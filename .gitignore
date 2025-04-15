@@ -44,3 +44,19 @@ yarn-error.log*
 
 # idea files
 .idea
+
+# Large files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.webp
+*.mp4
+*.mov
+*.avi
+*.pdf
+*.zip
+*.tar.gz
+*.rar
