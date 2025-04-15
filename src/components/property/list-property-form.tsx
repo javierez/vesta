@@ -180,7 +180,7 @@ export function ListPropertyForm({
                   <Label htmlFor="propertyType">Tipo de Propiedad*</Label>
                   <Select
                     value={formData.propertyType}
-                    onValueChange={(value: string) => handleSelectChange("propertyType", value)}
+                    onValueChange={(value) => handleSelectChange("propertyType", value)}
                   >
                     <SelectTrigger id="propertyType">
                       <SelectValue placeholder="Seleccionar tipo" />
@@ -308,7 +308,7 @@ export function ListPropertyForm({
                       <Checkbox
                         id={`feature-${feature}`}
                         checked={formData.features.includes(feature)}
-                        onCheckedChange={(checked: boolean) => handleFeatureToggle(feature, checked)}
+                        onCheckedChange={(checked) => handleFeatureToggle(feature, checked as boolean)}
                       />
                       <Label htmlFor={`feature-${feature}`} className="text-sm">
                         {feature}

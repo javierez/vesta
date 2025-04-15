@@ -12,12 +12,19 @@ import { Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { buildSearchSlug, type SearchParams } from "~/lib/search-utils"
 
-type PropertyType = "any" | "house" | "apartment" | "condo" | "commercial"
+type PropertyType = "any" | "piso" | "casa" | "local" | "solar" | "garaje"
+
+interface SearchFormData {
+  location: string
+  propertyType: PropertyType
+  bedrooms: string
+  bathrooms: string
+}
 
 export function PropertySearch() {
   const router = useRouter()
   const [priceRange, setPriceRange] = useState<number[]>([0, 1000000])
-  const [searchParams, setSearchParams] = useState({
+  const [searchParams, setSearchParams] = useState<SearchFormData>({
     location: "",
     propertyType: "any",
     bedrooms: "any",
@@ -29,31 +36,31 @@ export function PropertySearch() {
     setSearchParams((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSelectChange = (name: string, value: string) => {
+  const handleSelectChange = (name: keyof SearchFormData, value: string) => {
     setSearchParams((prev) => ({ ...prev, [name]: value }))
   }
 
-  // Update the handleSubmit function to use our new URL structure
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Create search params object
     const { location, propertyType, bedrooms, bathrooms } = searchParams
     const searchParamsData: SearchParams = {
-      location: location,
-      propertyType: propertyType as PropertyType,
-      bedrooms: bedrooms,
-      bathrooms: bathrooms,
-      minPrice: priceRange[0],
-      maxPrice: priceRange[1],
-      status: "for-sale", // Default to for-sale
+      location,
+      propertyType: propertyType === "any" ? undefined : propertyType,
+      bedrooms,
+      bathrooms,
+      minPrice: priceRange[0] ?? 0,
+      maxPrice: priceRange[1] ?? 0,
+      status: "for-sale",
     }
 
-    // Build the search slug
     const searchSlug = buildSearchSlug(searchParamsData)
-
-    // Redirect to the search page with the new URL structure
     router.push(`/busqueda/${searchSlug}`)
+  }
+
+  // Format numbers consistently to avoid hydration issues
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('es-ES').format(num)
   }
 
   return (
@@ -84,17 +91,18 @@ export function PropertySearch() {
               <Label htmlFor="property-type">Tipo de Propiedad</Label>
               <Select
                 defaultValue={searchParams.propertyType}
-                onValueChange={(value) => handleSelectChange("propertyType", value)}
+                onValueChange={(value) => handleSelectChange("propertyType", value as PropertyType)}
               >
                 <SelectTrigger id="property-type">
                   <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="any">Cualquiera</SelectItem>
-                  <SelectItem value="house">Casa</SelectItem>
-                  <SelectItem value="apartment">Apartamento</SelectItem>
-                  <SelectItem value="condo">Condominio</SelectItem>
-                  <SelectItem value="commercial">Comercial</SelectItem>
+                  <SelectItem value="piso">Piso</SelectItem>
+                  <SelectItem value="casa">Casa</SelectItem>
+                  <SelectItem value="local">Local</SelectItem>
+                  <SelectItem value="solar">Solar</SelectItem>
+                  <SelectItem value="garaje">Garaje</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -142,7 +150,7 @@ export function PropertySearch() {
               <div className="flex justify-between">
                 <Label>Rango de Precio</Label>
                 <span className="text-sm text-muted-foreground">
-                  ${(priceRange[0] ?? 0).toLocaleString()} - ${(priceRange[1] ?? 0).toLocaleString()}
+                  {formatNumber(priceRange[0] ?? 0)}€ - {formatNumber(priceRange[1] ?? 0)}€
                 </span>
               </div>
               <Slider

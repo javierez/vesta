@@ -1,3 +1,5 @@
+"use client"
+
 import { properties } from "~/lib/data"
 import { PropertyCard } from "~/components/property-card"
 import { Button } from "~/components/ui/button"

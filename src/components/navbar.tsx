@@ -2,11 +2,11 @@
 
 import Link from "next/link"
 import { Button } from "~/components/ui/button"
-import { Building, Menu, X } from "lucide-react"
+import { Building, Menu, X, ChevronDown } from "lucide-react"
 import { useState } from "react"
 import { cn } from "~/lib/utils"
-import { ListPropertyForm } from "~/components/property/list-property-form"
 import { SocialLinks } from "~/components/ui/social-links"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu"
 
 interface NavbarProps {
   socialLinks?: {
@@ -27,14 +27,69 @@ export default function Navbar({ socialLinks }: NavbarProps) {
         </Link>
 
         <nav className="hidden md:flex gap-6">
-          <Link href="/" className="text-sm font-medium transition-colors hover:text-primary">
-            Inicio
-          </Link>
-          <Link
-            href="/busqueda/venta-propiedades/todas-ubicaciones"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            Propiedades
+          <DropdownMenu>
+            <DropdownMenuTrigger className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1">
+              Comprar <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem>
+                <Link href="/busqueda/venta-pisos/todas-ubicaciones" className="w-full">
+                  Pisos
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/busqueda/venta-casas/todas-ubicaciones" className="w-full">
+                  Casas
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/busqueda/venta-locales/todas-ubicaciones" className="w-full">
+                  Locales
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/busqueda/venta-solares/todas-ubicaciones" className="w-full">
+                  Solares
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/busqueda/venta-garajes/todas-ubicaciones" className="w-full">
+                  Garajes
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1">
+              Alquilar <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem>
+                <Link href="/busqueda/alquiler-pisos/todas-ubicaciones" className="w-full">
+                  Pisos
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/busqueda/alquiler-casas/todas-ubicaciones" className="w-full">
+                  Casas
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/busqueda/alquiler-locales/todas-ubicaciones" className="w-full">
+                  Locales
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/busqueda/alquiler-garajes/todas-ubicaciones" className="w-full">
+                  Garajes
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Link href="/vender" className="text-sm font-medium transition-colors hover:text-primary">
+            Vender
           </Link>
           <Link href="#about" className="text-sm font-medium transition-colors hover:text-primary">
             Nosotros
@@ -49,7 +104,6 @@ export default function Navbar({ socialLinks }: NavbarProps) {
 
         <div className="hidden md:flex items-center gap-4">
           {socialLinks && socialLinks.length > 0 && <SocialLinks links={socialLinks} className="mr-2" />}
-          <ListPropertyForm />
         </div>
 
         <Button
@@ -66,17 +120,88 @@ export default function Navbar({ socialLinks }: NavbarProps) {
       {/* Menú móvil */}
       <div className={cn("fixed inset-0 top-16 z-50 bg-background md:hidden", isMenuOpen ? "block" : "hidden")}>
         <div className="container py-6 flex flex-col gap-4">
-          <Link href="/" className="text-lg font-medium py-2 hover:text-primary" onClick={() => setIsMenuOpen(false)}>
-            Inicio
-          </Link>
+          <div className="flex flex-col">
+            <div className="text-lg font-medium py-2">Comprar</div>
+            <div className="pl-4 flex flex-col gap-2">
+              <Link
+                href="/busqueda/venta-pisos/todas-ubicaciones"
+                className="text-sm py-1 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Pisos
+              </Link>
+              <Link
+                href="/busqueda/venta-casas/todas-ubicaciones"
+                className="text-sm py-1 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Casas
+              </Link>
+              <Link
+                href="/busqueda/venta-locales/todas-ubicaciones"
+                className="text-sm py-1 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Locales
+              </Link>
+              <Link
+                href="/busqueda/venta-solares/todas-ubicaciones"
+                className="text-sm py-1 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Solares
+              </Link>
+              <Link
+                href="/busqueda/venta-garajes/todas-ubicaciones"
+                className="text-sm py-1 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Garajes
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <div className="text-lg font-medium py-2">Alquilar</div>
+            <div className="pl-4 flex flex-col gap-2">
+              <Link
+                href="/busqueda/alquiler-pisos/todas-ubicaciones"
+                className="text-sm py-1 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Pisos
+              </Link>
+              <Link
+                href="/busqueda/alquiler-casas/todas-ubicaciones"
+                className="text-sm py-1 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Casas
+              </Link>
+              <Link
+                href="/busqueda/alquiler-locales/todas-ubicaciones"
+                className="text-sm py-1 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Locales
+              </Link>
+              <Link
+                href="/busqueda/alquiler-garajes/todas-ubicaciones"
+                className="text-sm py-1 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Garajes
+              </Link>
+            </div>
+          </div>
+
           <Link
-            href="/busqueda/venta-propiedades/todas-ubicaciones"
+            href="/vender"
             className="text-lg font-medium py-2 hover:text-primary"
             onClick={() => setIsMenuOpen(false)}
           >
-            Propiedades
+            Vender
           </Link>
-
           <Link
             href="#about"
             className="text-lg font-medium py-2 hover:text-primary"
@@ -104,10 +229,6 @@ export default function Navbar({ socialLinks }: NavbarProps) {
               <SocialLinks links={socialLinks} />
             </div>
           )}
-
-          <div className="flex flex-col gap-2 mt-4">
-            <ListPropertyForm className="w-full" />
-          </div>
         </div>
       </div>
     </header>

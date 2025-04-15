@@ -1,3 +1,5 @@
+"use client"
+
 import { testimonials } from "~/lib/data"
 import { Card, CardContent, CardFooter } from "~/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"

@@ -1,4 +1,4 @@
-type PropertyType = "house" | "apartment" | "condo" | "commercial" | "any"
+type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje" | "any"
 
 export interface SearchParams {
   location?: string
@@ -25,10 +25,11 @@ export function buildSearchSlug(params: SearchParams): string {
   }
 
   if (params.propertyType && params.propertyType !== "any") {
-    if (params.propertyType === "house") typeSegment += "-casas"
-    else if (params.propertyType === "apartment") typeSegment += "-apartamentos"
-    else if (params.propertyType === "condo") typeSegment += "-condominios"
-    else if (params.propertyType === "commercial") typeSegment += "-comercial"
+    if (params.propertyType === "casa") typeSegment += "-casas"
+    else if (params.propertyType === "piso") typeSegment += "-pisos"
+    else if (params.propertyType === "local") typeSegment += "-locales"
+    else if (params.propertyType === "solar") typeSegment += "-solares"
+    else if (params.propertyType === "garaje") typeSegment += "-garajes"
   } else {
     typeSegment += "-propiedades"
   }
@@ -111,13 +112,15 @@ export function parseSearchSlug(slug: string): SearchParams {
     }
 
     if (typeSegment.includes("-casas")) {
-      params.propertyType = "house"
-    } else if (typeSegment.includes("-apartamentos")) {
-      params.propertyType = "apartment"
-    } else if (typeSegment.includes("-condominios")) {
-      params.propertyType = "condo"
-    } else if (typeSegment.includes("-comercial")) {
-      params.propertyType = "commercial"
+      params.propertyType = "casa"
+    } else if (typeSegment.includes("-pisos")) {
+      params.propertyType = "piso"
+    } else if (typeSegment.includes("-locales")) {
+      params.propertyType = "local"
+    } else if (typeSegment.includes("-solares")) {
+      params.propertyType = "solar"
+    } else if (typeSegment.includes("-garajes")) {
+      params.propertyType = "garaje"
     }
   }
 

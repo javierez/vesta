@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image"
 import { StarRating } from "~/components/ui/star-rating"
 import { Badge } from "~/components/ui/badge"

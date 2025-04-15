@@ -2,86 +2,77 @@ export function JsonLd() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
-    name: "Agencia Inmobiliaria",
-    description: "Tu socio de confianza en el mercado inmobiliario. Especializados en compra, venta y alquiler de propiedades residenciales y comerciales.",
-    image: "https://agencia-inmobiliaria.com/images/logo.jpg",
-    url: "https://agencia-inmobiliaria.com",
-    telephone: "+34 123 456 789",
-    email: "info@agencia-inmobiliaria.com",
+    name: "Acropolis Bienes Raíces",
+    description: "Tu socio de confianza en el mercado inmobiliario de Nueva York. Especializados en propiedades residenciales y comerciales de lujo.",
+    image: "https://acropolis-realestate.com/images/logo.jpg",
+    url: "https://acropolis-realestate.com",
+    telephone: "(123) 456-7890",
+    email: "info@acropolis-realestate.com",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Calle Mayor, 123",
-      addressLocality: "Madrid",
-      addressRegion: "Madrid",
-      postalCode: "28001",
-      addressCountry: "ES"
+      streetAddress: "123 Avenida Inmobiliaria",
+      addressLocality: "Nueva York",
+      addressRegion: "NY",
+      postalCode: "10001",
+      addressCountry: "US",
     },
     geo: {
       "@type": "GeoCoordinates",
-      latitude: 40.4168,
-      longitude: -3.7038
+      latitude: 40.7128,
+      longitude: -74.006,
     },
     openingHoursSpecification: [
       {
         "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"],
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
         opens: "09:00",
-        closes: "19:00"
+        closes: "18:00",
       },
       {
         "@type": "OpeningHoursSpecification",
-        dayOfWeek: "Sábado",
+        dayOfWeek: "Saturday",
         opens: "10:00",
-        closes: "14:00"
-      }
+        closes: "16:00",
+      },
     ],
-    priceRange: "€€",
-    currenciesAccepted: "EUR",
-    paymentAccepted: ["Efectivo", "Transferencia Bancaria", "Tarjeta de Crédito"],
+    priceRange: "$$$",
     areaServed: {
       "@type": "City",
-      name: "Madrid",
-      sameAs: "https://es.wikipedia.org/wiki/Madrid"
+      name: "New York",
+      sameAs: "https://en.wikipedia.org/wiki/New_York_City"
     },
     hasOfferCatalog: {
       "@type": "OfferCatalog",
-      name: "Catálogo de Propiedades",
+      name: "Luxury Properties",
       itemListElement: [
         {
           "@type": "Offer",
           itemOffered: {
             "@type": "Product",
-            name: "Pisos en Venta",
-            description: "Amplia selección de pisos en venta en las mejores zonas de Madrid"
+            name: "Luxury Apartments",
+            description: "Premium apartments in Manhattan's most desirable neighborhoods"
           }
         },
         {
           "@type": "Offer",
           itemOffered: {
             "@type": "Product",
-            name: "Casas en Venta",
-            description: "Casas unifamiliares y adosados en las zonas más exclusivas"
-          }
-        },
-        {
-          "@type": "Offer",
-          itemOffered: {
-            "@type": "Product",
-            name: "Alquiler de Viviendas",
-            description: "Pisos y casas en alquiler para todos los presupuestos"
+            name: "Luxury Homes",
+            description: "Exclusive single-family homes in prestigious locations"
           }
         }
       ]
     },
     sameAs: [
-      "https://www.facebook.com/agencia-inmobiliaria",
-      "https://www.instagram.com/agencia-inmobiliaria",
-      "https://www.linkedin.com/company/agencia-inmobiliaria"
+      "https://www.facebook.com/acropolisrealestate",
+      "https://www.twitter.com/acropolisrealty",
+      "https://www.instagram.com/acropolisrealestate",
+      "https://www.linkedin.com/company/acropolis-real-estate",
     ],
     aggregateRating: {
       "@type": "AggregateRating",
-      ratingValue: "4.8",
-      reviewCount: "125",
+      ratingValue: "4.9",
+      reviewCount: "150",
       bestRating: "5",
       worstRating: "1"
     }
