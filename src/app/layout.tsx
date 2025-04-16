@@ -50,7 +50,6 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <div className="relative flex min-h-screen flex-col">
             <main className="flex-1">{children}</main>
-            <WhatsAppButton />
           </div>
         </ThemeProvider>
       </body>
