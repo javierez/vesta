@@ -12,15 +12,17 @@ import Navbar from "~/components/navbar"
 import Footer from "~/components/footer"
 import { ImageGallery } from "~/components/property/image-gallery"
 import { Card } from "~/components/ui/card"
+import { use } from "react"
 
 interface PropertyPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: PropertyPageProps): Promise<Metadata> {
-  const property = properties.find((p) => p.id === params.id)
+  const unwrappedParams = use(params) as { id: string }
+  const property = properties.find((p) => p.id === unwrappedParams.id)
 
   if (!property) {
     return {
@@ -57,7 +59,8 @@ const socialLinks = [
 ]
 
 export default function PropertyPage({ params }: PropertyPageProps) {
-  const property = properties.find((p) => p.id === params.id)
+  const unwrappedParams = use(params) as { id: string }
+  const property = properties.find((p) => p.id === unwrappedParams.id)
 
   if (!property) {
     notFound()
