@@ -19,10 +19,10 @@ import { Suspense, use } from "react"
 
 // Datos de redes sociales para toda la aplicación
 const socialLinks = [
-  { platform: "facebook" as "facebook", url: "https://facebook.com/acropolisrealestate" },
-  { platform: "instagram" as "instagram", url: "https://instagram.com/acropolisrealestate" },
-  { platform: "twitter" as "twitter", url: "https://twitter.com/acropolisrealty" },
-  { platform: "linkedin" as "linkedin", url: "https://linkedin.com/company/acropolis-real-estate" },
+  { platform: "facebook" as const, url: "https://facebook.com/acropolisrealestate" },
+  { platform: "instagram" as const, url: "https://instagram.com/acropolisrealestate" },
+  { platform: "twitter" as const, url: "https://twitter.com/acropolisrealty" },
+  { platform: "linkedin" as const, url: "https://linkedin.com/company/acropolis-real-estate" },
 ]
 
 interface SearchPageProps {
@@ -35,9 +35,7 @@ interface SearchPageProps {
 }
 
 export default function SearchPage({ params, searchParams }: SearchPageProps) {
-  const router = useRouter()
-
-  // Unwrap params and searchParams using React.use()
+  // Remove unused router
   const unwrappedParams = use(params) as { slug: string[] }
   const unwrappedSearchParams = use(searchParams) as { sort?: string }
 
@@ -74,18 +72,18 @@ export default function SearchPage({ params, searchParams }: SearchPageProps) {
     }
 
     // Filter by bedrooms
-    if (bedrooms !== "any" && property.bedrooms < Number.parseInt(bedrooms)) {
+    if (bedrooms !== "any" && property.bedrooms < Number.parseInt(bedrooms ?? "0")) {
       return false
     }
 
     // Filter by bathrooms
-    if (bathrooms !== "any" && property.bathrooms < Number.parseInt(bathrooms)) {
+    if (bathrooms !== "any" && property.bathrooms < Number.parseInt(bathrooms ?? "0")) {
       return false
     }
 
     // Filter by price
-    const minPriceValue = parsedParams.minPrice || 0
-    const maxPriceValue = parsedParams.maxPrice || Number.MAX_SAFE_INTEGER
+    const minPriceValue = parsedParams.minPrice ?? 0
+    const maxPriceValue = parsedParams.maxPrice ?? Number.MAX_SAFE_INTEGER
     if (property.price < minPriceValue || property.price > maxPriceValue) {
       return false
     }
@@ -101,7 +99,7 @@ export default function SearchPage({ params, searchParams }: SearchPageProps) {
   })
 
   // Sort properties based on the sort parameter
-  const sortOption = unwrappedSearchParams.sort || "default"
+  const sortOption = unwrappedSearchParams.sort ?? "default"
 
   switch (sortOption) {
     case "price-asc":
