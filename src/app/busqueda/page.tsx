@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { buildSearchSlug, type SearchParams } from "~/lib/search-utils"
+import { use } from "react"
 
 export const metadata: Metadata = {
   title: "Resultados de Búsqueda | Acropolis Bienes Raíces",
@@ -8,7 +9,19 @@ export const metadata: Metadata = {
 }
 
 interface SearchPageProps {
-  searchParams: {
+  searchParams: Promise<{
+    location?: string
+    tipo?: string
+    habitaciones?: string
+    banos?: string
+    precioMin?: string
+    precioMax?: string
+  }>
+}
+
+export default function SearchPage({ searchParams }: SearchPageProps) {
+  // Unwrap searchParams using React.use()
+  const unwrappedSearchParams = use(searchParams) as {
     location?: string
     tipo?: string
     habitaciones?: string
@@ -16,17 +29,15 @@ interface SearchPageProps {
     precioMin?: string
     precioMax?: string
   }
-}
 
-export default function SearchPage({ searchParams }: SearchPageProps) {
   // Convert old search params to new format
   const newSearchParams: SearchParams = {
-    location: searchParams.location,
-    propertyType: (searchParams.tipo as any) || "any",
-    bedrooms: searchParams.habitaciones || "any",
-    bathrooms: searchParams.banos || "any",
-    minPrice: Number.parseInt(searchParams.precioMin || "0"),
-    maxPrice: Number.parseInt(searchParams.precioMax || "2000000"),
+    location: unwrappedSearchParams.location,
+    propertyType: (unwrappedSearchParams.tipo as any) || "any",
+    bedrooms: unwrappedSearchParams.habitaciones || "any",
+    bathrooms: unwrappedSearchParams.banos || "any",
+    minPrice: Number.parseInt(unwrappedSearchParams.precioMin || "0"),
+    maxPrice: Number.parseInt(unwrappedSearchParams.precioMax || "2000000"),
     status: "for-sale",
   }
 
