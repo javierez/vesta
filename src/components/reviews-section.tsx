@@ -31,12 +31,12 @@ export function ReviewsSection({ title, subtitle, reviews, className, id }: Revi
   return (
     <section className={cn("py-16 bg-muted", className)} id={id}>
       <div className="container">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 ml-8 md:ml-12 lg:ml-16">
           <h2 className="text-3xl font-bold mb-2">{title}</h2>
           {subtitle && <p className="max-w-2xl mx-auto text-muted-foreground">{subtitle}</p>}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 ml-8 md:ml-12 lg:ml-16">
           {reviews.map((review) => (
             <div key={review.id} className="p-6 rounded-lg bg-background shadow-sm">
               <div className="flex justify-between items-start mb-4">

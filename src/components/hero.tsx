@@ -16,7 +16,7 @@ export function Hero() {
       </div>
 
       <div className="relative z-10 container py-24 md:py-32 lg:py-40">
-        <div className="max-w-3xl space-y-5">
+        <div className="max-w-3xl space-y-5 ml-8 md:ml-12 lg:ml-16">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white">
             Encuentra Tu Propiedad Soñada Con Acropolis
           </h1>

@@ -3,6 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "~/components/theme-provider";
+import { WhatsAppButton } from "~/components/ui/whatsapp-button";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -48,8 +49,9 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${geist.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <div className="flex min-h-screen flex-col">
+          <div className="relative flex min-h-screen flex-col">
             <main className="flex-1">{children}</main>
+            <WhatsAppButton />
           </div>
         </ThemeProvider>
       </body>

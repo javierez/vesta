@@ -9,9 +9,14 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
     NODE_ENV: z
-      .enum(["development", "test", "production"])
-      .default("development"),
-  },
+		.enum(["development", "test", "production"])
+		.default("development"),
+		SINGLESTORE_USER: z.string(),
+		SINGLESTORE_PASS: z.string(),
+		SINGLESTORE_DB: z.string(),
+		SINGLESTORE_HOST: z.string(),
+		SINGLESTORE_PORT: z.string(),
+	},
 
   /**
    * Specify your client-side environment variables schema here. This way you can ensure the app
@@ -29,6 +34,11 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    SINGLESTORE_USER: process.env.SINGLESTORE_USER,
+    SINGLESTORE_PASS: process.env.SINGLESTORE_PASS,
+    SINGLESTORE_DB: process.env.SINGLESTORE_DB,
+    SINGLESTORE_HOST: process.env.SINGLESTORE_HOST,
+    SINGLESTORE_PORT: process.env.SINGLESTORE_PORT,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**
