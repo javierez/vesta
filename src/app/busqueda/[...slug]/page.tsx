@@ -15,7 +15,7 @@ import { parseSearchSlug } from "~/lib/search-utils"
 import Navbar from "~/components/navbar"
 import Footer from "~/components/footer"
 import { SearchBar } from "~/components/search-bar"
-import { Suspense } from "react"
+import { Suspense, use } from "react"
 
 // Datos de redes sociales para toda la aplicación
 const socialLinks = [
@@ -26,19 +26,23 @@ const socialLinks = [
 ]
 
 interface SearchPageProps {
-  params: {
+  params: Promise<{
     slug: string[]
-  }
-  searchParams: {
+  }>
+  searchParams: Promise<{
     sort?: string
-  }
+  }>
 }
 
 export default function SearchPage({ params, searchParams }: SearchPageProps) {
   const router = useRouter()
 
+  // Unwrap params and searchParams using React.use()
+  const unwrappedParams = use(params) as { slug: string[] }
+  const unwrappedSearchParams = use(searchParams) as { sort?: string }
+
   // Join the slug array into a single string
-  const slugString = params.slug.join("/")
+  const slugString = unwrappedParams.slug.join("/")
 
   // Parse the slug to get search parameters
   const parsedParams = parseSearchSlug(slugString)
@@ -97,7 +101,7 @@ export default function SearchPage({ params, searchParams }: SearchPageProps) {
   })
 
   // Sort properties based on the sort parameter
-  const sortOption = searchParams.sort || "default"
+  const sortOption = unwrappedSearchParams.sort || "default"
 
   switch (sortOption) {
     case "price-asc":
