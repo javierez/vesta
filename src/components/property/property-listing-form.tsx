@@ -14,6 +14,7 @@ import { Card, CardContent } from "~/components/ui/card"
 import { Alert, AlertDescription } from "~/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import type { FormStep, PropertyFormData } from "~/types/property-form"
+import Link from "next/link"
 
 const initialFormData: PropertyFormData = {
   contactInfo: {
@@ -136,18 +137,18 @@ export function PropertyListingForm() {
   const handleNext = () => {
     if (validateCurrentStep()) {
       if (currentStep < steps.length - 1) {
-        setCurrentStep(currentStep + 1)
-        window.scrollTo(0, 0)
+        void setCurrentStep(currentStep + 1)
+        void window.scrollTo(0, 0)
       } else {
-        handleSubmit()
+        void handleSubmit()
       }
     }
   }
 
   const handleBack = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-      window.scrollTo(0, 0)
+      void setCurrentStep(currentStep - 1)
+      void window.scrollTo(0, 0)
     }
   }
 
@@ -158,7 +159,7 @@ export function PropertyListingForm() {
         // Aquí iría la lógica para enviar los datos al servidor
         await new Promise((resolve) => setTimeout(resolve, 2000)) // Simulación de envío
         setIsSubmitted(true)
-      } catch (error) {
+      } catch (_error) {
         setErrors({
           submit: "Ha ocurrido un error al enviar el formulario. Por favor, inténtelo de nuevo.",
         })
@@ -228,7 +229,7 @@ export function PropertyListingForm() {
             contigo en breve para completar el proceso.
           </p>
           <Button asChild>
-            <a href="/">Volver al inicio</a>
+            <Link href="/">Volver al inicio</Link>
           </Button>
         </CardContent>
       </Card>

@@ -21,7 +21,9 @@ export function Testimonials() {
             <Quote className="absolute top-4 right-4 h-8 w-8 text-muted-foreground/20" />
 
             <CardContent className="pt-6">
-              <p className="text-muted-foreground italic">"{testimonial.content}"</p>
+              <blockquote className="text-lg text-muted-foreground mb-4">
+                &ldquo;{testimonial.content}&rdquo;
+              </blockquote>
             </CardContent>
 
             <CardFooter className="flex items-center gap-4 pt-0">

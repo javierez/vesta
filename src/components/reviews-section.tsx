@@ -77,7 +77,7 @@ export function ReviewsSection({ title, subtitle, reviews, className, id }: Revi
                       </Badge>
                     )}
                   </div>
-                  {(review.author.role || review.author.company) && (
+                  {(review.author.role ?? review.author.company) && (
                     <p className="text-sm text-muted-foreground">
                       {review.author.role}
                       {review.author.role && review.author.company && " / "}

@@ -4,7 +4,6 @@ import { DropdownMenuContent } from "~/components/ui/dropdown-menu"
 import { DropdownMenuTrigger } from "~/components/ui/dropdown-menu"
 import { DropdownMenu } from "~/components/ui/dropdown-menu"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { properties } from "~/lib/data"
 import { PropertyCard } from "~/components/property-card"
 import { PropertyCardSkeleton } from "~/components/property-card-skeleton"
@@ -144,8 +143,7 @@ export default function SearchPage({ params, searchParams }: SearchPageProps) {
     }
 
     if (propertyType in propertyTypeLabels) {
-      const newTitle = propertyTypeLabels[propertyType as Exclude<PropertyType, "any">]
-      searchTitle = newTitle
+      searchTitle = propertyTypeLabels[propertyType]
     }
   }
 

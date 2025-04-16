@@ -342,7 +342,7 @@ export default function PropertyPage({ params }: PropertyPageProps) {
                     />
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold">Calificación: {property.energyCertification || "No disponible"}</p>
+                    <p className="text-lg font-bold">Calificación: {property.energyCertification ?? "No disponible"}</p>
                     <p className="text-sm text-muted-foreground mt-2">
                       Consumo de energía: {property.energyCertification ? "100 kWh/m² año" : "No disponible"}
                     </p>

@@ -103,7 +103,7 @@ export function parseSearchSlug(slug: string): SearchParams {
 
   // Parse property type and status
   if (segments.length > 0) {
-    const typeSegment = segments[0] || ""
+    const typeSegment = segments[0] ?? ""
 
     if (typeSegment.startsWith("alquiler")) {
       params.status = "for-rent"
