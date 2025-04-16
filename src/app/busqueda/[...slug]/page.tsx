@@ -4,12 +4,13 @@ import Footer from "~/components/footer"
 import { SearchBar } from "~/components/search-bar"
 import { SearchPageClient } from "~/components/search-page-client"
 
-interface PageProps {
+// This is the correct type for Next.js 14 page props
+type Props = {
   params: { slug: string[] }
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default function SearchPage({ params, searchParams }: PageProps) {
+export default function SearchPage({ params, searchParams }: Props) {
   return (
     <>
       <Navbar />
