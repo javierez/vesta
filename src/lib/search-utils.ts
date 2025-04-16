@@ -1,4 +1,4 @@
-type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje" | "any"
+export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje" | "any"
 
 export interface SearchParams {
   location?: string
@@ -14,41 +14,22 @@ export interface SearchParams {
 
 // Convert search params to URL slug
 export function buildSearchSlug(params: SearchParams): string {
-  const {
-    location = "todas-ubicaciones",
-    propertyType = "any",
-    bedrooms = "any",
-    bathrooms = "any",
-    minPrice,
-    maxPrice,
-    minArea,
-    maxArea,
-    status = "for-sale",
-  } = params
-
-  const locationSlug = location ?? "todas-ubicaciones"
-  const propertyTypeSlug = propertyType ?? "any"
-  const bedroomsSlug = bedrooms ?? "any"
-  const bathroomsSlug = bathrooms ?? "any"
-  const minPriceSlug = minPrice ?? 0
-  const maxPriceSlug = maxPrice ?? 2000000
-
   const segments: string[] = []
 
   // Add property type and status
   let typeSegment = ""
-  if (status === "for-rent") {
+  if (params.status === "for-rent") {
     typeSegment = "alquiler"
   } else {
     typeSegment = "venta"
   }
 
-  if (propertyTypeSlug !== "any") {
-    if (propertyTypeSlug === "casa") typeSegment += "-casas"
-    else if (propertyTypeSlug === "piso") typeSegment += "-pisos"
-    else if (propertyTypeSlug === "local") typeSegment += "-locales"
-    else if (propertyTypeSlug === "solar") typeSegment += "-solares"
-    else if (propertyTypeSlug === "garaje") typeSegment += "-garajes"
+  if (params.propertyType && params.propertyType !== "any") {
+    if (params.propertyType === "casa") typeSegment += "-casas"
+    else if (params.propertyType === "piso") typeSegment += "-pisos"
+    else if (params.propertyType === "local") typeSegment += "-locales"
+    else if (params.propertyType === "solar") typeSegment += "-solares"
+    else if (params.propertyType === "garaje") typeSegment += "-garajes"
   } else {
     typeSegment += "-propiedades"
   }
@@ -56,8 +37,8 @@ export function buildSearchSlug(params: SearchParams): string {
   segments.push(typeSegment)
 
   // Add location
-  if (locationSlug !== "todas-ubicaciones") {
-    segments.push(locationSlug.toLowerCase().replace(/\s+/g, "-"))
+  if (params.location) {
+    segments.push(params.location.toLowerCase().replace(/\s+/g, "-"))
   } else {
     segments.push("todas-ubicaciones")
   }
@@ -65,24 +46,24 @@ export function buildSearchSlug(params: SearchParams): string {
   // Add filters
   const filters: string[] = []
 
-  if (minPriceSlug) {
-    filters.push(`precio-desde_${minPriceSlug}`)
+  if (params.minPrice) {
+    filters.push(`precio-desde_${params.minPrice}`)
   }
 
-  if (maxPriceSlug) {
-    filters.push(`precio-hasta_${maxPriceSlug}`)
+  if (params.maxPrice) {
+    filters.push(`precio-hasta_${params.maxPrice}`)
   }
 
-  if (minArea) {
-    filters.push(`metros-cuadrados-mas-de_${minArea}`)
+  if (params.minArea) {
+    filters.push(`metros-cuadrados-mas-de_${params.minArea}`)
   }
 
-  if (maxArea) {
-    filters.push(`metros-cuadrados-menos-de_${maxArea}`)
+  if (params.maxArea) {
+    filters.push(`metros-cuadrados-menos-de_${params.maxArea}`)
   }
 
-  if (bedroomsSlug !== "any") {
-    const bedroomsNum = Number.parseInt(bedroomsSlug)
+  if (params.bedrooms && params.bedrooms !== "any") {
+    const bedroomsNum = Number.parseInt(params.bedrooms)
     if (bedroomsNum === 1) {
       filters.push("un-dormitorio")
     } else if (bedroomsNum === 2) {
@@ -94,8 +75,8 @@ export function buildSearchSlug(params: SearchParams): string {
     }
   }
 
-  if (bathroomsSlug !== "any") {
-    const bathroomsNum = Number.parseInt(bathroomsSlug)
+  if (params.bathrooms && params.bathrooms !== "any") {
+    const bathroomsNum = Number.parseInt(params.bathrooms)
     if (bathroomsNum === 1) {
       filters.push("un-bano")
     } else if (bathroomsNum === 2) {
@@ -145,23 +126,23 @@ export function parseSearchSlug(slug: string): SearchParams {
 
   // Parse location
   if (segments.length > 1 && segments[1] !== "todas-ubicaciones") {
-    params.location = (segments[1] || "").replace(/-/g, " ")
+    params.location = (segments[1] ?? "").replace(/-/g, " ")
   }
 
   // Parse filters
   if (segments.length > 2 && segments[2]?.startsWith("con-")) {
-    const filtersString = (segments[2] || "").substring(4) // Remove 'con-'
+    const filtersString = (segments[2] ?? "").substring(4) // Remove 'con-'
     const filters = filtersString.split(",")
 
     filters.forEach((filter) => {
       if (filter.startsWith("precio-desde_")) {
-        params.minPrice = Number.parseInt(filter.split("_")[1] || "0")
+        params.minPrice = Number.parseInt(filter.split("_")[1] ?? "0")
       } else if (filter.startsWith("precio-hasta_")) {
-        params.maxPrice = Number.parseInt(filter.split("_")[1] || "0")
+        params.maxPrice = Number.parseInt(filter.split("_")[1] ?? "0")
       } else if (filter.startsWith("metros-cuadrados-mas-de_")) {
-        params.minArea = Number.parseInt(filter.split("_")[1] || "0")
+        params.minArea = Number.parseInt(filter.split("_")[1] ?? "0")
       } else if (filter.startsWith("metros-cuadrados-menos-de_")) {
-        params.maxArea = Number.parseInt(filter.split("_")[1] || "0")
+        params.maxArea = Number.parseInt(filter.split("_")[1] ?? "0")
       } else if (filter === "un-dormitorio") {
         params.bedrooms = "1"
       } else if (filter === "dos-dormitorios") {

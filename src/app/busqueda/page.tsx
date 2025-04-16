@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { buildSearchSlug, type SearchParams } from "~/lib/search-utils"
+import { buildSearchSlug, type SearchParams, type PropertyType } from "~/lib/search-utils"
 import { use } from "react"
 
 export const metadata: Metadata = {
@@ -33,11 +33,11 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
   // Convert old search params to new format
   const newSearchParams: SearchParams = {
     location: unwrappedSearchParams.location,
-    propertyType: (unwrappedSearchParams.tipo as any) || "any",
-    bedrooms: unwrappedSearchParams.habitaciones || "any",
-    bathrooms: unwrappedSearchParams.banos || "any",
-    minPrice: Number.parseInt(unwrappedSearchParams.precioMin || "0"),
-    maxPrice: Number.parseInt(unwrappedSearchParams.precioMax || "2000000"),
+    propertyType: (unwrappedSearchParams.tipo as PropertyType) ?? "any",
+    bedrooms: unwrappedSearchParams.habitaciones ?? "any",
+    bathrooms: unwrappedSearchParams.banos ?? "any",
+    minPrice: Number.parseInt(unwrappedSearchParams.precioMin ?? "0"),
+    maxPrice: Number.parseInt(unwrappedSearchParams.precioMax ?? "2000000"),
     status: "for-sale",
   }
 

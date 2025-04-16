@@ -17,16 +17,16 @@ export function SearchBar({ initialParams }: SearchBarProps) {
 
   // Initialize state with provided params or defaults
   const [searchMode, setSearchMode] = useState<"for-sale" | "for-rent">(
-    (initialParams?.status as "for-sale" | "for-rent") || "for-sale"
+    (initialParams?.status as "for-sale" | "for-rent") ?? "for-sale"
   )
-  const [location, setLocation] = useState(initialParams?.location || "")
+  const [location, setLocation] = useState(initialParams?.location ?? "")
   const [propertyType, setPropertyType] = useState<"any" | "piso" | "casa" | "local" | "solar" | "garaje">(
-    initialParams?.propertyType || "any",
+    initialParams?.propertyType ?? "any",
   )
   const [minPrice, setMinPrice] = useState<string>(initialParams?.minPrice ? initialParams.minPrice.toString() : "")
   const [maxPrice, setMaxPrice] = useState<string>(initialParams?.maxPrice ? initialParams.maxPrice.toString() : "")
-  const [bedrooms, setBedrooms] = useState<string>(initialParams?.bedrooms || "any")
-  const [bathrooms, setBathrooms] = useState<string>(initialParams?.bathrooms || "any")
+  const [bedrooms, setBedrooms] = useState<string>(initialParams?.bedrooms ?? "any")
+  const [bathrooms, setBathrooms] = useState<string>(initialParams?.bathrooms ?? "any")
   const [province, setProvince] = useState<string>("leon")
   const [municipality, setMunicipality] = useState<string>("all")
   const [minArea, setMinArea] = useState<string>(initialParams?.minArea ? initialParams.minArea.toString() : "")
@@ -70,7 +70,7 @@ export function SearchBar({ initialParams }: SearchBarProps) {
   }
 
   // Handle property type change
-  const handlePropertyTypeChange = (value: any) => {
+  const handlePropertyTypeChange = (value: "any" | "piso" | "casa" | "local" | "solar" | "garaje") => {
     setPropertyType(value)
 
     // Auto-apply the filter

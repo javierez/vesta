@@ -43,8 +43,8 @@ export function ReviewsSection({ title, subtitle, reviews, className, id }: Revi
                 {review.companyLogo ? (
                   <div className="h-10 relative w-32">
                     <Image
-                      src={review.companyLogo || "/placeholder.svg"}
-                      alt={review.author.company || ""}
+                      src={review.companyLogo ?? "/placeholder.svg"}
+                      alt={review.author.company ?? ""}
                       fill
                       className="object-contain"
                     />
@@ -55,13 +55,13 @@ export function ReviewsSection({ title, subtitle, reviews, className, id }: Revi
                 <StarRating rating={review.rating} />
               </div>
 
-              <blockquote className="mb-6 italic text-muted-foreground">"{review.content}"</blockquote>
+              <blockquote className="mb-6 italic text-muted-foreground">&ldquo;{review.content}&rdquo;</blockquote>
 
               <div className="flex items-center gap-3">
                 {review.author.avatar && (
                   <div className="relative h-12 w-12 overflow-hidden rounded-full">
                     <Image
-                      src={review.author.avatar || "/placeholder.svg"}
+                      src={review.author.avatar ?? "/placeholder.svg"}
                       alt={review.author.name}
                       fill
                       className="object-cover"

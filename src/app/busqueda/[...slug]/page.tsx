@@ -11,7 +11,7 @@ import { PropertyCardSkeleton } from "~/components/property-card-skeleton"
 import { Button } from "~/components/ui/button"
 import { Separator } from "~/components/ui/separator"
 import { ArrowLeft, SlidersHorizontal } from "lucide-react"
-import { parseSearchSlug } from "~/lib/search-utils"
+import { parseSearchSlug, type PropertyType } from "~/lib/search-utils"
 import Navbar from "~/components/navbar"
 import Footer from "~/components/footer"
 import { SearchBar } from "~/components/search-bar"
@@ -89,8 +89,8 @@ export default function SearchPage({ params, searchParams }: SearchPageProps) {
     }
 
     // Filter by area
-    const minAreaValue = parsedParams.minArea || 0
-    const maxAreaValue = parsedParams.maxArea || Number.MAX_SAFE_INTEGER
+    const minAreaValue = parsedParams.minArea ?? 0
+    const maxAreaValue = parsedParams.maxArea ?? Number.MAX_SAFE_INTEGER
     if (property.squareFeet < minAreaValue || property.squareFeet > maxAreaValue) {
       return false
     }
@@ -135,7 +135,7 @@ export default function SearchPage({ params, searchParams }: SearchPageProps) {
   }
 
   if (propertyType !== "any") {
-    const propertyTypeLabels = {
+    const propertyTypeLabels: Record<Exclude<PropertyType, "any">, string> = {
       piso: status === "for-rent" ? "Pisos en Alquiler" : "Pisos en Venta",
       casa: status === "for-rent" ? "Casas en Alquiler" : "Casas en Venta",
       local: status === "for-rent" ? "Locales en Alquiler" : "Locales en Venta",
@@ -143,7 +143,10 @@ export default function SearchPage({ params, searchParams }: SearchPageProps) {
       garaje: status === "for-rent" ? "Garajes en Alquiler" : "Garajes en Venta",
     }
 
-    searchTitle = propertyTypeLabels[propertyType as keyof typeof propertyTypeLabels] || searchTitle
+    if (propertyType in propertyTypeLabels) {
+      const newTitle = propertyTypeLabels[propertyType as Exclude<PropertyType, "any">]
+      searchTitle = newTitle
+    }
   }
 
   if (location && location !== "todas-ubicaciones") {
