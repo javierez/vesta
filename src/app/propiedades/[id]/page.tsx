@@ -21,7 +21,7 @@ interface PropertyPageProps {
 }
 
 export async function generateMetadata({ params }: PropertyPageProps): Promise<Metadata> {
-  const unwrappedParams = use(params) as { id: string }
+  const unwrappedParams = await params
   const property = properties.find((p) => p.id === unwrappedParams.id)
 
   if (!property) {
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PropertyPageProps): Promise<M
       description: property.description,
       images: [
         {
-          url: property.imageUrl || "/suburban-dream.png",
+          url: property.imageUrl ?? "/suburban-dream.png",
           width: 1200,
           height: 630,
           alt: property.title,
@@ -51,11 +51,11 @@ export async function generateMetadata({ params }: PropertyPageProps): Promise<M
 
 // Datos de redes sociales para toda la aplicación
 const socialLinks = [
-  { platform: "facebook" as "facebook", url: "https://facebook.com/acropolisrealestate" },
-  { platform: "instagram" as "instagram", url: "https://instagram.com/acropolisrealestate" },
-  { platform: "twitter" as "twitter", url: "https://twitter.com/acropolisrealty" },
-  { platform: "linkedin" as "linkedin", url: "https://linkedin.com/company/acropolis-real-estate" },
-  { platform: "youtube" as "youtube", url: "https://youtube.com/acropolisrealestate" }
+  { platform: "facebook" as const, url: "https://facebook.com/acropolisrealestate" },
+  { platform: "instagram" as const, url: "https://instagram.com/acropolisrealestate" },
+  { platform: "twitter" as const, url: "https://twitter.com/acropolisrealty" },
+  { platform: "linkedin" as const, url: "https://linkedin.com/company/acropolis-real-estate" },
+  { platform: "youtube" as const, url: "https://youtube.com/acropolisrealestate" }
 ]
 
 export default function PropertyPage({ params }: PropertyPageProps) {
@@ -95,7 +95,7 @@ export default function PropertyPage({ params }: PropertyPageProps) {
   }
 
   // León, Spain coordinates
-  const mapCoordinates = property.coordinates || { lat: 42.5987, lng: -5.5671 }
+  const mapCoordinates = property.coordinates ?? { lat: 42.5987, lng: -5.5671 }
   const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d46997.95492133559!2d${mapCoordinates.lng}!3d${mapCoordinates.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd379a9a0d5e1bd9%3A0x7d849ffad4f1eef3!2sLe%C3%B3n%2C%20Spain!5e0!3m2!1sen!2sus!4v1681654321000!5m2!1sen!2sus`
 
   return (
@@ -246,7 +246,7 @@ export default function PropertyPage({ params }: PropertyPageProps) {
                     <Card className="overflow-hidden">
                       <div className="flex items-center p-4 bg-muted">
                         <span className="font-medium flex-1">Tipo calefacción</span>
-                        <span>{property.heatingType || "No disponible"}</span>
+                        <span>{property.heatingType ?? "No disponible"}</span>
                       </div>
                     </Card>
 

@@ -16,7 +16,7 @@ interface FooterProps {
 
 export default function Footer({ socialLinks, officeLocations }: FooterProps) {
   // Default office locations if none provided
-  const locations = officeLocations || [
+  const locations = officeLocations ?? [
     {
       name: "León (Sede Central)",
       address: ["123 Avenida Inmobiliaria", "León, CL 24001", "España"],
