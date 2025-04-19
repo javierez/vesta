@@ -42,7 +42,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   }
 
   // Get primary and secondary images with proper fallbacks
-  const defaultPlaceholder = "/suburban-dream.png"
+  const defaultPlaceholder = "/properties/suburban-dream.png"
   const primaryImage = property.imageUrl && property.imageUrl !== "" ? property.imageUrl : defaultPlaceholder
 
   // For secondary image, use the second image from the array or fall back to primary image

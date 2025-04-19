@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PropertyPageProps): Promise<M
       description: property.description,
       images: [
         {
-          url: property.imageUrl ?? "/suburban-dream.png",
+          url: property.imageUrl ?? "/properties/suburban-dream.png",
           width: 1200,
           height: 630,
           alt: property.title,
@@ -334,7 +334,7 @@ export default function PropertyPage({ params }: PropertyPageProps) {
                 <div className="bg-muted p-6 rounded-lg">
                   <div className="flex items-center justify-center mb-4">
                     <Image
-                      src="/energy-certification.png"
+                      src="/properties/energy-certification.png"
                       alt="Certificación Energética"
                       width={400}
                       height={200}
@@ -442,7 +442,7 @@ export default function PropertyPage({ params }: PropertyPageProps) {
                 <h3 className="font-bold text-lg mb-4">Agente Inmobiliario</h3>
                 <div className="flex items-center gap-4">
                   <div className="relative h-16 w-16 rounded-full overflow-hidden">
-                    <Image src="/confident-leader.png" alt="Agente Inmobiliario" fill className="object-cover" />
+                    <Image src="/properties/confident-leader.png" alt="Agente Inmobiliario" fill className="object-cover" />
                   </div>
                   <div>
                     <p className="font-medium">Carlos Rodríguez</p>

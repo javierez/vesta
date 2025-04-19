@@ -29,7 +29,7 @@ interface ReviewsSectionProps {
 
 export function ReviewsSection({ title, subtitle, reviews, className, id }: ReviewsSectionProps) {
   return (
-    <section className={cn("py-16 bg-muted", className)} id={id}>
+    <section className={cn("py-16", className)} id={id}>
       <div className="container">
         <div className="text-center mb-12 ml-8 md:ml-12 lg:ml-16">
           <h2 className="text-3xl font-bold mb-2">{title}</h2>

@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/singlestore";
-import { createPool, type Pool } from "mysql2/promise";
+import { createPool, type Pool } from "mysql2/promise"; 
 
 
 import { env } from "~/env";

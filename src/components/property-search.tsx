@@ -64,7 +64,7 @@ export function PropertySearch() {
   }
 
   return (
-    <section className="py-12 bg-muted" id="search">
+    <section className="py-12" id="search">
       <div className="container">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold mb-2">Encuentra Tu Propiedad Perfecta</h2>
