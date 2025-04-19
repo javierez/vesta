@@ -11,7 +11,7 @@ export function AboutSection() {
       <div className="grid gap-12 lg:grid-cols-2 items-center">
         <div className="relative aspect-square lg:aspect-auto">
           <Image
-            src="/placeholder.svg?height=600&width=600&query=real estate team in modern office"
+            src="/properties/thoughtful-man.png"
             alt="Equipo de Acropolis Bienes Raíces"
             fill
             className="object-cover rounded-lg"

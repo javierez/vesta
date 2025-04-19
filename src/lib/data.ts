@@ -1,3 +1,5 @@
+import { getPlaceholderImage } from "./placeholder-image"
+
 export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje"
 
 export type PropertyImage = {
@@ -65,10 +67,10 @@ export const properties: Property[] = [
     propertyType: "casa",
     status: "for-sale",
     isFeatured: true,
-    imageUrl: "/placeholder.svg?height=600&width=600&query=waterfront luxury villa",
+    imageUrl: "/properties/waterfront-luxury.png",
     images: [
-      { url: "/placeholder.svg?height=600&width=600&query=waterfront luxury villa", alt: "Vista exterior de la villa", tag: "Exterior" },
-      { url: "/placeholder.svg?height=600&width=600&query=luxury kitchen", alt: "Cocina gourmet", tag: "Cocina" },
+      { url: "/properties/waterfront-luxury.png", alt: "Vista exterior de la villa", tag: "Exterior" },
+      { url: "/properties/luxury-kitchen.png", alt: "Cocina gourmet", tag: "Cocina" },
       { url: "/properties/luxury-living.png", alt: "Sala de estar", tag: "Sala de estar" },
       { url: "/properties/luxury-bedroom.png", alt: "Dormitorio principal", tag: "Dormitorio" },
       { url: "/properties/luxury-pool.png", alt: "Piscina privada", tag: "Piscina" },
@@ -110,13 +112,12 @@ export const properties: Property[] = [
     propertyType: "piso",
     status: "for-sale",
     isFeatured: true,
-    imageUrl: "/placeholder.svg?height=600&width=600&query=urban loft",
+    imageUrl: "/properties/urban-loft-vista.png",
     images: [
-      { url: "/placeholder.svg?height=600&width=600&query=urban loft", alt: "Vista del apartamento", tag: "Sala de estar" },
-      { url: "/placeholder.svg?height=600&width=600&query=modern kitchen", alt: "Cocina moderna", tag: "Cocina" },
-      { url: "/properties/modern-bathroom.png", alt: "Baño con acabados de lujo", tag: "Baño" },
-      { url: "/properties/city-view.png", alt: "Vistas a la ciudad", tag: "Vistas" },
-      { url: "/properties/building-gym.png", alt: "Gimnasio del edificio", tag: "Gimnasio" },
+      { url: "/properties/urban-loft-vista.png", alt: "Vista del apartamento", tag: "Sala de estar" },
+      { url: "/properties/modern-kitchen.png", alt: "Cocina moderna", tag: "Cocina" },
+      { url: "/properties/luxury-living.png", alt: "Sala de estar", tag: "Sala de estar" },
+      { url: "/properties/luxury-bedroom.png", alt: "Dormitorio", tag: "Dormitorio" },
     ],
     isBankOwned: true,
     energyCertification: "A",
@@ -201,13 +202,12 @@ export const properties: Property[] = [
     propertyType: "piso",
     status: "for-sale",
     isFeatured: true,
-    imageUrl: "/placeholder.svg?height=600&width=600&query=penthouse",
+    imageUrl: "/properties/penthouse-panorama.png",
     images: [
-      { url: "/placeholder.svg?height=600&width=600&query=penthouse", alt: "Vista panorámica del penthouse", tag: "Vistas" },
-      { url: "/placeholder.svg?height=600&width=600&query=penthouse living", alt: "Sala de estar de lujo", tag: "Sala de estar" },
-      { url: "/gourmet-kitchen.png", alt: "Cocina gourmet", tag: "Cocina" },
-      { url: "/private-elevator.png", alt: "Ascensor privado", tag: "Ascensor" },
-      { url: "/wrap-terrace.png", alt: "Terraza envolvente", tag: "Terraza" },
+      { url: "/properties/penthouse-panorama.png", alt: "Vista panorámica del penthouse", tag: "Vistas" },
+      { url: "/properties/luxury-living.png", alt: "Sala de estar de lujo", tag: "Sala de estar" },
+      { url: "/properties/luxury-kitchen.png", alt: "Cocina gourmet", tag: "Cocina" },
+      { url: "/properties/luxury-bedroom.png", alt: "Dormitorio principal", tag: "Dormitorio" },
     ],
     energyCertification: "B",
     hasHeating: true,
@@ -249,10 +249,10 @@ export const properties: Property[] = [
     imageUrl: "/properties/brownstone-facade.png",
     images: [
       { url: "/properties/brownstone-facade.png", alt: "Fachada del local comercial", tag: "Exterior" },
-      { url: "/commercial-interior.png", alt: "Interior diáfano", tag: "Interior" },
-      { url: "/storefront-windows.png", alt: "Amplios escaparates", tag: "Escaparates" },
-      { url: "/commercial-bathroom.png", alt: "Baño del local", tag: "Baño" },
-      { url: "/security-system.png", alt: "Sistema de seguridad", tag: "Seguridad" },
+      { url: "/properties/commercial-interior.png", alt: "Interior diáfano", tag: "Interior" },
+      { url: "/properties/storefront-windows.png", alt: "Amplios escaparates", tag: "Escaparates" },
+      { url: "/properties/commercial-bathroom.png", alt: "Baño del local", tag: "Baño" },
+      { url: "/properties/security-system.png", alt: "Sistema de seguridad", tag: "Seguridad" },
     ],
     isBankOwned: true,
     energyCertification: "D",
@@ -295,10 +295,10 @@ export const properties: Property[] = [
     imageUrl: "/properties/beachfront-balcony-view.png",
     images: [
       { url: "/properties/beachfront-balcony-view.png", alt: "Vista al océano desde el balcón", tag: "Vistas" },
-      { url: "/beach-apartment-living.png", alt: "Sala de estar con vistas", tag: "Sala de estar" },
-      { url: "/updated-beach-kitchen.png", alt: "Cocina actualizada", tag: "Cocina" },
-      { url: "/ocean-view-bedroom.png", alt: "Dormitorio con vistas al océano", tag: "Dormitorio" },
-      { url: "/community-pool.png", alt: "Piscina comunitaria", tag: "Piscina" },
+      { url: "/properties/beach-apartment-living.png", alt: "Sala de estar con vistas", tag: "Sala de estar" },
+      { url: "/properties/updated-beach-kitchen.png", alt: "Cocina actualizada", tag: "Cocina" },
+      { url: "/properties/ocean-view-bedroom.png", alt: "Dormitorio con vistas al océano", tag: "Dormitorio" },
+      { url: "/properties/community-pool.png", alt: "Piscina comunitaria", tag: "Piscina" },
     ],
     energyCertification: "C",
     hasHeating: true,
@@ -337,13 +337,11 @@ export const properties: Property[] = [
     propertyType: "solar",
     status: "for-sale",
     isFeatured: true,
-    imageUrl: "/placeholder.svg?height=600&width=600&query=alpine luxury",
+    imageUrl: "/properties/alpine-luxury.png",
     images: [
-      { url: "/placeholder.svg?height=600&width=600&query=alpine luxury", alt: "Vistas panorámicas del terreno", tag: "Vistas" },
-      { url: "/land-plot.png", alt: "Plano del terreno", tag: "Plano" },
-      { url: "/land-services.png", alt: "Servicios disponibles", tag: "Servicios" },
-      { url: "/land-surroundings.png", alt: "Alrededores del terreno", tag: "Alrededores" },
-      { url: "/construction-permit.png", alt: "Permiso de construcción", tag: "Documentación" },
+      { url: "/properties/alpine-luxury.png", alt: "Vistas panorámicas del terreno", tag: "Vistas" },
+      { url: "/properties/suburban-dream.png", alt: "Plano del terreno", tag: "Plano" },
+      { url: "/properties/suburban-garden-charm.png", alt: "Alrededores del terreno", tag: "Alrededores" },
     ],
     coordinates: {
       lat: 42.5987,
@@ -378,10 +376,8 @@ export const properties: Property[] = [
     imageUrl: "/properties/exposed-brick-loft.png",
     images: [
       { url: "/properties/exposed-brick-loft.png", alt: "Interior del garaje", tag: "Interior" },
-      { url: "/garage-entrance.png", alt: "Entrada del garaje", tag: "Entrada" },
-      { url: "/security-cameras.png", alt: "Cámaras de seguridad", tag: "Seguridad" },
-      { url: "/storage-space.png", alt: "Espacio de almacenamiento", tag: "Almacenamiento" },
-      { url: "/automatic-door.png", alt: "Puerta automática", tag: "Acceso" },
+      { url: "/properties/urban-loft-vista.png", alt: "Entrada del garaje", tag: "Entrada" },
+      { url: "/properties/modern-kitchen.png", alt: "Espacio adicional", tag: "Espacio" },
     ],
     coordinates: {
       lat: 42.5987,
@@ -413,13 +409,12 @@ export const properties: Property[] = [
     propertyType: "piso",
     status: "for-rent",
     isFeatured: true,
-    imageUrl: "/placeholder.svg?height=600&width=600&query=urban loft",
+    imageUrl: "/properties/suburban-garden-charm.png",
     images: [
-      { url: "/placeholder.svg?height=600&width=600&query=urban loft", alt: "Sala de estar amueblada", tag: "Sala de estar" },
-      { url: "/furnished-bedroom.png", alt: "Dormitorio amueblado", tag: "Dormitorio" },
-      { url: "/modern-appliances.png", alt: "Electrodomésticos modernos", tag: "Cocina" },
-      { url: "/fiber-internet.png", alt: "Conexión de internet", tag: "Comunicaciones" },
-      { url: "/central-location.png", alt: "Ubicación céntrica", tag: "Ubicación" },
+      { url: "/properties/suburban-garden-charm.png", alt: "Vista exterior con jardín", tag: "Exterior" },
+      { url: "/properties/suburban-dream.png", alt: "Jardín privado", tag: "Jardín" },
+      { url: "/properties/luxury-living.png", alt: "Sala de estar familiar", tag: "Sala de estar" },
+      { url: "/properties/luxury-bedroom.png", alt: "Dormitorio", tag: "Dormitorio" },
     ],
     energyCertification: "E",
     hasHeating: true,
@@ -461,10 +456,10 @@ export const properties: Property[] = [
     imageUrl: "/properties/suburban-garden-charm.png",
     images: [
       { url: "/properties/suburban-garden-charm.png", alt: "Vista exterior con jardín", tag: "Exterior" },
-      { url: "/private-garden.png", alt: "Jardín privado", tag: "Jardín" },
-      { url: "/equipped-kitchen.png", alt: "Cocina equipada", tag: "Cocina" },
-      { url: "/family-living-room.png", alt: "Sala de estar familiar", tag: "Sala de estar" },
-      { url: "/built-in-wardrobes.png", alt: "Armarios empotrados", tag: "Dormitorio" },
+      { url: "/properties/suburban-dream.png", alt: "Jardín privado", tag: "Jardín" },
+      { url: "/properties/equipped-kitchen.png", alt: "Cocina equipada", tag: "Cocina" },
+      { url: "/properties/family-living-room.png", alt: "Sala de estar familiar", tag: "Sala de estar" },
+      { url: "/properties/built-in-wardrobes.png", alt: "Armarios empotrados", tag: "Dormitorio" },
     ],
     energyCertification: "D",
     hasHeating: true,
@@ -487,7 +482,7 @@ export const testimonials = [
     role: "Propietaria",
     content:
       "Trabajar con Acropolis Bienes Raíces fue un sueño. Entendieron exactamente lo que estábamos buscando y nos encontraron nuestra casa familiar perfecta dentro de nuestro presupuesto. Todo el proceso fue fluido y sin estrés.",
-    avatar: "/confident-leader.png",
+    avatar: "/properties/confident-leader.png",
   },
   {
     id: "2",
@@ -495,7 +490,7 @@ export const testimonials = [
     role: "Inversionista Inmobiliario",
     content:
       "Como inversionista, aprecio el conocimiento del mercado y la atención al detalle de Acropolis. Me han ayudado a adquirir múltiples propiedades con excelente potencial de retorno de inversión. Su experiencia es realmente invaluable.",
-    avatar: "/confident-leader.png",
+    avatar: "/properties/confident-leader.png",
   },
   {
     id: "3",
@@ -503,6 +498,6 @@ export const testimonials = [
     role: "Compradora por Primera Vez",
     content:
       "Ser compradora de vivienda por primera vez fue intimidante, pero el equipo de Acropolis me guió en cada paso. Fueron pacientes, informativos y me encontraron un maravilloso condominio que se ajustaba a todas mis necesidades.",
-    avatar: "/serene-gaze.png",
+    avatar: "/properties/serene-gaze.png",
   },
 ]
