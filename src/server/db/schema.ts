@@ -37,9 +37,27 @@ export const agents = singlestoreTable("flexweb_agents", {
   officeId: bigint("office_id", { mode: "bigint" }),
 });
 
+// Accounts table
+export const accounts = singlestoreTable("flexweb_accounts", {
+  accountId: bigint("account_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  name: varchar("name", { length: 100 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull(), // active, inactive, suspended
+  subscriptionType: varchar("subscription_type", { length: 50 }).notNull(),
+  subscriptionStartDate: timestamp("subscription_start_date").notNull(),
+  subscriptionEndDate: timestamp("subscription_end_date"),
+  maxOffices: int("max_offices").default(1),
+  maxUsers: int("max_users").default(5),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  statusIdx: index("idx_account_status").on(table.status),
+  subscriptionTypeIdx: index("idx_subscription_type").on(table.subscriptionType),
+}));
+
 // Offices table
 export const offices = singlestoreTable("flexweb_offices", {
   officeId: bigint("office_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // Reference to accounts table
   name: varchar("name", { length: 100 }).notNull(),
   address: varchar("address", { length: 255 }).notNull(),
   city: varchar("city", { length: 100 }).notNull(),
@@ -49,7 +67,9 @@ export const offices = singlestoreTable("flexweb_offices", {
   email: varchar("email", { length: 255 }),
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
-});
+}, (table) => ({
+  accountIdIdx: index("idx_account_id").on(table.accountId),
+}));
 
 // Properties table
 export const properties = singlestoreTable("flexweb_properties", {
@@ -92,4 +112,27 @@ export const properties = singlestoreTable("flexweb_properties", {
   bedroomsIdx: index("idx_bedrooms").on(table.bedrooms),
   squareFeetIdx: index("idx_square_feet").on(table.squareFeet),
   featuredIdx: index("idx_featured").on(table.isFeatured),
+}));
+
+// Property Images table
+export const propertyImages = singlestoreTable("flexweb_property_images", {
+  imageId: bigint("image_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  propertyId: bigint("property_id", { mode: "bigint" }).notNull(), // Reference to properties table
+  fileId: varchar("file_id", { length: 255 }).notNull(), // Unique identifier from storage service
+  url: varchar("url", { length: 1024 }).notNull(), // Full URL to the image
+  name: varchar("name", { length: 255 }).notNull(), // Original filename
+  size: int("size").notNull(), // File size in bytes
+  mimeType: varchar("mime_type", { length: 100 }).notNull(), // e.g., "image/jpeg", "image/png"
+  width: int("width"), // Image width in pixels
+  height: int("height"), // Image height in pixels
+  isFeatured: boolean("is_featured").default(false), // Main property image
+  sortOrder: int("sort_order").default(0), // For controlling display order
+  altText: varchar("alt_text", { length: 255 }), // For accessibility
+  caption: varchar("caption", { length: 500 }), // Optional image description
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  propertyIdIdx: index("idx_property_images_property").on(table.propertyId),
+  fileIdIdx: index("idx_property_images_file").on(table.fileId),
+  featuredIdx: index("idx_property_images_featured").on(table.isFeatured),
 }));

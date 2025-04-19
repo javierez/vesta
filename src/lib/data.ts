@@ -1,5 +1,3 @@
-import { getPlaceholderImage } from "./placeholder-image"
-
 export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje"
 
 export type PropertyImage = {
