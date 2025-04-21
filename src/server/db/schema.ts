@@ -42,6 +42,7 @@ export const agents = singlestoreTable("flexweb_agents", {
 export const accounts = singlestoreTable("flexweb_accounts", {
   accountId: bigint("account_id", { mode: "bigint" }).primaryKey().autoincrement(),
   name: varchar("name", { length: 100 }).notNull(),
+  shortName: varchar("short_name", { length: 50 }).notNull(),
   status: varchar("status", { length: 20 }).notNull(), // active, inactive, suspended
   subscriptionType: varchar("subscription_type", { length: 50 }).notNull(),
   subscriptionStartDate: timestamp("subscription_start_date").notNull(),

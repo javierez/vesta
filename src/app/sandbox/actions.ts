@@ -56,6 +56,7 @@ function toDbWebsiteConfig(config: WebsiteConfig) {
 function toDbAccount(account: Account) {
   return {
     name: account.name,
+    shortName: account.shortName,
     status: account.status,
     subscriptionType: account.subscriptionType,
     subscriptionStartDate: account.subscriptionStartDate,

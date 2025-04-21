@@ -10,13 +10,15 @@ import Navbar from "~/components/navbar"
 import Footer from "~/components/footer"
 import { PropertySearch } from "~/components/property-search"
 import { getSocialLinks } from "~/server/queries/social"
+import { getAccountInfo } from "~/server/queries/account"
 
 export default async function Home() {
   const socialLinks = await getSocialLinks()
+  const accountInfo = await getAccountInfo("1234")
   
   return (
     <>
-      <Navbar socialLinks={socialLinks} />
+      <Navbar socialLinks={socialLinks} shortName={accountInfo?.shortName} />
       <div>
         <JsonLd />
         <Hero />

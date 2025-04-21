@@ -500,6 +500,59 @@ export const testimonials = [
   },
 ]
 
+export type SeoProps = {
+  title: string
+  description: string
+  keywords: string[]
+  ogImage?: string
+}
+
+export type HeroProps = {
+  title: string
+  subtitle: string
+  backgroundImage: string
+}
+
+export type FeaturedProps = {
+  title: string
+  subtitle: string
+  maxItems: number
+}
+
+export type AboutProps = {
+  title: string
+  subtitle: string
+  content: string
+  image: string
+}
+
+export type PropertiesProps = {
+  title: string
+  subtitle: string
+  itemsPerPage: number
+  defaultSort: string
+}
+
+export type TestimonialProps = {
+  title: string
+  subtitle: string
+  items: Array<{
+    name: string
+    role: string
+    content: string
+    avatar: string
+  }>
+}
+
+export type FooterProps = {
+  companyName: string
+  description: string
+  address: string
+  phone: string
+  email: string
+  copyright: string
+}
+
 export type WebsiteConfig = {
   id: string
   accountId: string
@@ -509,15 +562,15 @@ export type WebsiteConfig = {
     twitter?: string
     instagram?: string
   }
-  seoProps: any | null
+  seoProps: SeoProps | null
   logo: string | null
   favicon: string | null
-  heroProps: any | null
-  featuredProps: any | null
-  aboutProps: any | null
-  propertiesProps: any | null
-  testimonialProps: any | null
-  footerProps: any | null
+  heroProps: HeroProps | null
+  featuredProps: FeaturedProps | null
+  aboutProps: AboutProps | null
+  propertiesProps: PropertiesProps | null
+  testimonialProps: TestimonialProps | null
+  footerProps: FooterProps | null
   createdAt: Date
   updatedAt: Date
 }
@@ -525,6 +578,7 @@ export type WebsiteConfig = {
 export type Account = {
   accountId: string
   name: string
+  shortName: string
   status: 'active' | 'inactive' | 'suspended'
   subscriptionType: string
   subscriptionStartDate: Date
@@ -563,6 +617,7 @@ export const accounts: Account[] = [
   {
     accountId: "1234",
     name: "Acropolis Real Estate",
+    shortName: "Acropolis",
     status: "active",
     subscriptionType: "premium",
     subscriptionStartDate: new Date("2024-01-01"),

@@ -13,9 +13,10 @@ interface NavbarProps {
     platform: "facebook" | "twitter" | "instagram" | "linkedin" | "youtube"
     url: string
   }[]
+  shortName?: string
 }
 
-export default function Navbar({ socialLinks }: NavbarProps) {
+export default function Navbar({ socialLinks, shortName = "Acropolis" }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
@@ -23,7 +24,7 @@ export default function Navbar({ socialLinks }: NavbarProps) {
       <div className="container flex h-16 items-center justify-between ml-8 md:ml-12 lg:ml-16">
         <Link href="/" className="flex items-center gap-2">
           <Building className="h-6 w-6" />
-          <span className="text-xl font-bold">Acropolis</span>
+          <span className="text-xl font-bold">{shortName}</span>
         </Link>
 
         <nav className="hidden md:flex gap-6">
