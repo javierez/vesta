@@ -499,3 +499,77 @@ export const testimonials = [
     avatar: "/properties/serene-gaze.png",
   },
 ]
+
+export type WebsiteConfig = {
+  id: string
+  accountId: string
+  socialLinks: {
+    facebook?: string
+    linkedin?: string
+    twitter?: string
+    instagram?: string
+  }
+  seoProps: any | null
+  logo: string | null
+  favicon: string | null
+  heroProps: any | null
+  featuredProps: any | null
+  aboutProps: any | null
+  propertiesProps: any | null
+  testimonialProps: any | null
+  footerProps: any | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export type Account = {
+  accountId: string
+  name: string
+  status: 'active' | 'inactive' | 'suspended'
+  subscriptionType: string
+  subscriptionStartDate: Date
+  subscriptionEndDate: Date | null
+  maxOffices: number
+  maxUsers: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+export const websiteConfigs: WebsiteConfig[] = [
+  {
+    id: "1",
+    accountId: "1234",
+    socialLinks: {
+      facebook: "https://facebook.com/acropolisrealestate",
+      linkedin: "https://linkedin.com/company/acropolisrealestate",
+      twitter: "https://twitter.com/acropolisRE",
+      instagram: "https://instagram.com/acropolisrealestate"
+    },
+    seoProps: null,
+    logo: null,
+    favicon: null,
+    heroProps: null,
+    featuredProps: null,
+    aboutProps: null,
+    propertiesProps: null,
+    testimonialProps: null,
+    footerProps: null,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
+  }
+]
+
+export const accounts: Account[] = [
+  {
+    accountId: "1234",
+    name: "Acropolis Real Estate",
+    status: "active",
+    subscriptionType: "premium",
+    subscriptionStartDate: new Date("2024-01-01"),
+    subscriptionEndDate: null,
+    maxOffices: 5,
+    maxUsers: 20,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
+  }
+]

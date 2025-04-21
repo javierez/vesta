@@ -10,6 +10,7 @@ import {
   index,
   singlestoreTable
 } from "drizzle-orm/singlestore-core";
+import { sql } from "drizzle-orm"
 
 // Users table
 export const users = singlestoreTable("flexweb_users", {
@@ -100,6 +101,7 @@ export const properties = singlestoreTable("flexweb_properties", {
   hasElevator: boolean("has_elevator").default(false),
   hasGarage: boolean("has_garage").default(false),
   hasStorageRoom: boolean("has_storage_room").default(false),
+  features: text("features"), // Stored as JSON array of strings
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   listedByAgentId: bigint("listed_by_agent_id", { mode: "bigint" }),
@@ -135,4 +137,44 @@ export const propertyImages = singlestoreTable("flexweb_property_images", {
   propertyIdIdx: index("idx_property_images_property").on(table.propertyId),
   fileIdIdx: index("idx_property_images_file").on(table.fileId),
   featuredIdx: index("idx_property_images_featured").on(table.isFeatured),
+}));
+
+export const folders = singlestoreTable("flexweb_folders", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  parentId: text("parent_id"),
+  path: text("path").notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
+})
+
+export const files = singlestoreTable("flexweb_files", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  folderId: text("folder_id").notNull(),
+  path: text("path").notNull(),
+  size: int("size").notNull(),
+  mimeType: text("mime_type").notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
+})
+
+export const websiteProperties = singlestoreTable("flexweb_config", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // Reference to accounts table
+  socialLinks: text("social_links").notNull(), // JSON containing social media links
+  seoProps: text("seo_props").notNull(), // JSON containing SEO properties
+  logo: varchar("logo", { length: 1024 }).notNull(), // URL to logo file
+  favicon: varchar("favicon", { length: 1024 }).notNull(), // URL to favicon file
+  heroProps: text("hero_props").notNull(), // JSON containing hero section properties
+  featuredProps: text("featured_props").notNull(), // JSON containing featured section properties
+  aboutProps: text("about_props").notNull(), // JSON containing about section properties
+  propertiesProps: text("properties_props").notNull(), // JSON containing properties section configuration
+  testimonialProps: text("testimonial_props").notNull(), // JSON containing testimonial section properties
+  footerProps: text("footer_props").notNull(), // JSON containing footer configuration
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  // Add index on updatedAt to help with caching and fetching latest config
+  updatedAtIdx: index("idx_website_props_updated").on(table.updatedAt),
 }));

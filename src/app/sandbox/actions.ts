@@ -1,0 +1,77 @@
+'use server'
+
+import { db } from "~/server/db"
+import { properties, type Property, accounts, type Account, websiteConfigs, type WebsiteConfig } from "~/lib/data"
+import { properties as dbProperties, websiteProperties, accounts as dbAccounts } from "~/server/db/schema"
+
+// Helper function to convert property to DB format
+function toDbProperty(property: Property) {
+  return {
+    title: property.title,
+    description: property.description,
+    propertyType: property.propertyType,
+    status: property.status,
+    price: property.price.toString(),
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms?.toString(),
+    squareFeet: property.squareFeet,
+    yearBuilt: property.age ? new Date().getFullYear() - property.age : null,
+    address: property.address,
+    city: property.city,
+    state: property.state,
+    postalCode: property.zipCode,
+    latitude: property.coordinates?.lat.toString() ?? null,
+    longitude: property.coordinates?.lng.toString() ?? null,
+    isFeatured: property.isFeatured,
+    isBankOwned: property.isBankOwned ?? false,
+    energyCertification: property.energyCertification ?? null,
+    hasHeating: property.hasHeating ?? false,
+    heatingType: property.heatingType ?? null,
+    hasElevator: property.hasElevator ?? false,
+    hasGarage: property.hasGarage ?? false,
+    hasStorageRoom: property.hasStorageRoom ?? false,
+    features: JSON.stringify(property.features),
+    referenceNumber: property.reference
+  }
+}
+
+// Helper function to convert website config to DB format
+function toDbWebsiteConfig(config: WebsiteConfig) {
+  return {
+    accountId: BigInt(config.accountId),
+    socialLinks: JSON.stringify(config.socialLinks),
+    logo: config.logo ?? '',
+    favicon: config.favicon ?? '',
+    seoProps: JSON.stringify(config.seoProps ?? {}),
+    heroProps: JSON.stringify(config.heroProps ?? {}),
+    featuredProps: JSON.stringify(config.featuredProps ?? {}),
+    aboutProps: JSON.stringify(config.aboutProps ?? {}),
+    propertiesProps: JSON.stringify(config.propertiesProps ?? {}),
+    testimonialProps: JSON.stringify(config.testimonialProps ?? {}),
+    footerProps: JSON.stringify(config.footerProps ?? {})
+  }
+}
+
+// Helper function to convert account to DB format
+function toDbAccount(account: Account) {
+  return {
+    name: account.name,
+    status: account.status,
+    subscriptionType: account.subscriptionType,
+    subscriptionStartDate: account.subscriptionStartDate,
+    subscriptionEndDate: account.subscriptionEndDate ?? null,
+    maxOffices: account.maxOffices ?? 1,
+    maxUsers: account.maxUsers ?? 5
+  }
+}
+
+export async function seedDatabase() {
+  // First seed accounts as they are referenced by other tables
+  await db.insert(dbAccounts).values(accounts.map(toDbAccount))
+  
+  // Then seed website properties
+  await db.insert(websiteProperties).values(websiteConfigs.map(toDbWebsiteConfig))
+  
+  // Finally seed properties
+  await db.insert(dbProperties).values(properties.map(toDbProperty))
+} 
