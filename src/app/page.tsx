@@ -9,17 +9,11 @@ import { reviews } from "~/lib/reviews-data"
 import Navbar from "~/components/navbar"
 import Footer from "~/components/footer"
 import { PropertySearch } from "~/components/property-search"
+import { getSocialLinks } from "~/server/queries/social"
 
-// Datos de redes sociales para toda la aplicación
-const socialLinks: { platform: "facebook" | "instagram" | "twitter" | "linkedin" | "youtube"; url: string }[] = [
-  { platform: "facebook", url: "https://facebook.com/acropolisrealestate" },
-  { platform: "instagram", url: "https://instagram.com/acropolisrealestate" },
-  { platform: "twitter", url: "https://twitter.com/acropolisrealty" },
-  { platform: "linkedin", url: "https://linkedin.com/company/acropolis-real-estate" },
-  { platform: "youtube", url: "https://youtube.com/acropolisrealestate" }
-]
-
-export default function Home() {
+export default async function Home() {
+  const socialLinks = await getSocialLinks()
+  
   return (
     <>
       <Navbar socialLinks={socialLinks} />
@@ -27,6 +21,7 @@ export default function Home() {
         <JsonLd />
         <Hero />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <PropertySearch />
           <FeaturedProperties />
           <AboutSection />
           <PropertyGrid />
