@@ -14,7 +14,7 @@ import { getAccountInfo } from "~/server/queries/account"
 
 export default async function Home() {
   const socialLinks = await getSocialLinks()
-  const accountInfo = await getAccountInfo("1234")
+  const accountInfo = await getAccountInfo("1125899906842625")
   
   return (
     <>

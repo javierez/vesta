@@ -602,7 +602,11 @@ export const websiteConfigs: WebsiteConfig[] = [
     seoProps: null,
     logo: null,
     favicon: null,
-    heroProps: null,
+    heroProps: {
+      title: "Encuentra La Casa de Tus Sueños con Acrópolis",
+      subtitle: "Permítenos guiarte en tu viaje inmobiliario",
+      backgroundImage: "url",
+    },
     featuredProps: null,
     aboutProps: null,
     propertiesProps: null,

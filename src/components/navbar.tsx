@@ -16,7 +16,7 @@ interface NavbarProps {
   shortName?: string
 }
 
-export default function Navbar({ socialLinks, shortName = "Acropolis" }: NavbarProps) {
+export default function Navbar({ socialLinks, shortName}: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (

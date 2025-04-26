@@ -13,6 +13,7 @@ export type AccountInfo = {
 
 export const getAccountInfo = cache(async (accountId: string): Promise<AccountInfo | null> => {
   'use server'
+  console.log("accountId: ", BigInt(accountId))
   
   try {
     const [account] = await db
@@ -30,6 +31,7 @@ export const getAccountInfo = cache(async (accountId: string): Promise<AccountIn
     if (!account) {
       return null
     }
+    console.log("account info: ", account)
 
     return {
       accountId: account.accountId.toString(),
@@ -38,6 +40,7 @@ export const getAccountInfo = cache(async (accountId: string): Promise<AccountIn
       status: account.status,
       subscriptionType: account.subscriptionType,
     }
+
   } catch (error) {
     console.error('Error fetching account info:', error)
     return null
