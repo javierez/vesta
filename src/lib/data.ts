@@ -505,12 +505,54 @@ export type SeoProps = {
   description: string
   keywords: string[]
   ogImage?: string
+  name: string
+  image: string
+  url: string
+  telephone: string
+  email: string
+  address: {
+    streetAddress: string
+    addressLocality: string
+    addressRegion: string
+    postalCode: string
+    addressCountry: string
+  }
+  geo: {
+    latitude: number
+    longitude: number
+  }
+  openingHoursSpecification: Array<{
+    dayOfWeek: string[]
+    opens: string
+    closes: string
+  }>
+  priceRange: string
+  areaServed: {
+    name: string
+    sameAs: string
+  }
+  hasOfferCatalog: {
+    name: string
+    itemListElement: Array<{
+      name: string
+      description: string
+    }>
+  }
+  sameAs: string[]
+  aggregateRating: {
+    ratingValue: string
+    reviewCount: string
+    bestRating: string
+    worstRating: string
+  }
 }
 
 export type HeroProps = {
   title: string
   subtitle: string
   backgroundImage: string
+  findPropertyButton: string
+  contactButton: string
 }
 
 export type FeaturedProps = {
@@ -553,6 +595,11 @@ export type FooterProps = {
   copyright: string
 }
 
+export type HeadProps = {
+  title: string
+  description: string
+}
+
 export type WebsiteConfig = {
   id: string
   accountId: string
@@ -571,6 +618,7 @@ export type WebsiteConfig = {
   propertiesProps: PropertiesProps | null
   testimonialProps: TestimonialProps | null
   footerProps: FooterProps | null
+  headProps: HeadProps | null
   createdAt: Date
   updatedAt: Date
 }
@@ -599,19 +647,132 @@ export const websiteConfigs: WebsiteConfig[] = [
       twitter: "https://twitter.com/acropolisRE",
       instagram: "https://instagram.com/acropolisrealestate"
     },
-    seoProps: null,
+    seoProps: {
+      title: "Acropolis Bienes Raíces - Propiedades en España",
+      description: "Tu socio de confianza en el mercado inmobiliario de España. Especializados en propiedades residenciales y comerciales.",
+      name: "Acropolis Bienes Raíces",
+      image: "https://acropolis-realestate.com/images/logo.jpg",
+      url: "https://acropolis-realestate.com",
+      telephone: "+34 987 123 456",
+      email: "info@acropolis-realestate.com",
+      address: {
+        streetAddress: "123 Avenida Inmobiliaria",
+        addressLocality: "León",
+        addressRegion: "CL",
+        postalCode: "24001",
+        addressCountry: "ES"
+      },
+      geo: {
+        latitude: 42.5987,
+        longitude: -5.5671
+      },
+      openingHoursSpecification: [
+        {
+          dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          opens: "09:00",
+          closes: "18:00"
+        },
+        {
+          dayOfWeek: ["Saturday"],
+          opens: "10:00",
+          closes: "14:00"
+        }
+      ],
+      priceRange: "€€",
+      areaServed: {
+        name: "León",
+        sameAs: "https://es.wikipedia.org/wiki/Le%C3%B3n_(Espa%C3%B1a)"
+      },
+      hasOfferCatalog: {
+        name: "Propiedades",
+        itemListElement: [
+          {
+            name: "Pisos",
+            description: "Pisos premium en las zonas más exclusivas de León"
+          },
+          {
+            name: "Casas",
+            description: "Chalets y casas exclusivas en ubicaciones privilegiadas"
+          }
+        ]
+      },
+      sameAs: [
+        "https://www.facebook.com/acropolisrealestate",
+        "https://www.twitter.com/acropolisrealty",
+        "https://www.instagram.com/acropolisrealestate",
+        "https://www.linkedin.com/company/acropolis-real-estate"
+      ],
+      aggregateRating: {
+        ratingValue: "4.9",
+        reviewCount: "150",
+        bestRating: "5",
+        worstRating: "1"
+      },
+      keywords: ["inmobiliaria", "casas", "pisos", "locales", "lujo", "España"],
+      ogImage: "/images/og-image.png"
+    },
     logo: null,
     favicon: null,
     heroProps: {
-      title: "Encuentra La Casa de Tus Sueños con Acrópolis",
+      title: "Encuentra Tu Casa con Acropolis",
       subtitle: "Permítenos guiarte en tu viaje inmobiliario",
-      backgroundImage: "url",
+      backgroundImage: "/properties/sleek-city-tower.png",
+      findPropertyButton: "Explorar Propiedades",
+      contactButton: "Contáctanos"
     },
-    featuredProps: null,
-    aboutProps: null,
-    propertiesProps: null,
-    testimonialProps: null,
-    footerProps: null,
+    featuredProps: {
+      title: "Propiedades Destacadas",
+      subtitle: "Descubre nuestra selección de propiedades premium en las ubicaciones más deseables",
+      maxItems: 6
+    },
+    aboutProps: {
+      title: "Sobre Acropolis Bienes Raíces",
+      subtitle: "Tu socio de confianza en el viaje inmobiliario desde 2005",
+      content: "En Acropolis Bienes Raíces, creemos que encontrar la propiedad perfecta debe ser una experiencia emocionante y gratificante. Con más de 15 años de experiencia en la industria, nuestro dedicado equipo de profesionales está comprometido a proporcionar un servicio y orientación excepcionales a lo largo de tu viaje inmobiliario. Ya sea que estés comprando tu primera casa, vendiendo una propiedad o buscando oportunidades de inversión, tenemos el conocimiento, los recursos y la pasión para ayudarte a lograr tus objetivos inmobiliarios.",
+      image: "/properties/thoughtful-man.png"
+    },
+    propertiesProps: {
+      title: "Explora Nuestras Propiedades",
+      subtitle: "Explora nuestro diverso portafolio de propiedades para encontrar tu opción perfecta",
+      itemsPerPage: 12,
+      defaultSort: "price-desc"
+    },
+    testimonialProps: {
+      title: "Lo Que Dicen Nuestros Clientes",
+      subtitle: "No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos.",
+      items: [
+        {
+          name: "Sara Jiménez",
+          role: "Propietaria",
+          content: "Trabajar con Acropolis Bienes Raíces fue un sueño. Entendieron exactamente lo que estábamos buscando y nos encontraron nuestra casa familiar perfecta dentro de nuestro presupuesto. Todo el proceso fue fluido y sin estrés.",
+          avatar: "/properties/confident-leader.png"
+        },
+        {
+          name: "Miguel Chen",
+          role: "Inversionista Inmobiliario",
+          content: "Como inversionista, aprecio el conocimiento del mercado y la atención al detalle de Acropolis. Me han ayudado a adquirir múltiples propiedades con excelente potencial de retorno de inversión. Su experiencia es realmente invaluable.",
+          avatar: "/properties/confident-leader.png"
+        },
+        {
+          name: "Emilia Rodríguez",
+          role: "Compradora por Primera Vez",
+          content: "Ser compradora de vivienda por primera vez fue intimidante, pero el equipo de Acropolis me guió en cada paso. Fueron pacientes, informativos y me encontraron un maravilloso condominio que se ajustaba a todas mis necesidades.",
+          avatar: "/properties/serene-gaze.png"
+        }
+      ]
+    },
+    footerProps: {
+      companyName: "Acropolis Bienes Raíces",
+      description: "Tu socio de confianza para encontrar la propiedad perfecta. Con años de experiencia y dedicación a la excelencia, te ayudamos a tomar decisiones inmobiliarias informadas.",
+      address: "123 Avenida Inmobiliaria, León, CL 24001, España",
+      phone: "+34 987 123 456",
+      email: "info@acropolis-realestate.com",
+      copyright: "© 2024 Acropolis Bienes Raíces. Todos los derechos reservados."
+    },
+    headProps: {
+      title: "idealista — Casas y pisos, alquiler y venta. Anuncios gratis",
+      description: "¿Buscas casa? Con idealista es más fácil. Más de 1.200.000 anuncios de pisos y casas en venta o alquiler. Publicar anuncios es gratis para particulares."
+    },
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01")
   }

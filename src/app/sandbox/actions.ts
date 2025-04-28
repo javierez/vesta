@@ -48,7 +48,8 @@ function toDbWebsiteConfig(config: WebsiteConfig) {
     aboutProps: JSON.stringify(config.aboutProps ?? {}),
     propertiesProps: JSON.stringify(config.propertiesProps ?? {}),
     testimonialProps: JSON.stringify(config.testimonialProps ?? {}),
-    footerProps: JSON.stringify(config.footerProps ?? {})
+    footerProps: JSON.stringify(config.footerProps ?? {}),
+    headProps: JSON.stringify(config.headProps ?? {})
   }
 }
 

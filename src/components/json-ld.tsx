@@ -1,81 +1,65 @@
-export function JsonLd() {
+import { getSeoProps } from "~/server/queries/jsonLd"
+
+export default async function JsonLd() {
+  const seoProps = await getSeoProps()
+  if (!seoProps) return null
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
-    name: "Acropolis Bienes Raíces",
-    description: "Tu socio de confianza en el mercado inmobiliario de Nueva York. Especializados en propiedades residenciales y comerciales de lujo.",
-    image: "https://acropolis-realestate.com/images/logo.jpg",
-    url: "https://acropolis-realestate.com",
-    telephone: "(123) 456-7890",
-    email: "info@acropolis-realestate.com",
+    name: seoProps.name,
+    description: seoProps.description,
+    image: seoProps.image,
+    url: seoProps.url,
+    telephone: seoProps.telephone,
+    email: seoProps.email,
     address: {
       "@type": "PostalAddress",
-      streetAddress: "123 Avenida Inmobiliaria",
-      addressLocality: "Nueva York",
-      addressRegion: "NY",
-      postalCode: "10001",
-      addressCountry: "US",
+      streetAddress: seoProps.address.streetAddress,
+      addressLocality: seoProps.address.addressLocality,
+      addressRegion: seoProps.address.addressRegion,
+      postalCode: seoProps.address.postalCode,
+      addressCountry: seoProps.address.addressCountry,
     },
     geo: {
       "@type": "GeoCoordinates",
-      latitude: 40.7128,
-      longitude: -74.006,
+      latitude: seoProps.geo.latitude,
+      longitude: seoProps.geo.longitude,
     },
-    openingHoursSpecification: [
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        opens: "09:00",
-        closes: "18:00",
-      },
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: "Saturday",
-        opens: "10:00",
-        closes: "16:00",
-      },
-    ],
-    priceRange: "$$$",
+    openingHoursSpecification: seoProps.openingHoursSpecification.map((spec) => ({
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: spec.dayOfWeek,
+      opens: spec.opens,
+      closes: spec.closes,
+    })),
+    priceRange: seoProps.priceRange,
     areaServed: {
       "@type": "City",
-      name: "New York",
-      sameAs: "https://en.wikipedia.org/wiki/New_York_City"
+      name: seoProps.areaServed.name,
+      sameAs: seoProps.areaServed.sameAs,
     },
     hasOfferCatalog: {
       "@type": "OfferCatalog",
-      name: "Luxury Properties",
-      itemListElement: [
-        {
-          "@type": "Offer",
-          itemOffered: {
-            "@type": "Product",
-            name: "Luxury Apartments",
-            description: "Premium apartments in Manhattan's most desirable neighborhoods"
-          }
+      name: seoProps.hasOfferCatalog.name,
+      itemListElement: seoProps.hasOfferCatalog.itemListElement.map((item) => ({
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Product",
+          name: item.name,
+          description: item.description,
         },
-        {
-          "@type": "Offer",
-          itemOffered: {
-            "@type": "Product",
-            name: "Luxury Homes",
-            description: "Exclusive single-family homes in prestigious locations"
-          }
-        }
-      ]
+      })),
     },
-    sameAs: [
-      "https://www.facebook.com/acropolisrealestate",
-      "https://www.twitter.com/acropolisrealty",
-      "https://www.instagram.com/acropolisrealestate",
-      "https://www.linkedin.com/company/acropolis-real-estate",
-    ],
+    sameAs: seoProps.sameAs,
     aggregateRating: {
       "@type": "AggregateRating",
-      ratingValue: "4.9",
-      reviewCount: "150",
-      bestRating: "5",
-      worstRating: "1"
-    }
+      ratingValue: seoProps.aggregateRating.ratingValue,
+      reviewCount: seoProps.aggregateRating.reviewCount,
+      bestRating: seoProps.aggregateRating.bestRating,
+      worstRating: seoProps.aggregateRating.worstRating,
+    },
+    keywords: seoProps.keywords,
+    ogImage: seoProps.ogImage,
   }
 
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

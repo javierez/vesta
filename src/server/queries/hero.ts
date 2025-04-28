@@ -2,33 +2,30 @@ import { db } from "../db"
 import { websiteProperties } from "../db/schema"
 import { eq } from "drizzle-orm"
 import { cache } from 'react'
-
-export type SocialPlatform = "facebook" | "instagram" | "twitter" | "linkedin" | "youtube"
-export type SocialLink = { platform: SocialPlatform; url: string }
+import type { HeroProps } from "../../lib/data"
 
 // Using React cache to memoize the query
-export const getSocialLinks = cache(async (): Promise<SocialLink[]> => {
+export const getHeroProps = cache(async (): Promise<HeroProps | null> => {
   'use server' // Mark this as a server function
   
   try {
     const [config] = await db
-      .select({ socialLinks: websiteProperties.socialLinks })
+      .select({ heroProps: websiteProperties.heroProps })
       .from(websiteProperties)
-      .where(eq(websiteProperties.accountId, BigInt("1234")))
+      .where(eq(websiteProperties.id, BigInt("1125899906842629")))
       .limit(1)
 
-    if (!config?.socialLinks) {
-      return []
+    if (!config?.heroProps) {
+      return null
     }
+    console.log(config.heroProps)
 
-    const socialLinksObj = JSON.parse(config.socialLinks) as Record<string, string>
-    
-    return Object.entries(socialLinksObj).map(([platform, url]) => ({
-      platform: platform as SocialPlatform,
-      url
-    }))
+    // heroProps is stored as JSON string, so parse it
+    const heroProps = JSON.parse(config.heroProps) as HeroProps
+    console.log("heroProps", heroProps)
+    return heroProps
   } catch (error) {
-    console.error('Error fetching social links:', error)
-    return [] // Return empty array on error
+    console.error('Error fetching hero props:', error)
+    return null // Return null on error
   }
 }) 

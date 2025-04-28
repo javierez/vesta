@@ -12,9 +12,7 @@ export type AccountInfo = {
 }
 
 export const getAccountInfo = cache(async (accountId: string): Promise<AccountInfo | null> => {
-  'use server'
-  console.log("accountId: ", BigInt(accountId))
-  
+  'use server'  
   try {
     const [account] = await db
       .select({
@@ -31,7 +29,6 @@ export const getAccountInfo = cache(async (accountId: string): Promise<AccountIn
     if (!account) {
       return null
     }
-    console.log("account info: ", account)
 
     return {
       accountId: account.accountId.toString(),

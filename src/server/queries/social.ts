@@ -14,7 +14,7 @@ export const getSocialLinks = cache(async (): Promise<SocialLink[]> => {
     const [config] = await db
       .select({ socialLinks: websiteProperties.socialLinks })
       .from(websiteProperties)
-      .where(eq(websiteProperties.accountId, BigInt("1234")))
+      .where(eq(websiteProperties.id, BigInt("1125899906842629")))
       .limit(1)
 
     if (!config?.socialLinks) {
@@ -22,6 +22,7 @@ export const getSocialLinks = cache(async (): Promise<SocialLink[]> => {
     }
 
     const socialLinksObj = JSON.parse(config.socialLinks) as Record<string, string>
+    console.log("socialLinksObj", socialLinksObj)
     
     return Object.entries(socialLinksObj).map(([platform, url]) => ({
       platform: platform as SocialPlatform,

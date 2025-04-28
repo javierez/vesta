@@ -173,6 +173,7 @@ export const websiteProperties = singlestoreTable("flexweb_config", {
   propertiesProps: text("properties_props").notNull(), // JSON containing properties section configuration
   testimonialProps: text("testimonial_props").notNull(), // JSON containing testimonial section properties
   footerProps: text("footer_props").notNull(), // JSON containing footer configuration
+  headProps: text("head_props").notNull(), // JSON containing head section properties
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
