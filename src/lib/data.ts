@@ -565,7 +565,25 @@ export type AboutProps = {
   title: string
   subtitle: string
   content: string
+  content2: string
   image: string
+  services: Array<{
+    title: string
+    icon: string
+  }>
+  maxServicesDisplayed: number
+  servicesSectionTitle: string
+  aboutSectionTitle: string
+  buttonName: string
+  showKPI: boolean
+  kpi1Name?: string
+  kpi1Data?: string
+  kpi2Name?: string
+  kpi2Data?: string
+  kpi3Name?: string
+  kpi3Data?: string
+  kpi4Name?: string
+  kpi4Data?: string
 }
 
 export type PropertiesProps = {
@@ -726,10 +744,50 @@ export const websiteConfigs: WebsiteConfig[] = [
       maxItems: 6
     },
     aboutProps: {
-      title: "Sobre Acropolis Bienes Raíces",
-      subtitle: "Tu socio de confianza en el viaje inmobiliario desde 2005",
-      content: "En Acropolis Bienes Raíces, creemos que encontrar la propiedad perfecta debe ser una experiencia emocionante y gratificante. Con más de 15 años de experiencia en la industria, nuestro dedicado equipo de profesionales está comprometido a proporcionar un servicio y orientación excepcionales a lo largo de tu viaje inmobiliario. Ya sea que estés comprando tu primera casa, vendiendo una propiedad o buscando oportunidades de inversión, tenemos el conocimiento, los recursos y la pasión para ayudarte a lograr tus objetivos inmobiliarios.",
-      image: "/properties/thoughtful-man.png"
+      title: "Sobre Inmobiliaria Acropolis",
+      subtitle: "Tu socio de confianza en el viaje inmobiliario desde 20XX",
+      content: "En Inmobiliaria Acropolis, creemos que encontrar la propiedad perfecta debe ser una experiencia emocionante y gratificante. Con más de 25 años de experiencia en la industria, nuestro dedicado equipo de profesionales está comprometido a proporcionar un servicio y orientación excepcionales a lo largo de tu viaje inmobiliario. Ya sea que estés comprando tu primera casa, vendiendo una propiedad o buscando oportunidades de inversión, tenemos el conocimiento, los recursos y la pasión para ayudarte a lograr tus objetivos inmobiliarios.",
+      content2: "Nuestro enfoque personalizado y atención al detalle nos distingue en el mercado. Nos enorgullece ofrecer un servicio integral que abarca desde la búsqueda inicial hasta el cierre de la operación, asegurando que cada cliente reciba la atención y el asesoramiento que merece. Nuestro profundo conocimiento del mercado local y nuestras conexiones en la industria nos permiten ofrecer oportunidades exclusivas y negociaciones ventajosas para nuestros clientes.",
+      image: "/properties/thoughtful-man.png",
+      services: [
+        {
+          title: "Conocimiento local experto",
+          icon: "map"
+        },
+        {
+          title: "Servicio personalizado",
+          icon: "user"
+        },
+        {
+          title: "Comunicación transparente",
+          icon: "message-square"
+        },
+        {
+          title: "Experiencia en negociación",
+          icon: "handshake"
+        },
+        {
+          title: "Marketing integral",
+          icon: "megaphone"
+        },
+        {
+          title: "Soporte continuo",
+          icon: "help-circle"
+        }
+      ],
+      maxServicesDisplayed: 6,
+      servicesSectionTitle: "Nuestros Servicios",
+      aboutSectionTitle: "Nuestra Misión",
+      buttonName: "Contacta a Nuestro Equipo",
+      showKPI: true,
+      kpi1Name: "Años de Experiencia",
+      kpi1Data: "15+",
+      kpi2Name: "Propiedades Vendidas",
+      kpi2Data: "500+",
+      kpi3Name: "Agentes Profesionales",
+      kpi3Data: "50+",
+      kpi4Name: "Clientes Satisfechos",
+      kpi4Data: "98%"
     },
     propertiesProps: {
       title: "Explora Nuestras Propiedades",

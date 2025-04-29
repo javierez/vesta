@@ -1,72 +1,57 @@
-'use client'
+import { getAboutProps } from "../server/queries/about"
+import { AboutHeader } from "./about/AboutHeader"
+import { ServicesGrid } from "./about/ServicesGrid"
+import { MissionSection } from "./about/MissionSection"
+import { KpiSection } from "./about/KpiSection"
+import { AboutButton } from "./about/AboutButton"
 
-import Image from "next/image"
-import { Button } from "~/components/ui/button"
-import Link from "next/link"
-import { Check } from "lucide-react"
+export async function AboutSection() {
+  const aboutProps = await getAboutProps()
+  console.log("aboutProps", aboutProps)
 
-export function AboutSection() {
+  // Fallbacks in case data is missing
+  const title = aboutProps?.title || "Sobre Acropolis Bienes Raíces"
+  const subtitle = aboutProps?.subtitle || "Tu socio de confianza en el viaje inmobiliario desde 2005"
+  const content = aboutProps?.content || "En Acropolis Bienes Raíces, creemos que encontrar la propiedad perfecta debe ser una experiencia emocionante y gratificante. Con más de 15 años de experiencia en la industria, nuestro dedicado equipo de profesionales está comprometido a proporcionar un servicio y orientación excepcionales a lo largo de tu viaje inmobiliario."
+  const content2 = aboutProps?.content2 || "Ya sea que estés comprando tu primera casa, vendiendo una propiedad o buscando oportunidades de inversión, tenemos el conocimiento, los recursos y la pasión para ayudarte a lograr tus objetivos inmobiliarios."
+  const services = aboutProps?.services || [
+    { title: "Conocimiento local experto", icon: "map" },
+    { title: "Servicio personalizado", icon: "user" },
+    { title: "Comunicación transparente", icon: "message-square" },
+    { title: "Experiencia en negociación", icon: "handshake" },
+    { title: "Marketing integral", icon: "megaphone" },
+    { title: "Soporte continuo", icon: "help-circle" },
+  ]
+
+  // Prepare KPI data
+  const kpis = []
+  if (aboutProps?.kpi1Name && aboutProps?.kpi1Data) kpis.push({ name: aboutProps.kpi1Name, data: aboutProps.kpi1Data })
+  if (aboutProps?.kpi2Name && aboutProps?.kpi2Data) kpis.push({ name: aboutProps.kpi2Name, data: aboutProps.kpi2Data })
+  if (aboutProps?.kpi3Name && aboutProps?.kpi3Data) kpis.push({ name: aboutProps.kpi3Name, data: aboutProps.kpi3Data })
+  if (aboutProps?.kpi4Name && aboutProps?.kpi4Data) kpis.push({ name: aboutProps.kpi4Name, data: aboutProps.kpi4Data })
+
   return (
-    <section className="py-16 container" id="about">
-      <div className="grid gap-12 lg:grid-cols-2 items-center">
-        <div className="relative aspect-square lg:aspect-auto">
-          <Image
-            src="/properties/thoughtful-man.png"
-            alt="Equipo de Acropolis Bienes Raíces"
-            fill
-            className="object-cover rounded-lg"
+    <section className="py-24" id="about">
+      <div className="container">
+        <AboutHeader title={title} subtitle={subtitle} />
+
+        <div className="grid gap-12 lg:grid-cols-2 items-start">
+          <ServicesGrid
+            services={services}
+            title={aboutProps?.servicesSectionTitle || "Nuestros Servicios"}
+            maxServicesDisplayed={aboutProps?.maxServicesDisplayed || 6}
+          />
+
+          <MissionSection
+            title={aboutProps?.aboutSectionTitle || "Nuestra Misión"}
+            content={content}
+            content2={content2}
           />
         </div>
 
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-3xl font-bold mb-2">Sobre Acropolis Bienes Raíces</h2>
-            <p className="text-muted-foreground">Tu socio de confianza en el viaje inmobiliario desde 2005</p>
-          </div>
+        <AboutButton text={aboutProps?.buttonName || "Contacta a Nuestro Equipo"} href="#contact" />
 
-          <p>
-            En Acropolis Bienes Raíces, creemos que encontrar la propiedad perfecta debe ser una experiencia emocionante
-            y gratificante. Con más de 15 años de experiencia en la industria, nuestro dedicado equipo de profesionales
-            está comprometido a proporcionar un servicio y orientación excepcionales a lo largo de tu viaje
-            inmobiliario.
-          </p>
-
-          <p>
-            Ya sea que estés comprando tu primera casa, vendiendo una propiedad o buscando oportunidades de inversión,
-            tenemos el conocimiento, los recursos y la pasión para ayudarte a lograr tus objetivos inmobiliarios.
-          </p>
-
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-primary" />
-              <span>Conocimiento local experto</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-primary" />
-              <span>Servicio personalizado</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-primary" />
-              <span>Comunicación transparente</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-primary" />
-              <span>Experiencia en negociación</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-primary" />
-              <span>Marketing integral</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-primary" />
-              <span>Soporte continuo</span>
-            </div>
-          </div>
-
-          <Button asChild>
-            <Link href="#contact">Contacta a Nuestro Equipo</Link>
-          </Button>
-        </div>
+        {aboutProps?.showKPI && <KpiSection kpis={kpis} />}
       </div>
     </section>
   )
