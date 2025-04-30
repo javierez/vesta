@@ -32,10 +32,6 @@ export default async function Home() {
           <PropertyGrid />
         </div>
         <ReviewsSection
-          title="Lo Que Dicen Nuestros Clientes"
-          subtitle="No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos."
-          reviews={reviews}
-          id="reviews"
         />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <ContactSection />

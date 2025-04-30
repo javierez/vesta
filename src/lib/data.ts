@@ -481,6 +481,12 @@ export const testimonials = [
     content:
       "Trabajar con Acropolis Bienes Raíces fue un sueño. Entendieron exactamente lo que estábamos buscando y nos encontraron nuestra casa familiar perfecta dentro de nuestro presupuesto. Todo el proceso fue fluido y sin estrés.",
     avatar: "/properties/confident-leader.png",
+    rating: 5,
+    isVerified: true,
+    sortOrder: 1,
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
   },
   {
     id: "2",
@@ -489,6 +495,12 @@ export const testimonials = [
     content:
       "Como inversionista, aprecio el conocimiento del mercado y la atención al detalle de Acropolis. Me han ayudado a adquirir múltiples propiedades con excelente potencial de retorno de inversión. Su experiencia es realmente invaluable.",
     avatar: "/properties/confident-leader.png",
+    rating: 5,
+    isVerified: true,
+    sortOrder: 2,
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
   },
   {
     id: "3",
@@ -497,7 +509,55 @@ export const testimonials = [
     content:
       "Ser compradora de vivienda por primera vez fue intimidante, pero el equipo de Acropolis me guió en cada paso. Fueron pacientes, informativos y me encontraron un maravilloso condominio que se ajustaba a todas mis necesidades.",
     avatar: "/properties/serene-gaze.png",
+    rating: 5,
+    isVerified: true,
+    sortOrder: 3,
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
   },
+  {
+    id: "4",
+    name: "Carlos Mendoza",
+    role: "Propietario",
+    content:
+      "Acropolis Bienes Raíces superó todas mis expectativas. Su equipo profesional me ayudó a encontrar la casa perfecta para mi familia en tiempo récord. El proceso fue fluido y sin complicaciones desde el principio hasta el final.",
+    avatar: "/properties/confident-leader.png",
+    rating: 5,
+    isVerified: true,
+    sortOrder: 4,
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
+  },
+  {
+    id: "5",
+    name: "María González",
+    role: "Inversora Inmobiliaria",
+    content:
+      "Como inversora, valoro enormemente la experiencia y conocimiento del mercado que tiene el equipo de Acropolis. Han sido fundamentales para ampliar mi cartera de propiedades con inversiones rentables.",
+    avatar: "/properties/confident-leader.png",
+    rating: 4.5,
+    isVerified: true,
+    sortOrder: 5,
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
+  },
+  {
+    id: "6",
+    name: "Alejandro Torres",
+    role: "Comprador Primerizo",
+    content:
+      "Siendo mi primera compra, estaba nervioso por todo el proceso. El equipo de Acropolis me guió paso a paso, explicándome cada detalle y asegurándose de que entendiera todas mis opciones. ¡Ahora soy un orgulloso propietario!",
+    avatar: "/properties/thoughtful-gaze.png",
+    rating: 5,
+    isVerified: true,
+    sortOrder: 6,
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
+  }
 ]
 
 export type SeoProps = {
@@ -597,12 +657,7 @@ export type PropertiesProps = {
 export type TestimonialProps = {
   title: string
   subtitle: string
-  items: Array<{
-    name: string
-    role: string
-    content: string
-    avatar: string
-  }>
+  itemsPerPage: number
 }
 
 export type FooterProps = {
@@ -793,33 +848,14 @@ export const websiteConfigs: WebsiteConfig[] = [
     propertiesProps: {
       title: "Explora Nuestras Propiedades",
       subtitle: "Explora nuestro diverso portafolio de propiedades para encontrar tu opción perfecta",
-      itemsPerPage: 12,
+      itemsPerPage: 6,
       defaultSort: "price-desc",
       buttonText: "Ver Todas las Propiedades"
     },
     testimonialProps: {
       title: "Lo Que Dicen Nuestros Clientes",
       subtitle: "No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos.",
-      items: [
-        {
-          name: "Sara Jiménez",
-          role: "Propietaria",
-          content: "Trabajar con Acropolis Bienes Raíces fue un sueño. Entendieron exactamente lo que estábamos buscando y nos encontraron nuestra casa familiar perfecta dentro de nuestro presupuesto. Todo el proceso fue fluido y sin estrés.",
-          avatar: "/properties/confident-leader.png"
-        },
-        {
-          name: "Miguel Chen",
-          role: "Inversionista Inmobiliario",
-          content: "Como inversionista, aprecio el conocimiento del mercado y la atención al detalle de Acropolis. Me han ayudado a adquirir múltiples propiedades con excelente potencial de retorno de inversión. Su experiencia es realmente invaluable.",
-          avatar: "/properties/confident-leader.png"
-        },
-        {
-          name: "Emilia Rodríguez",
-          role: "Compradora por Primera Vez",
-          content: "Ser compradora de vivienda por primera vez fue intimidante, pero el equipo de Acropolis me guió en cada paso. Fueron pacientes, informativos y me encontraron un maravilloso condominio que se ajustaba a todas mis necesidades.",
-          avatar: "/properties/serene-gaze.png"
-        }
-      ]
+      itemsPerPage: 3
     },
     footerProps: {
       companyName: "Acropolis Bienes Raíces",

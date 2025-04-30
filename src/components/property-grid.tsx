@@ -1,13 +1,13 @@
-"use client"
-
 import { getPropertiesProps } from "~/server/queries/properties"
-import { PropertyHeader } from "./property/PropertyHeader"
-import { PropertyGridContent } from "./property/PropertyGridContent"
-import { PropertyButton } from "./property/PropertyButton"
+import { PropertyHeader } from "./propertygrid/PropertyHeader"
+import { PropertyGridContent } from "./propertygrid/PropertyGridContent"
+import { PropertyButton } from "./propertygrid/PropertyButton"
 import { properties } from "~/lib/data"
 
 export async function PropertyGrid() {
+  // Fetch data on the server
   const propertiesProps = await getPropertiesProps()
+  console.log(propertiesProps)
   
   // Fallbacks in case data is missing
   const title = propertiesProps?.title || "Explora Nuestras Propiedades"

@@ -1,8 +1,8 @@
 'use server'
 
 import { db } from "~/server/db"
-import { properties, type Property, accounts, type Account, websiteConfigs, type WebsiteConfig } from "~/lib/data"
-import { properties as dbProperties, websiteProperties, accounts as dbAccounts } from "~/server/db/schema"
+import { properties, type Property, accounts, type Account, websiteConfigs, type WebsiteConfig, testimonials } from "~/lib/data"
+import { properties as dbProperties, websiteProperties, accounts as dbAccounts, testimonials as dbTestimonials } from "~/server/db/schema"
 
 // Helper function to convert property to DB format
 function toDbProperty(property: Property) {
@@ -67,12 +67,32 @@ function toDbAccount(account: Account) {
   }
 }
 
+// Helper function to convert testimonial to DB format
+function toDbTestimonial(testimonial: typeof testimonials[0]) {
+  return {
+    accountId: BigInt("1234"), // Using the same account ID as in the website configs
+    name: testimonial.name,
+    role: testimonial.role,
+    content: testimonial.content,
+    avatar: testimonial.avatar,
+    rating: Math.round(testimonial.rating ?? 5), // Round to nearest integer and default to 5 if null
+    isVerified: testimonial.isVerified,
+    sortOrder: testimonial.sortOrder,
+    isActive: testimonial.isActive,
+    createdAt: testimonial.createdAt,
+    updatedAt: testimonial.updatedAt
+  }
+}
+
 export async function seedDatabase() {
   // First seed accounts as they are referenced by other tables
   await db.insert(dbAccounts).values(accounts.map(toDbAccount))
   
   // Then seed website properties
   await db.insert(websiteProperties).values(websiteConfigs.map(toDbWebsiteConfig))
+  
+  // Seed testimonials
+  await db.insert(dbTestimonials).values(testimonials.map(toDbTestimonial))
   
   // Finally seed properties
   await db.insert(dbProperties).values(properties.map(toDbProperty))

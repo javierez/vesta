@@ -1,33 +1,31 @@
-"use client"
-
 import Image from "next/image"
 import { StarRating } from "~/components/ui/star-rating"
 import { Badge } from "~/components/ui/badge"
 import { cn } from "~/lib/utils"
+import { getTestimonialProps } from "~/server/queries/testimonial"
+import { getTestimonialReviews } from "~/server/queries/testimonial_reviews"
+import { testimonials } from "~/server/db/schema"
+import type { InferSelectModel } from "drizzle-orm"
 
-export interface Review {
-  id: string
-  author: {
-    name: string
-    role?: string
-    company?: string
-    avatar?: string
-    verified?: boolean
-  }
-  rating: number
-  content: string
-  companyLogo?: string
-}
+type Testimonial = InferSelectModel<typeof testimonials>
 
 interface ReviewsSectionProps {
-  title: string
-  subtitle?: string
-  reviews: Review[]
   className?: string
   id?: string
 }
 
-export function ReviewsSection({ title, subtitle, reviews, className, id }: ReviewsSectionProps) {
+export async function ReviewsSection({ className, id }: ReviewsSectionProps) {
+  const testimonialProps = await getTestimonialProps()
+  const reviews = await getTestimonialReviews()
+  
+  // Fallbacks in case data is missing
+  const title = testimonialProps?.title || "Lo Que Dicen Nuestros Clientes"
+  const subtitle = testimonialProps?.subtitle || "No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos."
+  
+  // Show only a subset of testimonials initially
+  const displayedReviews = reviews.slice(0, testimonialProps?.itemsPerPage || 3)
+  console.log("displayedReviews", displayedReviews)
+
   return (
     <section className={cn("py-16", className)} id={id}>
       <div className="container">
@@ -37,32 +35,21 @@ export function ReviewsSection({ title, subtitle, reviews, className, id }: Revi
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 ml-8 md:ml-12 lg:ml-16">
-          {reviews.map((review) => (
-            <div key={review.id} className="p-6 rounded-lg bg-background shadow-sm">
+          {displayedReviews.map((testimonial: Testimonial) => (
+            <div key={testimonial.testimonialId} className="p-6 rounded-lg bg-background shadow-sm">
               <div className="flex justify-between items-start mb-4">
-                {review.companyLogo ? (
-                  <div className="h-10 relative w-32">
-                    <Image
-                      src={review.companyLogo ?? "/placeholder.svg"}
-                      alt={review.author.company ?? ""}
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div />
-                )}
-                <StarRating rating={review.rating} />
+                <div />
+                <StarRating rating={testimonial.rating ?? 5} />
               </div>
 
-              <blockquote className="mb-6 italic text-muted-foreground">&ldquo;{review.content}&rdquo;</blockquote>
+              <blockquote className="mb-6 italic text-muted-foreground">&ldquo;{testimonial.content}&rdquo;</blockquote>
 
               <div className="flex items-center gap-3">
-                {review.author.avatar && (
+                {testimonial.avatar && (
                   <div className="relative h-12 w-12 overflow-hidden rounded-full">
                     <Image
-                      src={review.author.avatar ?? "/placeholder.svg"}
-                      alt={review.author.name}
+                      src={testimonial.avatar}
+                      alt={testimonial.name}
                       fill
                       className="object-cover"
                     />
@@ -70,18 +57,16 @@ export function ReviewsSection({ title, subtitle, reviews, className, id }: Revi
                 )}
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium">{review.author.name}</p>
-                    {review.author.verified && (
+                    <p className="font-medium">{testimonial.name}</p>
+                    {testimonial.isVerified && (
                       <Badge variant="outline" className="text-xs">
                         Verificado
                       </Badge>
                     )}
                   </div>
-                  {(review.author.role ?? review.author.company) && (
+                  {testimonial.role && (
                     <p className="text-sm text-muted-foreground">
-                      {review.author.role}
-                      {review.author.role && review.author.company && " / "}
-                      {review.author.company}
+                      {testimonial.role}
                     </p>
                   )}
                 </div>

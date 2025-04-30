@@ -180,3 +180,24 @@ export const websiteProperties = singlestoreTable("flexweb_config", {
   // Add index on updatedAt to help with caching and fetching latest config
   updatedAtIdx: index("idx_website_props_updated").on(table.updatedAt),
 }));
+
+// Testimonials table
+export const testimonials = singlestoreTable("flexweb_testimonials", {
+  testimonialId: bigint("testimonial_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // Reference to accounts table
+  name: varchar("name", { length: 100 }).notNull(),
+  role: varchar("role", { length: 100 }),
+  content: text("content").notNull(),
+  avatar: varchar("avatar", { length: 1024 }), // URL to avatar image
+  rating: smallint("rating").default(5), // Rating from 1-5
+  isVerified: boolean("is_verified").default(false),
+  sortOrder: int("sort_order").default(0), // For controlling display order
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  accountIdIdx: index("idx_testimonials_account").on(table.accountId),
+  ratingIdx: index("idx_testimonials_rating").on(table.rating),
+  activeIdx: index("idx_testimonials_active").on(table.isActive),
+  sortOrderIdx: index("idx_testimonials_sort").on(table.sortOrder),
+}));
