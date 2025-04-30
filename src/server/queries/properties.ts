@@ -10,7 +10,7 @@ export const getPropertiesProps = cache(async (): Promise<PropertiesProps | null
     const [config] = await db
       .select({ propertiesProps: websiteProperties.propertiesProps })
       .from(websiteProperties)
-      .where(eq(websiteProperties.id, BigInt("1125899906842629")))
+      .where(eq(websiteProperties.id, BigInt("2251799813685253")))
       .limit(1)
     if (!config?.propertiesProps) return null
     return JSON.parse(config.propertiesProps) as PropertiesProps

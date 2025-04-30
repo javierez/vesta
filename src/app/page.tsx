@@ -15,9 +15,7 @@ import Head from "next/head"
 
 export default async function Home() {
   const socialLinks = await getSocialLinks()
-  console.log("socialLinks", socialLinks)
   const accountInfo = await getAccountInfo("1125899906842628")
-  console.log("accountInfo", accountInfo)
   return (
     <>
       <Head>

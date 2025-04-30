@@ -591,6 +591,7 @@ export type PropertiesProps = {
   subtitle: string
   itemsPerPage: number
   defaultSort: string
+  buttonText: string
 }
 
 export type TestimonialProps = {
@@ -793,7 +794,8 @@ export const websiteConfigs: WebsiteConfig[] = [
       title: "Explora Nuestras Propiedades",
       subtitle: "Explora nuestro diverso portafolio de propiedades para encontrar tu opción perfecta",
       itemsPerPage: 12,
-      defaultSort: "price-desc"
+      defaultSort: "price-desc",
+      buttonText: "Ver Todas las Propiedades"
     },
     testimonialProps: {
       title: "Lo Que Dicen Nuestros Clientes",

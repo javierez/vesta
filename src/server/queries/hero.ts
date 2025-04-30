@@ -18,11 +18,9 @@ export const getHeroProps = cache(async (): Promise<HeroProps | null> => {
     if (!config?.heroProps) {
       return null
     }
-    console.log(config.heroProps)
 
     // heroProps is stored as JSON string, so parse it
     const heroProps = JSON.parse(config.heroProps) as HeroProps
-    console.log("heroProps", heroProps)
     return heroProps
   } catch (error) {
     console.error('Error fetching hero props:', error)
