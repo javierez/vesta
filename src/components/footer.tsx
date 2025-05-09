@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Building } from "lucide-react"
 import { SocialLinks, type SocialLink } from "~/components/ui/social-links"
 import { getFooterProps } from "~/server/queries/footer"
+import { OfficeLocationsSlider } from "~/components/footer/FooterSlider"
 
 export default async function Footer() {
   const footerProps = await getFooterProps()
@@ -9,13 +10,16 @@ export default async function Footer() {
   // Fallbacks in case data is missing
   const companyName = footerProps?.companyName || "Acropolis"
   const description = footerProps?.description || "Tu socio de confianza para encontrar la propiedad perfecta."
+  
+  // Convert social links object to array format
   const socialLinksObj = footerProps?.socialLinks || {}
   const socialLinks: SocialLink[] = Object.entries(socialLinksObj)
     .filter(([_, url]) => url)
     .map(([platform, url]) => ({
-      platform: platform as "facebook" | "linkedin" | "twitter" | "instagram",
+      platform: platform.toLowerCase() as "facebook" | "linkedin" | "twitter" | "instagram",
       url: url as string
     }))
+
   const officeLocations = footerProps?.officeLocations || []
   const quickLinks = footerProps?.quickLinks || []
   const propertyTypes = footerProps?.propertyTypes || []
@@ -63,20 +67,7 @@ export default async function Footer() {
 
           <div>
             <h3 className="font-semibold text-lg mb-4">Nuestras Oficinas</h3>
-            <div className="space-y-6">
-              {officeLocations.map((office, index) => (
-                <div key={index} className="text-muted-foreground">
-                  <p className="font-medium text-foreground">{office.name}</p>
-                  <address className="not-italic mt-1">
-                    {office.address.map((line, i) => (
-                      <p key={i}>{line}</p>
-                    ))}
-                    <p className="mt-1">Email: {office.email}</p>
-                    <p>Teléfono: {office.phone}</p>
-                  </address>
-                </div>
-              ))}
-            </div>
+            <OfficeLocationsSlider officeLocations={officeLocations} />
           </div>
         </div>
 
