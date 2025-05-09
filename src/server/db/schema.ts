@@ -172,6 +172,7 @@ export const websiteProperties = singlestoreTable("flexweb_config", {
   aboutProps: text("about_props").notNull(), // JSON containing about section properties
   propertiesProps: text("properties_props").notNull(), // JSON containing properties section configuration
   testimonialProps: text("testimonial_props").notNull(), // JSON containing testimonial section properties
+  contactProps: text("contact_props").notNull(), // JSON containing contact section properties
   footerProps: text("footer_props").notNull(), // JSON containing footer configuration
   headProps: text("head_props").notNull(), // JSON containing head section properties
   createdAt: timestamp("created_at").defaultNow().notNull(),

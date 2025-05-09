@@ -663,15 +663,68 @@ export type TestimonialProps = {
 export type FooterProps = {
   companyName: string
   description: string
-  address: string
-  phone: string
-  email: string
+  socialLinks: {
+    facebook?: string
+    linkedin?: string
+    twitter?: string
+    instagram?: string
+  }
+  officeLocations: Array<{
+    name: string
+    address: string[]
+    phone: string
+    email: string
+  }>
+  quickLinks: Array<{
+    text: string
+    href: string
+  }>
+  propertyTypes: Array<{
+    text: string
+    href: string
+  }>
+  legalLinks: Array<{
+    text: string
+    href: string
+  }>
   copyright: string
 }
 
 export type HeadProps = {
   title: string
   description: string
+}
+
+export type ContactProps = {
+  title: string
+  subtitle: string
+  messageForm: boolean
+  address: boolean
+  phone: boolean
+  mail: boolean
+  schedule: boolean
+  map: boolean
+  // Contact information fields
+  officeAddress?: {
+    street: string
+    city: string
+    state: string
+    country: string
+  }
+  phoneNumbers?: {
+    main: string
+    sales: string
+  }
+  emailAddresses?: {
+    info: string
+    sales: string
+  }
+  scheduleInfo?: {
+    weekdays: string
+    saturday: string
+    sunday: string
+  }
+  mapUrl?: string
 }
 
 export type WebsiteConfig = {
@@ -691,6 +744,7 @@ export type WebsiteConfig = {
   aboutProps: AboutProps | null
   propertiesProps: PropertiesProps | null
   testimonialProps: TestimonialProps | null
+  contactProps: ContactProps | null
   footerProps: FooterProps | null
   headProps: HeadProps | null
   createdAt: Date
@@ -857,13 +911,85 @@ export const websiteConfigs: WebsiteConfig[] = [
       subtitle: "No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos.",
       itemsPerPage: 3
     },
+    contactProps: {
+      title: "Contacta con Nosotros",
+      subtitle: "Estamos aquí para ayudarte en tu próximo paso inmobiliario",
+      messageForm: true,
+      address: true,
+      phone: true,
+      mail: true,
+      schedule: true,
+      map: true,
+      officeAddress: {
+        street: "123 Avenida Inmobiliaria",
+        city: "León",
+        state: "CL",
+        country: "España"
+      },
+      phoneNumbers: {
+        main: "+34 987 123 456",
+        sales: "+34 987 123 457"
+      },
+      emailAddresses: {
+        info: "info@acropolis-realestate.com",
+        sales: "ventas@acropolis-realestate.com"
+      },
+      scheduleInfo: {
+        weekdays: "Lunes a Viernes: 9:00 - 18:00",
+        saturday: "Sábado: 10:00 - 14:00",
+        sunday: "Domingo: Cerrado"
+      },
+      mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2923.8278533985427!2d-5.569259684526154!3d42.59872697917133!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd374a0c2c000001%3A0x400f8d1ce997580!2sLe%C3%B3n!5e0!3m2!1ses!2ses!4v1647881234567!5m2!1ses!2ses"
+    },
     footerProps: {
       companyName: "Acropolis Bienes Raíces",
       description: "Tu socio de confianza para encontrar la propiedad perfecta. Con años de experiencia y dedicación a la excelencia, te ayudamos a tomar decisiones inmobiliarias informadas.",
-      address: "123 Avenida Inmobiliaria, León, CL 24001, España",
-      phone: "+34 987 123 456",
-      email: "info@acropolis-realestate.com",
-      copyright: "© 2024 Acropolis Bienes Raíces. Todos los derechos reservados."
+      socialLinks: {
+        facebook: "https://facebook.com/acropolisrealestate",
+        linkedin: "https://linkedin.com/company/acropolisrealestate",
+        twitter: "https://twitter.com/acropolisRE",
+        instagram: "https://instagram.com/acropolisrealestate"
+      },
+      officeLocations: [
+        {
+          name: "León (Sede Central)",
+          address: ["123 Avenida Inmobiliaria", "León, CL 24001", "España"],
+          phone: "+34 987 123 456",
+          email: "leon@acropolis-realestate.com"
+        },
+        {
+          name: "Madrid",
+          address: ["456 Calle Gran Vía", "Madrid, MD 28013", "España"],
+          phone: "+34 910 234 567",
+          email: "madrid@acropolis-realestate.com"
+        },
+        {
+          name: "Barcelona",
+          address: ["789 Passeig de Gràcia", "Barcelona, CT 08007", "España"],
+          phone: "+34 934 567 890",
+          email: "barcelona@acropolis-realestate.com"
+        }
+      ],
+      quickLinks: [
+        { text: "Inicio", href: "/" },
+        { text: "Propiedades", href: "#properties" },
+        { text: "Nosotros", href: "#about" },
+        { text: "Reseñas", href: "#reviews" },
+        { text: "Contacto", href: "#contact" }
+      ],
+      propertyTypes: [
+        { text: "Pisos", href: "/busqueda/venta-pisos/todas-ubicaciones" },
+        { text: "Casas", href: "/busqueda/venta-casas/todas-ubicaciones" },
+        { text: "Locales", href: "/busqueda/venta-locales/todas-ubicaciones" },
+        { text: "Solares", href: "/busqueda/venta-solares/todas-ubicaciones" },
+        { text: "Garajes", href: "/busqueda/venta-garajes/todas-ubicaciones" }
+      ],
+      legalLinks: [
+        { text: "Política de Privacidad", href: "#" },
+        { text: "Términos de Servicio", href: "#" },
+        { text: "Mapa del Sitio", href: "#" }
+      ],
+      copyright: `© ${new Date().getFullYear()} Acropolis Bienes Raíces. Todos los derechos reservados.`
     },
     headProps: {
       title: "idealista — Casas y pisos, alquiler y venta. Anuncios gratis",

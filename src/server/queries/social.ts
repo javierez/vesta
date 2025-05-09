@@ -22,7 +22,6 @@ export const getSocialLinks = cache(async (): Promise<SocialLink[]> => {
     }
 
     const socialLinksObj = JSON.parse(config.socialLinks) as Record<string, string>
-    console.log("socialLinksObj", socialLinksObj)
     
     return Object.entries(socialLinksObj).map(([platform, url]) => ({
       platform: platform as SocialPlatform,

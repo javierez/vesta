@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: false
 ---
-# Addition Process
+# Addition Process  - Cursor Rule
 
 ## Overview
 This rule outlines the complete process for adding new UI features to the application, ensuring consistency across UI, database, and data handling.

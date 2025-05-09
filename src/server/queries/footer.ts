@@ -10,7 +10,7 @@ export const getFooterProps = cache(async (): Promise<FooterProps | null> => {
     const [config] = await db
       .select({ footerProps: websiteProperties.footerProps })
       .from(websiteProperties)
-      .where(eq(websiteProperties.id, BigInt("1125899906842629")))
+      .where(eq(websiteProperties.id, BigInt("1125899906842628")))
       .limit(1)
     if (!config?.footerProps) return null
     return JSON.parse(config.footerProps) as FooterProps
