@@ -5,10 +5,8 @@ import { ContactSection } from "~/components/contact-section"
 import { ReviewsSection } from "~/components/reviews-section"
 import { AboutSection } from "~/components/about-section"
 import  JsonLd  from "~/components/json-ld"
-import { reviews } from "~/lib/reviews-data"
 import Navbar from "~/components/navbar"
 import Footer from "~/components/footer"
-import { PropertySearch } from "~/components/property-search"
 import { getSocialLinks } from "~/server/queries/social"
 import { getAccountInfo } from "~/server/queries/account"
 import Head from "next/head"
@@ -19,8 +17,8 @@ export default async function Home() {
   return (
     <>
       <Head>
-        <title>idealista — Casas y pisos, alquiler y venta. Anuncios gratis</title>
-        <meta name="description" content="¿Buscas casa? Con idealista es más fácil. Más de 1.200.000 anuncios de pisos y casas en venta o alquiler. Publicar anuncios es gratis para particulares." />
+        <title> Casas y pisos, alquiler y venta.</title>
+        <meta name="description" content="¿Buscas casa? Con Inmobiliaria Acropolis es más fácil. Pisos y casas en venta o alquiler." />
       </Head>
       <Navbar socialLinks={socialLinks} shortName={accountInfo?.shortName} />
       <div>
@@ -37,7 +35,7 @@ export default async function Home() {
           <ContactSection />
         </div>
       </div>
-      <Footer socialLinks={socialLinks} />
+      <Footer />
     </>
   )
 }
