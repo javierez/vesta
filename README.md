@@ -1,4 +1,4 @@
 # Website Template
 
 Tasks
-- [parametrize every piece of code]
+- [Remove harcoded data in: head, properties, hero image]
