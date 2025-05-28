@@ -15,26 +15,31 @@ export type ContactProps = {
   schedule: boolean
   map: boolean
   // Contact information fields
-  officeAddress?: {
-    street: string
-    city: string
-    state: string
-    country: string
-  }
-  phoneNumbers?: {
-    main: string
-    sales: string
-  }
-  emailAddresses?: {
-    info: string
-    sales: string
-  }
-  scheduleInfo?: {
-    weekdays: string
-    saturday: string
-    sunday: string
-  }
-  mapUrl?: string
+  offices: Array<{
+    id: string
+    name: string
+    address: {
+      street: string
+      city: string
+      state: string
+      country: string
+    }
+    phoneNumbers: {
+      main: string
+      sales: string
+    }
+    emailAddresses: {
+      info: string
+      sales: string
+    }
+    scheduleInfo: {
+      weekdays: string
+      saturday: string
+      sunday: string
+    }
+    mapUrl: string
+    isDefault?: boolean
+  }>
 }
 
 export const getContactProps = cache(async (): Promise<ContactProps | null> => {
@@ -42,7 +47,7 @@ export const getContactProps = cache(async (): Promise<ContactProps | null> => {
     const [config] = await db
       .select({ contactProps: websiteProperties.contactProps })
       .from(websiteProperties)
-      .where(eq(websiteProperties.id, BigInt("1125899906842635")))
+      .where(eq(websiteProperties.id, BigInt("1125899906842636")))
       .limit(1)
     
     if (!config?.contactProps) return null

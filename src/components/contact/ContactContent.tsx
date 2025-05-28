@@ -1,8 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card"
 import { Mail, Phone, MapPin, Clock } from "lucide-react"
 import { ContactForm } from "./ContactForm"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import type { ContactProps } from "~/server/queries/contact"
 
 interface ContactContentProps {
@@ -28,6 +30,12 @@ export function ContactContent({
   map,
   contactProps
 }: ContactContentProps) {
+  const [selectedOfficeId, setSelectedOfficeId] = useState<string>(
+    contactProps?.offices?.find(office => office.isDefault)?.id || contactProps?.offices?.[0]?.id || ""
+  )
+
+  const selectedOffice = contactProps?.offices?.find(office => office.id === selectedOfficeId)
+
   return (
     <section className="py-16 container" id="contact">
       <div className="text-center mb-12">
@@ -44,74 +52,91 @@ export function ContactContent({
           <CardHeader>
             <CardTitle>Información de Contacto</CardTitle>
             <CardDescription>Comunícate con nosotros directamente o visita nuestra oficina.</CardDescription>
+            
+            {contactProps?.offices && contactProps.offices.length > 1 && (
+              <div className="mt-4">
+                <Select value={selectedOfficeId} onValueChange={setSelectedOfficeId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona una oficina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contactProps.offices.map((office) => (
+                      <SelectItem key={office.id} value={office.id}>
+                        {office.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {address && contactProps?.officeAddress && (
+            {address && selectedOffice?.address && (
               <div className="flex items-start">
                 <MapPin className="h-5 w-5 mr-3 text-primary" />
                 <div>
                   <h4 className="font-medium">Dirección de la Oficina</h4>
                   <address className="not-italic text-muted-foreground">
-                    {contactProps.officeAddress.street}
+                    {selectedOffice.address.street}
                     <br />
-                    {contactProps.officeAddress.city}, {contactProps.officeAddress.state}
+                    {selectedOffice.address.city}, {selectedOffice.address.state}
                     <br />
-                    {contactProps.officeAddress.country}
+                    {selectedOffice.address.country}
                   </address>
                 </div>
               </div>
             )}
 
-            {phone && contactProps?.phoneNumbers && (
+            {phone && selectedOffice?.phoneNumbers && (
               <div className="flex items-start">
                 <Phone className="h-5 w-5 mr-3 text-primary" />
                 <div>
                   <h4 className="font-medium">Teléfono</h4>
                   <p className="text-muted-foreground">
-                    Principal: {contactProps.phoneNumbers.main}
+                    Principal: {selectedOffice.phoneNumbers.main}
                     <br />
-                    Ventas: {contactProps.phoneNumbers.sales}
+                    Ventas: {selectedOffice.phoneNumbers.sales}
                   </p>
                 </div>
               </div>
             )}
 
-            {mail && contactProps?.emailAddresses && (
+            {mail && selectedOffice?.emailAddresses && (
               <div className="flex items-start">
                 <Mail className="h-5 w-5 mr-3 text-primary" />
                 <div>
                   <h4 className="font-medium">Correo Electrónico</h4>
                   <p className="text-muted-foreground">
-                    {contactProps.emailAddresses.info}
+                    {selectedOffice.emailAddresses.info}
                     <br />
-                    {contactProps.emailAddresses.sales}
+                    {selectedOffice.emailAddresses.sales}
                   </p>
                 </div>
               </div>
             )}
 
-            {schedule && contactProps?.scheduleInfo && (
+            {schedule && selectedOffice?.scheduleInfo && (
               <div className="flex items-start">
                 <Clock className="h-5 w-5 mr-3 text-primary" />
                 <div>
                   <h4 className="font-medium">Horario de Atención</h4>
                   <p className="text-muted-foreground">
-                    {contactProps.scheduleInfo.weekdays}
+                    {selectedOffice.scheduleInfo.weekdays}
                     <br />
-                    {contactProps.scheduleInfo.saturday}
+                    {selectedOffice.scheduleInfo.saturday}
                     <br />
-                    {contactProps.scheduleInfo.sunday}
+                    {selectedOffice.scheduleInfo.sunday}
                   </p>
                 </div>
               </div>
             )}
           </CardContent>
 
-          {map && contactProps?.mapUrl && (
+          {map && selectedOffice?.mapUrl && (
             <CardFooter>
               <iframe
-                src={contactProps.mapUrl}
+                src={selectedOffice.mapUrl}
                 width="100%"
                 height="200"
                 style={{ border: 0 }}

@@ -89,14 +89,14 @@ export const properties = singlestoreTable("flexweb_properties", {
   yearBuilt: smallint("year_built"),
   address: varchar("address", { length: 255 }).notNull(),
   city: varchar("city", { length: 100 }).notNull(),
-  state: varchar("state", { length: 100 }).notNull(),
-  postalCode: varchar("postal_code", { length: 20 }).notNull(),
+  state: varchar("state", { length: 100 }),
+  postalCode: varchar("postal_code", { length: 20 }),
   neighborhood: varchar("neighborhood", { length: 100 }),
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
   isFeatured: boolean("is_featured").default(false),
   isBankOwned: boolean("is_bank_owned").default(false),
-  energyCertification: varchar("energy_certification", { length: 1 }), // Enum handled in application
+  energyCertification: text("energy_certification"), // Enum handled in application
   hasHeating: boolean("has_heating").default(false),
   heatingType: varchar("heating_type", { length: 50 }),
   hasElevator: boolean("has_elevator").default(false),
@@ -117,28 +117,6 @@ export const properties = singlestoreTable("flexweb_properties", {
   featuredIdx: index("idx_featured").on(table.isFeatured),
 }));
 
-// Property Images table
-export const propertyImages = singlestoreTable("flexweb_property_images", {
-  imageId: bigint("image_id", { mode: "bigint" }).primaryKey().autoincrement(),
-  propertyId: bigint("property_id", { mode: "bigint" }).notNull(), // Reference to properties table
-  fileId: varchar("file_id", { length: 255 }).notNull(), // Unique identifier from storage service
-  url: varchar("url", { length: 1024 }).notNull(), // Full URL to the image
-  name: varchar("name", { length: 255 }).notNull(), // Original filename
-  size: int("size").notNull(), // File size in bytes
-  mimeType: varchar("mime_type", { length: 100 }).notNull(), // e.g., "image/jpeg", "image/png"
-  width: int("width"), // Image width in pixels
-  height: int("height"), // Image height in pixels
-  isFeatured: boolean("is_featured").default(false), // Main property image
-  sortOrder: int("sort_order").default(0), // For controlling display order
-  altText: varchar("alt_text", { length: 255 }), // For accessibility
-  caption: varchar("caption", { length: 500 }), // Optional image description
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  propertyIdIdx: index("idx_property_images_property").on(table.propertyId),
-  fileIdIdx: index("idx_property_images_file").on(table.fileId),
-  featuredIdx: index("idx_property_images_featured").on(table.isFeatured),
-}));
 
 export const folders = singlestoreTable("flexweb_folders", {
   id: text("id").primaryKey(),
@@ -149,16 +127,29 @@ export const folders = singlestoreTable("flexweb_folders", {
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 })
 
-export const files = singlestoreTable("flexweb_files", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  folderId: text("folder_id").notNull(),
-  path: text("path").notNull(),
-  size: int("size").notNull(),
-  mimeType: text("mime_type").notNull(),
+export const metadata = singlestoreTable("flexweb_metadata", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
+  accountId: varchar("account_id", { length: 50 }).notNull(),
+  url: varchar("url", { length: 2048 }).notNull(),
+  fileType: varchar("file_type", { length: 5 }).notNull(), // enum('text','image')
+  folder: varchar("folder", { length: 255 }).notNull(),
+  isProperty: boolean("is_property").notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileSize: bigint("file_size", { mode: "bigint" }),
+  contentType: varchar("content_type", { length: 100 }),
+  s3Key: varchar("s3_key", { length: 2048 }).notNull(),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
-})
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+  status: varchar("status", { length: 9 }).default("pending"), // enum('pending','processed','failed')
+  errorMessage: text("error_message"),
+  metadata: text("metadata"), // JSON type
+  s3Url: varchar("s3_url", { length: 2048 }),
+}, (table) => ({
+  accountIdIdx: index("idx_metadata_account").on(table.accountId),
+  urlIdx: index("idx_metadata_url").on(table.url),
+  folderIdx: index("idx_metadata_folder").on(table.folder),
+  isPropertyIdx: index("idx_metadata_property").on(table.isProperty),
+}));
 
 export const websiteProperties = singlestoreTable("flexweb_config", {
   id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
@@ -172,7 +163,7 @@ export const websiteProperties = singlestoreTable("flexweb_config", {
   aboutProps: text("about_props").notNull(), // JSON containing about section properties
   propertiesProps: text("properties_props").notNull(), // JSON containing properties section configuration
   testimonialProps: text("testimonial_props").notNull(), // JSON containing testimonial section properties
-  contactProps: text("contact_props").notNull(), // JSON containing contact section properties
+  contactProps: text("contact_props"), // JSON containing contact section properties
   footerProps: text("footer_props").notNull(), // JSON containing footer configuration
   headProps: text("head_props").notNull(), // JSON containing head section properties
   createdAt: timestamp("created_at").defaultNow().notNull(),

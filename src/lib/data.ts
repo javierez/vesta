@@ -705,26 +705,31 @@ export type ContactProps = {
   schedule: boolean
   map: boolean
   // Contact information fields
-  officeAddress?: {
-    street: string
-    city: string
-    state: string
-    country: string
-  }
-  phoneNumbers?: {
-    main: string
-    sales: string
-  }
-  emailAddresses?: {
-    info: string
-    sales: string
-  }
-  scheduleInfo?: {
-    weekdays: string
-    saturday: string
-    sunday: string
-  }
-  mapUrl?: string
+  offices: Array<{
+    id: string
+    name: string
+    address: {
+      street: string
+      city: string
+      state: string
+      country: string
+    }
+    phoneNumbers: {
+      main: string
+      sales: string
+    }
+    emailAddresses: {
+      info: string
+      sales: string
+    }
+    scheduleInfo: {
+      weekdays: string
+      saturday: string
+      sunday: string
+    }
+    mapUrl: string
+    isDefault?: boolean
+  }>
 }
 
 export type WebsiteConfig = {
@@ -920,26 +925,57 @@ export const websiteConfigs: WebsiteConfig[] = [
       mail: true,
       schedule: true,
       map: true,
-      officeAddress: {
-        street: "123 Avenida Inmobiliaria",
-        city: "León",
-        state: "CL",
-        country: "España"
-      },
-      phoneNumbers: {
-        main: "+34 987 123 456",
-        sales: "+34 987 123 457"
-      },
-      emailAddresses: {
-        info: "info@acropolis-realestate.com",
-        sales: "ventas@acropolis-realestate.com"
-      },
-      scheduleInfo: {
-        weekdays: "Lunes a Viernes: 9:00 - 18:00",
-        saturday: "Sábado: 10:00 - 14:00",
-        sunday: "Domingo: Cerrado"
-      },
-      mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2923.8278533985427!2d-5.569259684526154!3d42.59872697917133!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd374a0c2c000001%3A0x400f8d1ce997580!2sLe%C3%B3n!5e0!3m2!1ses!2ses!4v1647881234567!5m2!1ses!2ses"
+      offices: [
+        {
+          id: "leon",
+          name: "Oficina de León",
+          address: {
+            street: "123 Avenida Inmobiliaria",
+            city: "León",
+            state: "CL",
+            country: "España"
+          },
+          phoneNumbers: {
+            main: "+34 987 123 456",
+            sales: "+34 987 123 457"
+          },
+          emailAddresses: {
+            info: "leon@acropolis-realestate.com",
+            sales: "ventas.leon@acropolis-realestate.com"
+          },
+          scheduleInfo: {
+            weekdays: "Lunes a Viernes: 9:00 - 18:00",
+            saturday: "Sábado: 10:00 - 14:00",
+            sunday: "Domingo: Cerrado"
+          },
+          mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2923.8278533985427!2d-5.569259684526154!3d42.59872697917133!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd374a0c2c000001%3A0x400f8d1ce997580!2sLe%C3%B3n!5e0!3m2!1ses!2ses!4v1647881234567!5m2!1ses!2ses",
+          isDefault: true
+        },
+        {
+          id: "madrid",
+          name: "Oficina de Madrid",
+          address: {
+            street: "456 Calle Gran Vía",
+            city: "Madrid",
+            state: "MD",
+            country: "España"
+          },
+          phoneNumbers: {
+            main: "+34 910 234 567",
+            sales: "+34 910 234 568"
+          },
+          emailAddresses: {
+            info: "madrid@acropolis-realestate.com",
+            sales: "ventas.madrid@acropolis-realestate.com"
+          },
+          scheduleInfo: {
+            weekdays: "Lunes a Viernes: 9:30 - 19:00",
+            saturday: "Sábado: 10:00 - 15:00",
+            sunday: "Domingo: Cerrado"
+          },
+          mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3037.4301046875!2d-3.7022426845974537!3d40.41995597936578!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd42287e472b3b8f%3A0x6a4f71889c8b3b8f!2sGran%20V%C3%ADa%2C%20Madrid!5e0!3m2!1ses!2ses!4v1647881234567!5m2!1ses!2ses"
+        }
+      ]
     },
     footerProps: {
       companyName: "Acropolis Bienes Raíces",
@@ -952,7 +988,7 @@ export const websiteConfigs: WebsiteConfig[] = [
       },
       officeLocations: [
         {
-          name: "León (Sede Central)",
+          name: "León",
           address: ["123 Avenida Inmobiliaria", "León, CL 24001", "España"],
           phone: "+34 987 123 456",
           email: "leon@acropolis-realestate.com"

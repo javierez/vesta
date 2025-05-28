@@ -466,7 +466,7 @@ export default function PropertyPage({ params }: PropertyPageProps) {
         </div>
       </div>
       <ContactSection />
-      <Footer socialLinks={socialLinks} />
+      <Footer />
     </>
   )
 }

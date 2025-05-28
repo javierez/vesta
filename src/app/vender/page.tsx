@@ -25,7 +25,7 @@ export default function VenderPage() {
         <h1 className="text-3xl font-bold text-center mb-8">Publica Tu Inmueble</h1>
         <PropertyListingForm />
       </div>
-      <Footer socialLinks={socialLinks} />
+      <Footer/>
     </>
   )
 }

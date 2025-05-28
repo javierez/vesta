@@ -285,7 +285,7 @@ export default function SearchPage({ params, searchParams }: SearchPageProps) {
           </div>
         )}
       </div>
-      <Footer socialLinks={socialLinks} />
+      <Footer/>
     </>
   )
 }
