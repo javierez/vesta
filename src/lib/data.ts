@@ -675,14 +675,12 @@ export type FooterProps = {
     phone: string
     email: string
   }>
-  quickLinks: Array<{
-    text: string
-    href: string
-  }>
-  propertyTypes: Array<{
-    text: string
-    href: string
-  }>
+  quickLinksVisibility: {
+    [key: string]: boolean
+  }
+  propertyTypesVisibility: {
+    [key: string]: boolean
+  }
   legalLinks: Array<{
     text: string
     href: string
@@ -1006,20 +1004,23 @@ export const websiteConfigs: WebsiteConfig[] = [
           email: "barcelona@acropolis-realestate.com"
         }
       ],
-      quickLinks: [
-        { text: "Inicio", href: "/" },
-        { text: "Propiedades", href: "#properties" },
-        { text: "Nosotros", href: "#about" },
-        { text: "Reseñas", href: "#reviews" },
-        { text: "Contacto", href: "#contact" }
-      ],
-      propertyTypes: [
-        { text: "Pisos", href: "/busqueda/venta-pisos/todas-ubicaciones" },
-        { text: "Casas", href: "/busqueda/venta-casas/todas-ubicaciones" },
-        { text: "Locales", href: "/busqueda/venta-locales/todas-ubicaciones" },
-        { text: "Solares", href: "/busqueda/venta-solares/todas-ubicaciones" },
-        { text: "Garajes", href: "/busqueda/venta-garajes/todas-ubicaciones" }
-      ],
+      quickLinksVisibility: {
+        inicio: true,
+        propiedades: true,
+        nosotros: true,
+        reseñas: true,
+        contacto: true,
+        comprar: false,
+        alquilar: false,
+        vender: false
+      },
+      propertyTypesVisibility: {
+        pisos: true,
+        casas: true,
+        locales: true,
+        solares: true,
+        garajes: true
+      },
       legalLinks: [
         { text: "Política de Privacidad", href: "#" },
         { text: "Términos de Servicio", href: "#" },
