@@ -681,10 +681,6 @@ export type FooterProps = {
   propertyTypesVisibility: {
     [key: string]: boolean
   }
-  legalLinks: Array<{
-    text: string
-    href: string
-  }>
   copyright: string
 }
 
@@ -1021,11 +1017,6 @@ export const websiteConfigs: WebsiteConfig[] = [
         solares: true,
         garajes: true
       },
-      legalLinks: [
-        { text: "Política de Privacidad", href: "#" },
-        { text: "Términos de Servicio", href: "#" },
-        { text: "Mapa del Sitio", href: "#" }
-      ],
       copyright: `© ${new Date().getFullYear()} Acropolis Bienes Raíces. Todos los derechos reservados.`
     },
     headProps: {

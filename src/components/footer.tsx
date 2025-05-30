@@ -16,6 +16,15 @@ const QUICK_LINKS = [
   { text: "Vender", href: "/vender" },
 ] as const
 
+const LEGAL_LINKS = [
+  { text: "Aviso Legal", href: "/aviso-legal" },
+  { text: "Preguntas frecuentes (FAQs)", href: "/faqs" },
+  { text: "Contacta con Acrópolis", href: "/contacto" },
+  { text: "Política de privacidad", href: "/privacidad" },
+  { text: "Política de cookies", href: "/cookies" },
+  { text: "Condiciones generales", href: "/condiciones" },
+] as const
+
 const PROPERTY_TYPES = [
   { text: "Pisos", href: "/busqueda/venta-pisos/todas-ubicaciones" },
   { text: "Casas", href: "/busqueda/venta-casas/todas-ubicaciones" },
@@ -46,7 +55,6 @@ export default async function Footer() {
   const officeLocations = footerProps?.officeLocations || []
   const quickLinksVisibility = footerProps?.quickLinksVisibility || {}
   const propertyTypesVisibility = footerProps?.propertyTypesVisibility || {}
-  const legalLinks = footerProps?.legalLinks || []
   const copyright =
     footerProps?.copyright || `© ${new Date().getFullYear()} Acropolis Bienes Raíces. Todos los derechos reservados.`
 
@@ -150,10 +158,10 @@ export default async function Footer() {
             <p className="text-sm text-muted-foreground font-medium order-2 md:order-1">
               {copyright}
             </p>
-            {legalLinks.length > 0 && (
+            {LEGAL_LINKS.length > 0 && (
               <nav className="order-1 md:order-2">
                 <div className="flex flex-wrap justify-center md:justify-end gap-8 text-sm">
-                  {legalLinks.map((link, index) => (
+                  {LEGAL_LINKS.map((link, index) => (
                     <Link
                       key={index}
                       href={link.href}
