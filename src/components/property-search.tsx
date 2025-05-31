@@ -64,7 +64,7 @@ export function PropertySearch() {
   }
 
   return (
-    <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-2xl p-6 max-w-5xl mx-auto">
+    <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg p-6 max-w-5xl mx-auto">
       <form className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <Label htmlFor="location">Ubicación</Label>
