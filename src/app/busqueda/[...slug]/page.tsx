@@ -11,7 +11,6 @@ import { Button } from "~/components/ui/button"
 import { Separator } from "~/components/ui/separator"
 import { ArrowLeft, SlidersHorizontal } from "lucide-react"
 import { parseSearchSlug, type PropertyType } from "~/lib/search-utils"
-import Navbar from "~/components/navbar"
 import Footer from "~/components/footer"
 import { SearchBar } from "~/components/search-bar"
 import { Suspense, use } from "react"
@@ -153,7 +152,6 @@ export default function SearchPage({ params, searchParams }: SearchPageProps) {
 
   return (
     <>
-      <Navbar socialLinks={socialLinks} />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="py-4">

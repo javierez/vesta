@@ -24,11 +24,11 @@ export async function ReviewsSection({ className, id }: ReviewsSectionProps) {
   const displayedReviews = reviews.slice(0, testimonialProps?.itemsPerPage || 3)
 
   return (
-    <section className={cn("py-16", className)} id={id}>
+    <section className={cn("py-24 flex flex-col items-center", className)} id={id}>
       <div className="container">
         <TestimonialHeader title={title} subtitle={subtitle} />
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 ml-8 md:ml-12 lg:ml-16">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {displayedReviews.map((testimonial: Testimonial) => (
             <TestimonialCard
               key={testimonial.testimonialId.toString()}

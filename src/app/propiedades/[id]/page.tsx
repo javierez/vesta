@@ -8,7 +8,6 @@ import { Badge } from "~/components/ui/badge"
 import { Bed, Bath, SquareIcon, MapPin, Share2, Check, X } from "lucide-react"
 import { PropertyCard } from "~/components/property-card"
 import { ContactSection } from "~/components/contact-section"
-import Navbar from "~/components/navbar"
 import Footer from "~/components/footer"
 import { ImageGallery } from "~/components/property/image-gallery"
 import { Card } from "~/components/ui/card"
@@ -100,7 +99,6 @@ export default function PropertyPage({ params }: PropertyPageProps) {
 
   return (
     <>
-      <Navbar socialLinks={socialLinks} />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="py-4">
@@ -465,7 +463,9 @@ export default function PropertyPage({ params }: PropertyPageProps) {
           </div>
         </div>
       </div>
-      <ContactSection />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <ContactSection />
+      </div>
       <Footer />
     </>
   )

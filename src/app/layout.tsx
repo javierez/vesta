@@ -4,6 +4,7 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "~/components/theme-provider";
 import { WhatsAppButton } from "~/components/ui/whatsapp-button";
+import Navbar from "~/components/navbar";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -50,6 +51,14 @@ export default function RootLayout({
       <body className={`${geist.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <div className="relative flex min-h-screen flex-col">
+            <Navbar 
+              shortName="Acropolis"
+              socialLinks={[
+                { platform: "facebook", url: "https://facebook.com/acropolis" },
+                { platform: "instagram", url: "https://instagram.com/acropolis" },
+                { platform: "linkedin", url: "https://linkedin.com/company/acropolis" }
+              ]}
+            />
             <main className="flex-1">{children}</main>
             <WhatsAppButton />
           </div>

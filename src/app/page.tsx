@@ -5,7 +5,6 @@ import { ContactSection } from "~/components/contact-section"
 import { ReviewsSection } from "~/components/reviews-section"
 import { AboutSection } from "~/components/about-section"
 import  JsonLd  from "~/components/json-ld"
-import Navbar from "~/components/navbar"
 import Footer from "~/components/footer"
 import { getSocialLinks } from "~/server/queries/social"
 import { getAccountInfo } from "~/server/queries/account"
@@ -20,14 +19,13 @@ export default async function Home() {
         <title> Casas y pisos, alquiler y venta.</title>
         <meta name="description" content="¿Buscas casa? Con Inmobiliaria Acropolis es más fácil. Pisos y casas en venta o alquiler." />
       </Head>
-      <Navbar socialLinks={socialLinks} shortName={accountInfo?.shortName} />
       <div>
         <JsonLd />
         <Hero />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <FeaturedProperties />
-          <AboutSection />
+          {/* <FeaturedProperties /> */}
           <PropertyGrid />
+          <AboutSection />
         </div>
         <ReviewsSection
         />
