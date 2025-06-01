@@ -1,4 +1,6 @@
 # Website Template
 
 Tasks
-- [Remove harcoded data in: head, properties, hero image]
+- [Property Subtype]
+- [SEO Optimization]
+- [Location Hierarchy: state (provincia), 

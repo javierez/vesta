@@ -78,18 +78,19 @@ export function PropertyCard({ property }: PropertyCardProps) {
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className={`object-cover transition-opacity duration-300 ${isHovered ? "opacity-100" : "opacity-0"}`}
               loading="lazy"
+              
             />
             {!imageLoaded && <div className="absolute inset-0 bg-muted animate-pulse" />}
           </div>
         </Link>
-        <Badge className="absolute top-2 right-2 z-10">
+        <Badge className="absolute top-2 right-2 z-10 text-sm">
           {property.status === "for-sale" ? "En Venta" : property.status === "for-rent" ? "En Alquiler" : "Vendido"}
         </Badge>
-        <Badge variant="outline" className="absolute top-2 left-2 z-10 bg-white/80">
+        <Badge variant="outline" className="absolute top-2 left-2 z-10 bg-white/80 text-sm">
           {getPropertyTypeLabel(property.propertyType)}
         </Badge>
         {property.isBankOwned && (
-          <Badge variant="secondary" className="absolute bottom-2 left-2 z-10 bg-amber-500 text-white">
+          <Badge variant="secondary" className="absolute bottom-2 left-2 z-10 bg-amber-500 text-white text-sm">
             Piso de Banco
           </Badge>
         )}

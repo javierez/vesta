@@ -23,7 +23,7 @@ interface SearchFormData {
 
 export function PropertySearch() {
   const router = useRouter()
-  const [priceRange, setPriceRange] = useState<number[]>([0, 1000000])
+  const [priceRange, setPriceRange] = useState<number[]>([50000, 1000000])
   const [searchParams, setSearchParams] = useState<SearchFormData>({
     location: "",
     propertyType: "any",
@@ -55,7 +55,7 @@ export function PropertySearch() {
     }
 
     const searchSlug = buildSearchSlug(searchParamsData)
-    router.push(`/busqueda/${searchSlug}`)
+    router.push(`/${searchSlug}`)
   }
 
   // Format numbers consistently to avoid hydration issues
@@ -145,9 +145,10 @@ export function PropertySearch() {
             </span>
           </div>
           <Slider
-            defaultValue={[0, 1000000]}
+            defaultValue={[50000, 1000000]}
+            min={50000}
             max={2000000}
-            step={50000}
+            step={10000}
             onValueChange={setPriceRange}
             className="py-4"
           />

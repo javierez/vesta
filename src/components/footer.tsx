@@ -25,16 +25,16 @@ const LEGAL_LINKS = [
   { text: "Condiciones generales", href: "/condiciones" },
 ] as const
 
-const PROPERTY_TYPES = [
-  { text: "Pisos", href: "/busqueda/venta-pisos/todas-ubicaciones" },
-  { text: "Casas", href: "/busqueda/venta-casas/todas-ubicaciones" },
-  { text: "Locales", href: "/busqueda/venta-locales/todas-ubicaciones" },
-  { text: "Solares", href: "/busqueda/venta-solares/todas-ubicaciones" },
-  { text: "Garajes", href: "/busqueda/venta-garajes/todas-ubicaciones" },
-] as const
+const buyLinks = [
+  { text: "Pisos", href: "/venta-pisos/todas-ubicaciones" },
+  { text: "Casas", href: "/venta-casas/todas-ubicaciones" },
+  { text: "Locales", href: "/venta-locales/todas-ubicaciones" },
+  { text: "Solares", href: "/venta-solares/todas-ubicaciones" },
+  { text: "Garajes", href: "/venta-garajes/todas-ubicaciones" },
+]
 
 type QuickLink = (typeof QUICK_LINKS)[number]
-type PropertyType = (typeof PROPERTY_TYPES)[number]
+type PropertyType = (typeof buyLinks)[number]
 
 export default async function Footer() {
   const footerProps = await getFooterProps()
@@ -123,7 +123,7 @@ export default async function Footer() {
               </h3>
               <nav>
                 <ul className="space-y-4">
-                  {PROPERTY_TYPES.filter((type) => propertyTypesVisibility[type.text.toLowerCase()] !== false).map(
+                  {buyLinks.filter((type) => propertyTypesVisibility[type.text.toLowerCase()] !== false).map(
                     (type: PropertyType, index: number) => (
                       <li key={index}>
                         <Link

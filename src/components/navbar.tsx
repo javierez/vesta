@@ -83,27 +83,27 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
               <DropdownMenuItem>
-                <Link href="/busqueda/venta-pisos/todas-ubicaciones" className="w-full">
+                <Link href="/venta-pisos/todas-ubicaciones" className="w-full">
                   Pisos
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="/busqueda/venta-casas/todas-ubicaciones" className="w-full">
+                <Link href="/venta-casas/todas-ubicaciones" className="w-full">
                   Casas
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="/busqueda/venta-locales/todas-ubicaciones" className="w-full">
+                <Link href="/venta-locales/todas-ubicaciones" className="w-full">
                   Locales
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="/busqueda/venta-solares/todas-ubicaciones" className="w-full">
+                <Link href="/venta-solares/todas-ubicaciones" className="w-full">
                   Solares
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="/busqueda/venta-garajes/todas-ubicaciones" className="w-full">
+                <Link href="/venta-garajes/todas-ubicaciones" className="w-full">
                   Garajes
                 </Link>
               </DropdownMenuItem>
@@ -119,22 +119,22 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
               <DropdownMenuItem>
-                <Link href="/busqueda/alquiler-pisos/todas-ubicaciones" className="w-full">
+                <Link href="/alquiler-pisos/todas-ubicaciones" className="w-full">
                   Pisos
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="/busqueda/alquiler-casas/todas-ubicaciones" className="w-full">
+                <Link href="/alquiler-casas/todas-ubicaciones" className="w-full">
                   Casas
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="/busqueda/alquiler-locales/todas-ubicaciones" className="w-full">
+                <Link href="/alquiler-locales/todas-ubicaciones" className="w-full">
                   Locales
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="/busqueda/alquiler-garajes/todas-ubicaciones" className="w-full">
+                <Link href="/alquiler-garajes/todas-ubicaciones" className="w-full">
                   Garajes
                 </Link>
               </DropdownMenuItem>
@@ -220,7 +220,7 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
                 </h3>
                 <div className="space-y-1">
                   <Link
-                    href="/busqueda/venta-pisos/todas-ubicaciones"
+                    href="/venta-pisos/todas-ubicaciones"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                     onClick={handleMenuClose}
                   >
@@ -228,7 +228,7 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
                     Pisos
                   </Link>
                   <Link
-                    href="/busqueda/venta-casas/todas-ubicaciones"
+                    href="/venta-casas/todas-ubicaciones"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                     onClick={handleMenuClose}
                   >
@@ -236,7 +236,7 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
                     Casas
                   </Link>
                   <Link
-                    href="/busqueda/venta-locales/todas-ubicaciones"
+                    href="/venta-locales/todas-ubicaciones"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                     onClick={handleMenuClose}
                   >
@@ -244,7 +244,7 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
                     Locales
                   </Link>
                   <Link
-                    href="/busqueda/venta-solares/todas-ubicaciones"
+                    href="/venta-solares/todas-ubicaciones"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                     onClick={handleMenuClose}
                   >
@@ -252,7 +252,7 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
                     Solares
                   </Link>
                   <Link
-                    href="/busqueda/venta-garajes/todas-ubicaciones"
+                    href="/venta-garajes/todas-ubicaciones"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                     onClick={handleMenuClose}
                   >
@@ -269,7 +269,7 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
                 </h3>
                 <div className="space-y-1">
                   <Link
-                    href="/busqueda/alquiler-pisos/todas-ubicaciones"
+                    href="/alquiler-pisos/todas-ubicaciones"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                     onClick={handleMenuClose}
                   >
@@ -277,7 +277,7 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
                     Pisos
                   </Link>
                   <Link
-                    href="/busqueda/alquiler-casas/todas-ubicaciones"
+                    href="/alquiler-casas/todas-ubicaciones"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                     onClick={handleMenuClose}
                   >
@@ -285,7 +285,7 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
                     Casas
                   </Link>
                   <Link
-                    href="/busqueda/alquiler-locales/todas-ubicaciones"
+                    href="/alquiler-locales/todas-ubicaciones"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                     onClick={handleMenuClose}
                   >
@@ -293,7 +293,7 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
                     Locales
                   </Link>
                   <Link
-                    href="/busqueda/alquiler-garajes/todas-ubicaciones"
+                    href="/alquiler-garajes/todas-ubicaciones"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                     onClick={handleMenuClose}
                   >

@@ -101,19 +101,25 @@ export default function PropertyPage({ params }: PropertyPageProps) {
     <>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        <div className="py-4">
-          <div className="flex items-center text-sm">
-            <Link href="/" className="text-muted-foreground hover:text-primary">
-              Inicio
-            </Link>
-            <span className="mx-2">/</span>
-            <Link href="/busqueda" className="text-muted-foreground hover:text-primary">
-              Propiedades
-            </Link>
-            <span className="mx-2">/</span>
-            <span className="font-medium truncate">{property.title}</span>
-          </div>
-        </div>
+        <nav className="py-4" aria-label="Breadcrumb">
+          <ol className="flex items-center text-sm">
+            <li>
+              <Link href="/" className="text-muted-foreground hover:text-primary">
+                Inicio
+              </Link>
+            </li>
+            <li className="mx-2">/</li>
+            <li>
+              <Link href="/" className="text-muted-foreground hover:text-primary">
+                Propiedades
+              </Link>
+            </li>
+            <li className="mx-2">/</li>
+            <li className="font-medium" aria-current="page">
+              {property.title}
+            </li>
+          </ol>
+        </nav>
 
         {/* Encabezado de la propiedad */}
         <div className="py-8">

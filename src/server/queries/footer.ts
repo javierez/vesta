@@ -1,11 +1,11 @@
+'use server'
+
 import { db } from "../db"
 import { websiteProperties } from "../db/schema"
 import { eq } from "drizzle-orm"
-import { cache } from 'react'
 import type { FooterProps } from "../../lib/data"
 
-export const getFooterProps = cache(async (): Promise<FooterProps | null> => {
-  'use server'
+export async function getFooterProps(): Promise<FooterProps | null> {
   try {
     const [config] = await db
       .select({ footerProps: websiteProperties.footerProps })
@@ -18,4 +18,4 @@ export const getFooterProps = cache(async (): Promise<FooterProps | null> => {
     console.error('Error fetching footer props:', error)
     return null
   }
-}) 
+} 

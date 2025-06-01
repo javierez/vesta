@@ -10,6 +10,8 @@ export interface SearchParams {
   minArea?: number
   maxArea?: number
   status?: "for-sale" | "for-rent" | "any"
+  province?: string
+  municipality?: string
 }
 
 // Convert search params to URL slug
@@ -41,6 +43,14 @@ export function buildSearchSlug(params: SearchParams): string {
     segments.push(params.location.toLowerCase().replace(/\s+/g, "-"))
   } else {
     segments.push("todas-ubicaciones")
+  }
+
+  // Add province and municipality
+  if (params.province && params.province !== "all") {
+    segments.push(`provincia-${params.province}`)
+  }
+  if (params.municipality && params.municipality !== "all") {
+    segments.push(`municipio-${params.municipality}`)
   }
 
   // Add filters
@@ -129,9 +139,20 @@ export function parseSearchSlug(slug: string): SearchParams {
     params.location = (segments[1] ?? "").replace(/-/g, " ")
   }
 
+  // Parse province and municipality
+  for (let i = 2; i < segments.length; i++) {
+    const segment = segments[i]
+    if (segment?.startsWith("provincia-")) {
+      params.province = segment.substring(10)
+    } else if (segment?.startsWith("municipio-")) {
+      params.municipality = segment.substring(10)
+    }
+  }
+
   // Parse filters
-  if (segments.length > 2 && segments[2]?.startsWith("con-")) {
-    const filtersString = (segments[2] ?? "").substring(4) // Remove 'con-'
+  const filtersSegment = segments.find(segment => segment?.startsWith("con-"))
+  if (filtersSegment) {
+    const filtersString = filtersSegment.substring(4) // Remove 'con-'
     const filters = filtersString.split(",")
 
     filters.forEach((filter) => {

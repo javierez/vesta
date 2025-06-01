@@ -27,8 +27,8 @@ export function SearchBar({ initialParams }: SearchBarProps) {
   const [maxPrice, setMaxPrice] = useState<string>(initialParams?.maxPrice ? initialParams.maxPrice.toString() : "")
   const [bedrooms, setBedrooms] = useState<string>(initialParams?.bedrooms ?? "any")
   const [bathrooms, setBathrooms] = useState<string>(initialParams?.bathrooms ?? "any")
-  const [province, setProvince] = useState<string>("leon")
-  const [municipality, setMunicipality] = useState<string>("all")
+  const [province, setProvince] = useState<string>(initialParams?.province ?? "all")
+  const [municipality, setMunicipality] = useState<string>(initialParams?.municipality ?? "all")
   const [minArea, setMinArea] = useState<string>(initialParams?.minArea ? initialParams.minArea.toString() : "")
   const [maxArea, setMaxArea] = useState<string>(initialParams?.maxArea ? initialParams.maxArea.toString() : "")
 
@@ -44,6 +44,8 @@ export function SearchBar({ initialParams }: SearchBarProps) {
       if (initialParams.bathrooms) setBathrooms(initialParams.bathrooms)
       if (initialParams.minArea) setMinArea(initialParams.minArea.toString())
       if (initialParams.maxArea) setMaxArea(initialParams.maxArea.toString())
+      if (initialParams.province) setProvince(initialParams.province)
+      if (initialParams.municipality) setMunicipality(initialParams.municipality)
     }
   }, [initialParams])
 
@@ -63,10 +65,12 @@ export function SearchBar({ initialParams }: SearchBarProps) {
       minArea: minArea ? Number.parseInt(minArea) : undefined,
       maxArea: maxArea ? Number.parseInt(maxArea) : undefined,
       status: newMode,
+      province,
+      municipality,
     }
 
     const searchSlug = buildSearchSlug(searchParams)
-    router.push(`/busqueda/${searchSlug}`)
+    router.push(`/${searchSlug}`)
   }
 
   // Handle property type change
@@ -84,10 +88,58 @@ export function SearchBar({ initialParams }: SearchBarProps) {
       minArea: minArea ? Number.parseInt(minArea) : undefined,
       maxArea: maxArea ? Number.parseInt(maxArea) : undefined,
       status: searchMode,
+      province,
+      municipality,
     }
 
     const searchSlug = buildSearchSlug(searchParams)
-    router.push(`/busqueda/${searchSlug}`)
+    router.push(`/${searchSlug}`)
+  }
+
+  // Handle province change
+  const handleProvinceChange = (value: string) => {
+    setProvince(value)
+
+    // Auto-apply the filter
+    const searchParams: SearchParams = {
+      location,
+      propertyType,
+      bedrooms,
+      bathrooms,
+      minPrice: minPrice ? Number.parseInt(minPrice) : undefined,
+      maxPrice: maxPrice ? Number.parseInt(maxPrice) : undefined,
+      minArea: minArea ? Number.parseInt(minArea) : undefined,
+      maxArea: maxArea ? Number.parseInt(maxArea) : undefined,
+      status: searchMode,
+      province: value,
+      municipality,
+    }
+
+    const searchSlug = buildSearchSlug(searchParams)
+    router.push(`/${searchSlug}`)
+  }
+
+  // Handle municipality change
+  const handleMunicipalityChange = (value: string) => {
+    setMunicipality(value)
+
+    // Auto-apply the filter
+    const searchParams: SearchParams = {
+      location,
+      propertyType,
+      bedrooms,
+      bathrooms,
+      minPrice: minPrice ? Number.parseInt(minPrice) : undefined,
+      maxPrice: maxPrice ? Number.parseInt(maxPrice) : undefined,
+      minArea: minArea ? Number.parseInt(minArea) : undefined,
+      maxArea: maxArea ? Number.parseInt(maxArea) : undefined,
+      status: searchMode,
+      province,
+      municipality: value,
+    }
+
+    const searchSlug = buildSearchSlug(searchParams)
+    router.push(`/${searchSlug}`)
   }
 
   const handleSearch = () => {
@@ -101,10 +153,12 @@ export function SearchBar({ initialParams }: SearchBarProps) {
       minArea: minArea ? Number.parseInt(minArea) : undefined,
       maxArea: maxArea ? Number.parseInt(maxArea) : undefined,
       status: searchMode,
+      province,
+      municipality,
     }
 
     const searchSlug = buildSearchSlug(searchParams)
-    router.push(`/busqueda/${searchSlug}`)
+    router.push(`/${searchSlug}`)
   }
 
   return (
@@ -142,7 +196,7 @@ export function SearchBar({ initialParams }: SearchBarProps) {
 
         <div>
           <Label htmlFor="province">Provincia</Label>
-          <Select value={province} onValueChange={setProvince}>
+          <Select value={province} onValueChange={handleProvinceChange}>
             <SelectTrigger id="province">
               <SelectValue placeholder="Seleccionar provincia" />
             </SelectTrigger>
@@ -159,7 +213,7 @@ export function SearchBar({ initialParams }: SearchBarProps) {
 
         <div>
           <Label htmlFor="municipality">Municipio</Label>
-          <Select value={municipality} onValueChange={setMunicipality}>
+          <Select value={municipality} onValueChange={handleMunicipalityChange}>
             <SelectTrigger id="municipality">
               <SelectValue placeholder="Todos los municipios" />
             </SelectTrigger>
