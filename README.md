@@ -3,4 +3,4 @@
 Tasks
 - [Property Subtype]
 - [SEO Optimization]
-- [Location Hierarchy: state (provincia), 
+- [Location Hierarchy: state (provincia), city (ciudad), neighborhood (barrio o municipio)]
