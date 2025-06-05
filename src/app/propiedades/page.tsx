@@ -1,21 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu"
 import { Input } from "~/components/ui/input"
 import {
   Select,
@@ -24,46 +10,89 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select"
-import { MoreHorizontal, Plus, Search } from "lucide-react"
+import { Plus, Search } from "lucide-react"
 import Link from "next/link"
+import { PropertyCard } from "~/components/property-card"
+import { PropertyCardSkeleton } from "~/components/property-card-skeleton"
+import type { Property } from "~/lib/data"
 
 // Mock data - replace with actual data from your database
-const properties = [
+const mockProperties: Property[] = [
   {
-    id: 1,
+    id: "1",
     title: "Apartamento Moderno en el Centro",
-    type: "Apartamento",
-    status: "Activo",
-    price: "$450,000",
-    location: "Centro",
+    propertyType: "piso",
+    status: "for-sale",
+    price: 450000,
+    address: "Calle Principal 123",
+    city: "Madrid",
+    state: "Madrid",
+    zipCode: "28001",
+    description: "Hermoso apartamento en el centro de la ciudad con acabados de lujo",
     bedrooms: 2,
     bathrooms: 2,
-    area: "120 m²",
+    squareFeet: 120,
+    imageUrl: "/properties/suburban-dream.png",
+    images: [
+      { url: "/properties/suburban-dream.png", alt: "Vista principal del apartamento" },
+      { url: "/properties/suburban-dream.png", alt: "Vista alternativa del apartamento" }
+    ],
+    reference: "REF001",
+    isBankOwned: false,
+    features: ["Ascensor", "Parking", "Terraza"],
+    isFeatured: true
   },
   {
-    id: 2,
+    id: "2",
     title: "Villa de Lujo con Piscina",
-    type: "Villa",
-    status: "Pendiente",
-    price: "$1,200,000",
-    location: "Suburbios",
+    propertyType: "casa",
+    status: "for-sale",
+    price: 1200000,
+    address: "Avenida del Mar 45",
+    city: "Marbella",
+    state: "Málaga",
+    zipCode: "29600",
+    description: "Impresionante villa con vistas al mar y piscina privada",
     bedrooms: 4,
     bathrooms: 3,
-    area: "350 m²",
-  },
-  // Add more mock properties as needed
+    squareFeet: 350,
+    imageUrl: "/properties/suburban-dream.png",
+    images: [
+      { url: "/properties/suburban-dream.png", alt: "Vista principal de la villa" },
+      { url: "/properties/suburban-dream.png", alt: "Vista alternativa de la villa" }
+    ],
+    reference: "REF002",
+    isBankOwned: false,
+    features: ["Piscina", "Jardín", "Vistas al mar"],
+    isFeatured: true
+  }
 ]
 
 export default function PropertiesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
+  const [isLoading, setIsLoading] = useState(true)
+  const [properties, setProperties] = useState<Property[]>([])
+
+  useEffect(() => {
+    // Simulate API call
+    const fetchProperties = async () => {
+      setIsLoading(true)
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setProperties(mockProperties)
+      setIsLoading(false)
+    }
+
+    fetchProperties()
+  }, [])
 
   const filteredProperties = properties.filter((property) => {
     const matchesSearch = property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.location.toLowerCase().includes(searchQuery.toLowerCase())
+      property.address.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || property.status === statusFilter
-    const matchesType = typeFilter === "all" || property.type === typeFilter
+    const matchesType = typeFilter === "all" || property.propertyType === typeFilter
     return matchesSearch && matchesStatus && matchesType
   })
 
@@ -98,9 +127,9 @@ export default function PropertiesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los Estados</SelectItem>
-              <SelectItem value="Activo">Activo</SelectItem>
-              <SelectItem value="Pendiente">Pendiente</SelectItem>
-              <SelectItem value="Vendido">Vendido</SelectItem>
+              <SelectItem value="for-sale">En Venta</SelectItem>
+              <SelectItem value="for-rent">En Alquiler</SelectItem>
+              <SelectItem value="sold">Vendido</SelectItem>
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -109,75 +138,28 @@ export default function PropertiesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los Tipos</SelectItem>
-              <SelectItem value="Apartamento">Apartamento</SelectItem>
-              <SelectItem value="Villa">Villa</SelectItem>
-              <SelectItem value="Casa">Casa</SelectItem>
-              <SelectItem value="Comercial">Comercial</SelectItem>
+              <SelectItem value="piso">Piso</SelectItem>
+              <SelectItem value="casa">Casa</SelectItem>
+              <SelectItem value="local">Local</SelectItem>
+              <SelectItem value="solar">Solar</SelectItem>
+              <SelectItem value="garaje">Garaje</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Título</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Precio</TableHead>
-              <TableHead>Ubicación</TableHead>
-              <TableHead>Dormitorios</TableHead>
-              <TableHead>Baños</TableHead>
-              <TableHead>Área</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredProperties.map((property) => (
-              <TableRow key={property.id}>
-                <TableCell className="font-medium">{property.title}</TableCell>
-                <TableCell>{property.type}</TableCell>
-                <TableCell>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      property.status === "Activo"
-                        ? "bg-green-100 text-green-800"
-                        : property.status === "Pendiente"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {property.status}
-                  </span>
-                </TableCell>
-                <TableCell>{property.price}</TableCell>
-                <TableCell>{property.location}</TableCell>
-                <TableCell>{property.bedrooms}</TableCell>
-                <TableCell>{property.bathrooms}</TableCell>
-                <TableCell>{property.area}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/properties/${property.id}`}>Ver Detalles</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/properties/${property.id}/edit`}>Editar</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">Eliminar</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {isLoading ? (
+          // Show skeleton cards while loading
+          Array.from({ length: 6 }).map((_, index) => (
+            <PropertyCardSkeleton key={index} />
+          ))
+        ) : (
+          // Show actual property cards
+          filteredProperties.map((property) => (
+            <PropertyCard key={property.id} property={property} />
+          ))
+        )}
       </div>
     </div>
   )

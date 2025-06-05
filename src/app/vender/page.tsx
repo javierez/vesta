@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { PropertyListingForm } from "~/components/property/property-listing-form"
-import Footer from "~/components/footer"
 
 // Datos de redes sociales para toda la aplicación
 const socialLinks = [
@@ -23,7 +22,6 @@ export default function VenderPage() {
         <h1 className="text-3xl font-bold text-center mb-8">Publica Tu Inmueble</h1>
         <PropertyListingForm />
       </div>
-      <Footer/>
     </>
   )
 }

@@ -1,59 +1,94 @@
 'use server'
 
 import { db } from "../db"
-import { websiteProperties } from "../db/schema"
+import { contacts } from "../db/schema"
 import { eq } from "drizzle-orm"
-import { cache } from 'react'
+import type { Contact } from "../../lib/data"
 
-export type ContactProps = {
-  title: string
-  subtitle: string
-  messageForm: boolean
-  address: boolean
-  phone: boolean
-  mail: boolean
-  schedule: boolean
-  map: boolean
-  // Contact information fields
-  offices: Array<{
-    id: string
-    name: string
-    address: {
-      street: string
-      city: string
-      state: string
-      country: string
-    }
-    phoneNumbers: {
-      main: string
-      sales: string
-    }
-    emailAddresses: {
-      info: string
-      sales: string
-    }
-    scheduleInfo: {
-      weekdays: string
-      saturday: string
-      sunday: string
-    }
-    mapUrl: string
-    isDefault?: boolean
-  }>
+// Create a new contact
+export async function createContact(data: Omit<Contact, "contactId">) {
+  try {
+    const [result] = await db.insert(contacts).values(data).$returningId();
+    if (!result) throw new Error("Failed to create contact");
+    const [newContact] = await db.select().from(contacts).where(eq(contacts.contactId, BigInt(result.contactId)));
+    return newContact;
+  } catch (error) {
+    console.error("Error creating contact:", error);
+    throw error;
+  }
 }
 
-export const getContactProps = cache(async (): Promise<ContactProps | null> => {
+// Get contact by ID
+export async function getContactById(contactId: number) {
   try {
-    const [config] = await db
-      .select({ contactProps: websiteProperties.contactProps })
-      .from(websiteProperties)
-      .where(eq(websiteProperties.id, BigInt("1125899906842636")))
-      .limit(1)
-    
-    if (!config?.contactProps) return null
-    return JSON.parse(config.contactProps) as ContactProps
+    const [contact] = await db
+      .select()
+      .from(contacts)
+      .where(eq(contacts.contactId, BigInt(contactId)));
+    return contact;
   } catch (error) {
-    console.error('Error fetching contact props:', error)
-    return null
+    console.error("Error fetching contact:", error);
+    throw error;
   }
-}) 
+}
+
+// Get contact by email
+export async function getContactByEmail(email: string) {
+  try {
+    const [contact] = await db
+      .select()
+      .from(contacts)
+      .where(eq(contacts.email, email));
+    return contact;
+  } catch (error) {
+    console.error("Error fetching contact by email:", error);
+    throw error;
+  }
+}
+
+// Update contact
+export async function updateContact(contactId: number, data: Omit<Partial<Contact>, "contactId">) {
+  try {
+    await db
+      .update(contacts)
+      .set(data)
+      .where(eq(contacts.contactId, BigInt(contactId)));
+    const [updatedContact] = await db
+      .select()
+      .from(contacts)
+      .where(eq(contacts.contactId, BigInt(contactId)));
+    return updatedContact;
+  } catch (error) {
+    console.error("Error updating contact:", error);
+    throw error;
+  }
+}
+
+// Delete contact
+export async function deleteContact(contactId: number) {
+  try {
+    await db
+      .delete(contacts)
+      .where(eq(contacts.contactId, BigInt(contactId)));
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting contact:", error);
+    throw error;
+  }
+}
+
+// List all contacts (with pagination)
+export async function listContacts(page = 1, limit = 10) {
+  try {
+    const offset = (page - 1) * limit;
+    const allContacts = await db
+      .select()
+      .from(contacts)
+      .limit(limit)
+      .offset(offset);
+    return allContacts;
+  } catch (error) {
+    console.error("Error listing contacts:", error);
+    throw error;
+  }
+} 

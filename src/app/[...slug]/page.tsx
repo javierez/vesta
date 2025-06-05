@@ -11,7 +11,6 @@ import { Button } from "~/components/ui/button"
 import { Separator } from "~/components/ui/separator"
 import { ArrowLeft, SlidersHorizontal } from "lucide-react"
 import { parseSearchSlug, type PropertyType } from "~/lib/search-utils"
-import Footer from "~/components/footer"
 import { SearchBar } from "~/components/search-bar"
 import { Suspense } from "react"
 
@@ -305,7 +304,6 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
           </Suspense>
         </div>
       </div>
-      <Footer />
     </main>
   )
 } 

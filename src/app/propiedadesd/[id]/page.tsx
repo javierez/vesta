@@ -8,7 +8,6 @@ import { Badge } from "~/components/ui/badge"
 import { Bed, Bath, SquareIcon, MapPin, Share2, Check, X } from "lucide-react"
 import { PropertyCard } from "~/components/property-card"
 import { ContactSection } from "~/components/contact-section"
-import Footer from "~/components/footer"
 import { ImageGallery } from "~/components/property/image-gallery"
 import { Card } from "~/components/ui/card"
 import { use } from "react"
@@ -472,7 +471,6 @@ export default function PropertyPage({ params }: PropertyPageProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <ContactSection />
       </div>
-      <Footer />
     </>
   )
 }
