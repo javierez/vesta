@@ -8,6 +8,7 @@ export async function createProperty(data: Omit<Property, "propertyId" | "create
   try {
     const [property] = await db.insert(properties).values({
       ...data,
+      isActive: true,
       price: data.price,
       latitude: data.latitude,
       longitude: data.longitude,
@@ -26,7 +27,12 @@ export async function getPropertyById(propertyId: bigint) {
     const [property] = await db
       .select()
       .from(properties)
-      .where(eq(properties.propertyId, propertyId));
+      .where(
+        and(
+          eq(properties.propertyId, propertyId),
+          eq(properties.isActive, true)
+        )
+      );
     return property;
   } catch (error) {
     console.error("Error getting property:", error);
@@ -129,7 +135,10 @@ export async function getProperties({
 }
 
 // Update a property
-export async function updateProperty(propertyId: bigint, data: Partial<Property>) {
+export async function updateProperty(
+  propertyId: bigint,
+  data: Omit<Partial<Property>, "propertyId" | "createdAt" | "updatedAt">
+) {
   try {
     const updateData = {
       ...data,
@@ -137,13 +146,17 @@ export async function updateProperty(propertyId: bigint, data: Partial<Property>
       latitude: data.latitude,
       longitude: data.longitude,
       bathrooms: data.bathrooms,
-      updatedAt: new Date(),
     };
 
     await db
       .update(properties)
       .set(updateData)
-      .where(eq(properties.propertyId, propertyId));
+      .where(
+        and(
+          eq(properties.propertyId, propertyId),
+          eq(properties.isActive, true)
+        )
+      );
     
     return await getPropertyById(propertyId);
   } catch (error) {
@@ -152,7 +165,21 @@ export async function updateProperty(propertyId: bigint, data: Partial<Property>
   }
 }
 
-// Delete a property
+// Soft delete property (set isActive to false)
+export async function softDeleteProperty(propertyId: bigint) {
+  try {
+    await db
+      .update(properties)
+      .set({ isActive: false })
+      .where(eq(properties.propertyId, propertyId));
+    return { success: true };
+  } catch (error) {
+    console.error("Error soft deleting property:", error);
+    throw error;
+  }
+}
+
+// Hard delete property (remove from database)
 export async function deleteProperty(propertyId: bigint) {
   try {
     const property = await getPropertyById(propertyId);
@@ -169,12 +196,15 @@ export async function deleteProperty(propertyId: bigint) {
 // Search properties
 export async function searchProperties(searchTerm: string, limit = 10) {
   try {
-    const searchConditions = or(
-      like(properties.title, `%${searchTerm}%`),
-      like(properties.description, `%${searchTerm}%`),
-      like(properties.city, `%${searchTerm}%`),
-      like(properties.neighborhood, `%${searchTerm}%`),
-      like(properties.street, `%${searchTerm}%`)
+    const searchConditions = and(
+      eq(properties.isActive, true),
+      or(
+        like(properties.title, `%${searchTerm}%`),
+        like(properties.description, `%${searchTerm}%`),
+        like(properties.city, `%${searchTerm}%`),
+        like(properties.neighborhood, `%${searchTerm}%`),
+        like(properties.street, `%${searchTerm}%`)
+      )
     );
 
     return await db

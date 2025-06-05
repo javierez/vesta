@@ -748,6 +748,9 @@ export type Contact = {
   email?: string;
   phone?: string;
   orgId?: bigint;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type Organization = {
@@ -769,3 +772,387 @@ export type Lead = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type Deal = {
+  dealId: bigint;
+  listingId: bigint;
+  status: 'Offer' | 'UnderContract' | 'Closed' | 'Lost';
+  closeDate?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type DealParticipant = {
+  dealId: bigint;
+  contactId: bigint;
+  role: 'Buyer' | 'Seller' | 'Lawyer' | 'Agent' | 'Other';
+};
+
+export type Appointment = {
+  appointmentId: bigint;
+  userId: bigint;
+  contactId: bigint;
+  listingId?: bigint;
+  leadId?: bigint;
+  dealId?: bigint;
+  datetimeStart: Date;
+  datetimeEnd: Date;
+  status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Rescheduled' | 'NoShow';
+  notes?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Task = {
+  taskId: bigint;
+  userId: bigint;
+  description: string;
+  dueDate?: Date;
+  completed: boolean;
+  listingId?: bigint;
+  leadId?: bigint;
+  dealId?: bigint;
+  appointmentId?: bigint;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Document = {
+  docId: bigint;
+  filename: string;
+  fileType: string;
+  fileUrl: string;
+  userId: bigint;
+  contactId?: bigint;
+  uploadedAt: Date;
+  listingId?: bigint;
+  leadId?: bigint;
+  dealId?: bigint;
+  appointmentId?: bigint;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// Mock data for users
+export const users: User[] = [
+  {
+    userId: 1,
+    email: "juan.garcia@acropolis-realestate.com",
+    firstName: "Juan",
+    lastName: "García",
+    phone: "+34 987 123 456",
+    profileImageUrl: "/agents/juan-garcia.jpg",
+    timezone: "Europe/Madrid",
+    language: "es",
+    preferences: {
+      notifications: true,
+      theme: "light"
+    },
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    lastLogin: new Date("2024-03-15"),
+    isVerified: true,
+    isActive: true
+  },
+  {
+    userId: 2,
+    email: "maria.lopez@acropolis-realestate.com",
+    firstName: "María",
+    lastName: "López",
+    phone: "+34 987 123 457",
+    profileImageUrl: "/agents/maria-lopez.jpg",
+    timezone: "Europe/Madrid",
+    language: "es",
+    preferences: {
+      notifications: true,
+      theme: "dark"
+    },
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    lastLogin: new Date("2024-03-14"),
+    isVerified: true,
+    isActive: true
+  }
+];
+
+// Mock data for roles
+export const roles: Role[] = [
+  {
+    roleId: 1,
+    name: "admin",
+    description: "Administrator with full system access",
+    permissions: {
+      canManageUsers: true,
+      canManageProperties: true,
+      canManageDeals: true
+    },
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    isActive: true
+  },
+  {
+    roleId: 2,
+    name: "agent",
+    description: "Real estate agent with property management access",
+    permissions: {
+      canManageProperties: true,
+      canManageDeals: true
+    },
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    isActive: true
+  }
+];
+
+// Mock data for user roles
+export const userRoles: UserRole[] = [
+  {
+    userRoleId: 1,
+    userId: 1,
+    roleId: 1,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    isActive: true
+  },
+  {
+    userRoleId: 2,
+    userId: 2,
+    roleId: 2,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    isActive: true
+  }
+];
+
+// Mock data for organizations
+export const organizations: Organization[] = [
+  {
+    orgId: BigInt(1),
+    orgName: "Banco Santander",
+    address: "Plaza de España 1",
+    city: "Madrid",
+    state: "MD",
+    postalCode: "28008",
+    country: "España"
+  },
+  {
+    orgId: BigInt(2),
+    orgName: "Despacho Legal Martínez",
+    address: "Calle Mayor 15",
+    city: "León",
+    state: "CL",
+    postalCode: "24001",
+    country: "España"
+  }
+];
+
+// Mock data for contacts
+export const contacts: Contact[] = [
+  {
+    contactId: BigInt(1),
+    firstName: "Carlos",
+    lastName: "Rodríguez",
+    email: "carlos.rodriguez@email.com",
+    phone: "+34 987 654 321",
+    orgId: BigInt(1),
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
+  },
+  {
+    contactId: BigInt(2),
+    firstName: "Ana",
+    lastName: "Martínez",
+    email: "ana.martinez@email.com",
+    phone: "+34 987 654 322",
+    orgId: BigInt(2),
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01")
+  }
+];
+
+// Mock data for listings
+export const listings: Listing[] = [
+  {
+    listingId: BigInt(1),
+    propertyId: BigInt(1),
+    agentId: BigInt(1),
+    ownerContactId: BigInt(1),
+    listingType: "Sale",
+    price: "1250000.00",
+    status: "Active",
+    viewCount: 150,
+    inquiryCount: 12,
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-03-15")
+  },
+  {
+    listingId: BigInt(2),
+    propertyId: BigInt(2),
+    agentId: BigInt(2),
+    ownerContactId: BigInt(2),
+    listingType: "Rent",
+    price: "1500.00",
+    status: "Active",
+    viewCount: 75,
+    inquiryCount: 8,
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-03-14")
+  }
+];
+
+// Mock data for leads
+export const leads: Lead[] = [
+  {
+    leadId: BigInt(1),
+    contactId: BigInt(1),
+    listingId: BigInt(1),
+    source: "Website",
+    status: "Working",
+    createdAt: new Date("2024-03-01"),
+    updatedAt: new Date("2024-03-15")
+  },
+  {
+    leadId: BigInt(2),
+    contactId: BigInt(2),
+    listingId: BigInt(2),
+    source: "Referral",
+    status: "New",
+    createdAt: new Date("2024-03-10"),
+    updatedAt: new Date("2024-03-10")
+  }
+];
+
+// Mock data for deals
+export const deals: Deal[] = [
+  {
+    dealId: BigInt(1),
+    listingId: BigInt(1),
+    status: "UnderContract",
+    closeDate: new Date("2024-04-15"),
+    createdAt: new Date("2024-03-01"),
+    updatedAt: new Date("2024-03-15")
+  },
+  {
+    dealId: BigInt(2),
+    listingId: BigInt(2),
+    status: "Offer",
+    createdAt: new Date("2024-03-10"),
+    updatedAt: new Date("2024-03-10")
+  }
+];
+
+// Mock data for deal participants
+export const dealParticipants: DealParticipant[] = [
+  {
+    dealId: BigInt(1),
+    contactId: BigInt(1),
+    role: "Buyer"
+  },
+  {
+    dealId: BigInt(1),
+    contactId: BigInt(2),
+    role: "Lawyer"
+  }
+];
+
+// Mock data for appointments
+export const appointments: Appointment[] = [
+  {
+    appointmentId: BigInt(1),
+    userId: BigInt(1),
+    contactId: BigInt(1),
+    listingId: BigInt(1),
+    leadId: BigInt(1),
+    dealId: BigInt(1),
+    datetimeStart: new Date("2024-03-20T10:00:00"),
+    datetimeEnd: new Date("2024-03-20T11:00:00"),
+    status: "Scheduled",
+    notes: "Property viewing for potential buyer",
+    isActive: true,
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15")
+  },
+  {
+    appointmentId: BigInt(2),
+    userId: BigInt(2),
+    contactId: BigInt(2),
+    listingId: BigInt(2),
+    leadId: BigInt(2),
+    datetimeStart: new Date("2024-03-21T15:00:00"),
+    datetimeEnd: new Date("2024-03-21T16:00:00"),
+    status: "Scheduled",
+    notes: "Initial consultation for rental property",
+    isActive: true,
+    createdAt: new Date("2024-03-16"),
+    updatedAt: new Date("2024-03-16")
+  }
+];
+
+// Mock data for tasks
+export const tasks: Task[] = [
+  {
+    taskId: BigInt(1),
+    userId: BigInt(1),
+    description: "Follow up with buyer about property viewing",
+    dueDate: new Date("2024-03-19"),
+    completed: false,
+    listingId: BigInt(1),
+    leadId: BigInt(1),
+    dealId: BigInt(1),
+    appointmentId: BigInt(1),
+    isActive: true,
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15")
+  },
+  {
+    taskId: BigInt(2),
+    userId: BigInt(2),
+    description: "Prepare rental agreement for new tenant",
+    dueDate: new Date("2024-03-22"),
+    completed: false,
+    listingId: BigInt(2),
+    leadId: BigInt(2),
+    isActive: true,
+    createdAt: new Date("2024-03-16"),
+    updatedAt: new Date("2024-03-16")
+  }
+];
+
+// Mock data for documents
+export const documents: Document[] = [
+  {
+    docId: BigInt(1),
+    filename: "property_deed.pdf",
+    fileType: "PDF",
+    fileUrl: "/documents/property_deed.pdf",
+    userId: BigInt(1),
+    contactId: BigInt(1),
+    uploadedAt: new Date("2024-03-15"),
+    listingId: BigInt(1),
+    dealId: BigInt(1),
+    isActive: true,
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15")
+  },
+  {
+    docId: BigInt(2),
+    filename: "rental_agreement.pdf",
+    fileType: "PDF",
+    fileUrl: "/documents/rental_agreement.pdf",
+    userId: BigInt(2),
+    contactId: BigInt(2),
+    uploadedAt: new Date("2024-03-16"),
+    listingId: BigInt(2),
+    leadId: BigInt(2),
+    isActive: true,
+    createdAt: new Date("2024-03-16"),
+    updatedAt: new Date("2024-03-16")
+  }
+];

@@ -6,9 +6,15 @@ import type { Listing } from "../../lib/data";
 // Create a new listing
 export async function createListing(data: Omit<Listing, "listingId" | "createdAt" | "updatedAt">) {
   try {
-    const [result] = await db.insert(listings).values(data).$returningId();
+    const [result] = await db.insert(listings).values({
+      ...data,
+      isActive: true,
+    }).$returningId();
     if (!result) throw new Error("Failed to create listing");
-    const [newListing] = await db.select().from(listings).where(eq(listings.listingId, BigInt(result.listingId)));
+    const [newListing] = await db
+      .select()
+      .from(listings)
+      .where(eq(listings.listingId, BigInt(result.listingId)));
     return newListing;
   } catch (error) {
     console.error("Error creating listing:", error);
@@ -22,7 +28,12 @@ export async function getListingById(listingId: number) {
     const [listing] = await db
       .select()
       .from(listings)
-      .where(eq(listings.listingId, BigInt(listingId)));
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.isActive, true)
+        )
+      );
     return listing;
   } catch (error) {
     console.error("Error fetching listing:", error);
@@ -36,7 +47,12 @@ export async function getListingsByPropertyId(propertyId: number) {
     const propertyListings = await db
       .select()
       .from(listings)
-      .where(eq(listings.propertyId, BigInt(propertyId)));
+      .where(
+        and(
+          eq(listings.propertyId, BigInt(propertyId)),
+          eq(listings.isActive, true)
+        )
+      );
     return propertyListings;
   } catch (error) {
     console.error("Error fetching property listings:", error);
@@ -50,7 +66,12 @@ export async function getListingsByAgentId(agentId: number) {
     const agentListings = await db
       .select()
       .from(listings)
-      .where(eq(listings.agentId, BigInt(agentId)));
+      .where(
+        and(
+          eq(listings.agentId, BigInt(agentId)),
+          eq(listings.isActive, true)
+        )
+      );
     return agentListings;
   } catch (error) {
     console.error("Error fetching agent listings:", error);
@@ -64,7 +85,12 @@ export async function getListingsByOwnerContactId(ownerContactId: number) {
     const ownerListings = await db
       .select()
       .from(listings)
-      .where(eq(listings.ownerContactId, BigInt(ownerContactId)));
+      .where(
+        and(
+          eq(listings.ownerContactId, BigInt(ownerContactId)),
+          eq(listings.isActive, true)
+        )
+      );
     return ownerListings;
   } catch (error) {
     console.error("Error fetching owner listings:", error);
@@ -73,12 +99,20 @@ export async function getListingsByOwnerContactId(ownerContactId: number) {
 }
 
 // Update listing
-export async function updateListing(listingId: number, data: Omit<Partial<Listing>, "listingId">) {
+export async function updateListing(
+  listingId: number,
+  data: Omit<Partial<Listing>, "listingId" | "createdAt" | "updatedAt">
+) {
   try {
     await db
       .update(listings)
       .set(data)
-      .where(eq(listings.listingId, BigInt(listingId)));
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.isActive, true)
+        )
+      );
     const [updatedListing] = await db
       .select()
       .from(listings)
@@ -90,7 +124,21 @@ export async function updateListing(listingId: number, data: Omit<Partial<Listin
   }
 }
 
-// Delete listing
+// Soft delete listing (set isActive to false)
+export async function softDeleteListing(listingId: number) {
+  try {
+    await db
+      .update(listings)
+      .set({ isActive: false })
+      .where(eq(listings.listingId, BigInt(listingId)));
+    return { success: true };
+  } catch (error) {
+    console.error("Error soft deleting listing:", error);
+    throw error;
+  }
+}
+
+// Hard delete listing (remove from database)
 export async function deleteListing(listingId: number) {
   try {
     await db
@@ -140,6 +188,9 @@ export async function listListings(
       if (filters.isActive !== undefined) {
         whereConditions.push(eq(listings.isActive, filters.isActive));
       }
+    } else {
+      // By default, only show active listings
+      whereConditions.push(eq(listings.isActive, true));
     }
 
     // Create the base query

@@ -62,7 +62,7 @@ export const userRoles = singlestoreTable("user_roles", {
 }));
 
 // Properties table
-export const properties = singlestoreTable("flexweb_properties", {
+export const properties = singlestoreTable("properties", {
   propertyId: bigint("property_id", { mode: "bigint" }).primaryKey().autoincrement(),
   referenceNumber: varchar("reference_number", { length: 20 }).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -121,7 +121,7 @@ export const propertyImages = singlestoreTable("property_images", {
   propertyImageIdx: index("idx_property_images").on(table.propertyId),
 }));
 
-export const listings = singlestoreTable("flexweb_listings", {
+export const listings = singlestoreTable("listings", {
   listingId: bigint("listing_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
@@ -144,7 +144,7 @@ export const listings = singlestoreTable("flexweb_listings", {
 }));
 
 // Contacts (external people: buyers, sellers, etc.)
-export const contacts = singlestoreTable("flexweb_contacts", {
+export const contacts = singlestoreTable("contacts", {
   contactId: bigint("contact_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
@@ -153,8 +153,12 @@ export const contacts = singlestoreTable("flexweb_contacts", {
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 20 }),
   orgId: bigint("org_id", { mode: "bigint" }), // Nullable FK to organizations
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
   orgIdIdx: index("idx_contacts_org_id").on(table.orgId),
+  statusIdx: index("idx_contacts_status").on(table.isActive),
 }));
 
 // Organizations (companies, law firms, banks)
@@ -190,5 +194,116 @@ export const leads = singlestoreTable("leads", {
   statusIdx: index("idx_leads_status").on(table.status),
 }));
 
+// Deals (potential or closed transaction)
+export const deals = singlestoreTable("deals", {
+  dealId: bigint("deal_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
+  listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
+  status: varchar("stage", { length: 20 }).notNull(),              // e.g. "Offer", "UnderContract", "Closed", "Lost"
+  closeDate: timestamp("close_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  listingIdx: index("idx_deals_listing").on(table.listingId),
+  statusIdx: index("idx_deals_status").on(table.status),
+}));
 
+// Deal Participants (people involved in a deal)
+export const dealParticipants = singlestoreTable(
+  "deal_participants",
+  {
+    dealId: bigint("deal_id", { mode: "bigint" }).notNull(),         // FK → deals.deal_id
+    contactId: bigint("contact_id", { mode: "bigint" }).notNull(),   // FK → contacts.contact_id
+    role: varchar("role", { length: 50 }).notNull(),                // e.g. "Buyer", "Seller", "Lawyer"
+  },
+  (table) => ({
+    // Composite primary key
+    pk: { primaryKey: [table.dealId, table.contactId, table.role] },
+    dealIdx: index("idx_deal_participants_deal").on(table.dealId),
+    contactIdx: index("idx_deal_participants_contact").on(table.contactId),
+  })
+);
+
+// Appointments table
+export const appointments = singlestoreTable("appointments", {
+  appointmentId: bigint("appointment_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
+  userId: bigint("user_id", { mode: "bigint" }).notNull(),         // FK → users.user_id
+  contactId: bigint("contact_id", { mode: "bigint" }).notNull(),     // FK → contacts.contact_id
+  listingId: bigint("listing_id", { mode: "bigint" }),             // FK → listings.listing_id (nullable)
+  leadId: bigint("lead_id", { mode: "bigint" }),                     // FK → leads.lead_id (nullable)
+  dealId: bigint("deal_id", { mode: "bigint" }),                     // FK → deals.deal_id (nullable)
+  datetimeStart: timestamp("datetime_start").notNull(),
+  datetimeEnd: timestamp("datetime_end").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default('Scheduled'),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("idx_appointments_user").on(table.userId),
+  contactIdx: index("idx_appointments_contact").on(table.contactId),
+  listingIdx: index("idx_appointments_listing").on(table.listingId),
+  leadIdx: index("idx_appointments_lead").on(table.leadId),
+  dealIdx: index("idx_appointments_deal").on(table.dealId),
+  statusIdx: index("idx_appointments_status").on(table.status),
+  datetimeIdx: index("idx_appointments_datetime").on(table.datetimeStart, table.datetimeEnd),
+}));
+
+// Tasks
+export const tasks = singlestoreTable("tasks", {
+  taskId: bigint("task_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
+  userId: bigint("user_id", { mode: "bigint" }).notNull(),         // FK → users.user_id
+  description: text("description").notNull(),
+  dueDate: timestamp("due_date"),
+  completed: boolean("completed").default(false),
+  listingId: bigint("listing_id", { mode: "bigint" }),             // FK → listings.listing_id (nullable)
+  leadId: bigint("lead_id", { mode: "bigint" }),                   // FK → leads.lead_id (nullable)
+  dealId: bigint("deal_id", { mode: "bigint" }),                   // FK → deals.deal_id (nullable)
+  appointmentId: bigint("appointment_id", { mode: "bigint" }),     // FK → appointments.appointment_id (nullable)
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("idx_tasks_user").on(table.userId),
+  listingIdx: index("idx_tasks_listing").on(table.listingId),
+  leadIdx: index("idx_tasks_lead").on(table.leadId),
+  dealIdx: index("idx_tasks_deal").on(table.dealId),
+  appointmentIdx: index("idx_tasks_appointment").on(table.appointmentId),
+  completedIdx: index("idx_tasks_completed").on(table.completed),
+  statusIdx: index("idx_tasks_status").on(table.isActive),
+}));
+
+// Documents table
+export const documents = singlestoreTable("documents", {
+  docId: bigint("doc_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  fileType: varchar("file_type", { length: 50 }).notNull(),           // e.g. "PDF", "Image"
+  fileUrl: varchar("file_url", { length: 2048 }).notNull(),
+  userId: bigint("user_id", { mode: "bigint" }).notNull(),            // FK → users.user_id
+  contactId: bigint("contact_id", { mode: "bigint" }),                // FK → contacts.contact_id (nullable)
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  listingId: bigint("listing_id", { mode: "bigint" }),                // FK → listings.listing_id (nullable)
+  leadId: bigint("lead_id", { mode: "bigint" }),                      // FK → leads.lead_id (nullable)
+  dealId: bigint("deal_id", { mode: "bigint" }),                      // FK → deals.deal_id (nullable)
+  appointmentId: bigint("appointment_id", { mode: "bigint" }),        // FK → appointments.appointment_id (nullable)
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("idx_documents_user").on(table.userId),
+  contactIdx: index("idx_documents_contact").on(table.contactId),
+  listingIdx: index("idx_documents_listing").on(table.listingId),
+  leadIdx: index("idx_documents_lead").on(table.leadId),
+  dealIdx: index("idx_documents_deal").on(table.dealId),
+  appointmentIdx: index("idx_documents_appointment").on(table.appointmentId),
+  fileTypeIdx: index("idx_documents_type").on(table.fileType),
+  statusIdx: index("idx_documents_status").on(table.isActive),
+}));
 
