@@ -15,7 +15,7 @@ export interface Process {
 // Sales Process Definition
 export const salesProcess = [
   {
-    label: "Captación de propiedad",
+    label: "Captación",
     value: 0,
     icon: Home,
     subprocesses: [

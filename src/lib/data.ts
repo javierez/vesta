@@ -47,6 +47,18 @@ export type Property = {
   isActive: boolean;
 }
 
+export type Prospect = {
+  preListingId: bigint;
+  contactId: bigint;
+  sourceType: string;
+  sourceDetails?: string;
+  status: string;
+  statusUpdatedAt: Date;
+  listingId?: bigint;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 // Mock data for development/testing
 export const properties: Property[] = [
   {
@@ -1152,6 +1164,30 @@ export const documents: Document[] = [
     listingId: BigInt(2),
     leadId: BigInt(2),
     isActive: true,
+    createdAt: new Date("2024-03-16"),
+    updatedAt: new Date("2024-03-16")
+  }
+];
+
+// Mock data for prospects
+export const prospects: Prospect[] = [
+  {
+    preListingId: BigInt(1),
+    contactId: BigInt(1),
+    sourceType: "OWNER_DIRECT",
+    sourceDetails: "Contacto directo con propietario",
+    status: "CAPTACION",
+    statusUpdatedAt: new Date("2024-03-15"),
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15")
+  },
+  {
+    preListingId: BigInt(2),
+    contactId: BigInt(2),
+    sourceType: "PORTAL_SEARCH",
+    sourceDetails: "Encontrado en Idealista",
+    status: "VALORACION_SCHED",
+    statusUpdatedAt: new Date("2024-03-16"),
     createdAt: new Date("2024-03-16"),
     updatedAt: new Date("2024-03-16")
   }

@@ -235,6 +235,7 @@ export const appointments = singlestoreTable("appointments", {
   listingId: bigint("listing_id", { mode: "bigint" }),             // FK → listings.listing_id (nullable)
   leadId: bigint("lead_id", { mode: "bigint" }),                     // FK → leads.lead_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }),                     // FK → deals.deal_id (nullable)
+  prospectId: bigint("prospect_id", { mode: "bigint" }),             // FK → prospects.prospect_id (nullable)
   datetimeStart: timestamp("datetime_start").notNull(),
   datetimeEnd: timestamp("datetime_end").notNull(),
   status: varchar("status", { length: 20 }).notNull().default('Scheduled'),
@@ -248,6 +249,7 @@ export const appointments = singlestoreTable("appointments", {
   listingIdx: index("idx_appointments_listing").on(table.listingId),
   leadIdx: index("idx_appointments_lead").on(table.leadId),
   dealIdx: index("idx_appointments_deal").on(table.dealId),
+  prospectIdx: index("idx_appointments_prospect").on(table.prospectId),
   statusIdx: index("idx_appointments_status").on(table.status),
   datetimeIdx: index("idx_appointments_datetime").on(table.datetimeStart, table.datetimeEnd),
 }));
@@ -265,6 +267,7 @@ export const tasks = singlestoreTable("tasks", {
   leadId: bigint("lead_id", { mode: "bigint" }),                   // FK → leads.lead_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }),                   // FK → deals.deal_id (nullable)
   appointmentId: bigint("appointment_id", { mode: "bigint" }),     // FK → appointments.appointment_id (nullable)
+  prospectId: bigint("prospect_id", { mode: "bigint" }),           // FK → prospects.prospect_id (nullable)
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
@@ -274,6 +277,7 @@ export const tasks = singlestoreTable("tasks", {
   leadIdx: index("idx_tasks_lead").on(table.leadId),
   dealIdx: index("idx_tasks_deal").on(table.dealId),
   appointmentIdx: index("idx_tasks_appointment").on(table.appointmentId),
+  prospectIdx: index("idx_tasks_prospect").on(table.prospectId),
   completedIdx: index("idx_tasks_completed").on(table.completed),
   statusIdx: index("idx_tasks_status").on(table.isActive),
 }));
@@ -293,6 +297,7 @@ export const documents = singlestoreTable("documents", {
   leadId: bigint("lead_id", { mode: "bigint" }),                      // FK → leads.lead_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }),                      // FK → deals.deal_id (nullable)
   appointmentId: bigint("appointment_id", { mode: "bigint" }),        // FK → appointments.appointment_id (nullable)
+  prospectId: bigint("prospect_id", { mode: "bigint" }),              // FK → prospects.prospect_id (nullable)
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
@@ -303,7 +308,42 @@ export const documents = singlestoreTable("documents", {
   leadIdx: index("idx_documents_lead").on(table.leadId),
   dealIdx: index("idx_documents_deal").on(table.dealId),
   appointmentIdx: index("idx_documents_appointment").on(table.appointmentId),
+  prospectIdx: index("idx_documents_prospect").on(table.prospectId),
   fileTypeIdx: index("idx_documents_type").on(table.fileType),
   statusIdx: index("idx_documents_status").on(table.isActive),
+}));
+
+// Prospects table
+export const prospects = singlestoreTable("prospects", {
+  prospectId: bigint("prospect_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  contactId: bigint("contact_id", { mode: "bigint" }).notNull(),
+  sourceType: varchar("source_type", { length: 50 }).notNull(),
+  sourceDetails: text("source_details"),
+  status: varchar("status", { length: 50 }).notNull(),
+  statusUpdatedAt: timestamp("status_updated_at").defaultNow().notNull(),
+  listingId: bigint("listing_id", { mode: "bigint" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  contactIdx: index("idx_prospects_contact").on(table.contactId),
+  statusIdx: index("idx_prospects_status").on(table.status),
+  sourceTypeIdx: index("idx_prospects_source").on(table.sourceType),
+  listingIdx: index("idx_prospects_listing").on(table.listingId),
+}));
+
+// Prospect History table to track status changes
+export const prospectHistory = singlestoreTable("prospect_history", {
+  historyId: bigint("history_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  prospectId: bigint("prospect_id", { mode: "bigint" }).notNull(),
+  previousStatus: varchar("previous_status", { length: 50 }),
+  newStatus: varchar("new_status", { length: 50 }).notNull(),
+  changedBy: bigint("changed_by", { mode: "bigint" }).notNull(), // FK → users.user_id
+  changeReason: text("change_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  prospectIdx: index("idx_prospect_history_prospect").on(table.prospectId),
+  statusChangeIdx: index("idx_prospect_history_status").on(table.previousStatus, table.newStatus),
+  changedByIdx: index("idx_prospect_history_user").on(table.changedBy),
+  createdAtIdx: index("idx_prospect_history_created").on(table.createdAt),
 }));
 
