@@ -152,6 +152,8 @@ export const contacts = singlestoreTable("contacts", {
   lastName: varchar("last_name", { length: 100 }).notNull(),
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 20 }),
+  contactType: varchar("contact_type", { length: 20 }).notNull().default('demandante'),
+  additionalInfo: json("additional_info").default({}),
   orgId: bigint("org_id", { mode: "bigint" }), // Nullable FK to organizations
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -159,6 +161,7 @@ export const contacts = singlestoreTable("contacts", {
 }, (table) => ({
   orgIdIdx: index("idx_contacts_org_id").on(table.orgId),
   statusIdx: index("idx_contacts_status").on(table.isActive),
+  contactTypeIdx: index("idx_contacts_type").on(table.contactType),
 }));
 
 // Organizations (companies, law firms, banks)

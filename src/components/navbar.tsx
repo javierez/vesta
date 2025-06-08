@@ -163,11 +163,11 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
             Reseñas
           </Link>
           <Link 
-            href="#contact" 
+            href="#contactos" 
             className="text-sm font-medium transition-colors hover:text-primary"
-            aria-label="Contacto"
+            aria-label="Contactos"
           >
-            Contacto
+            Contactos
           </Link>
         </nav>
 
@@ -332,11 +332,11 @@ export default function Navbar({ socialLinks, shortName }: NavbarProps): React.R
                     Reseñas
                   </Link>
                   <Link
-                    href="#contact"
+                    href="#contactos"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                     onClick={handleMenuClose}
                   >
-                    Contacto
+                    Contactos
                   </Link>
                 </div>
               </div>

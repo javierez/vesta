@@ -759,7 +759,12 @@ export type Contact = {
   lastName: string;
   email?: string;
   phone?: string;
-  orgId?: bigint;
+  contactType: 'demandante' | 'propietario' | 'banco' | 'agencia';
+  additionalInfo?: {
+    demandType?: string;  // For demandante: what they're looking for
+    propertiesCount?: number;  // For sellers: number of properties
+    propertyTypes?: string[];  // For sellers: types of properties they sell
+  };
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -969,7 +974,11 @@ export const contacts: Contact[] = [
     lastName: "Rodríguez",
     email: "carlos.rodriguez@email.com",
     phone: "+34 987 654 321",
-    orgId: BigInt(1),
+    contactType: "propietario",
+    additionalInfo: {
+      propertiesCount: 2,
+      propertyTypes: ["casa", "piso"]
+    },
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01")
@@ -980,7 +989,10 @@ export const contacts: Contact[] = [
     lastName: "Martínez",
     email: "ana.martinez@email.com",
     phone: "+34 987 654 322",
-    orgId: BigInt(2),
+    contactType: "banco",
+    additionalInfo: {
+      demandType: "inversionista"
+    },
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01")
