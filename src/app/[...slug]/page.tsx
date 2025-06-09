@@ -113,14 +113,14 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
       location &&
       location !== "todas-ubicaciones" &&
       !property.city.toLowerCase().includes(location.toLowerCase()) &&
-      !property.state.toLowerCase().includes(location.toLowerCase()) &&
-      !property.address.toLowerCase().includes(location.toLowerCase())
+      !property.province?.toLowerCase().includes(location.toLowerCase()) &&
+      !property.street.toLowerCase().includes(location.toLowerCase())
     ) {
       return false
     }
 
     // Filter by province
-    if (province !== "all" && property.state.toLowerCase() !== province.toLowerCase()) {
+    if (province !== "all" && property.province?.toLowerCase() !== province.toLowerCase()) {
       return false
     }
 
@@ -135,26 +135,27 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
     }
 
     // Filter by bedrooms
-    if (bedrooms !== "any" && property.bedrooms < Number.parseInt(bedrooms ?? "0")) {
+    if (bedrooms !== "any" && (property.bedrooms ?? 0) < Number.parseInt(bedrooms ?? "0")) {
       return false
     }
 
     // Filter by bathrooms
-    if (bathrooms !== "any" && property.bathrooms < Number.parseInt(bathrooms ?? "0")) {
+    if (bathrooms !== "any" && Number.parseFloat(property.bathrooms ?? "0") < Number.parseInt(bathrooms ?? "0")) {
       return false
     }
 
     // Filter by price
     const minPriceValue = parsedParams.minPrice ?? 0
     const maxPriceValue = parsedParams.maxPrice ?? Number.MAX_SAFE_INTEGER
-    if (property.price < minPriceValue || property.price > maxPriceValue) {
+    const propertyPrice = Number.parseFloat(property.price)
+    if (propertyPrice < minPriceValue || propertyPrice > maxPriceValue) {
       return false
     }
 
     // Filter by area
     const minAreaValue = parsedParams.minArea ?? 0
     const maxAreaValue = parsedParams.maxArea ?? Number.MAX_SAFE_INTEGER
-    if (property.squareFeet < minAreaValue || property.squareFeet > maxAreaValue) {
+    if (property.squareMeter < minAreaValue || property.squareMeter > maxAreaValue) {
       return false
     }
 
@@ -166,19 +167,19 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
 
   switch (sortOption) {
     case "price-asc":
-      filteredProperties = filteredProperties.sort((a, b) => a.price - b.price)
+      filteredProperties = filteredProperties.sort((a, b) => Number.parseFloat(a.price) - Number.parseFloat(b.price))
       break
     case "price-desc":
-      filteredProperties = filteredProperties.sort((a, b) => b.price - a.price)
+      filteredProperties = filteredProperties.sort((a, b) => Number.parseFloat(b.price) - Number.parseFloat(a.price))
       break
     case "size-asc":
-      filteredProperties = filteredProperties.sort((a, b) => a.squareFeet - b.squareFeet)
+      filteredProperties = filteredProperties.sort((a, b) => a.squareMeter - b.squareMeter)
       break
     case "size-desc":
-      filteredProperties = filteredProperties.sort((a, b) => b.squareFeet - a.squareFeet)
+      filteredProperties = filteredProperties.sort((a, b) => b.squareMeter - a.squareMeter)
       break
     case "newest":
-      filteredProperties = filteredProperties.sort((a, b) => b.id.localeCompare(a.id))
+      filteredProperties = filteredProperties.sort((a, b) => b.propertyId.toString().localeCompare(a.propertyId.toString()))
       break
     default:
       filteredProperties = filteredProperties.sort((a, b) =>

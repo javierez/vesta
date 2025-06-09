@@ -15,11 +15,11 @@ import Link from "next/link"
 import { cn } from "~/lib/utils"
 
 interface Contact {
-  contactId: number
+  contactId: bigint
   firstName: string
   lastName: string
-  email: string
-  phone: string
+  email?: string
+  phone?: string
   contactType: "demandante" | "propietario" | "banco" | "agencia"
   isActive: boolean
   additionalInfo?: {
@@ -30,8 +30,8 @@ interface Contact {
     location?: string
     notes?: string
   }
-  lastContact?: string
-  createdAt?: string
+  lastContact?: Date
+  createdAt?: Date
 }
 
 interface ContactCardProps {

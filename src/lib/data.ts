@@ -991,7 +991,7 @@ export const contacts: Contact[] = [
     phone: "+34 987 654 322",
     contactType: "banco",
     additionalInfo: {
-      demandType: "inversionista"
+      demandType: "demandante"
     },
     isActive: true,
     createdAt: new Date("2024-01-01"),

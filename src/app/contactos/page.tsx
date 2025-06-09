@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
-import { Input } from "~/components/ui/input"
-import { Plus, Search, Filter, X, Check, ChevronDown } from "lucide-react"
+import { Plus } from "lucide-react"
 import Link from "next/link"
 import { ContactCard } from "~/components/contactos/contact-card"
 import { ContactCardSkeleton } from "~/components/contactos/contact-card-skeleton"
 import { contacts } from "~/lib/data"
 import type { Contact } from "~/lib/data"
-import { Badge } from "~/components/ui/badge"
-import { ScrollArea } from "~/components/ui/scroll-area"
 import { ContactFilter } from "~/components/contactos/contact-filter"
 import { ContactTable } from "~/components/contactos/contact-table"
 

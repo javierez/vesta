@@ -18,13 +18,11 @@ import {
 } from "lucide-react"
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: BarChart3 },
+  { name: "Resumen", href: "/", icon: BarChart3 },
   { name: "Propiedades", href: "/propiedades", icon: Building2 },
   { name: "Contactos", href: "/contactos", icon: Users },
-  { name: "Appointments", href: "/appointments", icon: Calendar },
-  { name: "Documents", href: "/documents", icon: FileText },
-  { name: "Messages", href: "/messages", icon: MessageSquare },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Calendario", href: "/calendario", icon: Calendar },
+  { name: "Ajustes", href: "/ajustes", icon: Settings },
 ]
 
 interface DashboardLayoutProps {
