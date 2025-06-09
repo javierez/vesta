@@ -3,12 +3,14 @@ export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje"
 export type PropertyImage = {
   propertyImageId: bigint;
   propertyId: bigint;
+  referenceNumber: string;
   imageUrl: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
   imageKey: string;
   imageTag?: string;
+  s3key: string;
 }
 
 export type Property = {
@@ -17,7 +19,6 @@ export type Property = {
   title: string;
   description: string;
   propertyType: string;
-  status: string;
   price: string;
   bedrooms?: number;
   bathrooms?: string;
@@ -31,20 +32,74 @@ export type Property = {
   neighborhood?: string;
   latitude?: string;
   longitude?: string;
-  isFeatured: boolean;
-  isBankOwned: boolean;
   energyCertification?: string;
   hasHeating: boolean;
   heatingType?: string;
   hasElevator: boolean;
   hasGarage: boolean;
   hasStorageRoom: boolean;
-  features: string[];
   createdAt: Date;
   updatedAt: Date;
   listedByAgentId?: bigint;
   ownerId?: bigint;
   isActive: boolean;
+  garageType?: string;
+  garageSpaces?: number;
+  garageInBuilding?: boolean;
+  elevatorToGarage?: boolean;
+  garageNumber?: string;
+  disabledAccessible?: boolean;
+  vpo?: boolean;
+  videoIntercom?: boolean;
+  conciergeService?: boolean;
+  securityGuard?: boolean;
+  satelliteDish?: boolean;
+  doubleGlazing?: boolean;
+  alarm?: boolean;
+  securityDoor?: boolean;
+  brandNew?: boolean;
+  newConstruction?: boolean;
+  underConstruction?: boolean;
+  needsRenovation?: boolean;
+  lastRenovationYear?: number;
+  kitchenType?: string;
+  hotWaterType?: string;
+  openKitchen?: boolean;
+  frenchKitchen?: boolean;
+  furnishedKitchen?: boolean;
+  pantry?: boolean;
+  storageRoomSize?: number;
+  storageRoomNumber?: string;
+  terrace?: boolean;
+  terraceSize?: number;
+  wineCellar?: boolean;
+  wineCellarSize?: number;
+  livingRoomSize?: number;
+  balconyCount?: number;
+  galleryCount?: number;
+  buildingFloors?: number;
+  builtInWardrobes?: string;
+  mainFloorType?: string;
+  shutterType?: string;
+  carpentryType?: string;
+  orientation?: string;
+  airConditioningType?: string;
+  windowType?: string;
+  exterior?: boolean;
+  bright?: boolean;
+  views?: boolean;
+  mountainViews?: boolean;
+  seaViews?: boolean;
+  beachfront?: boolean;
+  jacuzzi?: boolean;
+  hydromassage?: boolean;
+  garden?: boolean;
+  pool?: boolean;
+  homeAutomation?: boolean;
+  musicSystem?: boolean;
+  laundryRoom?: boolean;
+  coveredClothesline?: boolean;
+  fireplace?: boolean;
 }
 
 export type Prospect = {
@@ -63,15 +118,14 @@ export type Prospect = {
 export const properties: Property[] = [
   {
     propertyId: BigInt(1),
-    referenceNumber: "P001234",
-    title: "Villa de Lujo Frente al Mar",
-    description: "Impresionante villa frente al mar con vistas panorámicas al océano.",
+    referenceNumber: "152653",
+    title: "Casa en Paseo Oceanview Exterior Luminoso",
+    description: "Impresionante villa frente al mar con vistas panorámicas al océano. Construida con materiales de alta calidad y acabados de lujo. Amplios espacios interiores y exteriores perfectos para el entretenimiento. Incluye piscina privada, jardín mediterráneo y garaje para 3 vehículos.",
     propertyType: "casa",
-    status: "for-sale",
     price: "1250000.00",
-    bedrooms: 4,
-    bathrooms: "3.5",
-    squareMeter: 3200,
+    bedrooms: 5,
+    bathrooms: "4.5",
+    squareMeter: 450,
     yearBuilt: 2020,
     street: "123 Paseo Oceanview",
     city: "León",
@@ -80,54 +134,296 @@ export const properties: Property[] = [
     neighborhood: "Oceanview",
     latitude: "42.59870000",
     longitude: "-5.56710000",
-    isFeatured: true,
-    isBankOwned: false,
-    energyCertification: "B",
+    energyCertification: "A",
     hasHeating: true,
-    heatingType: "Central",
+    heatingType: "Suelo Radiante",
     hasElevator: false,
     hasGarage: true,
     hasStorageRoom: true,
-    features: ["Frente al Mar", "Piscina Privada", "Cocina Gourmet"],
     createdAt: new Date(),
     updatedAt: new Date(),
     listedByAgentId: BigInt(1),
     ownerId: BigInt(1),
-    isActive: true
+    isActive: true,
+    garageType: "Cubierto",
+    garageSpaces: 3,
+    garageInBuilding: true,
+    elevatorToGarage: true,
+    disabledAccessible: true,
+    videoIntercom: true,
+    conciergeService: true,
+    securityGuard: true,
+    alarm: true,
+    securityDoor: true,
+    brandNew: true,
+    kitchenType: "Isla",
+    hotWaterType: "Gas Natural",
+    openKitchen: true,
+    frenchKitchen: true,
+    furnishedKitchen: true,
+    pantry: true,
+    terrace: true,
+    terraceSize: 100,
+    wineCellar: true,
+    wineCellarSize: 20,
+    livingRoomSize: 80,
+    balconyCount: 3,
+    buildingFloors: 2,
+    builtInWardrobes: "Empotrados",
+    mainFloorType: "Mármol",
+    shutterType: "Automáticos",
+    carpentryType: "Aluminio",
+    orientation: "Sur",
+    airConditioningType: "Centralizado",
+    windowType: "Climalit",
+    exterior: true,
+    bright: true,
+    views: true,
+    seaViews: true,
+    beachfront: true,
+    jacuzzi: true,
+    hydromassage: true,
+    garden: true,
+    pool: true,
+    homeAutomation: true,
+    musicSystem: true,
+    laundryRoom: true,
+    coveredClothesline: true,
+    fireplace: true
   },
   {
     propertyId: BigInt(2),
-    referenceNumber: "P002345",
-    title: "Apartamento Moderno en el Centro",
-    description: "Elegante y moderno apartamento en el corazón del centro.",
+    referenceNumber: "153982",
+    title: "Piso en Calle Mayor Exterior Luminoso",
+    description: "Elegante y moderno apartamento en el corazón del centro histórico. Recientemente reformado con diseño contemporáneo y materiales de alta calidad. Ubicación privilegiada cerca de todos los servicios y transporte público.",
     propertyType: "piso",
-    status: "for-sale",
-    price: "850000.00",
-    bedrooms: 2,
+    price: "350000.00",
+    bedrooms: 3,
     bathrooms: "2.0",
-    squareMeter: 1200,
-    yearBuilt: 2022,
-    street: "456 Avenida Urbana",
+    squareMeter: 120,
+    yearBuilt: 1960,
+    street: "456 Calle Mayor",
     city: "León",
     province: "CL",
     postalCode: "24002",
     neighborhood: "Centro",
     latitude: "42.59870000",
     longitude: "-5.56710000",
-    isFeatured: true,
-    isBankOwned: true,
-    energyCertification: "A",
+    energyCertification: "B",
     hasHeating: true,
     heatingType: "Individual",
     hasElevator: true,
     hasGarage: true,
-    hasStorageRoom: false,
-    features: ["Vistas a la Ciudad", "Portero", "Centro de Fitness"],
+    hasStorageRoom: true,
     createdAt: new Date(),
     updatedAt: new Date(),
     listedByAgentId: BigInt(1),
     ownerId: BigInt(2),
-    isActive: true
+    isActive: true,
+    garageType: "Comunitario",
+    garageSpaces: 1,
+    garageInBuilding: true,
+    elevatorToGarage: true,
+    videoIntercom: true,
+    alarm: true,
+    securityDoor: true,
+    needsRenovation: false,
+    lastRenovationYear: 2023,
+    kitchenType: "Lineal",
+    hotWaterType: "Eléctrico",
+    openKitchen: true,
+    furnishedKitchen: true,
+    terrace: true,
+    terraceSize: 15,
+    livingRoomSize: 35,
+    balconyCount: 2,
+    buildingFloors: 4,
+    builtInWardrobes: "Empotrados",
+    mainFloorType: "Parquet",
+    shutterType: "Manual",
+    carpentryType: "PVC",
+    orientation: "Este",
+    airConditioningType: "Split",
+    windowType: "Climalit",
+    exterior: true,
+    bright: true,
+    views: true,
+    homeAutomation: true,
+    laundryRoom: true
+  },
+  {
+    propertyId: BigInt(3),
+    referenceNumber: "160608",
+    title: "Local en Avenida Comercial Exterior Luminoso",
+    description: "Espacioso local comercial en zona de alto tránsito. Ideal para negocio de retail o restauración. Excelente visibilidad y acceso. Incluye almacén y oficina en la parte trasera.",
+    propertyType: "local",
+    price: "450000.00",
+    squareMeter: 200,
+    yearBuilt: 1990,
+    street: "789 Avenida Comercial",
+    city: "León",
+    province: "CL",
+    postalCode: "24003",
+    neighborhood: "Comercial",
+    latitude: "42.59870000",
+    longitude: "-5.56710000",
+    energyCertification: "C",
+    hasHeating: true,
+    heatingType: "Individual",
+    hasElevator: true,
+    hasGarage: false,
+    hasStorageRoom: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    listedByAgentId: BigInt(2),
+    ownerId: BigInt(3),
+    isActive: true,
+    videoIntercom: true,
+    alarm: true,
+    securityDoor: true,
+    lastRenovationYear: 2022,
+    mainFloorType: "Gres",
+    shutterType: "Automáticos",
+    carpentryType: "Aluminio",
+    orientation: "Norte",
+    airConditioningType: "Split",
+    windowType: "Escaparate",
+    exterior: true,
+    bright: true
+  },
+  {
+    propertyId: BigInt(4),
+    referenceNumber: "161597",
+    title: "Solar en Calle Panorámica Exterior Luminoso",
+    description: "Parcela residencial con excelentes vistas panorámicas. Terreno llano y urbanizado, listo para construir. Incluye proyecto básico de vivienda unifamiliar.",
+    propertyType: "solar",
+    price: "250000.00",
+    squareMeter: 500,
+    street: "321 Calle Panorámica",
+    city: "León",
+    province: "CL",
+    postalCode: "24004",
+    neighborhood: "Residencial",
+    latitude: "42.59870000",
+    longitude: "-5.56710000",
+    hasHeating: false,
+    hasElevator: false,
+    hasGarage: false,
+    hasStorageRoom: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    listedByAgentId: BigInt(1),
+    ownerId: BigInt(4),
+    isActive: true,
+    exterior: true,
+    bright: true,
+    views: true,
+    mountainViews: true
+  },
+  {
+    propertyId: BigInt(5),
+    referenceNumber: "32669",
+    title: "Garaje en Calle Principal Interior",
+    description: "Plaza de garaje en edificio de lujo en el centro de la ciudad. Acceso directo desde la calle y conexión con el ascensor del edificio. Dimensiones amplias para vehículos grandes.",
+    propertyType: "garaje",
+    price: "35000.00",
+    squareMeter: 20,
+    street: "654 Calle Principal",
+    city: "León",
+    province: "CL",
+    postalCode: "24005",
+    neighborhood: "Centro",
+    latitude: "42.59870000",
+    longitude: "-5.56710000",
+    hasHeating: false,
+    hasElevator: true,
+    hasGarage: true,
+    hasStorageRoom: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    listedByAgentId: BigInt(2),
+    ownerId: BigInt(5),
+    isActive: true,
+    garageType: "Cubierto",
+    garageSpaces: 1,
+    garageInBuilding: true,
+    elevatorToGarage: true,
+    securityDoor: true
+  }
+];
+
+export const propertyImages: PropertyImage[] = [
+  {
+    propertyImageId: BigInt(1),
+    propertyId: BigInt(1), // This corresponds to property 152653
+    referenceNumber: "152653",
+    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/152653/images/image_1_b89dc078.jpg",
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    imageKey: "152653/images/image_1_b89dc078.jpg",
+    imageTag: "exterior",
+    s3key: "s3://inmobiliariaacropolis/152653/images/image_1_b89dc078.jpg"
+  },
+  {
+    propertyImageId: BigInt(2),
+    propertyId: BigInt(1), // This corresponds to property 152653
+    referenceNumber: "152653",
+    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/152653/images/image_2_9e28838e.png",
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    imageKey: "152653/images/image_2_9e28838e.png",
+    imageTag: "interior",
+    s3key: "s3://inmobiliariaacropolis/152653/images/image_2_9e28838e.png"
+  },
+  {
+    propertyImageId: BigInt(3),
+    propertyId: BigInt(1), // This corresponds to property 152653
+    referenceNumber: "152653",
+    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/152653/images/image_3_4e0e1792.jpg",
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    imageKey: "152653/images/image_3_4e0e1792.jpg",
+    imageTag: "dormitorio",
+    s3key: "s3://inmobiliariaacropolis/152653/images/image_3_4e0e1792.jpg"
+  },
+  {
+    propertyImageId: BigInt(4),
+    propertyId: BigInt(2), // This corresponds to property 153982
+    referenceNumber: "153982",
+    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/153982/images/image_1_030aebc8.jpg",
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    imageKey: "153982/images/image_1_030aebc8.jpg",
+    imageTag: "exterior",
+    s3key: "s3://inmobiliariaacropolis/153982/images/image_1_030aebc8.jpg"
+  },
+  {
+    propertyImageId: BigInt(5),
+    propertyId: BigInt(2), // This corresponds to property 153982
+    referenceNumber: "153982",
+    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/153982/images/image_1_944360d4.jpg",
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    imageKey: "153982/images/image_1_944360d4.jpg",
+    imageTag: "salon",
+    s3key: "s3://inmobiliariaacropolis/153982/images/image_1_944360d4.jpg"
+  },
+  {
+    propertyImageId: BigInt(6),
+    propertyId: BigInt(2), // This corresponds to property 153982
+    referenceNumber: "153982",
+    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/153982/images/image_10_030aebc8.jpg",
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    imageKey: "153982/images/image_10_030aebc8.jpg",
+    imageTag: "cocina",
+    s3key: "s3://inmobiliariaacropolis/153982/images/image_10_030aebc8.jpg"
   }
 ];
 
@@ -746,11 +1042,20 @@ export type Listing = {
   listingType: 'Sale' | 'Rent';
   price: string;
   status: 'Active' | 'Pending' | 'Sold';
+  isFeatured: boolean;
+  isBankOwned: boolean;
   viewCount: number;
   inquiryCount: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  isFurnished?: boolean;
+  furnitureQuality?: string;
+  optionalGarage?: boolean;
+  optionalGaragePrice?: string;
+  studentFriendly?: boolean;
+  petsAllowed?: boolean;
+  appliancesIncluded?: boolean;
 };
 
 export type Contact = {
@@ -977,7 +1282,7 @@ export const contacts: Contact[] = [
     contactType: "propietario",
     additionalInfo: {
       propertiesCount: 2,
-      propertyTypes: ["casa", "piso"]
+      propertyTypes: ["house", "apartment"]
     },
     isActive: true,
     createdAt: new Date("2024-01-01"),
@@ -1009,25 +1314,105 @@ export const listings: Listing[] = [
     listingType: "Sale",
     price: "1250000.00",
     status: "Active",
+    isFeatured: true,
+    isBankOwned: false,
     viewCount: 150,
     inquiryCount: 12,
     isActive: true,
     createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
+    isFurnished: true,
+    furnitureQuality: "Alta",
+    optionalGarage: false,
+    studentFriendly: false,
+    petsAllowed: true,
+    appliancesIncluded: true
   },
   {
     listingId: BigInt(2),
     propertyId: BigInt(2),
     agentId: BigInt(2),
     ownerContactId: BigInt(2),
-    listingType: "Rent",
-    price: "1500.00",
+    listingType: "Sale",
+    price: "350000.00",
     status: "Active",
-    viewCount: 75,
-    inquiryCount: 8,
+    isFeatured: true,
+    isBankOwned: false,
+    viewCount: 89,
+    inquiryCount: 7,
     isActive: true,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-03-14")
+    createdAt: new Date("2024-01-15"),
+    updatedAt: new Date("2024-03-14"),
+    isFurnished: false,
+    furnitureQuality: "Media",
+    optionalGarage: true,
+    optionalGaragePrice: "25000.00",
+    studentFriendly: true,
+    petsAllowed: true,
+    appliancesIncluded: true
+  },
+  {
+    listingId: BigInt(3),
+    propertyId: BigInt(3),
+    agentId: BigInt(1),
+    ownerContactId: BigInt(3),
+    listingType: "Sale",
+    price: "450000.00",
+    status: "Active",
+    isFeatured: false,
+    isBankOwned: false,
+    viewCount: 45,
+    inquiryCount: 3,
+    isActive: true,
+    createdAt: new Date("2024-02-01"),
+    updatedAt: new Date("2024-03-13"),
+    isFurnished: false,
+    optionalGarage: false,
+    studentFriendly: false,
+    petsAllowed: false,
+    appliancesIncluded: false
+  },
+  {
+    listingId: BigInt(4),
+    propertyId: BigInt(4),
+    agentId: BigInt(2),
+    ownerContactId: BigInt(4),
+    listingType: "Sale",
+    price: "250000.00",
+    status: "Active",
+    isFeatured: false,
+    isBankOwned: false,
+    viewCount: 67,
+    inquiryCount: 5,
+    isActive: true,
+    createdAt: new Date("2024-02-15"),
+    updatedAt: new Date("2024-03-12"),
+    isFurnished: false,
+    optionalGarage: false,
+    studentFriendly: false,
+    petsAllowed: false,
+    appliancesIncluded: false
+  },
+  {
+    listingId: BigInt(5),
+    propertyId: BigInt(5),
+    agentId: BigInt(1),
+    ownerContactId: BigInt(5),
+    listingType: "Sale",
+    price: "35000.00",
+    status: "Active",
+    isFeatured: false,
+    isBankOwned: false,
+    viewCount: 34,
+    inquiryCount: 2,
+    isActive: true,
+    createdAt: new Date("2024-03-01"),
+    updatedAt: new Date("2024-03-11"),
+    isFurnished: false,
+    optionalGarage: false,
+    studentFriendly: false,
+    petsAllowed: false,
+    appliancesIncluded: false
   }
 ];
 

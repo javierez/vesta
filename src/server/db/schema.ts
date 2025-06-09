@@ -5,7 +5,6 @@ import {
   boolean,
   singlestoreTable,
   json,
-  type SingleStoreBigInt64BuilderInitial,
   index,
   uniqueIndex,
   text,
@@ -63,17 +62,22 @@ export const userRoles = singlestoreTable("user_roles", {
 
 // Properties table
 export const properties = singlestoreTable("properties", {
+  // Primary Key
   propertyId: bigint("property_id", { mode: "bigint" }).primaryKey().autoincrement(),
+
+  // Basic Information
   referenceNumber: varchar("reference_number", { length: 20 }).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description").notNull(),
   propertyType: varchar("property_type", { length: 20 }).notNull(),
-  status: varchar("status", { length: 20 }).notNull(),
-  price: decimal("price", { precision: 12, scale: 2 }).notNull(),
+
+  // Property Specifications
   bedrooms: smallint("bedrooms"),
   bathrooms: decimal("bathrooms", { precision: 3, scale: 1 }),
   squareMeter: int("square_meter").notNull(),
   yearBuilt: smallint("year_built"),
+
+  // Location Information
   street: varchar("street", { length: 255 }).notNull(),
   addressDetails: varchar("address_details", { length: 255 }),
   city: varchar("city", { length: 100 }).notNull(),
@@ -82,58 +86,151 @@ export const properties = singlestoreTable("properties", {
   neighborhood: varchar("neighborhood", { length: 100 }),
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
-  isFeatured: boolean("is_featured").default(false),
-  isBankOwned: boolean("is_bank_owned").default(false),
+
+  // Energy and Heating
   energyCertification: text("energy_certification"),
   hasHeating: boolean("has_heating").default(false),
   heatingType: varchar("heating_type", { length: 50 }),
+
+  // Basic Amenities
   hasElevator: boolean("has_elevator").default(false),
   hasGarage: boolean("has_garage").default(false),
   hasStorageRoom: boolean("has_storage_room").default(false),
-  features: json("features").default([]),
+
+  // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-  listedByAgentId: bigint("listed_by_agent_id", { mode: "bigint" }),
-  ownerId: bigint("owner_id", { mode: "bigint" }),
   isActive: boolean("is_active").default(true),
+
+  // Property Features
+  garageType: varchar("garage_type", { length: 50 }),
+  garageSpaces: smallint("garage_spaces"),
+  garageInBuilding: boolean("garage_in_building"),
+  elevatorToGarage: boolean("elevator_to_garage"),
+  garageNumber: varchar("garage_number", { length: 20 }),
+
+  // Property Characteristics
+  disabledAccessible: boolean("disabled_accessible"),
+  vpo: boolean("vpo"),
+  videoIntercom: boolean("video_intercom"),
+  conciergeService: boolean("concierge_service"),
+  securityGuard: boolean("security_guard"),
+  satelliteDish: boolean("satellite_dish"),
+  doubleGlazing: boolean("double_glazing"),
+  alarm: boolean("alarm"),
+  securityDoor: boolean("security_door"),
+
+  // Property Condition
+  brandNew: boolean("brand_new"),
+  newConstruction: boolean("new_construction"),
+  underConstruction: boolean("under_construction"),
+  needsRenovation: boolean("needs_renovation"),
+  lastRenovationYear: smallint("last_renovation_year"),
+
+  // Kitchen Features
+  kitchenType: varchar("kitchen_type", { length: 50 }),
+  hotWaterType: varchar("hot_water_type", { length: 50 }),
+  openKitchen: boolean("open_kitchen"),
+  frenchKitchen: boolean("french_kitchen"),
+  furnishedKitchen: boolean("furnished_kitchen"),
+  pantry: boolean("pantry"),
+
+  // Storage and Additional Spaces
+  storageRoomSize: int("storage_room_size"),
+  storageRoomNumber: varchar("storage_room_number", { length: 20 }),
+  terrace: boolean("terrace"),
+  terraceSize: int("terrace_size"),
+  wineCellar: boolean("wine_cellar"),
+  wineCellarSize: int("wine_cellar_size"),
+  livingRoomSize: int("living_room_size"),
+  balconyCount: smallint("balcony_count"),
+  galleryCount: smallint("gallery_count"),
+  buildingFloors: smallint("building_floors"),
+
+  // Interior Features
+  builtInWardrobes: varchar("built_in_wardrobes", { length: 50 }),
+  mainFloorType: varchar("main_floor_type", { length: 50 }),
+  shutterType: varchar("shutter_type", { length: 50 }),
+  carpentryType: varchar("carpentry_type", { length: 50 }),
+  orientation: varchar("orientation", { length: 50 }),
+  airConditioningType: varchar("air_conditioning_type", { length: 50 }),
+  windowType: varchar("window_type", { length: 50 }),
+
+  // Views and Location Features
+  exterior: boolean("exterior"),
+  bright: boolean("bright"),
+  views: boolean("views"),
+  mountainViews: boolean("mountain_views"),
+  seaViews: boolean("sea_views"),
+  beachfront: boolean("beachfront"),
+
+  // Luxury Amenities
+  jacuzzi: boolean("jacuzzi"),
+  hydromassage: boolean("hydromassage"),
+  garden: boolean("garden"),
+  pool: boolean("pool"),
+  homeAutomation: boolean("home_automation"),
+  musicSystem: boolean("music_system"),
+  laundryRoom: boolean("laundry_room"),
+  coveredClothesline: boolean("covered_clothesline"),
+  fireplace: boolean("fireplace"),
 }, (table) => ({
+  // Indexes for common queries
   propertyTypeIdx: index("idx_properties_type").on(table.propertyType),
-  statusIdx: index("idx_properties_status").on(table.status),
   cityIdx: index("idx_properties_city").on(table.city),
-  priceIdx: index("idx_properties_price").on(table.price),
   bedroomsIdx: index("idx_properties_bedrooms").on(table.bedrooms),
   squareMeterIdx: index("idx_properties_sqm").on(table.squareMeter),
-  featuredIdx: index("idx_properties_featured").on(table.isFeatured),
-  listedByAgentIdx: index("idx_properties_agent").on(table.listedByAgentId),
-  ownerIdx: index("idx_properties_owner").on(table.ownerId),
 }));
 
 export const propertyImages = singlestoreTable("property_images", {
   propertyImageId: bigint("property_image_id", { mode: "bigint" }).primaryKey().autoincrement(),
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(),
+  referenceNumber: varchar("reference_number", { length: 20 }).notNull(),
   imageUrl: varchar("image_url", { length: 255 }).notNull(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   imageKey: varchar("image_key", { length: 2048 }).notNull(),
   imageTag: varchar("image_tag", { length: 255 }),
+  s3key: varchar("s3key", { length: 2048 }).notNull(),
 }, (table) => ({
   propertyImageIdx: index("idx_property_images").on(table.propertyId),
+  referenceNumberIdx: index("idx_property_images_reference").on(table.referenceNumber),
 }));
 
 export const listings = singlestoreTable("listings", {
+  // Primary Key
   listingId: bigint("listing_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
+
+  // Basic Information
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(),        // FK → properties.property_id
   agentId: bigint("agent_id", { mode: "bigint" }).notNull(),               // FK → users.user_id (agent)
   ownerContactId: bigint("owner_contact_id", { mode: "bigint" }).notNull(),// FK → contacts.contact_id
   listingType: varchar("listing_type", { length: 20 }).notNull(),          // e.g. "Sale" or "Rent"
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
   status: varchar("status", { length: 20 }).notNull(),                     // e.g. "Active", "Pending", "Sold"
+
+  // Listing Features
+  isFurnished: boolean("is_furnished"),
+  furnitureQuality: varchar("furniture_quality", { length: 50 }),
+  optionalGarage: boolean("optional_garage"),
+  optionalGaragePrice: decimal("optional_garage_price", { precision: 12, scale: 2 }),
+  studentFriendly: boolean("student_friendly"),
+  petsAllowed: boolean("pets_allowed"),
+  appliancesIncluded: boolean("appliances_included"),
+
+  // Listing Status and Visibility
+  isFeatured: boolean("is_featured").default(false),
+  isBankOwned: boolean("is_bank_owned").default(false),
+  isActive: boolean("is_active").default(true),
+
+  // Analytics
   viewCount: int("view_count").default(0),
   inquiryCount: int("inquiry_count").default(0),
-  isActive: boolean("is_active").default(true),
+
+  // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -141,6 +238,8 @@ export const listings = singlestoreTable("listings", {
   agentIdx: index("idx_listings_agent").on(table.agentId),
   ownerIdx: index("idx_listings_owner").on(table.ownerContactId),
   statusIdx: index("idx_listings_status").on(table.status),
+  featuredIdx: index("idx_listings_featured").on(table.isFeatured),
+  priceIdx: index("idx_listings_price").on(table.price),
 }));
 
 // Contacts (external people: buyers, sellers, etc.)

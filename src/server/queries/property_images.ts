@@ -28,6 +28,24 @@ export async function getPropertyImageById(propertyImageId: bigint) {
   }
 }
 
+// Get property images by reference number
+export async function getPropertyImagesByReference(referenceNumber: string, isActive = true) {
+  try {
+    const conditions = [eq(propertyImages.referenceNumber, referenceNumber)];
+    if (isActive !== undefined) {
+      conditions.push(eq(propertyImages.isActive, isActive));
+    }
+
+    return await db
+      .select()
+      .from(propertyImages)
+      .where(and(...conditions));
+  } catch (error) {
+    console.error("Error getting property images by reference:", error);
+    throw error;
+  }
+}
+
 // Get all images for a property
 export async function getPropertyImages(propertyId: bigint, isActive = true) {
   try {

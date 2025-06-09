@@ -1,6 +1,8 @@
+'use server'
+
 import { db } from "../db"
 import { listings } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 
 // Create a new listing
@@ -9,6 +11,8 @@ export async function createListing(data: Omit<Listing, "listingId" | "createdAt
     const [result] = await db.insert(listings).values({
       ...data,
       isActive: true,
+      viewCount: 0,
+      inquiryCount: 0,
     }).$returningId();
     if (!result) throw new Error("Failed to create listing");
     const [newListing] = await db
@@ -162,6 +166,10 @@ export async function listListings(
     propertyId?: number;
     ownerContactId?: number;
     isActive?: boolean;
+    isFeatured?: boolean;
+    isBankOwned?: boolean;
+    minPrice?: number;
+    maxPrice?: number;
   }
 ) {
   try {
@@ -188,6 +196,18 @@ export async function listListings(
       if (filters.isActive !== undefined) {
         whereConditions.push(eq(listings.isActive, filters.isActive));
       }
+      if (filters.isFeatured !== undefined) {
+        whereConditions.push(eq(listings.isFeatured, filters.isFeatured));
+      }
+      if (filters.isBankOwned !== undefined) {
+        whereConditions.push(eq(listings.isBankOwned, filters.isBankOwned));
+      }
+      if (filters.minPrice) {
+        whereConditions.push(sql`CAST(${listings.price} AS DECIMAL) >= ${filters.minPrice}`);
+      }
+      if (filters.maxPrice) {
+        whereConditions.push(sql`CAST(${listings.price} AS DECIMAL) <= ${filters.maxPrice}`);
+      }
     } else {
       // By default, only show active listings
       whereConditions.push(eq(listings.isActive, true));
@@ -209,6 +229,34 @@ export async function listListings(
     return allListings;
   } catch (error) {
     console.error("Error listing listings:", error);
+    throw error;
+  }
+}
+
+// Increment view count for a listing
+export async function incrementViewCount(listingId: number) {
+  try {
+    await db
+      .update(listings)
+      .set({ viewCount: sql`${listings.viewCount} + 1` })
+      .where(eq(listings.listingId, BigInt(listingId)));
+    return { success: true };
+  } catch (error) {
+    console.error("Error incrementing view count:", error);
+    throw error;
+  }
+}
+
+// Increment inquiry count for a listing
+export async function incrementInquiryCount(listingId: number) {
+  try {
+    await db
+      .update(listings)
+      .set({ inquiryCount: sql`${listings.inquiryCount} + 1` })
+      .where(eq(listings.listingId, BigInt(listingId)));
+    return { success: true };
+  } catch (error) {
+    console.error("Error incrementing inquiry count:", error);
     throw error;
   }
 }

@@ -190,19 +190,6 @@ export default function PropertyPage({ params }: PropertyPageProps) {
                 <p className="text-muted-foreground whitespace-pre-line">{property.description}</p>
               </div>
 
-              {/* Características */}
-              <div>
-                <h2 className="text-2xl font-bold mb-4">Características</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2">
-                  {property.features.map((feature) => (
-                    <div key={feature} className="flex items-center">
-                      <div className="h-2 w-2 rounded-full bg-primary mr-2" />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Características detalladas - MODERNIZED */}
               <div>
                 <h2 className="text-2xl font-bold mb-6">CARACTERÍSTICAS</h2>

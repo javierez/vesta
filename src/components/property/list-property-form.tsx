@@ -44,7 +44,6 @@ export function ListPropertyForm({
     city: "",
     state: "",
     zipCode: "",
-    features: [] as string[],
     images: [] as File[],
   })
 
@@ -55,13 +54,6 @@ export function ListPropertyForm({
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleFeatureToggle = (feature: string, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      features: checked ? [...prev.features, feature] : prev.features.filter((f) => f !== feature),
-    }))
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,21 +104,6 @@ export function ListPropertyForm({
       setError("Ha ocurrido un error al enviar tu propiedad. Por favor, inténtalo de nuevo.")
     }
   }
-
-  const features = [
-    "Piscina",
-    "Jardín",
-    "Garaje",
-    "Balcón",
-    "Terraza",
-    "Aire acondicionado",
-    "Calefacción",
-    "Seguridad 24h",
-    "Amueblado",
-    "Ascensor",
-    "Vistas al mar",
-    "Vistas a la montaña",
-  ]
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -297,24 +274,6 @@ export function ListPropertyForm({
                     value={formData.zipCode}
                     onChange={handleChange}
                   />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Características</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {features.map((feature) => (
-                    <div key={feature} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`feature-${feature}`}
-                        checked={formData.features.includes(feature)}
-                        onCheckedChange={(checked) => handleFeatureToggle(feature, checked as boolean)}
-                      />
-                      <Label htmlFor={`feature-${feature}`} className="text-sm">
-                        {feature}
-                      </Label>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>

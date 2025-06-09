@@ -22,21 +22,6 @@ export function PropertyStep({ data, updateData, errors }: PropertyStepProps) {
     { value: "garaje", label: "Garaje" },
   ]
 
-  const features = [
-    "Piscina",
-    "Jardín",
-    "Garaje",
-    "Balcón",
-    "Terraza",
-    "Aire acondicionado",
-    "Calefacción",
-    "Seguridad 24h",
-    "Amueblado",
-    "Ascensor",
-    "Vistas al mar",
-    "Vistas a la montaña",
-  ]
-
   const handleFeatureToggle = (feature: string, checked: boolean) => {
     if (checked) {
       updateData({ caracteristicas: [...data.caracteristicas, feature] })
@@ -123,24 +108,6 @@ export function PropertyStep({ data, updateData, errors }: PropertyStepProps) {
             className={errors.descripcion ? "border-red-500" : ""}
           />
           {errors.descripcion && <p className="text-red-500 text-sm">{errors.descripcion}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <Label>Características</Label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {features.map((feature) => (
-              <div key={feature} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`feature-${feature}`}
-                  checked={data.caracteristicas.includes(feature)}
-                  onCheckedChange={(checked) => handleFeatureToggle(feature, checked as boolean)}
-                />
-                <Label htmlFor={`feature-${feature}`} className="text-sm">
-                  {feature}
-                </Label>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>

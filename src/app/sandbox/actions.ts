@@ -1,8 +1,11 @@
 'use server'
 
 import { db } from "~/server/db"
-import { properties, type Property, accounts, type Account, websiteConfigs, type WebsiteConfig, testimonials } from "~/lib/data"
-import { properties as dbProperties, websiteProperties, accounts as dbAccounts, testimonials as dbTestimonials } from "~/server/db/schema"
+import { properties, type Property, propertyImages as mockPropertyImages } from "~/lib/data"
+import { properties as dbProperties } from "~/server/db/schema"
+import { createProperty } from "~/server/queries/properties"
+import { createListing } from "~/server/queries/listing"
+import { createPropertyImage } from "~/server/queries/property_images"
 
 // Helper function to convert property to DB format
 function toDbProperty(property: Property) {
@@ -10,91 +13,76 @@ function toDbProperty(property: Property) {
     title: property.title,
     description: property.description,
     propertyType: property.propertyType,
-    status: property.status,
-    price: property.price.toString(),
+    price: property.price,
     bedrooms: property.bedrooms,
-    bathrooms: property.bathrooms?.toString(),
-    squareFeet: property.squareFeet,
-    yearBuilt: property.age ? new Date().getFullYear() - property.age : null,
-    address: property.address,
+    bathrooms: property.bathrooms,
+    squareMeter: property.squareMeter,
+    street: property.street,
     city: property.city,
-    state: property.state,
-    postalCode: property.zipCode,
-    latitude: property.coordinates?.lat.toString() ?? null,
-    longitude: property.coordinates?.lng.toString() ?? null,
-    isFeatured: property.isFeatured,
-    isBankOwned: property.isBankOwned ?? false,
-    energyCertification: property.energyCertification ?? null,
-    hasHeating: property.hasHeating ?? false,
-    heatingType: property.heatingType ?? null,
-    hasElevator: property.hasElevator ?? false,
-    hasGarage: property.hasGarage ?? false,
-    hasStorageRoom: property.hasStorageRoom ?? false,
-    features: JSON.stringify(property.features),
-    referenceNumber: property.reference
-  }
-}
-
-// Helper function to convert website config to DB format
-function toDbWebsiteConfig(config: WebsiteConfig) {
-  return {
-    accountId: BigInt(config.accountId),
-    socialLinks: JSON.stringify(config.socialLinks),
-    logo: config.logo ?? '',
-    favicon: config.favicon ?? '',
-    seoProps: JSON.stringify(config.seoProps ?? {}),
-    heroProps: JSON.stringify(config.heroProps ?? {}),
-    featuredProps: JSON.stringify(config.featuredProps ?? {}),
-    aboutProps: JSON.stringify(config.aboutProps ?? {}),
-    propertiesProps: JSON.stringify(config.propertiesProps ?? {}),
-    testimonialProps: JSON.stringify(config.testimonialProps ?? {}),
-    contactProps: JSON.stringify(config.contactProps ?? {}),
-    footerProps: JSON.stringify(config.footerProps ?? {}),
-    headProps: JSON.stringify(config.headProps ?? {})
-  }
-}
-
-// Helper function to convert account to DB format
-function toDbAccount(account: Account) {
-  return {
-    name: account.name,
-    shortName: account.shortName,
-    status: account.status,
-    subscriptionType: account.subscriptionType,
-    subscriptionStartDate: account.subscriptionStartDate,
-    subscriptionEndDate: account.subscriptionEndDate ?? null,
-    maxOffices: account.maxOffices ?? 1,
-    maxUsers: account.maxUsers ?? 5
-  }
-}
-
-// Helper function to convert testimonial to DB format
-function toDbTestimonial(testimonial: typeof testimonials[0]) {
-  return {
-    accountId: BigInt("1234"), // Using the same account ID as in the website configs
-    name: testimonial.name,
-    role: testimonial.role,
-    content: testimonial.content,
-    avatar: testimonial.avatar,
-    rating: Math.round(testimonial.rating ?? 5), // Round to nearest integer and default to 5 if null
-    isVerified: testimonial.isVerified,
-    sortOrder: testimonial.sortOrder,
-    isActive: testimonial.isActive,
-    createdAt: testimonial.createdAt,
-    updatedAt: testimonial.updatedAt
+    exterior: property.exterior,
+    bright: property.bright,
+    isActive: true,
+    referenceNumber: property.referenceNumber,
+    hasHeating: property.hasHeating,
+    hasElevator: property.hasElevator,
+    hasGarage: property.hasGarage,
+    hasStorageRoom: property.hasStorageRoom,
+    // Optional fields with defaults
+    addressDetails: property.addressDetails,
+    province: property.province,
+    postalCode: property.postalCode,
+    neighborhood: property.neighborhood,
+    latitude: property.latitude,
+    longitude: property.longitude,
+    energyCertification: property.energyCertification,
+    heatingType: property.heatingType,
+    yearBuilt: property.yearBuilt
   }
 }
 
 export async function seedDatabase() {
-  // First seed accounts as they are referenced by other tables
-  await db.insert(dbAccounts).values(accounts.map(toDbAccount))
-  
-  // Then seed website properties
-  await db.insert(websiteProperties).values(websiteConfigs.map(toDbWebsiteConfig))
-  
-  // Seed testimonials
-  await db.insert(dbTestimonials).values(testimonials.map(toDbTestimonial))
-  
-  // Finally seed properties
-  await db.insert(dbProperties).values(properties.map(toDbProperty))
+  try {
+    // Seed properties
+    for (const property of properties) {
+      const dbProperty = toDbProperty(property)
+      const createdProperty = await createProperty(dbProperty)
+      
+      // Create a listing for each property
+      if (createdProperty) {
+        await createListing({
+          propertyId: BigInt(createdProperty.propertyId),
+          agentId: BigInt(1), // Default agent ID
+          ownerContactId: BigInt(1), // Default owner contact ID
+          listingType: 'Sale',
+          price: property.price,
+          status: 'Active',
+          isActive: true,
+          isFeatured: false,
+          isBankOwned: false,
+          viewCount: 0,
+          inquiryCount: 0
+        })
+
+        // Create property images for this property
+        const propertyImages = mockPropertyImages.filter(
+          img => img.referenceNumber === property.referenceNumber
+        )
+
+        for (const image of propertyImages) {
+          await createPropertyImage({
+            propertyId: BigInt(createdProperty.propertyId),
+            referenceNumber: image.referenceNumber,
+            imageUrl: image.imageUrl,
+            isActive: image.isActive,
+            imageKey: image.imageKey,
+            imageTag: image.imageTag,
+            s3key: image.s3key
+          })
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error seeding database:', error)
+    throw error
+  }
 } 
