@@ -37,7 +37,7 @@ export const users = singlestoreTable("users", {
 // Roles table
 export const roles = singlestoreTable("roles", {
   roleId: bigint("role_id", { mode: "bigint" }).primaryKey().autoincrement(),
-  name: varchar("name", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 50 }).notNull(),
   description: varchar("description", { length: 255 }),
   permissions: json("permissions").default({}),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -60,6 +60,23 @@ export const userRoles = singlestoreTable("user_roles", {
   userRoleIdx: uniqueIndex("user_role_idx").on(table.userId, table.roleId),
 }));
 
+// Locations table
+export const locations = singlestoreTable("locations", {
+  neighborhoodId: varchar("neighborhood_id", { length: 50 }).primaryKey(),
+  city: varchar("city", { length: 100 }).notNull(),
+  province: varchar("province", { length: 100 }).notNull(),
+  municipality: varchar("municipality", { length: 100 }).notNull(),
+  neighborhood: varchar("neighborhood", { length: 100 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  isActive: boolean("is_active").default(true),
+}, (table) => ({
+  cityIdx: index("idx_locations_city").on(table.city),
+  provinceIdx: index("idx_locations_province").on(table.province),
+  municipalityIdx: index("idx_locations_municipality").on(table.municipality),
+  neighborhoodIdx: index("idx_locations_neighborhood").on(table.neighborhood),
+}));
+
 // Properties table
 export const properties = singlestoreTable("properties", {
   // Primary Key
@@ -80,10 +97,8 @@ export const properties = singlestoreTable("properties", {
   // Location Information
   street: varchar("street", { length: 255 }).notNull(),
   addressDetails: varchar("address_details", { length: 255 }),
-  city: varchar("city", { length: 100 }).notNull(),
-  province: varchar("province", { length: 100 }),
   postalCode: varchar("postal_code", { length: 20 }),
-  neighborhood: varchar("neighborhood", { length: 100 }),
+  neighborhoodId: varchar("neighborhood_id", { length: 50 }),
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
 
@@ -177,7 +192,7 @@ export const properties = singlestoreTable("properties", {
 }, (table) => ({
   // Indexes for common queries
   propertyTypeIdx: index("idx_properties_type").on(table.propertyType),
-  cityIdx: index("idx_properties_city").on(table.city),
+  neighborhoodIdIdx: index("idx_properties_neighborhood").on(table.neighborhoodId),
   bedroomsIdx: index("idx_properties_bedrooms").on(table.bedrooms),
   squareMeterIdx: index("idx_properties_sqm").on(table.squareMeter),
 }));

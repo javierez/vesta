@@ -18,7 +18,6 @@ function toDbProperty(property: Property) {
     bathrooms: property.bathrooms,
     squareMeter: property.squareMeter,
     street: property.street,
-    city: property.city,
     exterior: property.exterior,
     bright: property.bright,
     isActive: true,
@@ -29,9 +28,8 @@ function toDbProperty(property: Property) {
     hasStorageRoom: property.hasStorageRoom,
     // Optional fields with defaults
     addressDetails: property.addressDetails,
-    province: property.province,
     postalCode: property.postalCode,
-    neighborhood: property.neighborhood,
+    neighborhoodId: property.neighborhoodId,
     latitude: property.latitude,
     longitude: property.longitude,
     energyCertification: property.energyCertification,

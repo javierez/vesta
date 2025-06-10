@@ -103,7 +103,7 @@ export async function listProperties(
   limit = 10, 
   filters?: {
     propertyType?: string;
-    city?: string;
+    neighborhoodId?: string;
     bedrooms?: number;
     minSquareMeter?: number;
     maxSquareMeter?: number;
@@ -119,8 +119,8 @@ export async function listProperties(
       if (filters.propertyType) {
         whereConditions.push(eq(properties.propertyType, filters.propertyType));
       }
-      if (filters.city) {
-        whereConditions.push(eq(properties.city, filters.city));
+      if (filters.neighborhoodId) {
+        whereConditions.push(eq(properties.neighborhoodId, filters.neighborhoodId));
       }
       if (filters.bedrooms) {
         whereConditions.push(eq(properties.bedrooms, filters.bedrooms));

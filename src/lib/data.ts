@@ -13,6 +13,17 @@ export type PropertyImage = {
   s3key: string;
 }
 
+export type Location = {
+  neighborhoodId: string;
+  city: string;
+  province: string;
+  municipality: string;
+  neighborhood: string;
+  createdAt: Date;
+  updatedAt: Date;
+  isActive: boolean;
+};
+
 export type Property = {
   propertyId: bigint;
   referenceNumber: string;
@@ -26,10 +37,8 @@ export type Property = {
   yearBuilt?: number;
   street: string;
   addressDetails?: string;
-  city: string;
-  province?: string;
   postalCode?: string;
-  neighborhood?: string;
+  neighborhoodId?: string;
   latitude?: string;
   longitude?: string;
   energyCertification?: string;
@@ -128,10 +137,8 @@ export const properties: Property[] = [
     squareMeter: 450,
     yearBuilt: 2020,
     street: "123 Paseo Oceanview",
-    city: "León",
-    province: "CL",
     postalCode: "24001",
-    neighborhood: "Oceanview",
+    neighborhoodId: "Oceanview",
     latitude: "42.59870000",
     longitude: "-5.56710000",
     energyCertification: "A",
@@ -203,10 +210,8 @@ export const properties: Property[] = [
     squareMeter: 120,
     yearBuilt: 1960,
     street: "456 Calle Mayor",
-    city: "León",
-    province: "CL",
     postalCode: "24002",
-    neighborhood: "Centro",
+    neighborhoodId: "Centro",
     latitude: "42.59870000",
     longitude: "-5.56710000",
     energyCertification: "B",
@@ -261,10 +266,8 @@ export const properties: Property[] = [
     squareMeter: 200,
     yearBuilt: 1990,
     street: "789 Avenida Comercial",
-    city: "León",
-    province: "CL",
     postalCode: "24003",
-    neighborhood: "Comercial",
+    neighborhoodId: "Comercial",
     latitude: "42.59870000",
     longitude: "-5.56710000",
     energyCertification: "C",
@@ -300,10 +303,8 @@ export const properties: Property[] = [
     price: "250000.00",
     squareMeter: 500,
     street: "321 Calle Panorámica",
-    city: "León",
-    province: "CL",
     postalCode: "24004",
-    neighborhood: "Residencial",
+    neighborhoodId: "Residencial",
     latitude: "42.59870000",
     longitude: "-5.56710000",
     hasHeating: false,
@@ -329,10 +330,8 @@ export const properties: Property[] = [
     price: "35000.00",
     squareMeter: 20,
     street: "654 Calle Principal",
-    city: "León",
-    province: "CL",
     postalCode: "24005",
-    neighborhood: "Centro",
+    neighborhoodId: "Centro",
     latitude: "42.59870000",
     longitude: "-5.56710000",
     hasHeating: false,
@@ -1587,5 +1586,128 @@ export const prospects: Prospect[] = [
     statusUpdatedAt: new Date("2024-03-16"),
     createdAt: new Date("2024-03-16"),
     updatedAt: new Date("2024-03-16")
+  }
+];
+
+export const LEON_NEIGHBORHOODS: Location[] = [
+  {
+    neighborhoodId: "centro",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "Centro Ciudad",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "chantria-lastra",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "La Chantría- La Lastra",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "vega-oteruelo",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "La Vega-Oteruelo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "eras-renueva",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "Las Eras de Renueva",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "san-mames-palomera",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "San Mamés- La Palomera",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "crucero-pinilla",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "Crucero- Pinilla",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "ejido-santa-ana",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "El Ejido- Sta. Ana",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "san-esteban",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "San Esteban",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "casco-antiguo",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "Casco Antiguo",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "ventas",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "Las Ventas",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "puente-castro",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "Puente Castro",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
+  },
+  {
+    neighborhoodId: "asuncion-inmaculada",
+    city: "León",
+    province: "León",
+    municipality: "León",
+    neighborhood: "La Asunción - La Inmaculada",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true
   }
 ];
