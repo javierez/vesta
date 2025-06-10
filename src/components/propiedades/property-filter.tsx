@@ -10,11 +10,43 @@ import {
 import { Badge } from "~/components/ui/badge"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { Filter, X, Check, ChevronDown, LayoutGrid, Table as TableIcon } from "lucide-react"
-import type { Property } from "~/lib/data"
 import { PropertySearch } from "./property-search"
 
+type Listing = {
+  // Listing fields
+  listingId: bigint
+  propertyId: bigint
+  price: string
+  status: string
+  listingType: string
+  isActive: boolean | null
+  isFeatured: boolean | null
+  isBankOwned: boolean | null
+  viewCount: number | null
+  inquiryCount: number | null
+  
+  // Property fields
+  referenceNumber: string | null
+  title: string | null
+  propertyType: string | null
+  bedrooms: number | null
+  bathrooms: string | null
+  squareMeter: number | null
+  street: string | null
+  addressDetails: string | null
+  postalCode: string | null
+  latitude: string | null
+  longitude: string | null
+  
+  // Location fields
+  city: string | null
+  province: string | null
+  municipality: string | null
+  neighborhood: string | null
+}
+
 interface PropertyFilterProps {
-  properties: Property[]
+  listings: Listing[]
   onFilterChange: (filters: {
     searchQuery: string
     status: string[]
@@ -28,7 +60,7 @@ interface PropertyFilterProps {
 }
 
 export function PropertyFilter({ 
-  properties, 
+  listings, 
   onFilterChange,
   view,
   onViewChange 
@@ -48,8 +80,6 @@ export function PropertyFilter({
     source: true,
     createdAt: true
   })
-
-  const cities = Array.from(new Set(properties.map(p => p.city)))
 
   const toggleFilter = (category: keyof typeof filters, value: string) => {
     const newFilters = {
@@ -175,12 +205,6 @@ export function PropertyFilter({
                     <FilterOption value="local" label="Local" category="type" />
                     <FilterOption value="solar" label="Solar" category="type" />
                     <FilterOption value="garaje" label="Garaje" category="type" />
-                  </FilterCategory>
-
-                  <FilterCategory title="Ciudad" category="city">
-                    {cities.map(city => (
-                      <FilterOption key={city} value={city} label={city} category="city" />
-                    ))}
                   </FilterCategory>
 
                   <FilterCategory title="Fuente" category="source">

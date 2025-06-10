@@ -2,47 +2,78 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
-import { Input } from "~/components/ui/input"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select"
-import { Plus, Search, Filter, X, Check, ChevronDown } from "lucide-react"
+import { Plus } from "lucide-react"
 import Link from "next/link"
 import { PropertyCard } from "~/components/property-card"
 import { PropertyCardSkeleton } from "~/components/property-card-skeleton"
-import { properties } from "~/lib/data"
-import type { Property } from "~/lib/data"
-import { Badge } from "~/components/ui/badge"
-import { ScrollArea } from "~/components/ui/scroll-area"
 import { PropertyFilter } from "~/components/propiedades/property-filter"
 import { PropertyTable } from "~/components/propiedades/property-table"
+import { listListings } from "~/server/queries/listing"
+
+type ListingOverview = {
+  // Listing fields
+  listingId: bigint
+  propertyId: bigint
+  price: string
+  status: string
+  listingType: string
+  isActive: boolean | null
+  isFeatured: boolean | null
+  isBankOwned: boolean | null
+  viewCount: number | null
+  inquiryCount: number | null
+  
+  // Property fields
+  referenceNumber: string | null
+  title: string | null
+  propertyType: string | null
+  bedrooms: number | null
+  bathrooms: string | null
+  squareMeter: number | null
+  street: string | null
+  addressDetails: string | null
+  postalCode: string | null
+  latitude: string | null
+  longitude: string | null
+  
+  // Location fields
+  city: string | null
+  province: string | null
+  municipality: string | null
+  neighborhood: string | null
+
+  // Image fields
+  imageUrl: string | null
+  s3key: string | null
+}
+
+const ITEMS_PER_PAGE = 12
 
 export default function PropertiesPage() {
   const [isLoading, setIsLoading] = useState(true)
-  const [propertiesList, setPropertiesList] = useState<Property[]>([])
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>([])
+  const [listings, setListings] = useState<ListingOverview[]>([])
+  const [filteredListings, setFilteredListings] = useState<ListingOverview[]>([])
   const [view, setView] = useState<"grid" | "table">("grid")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
-    const fetchProperties = async () => {
+    const fetchData = async () => {
       setIsLoading(true)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setPropertiesList(properties)
-      setFilteredProperties(properties)
-      setIsLoading(false)
+      try {
+        const listingsData = await listListings(currentPage, ITEMS_PER_PAGE)
+        setListings(listingsData)
+        setFilteredListings(listingsData)
+        setTotalPages(listingsData.length === ITEMS_PER_PAGE ? currentPage + 1 : currentPage)
+      } catch (error) {
+        console.error("Error fetching data:", error)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    fetchProperties()
-  }, [])
+    fetchData()
+  }, [currentPage])
 
   const handleFilterChange = (filters: {
     searchQuery: string
@@ -52,23 +83,23 @@ export default function PropertiesPage() {
     source: string[]
     createdAt: string[]
   }) => {
-    const filtered = propertiesList.filter((property) => {
+    const filtered = listings.filter((listing) => {
       const matchesSearch = 
-        property.title.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        property.description.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        property.city.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        property.referenceNumber.toLowerCase().includes(filters.searchQuery.toLowerCase())
+        (listing.title?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ?? false) ||
+        (listing.referenceNumber?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ?? false)
 
-      const matchesStatus = filters.status.length === 0 || filters.status.includes(property.status)
-      const matchesType = filters.type.length === 0 || filters.type.includes(property.propertyType)
-      const matchesCity = filters.city.length === 0 || filters.city.includes(property.city)
-      const matchesSource = filters.source.length === 0 // TODO: Add source field to Property type
-      const matchesCreatedAt = filters.createdAt.length === 0 // TODO: Add createdAt filter logic
+      const matchesType = filters.type.length === 0 || (listing.propertyType && filters.type.includes(listing.propertyType))
+      const matchesStatus = filters.status.length === 0 || filters.status.includes(listing.status)
+      const matchesCity = filters.city.length === 0 || (listing.city && filters.city.includes(listing.city))
 
-      return matchesSearch && matchesStatus && matchesType && matchesCity && matchesSource && matchesCreatedAt
+      return matchesSearch && matchesType && matchesStatus && matchesCity
     })
 
-    setFilteredProperties(filtered)
+    setFilteredListings(filtered)
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
   }
 
   return (
@@ -84,7 +115,7 @@ export default function PropertiesPage() {
       </div>
 
       <PropertyFilter 
-        properties={propertiesList}
+        listings={listings}
         onFilterChange={handleFilterChange}
         view={view}
         onViewChange={setView}
@@ -97,13 +128,40 @@ export default function PropertiesPage() {
           ))}
         </div>
       ) : view === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProperties.map((property) => (
-            <PropertyCard key={property.propertyId.toString()} property={property} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredListings.map((listing) => (
+              <PropertyCard 
+                key={listing.listingId.toString()} 
+                listing={listing}
+              />
+            ))}
+          </div>
+          {/* Pagination Controls */}
+          <div className="flex justify-center gap-2 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <span className="py-2 px-4">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </>
       ) : (
-        <PropertyTable properties={filteredProperties} />
+        <PropertyTable 
+          listings={filteredListings}
+        />
       )}
     </div>
   )

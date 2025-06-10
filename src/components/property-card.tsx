@@ -5,19 +5,55 @@ import Image from "next/image"
 import Link from "next/link"
 import { Badge } from "~/components/ui/badge"
 import { Card, CardContent, CardFooter } from "~/components/ui/card"
-import { Bed, Bath, SquareIcon as SquareFoot, MapPin, Building, User, Hash } from "lucide-react"
+import { Bed, Bath, SquareIcon as SquareFoot, MapPin, Hash } from "lucide-react"
 import { Button } from "~/components/ui/button"
-import type { Property } from "~/lib/data"
 
-interface PropertyCardProps {
-  property: Property
+type Listing = {
+  // Listing fields
+  listingId: bigint
+  propertyId: bigint
+  price: string
+  status: string
+  listingType: string
+  isActive: boolean | null
+  isFeatured: boolean | null
+  isBankOwned: boolean | null
+  viewCount: number | null
+  inquiryCount: number | null
+  
+  // Property fields
+  referenceNumber: string | null
+  title: string | null
+  propertyType: string | null
+  bedrooms: number | null
+  bathrooms: string | null
+  squareMeter: number | null
+  street: string | null
+  addressDetails: string | null
+  postalCode: string | null
+  latitude: string | null
+  longitude: string | null
+  
+  // Location fields
+  city: string | null
+  province: string | null
+  municipality: string | null
+  neighborhood: string | null
+
+  // Image fields
+  imageUrl: string | null
+  s3key: string | null
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+interface PropertyCardProps {
+  listing: Listing
+}
+
+export function PropertyCard({ listing }: PropertyCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
 
-  const getPropertyTypeLabel = (type: string) => {
+  const getPropertyTypeLabel = (type: string | null) => {
     switch (type) {
       case "piso":
         return "Piso"
@@ -36,7 +72,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
   // Get primary image with proper fallback
   const defaultPlaceholder = "/properties/suburban-dream.png"
-  const primaryImage = defaultPlaceholder // TODO: Add image handling when available
+  const primaryImage = listing.imageUrl || defaultPlaceholder
 
   // Format numbers consistently to avoid hydration issues
   const formatNumber = (num: string) => {
@@ -50,11 +86,11 @@ export function PropertyCard({ property }: PropertyCardProps) {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="aspect-[4/3] relative overflow-hidden">
-        <Link href={`/propiedades/${property.propertyId.toString()}`}>
+        <Link href={`/propiedades/${listing.propertyId.toString()}`}>
           <div className="relative w-full h-full">
             <Image
               src={primaryImage}
-              alt={property.title}
+              alt={listing.title ?? "Property"}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className={`object-cover transition-opacity duration-300 ${isHovered ? "opacity-0" : "opacity-100"}`}
@@ -66,22 +102,22 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </Link>
         {/* Top Left - Property Type */}
         <Badge variant="outline" className="absolute top-2 left-2 z-10 bg-white/80 text-sm">
-          {getPropertyTypeLabel(property.propertyType)}
+          {getPropertyTypeLabel(listing.propertyType)}
         </Badge>
         
         {/* Top Right - Status */}
         <Badge className="absolute top-2 right-2 z-10 text-sm">
-          {property.status === "for-sale" ? "En Venta" : property.status === "for-rent" ? "En Alquiler" : "Vendido"}
+          {listing.status === "for-sale" ? "En Venta" : listing.status === "for-rent" ? "En Alquiler" : "Vendido"}
         </Badge>
         
         {/* Bottom Left - Reference Number */}
         <Badge variant="secondary" className="absolute bottom-2 left-2 z-10 bg-blue-500/80 text-white text-sm">
           <Hash className="h-3 w-3 mr-1" />
-          {property.referenceNumber}
+          {listing.referenceNumber}
         </Badge>
         
         {/* Bottom Right - Bank Owned */}
-        {property.isBankOwned && (
+        {listing.isBankOwned && (
           <Badge variant="secondary" className="absolute bottom-2 right-2 z-10 bg-amber-500 text-white text-sm">
             Piso de Banco
           </Badge>
@@ -91,50 +127,50 @@ export function PropertyCard({ property }: PropertyCardProps) {
       <CardContent className="p-3">
         <div className="mb-1 flex items-start justify-between">
           <div>
-            <h3 className="font-semibold text-base line-clamp-1">{property.street}</h3>
+            <h3 className="font-semibold text-base line-clamp-1">{listing.street}</h3>
           </div>
           <p className="font-bold text-base">
-            {formatNumber(property.price)}€{property.status === "for-rent" ? "/mes" : ""}
+            {formatNumber(listing.price)}€{listing.status === "for-rent" ? "/mes" : ""}
           </p>
         </div>
 
         <div className="flex items-center text-muted-foreground mb-2">
           <MapPin className="h-3.5 w-3.5 mr-1" />
           <p className="text-xs line-clamp-1">
-            {property.city}, {property.province}
+            {listing.city}, {listing.province}
           </p>
         </div>
 
         <div className="flex justify-between text-xs">
-          {property.propertyType !== "solar" &&
-            property.propertyType !== "garaje" &&
-            property.propertyType !== "local" && (
+          {listing.propertyType !== "solar" &&
+            listing.propertyType !== "garaje" &&
+            listing.propertyType !== "local" && (
               <>
                 <div className="flex items-center">
                   <Bed className="h-3.5 w-3.5 mr-1" />
-                  <span>{property.bedrooms} {property.bedrooms === 1 ? "Hab" : "Habs"}</span>
+                  <span>{listing.bedrooms} {listing.bedrooms === 1 ? "Hab" : "Habs"}</span>
                 </div>
                 <div className="flex items-center">
                   <Bath className="h-3.5 w-3.5 mr-1" />
-                  <span>{property.bathrooms} {property.bathrooms === "1" ? "Baño" : "Baños"}</span>
+                  <span>{Math.floor(Number(listing.bathrooms))} {Math.floor(Number(listing.bathrooms)) === 1 ? "Baño" : "Baños"}</span>
                 </div>
               </>
             )}
           <div className="flex items-center">
             <SquareFoot className="h-3.5 w-3.5 mr-1" />
-            <span>{property.squareMeter} m²</span>
+            <span>{listing.squareMeter} m²</span>
           </div>
         </div>
       </CardContent>
 
       <CardFooter className="p-3 pt-0 flex gap-2">
         <Button asChild variant="outline" className="flex-1 text-xs">
-          <Link href={`/propiedades/${property.propertyId.toString()}`}>
+          <Link href={`/propiedades/${listing.propertyId.toString()}`}>
             VER
           </Link>
         </Button>
         <Button asChild variant="outline" className="flex-1 text-xs">
-          <Link href={`/propiedades/${property.propertyId.toString()}/edit`}>
+          <Link href={`/propiedades/${listing.propertyId.toString()}/edit`}>
             EDITAR
           </Link>
         </Button>

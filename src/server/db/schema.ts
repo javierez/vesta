@@ -5,8 +5,6 @@ import {
   boolean,
   singlestoreTable,
   json,
-  index,
-  uniqueIndex,
   text,
   decimal,
   smallint,
@@ -29,10 +27,7 @@ export const users = singlestoreTable("users", {
   lastLogin: timestamp("last_login"),
   isVerified: boolean("is_verified").default(false),
   isActive: boolean("is_active").default(true),
-}, (table) => ({
-  emailIdx: uniqueIndex("email_idx").on(table.email),
-  statusIdx: index("status_idx").on(table.isActive, table.isVerified),
-}));
+});
 
 // Roles table
 export const roles = singlestoreTable("roles", {
@@ -43,10 +38,7 @@ export const roles = singlestoreTable("roles", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
-}, (table) => ({
-  nameIdx: uniqueIndex("name_idx").on(table.name),
-  activeNameIdx: index("active_name_idx").on(table.isActive, table.name),
-}));
+});
 
 // UserRoles junction table (Many-to-Many relationship between users and roles)
 export const userRoles = singlestoreTable("user_roles", {
@@ -56,13 +48,11 @@ export const userRoles = singlestoreTable("user_roles", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
-}, (table) => ({
-  userRoleIdx: uniqueIndex("user_role_idx").on(table.userId, table.roleId),
-}));
+});
 
 // Locations table
 export const locations = singlestoreTable("locations", {
-  neighborhoodId: varchar("neighborhood_id", { length: 50 }).primaryKey(),
+  neighborhoodId: bigint("neighborhood_id", { mode: "bigint" }).primaryKey().autoincrement(),
   city: varchar("city", { length: 100 }).notNull(),
   province: varchar("province", { length: 100 }).notNull(),
   municipality: varchar("municipality", { length: 100 }).notNull(),
@@ -70,12 +60,7 @@ export const locations = singlestoreTable("locations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
-}, (table) => ({
-  cityIdx: index("idx_locations_city").on(table.city),
-  provinceIdx: index("idx_locations_province").on(table.province),
-  municipalityIdx: index("idx_locations_municipality").on(table.municipality),
-  neighborhoodIdx: index("idx_locations_neighborhood").on(table.neighborhood),
-}));
+});
 
 // Properties table
 export const properties = singlestoreTable("properties", {
@@ -98,7 +83,7 @@ export const properties = singlestoreTable("properties", {
   street: varchar("street", { length: 255 }).notNull(),
   addressDetails: varchar("address_details", { length: 255 }),
   postalCode: varchar("postal_code", { length: 20 }),
-  neighborhoodId: varchar("neighborhood_id", { length: 50 }),
+  neighborhoodId: bigint("neighborhood_id", { mode: "bigint" }),
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
 
@@ -189,13 +174,7 @@ export const properties = singlestoreTable("properties", {
   laundryRoom: boolean("laundry_room"),
   coveredClothesline: boolean("covered_clothesline"),
   fireplace: boolean("fireplace"),
-}, (table) => ({
-  // Indexes for common queries
-  propertyTypeIdx: index("idx_properties_type").on(table.propertyType),
-  neighborhoodIdIdx: index("idx_properties_neighborhood").on(table.neighborhoodId),
-  bedroomsIdx: index("idx_properties_bedrooms").on(table.bedrooms),
-  squareMeterIdx: index("idx_properties_sqm").on(table.squareMeter),
-}));
+});
 
 export const propertyImages = singlestoreTable("property_images", {
   propertyImageId: bigint("property_image_id", { mode: "bigint" }).primaryKey().autoincrement(),
@@ -208,10 +187,7 @@ export const propertyImages = singlestoreTable("property_images", {
   imageKey: varchar("image_key", { length: 2048 }).notNull(),
   imageTag: varchar("image_tag", { length: 255 }),
   s3key: varchar("s3key", { length: 2048 }).notNull(),
-}, (table) => ({
-  propertyImageIdx: index("idx_property_images").on(table.propertyId),
-  referenceNumberIdx: index("idx_property_images_reference").on(table.referenceNumber),
-}));
+});
 
 export const listings = singlestoreTable("listings", {
   // Primary Key
@@ -248,14 +224,7 @@ export const listings = singlestoreTable("listings", {
   // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  propertyIdx: index("idx_listings_property").on(table.propertyId),
-  agentIdx: index("idx_listings_agent").on(table.agentId),
-  ownerIdx: index("idx_listings_owner").on(table.ownerContactId),
-  statusIdx: index("idx_listings_status").on(table.status),
-  featuredIdx: index("idx_listings_featured").on(table.isFeatured),
-  priceIdx: index("idx_listings_price").on(table.price),
-}));
+});
 
 // Contacts (external people: buyers, sellers, etc.)
 export const contacts = singlestoreTable("contacts", {
@@ -272,11 +241,7 @@ export const contacts = singlestoreTable("contacts", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  orgIdIdx: index("idx_contacts_org_id").on(table.orgId),
-  statusIdx: index("idx_contacts_status").on(table.isActive),
-  contactTypeIdx: index("idx_contacts_type").on(table.contactType),
-}));
+});
 
 // Organizations (companies, law firms, banks)
 export const organizations = singlestoreTable("organizations", {
@@ -289,10 +254,7 @@ export const organizations = singlestoreTable("organizations", {
   state: varchar("state", { length: 100 }),
   postalCode: varchar("postal_code", { length: 20 }),
   country: varchar("country", { length: 100 }),
-}, (table) => ({
-  orgNameIdx: index("idx_organizations_name").on(table.orgName),
-  locationIdx: index("idx_organizations_location").on(table.city, table.state, table.country),
-}));
+});
 
 // Leads (inbound interest for a listing)
 export const leads = singlestoreTable("leads", {
@@ -305,11 +267,7 @@ export const leads = singlestoreTable("leads", {
   status: varchar("status", { length: 20 }).notNull(),             // e.g. "New", "Working", "Converted", "Disqualified"
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  contactIdx: index("idx_leads_contact").on(table.contactId),
-  listingIdx: index("idx_leads_listing").on(table.listingId),
-  statusIdx: index("idx_leads_status").on(table.status),
-}));
+});
 
 // Deals (potential or closed transaction)
 export const deals = singlestoreTable("deals", {
@@ -321,10 +279,7 @@ export const deals = singlestoreTable("deals", {
   closeDate: timestamp("close_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  listingIdx: index("idx_deals_listing").on(table.listingId),
-  statusIdx: index("idx_deals_status").on(table.status),
-}));
+});
 
 // Deal Participants (people involved in a deal)
 export const dealParticipants = singlestoreTable(
@@ -333,13 +288,7 @@ export const dealParticipants = singlestoreTable(
     dealId: bigint("deal_id", { mode: "bigint" }).notNull(),         // FK → deals.deal_id
     contactId: bigint("contact_id", { mode: "bigint" }).notNull(),   // FK → contacts.contact_id
     role: varchar("role", { length: 50 }).notNull(),                // e.g. "Buyer", "Seller", "Lawyer"
-  },
-  (table) => ({
-    // Composite primary key
-    pk: { primaryKey: [table.dealId, table.contactId, table.role] },
-    dealIdx: index("idx_deal_participants_deal").on(table.dealId),
-    contactIdx: index("idx_deal_participants_contact").on(table.contactId),
-  })
+  }
 );
 
 // Appointments table
@@ -360,16 +309,7 @@ export const appointments = singlestoreTable("appointments", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  userIdx: index("idx_appointments_user").on(table.userId),
-  contactIdx: index("idx_appointments_contact").on(table.contactId),
-  listingIdx: index("idx_appointments_listing").on(table.listingId),
-  leadIdx: index("idx_appointments_lead").on(table.leadId),
-  dealIdx: index("idx_appointments_deal").on(table.dealId),
-  prospectIdx: index("idx_appointments_prospect").on(table.prospectId),
-  statusIdx: index("idx_appointments_status").on(table.status),
-  datetimeIdx: index("idx_appointments_datetime").on(table.datetimeStart, table.datetimeEnd),
-}));
+});
 
 // Tasks
 export const tasks = singlestoreTable("tasks", {
@@ -388,16 +328,7 @@ export const tasks = singlestoreTable("tasks", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  userIdx: index("idx_tasks_user").on(table.userId),
-  listingIdx: index("idx_tasks_listing").on(table.listingId),
-  leadIdx: index("idx_tasks_lead").on(table.leadId),
-  dealIdx: index("idx_tasks_deal").on(table.dealId),
-  appointmentIdx: index("idx_tasks_appointment").on(table.appointmentId),
-  prospectIdx: index("idx_tasks_prospect").on(table.prospectId),
-  completedIdx: index("idx_tasks_completed").on(table.completed),
-  statusIdx: index("idx_tasks_status").on(table.isActive),
-}));
+});
 
 // Documents table
 export const documents = singlestoreTable("documents", {
@@ -418,17 +349,7 @@ export const documents = singlestoreTable("documents", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  userIdx: index("idx_documents_user").on(table.userId),
-  contactIdx: index("idx_documents_contact").on(table.contactId),
-  listingIdx: index("idx_documents_listing").on(table.listingId),
-  leadIdx: index("idx_documents_lead").on(table.leadId),
-  dealIdx: index("idx_documents_deal").on(table.dealId),
-  appointmentIdx: index("idx_documents_appointment").on(table.appointmentId),
-  prospectIdx: index("idx_documents_prospect").on(table.prospectId),
-  fileTypeIdx: index("idx_documents_type").on(table.fileType),
-  statusIdx: index("idx_documents_status").on(table.isActive),
-}));
+});
 
 // Prospects table
 export const prospects = singlestoreTable("prospects", {
@@ -441,12 +362,7 @@ export const prospects = singlestoreTable("prospects", {
   listingId: bigint("listing_id", { mode: "bigint" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  contactIdx: index("idx_prospects_contact").on(table.contactId),
-  statusIdx: index("idx_prospects_status").on(table.status),
-  sourceTypeIdx: index("idx_prospects_source").on(table.sourceType),
-  listingIdx: index("idx_prospects_listing").on(table.listingId),
-}));
+});
 
 // Prospect History table to track status changes
 export const prospectHistory = singlestoreTable("prospect_history", {
@@ -457,10 +373,5 @@ export const prospectHistory = singlestoreTable("prospect_history", {
   changedBy: bigint("changed_by", { mode: "bigint" }).notNull(), // FK → users.user_id
   changeReason: text("change_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => ({
-  prospectIdx: index("idx_prospect_history_prospect").on(table.prospectId),
-  statusChangeIdx: index("idx_prospect_history_status").on(table.previousStatus, table.newStatus),
-  changedByIdx: index("idx_prospect_history_user").on(table.changedBy),
-  createdAtIdx: index("idx_prospect_history_created").on(table.createdAt),
-}));
+});
 

@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from "../db"
-import { listings } from "../db/schema";
+import { listings, properties, locations, propertyImages } from "../db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 
@@ -213,8 +213,54 @@ export async function listListings(
       whereConditions.push(eq(listings.isActive, true));
     }
 
-    // Create the base query
-    const query = db.select().from(listings);
+    // Create the base query with property and location details
+    const query = db
+      .select({
+        // Listing fields
+        listingId: listings.listingId,
+        propertyId: listings.propertyId,
+        price: listings.price,
+        status: listings.status,
+        listingType: listings.listingType,
+        isActive: listings.isActive,
+        isFeatured: listings.isFeatured,
+        isBankOwned: listings.isBankOwned,
+        viewCount: listings.viewCount,
+        inquiryCount: listings.inquiryCount,
+        
+        // Property fields
+        referenceNumber: properties.referenceNumber,
+        title: properties.title,
+        propertyType: properties.propertyType,
+        bedrooms: properties.bedrooms,
+        bathrooms: properties.bathrooms,
+        squareMeter: properties.squareMeter,
+        street: properties.street,
+        addressDetails: properties.addressDetails,
+        postalCode: properties.postalCode,
+        latitude: properties.latitude,
+        longitude: properties.longitude,
+        
+        // Location fields
+        city: locations.city,
+        province: locations.province,
+        municipality: locations.municipality,
+        neighborhood: locations.neighborhood,
+
+        // Image fields (first image only)
+        imageUrl: propertyImages.imageUrl,
+        s3key: propertyImages.s3key
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        propertyImages,
+        and(
+          eq(properties.propertyId, propertyImages.propertyId),
+          eq(propertyImages.isActive, true)
+        )
+      );
 
     // Apply all where conditions at once
     const filteredQuery = whereConditions.length > 0 
@@ -257,6 +303,41 @@ export async function incrementInquiryCount(listingId: number) {
     return { success: true };
   } catch (error) {
     console.error("Error incrementing inquiry count:", error);
+    throw error;
+  }
+}
+
+// Get listing overview with property details
+export async function getListingOverview(listingId: number) {
+  try {
+    const [listing] = await db
+      .select({
+        listingId: listings.listingId,
+        propertyId: listings.propertyId,
+        price: listings.price,
+        status: listings.status,
+        property: {
+          propertyId: properties.propertyId,
+          referenceNumber: properties.referenceNumber,
+          title: properties.title,
+          propertyType: properties.propertyType,
+          bedrooms: properties.bedrooms,
+          bathrooms: properties.bathrooms,
+          squareMeter: properties.squareMeter,
+        }
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.isActive, true)
+        )
+      );
+
+    return listing;
+  } catch (error) {
+    console.error("Error fetching listing overview:", error);
     throw error;
   }
 }
