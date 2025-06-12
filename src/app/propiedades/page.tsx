@@ -10,25 +10,59 @@ import { PropertyFilter } from "~/components/propiedades/property-filter"
 import { PropertyTable } from "~/components/propiedades/property-table"
 import { listListings } from "~/server/queries/listing"
 import type { ListingOverview } from "~/types/listing"
+import { PaginationControls } from "~/components/ui/pagination-controls"
+import { useSearchParams, useRouter } from "next/navigation"
 
-const ITEMS_PER_PAGE = 12
+const ITEMS_PER_PAGE = 21
 
 export default function PropertiesPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
   const [listings, setListings] = useState<ListingOverview[]>([])
-  const [filteredListings, setFilteredListings] = useState<ListingOverview[]>([])
-  const [view, setView] = useState<"grid" | "table">("grid")
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+
+  const view = (searchParams.get('view') || 'grid') as "grid" | "table"
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
       try {
-        const listingsData = await listListings(currentPage, ITEMS_PER_PAGE)
-        setListings(listingsData)
-        setFilteredListings(listingsData)
-        setTotalPages(listingsData.length === ITEMS_PER_PAGE ? currentPage + 1 : currentPage)
+        const page = Number(searchParams.get('page')) || 1
+        setCurrentPage(page)
+        
+        // Get all filter parameters from URL
+        const filters: Record<string, any> = {}
+        for (const [key, value] of searchParams.entries()) {
+          if (key === 'page') continue
+          if (key === 'q') {
+            filters.searchQuery = value
+          } else if (key === 'status') {
+            // Map status to listingType
+            const statusMap: Record<string, string> = {
+              'for-sale': 'En Venta',
+              'for-rent': 'En Alquiler',
+              'sold': 'Vendido'
+            }
+            filters.listingType = statusMap[value] || value
+          } else if (key === 'type') {
+            filters.propertyType = value
+          } else if (['minPrice', 'maxPrice', 'bedrooms', 'minBathrooms', 'maxBathrooms', 'minSquareMeter', 'maxSquareMeter'].includes(key)) {
+            filters[key] = Number(value)
+          } else if (['hasGarage', 'hasElevator', 'hasStorageRoom', 'brandNew', 'needsRenovation'].includes(key)) {
+            filters[key] = value === 'true'
+          } else {
+            filters[key] = value
+          }
+        }
+        
+        const result = await listListings(page, ITEMS_PER_PAGE, filters)
+        
+        setListings(result.listings)
+        setTotalPages(result.totalPages)
+        setTotalCount(result.totalCount)
       } catch (error) {
         console.error("Error fetching data:", error)
       } finally {
@@ -37,33 +71,12 @@ export default function PropertiesPage() {
     }
 
     fetchData()
-  }, [currentPage])
-
-  const handleFilterChange = (filters: {
-    searchQuery: string
-    status: string[]
-    type: string[]
-    city: string[]
-    source: string[]
-    createdAt: string[]
-  }) => {
-    const filtered = listings.filter((listing) => {
-      const matchesSearch = 
-        (listing.title?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ?? false) ||
-        (listing.referenceNumber?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ?? false)
-
-      const matchesType = filters.type.length === 0 || (listing.propertyType && filters.type.includes(listing.propertyType))
-      const matchesStatus = filters.status.length === 0 || filters.status.includes(listing.status)
-      const matchesCity = filters.city.length === 0 || (listing.city && filters.city.includes(listing.city))
-
-      return matchesSearch && matchesType && matchesStatus && matchesCity
-    })
-
-    setFilteredListings(filtered)
-  }
+  }, [searchParams])
 
   const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('page', newPage.toString())
+    router.push(`/propiedades?${params.toString()}`)
   }
 
   return (
@@ -79,10 +92,7 @@ export default function PropertiesPage() {
       </div>
 
       <PropertyFilter 
-        listings={listings}
-        onFilterChange={handleFilterChange}
         view={view}
-        onViewChange={setView}
       />
 
       {isLoading ? (
@@ -94,37 +104,23 @@ export default function PropertiesPage() {
       ) : view === "grid" ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredListings.map((listing) => (
+            {listings.map((listing) => (
               <PropertyCard 
                 key={listing.listingId.toString()} 
                 listing={listing}
               />
             ))}
           </div>
-          {/* Pagination Controls */}
-          <div className="flex justify-center gap-2 mt-10">
-            <Button
-              variant="outline"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Anterior
-            </Button>
-            <span className="py-2 px-4 text-sm text-gray-500">
-              Página {currentPage} de {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Siguiente
-            </Button>
-          </div>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            className="mt-10"
+          />
         </>
       ) : (
         <PropertyTable 
-          listings={filteredListings}
+          listings={listings}
         />
       )}
     </div>

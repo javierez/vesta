@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import {
   Popover,
@@ -11,75 +11,70 @@ import { Badge } from "~/components/ui/badge"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { Filter, X, Check, ChevronDown, LayoutGrid, Table as TableIcon } from "lucide-react"
 import { PropertySearch } from "./property-search"
-
-type Listing = {
-  // Listing fields
-  listingId: bigint
-  propertyId: bigint
-  price: string
-  status: string
-  listingType: string
-  isActive: boolean | null
-  isFeatured: boolean | null
-  isBankOwned: boolean | null
-  viewCount: number | null
-  inquiryCount: number | null
-  
-  // Property fields
-  referenceNumber: string | null
-  title: string | null
-  propertyType: string | null
-  bedrooms: number | null
-  bathrooms: string | null
-  squareMeter: number | null
-  street: string | null
-  addressDetails: string | null
-  postalCode: string | null
-  latitude: string | null
-  longitude: string | null
-  
-  // Location fields
-  city: string | null
-  province: string | null
-  municipality: string | null
-  neighborhood: string | null
-}
+import { useRouter, useSearchParams } from "next/navigation"
 
 interface PropertyFilterProps {
-  listings: Listing[]
-  onFilterChange: (filters: {
-    searchQuery: string
-    status: string[]
-    type: string[]
-    city: string[]
-    source: string[]
-    createdAt: string[]
-  }) => void
   view: "grid" | "table"
-  onViewChange: (view: "grid" | "table") => void
 }
 
 export function PropertyFilter({ 
-  listings, 
-  onFilterChange,
-  view,
-  onViewChange 
+  view
 }: PropertyFilterProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState("")
   const [filters, setFilters] = useState({
     status: [] as string[],
-    type: [] as string[],
-    city: [] as string[],
-    source: [] as string[],
-    createdAt: [] as string[]
+    type: [] as string[]
   })
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     status: true,
-    type: true,
-    city: true,
-    source: true,
-    createdAt: true
+    type: true
   })
+
+  // Initialize filters from URL on mount
+  useEffect(() => {
+    const status = searchParams.get('status')
+    const type = searchParams.get('type')
+    const q = searchParams.get('q')
+
+    setFilters(prev => ({
+      ...prev,
+      status: status ? [status] : [],
+      type: type ? [type] : []
+    }))
+    setSearchQuery(q || '')
+  }, [searchParams])
+
+  const updateUrlParams = (newFilters: typeof filters, newSearchQuery: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    
+    // Update search query
+    if (newSearchQuery) {
+      params.set('q', newSearchQuery)
+    } else {
+      params.delete('q')
+    }
+
+    // Update status
+    if (newFilters.status.length > 0 && newFilters.status[0]) {
+      params.set('status', newFilters.status[0])
+    } else {
+      params.delete('status')
+    }
+
+    // Update type
+    if (newFilters.type.length > 0 && newFilters.type[0]) {
+      params.set('type', newFilters.type[0])
+    } else {
+      params.delete('type')
+    }
+
+    // Reset to first page when filters change
+    params.set('page', '1')
+    
+    router.push(`/propiedades?${params.toString()}`)
+  }
 
   const toggleFilter = (category: keyof typeof filters, value: string) => {
     const newFilters = {
@@ -89,7 +84,7 @@ export function PropertyFilter({
         : [...filters[category], value]
     }
     setFilters(newFilters)
-    onFilterChange({ searchQuery, ...newFilters })
+    updateUrlParams(newFilters, searchQuery)
   }
 
   const toggleCategory = (category: string) => {
@@ -102,18 +97,16 @@ export function PropertyFilter({
   const clearFilters = () => {
     const newFilters = {
       status: [],
-      type: [],
-      city: [],
-      source: [],
-      createdAt: []
+      type: []
     }
     setFilters(newFilters)
-    onFilterChange({ searchQuery, ...newFilters })
+    setSearchQuery('')
+    updateUrlParams(newFilters, '')
   }
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
-    onFilterChange({ searchQuery: value, ...filters })
+    updateUrlParams(filters, value)
   }
 
   const activeFiltersCount = Object.values(filters).reduce((acc, curr) => acc + curr.length, 0)
@@ -159,16 +152,25 @@ export function PropertyFilter({
     </div>
   )
 
+  const handleViewChange = () => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('view', view === "grid" ? "table" : "grid")
+    router.push(`/propiedades?${params.toString()}`)
+  }
+
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="flex flex-1 items-center space-x-2">
-        <PropertySearch onSearchChange={handleSearchChange} />
+        <PropertySearch 
+          onSearchChange={handleSearchChange} 
+          onSearch={() => updateUrlParams(filters, searchQuery)}
+        />
       </div>
       <div className="flex items-center space-x-2">
         <Button
           variant="outline"
           size="icon"
-          onClick={() => onViewChange(view === "grid" ? "table" : "grid")}
+          onClick={handleViewChange}
           title={view === "grid" ? "Ver como tabla" : "Ver como cuadrícula"}
         >
           {view === "grid" ? (
@@ -205,18 +207,6 @@ export function PropertyFilter({
                     <FilterOption value="local" label="Local" category="type" />
                     <FilterOption value="solar" label="Solar" category="type" />
                     <FilterOption value="garaje" label="Garaje" category="type" />
-                  </FilterCategory>
-
-                  <FilterCategory title="Fuente" category="source">
-                    <FilterOption value="idealista" label="Idealista" category="source" />
-                    <FilterOption value="fotocasa" label="Fotocasa" category="source" />
-                  </FilterCategory>
-
-                  <FilterCategory title="Fecha de Publicación" category="createdAt">
-                    <FilterOption value="today" label="Hoy" category="createdAt" />
-                    <FilterOption value="week" label="Esta Semana" category="createdAt" />
-                    <FilterOption value="month" label="Este Mes" category="createdAt" />
-                    <FilterOption value="year" label="Este Año" category="createdAt" />
                   </FilterCategory>
                 </div>
               </ScrollArea>

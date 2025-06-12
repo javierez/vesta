@@ -121,7 +121,9 @@ export function PropertyCard({ listing }: PropertyCardProps) {
               alt={listing.title || "Property image"}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className={`object-cover transition-opacity duration-300 ${isHovered ? "opacity-0" : "opacity-100"}`}
+              className={`object-cover transition-opacity duration-300 ${
+                isHovered ? "opacity-0" : "opacity-100"
+              } ${imageSrc === defaultPlaceholder ? "grayscale" : ""}`}
               loading="lazy"
               onLoad={() => setImageLoaded(true)}
               onError={onImageError}
@@ -133,7 +135,9 @@ export function PropertyCard({ listing }: PropertyCardProps) {
               alt={listing.title || "Property image"}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className={`object-cover transition-opacity duration-300 ${isHovered ? "opacity-100" : "opacity-0"}`}
+              className={`object-cover transition-opacity duration-300 ${
+                isHovered ? "opacity-100" : "opacity-0"
+              } ${imageSrc2 === defaultPlaceholder ? "grayscale" : ""}`}
               loading="lazy"
               onLoad={() => setImage2Loaded(true)}
               onError={onImage2Error}

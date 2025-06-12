@@ -170,6 +170,22 @@ export async function listListings(
     isBankOwned?: boolean;
     minPrice?: number;
     maxPrice?: number;
+    propertyType?: string;
+    bedrooms?: number;
+    minBathrooms?: number;
+    maxBathrooms?: number;
+    minSquareMeter?: number;
+    maxSquareMeter?: number;
+    city?: string;
+    province?: string;
+    municipality?: string;
+    neighborhood?: string;
+    hasGarage?: boolean;
+    hasElevator?: boolean;
+    hasStorageRoom?: boolean;
+    brandNew?: boolean;
+    needsRenovation?: boolean;
+    searchQuery?: string;
   }
 ) {
   try {
@@ -207,6 +223,62 @@ export async function listListings(
       }
       if (filters.maxPrice) {
         whereConditions.push(sql`CAST(${listings.price} AS DECIMAL) <= ${filters.maxPrice}`);
+      }
+      if (filters.propertyType) {
+        whereConditions.push(eq(properties.propertyType, filters.propertyType));
+      }
+      if (filters.bedrooms) {
+        whereConditions.push(eq(properties.bedrooms, filters.bedrooms));
+      }
+      if (filters.minBathrooms) {
+        whereConditions.push(sql`CAST(${properties.bathrooms} AS DECIMAL) >= ${filters.minBathrooms}`);
+      }
+      if (filters.maxBathrooms) {
+        whereConditions.push(sql`CAST(${properties.bathrooms} AS DECIMAL) <= ${filters.maxBathrooms}`);
+      }
+      if (filters.minSquareMeter) {
+        whereConditions.push(sql`${properties.squareMeter} >= ${filters.minSquareMeter}`);
+      }
+      if (filters.maxSquareMeter) {
+        whereConditions.push(sql`${properties.squareMeter} <= ${filters.maxSquareMeter}`);
+      }
+      if (filters.city) {
+        whereConditions.push(eq(locations.city, filters.city));
+      }
+      if (filters.province) {
+        whereConditions.push(eq(locations.province, filters.province));
+      }
+      if (filters.municipality) {
+        whereConditions.push(eq(locations.municipality, filters.municipality));
+      }
+      if (filters.neighborhood) {
+        whereConditions.push(eq(locations.neighborhood, filters.neighborhood));
+      }
+      if (filters.hasGarage !== undefined) {
+        whereConditions.push(eq(properties.hasGarage, filters.hasGarage));
+      }
+      if (filters.hasElevator !== undefined) {
+        whereConditions.push(eq(properties.hasElevator, filters.hasElevator));
+      }
+      if (filters.hasStorageRoom !== undefined) {
+        whereConditions.push(eq(properties.hasStorageRoom, filters.hasStorageRoom));
+      }
+      if (filters.brandNew !== undefined) {
+        whereConditions.push(eq(properties.brandNew, filters.brandNew));
+      }
+      if (filters.needsRenovation !== undefined) {
+        whereConditions.push(eq(properties.needsRenovation, filters.needsRenovation));
+      }
+      if (filters.searchQuery) {
+        whereConditions.push(
+          sql`(
+            ${properties.title} LIKE ${`%${filters.searchQuery}%`} OR
+            ${properties.referenceNumber} LIKE ${`%${filters.searchQuery}%`} OR
+            ${properties.street} LIKE ${`%${filters.searchQuery}%`} OR
+            ${locations.city} LIKE ${`%${filters.searchQuery}%`} OR
+            ${locations.province} LIKE ${`%${filters.searchQuery}%`}
+          )`
+        );
       }
     } else {
       // By default, only show active listings
@@ -288,37 +360,31 @@ export async function listListings(
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId));
 
+    // Get total count for pagination
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
+
     // Apply all where conditions at once
     const filteredQuery = whereConditions.length > 0 
       ? query.where(and(...whereConditions))
       : query;
 
-    // Apply pagination
+    // Apply pagination and sorting
     const allListings = await filteredQuery
+      .orderBy(sql`${listings.isFeatured} DESC, ${listings.createdAt} DESC`)
       .limit(limit)
       .offset(offset);
 
-    /*
-    console.log('Pagination Details:', {
-      page,
-      limit,
-      offset,
-      totalResults: allListings.length
-    });
-    
-    // Custom serializer for BigInt values
-    const listingsForLog = allListings.map(listing => ({
-      ...listing,
-      listingId: listing.listingId.toString(),
-      propertyId: listing.propertyId.toString(),
-      agentId: listing.agentId?.toString(),
-      ownerContactId: listing.ownerContactId?.toString()
-    }));
-    
-    console.log('Listings:', JSON.stringify(listingsForLog, null, 2));
-    */
-
-    return allListings;
+    return {
+      listings: allListings,
+      totalCount: Number(count),
+      totalPages: Math.ceil(Number(count) / limit),
+      currentPage: page
+    };
   } catch (error) {
     console.error("Error listing listings:", error);
     throw error;
