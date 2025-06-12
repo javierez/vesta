@@ -16,6 +16,11 @@ export const env = createEnv({
 		SINGLESTORE_DB: z.string(),
 		SINGLESTORE_HOST: z.string(),
 		SINGLESTORE_PORT: z.string(),
+		// AWS Configuration
+		AWS_ACCESS_KEY_ID: z.string(),
+		AWS_SECRET_ACCESS_KEY: z.string(),
+		AWS_REGION: z.string(),
+		AWS_S3_BUCKET: z.string(),
 	},
 
   /**
@@ -39,6 +44,11 @@ export const env = createEnv({
     SINGLESTORE_DB: process.env.SINGLESTORE_DB,
     SINGLESTORE_HOST: process.env.SINGLESTORE_HOST,
     SINGLESTORE_PORT: process.env.SINGLESTORE_PORT,
+    // AWS Configuration
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    AWS_REGION: process.env.AWS_REGION,
+    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

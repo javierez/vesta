@@ -219,6 +219,8 @@ export async function listListings(
         // Listing fields
         listingId: listings.listingId,
         propertyId: listings.propertyId,
+        agentId: listings.agentId,
+        ownerContactId: listings.ownerContactId,
         price: listings.price,
         status: listings.status,
         listingType: listings.listingType,
@@ -248,19 +250,26 @@ export async function listListings(
         neighborhood: locations.neighborhood,
 
         // Image fields (first image only)
-        imageUrl: propertyImages.imageUrl,
-        s3key: propertyImages.s3key
+        imageUrl: sql<string>`(
+          SELECT image_url 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          ORDER BY created_at ASC 
+          LIMIT 1
+        )`,
+        s3key: sql<string>`(
+          SELECT s3key 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          ORDER BY created_at ASC 
+          LIMIT 1
+        )`
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
-      .leftJoin(
-        propertyImages,
-        and(
-          eq(properties.propertyId, propertyImages.propertyId),
-          eq(propertyImages.isActive, true)
-        )
-      );
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId));
 
     // Apply all where conditions at once
     const filteredQuery = whereConditions.length > 0 
@@ -271,7 +280,28 @@ export async function listListings(
     const allListings = await filteredQuery
       .limit(limit)
       .offset(offset);
+
+    // Log the results with BigInt handling
+    /*
+    console.log('Pagination Details:', {
+      page,
+      limit,
+      offset,
+      totalResults: allListings.length
+    });
     
+    // Custom serializer for BigInt values
+    const listingsForLog = allListings.map(listing => ({
+      ...listing,
+      listingId: listing.listingId.toString(),
+      propertyId: listing.propertyId.toString(),
+      agentId: listing.agentId?.toString(),
+      ownerContactId: listing.ownerContactId?.toString()
+    }));
+    
+    console.log('Listings:', JSON.stringify(listingsForLog, null, 2));
+    */
+
     return allListings;
   } catch (error) {
     console.error("Error listing listings:", error);

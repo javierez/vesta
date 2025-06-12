@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Badge } from "~/components/ui/badge"
 import { Card, CardContent, CardFooter } from "~/components/ui/card"
 import { Bed, Bath, SquareIcon as SquareFoot, MapPin, Hash } from "lucide-react"
 import { Button } from "~/components/ui/button"
+import { handleImageError } from "~/lib/images"
 
 type Listing = {
   // Listing fields
@@ -72,7 +73,20 @@ export function PropertyCard({ listing }: PropertyCardProps) {
 
   // Get primary image with proper fallback
   const defaultPlaceholder = "/properties/suburban-dream.png"
-  const primaryImage = listing.imageUrl || defaultPlaceholder
+  const [imageSrc, setImageSrc] = useState(
+    listing.imageUrl || defaultPlaceholder
+  )
+
+  // Debug: Log the image URL
+  useEffect(() => {
+    console.log('Image URL:', listing.imageUrl)
+    console.log('Current src:', imageSrc)
+  }, [listing.imageUrl, imageSrc])
+
+  const onImageError = () => {
+    console.log('Image failed to load:', imageSrc)
+    setImageSrc(defaultPlaceholder)
+  }
 
   // Format numbers consistently to avoid hydration issues
   const formatNumber = (num: string) => {
@@ -89,13 +103,15 @@ export function PropertyCard({ listing }: PropertyCardProps) {
         <Link href={`/propiedades/${listing.propertyId.toString()}`}>
           <div className="relative w-full h-full">
             <Image
-              src={primaryImage}
-              alt={listing.title ?? "Property"}
+              src={imageSrc}
+              alt={listing.title || "Property image"}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className={`object-cover transition-opacity duration-300 ${isHovered ? "opacity-0" : "opacity-100"}`}
               loading="lazy"
               onLoad={() => setImageLoaded(true)}
+              onError={onImageError}
+              quality={85}
             />
             {!imageLoaded && <div className="absolute inset-0 bg-muted animate-pulse" />}
           </div>

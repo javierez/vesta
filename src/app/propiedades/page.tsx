@@ -138,23 +138,23 @@ export default function PropertiesPage() {
             ))}
           </div>
           {/* Pagination Controls */}
-          <div className="flex justify-center gap-2 mt-6">
+          <div className="flex justify-center gap-2 mt-10">
             <Button
               variant="outline"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
-              Previous
+              Anterior
             </Button>
-            <span className="py-2 px-4">
-              Page {currentPage} of {totalPages}
+            <span className="py-2 px-4 text-sm text-gray-500">
+              Página {currentPage} de {totalPages}
             </span>
             <Button
               variant="outline"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
-              Next
+              Siguiente
             </Button>
           </div>
         </>

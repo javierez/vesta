@@ -11,6 +11,7 @@ export type PropertyImage = {
   imageKey: string;
   imageTag?: string;
   s3key: string;
+  order: number;
 }
 
 export type Location = {
@@ -265,75 +266,81 @@ export const properties: Property[] = [
 export const propertyImages: PropertyImage[] = [
   {
     propertyImageId: BigInt(1),
-    propertyId: BigInt(1), // This corresponds to property 152653
-    referenceNumber: "152653",
+    propertyId: BigInt(1),
+    referenceNumber: "REF001",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/152653/images/image_1_b89dc078.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "152653/images/image_1_b89dc078.jpg",
     imageTag: "exterior",
-    s3key: "s3://inmobiliariaacropolis/152653/images/image_1_b89dc078.jpg"
+    s3key: "s3://inmobiliariaacropolis/152653/images/image_1_b89dc078.jpg",
+    order: 1
   },
   {
     propertyImageId: BigInt(2),
-    propertyId: BigInt(1), // This corresponds to property 152653
-    referenceNumber: "152653",
+    propertyId: BigInt(1),
+    referenceNumber: "REF001",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/152653/images/image_2_9e28838e.png",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "152653/images/image_2_9e28838e.png",
     imageTag: "interior",
-    s3key: "s3://inmobiliariaacropolis/152653/images/image_2_9e28838e.png"
+    s3key: "s3://inmobiliariaacropolis/152653/images/image_2_9e28838e.png",
+    order: 2
   },
   {
     propertyImageId: BigInt(3),
-    propertyId: BigInt(1), // This corresponds to property 152653
-    referenceNumber: "152653",
+    propertyId: BigInt(1),
+    referenceNumber: "REF001",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/152653/images/image_3_4e0e1792.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "152653/images/image_3_4e0e1792.jpg",
     imageTag: "dormitorio",
-    s3key: "s3://inmobiliariaacropolis/152653/images/image_3_4e0e1792.jpg"
+    s3key: "s3://inmobiliariaacropolis/152653/images/image_3_4e0e1792.jpg",
+    order: 3
   },
   {
     propertyImageId: BigInt(4),
-    propertyId: BigInt(2), // This corresponds to property 153982
-    referenceNumber: "153982",
+    propertyId: BigInt(2),
+    referenceNumber: "REF002",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/153982/images/image_1_030aebc8.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "153982/images/image_1_030aebc8.jpg",
     imageTag: "exterior",
-    s3key: "s3://inmobiliariaacropolis/153982/images/image_1_030aebc8.jpg"
+    s3key: "s3://inmobiliariaacropolis/153982/images/image_1_030aebc8.jpg",
+    order: 1
   },
   {
     propertyImageId: BigInt(5),
-    propertyId: BigInt(2), // This corresponds to property 153982
-    referenceNumber: "153982",
+    propertyId: BigInt(2),
+    referenceNumber: "REF002",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/153982/images/image_1_944360d4.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "153982/images/image_1_944360d4.jpg",
     imageTag: "salon",
-    s3key: "s3://inmobiliariaacropolis/153982/images/image_1_944360d4.jpg"
+    s3key: "s3://inmobiliariaacropolis/153982/images/image_1_944360d4.jpg",
+    order: 2
   },
   {
     propertyImageId: BigInt(6),
-    propertyId: BigInt(2), // This corresponds to property 153982
-    referenceNumber: "153982",
+    propertyId: BigInt(2),
+    referenceNumber: "REF002",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/153982/images/image_10_030aebc8.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "153982/images/image_10_030aebc8.jpg",
     imageTag: "cocina",
-    s3key: "s3://inmobiliariaacropolis/153982/images/image_10_030aebc8.jpg"
+    s3key: "s3://inmobiliariaacropolis/153982/images/image_10_030aebc8.jpg",
+    order: 3
   }
 ];
 
