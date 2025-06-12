@@ -9,43 +9,7 @@ import { PropertyCardSkeleton } from "~/components/property-card-skeleton"
 import { PropertyFilter } from "~/components/propiedades/property-filter"
 import { PropertyTable } from "~/components/propiedades/property-table"
 import { listListings } from "~/server/queries/listing"
-
-type ListingOverview = {
-  // Listing fields
-  listingId: bigint
-  propertyId: bigint
-  price: string
-  status: string
-  listingType: string
-  isActive: boolean | null
-  isFeatured: boolean | null
-  isBankOwned: boolean | null
-  viewCount: number | null
-  inquiryCount: number | null
-  
-  // Property fields
-  referenceNumber: string | null
-  title: string | null
-  propertyType: string | null
-  bedrooms: number | null
-  bathrooms: string | null
-  squareMeter: number | null
-  street: string | null
-  addressDetails: string | null
-  postalCode: string | null
-  latitude: string | null
-  longitude: string | null
-  
-  // Location fields
-  city: string | null
-  province: string | null
-  municipality: string | null
-  neighborhood: string | null
-
-  // Image fields
-  imageUrl: string | null
-  s3key: string | null
-}
+import type { ListingOverview } from "~/types/listing"
 
 const ITEMS_PER_PAGE = 12
 
