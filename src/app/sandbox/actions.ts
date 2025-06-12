@@ -2,7 +2,7 @@
 
 import { db } from "~/server/db"
 import { properties, type Property, propertyImages as mockPropertyImages, LEON_NEIGHBORHOODS } from "~/lib/data"
-import { properties as dbProperties } from "~/server/db/schema"
+import { properties as dbProperties, listings, propertyImages, locations } from "~/server/db/schema"
 import { createProperty } from "~/server/queries/properties"
 import { createListing } from "~/server/queries/listing"
 import { createPropertyImage } from "~/server/queries/property_images"
@@ -60,9 +60,27 @@ async function seedLocations() {
   }
 }
 
+// Clear all data from relevant tables
+async function clearDatabase() {
+  try {
+    // Delete in reverse order of dependencies to avoid foreign key constraints
+    await db.delete(listings);
+    await db.delete(propertyImages);
+    await db.delete(dbProperties);
+    await db.delete(locations);
+    console.log('Database cleared successfully');
+  } catch (error) {
+    console.error('Error clearing database:', error);
+    throw error;
+  }
+}
+
 export async function seedDatabase() {
   try {
-    // First seed locations
+    // First clear existing data
+    await clearDatabase();
+
+    // Then seed locations
     await seedLocations();
 
     // Then seed properties
@@ -103,7 +121,8 @@ export async function seedDatabase() {
                 isActive: image.isActive,
                 imageKey: image.imageKey,
                 imageTag: image.imageTag,
-                s3key: image.s3key
+                s3key: image.s3key,
+                imageOrder: image.imageOrder
               })
               console.log(`Successfully created image ${image.imageKey} for property ${property.referenceNumber}`)
             } catch (imageError) {

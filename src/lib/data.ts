@@ -11,7 +11,7 @@ export type PropertyImage = {
   imageKey: string;
   imageTag?: string;
   s3key: string;
-  order: number;
+  imageOrder: number;
 }
 
 export type Location = {
@@ -275,7 +275,7 @@ export const propertyImages: PropertyImage[] = [
     imageKey: "152653/images/image_1_b89dc078.jpg",
     imageTag: "exterior",
     s3key: "s3://inmobiliariaacropolis/152653/images/image_1_b89dc078.jpg",
-    order: 1
+    imageOrder: 1
   },
   {
     propertyImageId: BigInt(2),
@@ -288,7 +288,7 @@ export const propertyImages: PropertyImage[] = [
     imageKey: "152653/images/image_2_9e28838e.png",
     imageTag: "interior",
     s3key: "s3://inmobiliariaacropolis/152653/images/image_2_9e28838e.png",
-    order: 2
+    imageOrder: 2
   },
   {
     propertyImageId: BigInt(3),
@@ -301,7 +301,7 @@ export const propertyImages: PropertyImage[] = [
     imageKey: "152653/images/image_3_4e0e1792.jpg",
     imageTag: "dormitorio",
     s3key: "s3://inmobiliariaacropolis/152653/images/image_3_4e0e1792.jpg",
-    order: 3
+    imageOrder: 3
   },
   {
     propertyImageId: BigInt(4),
@@ -314,7 +314,7 @@ export const propertyImages: PropertyImage[] = [
     imageKey: "153982/images/image_1_030aebc8.jpg",
     imageTag: "exterior",
     s3key: "s3://inmobiliariaacropolis/153982/images/image_1_030aebc8.jpg",
-    order: 1
+    imageOrder: 1
   },
   {
     propertyImageId: BigInt(5),
@@ -327,7 +327,7 @@ export const propertyImages: PropertyImage[] = [
     imageKey: "153982/images/image_1_944360d4.jpg",
     imageTag: "salon",
     s3key: "s3://inmobiliariaacropolis/153982/images/image_1_944360d4.jpg",
-    order: 2
+    imageOrder: 2
   },
   {
     propertyImageId: BigInt(6),
@@ -340,7 +340,7 @@ export const propertyImages: PropertyImage[] = [
     imageKey: "153982/images/image_10_030aebc8.jpg",
     imageTag: "cocina",
     s3key: "s3://inmobiliariaacropolis/153982/images/image_10_030aebc8.jpg",
-    order: 3
+    imageOrder: 3
   }
 ];
 

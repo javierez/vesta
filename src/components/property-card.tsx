@@ -44,6 +44,8 @@ type Listing = {
   // Image fields
   imageUrl: string | null
   s3key: string | null
+  imageUrl2: string | null
+  s3key2: string | null
 }
 
 interface PropertyCardProps {
@@ -53,6 +55,7 @@ interface PropertyCardProps {
 export function PropertyCard({ listing }: PropertyCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [image2Loaded, setImage2Loaded] = useState(false)
 
   const getPropertyTypeLabel = (type: string | null) => {
     switch (type) {
@@ -76,16 +79,26 @@ export function PropertyCard({ listing }: PropertyCardProps) {
   const [imageSrc, setImageSrc] = useState(
     listing.imageUrl || defaultPlaceholder
   )
+  const [imageSrc2, setImageSrc2] = useState(
+    listing.imageUrl2 || defaultPlaceholder
+  )
 
-  // Debug: Log the image URL
+  // Debug: Log the image URLs
   useEffect(() => {
-    console.log('Image URL:', listing.imageUrl)
-    console.log('Current src:', imageSrc)
-  }, [listing.imageUrl, imageSrc])
+    console.log('Image URL 1:', listing.imageUrl)
+    console.log('Image URL 2:', listing.imageUrl2)
+    console.log('Current src 1:', imageSrc)
+    console.log('Current src 2:', imageSrc2)
+  }, [listing.imageUrl, listing.imageUrl2, imageSrc, imageSrc2])
 
   const onImageError = () => {
     console.log('Image failed to load:', imageSrc)
     setImageSrc(defaultPlaceholder)
+  }
+
+  const onImage2Error = () => {
+    console.log('Image 2 failed to load:', imageSrc2)
+    setImageSrc2(defaultPlaceholder)
   }
 
   // Format numbers consistently to avoid hydration issues
@@ -102,6 +115,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
       <div className="aspect-[4/3] relative overflow-hidden">
         <Link href={`/propiedades/${listing.propertyId.toString()}`}>
           <div className="relative w-full h-full">
+            {/* First Image */}
             <Image
               src={imageSrc}
               alt={listing.title || "Property image"}
@@ -113,7 +127,19 @@ export function PropertyCard({ listing }: PropertyCardProps) {
               onError={onImageError}
               quality={85}
             />
-            {!imageLoaded && <div className="absolute inset-0 bg-muted animate-pulse" />}
+            {/* Second Image */}
+            <Image
+              src={imageSrc2}
+              alt={listing.title || "Property image"}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className={`object-cover transition-opacity duration-300 ${isHovered ? "opacity-100" : "opacity-0"}`}
+              loading="lazy"
+              onLoad={() => setImage2Loaded(true)}
+              onError={onImage2Error}
+              quality={85}
+            />
+            {(!imageLoaded || !image2Loaded) && <div className="absolute inset-0 bg-muted animate-pulse" />}
           </div>
         </Link>
         {/* Top Left - Property Type */}

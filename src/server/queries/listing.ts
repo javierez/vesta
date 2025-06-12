@@ -255,7 +255,7 @@ export async function listListings(
           FROM property_images 
           WHERE property_id = ${properties.propertyId} 
           AND is_active = true 
-          ORDER BY created_at ASC 
+          AND image_order = 1
           LIMIT 1
         )`,
         s3key: sql<string>`(
@@ -263,7 +263,24 @@ export async function listListings(
           FROM property_images 
           WHERE property_id = ${properties.propertyId} 
           AND is_active = true 
-          ORDER BY created_at ASC 
+          AND image_order = 1
+          LIMIT 1
+        )`,
+        // Second image for hover effect
+        imageUrl2: sql<string>`(
+          SELECT image_url 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 2
+          LIMIT 1
+        )`,
+        s3key2: sql<string>`(
+          SELECT s3key 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 2
           LIMIT 1
         )`
       })
@@ -281,7 +298,6 @@ export async function listListings(
       .limit(limit)
       .offset(offset);
 
-    // Log the results with BigInt handling
     /*
     console.log('Pagination Details:', {
       page,

@@ -187,7 +187,7 @@ export const propertyImages = singlestoreTable("property_images", {
   imageKey: varchar("image_key", { length: 2048 }).notNull(),
   imageTag: varchar("image_tag", { length: 255 }),
   s3key: varchar("s3key", { length: 2048 }).notNull(),
-  order: int("order").default(0).notNull(),
+  imageOrder: int("image_order").default(0).notNull(),
 });
 
 export const listings = singlestoreTable("listings", {
