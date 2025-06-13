@@ -333,8 +333,18 @@ export async function listListings(
           LIMIT 1
         )`,
 
-        // Owner information through listing contacts
-        ownerName: sql<string>`(
+        // Agent information
+        agent: {
+          id: users.userId,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          phone: users.phone,
+          profileImageUrl: users.profileImageUrl,
+        },
+
+        // Owner information (just full name)
+        owner: sql<string>`(
           SELECT CONCAT(c.first_name, ' ', c.last_name)
           FROM listing_contacts lc
           JOIN contacts c ON lc.contact_id = c.contact_id
@@ -386,7 +396,7 @@ export async function listListings(
     // Log the results
     console.log(`Found ${allListings.length} listings with owner information:`);
     allListings.forEach((listing, index) => {
-      console.log(`${index + 1}. Listing ID: ${listing.listingId}, Property: ${listing.title}, Agent: ${listing.agentName}, Owner: ${listing.ownerName || 'No owner found'}`);
+      console.log(`${index + 1}. Listing ID: ${listing.listingId}, Property: ${listing.title}, Agent: ${listing.agentName}, Owner: ${listing.owner || 'No owner found'}`);
     });
 
     return {
@@ -426,4 +436,160 @@ export async function getAllAgents() {
   }
 }
 
-// ... rest of the file remains unchanged ...
+// Get detailed listing information including all related data
+export async function getListingDetails(listingId: number) {
+  try {
+    const [listingDetails] = await db
+      .select({
+        // Listing fields
+        listingId: listings.listingId,
+        propertyId: listings.propertyId,
+        agentId: listings.agentId,
+        listingType: listings.listingType,
+        price: listings.price,
+        status: listings.status,
+        isFurnished: listings.isFurnished,
+        furnitureQuality: listings.furnitureQuality,
+        optionalGarage: listings.optionalGarage,
+        optionalGaragePrice: listings.optionalGaragePrice,
+        studentFriendly: listings.studentFriendly,
+        petsAllowed: listings.petsAllowed,
+        appliancesIncluded: listings.appliancesIncluded,
+        isFeatured: listings.isFeatured,
+        isBankOwned: listings.isBankOwned,
+        isActive: listings.isActive,
+        viewCount: listings.viewCount,
+        inquiryCount: listings.inquiryCount,
+        createdAt: listings.createdAt,
+        updatedAt: listings.updatedAt,
+        
+        // Property fields
+        referenceNumber: properties.referenceNumber,
+        title: properties.title,
+        description: properties.description,
+        propertyType: properties.propertyType,
+        bedrooms: properties.bedrooms,
+        bathrooms: properties.bathrooms,
+        squareMeter: properties.squareMeter,
+        yearBuilt: properties.yearBuilt,
+        street: properties.street,
+        addressDetails: properties.addressDetails,
+        postalCode: properties.postalCode,
+        neighborhoodId: properties.neighborhoodId,
+        latitude: properties.latitude,
+        longitude: properties.longitude,
+        energyCertification: properties.energyCertification,
+        hasHeating: properties.hasHeating,
+        heatingType: properties.heatingType,
+        hasElevator: properties.hasElevator,
+        hasGarage: properties.hasGarage,
+        hasStorageRoom: properties.hasStorageRoom,
+        garageType: properties.garageType,
+        garageSpaces: properties.garageSpaces,
+        garageInBuilding: properties.garageInBuilding,
+        elevatorToGarage: properties.elevatorToGarage,
+        garageNumber: properties.garageNumber,
+        disabledAccessible: properties.disabledAccessible,
+        vpo: properties.vpo,
+        videoIntercom: properties.videoIntercom,
+        conciergeService: properties.conciergeService,
+        securityGuard: properties.securityGuard,
+        satelliteDish: properties.satelliteDish,
+        doubleGlazing: properties.doubleGlazing,
+        alarm: properties.alarm,
+        securityDoor: properties.securityDoor,
+        brandNew: properties.brandNew,
+        newConstruction: properties.newConstruction,
+        underConstruction: properties.underConstruction,
+        needsRenovation: properties.needsRenovation,
+        lastRenovationYear: properties.lastRenovationYear,
+        kitchenType: properties.kitchenType,
+        hotWaterType: properties.hotWaterType,
+        openKitchen: properties.openKitchen,
+        frenchKitchen: properties.frenchKitchen,
+        furnishedKitchen: properties.furnishedKitchen,
+        pantry: properties.pantry,
+        storageRoomSize: properties.storageRoomSize,
+        storageRoomNumber: properties.storageRoomNumber,
+        terrace: properties.terrace,
+        terraceSize: properties.terraceSize,
+        wineCellar: properties.wineCellar,
+        wineCellarSize: properties.wineCellarSize,
+        livingRoomSize: properties.livingRoomSize,
+        balconyCount: properties.balconyCount,
+        galleryCount: properties.galleryCount,
+        buildingFloors: properties.buildingFloors,
+        builtInWardrobes: properties.builtInWardrobes,
+        mainFloorType: properties.mainFloorType,
+        shutterType: properties.shutterType,
+        carpentryType: properties.carpentryType,
+        orientation: properties.orientation,
+        airConditioningType: properties.airConditioningType,
+        windowType: properties.windowType,
+        exterior: properties.exterior,
+        bright: properties.bright,
+        views: properties.views,
+        mountainViews: properties.mountainViews,
+        seaViews: properties.seaViews,
+        beachfront: properties.beachfront,
+        jacuzzi: properties.jacuzzi,
+        hydromassage: properties.hydromassage,
+        garden: properties.garden,
+        pool: properties.pool,
+        homeAutomation: properties.homeAutomation,
+        musicSystem: properties.musicSystem,
+        laundryRoom: properties.laundryRoom,
+        coveredClothesline: properties.coveredClothesline,
+        fireplace: properties.fireplace,
+        
+        // Location fields
+        city: locations.city,
+        province: locations.province,
+        municipality: locations.municipality,
+        neighborhood: locations.neighborhood,
+
+        // Agent information
+        agent: {
+          id: users.userId,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          phone: users.phone,
+          profileImageUrl: users.profileImageUrl,
+        },
+
+        // Owner information (just full name)
+        owner: sql<string>`(
+          SELECT CONCAT(c.first_name, ' ', c.last_name)
+          FROM listing_contacts lc
+          JOIN contacts c ON lc.contact_id = c.contact_id
+          WHERE lc.listing_id = ${listings.listingId}
+          AND lc.contact_type = 'owner'
+          AND lc.is_active = true
+          AND c.is_active = true
+          LIMIT 1
+        )`
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(users, eq(listings.agentId, users.userId))
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.isActive, true)
+        )
+      );
+
+    if (!listingDetails) {
+      throw new Error("Listing not found");
+    }
+
+    return listingDetails;
+  } catch (error) {
+    console.error("Error fetching listing details:", error);
+    throw error;
+  }
+}
+
+
