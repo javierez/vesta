@@ -36,6 +36,16 @@ export default function SandboxPage() {
     })
   }
 
+  const handleSeed = async () => {
+    try {
+      await seedDatabase()
+      alert('Database seeded successfully!')
+    } catch (error) {
+      console.error('Error seeding database:', error)
+      alert('Error seeding database. Check console for details.')
+    }
+  }
+
   return (
     <div className="container py-8">
       <div className="max-w-2xl mx-auto">

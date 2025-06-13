@@ -4,13 +4,13 @@ import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-import { PropertyCard } from "~/components/property-card"
 import { PropertyCardSkeleton } from "~/components/property-card-skeleton"
 import { PropertyFilter } from "~/components/propiedades/property-filter"
 import { PropertyTable } from "~/components/propiedades/property-table"
-import { listListings } from "~/server/queries/listing"
+import { PropertyGrid } from "~/components/propiedades/property-grid"
+import { NoResults } from "~/components/propiedades/no-results"
+import { listListings, getAllAgents } from "~/server/queries/listing"
 import type { ListingOverview } from "~/types/listing"
-import { PaginationControls } from "~/components/ui/pagination-controls"
 import { useSearchParams, useRouter } from "next/navigation"
 
 const ITEMS_PER_PAGE = 21
@@ -23,12 +23,29 @@ export default function PropertiesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [agents, setAgents] = useState<Array<{ id: bigint, name: string }>>([])
+  const [error, setError] = useState<string | null>(null)
 
   const view = (searchParams.get('view') || 'grid') as "grid" | "table"
+
+  // Fetch agents independently
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const allAgents = await getAllAgents()
+        setAgents(allAgents)
+      } catch (error) {
+        console.error("Error fetching agents:", error)
+        setError("Error al cargar los agentes")
+      }
+    }
+    fetchAgents()
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
+      setError(null)
       try {
         const page = Number(searchParams.get('page')) || 1
         setCurrentPage(page)
@@ -46,9 +63,11 @@ export default function PropertiesPage() {
               'for-rent': 'En Alquiler',
               'sold': 'Vendido'
             }
-            filters.listingType = statusMap[value] || value
+            filters.listingType = value.split(',').map(v => statusMap[v] || v)
           } else if (key === 'type') {
-            filters.propertyType = value
+            filters.propertyType = value.split(',')
+          } else if (key === 'agent') {
+            filters.agentId = value.split(',').map(Number)
           } else if (['minPrice', 'maxPrice', 'bedrooms', 'minBathrooms', 'maxBathrooms', 'minSquareMeter', 'maxSquareMeter'].includes(key)) {
             filters[key] = Number(value)
           } else if (['hasGarage', 'hasElevator', 'hasStorageRoom', 'brandNew', 'needsRenovation'].includes(key)) {
@@ -63,8 +82,14 @@ export default function PropertiesPage() {
         setListings(result.listings)
         setTotalPages(result.totalPages)
         setTotalCount(result.totalCount)
+
+        // If no results found, show a message
+        if (result.totalCount === 0) {
+          setError("No se encontraron propiedades con los filtros seleccionados")
+        }
       } catch (error) {
         console.error("Error fetching data:", error)
+        setError("Error al cargar las propiedades")
       } finally {
         setIsLoading(false)
       }
@@ -93,6 +118,7 @@ export default function PropertiesPage() {
 
       <PropertyFilter 
         view={view}
+        agents={agents}
       />
 
       {isLoading ? (
@@ -101,23 +127,15 @@ export default function PropertiesPage() {
             <PropertyCardSkeleton key={index} />
           ))}
         </div>
+      ) : error ? (
+        <NoResults message={error} />
       ) : view === "grid" ? (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {listings.map((listing) => (
-              <PropertyCard 
-                key={listing.listingId.toString()} 
-                listing={listing}
-              />
-            ))}
-          </div>
-          <PaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            className="mt-10"
-          />
-        </>
+        <PropertyGrid
+          listings={listings}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       ) : (
         <PropertyTable 
           listings={listings}

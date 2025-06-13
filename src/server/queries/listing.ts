@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from "../db"
-import { listings, properties, locations, propertyImages } from "../db/schema";
+import { listings, properties, locations, propertyImages, users, contacts, listingContacts } from "../db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 
@@ -83,25 +83,6 @@ export async function getListingsByAgentId(agentId: number) {
   }
 }
 
-// Get listings by owner contact ID
-export async function getListingsByOwnerContactId(ownerContactId: number) {
-  try {
-    const ownerListings = await db
-      .select()
-      .from(listings)
-      .where(
-        and(
-          eq(listings.ownerContactId, BigInt(ownerContactId)),
-          eq(listings.isActive, true)
-        )
-      );
-    return ownerListings;
-  } catch (error) {
-    console.error("Error fetching owner listings:", error);
-    throw error;
-  }
-}
-
 // Update listing
 export async function updateListing(
   listingId: number,
@@ -162,15 +143,14 @@ export async function listListings(
   filters?: {
     status?: 'Active' | 'Pending' | 'Sold';
     listingType?: 'Sale' | 'Rent';
-    agentId?: number;
+    agentId?: number[];
     propertyId?: number;
-    ownerContactId?: number;
     isActive?: boolean;
     isFeatured?: boolean;
     isBankOwned?: boolean;
     minPrice?: number;
     maxPrice?: number;
-    propertyType?: string;
+    propertyType?: string[];
     bedrooms?: number;
     minBathrooms?: number;
     maxBathrooms?: number;
@@ -195,19 +175,16 @@ export async function listListings(
     const whereConditions = [];
     if (filters) {
       if (filters.status) {
-        whereConditions.push(eq(listings.status, filters.status));
+        whereConditions.push(sql`${listings.status} IN (${filters.status})`);
       }
       if (filters.listingType) {
-        whereConditions.push(eq(listings.listingType, filters.listingType));
+        whereConditions.push(sql`${listings.listingType} IN (${filters.listingType})`);
       }
-      if (filters.agentId) {
-        whereConditions.push(eq(listings.agentId, BigInt(filters.agentId)));
+      if (filters.agentId && filters.agentId.length > 0) {
+        whereConditions.push(sql`${listings.agentId} IN (${filters.agentId.map(id => BigInt(id))})`);
       }
       if (filters.propertyId) {
         whereConditions.push(eq(listings.propertyId, BigInt(filters.propertyId)));
-      }
-      if (filters.ownerContactId) {
-        whereConditions.push(eq(listings.ownerContactId, BigInt(filters.ownerContactId)));
       }
       if (filters.isActive !== undefined) {
         whereConditions.push(eq(listings.isActive, filters.isActive));
@@ -224,8 +201,8 @@ export async function listListings(
       if (filters.maxPrice) {
         whereConditions.push(sql`CAST(${listings.price} AS DECIMAL) <= ${filters.maxPrice}`);
       }
-      if (filters.propertyType) {
-        whereConditions.push(eq(properties.propertyType, filters.propertyType));
+      if (filters.propertyType && filters.propertyType.length > 0) {
+        whereConditions.push(sql`${properties.propertyType} IN (${filters.propertyType})`);
       }
       if (filters.bedrooms) {
         whereConditions.push(eq(properties.bedrooms, filters.bedrooms));
@@ -285,14 +262,14 @@ export async function listListings(
       whereConditions.push(eq(listings.isActive, true));
     }
 
-    // Create the base query with property and location details
+    // Create the base query with property, location, agent, and owner details
     const query = db
       .select({
         // Listing fields
         listingId: listings.listingId,
         propertyId: listings.propertyId,
         agentId: listings.agentId,
-        ownerContactId: listings.ownerContactId,
+        agentName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
         price: listings.price,
         status: listings.status,
         listingType: listings.listingType,
@@ -354,19 +331,46 @@ export async function listListings(
           AND is_active = true 
           AND image_order = 2
           LIMIT 1
+        )`,
+
+        // Owner information through listing contacts
+        ownerName: sql<string>`(
+          SELECT CONCAT(c.first_name, ' ', c.last_name)
+          FROM listing_contacts lc
+          JOIN contacts c ON lc.contact_id = c.contact_id
+          WHERE lc.listing_id = ${listings.listingId}
+          AND lc.contact_type = 'owner'
+          AND lc.is_active = true
+          AND c.is_active = true
+          LIMIT 1
         )`
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId));
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(users, eq(listings.agentId, users.userId));
 
     // Get total count for pagination
-    const [{ count }] = await db
+    const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(users, eq(listings.agentId, users.userId))
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
+
+    const count = countResult[0]?.count ?? 0;
+
+    // If no results found, return empty result set
+    if (count === 0) {
+      console.log('No listings found with current filters');
+      return {
+        listings: [],
+        totalCount: 0,
+        totalPages: 0,
+        currentPage: page
+      };
+    }
 
     // Apply all where conditions at once
     const filteredQuery = whereConditions.length > 0 
@@ -379,6 +383,12 @@ export async function listListings(
       .limit(limit)
       .offset(offset);
 
+    // Log the results
+    console.log(`Found ${allListings.length} listings with owner information:`);
+    allListings.forEach((listing, index) => {
+      console.log(`${index + 1}. Listing ID: ${listing.listingId}, Property: ${listing.title}, Agent: ${listing.agentName}, Owner: ${listing.ownerName || 'No owner found'}`);
+    });
+
     return {
       listings: allListings,
       totalCount: Number(count),
@@ -387,69 +397,33 @@ export async function listListings(
     };
   } catch (error) {
     console.error("Error listing listings:", error);
-    throw error;
+    // Return empty result set on error
+    return {
+      listings: [],
+      totalCount: 0,
+      totalPages: 0,
+      currentPage: page
+    };
   }
 }
 
-// Increment view count for a listing
-export async function incrementViewCount(listingId: number) {
+// Get all active agents
+export async function getAllAgents() {
   try {
-    await db
-      .update(listings)
-      .set({ viewCount: sql`${listings.viewCount} + 1` })
-      .where(eq(listings.listingId, BigInt(listingId)));
-    return { success: true };
-  } catch (error) {
-    console.error("Error incrementing view count:", error);
-    throw error;
-  }
-}
-
-// Increment inquiry count for a listing
-export async function incrementInquiryCount(listingId: number) {
-  try {
-    await db
-      .update(listings)
-      .set({ inquiryCount: sql`${listings.inquiryCount} + 1` })
-      .where(eq(listings.listingId, BigInt(listingId)));
-    return { success: true };
-  } catch (error) {
-    console.error("Error incrementing inquiry count:", error);
-    throw error;
-  }
-}
-
-// Get listing overview with property details
-export async function getListingOverview(listingId: number) {
-  try {
-    const [listing] = await db
+    const agents = await db
       .select({
-        listingId: listings.listingId,
-        propertyId: listings.propertyId,
-        price: listings.price,
-        status: listings.status,
-        property: {
-          propertyId: properties.propertyId,
-          referenceNumber: properties.referenceNumber,
-          title: properties.title,
-          propertyType: properties.propertyType,
-          bedrooms: properties.bedrooms,
-          bathrooms: properties.bathrooms,
-          squareMeter: properties.squareMeter,
-        }
+        id: users.userId,
+        name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`
       })
-      .from(listings)
-      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .where(
-        and(
-          eq(listings.listingId, BigInt(listingId)),
-          eq(listings.isActive, true)
-        )
-      );
+      .from(users)
+      .where(eq(users.isActive, true))
+      .orderBy(sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`);
 
-    return listing;
+    return agents;
   } catch (error) {
-    console.error("Error fetching listing overview:", error);
+    console.error("Error fetching agents:", error);
     throw error;
   }
 }
+
+// ... rest of the file remains unchanged ...

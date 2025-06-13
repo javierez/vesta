@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Badge } from "~/components/ui/badge"
 import { Card, CardContent, CardFooter } from "~/components/ui/card"
-import { Bed, Bath, SquareIcon as SquareFoot, MapPin, Hash } from "lucide-react"
+import { Bed, Bath, SquareIcon as SquareFoot, MapPin, Hash, User } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { handleImageError } from "~/lib/images"
 
@@ -21,6 +21,7 @@ type Listing = {
   isBankOwned: boolean | null
   viewCount: number | null
   inquiryCount: number | null
+  agentName: string | null
   
   // Property fields
   referenceNumber: string | null
@@ -107,13 +108,13 @@ export function PropertyCard({ listing }: PropertyCardProps) {
   }
 
   return (
-    <Card
-      className="overflow-hidden transition-all hover:shadow-lg"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="aspect-[4/3] relative overflow-hidden">
-        <Link href={`/propiedades/${listing.propertyId.toString()}`}>
+    <Link href={`/propiedades/${listing.propertyId.toString()}`} className="block">
+      <Card
+        className="overflow-hidden transition-all hover:shadow-lg"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="aspect-[4/3] relative overflow-hidden">
           <div className="relative w-full h-full">
             {/* First Image */}
             <Image
@@ -123,7 +124,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className={`object-cover transition-opacity duration-300 ${
                 isHovered ? "opacity-0" : "opacity-100"
-              } ${imageSrc === defaultPlaceholder ? "grayscale" : ""}`}
+              } ${(imageSrc === defaultPlaceholder || listing.status === "Sold" || listing.status === "Vendido") ? "grayscale" : ""}`}
               loading="lazy"
               onLoad={() => setImageLoaded(true)}
               onError={onImageError}
@@ -137,7 +138,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className={`object-cover transition-opacity duration-300 ${
                 isHovered ? "opacity-100" : "opacity-0"
-              } ${imageSrc2 === defaultPlaceholder ? "grayscale" : ""}`}
+              } ${(imageSrc2 === defaultPlaceholder || listing.status === "Sold" || listing.status === "Vendido") ? "grayscale" : ""}`}
               loading="lazy"
               onLoad={() => setImage2Loaded(true)}
               onError={onImage2Error}
@@ -145,82 +146,85 @@ export function PropertyCard({ listing }: PropertyCardProps) {
             />
             {(!imageLoaded || !image2Loaded) && <div className="absolute inset-0 bg-muted animate-pulse" />}
           </div>
-        </Link>
-        {/* Top Left - Property Type */}
-        <Badge variant="outline" className="absolute top-2 left-2 z-10 bg-white/80 text-sm">
-          {getPropertyTypeLabel(listing.propertyType)}
-        </Badge>
-        
-        {/* Top Right - Status */}
-        <Badge className="absolute top-2 right-2 z-10 text-sm">
-          {listing.status === "for-sale" ? "En Venta" : listing.status === "for-rent" ? "En Alquiler" : "Vendido"}
-        </Badge>
-        
-        {/* Bottom Left - Reference Number */}
-        <Badge variant="secondary" className="absolute bottom-2 left-2 z-10 bg-blue-500/80 text-white text-sm">
-          <Hash className="h-3 w-3 mr-1" />
-          {listing.referenceNumber}
-        </Badge>
-        
-        {/* Bottom Right - Bank Owned */}
-        {listing.isBankOwned && (
-          <Badge variant="secondary" className="absolute bottom-2 right-2 z-10 bg-amber-500 text-white text-sm">
-            Piso de Banco
+          {/* Top Left - Property Type */}
+          <Badge variant="outline" className="absolute top-2 left-2 z-10 bg-white/80 text-sm">
+            {getPropertyTypeLabel(listing.propertyType)}
           </Badge>
-        )}
-      </div>
-
-      <CardContent className="p-3">
-        <div className="mb-1 flex items-start justify-between">
-          <div>
-            <h3 className="font-semibold text-base line-clamp-1">{listing.street}</h3>
+          
+          {/* Top Right - Status */}
+          <Badge className="absolute top-2 right-2 z-10 text-sm">
+            {listing.listingType === "Sale" ? "En Venta" : listing.listingType === "Rent" ? "En Alquiler" : "Vendido"}
+          </Badge>
+          
+          {/* Bottom Center - Reference Number */}
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-10">
+            <span className="text-[10px] font-semibold tracking-widest text-white/90">
+              {listing.referenceNumber}
+            </span>
           </div>
-          <p className="font-bold text-base">
-            {formatNumber(listing.price)}€{listing.status === "for-rent" ? "/mes" : ""}
-          </p>
+          
+          {/* Bottom Right - Bank Owned */}
+          {listing.isBankOwned && (
+            <Badge variant="secondary" className="absolute bottom-2 right-2 z-10 bg-amber-500 text-white text-sm">
+              Piso de Banco
+            </Badge>
+          )}
         </div>
 
-        <div className="flex items-center text-muted-foreground mb-2">
-          <MapPin className="h-3.5 w-3.5 mr-1" />
-          <p className="text-xs line-clamp-1">
-            {listing.city}, {listing.province}
-          </p>
-        </div>
-
-        <div className="flex justify-between text-xs">
-          {listing.propertyType !== "solar" &&
-            listing.propertyType !== "garaje" &&
-            listing.propertyType !== "local" && (
-              <>
-                <div className="flex items-center">
-                  <Bed className="h-3.5 w-3.5 mr-1" />
-                  <span>{listing.bedrooms} {listing.bedrooms === 1 ? "Hab" : "Habs"}</span>
-                </div>
-                <div className="flex items-center">
-                  <Bath className="h-3.5 w-3.5 mr-1" />
-                  <span>{Math.floor(Number(listing.bathrooms))} {Math.floor(Number(listing.bathrooms)) === 1 ? "Baño" : "Baños"}</span>
-                </div>
-              </>
-            )}
-          <div className="flex items-center">
-            <SquareFoot className="h-3.5 w-3.5 mr-1" />
-            <span>{listing.squareMeter} m²</span>
+        <CardContent className="p-3">
+          <div className="mb-1 flex items-start justify-between">
+            <div>
+              <h3 className="font-semibold text-base line-clamp-1">{listing.street}</h3>
+            </div>
+            <p className="font-bold text-base">
+              {formatNumber(listing.price)}€{listing.listingType === "Rent" ? "/mes" : ""}
+            </p>
           </div>
-        </div>
-      </CardContent>
 
-      <CardFooter className="p-3 pt-0 flex gap-2">
-        <Button asChild variant="outline" className="flex-1 text-xs">
-          <Link href={`/propiedades/${listing.propertyId.toString()}`}>
-            VER
-          </Link>
-        </Button>
-        <Button asChild variant="outline" className="flex-1 text-xs">
-          <Link href={`/propiedades/${listing.propertyId.toString()}/edit`}>
-            EDITAR
-          </Link>
-        </Button>
-      </CardFooter>
-    </Card>
+          <div className="flex items-center text-muted-foreground mb-2">
+            <MapPin className="h-3.5 w-3.5 mr-1" />
+            <p className="text-xs line-clamp-1">
+              {listing.city}, {listing.province}
+            </p>
+          </div>
+
+          <div className="flex justify-between text-xs">
+            {listing.propertyType !== "solar" &&
+              listing.propertyType !== "garaje" &&
+              listing.propertyType !== "local" && (
+                <>
+                  <div className="flex items-center">
+                    <Bed className="h-3.5 w-3.5 mr-1" />
+                    <span>{listing.bedrooms} {listing.bedrooms === 1 ? "Hab" : "Habs"}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Bath className="h-3.5 w-3.5 mr-1" />
+                    <span>{Math.floor(Number(listing.bathrooms))} {Math.floor(Number(listing.bathrooms)) === 1 ? "Baño" : "Baños"}</span>
+                  </div>
+                </>
+              )}
+            <div className="flex items-center">
+              <SquareFoot className="h-3.5 w-3.5 mr-1" />
+              <span>{listing.squareMeter} m²</span>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="p-3 pt-2 relative border-t border-border/40">
+          <div className="flex items-center gap-1.5 group cursor-pointer transition-all">
+            <User className="h-3 w-3 text-muted-foreground/80 transition-all group-hover:text-primary group-hover:scale-110" />
+            <p className="text-xs text-muted-foreground/80 font-light transition-all group-hover:font-bold group-hover:text-primary group-hover:underline">
+              {listing.agentName}
+            </p>
+          </div>
+          <Button 
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 bottom-1 h-8 w-8 text-muted-foreground/80 group hover:bg-transparent mr-2"
+          >
+            <Image src="/logos/whatsapp.png" alt="WhatsApp" width={20} height={20} className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+          </Button>
+        </CardFooter>
+      </Card>
+    </Link>
   )
 }

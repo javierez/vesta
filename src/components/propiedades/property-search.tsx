@@ -35,24 +35,17 @@ export function PropertySearch({
   }
 
   return (
-    <div className="relative flex-1 md:max-w-sm flex gap-2">
+    <div className="relative flex-1 md:max-w-sm">
       <div className="relative flex-1">
         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder={placeholder}
-          className="pl-8"
+          className="pl-8 w-full"
           value={value}
           onChange={handleChange}
           onKeyPress={handleKeyPress}
         />
       </div>
-      <Button 
-        variant="secondary" 
-        onClick={handleSearch}
-        className="shrink-0"
-      >
-        Buscar
-      </Button>
     </div>
   )
 }

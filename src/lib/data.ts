@@ -129,15 +129,15 @@ export const properties: Property[] = [
   {
     propertyId: BigInt(1),
     referenceNumber: "REF001",
-    title: "Luxury Apartment with Ocean View",
-    description: "Beautiful apartment with stunning ocean views",
+    title: "Piso en Avenida Ordoño II (Centro Ciudad)",
+    description: "Beautiful apartment with stunning views of the city center",
     propertyType: "piso",
     price: "350000",
     bedrooms: 3,
     bathrooms: "2",
     squareMeter: 120,
     yearBuilt: 2020,
-    street: "123 Paseo Oceanview",
+    street: "Avenida Ordoño II, 15",
     postalCode: "24001",
     neighborhoodId: BigInt(1), // Centro Ciudad
     latitude: "42.59870000",
@@ -156,16 +156,16 @@ export const properties: Property[] = [
   {
     propertyId: BigInt(2),
     referenceNumber: "REF002",
-    title: "Historic Downtown Loft",
-    description: "Renovated loft in historic building",
+    title: "Piso en Calle Ancha (Casco Antiguo)",
+    description: "Renovated apartment in historic building near the Cathedral",
     propertyType: "piso",
     price: "275000",
     bedrooms: 2,
     bathrooms: "1",
     squareMeter: 85,
     yearBuilt: 1960,
-    street: "456 Calle Mayor",
-    postalCode: "24002",
+    street: "Calle Ancha, 8",
+    postalCode: "24003",
     neighborhoodId: BigInt(9), // Casco Antiguo
     latitude: "42.59870000",
     longitude: "-5.56710000",
@@ -183,16 +183,16 @@ export const properties: Property[] = [
   {
     propertyId: BigInt(3),
     referenceNumber: "REF003",
-    title: "Modern Commercial Space",
-    description: "Prime location commercial property",
+    title: "Local en Avenida de la Facultad (Las Ventas)",
+    description: "Prime location commercial property near university area",
     propertyType: "local",
     price: "450000",
     bedrooms: 0,
     bathrooms: "1",
     squareMeter: 150,
     yearBuilt: 1990,
-    street: "789 Avenida Comercial",
-    postalCode: "24003",
+    street: "Avenida de la Facultad, 25",
+    postalCode: "24004",
     neighborhoodId: BigInt(10), // Las Ventas
     latitude: "42.59870000",
     longitude: "-5.56710000",
@@ -210,16 +210,16 @@ export const properties: Property[] = [
   {
     propertyId: BigInt(4),
     referenceNumber: "REF004",
-    title: "Spacious Family Home",
-    description: "Large family home with garden",
+    title: "Casa en Calle La Lastra (La Chantría- La Lastra)",
+    description: "Large family home with garden in quiet residential area",
     propertyType: "casa",
     price: "550000",
     bedrooms: 4,
     bathrooms: "3",
     squareMeter: 250,
     yearBuilt: 2005,
-    street: "321 Calle Panorámica",
-    postalCode: "24004",
+    street: "Calle La Lastra, 12",
+    postalCode: "24005",
     neighborhoodId: BigInt(2), // La Chantría- La Lastra
     latitude: "42.59870000",
     longitude: "-5.56710000",
@@ -237,7 +237,7 @@ export const properties: Property[] = [
   {
     propertyId: BigInt(5),
     referenceNumber: "REF005",
-    title: "Parking Space in City Center",
+    title: "Garaje en Calle Padre Isla (Centro Ciudad)",
     description: "Convenient parking space in central location",
     propertyType: "garaje",
     price: "25000",
@@ -245,8 +245,8 @@ export const properties: Property[] = [
     bathrooms: "0",
     squareMeter: 20,
     yearBuilt: 2010,
-    street: "654 Calle Principal",
-    postalCode: "24005",
+    street: "Calle Padre Isla, 5",
+    postalCode: "24002",
     neighborhoodId: BigInt(1), // Centro Ciudad
     latitude: "42.59870000",
     longitude: "-5.56710000",
@@ -955,10 +955,9 @@ export type Listing = {
   listingId: bigint;
   propertyId: bigint;
   agentId: bigint;
-  ownerContactId: bigint;
-  listingType: 'Sale' | 'Rent';
+  listingType: 'Sale' | 'Rent' | 'Sold';
   price: string;
-  status: 'Active' | 'Pending' | 'Sold';
+  status: 'Active' | 'Pending' | 'Resolved';
   isFeatured: boolean;
   isBankOwned: boolean;
   viewCount: number;
@@ -981,7 +980,6 @@ export type Contact = {
   lastName: string;
   email?: string;
   phone?: string;
-  contactType: 'demandante' | 'propietario' | 'banco' | 'agencia';
   additionalInfo?: {
     demandType?: string;  // For demandante: what they're looking for
     propertiesCount?: number;  // For sellers: number of properties
@@ -1075,10 +1073,10 @@ export type Document = {
   updatedAt: Date;
 };
 
-// Mock data for users
-export const users: User[] = [
+// Mock data for users (real estate agents)
+export const mockUsers = [
   {
-    userId: 1,
+    userId: BigInt(1),
     email: "juan.garcia@acropolis-realestate.com",
     firstName: "Juan",
     lastName: "García",
@@ -1088,7 +1086,9 @@ export const users: User[] = [
     language: "es",
     preferences: {
       notifications: true,
-      theme: "light"
+      theme: "light",
+      emailNotifications: true,
+      smsNotifications: false
     },
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -1097,7 +1097,7 @@ export const users: User[] = [
     isActive: true
   },
   {
-    userId: 2,
+    userId: BigInt(2),
     email: "maria.lopez@acropolis-realestate.com",
     firstName: "María",
     lastName: "López",
@@ -1107,11 +1107,34 @@ export const users: User[] = [
     language: "es",
     preferences: {
       notifications: true,
-      theme: "dark"
+      theme: "dark",
+      emailNotifications: true,
+      smsNotifications: true
     },
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     lastLogin: new Date("2024-03-14"),
+    isVerified: true,
+    isActive: true
+  },
+  {
+    userId: BigInt(3),
+    email: "carlos.martinez@acropolis-realestate.com",
+    firstName: "Carlos",
+    lastName: "Martínez",
+    phone: "+34 987 123 458",
+    profileImageUrl: "/agents/carlos-martinez.jpg",
+    timezone: "Europe/Madrid",
+    language: "es",
+    preferences: {
+      notifications: true,
+      theme: "light",
+      emailNotifications: true,
+      smsNotifications: true
+    },
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    lastLogin: new Date("2024-03-13"),
     isVerified: true,
     isActive: true
   }
@@ -1192,32 +1215,102 @@ export const organizations: Organization[] = [
 export const contacts: Contact[] = [
   {
     contactId: BigInt(1),
-    firstName: "Carlos",
-    lastName: "Rodríguez",
-    email: "carlos.rodriguez@email.com",
-    phone: "+34 987 654 321",
-    contactType: "propietario",
-    additionalInfo: {
-      propertiesCount: 2,
-      propertyTypes: ["house", "apartment"]
-    },
+    firstName: "María",
+    lastName: "López",
+    email: "maria.lopez@email.com",
+    phone: "+34 987 123 456",
     isActive: true,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15")
   },
   {
     contactId: BigInt(2),
+    firstName: "Juan",
+    lastName: "García",
+    email: "juan.garcia@email.com",
+    phone: "+34 987 234 567",
+    isActive: true,
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15")
+  },
+  {
+    contactId: BigInt(3),
     firstName: "Ana",
     lastName: "Martínez",
     email: "ana.martinez@email.com",
-    phone: "+34 987 654 322",
-    contactType: "banco",
-    additionalInfo: {
-      demandType: "demandante"
-    },
+    phone: "+34 987 345 678",
     isActive: true,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15")
+  },
+  {
+    contactId: BigInt(4),
+    firstName: "Carlos",
+    lastName: "Rodríguez",
+    email: "carlos.rodriguez@email.com",
+    phone: "+34 987 456 789",
+    isActive: true,
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15")
+  },
+  {
+    contactId: BigInt(5),
+    firstName: "Laura",
+    lastName: "Sánchez",
+    email: "laura.sanchez@email.com",
+    phone: "+34 987 567 890",
+    isActive: true,
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15")
+  }
+];
+
+// Mock data for listing contacts
+export const listingContacts: ListingContact[] = [
+  {
+    listingContactId: BigInt(1),
+    listingId: BigInt(1),
+    contactId: BigInt(1),
+    contactType: 'owner',
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15"),
+    isActive: true
+  },
+  {
+    listingContactId: BigInt(2),
+    listingId: BigInt(2),
+    contactId: BigInt(2),
+    contactType: 'owner',
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15"),
+    isActive: true
+  },
+  {
+    listingContactId: BigInt(3),
+    listingId: BigInt(3),
+    contactId: BigInt(3),
+    contactType: 'owner',
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15"),
+    isActive: true
+  },
+  {
+    listingContactId: BigInt(4),
+    listingId: BigInt(4),
+    contactId: BigInt(4),
+    contactType: 'owner',
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15"),
+    isActive: true
+  },
+  {
+    listingContactId: BigInt(5),
+    listingId: BigInt(5),
+    contactId: BigInt(5),
+    contactType: 'owner',
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-03-15"),
+    isActive: true
   }
 ];
 
@@ -1227,8 +1320,7 @@ export const listings: Listing[] = [
     listingId: BigInt(1),
     propertyId: BigInt(1),
     agentId: BigInt(1),
-    ownerContactId: BigInt(1),
-    listingType: "Sale",
+    listingType: 'Sale',
     price: "1250000.00",
     status: "Active",
     isFeatured: true,
@@ -1249,8 +1341,7 @@ export const listings: Listing[] = [
     listingId: BigInt(2),
     propertyId: BigInt(2),
     agentId: BigInt(2),
-    ownerContactId: BigInt(2),
-    listingType: "Sale",
+    listingType: 'Rent',
     price: "350000.00",
     status: "Active",
     isFeatured: true,
@@ -1272,8 +1363,7 @@ export const listings: Listing[] = [
     listingId: BigInt(3),
     propertyId: BigInt(3),
     agentId: BigInt(1),
-    ownerContactId: BigInt(3),
-    listingType: "Sale",
+    listingType: 'Sold',
     price: "450000.00",
     status: "Active",
     isFeatured: false,
@@ -1293,8 +1383,7 @@ export const listings: Listing[] = [
     listingId: BigInt(4),
     propertyId: BigInt(4),
     agentId: BigInt(2),
-    ownerContactId: BigInt(4),
-    listingType: "Sale",
+    listingType: 'Sold',
     price: "250000.00",
     status: "Active",
     isFeatured: false,
@@ -1314,9 +1403,8 @@ export const listings: Listing[] = [
     listingId: BigInt(5),
     propertyId: BigInt(5),
     agentId: BigInt(1),
-    ownerContactId: BigInt(5),
-    listingType: "Sale",
-    price: "35000.00",
+    listingType: 'Sold',
+    price: "350.00",
     status: "Active",
     isFeatured: false,
     isBankOwned: false,
@@ -1605,3 +1693,13 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     isActive: true
   }
 ];
+
+export type ListingContact = {
+  listingContactId: bigint;
+  listingId: bigint;
+  contactId: bigint;
+  contactType: 'owner' | 'buyer';
+  createdAt: Date;
+  updatedAt: Date;
+  isActive: boolean;
+};

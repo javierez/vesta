@@ -1,8 +1,8 @@
 'use server'
 
 import { db } from "~/server/db"
-import { properties, type Property, propertyImages as mockPropertyImages, LEON_NEIGHBORHOODS } from "~/lib/data"
-import { properties as dbProperties, listings, propertyImages, locations } from "~/server/db/schema"
+import { properties, type Property, propertyImages as mockPropertyImages, LEON_NEIGHBORHOODS, listings as mockListings, mockUsers, contacts as mockContacts, listingContacts as mockListingContacts } from "~/lib/data"
+import { properties as dbProperties, listings as dbListings, propertyImages, locations, users, contacts, listingContacts } from "~/server/db/schema"
 import { createProperty } from "~/server/queries/properties"
 import { createListing } from "~/server/queries/listing"
 import { createPropertyImage } from "~/server/queries/property_images"
@@ -60,14 +60,89 @@ async function seedLocations() {
   }
 }
 
+// Seed users data
+async function seedUsers() {
+  try {
+    for (const user of mockUsers) {
+      await db.insert(users).values({
+        userId: user.userId,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        profileImageUrl: user.profileImageUrl,
+        timezone: user.timezone,
+        language: user.language,
+        preferences: user.preferences,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        lastLogin: user.lastLogin,
+        isVerified: user.isVerified,
+        isActive: user.isActive
+      });
+    }
+    console.log('Users seeded successfully');
+  } catch (error) {
+    console.error('Error seeding users:', error);
+    throw error;
+  }
+}
+
+// Seed contacts data
+async function seedContacts() {
+  try {
+    for (const contact of mockContacts) {
+      await db.insert(contacts).values({
+        contactId: contact.contactId,
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        email: contact.email,
+        phone: contact.phone,
+        additionalInfo: contact.additionalInfo,
+        isActive: contact.isActive,
+        createdAt: contact.createdAt,
+        updatedAt: contact.updatedAt
+      });
+    }
+    console.log('Contacts seeded successfully');
+  } catch (error) {
+    console.error('Error seeding contacts:', error);
+    throw error;
+  }
+}
+
+// Seed listing contacts data
+async function seedListingContacts() {
+  try {
+    for (const listingContact of mockListingContacts) {
+      await db.insert(listingContacts).values({
+        listingContactId: listingContact.listingContactId,
+        listingId: listingContact.listingId,
+        contactId: listingContact.contactId,
+        contactType: listingContact.contactType,
+        createdAt: listingContact.createdAt,
+        updatedAt: listingContact.updatedAt,
+        isActive: listingContact.isActive
+      });
+    }
+    console.log('Listing contacts seeded successfully');
+  } catch (error) {
+    console.error('Error seeding listing contacts:', error);
+    throw error;
+  }
+}
+
 // Clear all data from relevant tables
 async function clearDatabase() {
   try {
     // Delete in reverse order of dependencies to avoid foreign key constraints
-    await db.delete(listings);
+    await db.delete(listingContacts);
+    await db.delete(dbListings);
     await db.delete(propertyImages);
     await db.delete(dbProperties);
+    await db.delete(contacts);
     await db.delete(locations);
+    await db.delete(users);
     console.log('Database cleared successfully');
   } catch (error) {
     console.error('Error clearing database:', error);
@@ -80,29 +155,55 @@ export async function seedDatabase() {
     // First clear existing data
     await clearDatabase();
 
+    // Then seed users
+    await seedUsers();
+
+    // Then seed contacts
+    await seedContacts();
+
     // Then seed locations
     await seedLocations();
 
-    // Then seed properties
+    // Then seed properties and listings
+    const createdListings = new Map<bigint, bigint>(); // Map to store propertyId -> listingId
+
     for (const property of properties) {
       const dbProperty = toDbProperty(property)
       const createdProperty = await createProperty(dbProperty)
       
       // Create a listing for each property
       if (createdProperty) {
-        await createListing({
+        // Find the corresponding listing in the mock data
+        const mockListing = mockListings.find((l: { propertyId: bigint }) => l.propertyId === property.propertyId);
+        
+        if (!mockListing) {
+          console.warn(`No mock listing found for property ${property.propertyId}, using defaults`);
+        }
+
+        const createdListing = await createListing({
           propertyId: BigInt(createdProperty.propertyId),
-          agentId: BigInt(1), // Default agent ID
-          ownerContactId: BigInt(1), // Default owner contact ID
-          listingType: 'Sale',
-          price: property.price,
-          status: 'Active',
-          isActive: true,
-          isFeatured: false,
-          isBankOwned: false,
-          viewCount: 0,
-          inquiryCount: 0
-        })
+          agentId: mockListing?.agentId || BigInt(1),
+          listingType: mockListing?.listingType || 'Sale',
+          price: mockListing?.price || property.price,
+          status: mockListing?.status || 'Active',
+          isActive: mockListing?.isActive ?? true,
+          isFeatured: mockListing?.isFeatured ?? false,
+          isBankOwned: mockListing?.isBankOwned ?? false,
+          viewCount: mockListing?.viewCount ?? 0,
+          inquiryCount: mockListing?.inquiryCount ?? 0,
+          isFurnished: mockListing?.isFurnished ?? false,
+          furnitureQuality: mockListing?.furnitureQuality,
+          optionalGarage: mockListing?.optionalGarage ?? false,
+          optionalGaragePrice: mockListing?.optionalGaragePrice,
+          studentFriendly: mockListing?.studentFriendly ?? false,
+          petsAllowed: mockListing?.petsAllowed ?? false,
+          appliancesIncluded: mockListing?.appliancesIncluded ?? false
+        });
+
+        // Store the mapping of property ID to listing ID
+        if (createdListing) {
+          createdListings.set(property.propertyId, createdListing.listingId);
+        }
 
         // Create property images for this property
         try {
@@ -138,6 +239,34 @@ export async function seedDatabase() {
         }
       }
     }
+
+    // Finally seed listing contacts with correct listing IDs
+    for (const listingContact of mockListingContacts) {
+      // Find the corresponding property ID from the mock data
+      const mockListing = mockListings.find(l => l.listingId === listingContact.listingId);
+      if (!mockListing) {
+        console.warn(`No mock listing found for listing contact ${listingContact.listingId}, skipping`);
+        continue;
+      }
+
+      // Get the actual listing ID from our mapping
+      const actualListingId = createdListings.get(mockListing.propertyId);
+      if (!actualListingId) {
+        console.warn(`No actual listing ID found for property ${mockListing.propertyId}, skipping`);
+        continue;
+      }
+
+      await db.insert(listingContacts).values({
+        listingContactId: listingContact.listingContactId,
+        listingId: actualListingId, // Use the actual listing ID
+        contactId: listingContact.contactId,
+        contactType: listingContact.contactType,
+        createdAt: listingContact.createdAt,
+        updatedAt: listingContact.updatedAt,
+        isActive: listingContact.isActive
+      });
+    }
+
     console.log('Database seeding completed successfully')
   } catch (error) {
     console.error('Error seeding database:', error)

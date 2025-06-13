@@ -6,6 +6,9 @@ export type ListingOverview = {
   // Listing fields
   listingId: bigint
   propertyId: bigint
+  agentId: bigint
+  agentName: string | null
+  ownerName: string | null
   price: string
   status: string
   listingType: string

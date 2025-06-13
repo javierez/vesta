@@ -199,10 +199,9 @@ export const listings = singlestoreTable("listings", {
   // Basic Information
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(),        // FK → properties.property_id
   agentId: bigint("agent_id", { mode: "bigint" }).notNull(),               // FK → users.user_id (agent)
-  ownerContactId: bigint("owner_contact_id", { mode: "bigint" }).notNull(),// FK → contacts.contact_id
   listingType: varchar("listing_type", { length: 20 }).notNull(),          // e.g. "Sale" or "Rent"
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
-  status: varchar("status", { length: 20 }).notNull(),                     // e.g. "Active", "Pending", "Sold"
+  status: varchar("status", { length: 20 }).notNull(),                     // e.g. "En Venta", "En Alquiler", "Vendido"
 
   // Listing Features
   isFurnished: boolean("is_furnished"),
@@ -236,12 +235,22 @@ export const contacts = singlestoreTable("contacts", {
   lastName: varchar("last_name", { length: 100 }).notNull(),
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 20 }),
-  contactType: varchar("contact_type", { length: 20 }).notNull().default('demandante'),
   additionalInfo: json("additional_info").default({}),
   orgId: bigint("org_id", { mode: "bigint" }), // Nullable FK to organizations
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+// Listing Contact junction table (Many-to-Many relationship between listings and contacts)
+export const listingContacts = singlestoreTable("listing_contacts", {
+  listingContactId: bigint("listing_contact_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
+  contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
+  contactType: varchar("contact_type", { length: 20 }).notNull(), // e.g. "buyer", "owner", "viewer"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  isActive: boolean("is_active").default(true),
 });
 
 // Organizations (companies, law firms, banks)
