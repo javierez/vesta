@@ -1,8 +1,10 @@
 'use client'
 
-import { MapPin } from "lucide-react"
+import { MapPin, Heart } from "lucide-react"
 import { Badge } from "~/components/ui/badge"
 import { formatPrice } from "~/lib/utils"
+import { Button } from "~/components/ui/button"
+import { cn } from "~/lib/utils"
 
 interface PropertyHeaderProps {
   title: string
@@ -14,6 +16,7 @@ interface PropertyHeaderProps {
   price: string
   listingType: 'Sale' | 'Rent' | 'Sold'
   isBankOwned?: boolean
+  isFeatured?: boolean
 }
 
 export function PropertyHeader({
@@ -25,7 +28,8 @@ export function PropertyHeader({
   referenceNumber,
   price,
   listingType,
-  isBankOwned = false
+  isBankOwned = false,
+  isFeatured = false
 }: PropertyHeaderProps) {
   return (
     <div className="py-8">
@@ -33,6 +37,19 @@ export function PropertyHeader({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold">{title}</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "h-16 w-16 p-0 hover:bg-transparent group",
+                isFeatured && "text-red-500"
+              )}
+            >
+              <Heart className={cn(
+                "h-16 w-16 transition-colors",
+                isFeatured ? "fill-current" : "text-muted-foreground group-hover:text-red-500"
+              )} />
+            </Button>
             {isBankOwned && (
               <Badge variant="secondary" className="bg-amber-500 text-white">
                 Piso de Banco

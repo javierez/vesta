@@ -94,6 +94,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           price={listing.price}
           listingType={listing.listingType as 'Sale' | 'Rent' | 'Sold'}
           isBankOwned={listing.isBankOwned ?? false}
+          isFeatured={listing.isFeatured ?? false}
         />
 
         {/* Galería de imágenes */}

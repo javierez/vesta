@@ -8,16 +8,73 @@ import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import { useState, useEffect } from "react"
-import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save } from "lucide-react"
+import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
+
+interface ModuleState {
+  hasUnsavedChanges: boolean;
+  hasBeenSaved: boolean;
+}
 
 interface PropertyCharacteristicsFormProps {
   listing: any // We'll type this properly later
 }
 
 export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristicsFormProps) {
+  // Module states
+  const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
+    basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
+    propertyDetails: { hasUnsavedChanges: false, hasBeenSaved: false },
+    location: { hasUnsavedChanges: false, hasBeenSaved: false },
+    features: { hasUnsavedChanges: false, hasBeenSaved: false },
+    contactInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
+    orientation: { hasUnsavedChanges: false, hasBeenSaved: false },
+    additionalCharacteristics: { hasUnsavedChanges: false, hasBeenSaved: false },
+    premiumFeatures: { hasUnsavedChanges: false, hasBeenSaved: false },
+    additionalSpaces: { hasUnsavedChanges: false, hasBeenSaved: false },
+    materials: { hasUnsavedChanges: false, hasBeenSaved: false },
+    description: { hasUnsavedChanges: false, hasBeenSaved: false },
+    rentalProperties: { hasUnsavedChanges: false, hasBeenSaved: false }
+  })
+
+  // Function to update module state
+  const updateModuleState = (moduleName: string, hasUnsavedChanges: boolean) => {
+    setModuleStates(prev => ({
+      ...prev,
+      [moduleName]: {
+        ...prev[moduleName],
+        hasUnsavedChanges,
+        hasBeenSaved: false
+      }
+    }))
+  }
+
+  // Function to mark module as saved
+  const markModuleAsSaved = (moduleName: string) => {
+    setModuleStates(prev => ({
+      ...prev,
+      [moduleName]: {
+        hasUnsavedChanges: false,
+        hasBeenSaved: true
+      }
+    }))
+  }
+
+  // Function to render module status indicator
+  const renderModuleStatus = (moduleName: string) => {
+    const state = moduleStates[moduleName]
+    if (!state) return null
+    if (state.hasUnsavedChanges) {
+      return <Circle className="h-2 w-2 fill-yellow-500 text-yellow-500" />
+    }
+    if (state.hasBeenSaved) {
+      return <Circle className="h-2 w-2 fill-green-500 text-green-500" />
+    }
+    return null
+  }
+
   const [listingTypes, setListingTypes] = useState<string[]>(
     listing.listingType ? [listing.listingType] : ['Sale'] // Default to 'Sale' if none selected
   )
@@ -161,6 +218,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       }
       return [...prev, type]
     })
+    updateModuleState('basicInfo', true)
   }
 
   return (
@@ -168,8 +226,16 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Basic Information */}
       <Card className="p-4">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN BÁSICA</h3>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN BÁSICA</h3>
+            {renderModuleStatus('basicInfo')}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 hover:bg-transparent group"
+            onClick={() => markModuleAsSaved('basicInfo')}
+          >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
         </div>
@@ -191,7 +257,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 type="button"
                 variant={listingTypes.includes('Sale') ? "default" : "outline"}
                 size="sm"
-                onClick={() => toggleListingType('Sale')}
+                onClick={() => {
+                  toggleListingType('Sale')
+                  updateModuleState('basicInfo', true)
+                }}
                 className="flex-1"
               >
                 Venta
@@ -200,7 +269,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 type="button"
                 variant={listingTypes.includes('Rent') ? "default" : "outline"}
                 size="sm"
-                onClick={() => toggleListingType('Rent')}
+                onClick={() => {
+                  toggleListingType('Rent')
+                  updateModuleState('basicInfo', true)
+                }}
                 className="flex-1"
               >
                 Alquiler
@@ -210,7 +282,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
 
           <div className="space-y-1.5">
             <Label htmlFor="propertyType" className="text-sm">Tipo de Propiedad</Label>
-            <Select defaultValue={listing.propertyType}>
+            <Select 
+              defaultValue={listing.propertyType}
+              onValueChange={() => updateModuleState('basicInfo', true)}
+            >
               <SelectTrigger className="h-8 text-gray-500">
                 <SelectValue placeholder="Seleccionar tipo" />
               </SelectTrigger>
@@ -233,29 +308,25 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               className="h-8 text-gray-500" 
               min="0"
               step="1"
+              onChange={() => updateModuleState('basicInfo', true)}
             />
           </div>
+
+          <div className="border-t border-border my-2" />
 
           <div className="flex gap-2">
             <Button
               type="button"
               variant={isBankOwned ? "default" : "outline"}
               size="sm"
-              onClick={() => setIsBankOwned(!isBankOwned)}
+              onClick={() => {
+                setIsBankOwned(!isBankOwned)
+                updateModuleState('basicInfo', true)
+              }}
               className="flex-1"
             >
               <Building2 className="h-4 w-4 mr-2" />
               Piso de Banco
-            </Button>
-            <Button
-              type="button"
-              variant={isFeatured ? "default" : "outline"}
-              size="sm"
-              onClick={() => setIsFeatured(!isFeatured)}
-              className="flex-1"
-            >
-              <Star className="h-4 w-4 mr-2" />
-              Destacado
             </Button>
           </div>
         </div>
@@ -264,15 +335,29 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Property Details */}
       <Card className="p-4">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide">DETALLES DE LA PROPIEDAD</h3>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">DETALLES DE LA PROPIEDAD</h3>
+            {renderModuleStatus('propertyDetails')}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 hover:bg-transparent group"
+            onClick={() => markModuleAsSaved('propertyDetails')}
+          >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="bedrooms" className="text-sm">Habitaciones</Label>
-            <Input id="bedrooms" type="number" defaultValue={listing.bedrooms} className="h-8 text-gray-500" />
+            <Input 
+              id="bedrooms" 
+              type="number" 
+              defaultValue={listing.bedrooms} 
+              className="h-8 text-gray-500"
+              onChange={() => updateModuleState('propertyDetails', true)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="bathrooms" className="text-sm">Baños</Label>
@@ -283,15 +368,28 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               className="h-8 text-gray-500" 
               min="0"
               step="1"
+              onChange={() => updateModuleState('propertyDetails', true)}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="squareMeter" className="text-sm">Superficie (m²)</Label>
-            <Input id="squareMeter" type="number" defaultValue={listing.squareMeter} className="h-8 text-gray-500" />
+            <Input 
+              id="squareMeter" 
+              type="number" 
+              defaultValue={listing.squareMeter} 
+              className="h-8 text-gray-500"
+              onChange={() => updateModuleState('propertyDetails', true)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="yearBuilt" className="text-sm">Año de Construcción</Label>
-            <Input id="yearBuilt" type="number" defaultValue={listing.yearBuilt} className="h-8 text-gray-500" />
+            <Input 
+              id="yearBuilt" 
+              type="number" 
+              defaultValue={listing.yearBuilt} 
+              className="h-8 text-gray-500"
+              onChange={() => updateModuleState('propertyDetails', true)}
+            />
           </div>
         </div>
       </Card>
@@ -299,15 +397,28 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Location */}
       <Card className="p-4">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide">UBICACIÓN</h3>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">UBICACIÓN</h3>
+            {renderModuleStatus('location')}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 hover:bg-transparent group"
+            onClick={() => markModuleAsSaved('location')}
+          >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="street" className="text-sm">Calle</Label>
-            <Input id="street" defaultValue={listing.street} className="h-8 text-gray-500" />
+            <Input 
+              id="street" 
+              defaultValue={listing.street} 
+              className="h-8 text-gray-500"
+              onChange={() => updateModuleState('location', true)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="addressDetails" className="text-sm">Detalles de la dirección</Label>
@@ -316,12 +427,18 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               defaultValue={listing.addressDetails} 
               className="h-8 text-gray-500" 
               placeholder="Piso, puerta, escalera, etc."
+              onChange={() => updateModuleState('location', true)}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="postalCode" className="text-sm">Código Postal</Label>
-              <Input id="postalCode" defaultValue={listing.postalCode} className="h-8 text-gray-500" />
+              <Input 
+                id="postalCode" 
+                defaultValue={listing.postalCode} 
+                className="h-8 text-gray-500"
+                onChange={() => updateModuleState('location', true)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="neighborhood" className="text-sm">Barrio</Label>
@@ -336,16 +453,40 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="city" className="text-sm">Ciudad</Label>
-              <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} className="h-8 text-gray-500" />
+              <Input 
+                id="city" 
+                value={city} 
+                onChange={(e) => {
+                  setCity(e.target.value)
+                  updateModuleState('location', true)
+                }} 
+                className="h-8 text-gray-500" 
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="municipality" className="text-sm">Municipio</Label>
-              <Input id="municipality" value={municipality} onChange={(e) => setMunicipality(e.target.value)} className="h-8 text-gray-500" />
+              <Input 
+                id="municipality" 
+                value={municipality} 
+                onChange={(e) => {
+                  setMunicipality(e.target.value)
+                  updateModuleState('location', true)
+                }} 
+                className="h-8 text-gray-500" 
+              />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="province" className="text-sm">Provincia</Label>
-            <Input id="province" value={province} onChange={(e) => setProvince(e.target.value)} className="h-8 text-gray-500" />
+            <Input 
+              id="province" 
+              value={province} 
+              onChange={(e) => {
+                setProvince(e.target.value)
+                updateModuleState('location', true)
+              }} 
+              className="h-8 text-gray-500" 
+            />
           </div>
         </div>
       </Card>
@@ -353,14 +494,26 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Features */}
       <Card className="p-4">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide">CARACTERÍSTICAS</h3>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">CARACTERÍSTICAS</h3>
+            {renderModuleStatus('features')}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 hover:bg-transparent group"
+            onClick={() => markModuleAsSaved('features')}
+          >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
         </div>
         <div className="space-y-3">
           <div className="flex items-center space-x-2">
-            <Checkbox id="hasElevator" defaultChecked={listing.hasElevator} />
+            <Checkbox 
+              id="hasElevator" 
+              defaultChecked={listing.hasElevator}
+              onCheckedChange={() => updateModuleState('features', true)}
+            />
             <Label htmlFor="hasElevator" className="text-sm">Ascensor</Label>
           </div>
           <div className="flex items-center space-x-2">
@@ -375,6 +528,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                   setGarageInBuilding(false)
                   setGarageNumber("")
                 }
+                updateModuleState('features', true)
               }}
             />
             <Label htmlFor="hasGarage" className="text-sm">Garaje</Label>
@@ -400,7 +554,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                     id="garageSpaces" 
                     type="number" 
                     value={garageSpaces}
-                    onChange={(e) => setGarageSpaces(parseInt(e.target.value))}
+                    onChange={(e) => {
+                      setGarageSpaces(parseInt(e.target.value))
+                      updateModuleState('features', true)
+                    }}
                     className="h-7 text-xs" 
                     min="1"
                     max="10"
@@ -412,7 +569,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                   <Checkbox 
                     id="garageInBuilding" 
                     checked={garageInBuilding}
-                    onCheckedChange={(checked) => setGarageInBuilding(checked as boolean)} 
+                    onCheckedChange={(checked) => {
+                      setGarageInBuilding(checked as boolean)
+                      updateModuleState('features', true)
+                    }} 
                     className="h-3 w-3"
                   />
                   <Label htmlFor="garageInBuilding" className="text-xs">En edificio</Label>
@@ -422,7 +582,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                   <Input 
                     id="garageNumber" 
                     value={garageNumber}
-                    onChange={(e) => setGarageNumber(e.target.value)}
+                    onChange={(e) => {
+                      setGarageNumber(e.target.value)
+                      updateModuleState('features', true)
+                    }}
                     className="h-7 text-xs" 
                     placeholder="A-123"
                   />
@@ -440,6 +603,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                   setStorageRoomSize(0)
                   setStorageRoomNumber("")
                 }
+                updateModuleState('features', true)
               }}
             />
             <Label htmlFor="hasStorageRoom" className="text-sm">Trastero</Label>
@@ -453,7 +617,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                     id="storageRoomSize" 
                     type="number" 
                     value={storageRoomSize}
-                    onChange={(e) => setStorageRoomSize(parseInt(e.target.value))}
+                    onChange={(e) => {
+                      setStorageRoomSize(parseInt(e.target.value))
+                      updateModuleState('features', true)
+                    }}
                     className="h-7 text-xs" 
                     min="0"
                     step="1"
@@ -464,7 +631,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                   <Input 
                     id="storageRoomNumber" 
                     value={storageRoomNumber}
-                    onChange={(e) => setStorageRoomNumber(e.target.value)}
+                    onChange={(e) => {
+                      setStorageRoomNumber(e.target.value)
+                      updateModuleState('features', true)
+                    }}
                     className="h-7 text-xs" 
                     placeholder="T-45"
                   />
@@ -473,7 +643,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             </div>
           )}
           <div className="flex items-center space-x-2">
-            <Checkbox id="hasHeating" checked={isHeating} onCheckedChange={checked => setIsHeating(!!checked)} />
+            <Checkbox id="hasHeating" checked={isHeating} onCheckedChange={checked => {
+              setIsHeating(!!checked)
+              updateModuleState('features', true)
+            }} />
             <Label htmlFor="hasHeating" className="text-sm">Calefacción</Label>
           </div>
           {isHeating && (
@@ -499,6 +672,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 if (!checked) {
                   setAirConditioningType("")
                 }
+                updateModuleState('features', true)
               }}
             />
             <Label htmlFor="hasAirConditioning" className="text-sm">Aire acondicionado</Label>
@@ -525,7 +699,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               <Checkbox 
                 id="isFurnished" 
                 checked={isFurnished}
-                onCheckedChange={(checked) => setIsFurnished(checked as boolean)} 
+                onCheckedChange={(checked) => {
+                  setIsFurnished(checked as boolean)
+                  updateModuleState('features', true)
+                }} 
               />
               <Label htmlFor="isFurnished" className="text-sm">Amueblado</Label>
             </div>
@@ -558,8 +735,16 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Contact Information */}
       <Card className="p-4">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN DE CONTACTO</h3>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN DE CONTACTO</h3>
+            {renderModuleStatus('contactInfo')}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 hover:bg-transparent group"
+            onClick={() => markModuleAsSaved('contactInfo')}
+          >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
         </div>
@@ -568,7 +753,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             <div className="space-y-1.5">
               <Label htmlFor="owner" className="text-sm">Propietario</Label>
               <div className="flex gap-2">
-                <Input id="owner" defaultValue={listing.owner} className="h-8 text-gray-500" />
+                <Input 
+                  id="owner" 
+                  defaultValue={listing.owner} 
+                  className="h-8 text-gray-500"
+                  onChange={() => updateModuleState('contactInfo', true)}
+                />
                 <Button
                   type="button"
                   variant="ghost"
@@ -585,7 +775,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           <div className="space-y-1.5">
             <Label htmlFor="agent" className="text-sm">Agente</Label>
             <div className="flex gap-2">
-              <Select defaultValue={listing.agent?.id?.toString()}>
+              <Select 
+                defaultValue={listing.agent?.id?.toString()}
+                onValueChange={() => updateModuleState('contactInfo', true)}
+              >
                 <SelectTrigger className="h-8 text-gray-500 flex-1">
                   <SelectValue placeholder="Seleccionar agente" />
                 </SelectTrigger>
@@ -615,8 +808,16 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Exterior and Orientation */}
       <Card className="p-4">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide">ORIENTACIÓN Y EXPOSICIÓN</h3>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">ORIENTACIÓN Y EXPOSICIÓN</h3>
+            {renderModuleStatus('orientation')}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 hover:bg-transparent group"
+            onClick={() => markModuleAsSaved('orientation')}
+          >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
         </div>
@@ -625,7 +826,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             <Checkbox 
               id="isExterior" 
               checked={isExterior}
-              onCheckedChange={(checked) => setIsExterior(checked as boolean)} 
+              onCheckedChange={(checked) => {
+                setIsExterior(checked as boolean)
+                updateModuleState('orientation', true)
+              }} 
             />
             <Label htmlFor="isExterior" className="text-sm">Exterior</Label>
           </div>
@@ -633,7 +837,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             <Checkbox 
               id="isBright" 
               checked={isBright}
-              onCheckedChange={(checked) => setIsBright(checked as boolean)} 
+              onCheckedChange={(checked) => {
+                setIsBright(checked as boolean)
+                updateModuleState('orientation', true)
+              }} 
             />
             <Label htmlFor="isBright" className="text-sm">Luminoso</Label>
           </div>
@@ -668,9 +875,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               onClick={() => setShowAdditionalCharacteristics(!showAdditionalCharacteristics)}
               className="flex items-center justify-between group"
             >
-              <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                Características adicionales
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  Características adicionales
+                </h3>
+                {renderModuleStatus('additionalCharacteristics')}
+              </div>
               <ChevronDown 
                 className={cn(
                   "h-4 w-4 text-muted-foreground transition-transform duration-200",
@@ -678,7 +888,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 )} 
               />
             </button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0 hover:bg-transparent group"
+              onClick={() => markModuleAsSaved('additionalCharacteristics')}
+            >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
           </div>
@@ -696,7 +911,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="securityDoor" 
                         checked={securityDoor}
-                        onCheckedChange={(checked) => setSecurityDoor(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setSecurityDoor(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="securityDoor" className="text-sm">Puerta blindada</Label>
                     </div>
@@ -704,7 +922,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="alarm" 
                         checked={alarm}
-                        onCheckedChange={(checked) => setAlarm(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setAlarm(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="alarm" className="text-sm">Alarma</Label>
                     </div>
@@ -712,7 +933,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="videoIntercom" 
                         checked={videoIntercom}
-                        onCheckedChange={(checked) => setVideoIntercom(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setVideoIntercom(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="videoIntercom" className="text-sm">Videoportero</Label>
                     </div>
@@ -720,7 +944,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="securityGuard" 
                         checked={securityGuard}
-                        onCheckedChange={(checked) => setSecurityGuard(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setSecurityGuard(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="securityGuard" className="text-sm">Vigilante</Label>
                     </div>
@@ -728,7 +955,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="conciergeService" 
                         checked={conciergeService}
-                        onCheckedChange={(checked) => setConciergeService(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setConciergeService(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="conciergeService" className="text-sm">Conserjería</Label>
                     </div>
@@ -741,7 +971,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="vpo" 
                         checked={vpo}
-                        onCheckedChange={(checked) => setVpo(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setVpo(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="vpo" className="text-sm">VPO</Label>
                     </div>
@@ -749,7 +982,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="disabledAccessible" 
                         checked={disabledAccessible}
-                        onCheckedChange={(checked) => setDisabledAccessible(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setDisabledAccessible(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="disabledAccessible" className="text-sm">Accesible</Label>
                     </div>
@@ -757,7 +993,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="satelliteDish" 
                         checked={satelliteDish}
-                        onCheckedChange={(checked) => setSatelliteDish(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setSatelliteDish(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="satelliteDish" className="text-sm">Antena</Label>
                     </div>
@@ -765,7 +1004,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="doubleGlazing" 
                         checked={doubleGlazing}
-                        onCheckedChange={(checked) => setDoubleGlazing(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setDoubleGlazing(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="doubleGlazing" className="text-sm">Doble acristalamiento</Label>
                     </div>
@@ -796,7 +1038,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="openKitchen" 
                         checked={openKitchen}
-                        onCheckedChange={(checked) => setOpenKitchen(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setOpenKitchen(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="openKitchen" className="text-sm">Cocina abierta</Label>
                     </div>
@@ -804,7 +1049,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="frenchKitchen" 
                         checked={frenchKitchen}
-                        onCheckedChange={(checked) => setFrenchKitchen(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setFrenchKitchen(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="frenchKitchen" className="text-sm">Cocina francesa</Label>
                     </div>
@@ -812,7 +1060,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="furnishedKitchen" 
                         checked={furnishedKitchen}
-                        onCheckedChange={(checked) => setFurnishedKitchen(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setFurnishedKitchen(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="furnishedKitchen" className="text-sm">Cocina amueblada</Label>
                     </div>
@@ -820,7 +1071,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="pantry" 
                         checked={pantry}
-                        onCheckedChange={(checked) => setPantry(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setPantry(checked as boolean)
+                          updateModuleState('additionalCharacteristics', true)
+                        }} 
                       />
                       <Label htmlFor="pantry" className="text-sm">Despensa</Label>
                     </div>
@@ -848,7 +1102,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                         id="lastRenovationYear" 
                         type="number" 
                         value={lastRenovationYear}
-                        onChange={(e) => setLastRenovationYear(e.target.value)}
+                        onChange={(e) => {
+                          setLastRenovationYear(e.target.value)
+                          updateModuleState('additionalCharacteristics', true)
+                        }}
                         className="h-8 text-gray-500" 
                         min="1900"
                         max={new Date().getFullYear()}
@@ -869,9 +1126,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               onClick={() => setShowPremiumFeatures(!showPremiumFeatures)}
               className="flex items-center justify-between group"
             >
-              <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                Características premium
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  Características premium
+                </h3>
+                {renderModuleStatus('premiumFeatures')}
+              </div>
               <ChevronDown 
                 className={cn(
                   "h-4 w-4 text-muted-foreground transition-transform duration-200",
@@ -879,7 +1139,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 )} 
               />
             </button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0 hover:bg-transparent group"
+              onClick={() => markModuleAsSaved('premiumFeatures')}
+            >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
           </div>
@@ -897,7 +1162,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="views" 
                         checked={views}
-                        onCheckedChange={(checked) => setViews(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setViews(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="views" className="text-sm">Vistas</Label>
                     </div>
@@ -905,7 +1173,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="mountainViews" 
                         checked={mountainViews}
-                        onCheckedChange={(checked) => setMountainViews(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setMountainViews(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="mountainViews" className="text-sm">Vistas montaña</Label>
                     </div>
@@ -913,7 +1184,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="seaViews" 
                         checked={seaViews}
-                        onCheckedChange={(checked) => setSeaViews(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setSeaViews(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="seaViews" className="text-sm">Vistas mar</Label>
                     </div>
@@ -921,7 +1195,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="beachfront" 
                         checked={beachfront}
-                        onCheckedChange={(checked) => setBeachfront(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setBeachfront(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="beachfront" className="text-sm">Primera línea</Label>
                     </div>
@@ -934,7 +1211,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="jacuzzi" 
                         checked={jacuzzi}
-                        onCheckedChange={(checked) => setJacuzzi(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setJacuzzi(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="jacuzzi" className="text-sm">Jacuzzi</Label>
                     </div>
@@ -942,7 +1222,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="hydromassage" 
                         checked={hydromassage}
-                        onCheckedChange={(checked) => setHydromassage(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setHydromassage(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="hydromassage" className="text-sm">Hidromasaje</Label>
                     </div>
@@ -950,7 +1233,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="fireplace" 
                         checked={fireplace}
-                        onCheckedChange={(checked) => setFireplace(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setFireplace(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="fireplace" className="text-sm">Chimenea</Label>
                     </div>
@@ -965,7 +1251,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="garden" 
                         checked={garden}
-                        onCheckedChange={(checked) => setGarden(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setGarden(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="garden" className="text-sm">Jardín</Label>
                     </div>
@@ -973,7 +1262,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="pool" 
                         checked={pool}
-                        onCheckedChange={(checked) => setPool(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setPool(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="pool" className="text-sm">Piscina</Label>
                     </div>
@@ -986,7 +1278,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="homeAutomation" 
                         checked={homeAutomation}
-                        onCheckedChange={(checked) => setHomeAutomation(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setHomeAutomation(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="homeAutomation" className="text-sm">Domótica</Label>
                     </div>
@@ -994,7 +1289,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="musicSystem" 
                         checked={musicSystem}
-                        onCheckedChange={(checked) => setMusicSystem(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setMusicSystem(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="musicSystem" className="text-sm">Sistema de música</Label>
                     </div>
@@ -1007,7 +1305,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="laundryRoom" 
                         checked={laundryRoom}
-                        onCheckedChange={(checked) => setLaundryRoom(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setLaundryRoom(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="laundryRoom" className="text-sm">Lavadero</Label>
                     </div>
@@ -1015,7 +1316,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="coveredClothesline" 
                         checked={coveredClothesline}
-                        onCheckedChange={(checked) => setCoveredClothesline(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setCoveredClothesline(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
                       />
                       <Label htmlFor="coveredClothesline" className="text-sm">Tendedero cubierto</Label>
                     </div>
@@ -1037,9 +1341,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               onClick={() => setShowAdditionalSpaces(!showAdditionalSpaces)}
               className="flex items-center justify-between group"
             >
-              <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                Espacios adicionales
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  Espacios adicionales
+                </h3>
+                {renderModuleStatus('additionalSpaces')}
+              </div>
               <ChevronDown 
                 className={cn(
                   "h-4 w-4 text-muted-foreground transition-transform duration-200",
@@ -1047,7 +1354,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 )} 
               />
             </button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0 hover:bg-transparent group"
+              onClick={() => markModuleAsSaved('additionalSpaces')}
+            >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
           </div>
@@ -1065,7 +1377,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="terrace" 
                         checked={terrace}
-                        onCheckedChange={(checked) => setTerrace(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setTerrace(checked as boolean)
+                          updateModuleState('additionalSpaces', true)
+                        }} 
                       />
                       <Label htmlFor="terrace" className="text-sm">Terraza</Label>
                     </div>
@@ -1076,7 +1391,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                           id="terraceSize" 
                           type="number" 
                           value={terraceSize}
-                          onChange={(e) => setTerraceSize(parseInt(e.target.value))}
+                          onChange={(e) => {
+                            setTerraceSize(parseInt(e.target.value))
+                            updateModuleState('additionalSpaces', true)
+                          }}
                           className="h-8 text-gray-500" 
                           min="0"
                           step="1"
@@ -1089,7 +1407,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                         id="balconyCount" 
                         type="number" 
                         value={balconyCount}
-                        onChange={(e) => setBalconyCount(parseInt(e.target.value))}
+                        onChange={(e) => {
+                          setBalconyCount(parseInt(e.target.value))
+                          updateModuleState('additionalSpaces', true)
+                        }}
                         className="h-8 text-gray-500" 
                         min="0"
                         step="1"
@@ -1101,7 +1422,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                         id="galleryCount" 
                         type="number" 
                         value={galleryCount}
-                        onChange={(e) => setGalleryCount(parseInt(e.target.value))}
+                        onChange={(e) => {
+                          setGalleryCount(parseInt(e.target.value))
+                          updateModuleState('additionalSpaces', true)
+                        }}
                         className="h-8 text-gray-500" 
                         min="0"
                         step="1"
@@ -1116,7 +1440,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="wineCellar" 
                         checked={wineCellar}
-                        onCheckedChange={(checked) => setWineCellar(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setWineCellar(checked as boolean)
+                          updateModuleState('additionalSpaces', true)
+                        }} 
                       />
                       <Label htmlFor="wineCellar" className="text-sm">Bodega</Label>
                     </div>
@@ -1127,7 +1454,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                           id="wineCellarSize" 
                           type="number" 
                           value={wineCellarSize}
-                          onChange={(e) => setWineCellarSize(parseInt(e.target.value))}
+                          onChange={(e) => {
+                            setWineCellarSize(parseInt(e.target.value))
+                            updateModuleState('additionalSpaces', true)
+                          }}
                           className="h-8 text-gray-500" 
                           min="0"
                           step="1"
@@ -1147,7 +1477,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                         id="livingRoomSize" 
                         type="number" 
                         value={livingRoomSize}
-                        onChange={(e) => setLivingRoomSize(parseInt(e.target.value))}
+                        onChange={(e) => {
+                          setLivingRoomSize(parseInt(e.target.value))
+                          updateModuleState('additionalSpaces', true)
+                        }}
                         className="h-8 text-gray-500" 
                         min="0"
                         step="1"
@@ -1159,7 +1492,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                         id="buildingFloors" 
                         type="number" 
                         value={buildingFloors}
-                        onChange={(e) => setBuildingFloors(parseInt(e.target.value))}
+                        onChange={(e) => {
+                          setBuildingFloors(parseInt(e.target.value))
+                          updateModuleState('additionalSpaces', true)
+                        }}
                         className="h-8 text-gray-500" 
                         min="1"
                         step="1"
@@ -1198,9 +1534,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               onClick={() => setShowMaterials(!showMaterials)}
               className="flex items-center justify-between group"
             >
-              <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                Materiales y acabados
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  Materiales y acabados
+                </h3>
+                {renderModuleStatus('materials')}
+              </div>
               <ChevronDown 
                 className={cn(
                   "h-4 w-4 text-muted-foreground transition-transform duration-200",
@@ -1208,7 +1547,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 )} 
               />
             </button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0 hover:bg-transparent group"
+              onClick={() => markModuleAsSaved('materials')}
+            >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
           </div>
@@ -1224,7 +1568,13 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                     <h4 className="text-xs font-medium text-muted-foreground">Ventanas y puertas</h4>
                     <div className="space-y-1.5">
                       <Label htmlFor="windowType" className="text-sm">Tipo de ventana</Label>
-                      <Select value={windowType} onValueChange={setWindowType}>
+                      <Select 
+                        value={windowType} 
+                        onValueChange={(value) => {
+                          setWindowType(value)
+                          updateModuleState('materials', true)
+                        }}
+                      >
                         <SelectTrigger className="h-8 text-gray-500">
                           <SelectValue placeholder="Seleccionar tipo" />
                         </SelectTrigger>
@@ -1295,7 +1645,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="doubleGlazing" 
                         checked={doubleGlazing}
-                        onCheckedChange={(checked) => setDoubleGlazing(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setDoubleGlazing(checked as boolean)
+                          updateModuleState('materials', true)
+                        }} 
                       />
                       <Label htmlFor="doubleGlazing" className="text-sm">Doble acristalamiento</Label>
                     </div>
@@ -1303,7 +1656,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       <Checkbox 
                         id="securityDoor" 
                         checked={securityDoor}
-                        onCheckedChange={(checked) => setSecurityDoor(checked as boolean)} 
+                        onCheckedChange={(checked) => {
+                          setSecurityDoor(checked as boolean)
+                          updateModuleState('materials', true)
+                        }} 
                       />
                       <Label htmlFor="securityDoor" className="text-sm">Puerta blindada</Label>
                     </div>
@@ -1318,8 +1674,16 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Description */}
       <Card className="p-4 col-span-2">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide">DESCRIPCIÓN</h3>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">DESCRIPCIÓN</h3>
+            {renderModuleStatus('description')}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 hover:bg-transparent group"
+            onClick={() => markModuleAsSaved('description')}
+          >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
         </div>
@@ -1330,6 +1694,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               defaultValue={listing.description} 
               className="min-h-[200px] resize-y text-gray-500"
               placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
+              onChange={() => updateModuleState('description', true)}
             />
           </div>
         </div>
@@ -1339,8 +1704,16 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {listingTypes.includes('Rent') && (
         <Card className="p-4">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES DEL ALQUILER</h3>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent group">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES DEL ALQUILER</h3>
+              {renderModuleStatus('rentalProperties')}
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0 hover:bg-transparent group"
+              onClick={() => markModuleAsSaved('rentalProperties')}
+            >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
           </div>
@@ -1349,7 +1722,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               <Checkbox 
                 id="studentFriendly" 
                 checked={studentFriendly}
-                onCheckedChange={(checked) => setStudentFriendly(checked as boolean)} 
+                onCheckedChange={(checked) => {
+                  setStudentFriendly(checked as boolean)
+                  updateModuleState('rentalProperties', true)
+                }} 
               />
               <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
             </div>
@@ -1357,7 +1733,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               <Checkbox 
                 id="petsAllowed" 
                 checked={petsAllowed}
-                onCheckedChange={(checked) => setPetsAllowed(checked as boolean)} 
+                onCheckedChange={(checked) => {
+                  setPetsAllowed(checked as boolean)
+                  updateModuleState('rentalProperties', true)
+                }} 
               />
               <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
             </div>
@@ -1365,7 +1744,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               <Checkbox 
                 id="appliancesIncluded" 
                 checked={appliancesIncluded}
-                onCheckedChange={(checked) => setAppliancesIncluded(checked as boolean)} 
+                onCheckedChange={(checked) => {
+                  setAppliancesIncluded(checked as boolean)
+                  updateModuleState('rentalProperties', true)
+                }} 
               />
               <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
             </div>
