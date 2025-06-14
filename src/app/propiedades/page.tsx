@@ -79,7 +79,12 @@ export default function PropertiesPage() {
         
         const result = await listListings(page, ITEMS_PER_PAGE, filters)
         
-        setListings(result.listings)
+        setListings(
+          result.listings.map(listing => ({
+            ...listing,
+            ownerName: listing.owner,
+          }))
+        )
         setTotalPages(result.totalPages)
         setTotalCount(result.totalCount)
 

@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table"
-import { formatNumber } from "~/lib/utils"
+import { formatPrice } from "~/lib/utils"
 import { Button } from "~/components/ui/button"
 import { ExternalLink, Pencil, Map, ArrowUpDown, Bath, Bed, Square, User, Building2 } from "lucide-react"
 import Link from "next/link"
@@ -134,7 +134,7 @@ export function PropertyTable({ listings }: PropertyTableProps) {
                   </Badge>
                 </TableCell>
                 <TableCell className="w-[150px] min-w-[150px] text-right font-medium">
-                  {new Intl.NumberFormat('es-ES').format(Number(listing.price))}€{listing.listingType === "Rent" ? "/mes" : ""}
+                  {formatPrice(listing.price)}€{listing.listingType === "Rent" ? "/mes" : ""}
                 </TableCell>
                 <TableCell className="w-[200px] min-w-[200px]">
                   <div className="flex items-center space-x-4">

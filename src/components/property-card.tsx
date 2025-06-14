@@ -8,6 +8,7 @@ import { Card, CardContent, CardFooter } from "~/components/ui/card"
 import { Bed, Bath, SquareIcon as SquareFoot, MapPin, Hash, User } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { handleImageError } from "~/lib/images"
+import { formatPrice } from "~/lib/utils"
 
 type Listing = {
   // Listing fields
@@ -177,7 +178,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
               <h3 className="font-semibold text-base line-clamp-1">{listing.street}</h3>
             </div>
             <p className="font-bold text-base">
-              {formatNumber(listing.price)}€{listing.listingType === "Rent" ? "/mes" : ""}
+              {formatPrice(listing.price)}€{listing.listingType === "Rent" ? "/mes" : ""}
             </p>
           </div>
 
