@@ -15,6 +15,7 @@ import { Textarea } from "~/components/ui/textarea"
 import { PropertyCharacteristicsFormGarage } from "./property-characteristics-form-garage"
 import { PropertyCharacteristicsFormSolar } from "./property-characteristics-form-solar"
 import { PropertyCharacteristicsFormLocal } from "./property-characteristics-form-local"
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface ModuleState {
   hasUnsavedChanges: boolean;
@@ -26,6 +27,10 @@ interface PropertyCharacteristicsFormProps {
 }
 
 export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristicsFormProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const propertyType = searchParams.get('type') ?? listing.propertyType ?? "piso"
+
   // Module states
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
     basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
@@ -152,7 +157,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const [showPremiumFeatures, setShowPremiumFeatures] = useState(false)
   const [showAdditionalSpaces, setShowAdditionalSpaces] = useState(false)
   const [showMaterials, setShowMaterials] = useState(false)
-  const [propertyType, setPropertyType] = useState(listing.propertyType ?? "piso")
 
   const heatingOptions = [
     "Si, Sin especificar",
@@ -225,22 +229,24 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   }
 
   const handlePropertyTypeChange = (newType: string) => {
-    setPropertyType(newType)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('type', newType)
+    router.push(`?${params.toString()}`)
   }
 
   // If property type is garage, render the garage form
   if (propertyType === 'garaje') {
-    return <PropertyCharacteristicsFormGarage listing={listing} onPropertyTypeChange={handlePropertyTypeChange} />
+    return <PropertyCharacteristicsFormGarage listing={listing} />
   }
 
   // If property type is solar, render the solar form
   if (propertyType === 'solar') {
-    return <PropertyCharacteristicsFormSolar listing={listing} onPropertyTypeChange={handlePropertyTypeChange} />
+    return <PropertyCharacteristicsFormSolar listing={listing} />
   }
 
   // If property type is local, render the local form
   if (propertyType === 'local') {
-    return <PropertyCharacteristicsFormLocal listing={listing} onPropertyTypeChange={handlePropertyTypeChange} />
+    return <PropertyCharacteristicsFormLocal listing={listing} />
   }
 
   return (
@@ -307,7 +313,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             <Select 
               value={propertyType}
               onValueChange={(value) => {
-                setPropertyType(value)
+                handlePropertyTypeChange(value)
                 updateModuleState('basicInfo', true)
               }}
             >

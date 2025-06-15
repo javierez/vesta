@@ -12,6 +12,7 @@ import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Cir
 import { getAllAgents } from "~/server/queries/listing"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
+import { useRouter, useSearchParams } from "next/navigation"
 
 interface ModuleState {
   hasUnsavedChanges: boolean;
@@ -20,10 +21,12 @@ interface ModuleState {
 
 interface PropertyCharacteristicsFormLocalProps {
   listing: any // We'll type this properly later
-  onPropertyTypeChange: (type: string) => void
 }
 
-export function PropertyCharacteristicsFormLocal({ listing, onPropertyTypeChange }: PropertyCharacteristicsFormLocalProps) {
+export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteristicsFormLocalProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
   // Module states
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
     basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
@@ -281,7 +284,9 @@ export function PropertyCharacteristicsFormLocal({ listing, onPropertyTypeChange
               defaultValue="local"
               onValueChange={(value) => {
                 if (value !== 'local') {
-                  onPropertyTypeChange(value)
+                  const params = new URLSearchParams(searchParams.toString())
+                  params.set('type', value)
+                  router.push(`?${params.toString()}`)
                 }
                 updateModuleState('basicInfo', true)
               }}

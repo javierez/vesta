@@ -11,6 +11,7 @@ import { useState, useEffect } from "react"
 import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
 import { Textarea } from "~/components/ui/textarea"
+import { useRouter, useSearchParams } from "next/navigation"
 
 interface ModuleState {
   hasUnsavedChanges: boolean;
@@ -19,10 +20,12 @@ interface ModuleState {
 
 interface PropertyCharacteristicsFormSolarProps {
   listing: any // We'll type this properly later
-  onPropertyTypeChange: (type: string) => void
 }
 
-export function PropertyCharacteristicsFormSolar({ listing, onPropertyTypeChange }: PropertyCharacteristicsFormSolarProps) {
+export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteristicsFormSolarProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
   // Module states
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
     basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
@@ -192,7 +195,9 @@ export function PropertyCharacteristicsFormSolar({ listing, onPropertyTypeChange
               defaultValue="solar"
               onValueChange={(value) => {
                 if (value !== 'solar') {
-                  onPropertyTypeChange(value)
+                  const params = new URLSearchParams(searchParams.toString())
+                  params.set('type', value)
+                  router.push(`?${params.toString()}`)
                 }
                 updateModuleState('basicInfo', true)
               }}
