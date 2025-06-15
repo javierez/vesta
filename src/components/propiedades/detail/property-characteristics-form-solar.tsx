@@ -19,9 +19,10 @@ interface ModuleState {
 
 interface PropertyCharacteristicsFormSolarProps {
   listing: any // We'll type this properly later
+  onPropertyTypeChange: (type: string) => void
 }
 
-export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteristicsFormSolarProps) {
+export function PropertyCharacteristicsFormSolar({ listing, onPropertyTypeChange }: PropertyCharacteristicsFormSolarProps) {
   // Module states
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
     basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
@@ -191,8 +192,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
               defaultValue="solar"
               onValueChange={(value) => {
                 if (value !== 'solar') {
-                  // If user selects a different property type, we'll let the parent form handle it
-                  window.location.reload() // This will trigger a re-render with the main form
+                  onPropertyTypeChange(value)
                 }
                 updateModuleState('basicInfo', true)
               }}

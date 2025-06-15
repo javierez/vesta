@@ -36,7 +36,7 @@ function toDbProperty(property: Property) {
     longitude: property.longitude,
     energyCertification: property.energyCertification,
     heatingType: property.heatingType,
-    yearBuilt: property.yearBuilt
+    yearBuilt: property.yearBuilt,
   }
 }
 
@@ -180,7 +180,7 @@ export async function seedDatabase() {
           console.warn(`No mock listing found for property ${property.propertyId}, using defaults`);
         }
 
-        const createdListing = await createListing({
+        const newListing = await createListing({
           propertyId: BigInt(createdProperty.propertyId),
           agentId: mockListing?.agentId || BigInt(1),
           listingType: mockListing?.listingType || 'Sale',
@@ -195,14 +195,17 @@ export async function seedDatabase() {
           furnitureQuality: mockListing?.furnitureQuality,
           optionalGarage: mockListing?.optionalGarage ?? false,
           optionalGaragePrice: mockListing?.optionalGaragePrice,
+          optionalStorageRoom: mockListing?.optionalStorageRoom ?? false,
+          optionalStorageRoomPrice: mockListing?.optionalStorageRoomPrice,
+          hasKeys: mockListing?.hasKeys ?? false,
           studentFriendly: mockListing?.studentFriendly ?? false,
           petsAllowed: mockListing?.petsAllowed ?? false,
           appliancesIncluded: mockListing?.appliancesIncluded ?? false
         });
 
         // Store the mapping of property ID to listing ID
-        if (createdListing) {
-          createdListings.set(property.propertyId, createdListing.listingId);
+        if (newListing) {
+          createdListings.set(property.propertyId, newListing.listingId);
         }
 
         // Create property images for this property

@@ -224,19 +224,23 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     updateModuleState('basicInfo', true)
   }
 
+  const handlePropertyTypeChange = (newType: string) => {
+    setPropertyType(newType)
+  }
+
   // If property type is garage, render the garage form
   if (propertyType === 'garaje') {
-    return <PropertyCharacteristicsFormGarage listing={listing} />
+    return <PropertyCharacteristicsFormGarage listing={listing} onPropertyTypeChange={handlePropertyTypeChange} />
   }
 
   // If property type is solar, render the solar form
   if (propertyType === 'solar') {
-    return <PropertyCharacteristicsFormSolar listing={listing} />
+    return <PropertyCharacteristicsFormSolar listing={listing} onPropertyTypeChange={handlePropertyTypeChange} />
   }
 
   // If property type is local, render the local form
   if (propertyType === 'local') {
-    return <PropertyCharacteristicsFormLocal listing={listing} />
+    return <PropertyCharacteristicsFormLocal listing={listing} onPropertyTypeChange={handlePropertyTypeChange} />
   }
 
   return (

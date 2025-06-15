@@ -48,6 +48,11 @@ export type Property = {
   hasElevator: boolean;
   hasGarage: boolean;
   hasStorageRoom: boolean;
+  optionalGarage?: boolean;
+  optionalGaragePrice?: string;
+  optionalStorageRoom?: boolean;
+  optionalStorageRoomPrice?: string;
+  hasKeys?: boolean;
   createdAt: Date;
   updatedAt: Date;
   listedByAgentId?: bigint;
@@ -969,6 +974,9 @@ export type Listing = {
   furnitureQuality?: string;
   optionalGarage?: boolean;
   optionalGaragePrice?: string;
+  optionalStorageRoom: boolean;
+  optionalStorageRoomPrice?: string;
+  hasKeys: boolean;
   studentFriendly?: boolean;
   petsAllowed?: boolean;
   appliancesIncluded?: boolean;
@@ -1333,6 +1341,10 @@ export const listings: Listing[] = [
     isFurnished: true,
     furnitureQuality: "Alta",
     optionalGarage: false,
+    optionalGaragePrice: "25000.00",
+    optionalStorageRoom: true,
+    optionalStorageRoomPrice: "10000.00",
+    hasKeys: true,
     studentFriendly: false,
     petsAllowed: true,
     appliancesIncluded: true
@@ -1355,6 +1367,9 @@ export const listings: Listing[] = [
     furnitureQuality: "Media",
     optionalGarage: true,
     optionalGaragePrice: "25000.00",
+    optionalStorageRoom: true,
+    optionalStorageRoomPrice: "15000.00",
+    hasKeys: true,
     studentFriendly: true,
     petsAllowed: true,
     appliancesIncluded: true
@@ -1375,6 +1390,8 @@ export const listings: Listing[] = [
     updatedAt: new Date("2024-03-13"),
     isFurnished: false,
     optionalGarage: false,
+    optionalStorageRoom: false,
+    hasKeys: true,
     studentFriendly: false,
     petsAllowed: false,
     appliancesIncluded: false
@@ -1395,6 +1412,8 @@ export const listings: Listing[] = [
     updatedAt: new Date("2024-03-12"),
     isFurnished: false,
     optionalGarage: false,
+    optionalStorageRoom: false,
+    hasKeys: true,
     studentFriendly: false,
     petsAllowed: false,
     appliancesIncluded: false
@@ -1415,6 +1434,8 @@ export const listings: Listing[] = [
     updatedAt: new Date("2024-03-11"),
     isFurnished: false,
     optionalGarage: false,
+    optionalStorageRoom: false,
+    hasKeys: true,
     studentFriendly: false,
     petsAllowed: false,
     appliancesIncluded: false

@@ -20,9 +20,10 @@ interface ModuleState {
 
 interface PropertyCharacteristicsFormGarageProps {
   listing: any // We'll type this properly later
+  onPropertyTypeChange: (type: string) => void
 }
 
-export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacteristicsFormGarageProps) {
+export function PropertyCharacteristicsFormGarage({ listing, onPropertyTypeChange }: PropertyCharacteristicsFormGarageProps) {
   // Module states
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
     basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
@@ -194,8 +195,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
               defaultValue="garaje"
               onValueChange={(value) => {
                 if (value !== 'garaje') {
-                  // If user selects a different property type, we'll let the parent form handle it
-                  window.location.reload() // This will trigger a re-render with the main form
+                  onPropertyTypeChange(value)
                 }
                 updateModuleState('basicInfo', true)
               }}

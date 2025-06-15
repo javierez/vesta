@@ -20,9 +20,10 @@ interface ModuleState {
 
 interface PropertyCharacteristicsFormLocalProps {
   listing: any // We'll type this properly later
+  onPropertyTypeChange: (type: string) => void
 }
 
-export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteristicsFormLocalProps) {
+export function PropertyCharacteristicsFormLocal({ listing, onPropertyTypeChange }: PropertyCharacteristicsFormLocalProps) {
   // Module states
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
     basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
@@ -280,9 +281,9 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               defaultValue="local"
               onValueChange={(value) => {
                 if (value !== 'local') {
-                  // If user selects a different property type, we'll let the parent form handle it
-                  window.location.reload()
+                  onPropertyTypeChange(value)
                 }
+                updateModuleState('basicInfo', true)
               }}
             >
               <SelectTrigger className="h-8 text-gray-500">
