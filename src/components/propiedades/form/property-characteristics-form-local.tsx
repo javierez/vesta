@@ -12,25 +12,22 @@ import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Cir
 import { getAllAgents } from "~/server/queries/listing"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
-import { PropertyCharacteristicsFormGarage } from "./property-characteristics-form-garage"
-import { PropertyCharacteristicsFormSolar } from "./property-characteristics-form-solar"
-import { PropertyCharacteristicsFormLocal } from "./property-characteristics-form-local"
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from "next/navigation"
+import { PropertyTitle } from "./common/property-title"
 
 interface ModuleState {
   hasUnsavedChanges: boolean;
   hasBeenSaved: boolean;
 }
 
-interface PropertyCharacteristicsFormProps {
+interface PropertyCharacteristicsFormLocalProps {
   listing: any // We'll type this properly later
 }
 
-export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristicsFormProps) {
+export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteristicsFormLocalProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const propertyType = searchParams.get('type') ?? listing.propertyType ?? "piso"
-
+  
   // Module states
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
     basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
@@ -87,27 +84,24 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     listing.listingType ? [listing.listingType] : ['Sale'] // Default to 'Sale' if none selected
   )
   const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false)
-  const [isFeatured, setIsFeatured] = useState(listing.isFeatured ?? false)
   const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([])
   const [isFurnished, setIsFurnished] = useState(listing.isFurnished ?? false)
   const [isHeating, setIsHeating] = useState(listing.hasHeating ?? false)
   const [heatingType, setHeatingType] = useState(listing.heatingType ?? "")
   const [isAirConditioning, setIsAirConditioning] = useState(!!listing.airConditioningType)
   const [airConditioningType, setAirConditioningType] = useState(listing.airConditioningType ?? "")
-  const [studentFriendly, setStudentFriendly] = useState(listing.studentFriendly ?? false)
-  const [petsAllowed, setPetsAllowed] = useState(listing.petsAllowed ?? false)
-  const [appliancesIncluded, setAppliancesIncluded] = useState(listing.appliancesIncluded ?? false)
   const [isExterior, setIsExterior] = useState(listing.exterior ?? false)
   const [orientation, setOrientation] = useState(listing.orientation ?? "")
   const [isBright, setIsBright] = useState(listing.bright ?? false)
+  const [hasGarage, setHasGarage] = useState(listing.hasGarage ?? false)
   const [garageType, setGarageType] = useState(listing.garageType ?? "")
   const [garageSpaces, setGarageSpaces] = useState(listing.garageSpaces ?? 1)
   const [garageInBuilding, setGarageInBuilding] = useState(listing.garageInBuilding ?? false)
   const [garageNumber, setGarageNumber] = useState(listing.garageNumber ?? "")
+  const [hasStorageRoom, setHasStorageRoom] = useState(listing.hasStorageRoom ?? false)
   const [storageRoomSize, setStorageRoomSize] = useState(listing.storageRoomSize ?? 0)
   const [storageRoomNumber, setStorageRoomNumber] = useState(listing.storageRoomNumber ?? "")
-  const [hasGarage, setHasGarage] = useState(listing.hasGarage ?? false)
-  const [hasStorageRoom, setHasStorageRoom] = useState(listing.hasStorageRoom ?? false)
+  const [appliancesIncluded, setAppliancesIncluded] = useState(listing.appliancesIncluded ?? false)
   const [disabledAccessible, setDisabledAccessible] = useState(listing.disabledAccessible ?? false)
   const [vpo, setVpo] = useState(listing.vpo ?? false)
   const [videoIntercom, setVideoIntercom] = useState(listing.videoIntercom ?? false)
@@ -147,8 +141,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const [pool, setPool] = useState(listing.pool ?? false)
   const [homeAutomation, setHomeAutomation] = useState(listing.homeAutomation ?? false)
   const [musicSystem, setMusicSystem] = useState(listing.musicSystem ?? false)
-  const [laundryRoom, setLaundryRoom] = useState(listing.laundryRoom ?? false)
-  const [coveredClothesline, setCoveredClothesline] = useState(listing.coveredClothesline ?? false)
   const [fireplace, setFireplace] = useState(listing.fireplace ?? false)
   const [city, setCity] = useState(listing.city ?? "")
   const [province, setProvince] = useState(listing.province ?? "")
@@ -194,7 +186,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   }
 
   const generateTitle = () => {
-    const type = getPropertyTypeText(propertyType)
+    const type = getPropertyTypeText(listing.propertyType ?? 'local')
     const street = listing.street ?? ''
     const neighborhood = listing.neighborhood ? `(${listing.neighborhood})` : ''
     return `${type} en ${street} ${neighborhood}`.trim()
@@ -228,27 +220,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     updateModuleState('basicInfo', true)
   }
 
-  const handlePropertyTypeChange = (newType: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('type', newType)
-    router.push(`?${params.toString()}`)
-  }
-
-  // If property type is garage, render the garage form
-  if (propertyType === 'garaje') {
-    return <PropertyCharacteristicsFormGarage listing={listing} />
-  }
-
-  // If property type is solar, render the solar form
-  if (propertyType === 'solar') {
-    return <PropertyCharacteristicsFormSolar listing={listing} />
-  }
-
-  // If property type is local, render the local form
-  if (propertyType === 'local') {
-    return <PropertyCharacteristicsFormLocal listing={listing} />
-  }
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
@@ -269,12 +240,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="title" className="text-sm">Título</Label>
-            <Input 
-              id="title" 
-              value={generateTitle()} 
-              className="h-8 bg-muted" 
-              disabled 
+            <PropertyTitle 
+              propertyType="local"
+              street={listing.street}
+              neighborhood={listing.neighborhood}
             />
           </div>
 
@@ -311,9 +280,13 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           <div className="space-y-1.5">
             <Label htmlFor="propertyType" className="text-sm">Tipo de Propiedad</Label>
             <Select 
-              value={propertyType}
+              defaultValue="local"
               onValueChange={(value) => {
-                handlePropertyTypeChange(value)
+                if (value !== 'local') {
+                  const params = new URLSearchParams(searchParams.toString())
+                  params.set('type', value)
+                  router.push(`?${params.toString()}`)
+                }
                 updateModuleState('basicInfo', true)
               }}
             >
@@ -357,7 +330,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               className="flex-1"
             >
               <Building2 className="h-4 w-4 mr-2" />
-              Piso de Banco
+              Local de Banco
             </Button>
           </div>
         </div>
@@ -381,9 +354,9 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="bedrooms" className="text-sm">Habitaciones</Label>
+            <Label htmlFor="estancias" className="text-sm">Estancias</Label>
             <Input 
-              id="bedrooms" 
+              id="estancias" 
               type="number" 
               defaultValue={listing.bedrooms} 
               className="h-8 text-gray-500"
@@ -1334,25 +1307,14 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                     <h4 className="text-xs font-medium text-muted-foreground">Estancias</h4>
                     <div className="flex items-center space-x-2">
                       <Checkbox 
-                        id="laundryRoom" 
-                        checked={laundryRoom}
+                        id="wineCellar" 
+                        checked={wineCellar}
                         onCheckedChange={(checked) => {
-                          setLaundryRoom(checked as boolean)
+                          setWineCellar(checked as boolean)
                           updateModuleState('premiumFeatures', true)
                         }} 
                       />
-                      <Label htmlFor="laundryRoom" className="text-sm">Lavadero</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="coveredClothesline" 
-                        checked={coveredClothesline}
-                        onCheckedChange={(checked) => {
-                          setCoveredClothesline(checked as boolean)
-                          updateModuleState('premiumFeatures', true)
-                        }} 
-                      />
-                      <Label htmlFor="coveredClothesline" className="text-sm">Tendedero cubierto</Label>
+                      <Label htmlFor="wineCellar" className="text-sm">Bodega</Label>
                     </div>
                   </div>
                 </div>
@@ -1749,28 +1711,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             </Button>
           </div>
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="studentFriendly" 
-                checked={studentFriendly}
-                onCheckedChange={(checked) => {
-                  setStudentFriendly(checked as boolean)
-                  updateModuleState('rentalProperties', true)
-                }} 
-              />
-              <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="petsAllowed" 
-                checked={petsAllowed}
-                onCheckedChange={(checked) => {
-                  setPetsAllowed(checked as boolean)
-                  updateModuleState('rentalProperties', true)
-                }} 
-              />
-              <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
-            </div>
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="appliancesIncluded" 

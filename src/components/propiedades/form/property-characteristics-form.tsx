@@ -12,21 +12,29 @@ import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Cir
 import { getAllAgents } from "~/server/queries/listing"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
-import { useRouter, useSearchParams } from "next/navigation"
+import { PropertyCharacteristicsFormGarage } from "./property-characteristics-form-garage"
+import { PropertyCharacteristicsFormSolar } from "./property-characteristics-form-solar"
+import { PropertyCharacteristicsFormLocal } from "./property-characteristics-form-local"
+import { useRouter, useSearchParams } from 'next/navigation'
+import { updateProperty } from "~/server/queries/properties"
+import { updateListing } from "~/server/queries/listing"
+import { toast } from "sonner"
+import { PropertyTitle } from "./common/property-title"
 
 interface ModuleState {
   hasUnsavedChanges: boolean;
   hasBeenSaved: boolean;
 }
 
-interface PropertyCharacteristicsFormLocalProps {
+interface PropertyCharacteristicsFormProps {
   listing: any // We'll type this properly later
 }
 
-export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteristicsFormLocalProps) {
+export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristicsFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+  const propertyType = searchParams.get('type') ?? listing.propertyType ?? "piso"
+
   // Module states
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
     basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
@@ -55,7 +63,183 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
     }))
   }
 
-  // Function to mark module as saved
+  // Function to save module data
+  const saveModule = async (moduleName: string) => {
+    try {
+      const propertyId = Number(listing.propertyId)
+      const listingId = Number(listing.listingId)
+
+      let propertyData = {}
+      let listingData = {}
+
+      switch (moduleName) {
+        case 'basicInfo':
+          listingData = {
+            listingType: listingTypes[0],
+            isBankOwned,
+            isFeatured,
+            price: (document.getElementById('price') as HTMLInputElement)?.value
+          }
+          break
+
+        case 'propertyDetails':
+          propertyData = {
+            bedrooms: Number((document.getElementById('bedrooms') as HTMLInputElement)?.value),
+            bathrooms: Number((document.getElementById('bathrooms') as HTMLInputElement)?.value),
+            squareMeter: Number((document.getElementById('squareMeter') as HTMLInputElement)?.value),
+            yearBuilt: Number((document.getElementById('yearBuilt') as HTMLInputElement)?.value)
+          }
+          break
+
+        case 'location':
+          propertyData = {
+            street: (document.getElementById('street') as HTMLInputElement)?.value,
+            addressDetails: (document.getElementById('addressDetails') as HTMLInputElement)?.value,
+            postalCode: (document.getElementById('postalCode') as HTMLInputElement)?.value,
+            city,
+            province,
+            municipality
+          }
+          break
+
+        case 'features':
+          propertyData = {
+            hasElevator: (document.getElementById('hasElevator') as HTMLInputElement)?.checked,
+            hasGarage,
+            garageType,
+            garageSpaces,
+            garageInBuilding,
+            garageNumber,
+            hasStorageRoom,
+            storageRoomSize,
+            storageRoomNumber,
+            hasHeating: isHeating,
+            heatingType,
+            airConditioningType: isAirConditioning ? airConditioningType : null,
+            isFurnished
+          }
+          break
+
+        case 'contactInfo':
+          listingData = {
+            agentId: BigInt((document.getElementById('agent') as HTMLSelectElement)?.value)
+          }
+          break
+
+        case 'orientation':
+          propertyData = {
+            exterior: isExterior,
+            bright: isBright,
+            orientation
+          }
+          break
+
+        case 'additionalCharacteristics':
+          propertyData = {
+            disabledAccessible,
+            vpo,
+            videoIntercom,
+            conciergeService,
+            securityGuard,
+            satelliteDish,
+            doubleGlazing,
+            alarm,
+            securityDoor,
+            lastRenovationYear,
+            kitchenType,
+            hotWaterType,
+            openKitchen,
+            frenchKitchen,
+            furnishedKitchen,
+            pantry
+          }
+          break
+
+        case 'premiumFeatures':
+          propertyData = {
+            views,
+            mountainViews,
+            seaViews,
+            beachfront,
+            jacuzzi,
+            hydromassage,
+            garden,
+            pool,
+            homeAutomation,
+            musicSystem,
+            laundryRoom,
+            coveredClothesline,
+            fireplace
+          }
+          break
+
+        case 'additionalSpaces':
+          propertyData = {
+            terrace,
+            terraceSize,
+            wineCellar,
+            wineCellarSize,
+            livingRoomSize,
+            balconyCount,
+            galleryCount,
+            buildingFloors,
+            builtInWardrobes
+          }
+          break
+
+        case 'materials':
+          propertyData = {
+            mainFloorType,
+            shutterType,
+            carpentryType,
+            windowType,
+            doubleGlazing,
+            securityDoor
+          }
+          break
+
+        case 'description':
+          propertyData = {
+            description: (document.getElementById('description') as HTMLTextAreaElement)?.value
+          }
+          break
+
+        case 'rentalProperties':
+          listingData = {
+            studentFriendly,
+            petsAllowed,
+            appliancesIncluded
+          }
+          break
+      }
+
+      // Update property if there's property data
+      if (Object.keys(propertyData).length > 0) {
+        await updateProperty(propertyId, propertyData)
+      }
+
+      // Update listing if there's listing data
+      if (Object.keys(listingData).length > 0) {
+        await updateListing(listingId, listingData)
+      }
+
+      // Update module state directly here instead of calling markModuleAsSaved
+      setModuleStates(prev => ({
+        ...prev,
+        [moduleName]: {
+          hasUnsavedChanges: false,
+          hasBeenSaved: true
+        }
+      }))
+
+      toast.success('Cambios guardados correctamente')
+    } catch (error) {
+      console.error(`Error saving ${moduleName}:`, error)
+      toast.error('Error al guardar los cambios')
+    }
+  }
+
+  // Function to mark module as saved - simplified to only update state
   const markModuleAsSaved = (moduleName: string) => {
     setModuleStates(prev => ({
       ...prev,
@@ -83,24 +267,27 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
     listing.listingType ? [listing.listingType] : ['Sale'] // Default to 'Sale' if none selected
   )
   const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false)
+  const [isFeatured, setIsFeatured] = useState(listing.isFeatured ?? false)
   const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([])
   const [isFurnished, setIsFurnished] = useState(listing.isFurnished ?? false)
   const [isHeating, setIsHeating] = useState(listing.hasHeating ?? false)
   const [heatingType, setHeatingType] = useState(listing.heatingType ?? "")
   const [isAirConditioning, setIsAirConditioning] = useState(!!listing.airConditioningType)
   const [airConditioningType, setAirConditioningType] = useState(listing.airConditioningType ?? "")
+  const [studentFriendly, setStudentFriendly] = useState(listing.studentFriendly ?? false)
+  const [petsAllowed, setPetsAllowed] = useState(listing.petsAllowed ?? false)
+  const [appliancesIncluded, setAppliancesIncluded] = useState(listing.appliancesIncluded ?? false)
   const [isExterior, setIsExterior] = useState(listing.exterior ?? false)
   const [orientation, setOrientation] = useState(listing.orientation ?? "")
   const [isBright, setIsBright] = useState(listing.bright ?? false)
-  const [hasGarage, setHasGarage] = useState(listing.hasGarage ?? false)
   const [garageType, setGarageType] = useState(listing.garageType ?? "")
   const [garageSpaces, setGarageSpaces] = useState(listing.garageSpaces ?? 1)
   const [garageInBuilding, setGarageInBuilding] = useState(listing.garageInBuilding ?? false)
   const [garageNumber, setGarageNumber] = useState(listing.garageNumber ?? "")
-  const [hasStorageRoom, setHasStorageRoom] = useState(listing.hasStorageRoom ?? false)
   const [storageRoomSize, setStorageRoomSize] = useState(listing.storageRoomSize ?? 0)
   const [storageRoomNumber, setStorageRoomNumber] = useState(listing.storageRoomNumber ?? "")
-  const [appliancesIncluded, setAppliancesIncluded] = useState(listing.appliancesIncluded ?? false)
+  const [hasGarage, setHasGarage] = useState(listing.hasGarage ?? false)
+  const [hasStorageRoom, setHasStorageRoom] = useState(listing.hasStorageRoom ?? false)
   const [disabledAccessible, setDisabledAccessible] = useState(listing.disabledAccessible ?? false)
   const [vpo, setVpo] = useState(listing.vpo ?? false)
   const [videoIntercom, setVideoIntercom] = useState(listing.videoIntercom ?? false)
@@ -140,6 +327,8 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
   const [pool, setPool] = useState(listing.pool ?? false)
   const [homeAutomation, setHomeAutomation] = useState(listing.homeAutomation ?? false)
   const [musicSystem, setMusicSystem] = useState(listing.musicSystem ?? false)
+  const [laundryRoom, setLaundryRoom] = useState(listing.laundryRoom ?? false)
+  const [coveredClothesline, setCoveredClothesline] = useState(listing.coveredClothesline ?? false)
   const [fireplace, setFireplace] = useState(listing.fireplace ?? false)
   const [city, setCity] = useState(listing.city ?? "")
   const [province, setProvince] = useState(listing.province ?? "")
@@ -185,7 +374,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
   }
 
   const generateTitle = () => {
-    const type = getPropertyTypeText(listing.propertyType ?? 'local')
+    const type = getPropertyTypeText(propertyType)
     const street = listing.street ?? ''
     const neighborhood = listing.neighborhood ? `(${listing.neighborhood})` : ''
     return `${type} en ${street} ${neighborhood}`.trim()
@@ -219,6 +408,27 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
     updateModuleState('basicInfo', true)
   }
 
+  const handlePropertyTypeChange = (newType: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('type', newType)
+    router.push(`?${params.toString()}`)
+  }
+
+  // If property type is garage, render the garage form
+  if (propertyType === 'garaje') {
+    return <PropertyCharacteristicsFormGarage listing={listing} />
+  }
+
+  // If property type is solar, render the solar form
+  if (propertyType === 'solar') {
+    return <PropertyCharacteristicsFormSolar listing={listing} />
+  }
+
+  // If property type is local, render the local form
+  if (propertyType === 'local') {
+    return <PropertyCharacteristicsFormLocal listing={listing} />
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
@@ -232,19 +442,23 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('basicInfo')}
+            onClick={async () => {
+              try {
+                await saveModule('basicInfo')
+              } catch (error) {
+                console.error('Error saving basic info:', error)
+              }
+            }}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="title" className="text-sm">Título</Label>
-            <Input 
-              id="title" 
-              value={generateTitle()} 
-              className="h-8 bg-muted" 
-              disabled 
+            <PropertyTitle 
+              propertyType={propertyType}
+              street={listing.street}
+              neighborhood={listing.neighborhood}
             />
           </div>
 
@@ -281,13 +495,9 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
           <div className="space-y-1.5">
             <Label htmlFor="propertyType" className="text-sm">Tipo de Propiedad</Label>
             <Select 
-              defaultValue="local"
+              value={propertyType}
               onValueChange={(value) => {
-                if (value !== 'local') {
-                  const params = new URLSearchParams(searchParams.toString())
-                  params.set('type', value)
-                  router.push(`?${params.toString()}`)
-                }
+                handlePropertyTypeChange(value)
                 updateModuleState('basicInfo', true)
               }}
             >
@@ -331,7 +541,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               className="flex-1"
             >
               <Building2 className="h-4 w-4 mr-2" />
-              Local de Banco
+              Piso de Banco
             </Button>
           </div>
         </div>
@@ -348,16 +558,16 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('propertyDetails')}
+            onClick={() => saveModule('propertyDetails')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="estancias" className="text-sm">Estancias</Label>
+            <Label htmlFor="bedrooms" className="text-sm">Habitaciones</Label>
             <Input 
-              id="estancias" 
+              id="bedrooms" 
               type="number" 
               defaultValue={listing.bedrooms} 
               className="h-8 text-gray-500"
@@ -410,7 +620,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('location')}
+            onClick={() => saveModule('location')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -507,7 +717,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('features')}
+            onClick={() => saveModule('features')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -748,7 +958,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('contactInfo')}
+            onClick={() => saveModule('contactInfo')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -821,7 +1031,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('orientation')}
+            onClick={() => saveModule('orientation')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -897,7 +1107,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               variant="ghost" 
               size="sm" 
               className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => markModuleAsSaved('additionalCharacteristics')}
+              onClick={() => saveModule('additionalCharacteristics')}
             >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
@@ -1148,7 +1358,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               variant="ghost" 
               size="sm" 
               className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => markModuleAsSaved('premiumFeatures')}
+              onClick={() => saveModule('premiumFeatures')}
             >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
@@ -1308,14 +1518,25 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
                     <h4 className="text-xs font-medium text-muted-foreground">Estancias</h4>
                     <div className="flex items-center space-x-2">
                       <Checkbox 
-                        id="wineCellar" 
-                        checked={wineCellar}
+                        id="laundryRoom" 
+                        checked={laundryRoom}
                         onCheckedChange={(checked) => {
-                          setWineCellar(checked as boolean)
+                          setLaundryRoom(checked as boolean)
                           updateModuleState('premiumFeatures', true)
                         }} 
                       />
-                      <Label htmlFor="wineCellar" className="text-sm">Bodega</Label>
+                      <Label htmlFor="laundryRoom" className="text-sm">Lavadero</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="coveredClothesline" 
+                        checked={coveredClothesline}
+                        onCheckedChange={(checked) => {
+                          setCoveredClothesline(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
+                      />
+                      <Label htmlFor="coveredClothesline" className="text-sm">Tendedero cubierto</Label>
                     </div>
                   </div>
                 </div>
@@ -1352,7 +1573,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               variant="ghost" 
               size="sm" 
               className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => markModuleAsSaved('additionalSpaces')}
+              onClick={() => saveModule('additionalSpaces')}
             >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
@@ -1545,7 +1766,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               variant="ghost" 
               size="sm" 
               className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => markModuleAsSaved('materials')}
+              onClick={() => saveModule('materials')}
             >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
@@ -1676,7 +1897,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('description')}
+            onClick={() => saveModule('description')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -1706,12 +1927,34 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               variant="ghost" 
               size="sm" 
               className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => markModuleAsSaved('rentalProperties')}
+              onClick={() => saveModule('rentalProperties')}
             >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
           </div>
           <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="studentFriendly" 
+                checked={studentFriendly}
+                onCheckedChange={(checked) => {
+                  setStudentFriendly(checked as boolean)
+                  updateModuleState('rentalProperties', true)
+                }} 
+              />
+              <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="petsAllowed" 
+                checked={petsAllowed}
+                onCheckedChange={(checked) => {
+                  setPetsAllowed(checked as boolean)
+                  updateModuleState('rentalProperties', true)
+                }} 
+              />
+              <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
+            </div>
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="appliancesIncluded" 

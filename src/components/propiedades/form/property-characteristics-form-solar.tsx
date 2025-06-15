@@ -12,6 +12,7 @@ import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Cir
 import { getAllAgents } from "~/server/queries/listing"
 import { Textarea } from "~/components/ui/textarea"
 import { useRouter, useSearchParams } from "next/navigation"
+import { PropertyTitle } from "./common/property-title"
 
 interface ModuleState {
   hasUnsavedChanges: boolean;
@@ -150,12 +151,10 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="title" className="text-sm">Título</Label>
-            <Input 
-              id="title" 
-              value={generateTitle()} 
-              className="h-8 bg-muted" 
-              disabled 
+            <PropertyTitle 
+              propertyType="solar"
+              street={listing.street}
+              neighborhood={listing.neighborhood}
             />
           </div>
 

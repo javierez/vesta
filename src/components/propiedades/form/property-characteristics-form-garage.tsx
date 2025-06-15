@@ -13,6 +13,7 @@ import { getAllAgents } from "~/server/queries/listing"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
 import { useRouter, useSearchParams } from "next/navigation"
+import { PropertyTitle } from "./common/property-title"
 
 interface ModuleState {
   hasUnsavedChanges: boolean;
@@ -153,12 +154,10 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="title" className="text-sm">Título</Label>
-            <Input 
-              id="title" 
-              value={generateTitle()} 
-              className="h-8 bg-muted" 
-              disabled 
+            <PropertyTitle 
+              propertyType="garaje"
+              street={listing.street}
+              neighborhood={listing.neighborhood}
             />
           </div>
 

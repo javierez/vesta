@@ -32,10 +32,10 @@ export function PropertyHeader({
   isFeatured = false
 }: PropertyHeaderProps) {
   return (
-    <div className="py-8">
+    <div className="py-3 mb-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold">{title}</h1>
             <Button
               variant="ghost"
@@ -56,7 +56,7 @@ export function PropertyHeader({
               </Badge>
             )}
           </div>
-          <div className="flex items-center mt-2 text-muted-foreground">
+          <div className="flex items-center text-muted-foreground">
             <MapPin className="h-4 w-4 mr-1" />
             <p>
               {street}, {city}, {province} {postalCode}
