@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
 import { PropertyCard } from "~/components/property-card"
 import { ImageGallery } from "~/components/propiedades/detail/image-gallery"
+import { PropertySummary } from "~/components/propiedades/detail/property-summary"
 import { Card } from "~/components/ui/card"
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump"
 import { PropertyHeader } from "~/components/propiedades/detail/property-header"
@@ -101,6 +102,29 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           isFeatured={listing.isFeatured ?? false}
           neighborhood={listing.neighborhood ?? ''}
         />
+
+        {/* Property Summary */}
+        {/* <div className="pb-8">
+          <PropertySummary
+            agent={listing.agent ? {
+              id: listing.agent.id,
+              name: listing.agent.name,
+              email: listing.agent.email,
+              phone: listing.agent.phone
+            } : undefined}
+            owners={listing.owners?.map(owner => ({
+              id: owner.id,
+              name: owner.name,
+              email: owner.email,
+              phone: owner.phone
+            }))}
+            status={listing.status as 'prospeccion' | 'lead' | 'deal'}
+            hasKeys={listing.hasKeys ?? false}
+            isPublished={listing.isPublished ?? false}
+            publishedPlatforms={listing.publishedPlatforms}
+            lastUpdated={listing.updatedAt}
+          />
+        </div> */}
 
         {/* Galería de imágenes */}
         <div className="pb-8 max-w-3xl mx-auto mb-8">

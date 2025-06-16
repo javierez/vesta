@@ -1686,7 +1686,11 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
 
       {/* Rental Properties - Only shown when listing type includes Rent */}
       {listingType === 'Rent' && (
-        <Card className="p-4">
+        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
+          <ModernSaveIndicator 
+            state={moduleStates.rentalProperties?.saveState || "idle"} 
+            onSave={() => saveModule("rentalProperties")} 
+          />
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES DEL ALQUILER</h3>

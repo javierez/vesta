@@ -242,54 +242,6 @@ export function ImageGallery({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end space-x-2 mb-4">
-        {isSelectMode ? (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSelectedImages(new Set())
-                setIsSelectMode(false)
-              }}
-              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBulkDownload}
-              disabled={selectedImages.size === 0 || isDeleting}
-              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            >
-              <Download className="h-4 w-4 mr-1.5" />
-              {selectedImages.size}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBulkDelete}
-              disabled={selectedImages.size === 0 || isDeleting}
-              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-            >
-              <Trash2 className="h-4 w-4 mr-1.5" />
-              {selectedImages.size}
-            </Button>
-          </>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsSelectMode(true)}
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-          >
-            <CheckSquare2 className="h-4 w-4 mr-1.5" />
-            Seleccionar
-          </Button>
-        )}
-      </div>
-
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {images.map((image, idx) => (
           <div 
@@ -397,6 +349,55 @@ export function ImageGallery({
             </>
           )}
         </label>
+      </div>
+
+      {/* Selection Controls - Moved to bottom */}
+      <div className="flex items-center space-x-2 mt-4">
+        {isSelectMode ? (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedImages(new Set())
+                setIsSelectMode(false)
+              }}
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBulkDownload}
+              disabled={selectedImages.size === 0 || isDeleting}
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            >
+              <Download className="h-4 w-4 mr-1.5" />
+              {selectedImages.size}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={selectedImages.size === 0 || isDeleting}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" />
+              {selectedImages.size}
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsSelectMode(true)}
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+          >
+            <CheckSquare2 className="h-4 w-4 mr-1.5" />
+            Seleccionar
+          </Button>
+        )}
       </div>
 
       <Dialog open={imageToDelete !== null} onOpenChange={() => setImageToDelete(null)}>
