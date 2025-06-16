@@ -1,12 +1,17 @@
 'use client'
 
 import Link from "next/link"
+import { generatePropertyTitle } from "~/components/propiedades/form/common/property-title"
 
 interface PropertyBreadcrumbProps {
-  title: string
+  propertyType: string
+  street: string
+  referenceNumber?: string
 }
 
-export function PropertyBreadcrumb({ title }: PropertyBreadcrumbProps) {
+export function PropertyBreadcrumb({ propertyType, street, referenceNumber }: PropertyBreadcrumbProps) {
+  const title = generatePropertyTitle(propertyType, street)
+
   return (
     <nav className="py-4" aria-label="Breadcrumb">
       <ol className="flex items-center text-sm">
@@ -18,6 +23,11 @@ export function PropertyBreadcrumb({ title }: PropertyBreadcrumbProps) {
         <li className="mx-2">/</li>
         <li className="font-medium" aria-current="page">
           {title}
+          {referenceNumber && (
+            <span className="tracking-wide ml-1">
+              ({referenceNumber})
+            </span>
+          )}
         </li>
       </ol>
     </nav>

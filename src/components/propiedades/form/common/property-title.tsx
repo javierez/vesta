@@ -9,7 +9,7 @@ interface PropertyTitleProps {
   neighborhood?: string
 }
 
-export function PropertyTitle({ propertyType, street = '', neighborhood = '' }: PropertyTitleProps) {
+export function generatePropertyTitle(propertyType: string, street: string = '', neighborhood: string = '') {
   const getPropertyTypeText = (type: string) => {
     switch (type) {
       case 'piso':
@@ -27,18 +27,18 @@ export function PropertyTitle({ propertyType, street = '', neighborhood = '' }: 
     }
   }
 
-  const generateTitle = () => {
-    const type = getPropertyTypeText(propertyType)
-    const neighborhoodText = neighborhood ? `(${neighborhood})` : ''
-    return `${type} en ${street} ${neighborhoodText}`.trim()
-  }
+  const type = getPropertyTypeText(propertyType)
+  const neighborhoodText = neighborhood ? `(${neighborhood})` : ''
+  return `${type} en ${street} ${neighborhoodText}`.trim()
+}
 
+export function PropertyTitle({ propertyType, street = '', neighborhood = '' }: PropertyTitleProps) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor="title" className="text-sm">Título</Label>
       <Input 
         id="title" 
-        value={generateTitle()} 
+        value={generatePropertyTitle(propertyType, street, neighborhood)} 
         className="h-8 bg-muted" 
         disabled 
       />

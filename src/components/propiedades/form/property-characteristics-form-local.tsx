@@ -13,6 +13,9 @@ import { getAllAgents } from "~/server/queries/listing"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
 import { useRouter, useSearchParams } from "next/navigation"
+import { updateProperty } from "~/server/queries/properties"
+import { updateListing } from "~/server/queries/listing"
+import { toast } from "sonner"
 import { PropertyTitle } from "./common/property-title"
 
 interface ModuleState {
@@ -220,6 +223,114 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
     updateModuleState('basicInfo', true)
   }
 
+  // Function to save module data
+  const saveModule = async (moduleName: string) => {
+    try {
+      const propertyId = Number(listing.propertyId)
+      const listingId = Number(listing.listingId)
+
+      let propertyData = {}
+      let listingData = {}
+
+      switch (moduleName) {
+        case 'basicInfo':
+          listingData = {
+            listingType: listingTypes[0],
+            isBankOwned,
+            price: (document.getElementById('price') as HTMLInputElement)?.value
+          }
+          propertyData = {
+            propertyType: 'local'
+          }
+          break
+
+        case 'propertyDetails':
+          propertyData = {
+            squareMeter: Number((document.getElementById('squareMeter') as HTMLInputElement)?.value),
+            yearBuilt: Number((document.getElementById('yearBuilt') as HTMLInputElement)?.value),
+            isFurnished,
+            hasHeating: isHeating,
+            heatingType,
+            airConditioningType: isAirConditioning ? airConditioningType : null
+          }
+          break
+
+        case 'location':
+          propertyData = {
+            street: (document.getElementById('street') as HTMLInputElement)?.value,
+            addressDetails: (document.getElementById('addressDetails') as HTMLInputElement)?.value,
+            postalCode: (document.getElementById('postalCode') as HTMLInputElement)?.value,
+            city,
+            province,
+            municipality
+          }
+          break
+
+        case 'features':
+          propertyData = {
+            hasGarage,
+            garageType,
+            garageSpaces,
+            garageInBuilding,
+            garageNumber,
+            hasStorageRoom,
+            storageRoomSize,
+            storageRoomNumber
+          }
+          break
+
+        case 'orientation':
+          propertyData = {
+            exterior: isExterior,
+            bright: isBright,
+            orientation
+          }
+          break
+
+        case 'additionalCharacteristics':
+          propertyData = {
+            disabledAccessible,
+            videoIntercom,
+            conciergeService,
+            securityGuard,
+            alarm,
+            securityDoor
+          }
+          break
+
+        case 'description':
+          propertyData = {
+            description: (document.getElementById('description') as HTMLTextAreaElement)?.value
+          }
+          break
+      }
+
+      // Update property if there's property data
+      if (Object.keys(propertyData).length > 0) {
+        await updateProperty(propertyId, propertyData)
+      }
+
+      // Update listing if there's listing data
+      if (Object.keys(listingData).length > 0) {
+        await updateListing(listingId, listingData)
+      }
+
+      // Update module state
+      setModuleStates(prev => ({
+        ...prev,
+        [moduleName]: {
+          hasUnsavedChanges: false,
+          hasBeenSaved: true
+        }
+      }))
+
+      toast.success('Cambios guardados correctamente')
+    } catch (error) {
+      console.error(`Error saving ${moduleName}:`, error)
+      toast.error('Error al guardar los cambios')
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
@@ -233,7 +344,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('basicInfo')}
+            onClick={() => saveModule('basicInfo')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -347,7 +458,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('propertyDetails')}
+            onClick={() => saveModule('propertyDetails')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -409,7 +520,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('location')}
+            onClick={() => saveModule('location')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -506,7 +617,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('features')}
+            onClick={() => saveModule('features')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -747,7 +858,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('contactInfo')}
+            onClick={() => saveModule('contactInfo')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -820,7 +931,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('orientation')}
+            onClick={() => saveModule('orientation')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -896,7 +1007,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               variant="ghost" 
               size="sm" 
               className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => markModuleAsSaved('additionalCharacteristics')}
+              onClick={() => saveModule('additionalCharacteristics')}
             >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
@@ -1147,7 +1258,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               variant="ghost" 
               size="sm" 
               className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => markModuleAsSaved('premiumFeatures')}
+              onClick={() => saveModule('premiumFeatures')}
             >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
@@ -1351,7 +1462,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               variant="ghost" 
               size="sm" 
               className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => markModuleAsSaved('additionalSpaces')}
+              onClick={() => saveModule('additionalSpaces')}
             >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
@@ -1544,7 +1655,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               variant="ghost" 
               size="sm" 
               className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => markModuleAsSaved('materials')}
+              onClick={() => saveModule('materials')}
             >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>
@@ -1675,7 +1786,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('description')}
+            onClick={() => saveModule('description')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -1705,7 +1816,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               variant="ghost" 
               size="sm" 
               className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => markModuleAsSaved('rentalProperties')}
+              onClick={() => saveModule('rentalProperties')}
             >
               <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Button>

@@ -13,6 +13,9 @@ import { getAllAgents } from "~/server/queries/listing"
 import { Textarea } from "~/components/ui/textarea"
 import { useRouter, useSearchParams } from "next/navigation"
 import { PropertyTitle } from "./common/property-title"
+import { updateProperty } from "~/server/queries/properties"
+import { updateListing } from "~/server/queries/listing"
+import { toast } from "sonner"
 
 interface ModuleState {
   hasUnsavedChanges: boolean;
@@ -131,6 +134,140 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
     updateModuleState('basicInfo', true)
   }
 
+  // Function to save module data
+  const saveModule = async (moduleName: string) => {
+    try {
+      const propertyId = Number(listing.propertyId)
+      const listingId = Number(listing.listingId)
+
+      let propertyData = {}
+      let listingData = {}
+
+      switch (moduleName) {
+        case 'basicInfo':
+          listingData = {
+            listingType: listingTypes[0],
+            isBankOwned,
+            price: (document.getElementById('price') as HTMLInputElement)?.value
+          }
+          propertyData = {
+            propertyType: 'solar'
+          }
+          break
+
+        case 'propertyDetails':
+          propertyData = {
+            squareMeter: Number((document.getElementById('squareMeter') as HTMLInputElement)?.value),
+            buildableArea: Number((document.getElementById('buildableArea') as HTMLInputElement)?.value),
+            yearBuilt: Number((document.getElementById('yearBuilt') as HTMLInputElement)?.value)
+          }
+          break
+
+        case 'location':
+          propertyData = {
+            street: (document.getElementById('street') as HTMLInputElement)?.value,
+            addressDetails: (document.getElementById('addressDetails') as HTMLInputElement)?.value,
+            postalCode: (document.getElementById('postalCode') as HTMLInputElement)?.value,
+            city,
+            province,
+            municipality
+          }
+          break
+
+        case 'features':
+          propertyData = {
+            hasWater: (document.getElementById('hasWater') as HTMLInputElement)?.checked,
+            hasElectricity: (document.getElementById('hasElectricity') as HTMLInputElement)?.checked,
+            hasGas: (document.getElementById('hasGas') as HTMLInputElement)?.checked,
+            hasSewer: (document.getElementById('hasSewer') as HTMLInputElement)?.checked,
+            hasInternet: (document.getElementById('hasInternet') as HTMLInputElement)?.checked,
+            hasPhone: (document.getElementById('hasPhone') as HTMLInputElement)?.checked,
+            hasRoadAccess: (document.getElementById('hasRoadAccess') as HTMLInputElement)?.checked,
+            hasFence: (document.getElementById('hasFence') as HTMLInputElement)?.checked,
+            hasSecurity: (document.getElementById('hasSecurity') as HTMLInputElement)?.checked,
+            hasParking: (document.getElementById('hasParking') as HTMLInputElement)?.checked,
+            hasStorage: (document.getElementById('hasStorage') as HTMLInputElement)?.checked,
+            hasGarden: (document.getElementById('hasGarden') as HTMLInputElement)?.checked,
+            hasPool: (document.getElementById('hasPool') as HTMLInputElement)?.checked,
+            hasTennis: (document.getElementById('hasTennis') as HTMLInputElement)?.checked,
+            hasBasketball: (document.getElementById('hasBasketball') as HTMLInputElement)?.checked,
+            hasFootball: (document.getElementById('hasFootball') as HTMLInputElement)?.checked,
+            hasVolleyball: (document.getElementById('hasVolleyball') as HTMLInputElement)?.checked,
+            hasGolf: (document.getElementById('hasGolf') as HTMLInputElement)?.checked,
+            hasHorseRiding: (document.getElementById('hasHorseRiding') as HTMLInputElement)?.checked,
+            hasHunting: (document.getElementById('hasHunting') as HTMLInputElement)?.checked,
+            hasFishing: (document.getElementById('hasFishing') as HTMLInputElement)?.checked,
+            hasCamping: (document.getElementById('hasCamping') as HTMLInputElement)?.checked,
+            hasPicnic: (document.getElementById('hasPicnic') as HTMLInputElement)?.checked,
+            hasBBQ: (document.getElementById('hasBBQ') as HTMLInputElement)?.checked,
+            hasTerrace: (document.getElementById('hasTerrace') as HTMLInputElement)?.checked,
+            hasBalcony: (document.getElementById('hasBalcony') as HTMLInputElement)?.checked,
+            hasPatio: (document.getElementById('hasPatio') as HTMLInputElement)?.checked,
+            hasPorch: (document.getElementById('hasPorch') as HTMLInputElement)?.checked,
+            hasDeck: (document.getElementById('hasDeck') as HTMLInputElement)?.checked,
+            hasGazebo: (document.getElementById('hasGazebo') as HTMLInputElement)?.checked,
+            hasGreenhouse: (document.getElementById('hasGreenhouse') as HTMLInputElement)?.checked,
+            hasOrchard: (document.getElementById('hasOrchard') as HTMLInputElement)?.checked,
+            hasVineyard: (document.getElementById('hasVineyard') as HTMLInputElement)?.checked,
+            hasOliveGrove: (document.getElementById('hasOliveGrove') as HTMLInputElement)?.checked,
+            hasForest: (document.getElementById('hasForest') as HTMLInputElement)?.checked,
+            hasMountain: (document.getElementById('hasMountain') as HTMLInputElement)?.checked,
+            hasSea: (document.getElementById('hasSea') as HTMLInputElement)?.checked,
+            hasRiver: (document.getElementById('hasRiver') as HTMLInputElement)?.checked,
+            hasLake: (document.getElementById('hasLake') as HTMLInputElement)?.checked,
+            hasBeach: (document.getElementById('hasBeach') as HTMLInputElement)?.checked,
+            hasValley: (document.getElementById('hasValley') as HTMLInputElement)?.checked,
+            hasPlateau: (document.getElementById('hasPlateau') as HTMLInputElement)?.checked,
+            hasHill: (document.getElementById('hasHill') as HTMLInputElement)?.checked,
+            hasCave: (document.getElementById('hasCave') as HTMLInputElement)?.checked,
+            hasQuarry: (document.getElementById('hasQuarry') as HTMLInputElement)?.checked,
+            hasMine: (document.getElementById('hasMine') as HTMLInputElement)?.checked,
+            hasWell: (document.getElementById('hasWell') as HTMLInputElement)?.checked,
+            hasSpring: (document.getElementById('hasSpring') as HTMLInputElement)?.checked,
+            hasStream: (document.getElementById('hasStream') as HTMLInputElement)?.checked,
+            hasPond: (document.getElementById('hasPond') as HTMLInputElement)?.checked,
+            hasSwamp: (document.getElementById('hasSwamp') as HTMLInputElement)?.checked,
+            hasMarsh: (document.getElementById('hasMarsh') as HTMLInputElement)?.checked,
+            hasMeadow: (document.getElementById('hasMeadow') as HTMLInputElement)?.checked,
+            hasPasture: (document.getElementById('hasPasture') as HTMLInputElement)?.checked,
+            hasField: (document.getElementById('hasField') as HTMLInputElement)?.checked,
+            hasCrop: (document.getElementById('hasCrop') as HTMLInputElement)?.checked
+          }
+          break
+
+        case 'description':
+          propertyData = {
+            description: (document.getElementById('description') as HTMLTextAreaElement)?.value
+          }
+          break
+      }
+
+      // Update property if there's property data
+      if (Object.keys(propertyData).length > 0) {
+        await updateProperty(propertyId, propertyData)
+      }
+
+      // Update listing if there's listing data
+      if (Object.keys(listingData).length > 0) {
+        await updateListing(listingId, listingData)
+      }
+
+      // Update module state
+      setModuleStates(prev => ({
+        ...prev,
+        [moduleName]: {
+          hasUnsavedChanges: false,
+          hasBeenSaved: true
+        }
+      }))
+
+      toast.success('Cambios guardados correctamente')
+    } catch (error) {
+      console.error(`Error saving ${moduleName}:`, error)
+      toast.error('Error al guardar los cambios')
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
@@ -144,7 +281,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('basicInfo')}
+            onClick={() => saveModule('basicInfo')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -258,7 +395,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('propertyDetails')}
+            onClick={() => saveModule('propertyDetails')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -288,7 +425,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('location')}
+            onClick={() => saveModule('location')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -385,7 +522,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('features')}
+            onClick={() => saveModule('features')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -480,7 +617,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('description')}
+            onClick={() => saveModule('description')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>

@@ -77,8 +77,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           listingData = {
             listingType: listingTypes[0],
             isBankOwned,
-            isFeatured,
             price: (document.getElementById('price') as HTMLInputElement)?.value
+          }
+          propertyData = {
+            propertyType
           }
           break
 

@@ -13,6 +13,9 @@ import { getAllAgents } from "~/server/queries/listing"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
 import { useRouter, useSearchParams } from "next/navigation"
+import { updateProperty } from "~/server/queries/properties"
+import { updateListing } from "~/server/queries/listing"
+import { toast } from "sonner"
 import { PropertyTitle } from "./common/property-title"
 
 interface ModuleState {
@@ -134,6 +137,82 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
     updateModuleState('basicInfo', true)
   }
 
+  // Function to save module data
+  const saveModule = async (moduleName: string) => {
+    try {
+      const propertyId = Number(listing.propertyId)
+      const listingId = Number(listing.listingId)
+
+      let propertyData = {}
+      let listingData = {}
+
+      switch (moduleName) {
+        case 'basicInfo':
+          listingData = {
+            listingType: listingTypes[0],
+            isBankOwned,
+            price: (document.getElementById('price') as HTMLInputElement)?.value
+          }
+          propertyData = {
+            propertyType: 'garaje'
+          }
+          break
+
+        case 'propertyDetails':
+          propertyData = {
+            garageSize: Number((document.getElementById('garageSize') as HTMLInputElement)?.value),
+            yearBuilt: Number((document.getElementById('yearBuilt') as HTMLInputElement)?.value)
+          }
+          break
+
+        case 'features':
+          propertyData = {
+            garageType,
+            garageSpaces,
+            garageInBuilding,
+            garageNumber,
+            disabledAccessible,
+            securityDoor,
+            alarm,
+            videoIntercom,
+            securityGuard,
+            conciergeService
+          }
+          break
+
+        case 'description':
+          propertyData = {
+            description: (document.getElementById('description') as HTMLTextAreaElement)?.value
+          }
+          break
+      }
+
+      // Update property if there's property data
+      if (Object.keys(propertyData).length > 0) {
+        await updateProperty(propertyId, propertyData)
+      }
+
+      // Update listing if there's listing data
+      if (Object.keys(listingData).length > 0) {
+        await updateListing(listingId, listingData)
+      }
+
+      // Update module state
+      setModuleStates(prev => ({
+        ...prev,
+        [moduleName]: {
+          hasUnsavedChanges: false,
+          hasBeenSaved: true
+        }
+      }))
+
+      toast.success('Cambios guardados correctamente')
+    } catch (error) {
+      console.error(`Error saving ${moduleName}:`, error)
+      toast.error('Error al guardar los cambios')
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
@@ -147,7 +226,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('basicInfo')}
+            onClick={() => saveModule('basicInfo')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -261,7 +340,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('propertyDetails')}
+            onClick={() => saveModule('propertyDetails')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -311,7 +390,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('features')}
+            onClick={() => saveModule('features')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>
@@ -477,7 +556,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
             variant="ghost" 
             size="sm" 
             className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => markModuleAsSaved('description')}
+            onClick={() => saveModule('description')}
           >
             <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Button>

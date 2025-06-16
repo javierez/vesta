@@ -82,10 +82,14 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   return (
     <>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <PropertyBreadcrumb title={listing.title ?? 'Propiedad'} />
+        <PropertyBreadcrumb 
+          propertyType={listing.propertyType ?? ''}
+          street={listing.street ?? ''}
+          referenceNumber={listing.referenceNumber ?? ''}
+        />
         
         <PropertyHeader
-          title={listing.title ?? 'Propiedad'}
+          propertyType={listing.propertyType ?? ''}
           street={listing.street ?? ''}
           city={listing.city ?? ''}
           province={listing.province ?? ''}
@@ -95,11 +99,17 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           listingType={listing.listingType as 'Sale' | 'Rent' | 'Sold'}
           isBankOwned={listing.isBankOwned ?? false}
           isFeatured={listing.isFeatured ?? false}
+          neighborhood={listing.neighborhood ?? ''}
         />
 
         {/* Galería de imágenes */}
         <div className="pb-8 max-w-3xl mx-auto mb-8">
-          <ImageGallery images={processedImages} title={listing.title ?? ""} />
+          <ImageGallery 
+            images={processedImages} 
+            title={listing.title ?? ""} 
+            propertyId={BigInt(listing.propertyId)}
+            referenceNumber={listing.referenceNumber ?? ""}
+          />
         </div>
 
         {/* Contenido principal */}
