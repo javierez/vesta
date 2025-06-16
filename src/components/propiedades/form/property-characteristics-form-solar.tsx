@@ -17,6 +17,7 @@ import { updateProperty } from "~/server/queries/properties"
 import { updateListing } from "~/server/queries/listing"
 import { toast } from "sonner"
 import { ModernSaveIndicator } from "./common/modern-save-indicator"
+import { getAllPotentialOwners, getCurrentListingOwners, updateListingOwners } from "~/server/queries/contact"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -26,7 +27,7 @@ interface ModuleState {
   lastSaved?: Date
 }
 
-type ModuleName = "basicInfo" | "propertyDetails" | "location" | "features" | "description"
+type ModuleName = "basicInfo" | "propertyDetails" | "location" | "features" | "description" | "contactInfo"
 
 interface PropertyCharacteristicsFormSolarProps {
   listing: any // We'll type this properly later
@@ -41,14 +42,15 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
     listing.propertyType !== searchParams.get('type')
   
   // Module states with new save state
-  const [modules, setModules] = useState<Record<ModuleName, ModuleState>>(() => {
+  const [moduleStates, setModuleStates] = useState<Record<ModuleName, ModuleState>>(() => {
     // Initialize with property type change detection
     const initialState = {
       basicInfo: { saveState: "idle" as SaveState, hasChanges: hasPropertyTypeChanged },
       propertyDetails: { saveState: "idle" as SaveState, hasChanges: false },
       location: { saveState: "idle" as SaveState, hasChanges: false },
       features: { saveState: "idle" as SaveState, hasChanges: false },
-      description: { saveState: "idle" as SaveState, hasChanges: false }
+      description: { saveState: "idle" as SaveState, hasChanges: false },
+      contactInfo: { saveState: "idle" as SaveState, hasChanges: false }
     }
     
     // Set basicInfo to modified if property type changed
@@ -62,7 +64,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
   // Update module states when property type change is detected
   useEffect(() => {
     if (hasPropertyTypeChanged) {
-      setModules(prev => ({
+      setModuleStates(prev => ({
         ...prev,
         basicInfo: {
           ...prev.basicInfo,
@@ -75,7 +77,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
 
   // Function to update module state
   const updateModuleState = useCallback((moduleName: ModuleName, hasChanges: boolean) => {
-    setModules(prev => ({
+    setModuleStates(prev => ({
       ...prev,
       [moduleName]: {
         ...prev[moduleName],
@@ -86,8 +88,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
   }, [])
 
   // Function to handle save
-  const handleSave = async (moduleName: ModuleName) => {
-    setModules(prev => ({
+  const saveModule = async (moduleName: ModuleName) => {
+    setModuleStates(prev => ({
       ...prev,
       [moduleName]: {
         ...prev[moduleName],
@@ -200,6 +202,22 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             description: (document.getElementById('description') as HTMLTextAreaElement)?.value
           }
           break
+
+        case 'contactInfo':
+          if (!selectedAgentId) {
+            toast.error('Debes seleccionar un agente')
+            return
+          }
+          if (selectedOwnerIds.length === 0) {
+            toast.error('Debes seleccionar al menos un propietario')
+            return
+          }
+          listingData = {
+            agentId: Number(selectedAgentId)
+          }
+          // Update owner relationships
+          await updateListingOwners(listingId, selectedOwnerIds.map(id => Number(id)))
+          break
       }
 
       // Update property if there's property data
@@ -212,7 +230,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
         await updateListing(listingId, listingData)
       }
 
-      setModules(prev => ({
+      setModuleStates(prev => ({
         ...prev,
         [moduleName]: {
           saveState: "saved",
@@ -225,7 +243,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
 
       // Reset to idle state after 2 seconds
       setTimeout(() => {
-        setModules(prev => ({
+        setModuleStates(prev => ({
           ...prev,
           [moduleName]: {
             ...prev[moduleName],
@@ -238,7 +256,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
     } catch (error) {
       console.error(`Error saving ${moduleName}:`, error)
       
-      setModules(prev => ({
+      setModuleStates(prev => ({
         ...prev,
         [moduleName]: {
           ...prev[moduleName],
@@ -251,7 +269,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
 
       // Reset to modified state after 3 seconds if there are changes
       setTimeout(() => {
-        setModules(prev => ({
+        setModuleStates(prev => ({
           ...prev,
           [moduleName]: {
             ...prev[moduleName],
@@ -264,7 +282,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
   }
 
   const getCardStyles = (moduleName: ModuleName) => {
-    const state = modules[moduleName].saveState
+    const state = moduleStates[moduleName].saveState
 
     switch (state) {
       case "modified":
@@ -294,22 +312,15 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
   const [city, setCity] = useState(listing.city ?? "")
   const [province, setProvince] = useState(listing.province ?? "")
   const [municipality, setMunicipality] = useState(listing.municipality ?? "")
+  const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[]>([])
+  const [owners, setOwners] = useState<Array<{id: number, name: string}>>([])
+  const [ownerSearch, setOwnerSearch] = useState("")
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("")
 
-  const getPropertyTypeText = (type: string) => {
-    switch (type) {
-      case 'solar':
-        return 'Solar'
-      default:
-        return type
-    }
-  }
-
-  const generateTitle = () => {
-    const type = getPropertyTypeText(listing.propertyType ?? 'solar')
-    const street = listing.street ?? ''
-    const neighborhood = listing.neighborhood ? `(${listing.neighborhood})` : ''
-    return `${type} en ${street} ${neighborhood}`.trim()
-  }
+  // Filter owners based on search
+  const filteredOwners = owners.filter(owner => 
+    owner.name.toLowerCase().includes(ownerSearch.toLowerCase())
+  )
 
   useEffect(() => {
     const fetchAgents = async () => {
@@ -326,6 +337,32 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
     fetchAgents()
   }, [])
 
+  useEffect(() => {
+    const fetchOwners = async () => {
+      try {
+        const ownersList = await getAllPotentialOwners()
+        setOwners(ownersList.map(owner => ({
+          id: Number(owner.id),
+          name: owner.name
+        })))
+
+        // Load current owners only if we have a valid listingId
+        if (listing.listingId) {
+          const currentOwners = await getCurrentListingOwners(listing.listingId)
+          setSelectedOwnerIds(currentOwners.map(owner => owner.id.toString()))
+
+          // Set current agent if exists
+          if (listing.agentId) {
+            setSelectedAgentId(listing.agentId.toString())
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching owners:", error)
+      }
+    }
+    fetchOwners()
+  }, [listing.listingId, listing.agentId])
+
   const handleListingTypeChange = (type: string) => {
     setListingType(type)
     updateModuleState('basicInfo', true)
@@ -336,12 +373,14 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       {/* Basic Information */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
         <ModernSaveIndicator 
-          state={modules.basicInfo.saveState} 
-          onSave={() => handleSave("basicInfo")} 
+          state={moduleStates.basicInfo.saveState} 
+          onSave={() => saveModule("basicInfo")} 
         />
         
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">INFORMACIÓN BÁSICA</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN BÁSICA</h3>
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -416,6 +455,17 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             />
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="cadastralReference" className="text-sm">Referencia Catastral</Label>
+            <Input 
+              id="cadastralReference" 
+              type="text" 
+              defaultValue={listing.cadastralReference} 
+              className="h-8 text-gray-500"
+              onChange={() => updateModuleState('basicInfo', true)}
+            />
+          </div>
+
           <div className="border-t border-border my-2" />
 
           <div className="flex gap-2">
@@ -439,8 +489,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       {/* Property Details */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("propertyDetails"))}>
         <ModernSaveIndicator 
-          state={modules.propertyDetails.saveState} 
-          onSave={() => handleSave("propertyDetails")} 
+          state={moduleStates.propertyDetails.saveState} 
+          onSave={() => saveModule("propertyDetails")} 
         />
         
         <div className="flex justify-between items-center mb-3">
@@ -464,8 +514,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       {/* Location */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("location"))}>
         <ModernSaveIndicator 
-          state={modules.location.saveState} 
-          onSave={() => handleSave("location")} 
+          state={moduleStates.location.saveState} 
+          onSave={() => saveModule("location")} 
         />
         
         <div className="flex justify-between items-center mb-3">
@@ -556,8 +606,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       {/* Features */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("features"))}>
         <ModernSaveIndicator 
-          state={modules.features.saveState} 
-          onSave={() => handleSave("features")} 
+          state={moduleStates.features.saveState} 
+          onSave={() => saveModule("features")} 
         />
         
         <div className="flex justify-between items-center mb-3">
@@ -646,8 +696,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       {/* Description */}
       <Card className={cn("relative p-4 col-span-2 transition-all duration-500 ease-out", getCardStyles("description"))}>
         <ModernSaveIndicator 
-          state={modules.description.saveState} 
-          onSave={() => handleSave("description")} 
+          state={moduleStates.description.saveState} 
+          onSave={() => saveModule("description")} 
         />
         
         <div className="flex justify-between items-center mb-3">
@@ -663,6 +713,99 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
               placeholder="Describe las características principales del solar, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
               onChange={() => updateModuleState('description', true)}
             />
+          </div>
+        </div>
+      </Card>
+
+      {/* Contact Information */}
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("contactInfo"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.contactInfo?.saveState || "idle"} 
+          onSave={() => saveModule("contactInfo")} 
+        />
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN DE CONTACTO</h3>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="owners" className="text-sm">Propietarios</Label>
+            <div className="flex gap-2">
+              <Select 
+                value={selectedOwnerIds[0]} // We'll handle multiple selection differently
+                onValueChange={(value) => {
+                  if (!selectedOwnerIds.includes(value)) {
+                    setSelectedOwnerIds([...selectedOwnerIds, value])
+                    updateModuleState('contactInfo', true)
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 text-gray-500 flex-1">
+                  <SelectValue placeholder="Añadir propietario" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredOwners.map((owner) => (
+                    <SelectItem 
+                      key={owner.id} 
+                      value={owner.id.toString()}
+                    >
+                      {owner.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedOwnerIds.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {selectedOwnerIds.map((ownerId) => {
+                  const owner = owners.find(o => o.id.toString() === ownerId)
+                  return owner ? (
+                    <div key={ownerId} className="flex items-center justify-between bg-muted/50 px-2 py-1 rounded-md">
+                      <span className="text-sm">{owner.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => {
+                          setSelectedOwnerIds(selectedOwnerIds.filter(id => id !== ownerId))
+                          updateModuleState('contactInfo', true)
+                        }}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ) : null
+                })}
+              </div>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="agent" className="text-sm">Agente</Label>
+            <div className="flex gap-2">
+              <Select 
+                value={selectedAgentId} 
+                onValueChange={(value) => {
+                  setSelectedAgentId(value)
+                  updateModuleState('contactInfo', true)
+                }}
+              >
+                <SelectTrigger className="h-8 text-gray-500 flex-1">
+                  <SelectValue placeholder="Seleccionar agente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.map((agent) => (
+                    <SelectItem 
+                      key={agent.id} 
+                      value={agent.id.toString()}
+                    >
+                      {agent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </Card>

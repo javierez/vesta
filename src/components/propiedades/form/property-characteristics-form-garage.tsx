@@ -8,7 +8,7 @@ import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import { useState, useEffect } from "react"
-import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle } from "lucide-react"
+import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle, BanknoteIcon } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
@@ -18,6 +18,7 @@ import { updateListing } from "~/server/queries/listing"
 import { toast } from "sonner"
 import { PropertyTitle } from "./common/property-title"
 import { ModernSaveIndicator } from "./common/modern-save-indicator"
+import { getAllPotentialOwners, getCurrentListingOwners, updateListingOwners } from "~/server/queries/contact"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -168,6 +169,22 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
             description: (document.getElementById('description') as HTMLTextAreaElement)?.value
           }
           break
+
+        case 'contactInfo':
+          if (!selectedAgentId) {
+            toast.error('Debes seleccionar un agente')
+            return
+          }
+          if (selectedOwnerIds.length === 0) {
+            toast.error('Debes seleccionar al menos un propietario')
+            return
+          }
+          listingData = {
+            agentId: Number(selectedAgentId)
+          }
+          // Update owner relationships
+          await updateListingOwners(listingId, selectedOwnerIds.map(id => Number(id)))
+          break
       }
 
       // Update property if there's property data
@@ -281,6 +298,11 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
   const [city, setCity] = useState(listing.city ?? "")
   const [province, setProvince] = useState(listing.province ?? "")
   const [municipality, setMunicipality] = useState(listing.municipality ?? "")
+  const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[]>([])
+  const [owners, setOwners] = useState<Array<{id: number, name: string}>>([])
+  const [ownerSearch, setOwnerSearch] = useState("")
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("")
+  const [newConstruction, setNewConstruction] = useState(listing.newConstruction ?? false)
 
   const getPropertyTypeText = (type: string) => {
     switch (type) {
@@ -317,6 +339,37 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
     setListingType(type)
     updateModuleState('basicInfo', true)
   }
+
+  // Filter owners based on search
+  const filteredOwners = owners.filter(owner => 
+    owner.name.toLowerCase().includes(ownerSearch.toLowerCase())
+  )
+
+  useEffect(() => {
+    const fetchOwners = async () => {
+      try {
+        const ownersList = await getAllPotentialOwners()
+        setOwners(ownersList.map(owner => ({
+          id: Number(owner.id),
+          name: owner.name
+        })))
+
+        // Load current owners only if we have a valid listingId
+        if (listing.listingId) {
+          const currentOwners = await getCurrentListingOwners(listing.listingId)
+          setSelectedOwnerIds(currentOwners.map(owner => owner.id.toString()))
+
+          // Set current agent if exists
+          if (listing.agentId) {
+            setSelectedAgentId(listing.agentId.toString())
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching owners:", error)
+      }
+    }
+    fetchOwners()
+  }, [listing.listingId, listing.agentId])
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -403,21 +456,43 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
             />
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="cadastralReference" className="text-sm">Referencia Catastral</Label>
+            <Input 
+              id="cadastralReference" 
+              type="text" 
+              defaultValue={listing.cadastralReference} 
+              className="h-8 text-gray-500"
+              onChange={() => updateModuleState('basicInfo', true)}
+            />
+          </div>
+
           <div className="border-t border-border my-2" />
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button
-              type="button"
               variant={isBankOwned ? "default" : "outline"}
               size="sm"
+              className="h-7 text-xs"
               onClick={() => {
                 setIsBankOwned(!isBankOwned)
                 updateModuleState('basicInfo', true)
               }}
-              className="flex-1"
             >
-              <Building2 className="h-4 w-4 mr-2" />
-              Piso de Banco
+              <BanknoteIcon className="h-3.5 w-3.5 mr-1" />
+              Garaje de banco
+            </Button>
+            <Button
+              variant={newConstruction ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => {
+                setNewConstruction(!newConstruction)
+                updateModuleState('basicInfo', true)
+              }}
+            >
+              <Building2 className="h-3.5 w-3.5 mr-1" />
+              Obra nueva
             </Button>
           </div>
         </div>
@@ -741,6 +816,99 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
               placeholder="Describe las características principales del garaje, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
               onChange={() => updateModuleState('description', true)}
             />
+          </div>
+        </div>
+      </Card>
+
+      {/* Contact Information */}
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("contactInfo"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.contactInfo?.saveState || "idle"} 
+          onSave={() => saveModule("contactInfo")} 
+        />
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN DE CONTACTO</h3>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="owners" className="text-sm">Propietarios</Label>
+            <div className="flex gap-2">
+              <Select 
+                value={selectedOwnerIds[0]} // We'll handle multiple selection differently
+                onValueChange={(value) => {
+                  if (!selectedOwnerIds.includes(value)) {
+                    setSelectedOwnerIds([...selectedOwnerIds, value])
+                    updateModuleState('contactInfo', true)
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 text-gray-500 flex-1">
+                  <SelectValue placeholder="Añadir propietario" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredOwners.map((owner) => (
+                    <SelectItem 
+                      key={owner.id} 
+                      value={owner.id.toString()}
+                    >
+                      {owner.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedOwnerIds.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {selectedOwnerIds.map((ownerId) => {
+                  const owner = owners.find(o => o.id.toString() === ownerId)
+                  return owner ? (
+                    <div key={ownerId} className="flex items-center justify-between bg-muted/50 px-2 py-1 rounded-md">
+                      <span className="text-sm">{owner.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => {
+                          setSelectedOwnerIds(selectedOwnerIds.filter(id => id !== ownerId))
+                          updateModuleState('contactInfo', true)
+                        }}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ) : null
+                })}
+              </div>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="agent" className="text-sm">Agente</Label>
+            <div className="flex gap-2">
+              <Select 
+                value={selectedAgentId} 
+                onValueChange={(value) => {
+                  setSelectedAgentId(value)
+                  updateModuleState('contactInfo', true)
+                }}
+              >
+                <SelectTrigger className="h-8 text-gray-500 flex-1">
+                  <SelectValue placeholder="Seleccionar agente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.map((agent) => (
+                    <SelectItem 
+                      key={agent.id} 
+                      value={agent.id.toString()}
+                    >
+                      {agent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </Card>

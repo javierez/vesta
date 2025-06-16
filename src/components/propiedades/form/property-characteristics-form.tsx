@@ -1070,7 +1070,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           </div>
           {isHeating && (
             <div className="ml-6 mt-2">
-              <Select value={heatingType} onValueChange={setHeatingType}>
+              <Select value={heatingType} onValueChange={(value) => {
+                setHeatingType(value)
+                updateModuleState('features', true)
+              }}>
                 <SelectTrigger className="h-6 text-xs text-gray-500 mt-1 px-2 py-0">
                   <SelectValue placeholder="Seleccionar tipo de calefacción" />
                 </SelectTrigger>
@@ -1098,7 +1101,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           </div>
           {isAirConditioning && (
             <div className="ml-6 mt-1">
-              <Select value={airConditioningType} onValueChange={setAirConditioningType}>
+              <Select value={airConditioningType} onValueChange={(value) => {
+                setAirConditioningType(value)
+                updateModuleState('features', true)
+              }}>
                 <SelectTrigger className="h-6 text-xs text-gray-500 mt-1 px-2 py-0">
                   <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
@@ -1292,7 +1298,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="orientation" className="text-sm">Orientación</Label>
-            <Select value={orientation} onValueChange={setOrientation}>
+            <Select value={orientation} onValueChange={(value) => {
+              setOrientation(value)
+              updateModuleState('orientation', true)
+            }}>
               <SelectTrigger className="h-8 text-gray-500">
                 <SelectValue placeholder="Seleccionar orientación" />
               </SelectTrigger>
