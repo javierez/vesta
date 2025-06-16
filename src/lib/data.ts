@@ -36,6 +36,8 @@ export type Property = {
   bathrooms?: string;
   squareMeter: number;
   yearBuilt?: number;
+  cadastralReference?: string;
+  builtSurfaceArea?: number;
   street: string;
   addressDetails?: string;
   postalCode?: string;
@@ -133,7 +135,7 @@ export type Prospect = {
 export const properties: Property[] = [
   {
     propertyId: BigInt(1),
-    referenceNumber: "REF001",
+    referenceNumber: "152653",
     title: "Piso en Avenida Ordoño II (Centro Ciudad)",
     description: "Beautiful apartment with stunning views of the city center",
     propertyType: "piso",
@@ -142,6 +144,8 @@ export const properties: Property[] = [
     bathrooms: "2",
     squareMeter: 120,
     yearBuilt: 2020,
+    cadastralReference: "123456789ABC",
+    builtSurfaceArea: 110,
     street: "Avenida Ordoño II, 15",
     postalCode: "24001",
     neighborhoodId: BigInt(1), // Centro Ciudad
@@ -160,7 +164,7 @@ export const properties: Property[] = [
   },
   {
     propertyId: BigInt(2),
-    referenceNumber: "REF002",
+    referenceNumber: "153982",
     title: "Piso en Calle Ancha (Casco Antiguo)",
     description: "Renovated apartment in historic building near the Cathedral",
     propertyType: "piso",
@@ -169,6 +173,8 @@ export const properties: Property[] = [
     bathrooms: "1",
     squareMeter: 85,
     yearBuilt: 1960,
+    cadastralReference: "987654321XYZ",
+    builtSurfaceArea: 75,
     street: "Calle Ancha, 8",
     postalCode: "24003",
     neighborhoodId: BigInt(9), // Casco Antiguo
@@ -187,7 +193,7 @@ export const properties: Property[] = [
   },
   {
     propertyId: BigInt(3),
-    referenceNumber: "REF003",
+    referenceNumber: "160608",
     title: "Local en Avenida de la Facultad (Las Ventas)",
     description: "Prime location commercial property near university area",
     propertyType: "local",
@@ -196,6 +202,8 @@ export const properties: Property[] = [
     bathrooms: "1",
     squareMeter: 150,
     yearBuilt: 1990,
+    cadastralReference: "456789123DEF",
+    builtSurfaceArea: 150,
     street: "Avenida de la Facultad, 25",
     postalCode: "24004",
     neighborhoodId: BigInt(10), // Las Ventas
@@ -214,7 +222,7 @@ export const properties: Property[] = [
   },
   {
     propertyId: BigInt(4),
-    referenceNumber: "REF004",
+    referenceNumber: "161597",
     title: "Casa en Calle La Lastra (La Chantría- La Lastra)",
     description: "Large family home with garden in quiet residential area",
     propertyType: "casa",
@@ -223,6 +231,8 @@ export const properties: Property[] = [
     bathrooms: "3",
     squareMeter: 250,
     yearBuilt: 2005,
+    cadastralReference: "789123456GHI",
+    builtSurfaceArea: 220,
     street: "Calle La Lastra, 12",
     postalCode: "24005",
     neighborhoodId: BigInt(2), // La Chantría- La Lastra
@@ -241,7 +251,7 @@ export const properties: Property[] = [
   },
   {
     propertyId: BigInt(5),
-    referenceNumber: "REF005",
+    referenceNumber: "32669",
     title: "Garaje en Calle Padre Isla (Centro Ciudad)",
     description: "Convenient parking space in central location",
     propertyType: "garaje",
@@ -250,6 +260,8 @@ export const properties: Property[] = [
     bathrooms: "0",
     squareMeter: 20,
     yearBuilt: 2010,
+    cadastralReference: "321654987JKL",
+    builtSurfaceArea: 20,
     street: "Calle Padre Isla, 5",
     postalCode: "24002",
     neighborhoodId: BigInt(1), // Centro Ciudad
@@ -272,7 +284,7 @@ export const propertyImages: PropertyImage[] = [
   {
     propertyImageId: BigInt(1),
     propertyId: BigInt(1),
-    referenceNumber: "REF001",
+    referenceNumber: "152653",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/152653/images/image_1_b89dc078.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
@@ -285,7 +297,7 @@ export const propertyImages: PropertyImage[] = [
   {
     propertyImageId: BigInt(2),
     propertyId: BigInt(1),
-    referenceNumber: "REF001",
+    referenceNumber: "152653",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/152653/images/image_2_9e28838e.png",
     isActive: true,
     createdAt: new Date("2024-01-01"),
@@ -298,7 +310,7 @@ export const propertyImages: PropertyImage[] = [
   {
     propertyImageId: BigInt(3),
     propertyId: BigInt(1),
-    referenceNumber: "REF001",
+    referenceNumber: "152653",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/152653/images/image_3_4e0e1792.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
@@ -311,7 +323,7 @@ export const propertyImages: PropertyImage[] = [
   {
     propertyImageId: BigInt(4),
     propertyId: BigInt(2),
-    referenceNumber: "REF002",
+    referenceNumber: "153982",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/153982/images/image_1_030aebc8.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
@@ -324,7 +336,7 @@ export const propertyImages: PropertyImage[] = [
   {
     propertyImageId: BigInt(5),
     propertyId: BigInt(2),
-    referenceNumber: "REF002",
+    referenceNumber: "153982",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/153982/images/image_1_944360d4.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
@@ -337,7 +349,7 @@ export const propertyImages: PropertyImage[] = [
   {
     propertyImageId: BigInt(6),
     propertyId: BigInt(2),
-    referenceNumber: "REF002",
+    referenceNumber: "153982",
     imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/153982/images/image_10_030aebc8.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),

@@ -37,6 +37,8 @@ function toDbProperty(property: Property) {
     energyCertification: property.energyCertification,
     heatingType: property.heatingType,
     yearBuilt: property.yearBuilt,
+    cadastralReference: property.cadastralReference,
+    builtSurfaceArea: property.builtSurfaceArea,
   }
 }
 

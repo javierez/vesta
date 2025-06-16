@@ -78,6 +78,8 @@ export const properties = singlestoreTable("properties", {
   bathrooms: decimal("bathrooms", { precision: 3, scale: 1 }),
   squareMeter: int("square_meter").notNull(),
   yearBuilt: smallint("year_built"),
+  cadastralReference: varchar("cadastral_reference", { length: 255 }),
+  builtSurfaceArea: decimal("built_surface_area", { precision: 10, scale: 2 }),
 
   // Location Information
   street: varchar("street", { length: 255 }).notNull(),

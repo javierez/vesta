@@ -130,7 +130,8 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             price: (document.getElementById('price') as HTMLInputElement)?.value
           }
           propertyData = {
-            propertyType
+            propertyType,
+            cadastralReference: (document.getElementById('cadastralReference') as HTMLInputElement)?.value
           }
           break
 
@@ -139,6 +140,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             bedrooms: Number((document.getElementById('bedrooms') as HTMLInputElement)?.value),
             bathrooms: Number((document.getElementById('bathrooms') as HTMLInputElement)?.value),
             squareMeter: Number((document.getElementById('squareMeter') as HTMLInputElement)?.value),
+            builtSurfaceArea: Math.round(Number((document.getElementById('builtSurfaceArea') as HTMLInputElement)?.value)),
             yearBuilt: Number((document.getElementById('yearBuilt') as HTMLInputElement)?.value)
           }
           break
@@ -497,15 +499,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   }, [])
 
   const toggleListingType = (type: string) => {
-    setListingTypes(prev => {
-      if (prev.length === 1 && prev.includes(type)) {
-        return prev
-      }
-      if (prev.includes(type)) {
-        return prev.filter(t => t !== type)
-      }
-      return [...prev, type]
-    })
+    setListingTypes([type]) // Replace the current type with the new one
     updateModuleState('basicInfo', true)
   }
 
@@ -574,7 +568,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             <div className="flex gap-2">
               <Button
                 type="button"
-                variant={listingTypes.includes('Sale') ? "default" : "outline"}
+                variant={listingTypes[0] === 'Sale' ? "default" : "outline"}
                 size="sm"
                 onClick={() => {
                   toggleListingType('Sale')
@@ -586,7 +580,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               </Button>
               <Button
                 type="button"
-                variant={listingTypes.includes('Rent') ? "default" : "outline"}
+                variant={listingTypes[0] === 'Rent' ? "default" : "outline"}
                 size="sm"
                 onClick={() => {
                   toggleListingType('Rent')
@@ -630,6 +624,17 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               className="h-8 text-gray-500" 
               min="0"
               step="1"
+              onChange={() => updateModuleState('basicInfo', true)}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="cadastralReference" className="text-sm">Referencia Catastral</Label>
+            <Input 
+              id="cadastralReference" 
+              type="text" 
+              defaultValue={listing.cadastralReference} 
+              className="h-8 text-gray-500"
               onChange={() => updateModuleState('basicInfo', true)}
             />
           </div>
@@ -695,6 +700,18 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               type="number" 
               defaultValue={listing.squareMeter} 
               className="h-8 text-gray-500"
+              onChange={() => updateModuleState('propertyDetails', true)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="builtSurfaceArea" className="text-sm">Superficie Construida (m²)</Label>
+            <Input 
+              id="builtSurfaceArea" 
+              type="number" 
+              defaultValue={Math.round(listing.builtSurfaceArea)} 
+              className="h-8 text-gray-500"
+              min="0"
+              step="1"
               onChange={() => updateModuleState('propertyDetails', true)}
             />
           </div>
@@ -1972,8 +1989,8 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         </div>
       </Card>
 
-      {/* Rental Properties - Only shown when listing type includes Rent */}
-      {listingTypes.includes('Rent') && (
+      {/* Rental Properties - Only shown when listing type is Rent */}
+      {listingTypes[0] === 'Rent' && (
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
           <ModernSaveIndicator 
             state={moduleStates.rentalProperties?.saveState || "idle"} 
