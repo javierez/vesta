@@ -20,11 +20,17 @@ import { updateProperty } from "~/server/queries/properties"
 import { updateListing } from "~/server/queries/listing"
 import { toast } from "sonner"
 import { PropertyTitle } from "./common/property-title"
+import { ModernSaveIndicator } from "./common/modern-save-indicator"
+
+type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
 interface ModuleState {
-  hasUnsavedChanges: boolean;
-  hasBeenSaved: boolean;
+  saveState: SaveState
+  hasChanges: boolean
+  lastSaved?: Date
 }
+
+type ModuleName = "basicInfo" | "propertyDetails" | "location" | "features" | "description" | "contactInfo" | "orientation" | "additionalCharacteristics" | "premiumFeatures" | "additionalSpaces" | "materials" | "rentalProperties"
 
 interface PropertyCharacteristicsFormProps {
   listing: any // We'll type this properly later
@@ -35,36 +41,80 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const searchParams = useSearchParams()
   const propertyType = searchParams.get('type') ?? listing.propertyType ?? "piso"
 
+  // Check if property type has been changed
+  const hasPropertyTypeChanged = listing.propertyType && searchParams.get('type') && 
+    listing.propertyType !== searchParams.get('type')
+
   // Module states
-  const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
-    basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
-    propertyDetails: { hasUnsavedChanges: false, hasBeenSaved: false },
-    location: { hasUnsavedChanges: false, hasBeenSaved: false },
-    features: { hasUnsavedChanges: false, hasBeenSaved: false },
-    contactInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
-    orientation: { hasUnsavedChanges: false, hasBeenSaved: false },
-    additionalCharacteristics: { hasUnsavedChanges: false, hasBeenSaved: false },
-    premiumFeatures: { hasUnsavedChanges: false, hasBeenSaved: false },
-    additionalSpaces: { hasUnsavedChanges: false, hasBeenSaved: false },
-    materials: { hasUnsavedChanges: false, hasBeenSaved: false },
-    description: { hasUnsavedChanges: false, hasBeenSaved: false },
-    rentalProperties: { hasUnsavedChanges: false, hasBeenSaved: false }
+  const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>(() => {
+    // Initialize with property type change detection
+    const initialState = {
+      basicInfo: { saveState: "idle" as SaveState, hasChanges: hasPropertyTypeChanged },
+      propertyDetails: { saveState: "idle" as SaveState, hasChanges: false },
+      location: { saveState: "idle" as SaveState, hasChanges: false },
+      features: { saveState: "idle" as SaveState, hasChanges: false },
+      contactInfo: { saveState: "idle" as SaveState, hasChanges: false },
+      orientation: { saveState: "idle" as SaveState, hasChanges: false },
+      additionalCharacteristics: { saveState: "idle" as SaveState, hasChanges: false },
+      premiumFeatures: { saveState: "idle" as SaveState, hasChanges: false },
+      additionalSpaces: { saveState: "idle" as SaveState, hasChanges: false },
+      materials: { saveState: "idle" as SaveState, hasChanges: false },
+      description: { saveState: "idle" as SaveState, hasChanges: false },
+      rentalProperties: { saveState: "idle" as SaveState, hasChanges: false }
+    }
+    
+    // Set basicInfo to modified if property type changed
+    if (hasPropertyTypeChanged) {
+      initialState.basicInfo.saveState = "modified"
+    }
+    
+    return initialState
   })
 
+  // Update module states when property type change is detected
+  useEffect(() => {
+    if (hasPropertyTypeChanged) {
+      setModuleStates(prev => ({
+        ...prev,
+        basicInfo: {
+          ...prev.basicInfo,
+          saveState: "modified",
+          hasChanges: true
+        }
+      }))
+    }
+  }, [hasPropertyTypeChanged])
+
   // Function to update module state
-  const updateModuleState = (moduleName: string, hasUnsavedChanges: boolean) => {
-    setModuleStates(prev => ({
-      ...prev,
-      [moduleName]: {
-        ...prev[moduleName],
-        hasUnsavedChanges,
-        hasBeenSaved: false
+  const updateModuleState = (moduleName: ModuleName, hasChanges: boolean) => {
+    setModuleStates(prev => {
+      const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+      return {
+        ...prev,
+        [moduleName]: {
+          ...currentState,
+          saveState: hasChanges ? "modified" : "idle",
+          hasChanges,
+          lastSaved: currentState.lastSaved
+        }
       }
-    }))
+    })
   }
 
   // Function to save module data
-  const saveModule = async (moduleName: string) => {
+  const saveModule = async (moduleName: ModuleName) => {
+    setModuleStates(prev => {
+      const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+      return {
+        ...prev,
+        [moduleName]: {
+          ...currentState,
+          saveState: "saving",
+          hasChanges: currentState.hasChanges
+        }
+      }
+    })
+
     try {
       const propertyId = Number(listing.propertyId)
       const listingId = Number(listing.listingId)
@@ -225,19 +275,67 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         await updateListing(listingId, listingData)
       }
 
-      // Update module state directly here instead of calling markModuleAsSaved
-      setModuleStates(prev => ({
-        ...prev,
-        [moduleName]: {
-          hasUnsavedChanges: false,
-          hasBeenSaved: true
+      setModuleStates(prev => {
+        const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+        return {
+          ...prev,
+          [moduleName]: {
+            ...currentState,
+            saveState: "saved",
+            hasChanges: false,
+            lastSaved: new Date()
+          }
         }
-      }))
+      })
 
       toast.success('Cambios guardados correctamente')
+
+      // Reset to idle state after 2 seconds
+      setTimeout(() => {
+        setModuleStates(prev => {
+          const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+          return {
+            ...prev,
+            [moduleName]: {
+              ...currentState,
+              saveState: "idle",
+              hasChanges: currentState.hasChanges
+            }
+          }
+        })
+      }, 2000)
+
     } catch (error) {
       console.error(`Error saving ${moduleName}:`, error)
+      
+      setModuleStates(prev => {
+        const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+        return {
+          ...prev,
+          [moduleName]: {
+            ...currentState,
+            saveState: "error",
+            hasChanges: currentState.hasChanges
+          }
+        }
+      })
+
       toast.error('Error al guardar los cambios')
+
+      // Reset to modified state after 3 seconds if there are changes
+      setTimeout(() => {
+        setModuleStates(prev => {
+          const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+          return {
+            ...prev,
+            [moduleName]: {
+              ...currentState,
+              saveState: currentState.hasChanges ? "modified" : "idle",
+              hasChanges: currentState.hasChanges
+            }
+          }
+        })
+      }, 3000)
     }
   }
 
@@ -246,8 +344,9 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     setModuleStates(prev => ({
       ...prev,
       [moduleName]: {
-        hasUnsavedChanges: false,
-        hasBeenSaved: true
+        saveState: "saved",
+        hasChanges: false,
+        lastSaved: new Date()
       }
     }))
   }
@@ -256,10 +355,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const renderModuleStatus = (moduleName: string) => {
     const state = moduleStates[moduleName]
     if (!state) return null
-    if (state.hasUnsavedChanges) {
+    if (state.hasChanges) {
       return <Circle className="h-2 w-2 fill-yellow-500 text-yellow-500" />
     }
-    if (state.hasBeenSaved) {
+    if (state.saveState === "saved") {
       return <Circle className="h-2 w-2 fill-green-500 text-green-500" />
     }
     return null
@@ -431,29 +530,35 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     return <PropertyCharacteristicsFormLocal listing={listing} />
   }
 
+  const getCardStyles = (moduleName: ModuleName) => {
+    const state = moduleStates[moduleName]?.saveState
+
+    switch (state) {
+      case "modified":
+        return "ring-2 ring-yellow-500/20 shadow-lg shadow-yellow-500/10 border-yellow-500/20"
+      case "saving":
+        return "ring-2 ring-amber-500/20 shadow-lg shadow-amber-500/10 border-amber-500/20"
+      case "saved":
+        return "ring-2 ring-emerald-500/20 shadow-lg shadow-emerald-500/10 border-emerald-500/20"
+      case "error":
+        return "ring-2 ring-red-500/20 shadow-lg shadow-red-500/10 border-red-500/20"
+      default:
+        return "hover:shadow-lg transition-all duration-300"
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
-      <Card className="p-4">
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.basicInfo?.saveState || "idle"} 
+          onSave={() => saveModule("basicInfo")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN BÁSICA</h3>
-            {renderModuleStatus('basicInfo')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={async () => {
-              try {
-                await saveModule('basicInfo')
-              } catch (error) {
-                console.error('Error saving basic info:', error)
-              }
-            }}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -550,20 +655,15 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       </Card>
 
       {/* Property Details */}
-      <Card className="p-4">
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("propertyDetails"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.propertyDetails?.saveState || "idle"} 
+          onSave={() => saveModule("propertyDetails")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">DETALLES DE LA PROPIEDAD</h3>
-            {renderModuleStatus('propertyDetails')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => saveModule('propertyDetails')}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -612,20 +712,15 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       </Card>
 
       {/* Location */}
-      <Card className="p-4">
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("location"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.location?.saveState || "idle"} 
+          onSave={() => saveModule("location")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">UBICACIÓN</h3>
-            {renderModuleStatus('location')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => saveModule('location')}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -709,20 +804,15 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       </Card>
 
       {/* Features */}
-      <Card className="p-4">
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("features"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.features?.saveState || "idle"} 
+          onSave={() => saveModule("features")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">CARACTERÍSTICAS</h3>
-            {renderModuleStatus('features')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => saveModule('features')}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-3">
           <div className="flex items-center space-x-2">
@@ -950,20 +1040,15 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       </Card>
 
       {/* Contact Information */}
-      <Card className="p-4">
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("contactInfo"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.contactInfo?.saveState || "idle"} 
+          onSave={() => saveModule("contactInfo")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN DE CONTACTO</h3>
-            {renderModuleStatus('contactInfo')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => saveModule('contactInfo')}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-3">
           {listing.owner && (
@@ -1023,20 +1108,15 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       </Card>
 
       {/* Exterior and Orientation */}
-      <Card className="p-4">
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("orientation"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.orientation?.saveState || "idle"} 
+          onSave={() => saveModule("orientation")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">ORIENTACIÓN Y EXPOSICIÓN</h3>
-            {renderModuleStatus('orientation')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => saveModule('orientation')}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-3">
           <div className="flex items-center space-x-2">
@@ -1085,7 +1165,11 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Additional Characteristics and Premium Features */}
       <div className="grid grid-cols-2 gap-4 col-span-full">
         {/* Additional Characteristics */}
-        <Card className="p-4">
+        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("additionalCharacteristics"))}>
+          <ModernSaveIndicator 
+            state={moduleStates.additionalCharacteristics?.saveState || "idle"} 
+            onSave={() => saveModule("additionalCharacteristics")} 
+          />
           <div className="flex justify-between items-center">
             <button
               type="button"
@@ -1096,7 +1180,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                   Características adicionales
                 </h3>
-                {renderModuleStatus('additionalCharacteristics')}
               </div>
               <ChevronDown 
                 className={cn(
@@ -1105,14 +1188,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 )} 
               />
             </button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => saveModule('additionalCharacteristics')}
-            >
-              <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </Button>
           </div>
           <div className={cn(
             "grid transition-all duration-200 ease-in-out",
@@ -1336,7 +1411,11 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         </Card>
 
         {/* Premium Features */}
-        <Card className="p-4">
+        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("premiumFeatures"))}>
+          <ModernSaveIndicator 
+            state={moduleStates.premiumFeatures?.saveState || "idle"} 
+            onSave={() => saveModule("premiumFeatures")} 
+          />
           <div className="flex justify-between items-center">
             <button
               type="button"
@@ -1347,7 +1426,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                   Características premium
                 </h3>
-                {renderModuleStatus('premiumFeatures')}
               </div>
               <ChevronDown 
                 className={cn(
@@ -1356,14 +1434,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 )} 
               />
             </button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => saveModule('premiumFeatures')}
-            >
-              <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </Button>
           </div>
           <div className={cn(
             "grid transition-all duration-200 ease-in-out",
@@ -1551,7 +1621,11 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Additional Spaces and Materials */}
       <div className="grid grid-cols-2 gap-4 col-span-full">
         {/* Additional Spaces */}
-        <Card className="p-4">
+        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("additionalSpaces"))}>
+          <ModernSaveIndicator 
+            state={moduleStates.additionalSpaces?.saveState || "idle"} 
+            onSave={() => saveModule("additionalSpaces")} 
+          />
           <div className="flex justify-between items-center">
             <button
               type="button"
@@ -1562,7 +1636,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                   Espacios adicionales
                 </h3>
-                {renderModuleStatus('additionalSpaces')}
               </div>
               <ChevronDown 
                 className={cn(
@@ -1571,14 +1644,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 )} 
               />
             </button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => saveModule('additionalSpaces')}
-            >
-              <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </Button>
           </div>
           <div className={cn(
             "grid transition-all duration-200 ease-in-out",
@@ -1744,7 +1809,11 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         </Card>
 
         {/* Materials and Finishes */}
-        <Card className="p-4">
+        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("materials"))}>
+          <ModernSaveIndicator 
+            state={moduleStates.materials?.saveState || "idle"} 
+            onSave={() => saveModule("materials")} 
+          />
           <div className="flex justify-between items-center">
             <button
               type="button"
@@ -1755,7 +1824,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                   Materiales y acabados
                 </h3>
-                {renderModuleStatus('materials')}
               </div>
               <ChevronDown 
                 className={cn(
@@ -1764,14 +1832,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 )} 
               />
             </button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => saveModule('materials')}
-            >
-              <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </Button>
           </div>
           <div className={cn(
             "grid transition-all duration-200 ease-in-out",
@@ -1889,20 +1949,15 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       </div>
 
       {/* Description */}
-      <Card className="p-4 col-span-2">
+      <Card className={cn("relative p-4 col-span-2 transition-all duration-500 ease-out", getCardStyles("description"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.description?.saveState || "idle"} 
+          onSave={() => saveModule("description")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">DESCRIPCIÓN</h3>
-            {renderModuleStatus('description')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => saveModule('description')}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -1919,20 +1974,15 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
 
       {/* Rental Properties - Only shown when listing type includes Rent */}
       {listingTypes.includes('Rent') && (
-        <Card className="p-4">
+        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
+          <ModernSaveIndicator 
+            state={moduleStates.rentalProperties?.saveState || "idle"} 
+            onSave={() => saveModule("rentalProperties")} 
+          />
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES DEL ALQUILER</h3>
-              {renderModuleStatus('rentalProperties')}
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0 hover:bg-transparent group"
-              onClick={() => saveModule('rentalProperties')}
-            >
-              <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </Button>
           </div>
           <div className="space-y-3">
             <div className="flex items-center space-x-2">

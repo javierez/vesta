@@ -17,11 +17,17 @@ import { updateProperty } from "~/server/queries/properties"
 import { updateListing } from "~/server/queries/listing"
 import { toast } from "sonner"
 import { PropertyTitle } from "./common/property-title"
+import { ModernSaveIndicator } from "./common/modern-save-indicator"
+
+type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
 interface ModuleState {
-  hasUnsavedChanges: boolean;
-  hasBeenSaved: boolean;
+  saveState: SaveState
+  hasChanges: boolean
+  lastSaved?: Date
 }
+
+type ModuleName = "basicInfo" | "propertyDetails" | "location" | "features" | "description" | "contactInfo" | "orientation" | "additionalCharacteristics" | "premiumFeatures" | "additionalSpaces" | "materials" | "rentalProperties"
 
 interface PropertyCharacteristicsFormGarageProps {
   listing: any // We'll type this properly later
@@ -31,114 +37,80 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Module states
-  const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
-    basicInfo: { hasUnsavedChanges: false, hasBeenSaved: false },
-    propertyDetails: { hasUnsavedChanges: false, hasBeenSaved: false },
-    features: { hasUnsavedChanges: false, hasBeenSaved: false },
-    description: { hasUnsavedChanges: false, hasBeenSaved: false }
+  // Check if property type has been changed
+  const hasPropertyTypeChanged = listing.propertyType && searchParams.get('type') && 
+    listing.propertyType !== searchParams.get('type')
+
+  // Module states with new save state
+  const [moduleStates, setModuleStates] = useState<Record<ModuleName, ModuleState>>(() => {
+    // Initialize with property type change detection
+    const initialState = {
+      basicInfo: { saveState: "idle" as SaveState, hasChanges: hasPropertyTypeChanged },
+      propertyDetails: { saveState: "idle" as SaveState, hasChanges: false },
+      location: { saveState: "idle" as SaveState, hasChanges: false },
+      features: { saveState: "idle" as SaveState, hasChanges: false },
+      description: { saveState: "idle" as SaveState, hasChanges: false },
+      contactInfo: { saveState: "idle" as SaveState, hasChanges: false },
+      orientation: { saveState: "idle" as SaveState, hasChanges: false },
+      additionalCharacteristics: { saveState: "idle" as SaveState, hasChanges: false },
+      premiumFeatures: { saveState: "idle" as SaveState, hasChanges: false },
+      additionalSpaces: { saveState: "idle" as SaveState, hasChanges: false },
+      materials: { saveState: "idle" as SaveState, hasChanges: false },
+      rentalProperties: { saveState: "idle" as SaveState, hasChanges: false }
+    }
+    
+    // Set basicInfo to modified if property type changed
+    if (hasPropertyTypeChanged) {
+      initialState.basicInfo.saveState = "modified"
+    }
+    
+    return initialState
   })
 
-  // Function to update module state
-  const updateModuleState = (moduleName: string, hasUnsavedChanges: boolean) => {
-    setModuleStates(prev => ({
-      ...prev,
-      [moduleName]: {
-        ...prev[moduleName],
-        hasUnsavedChanges,
-        hasBeenSaved: false
-      }
-    }))
-  }
-
-  // Function to mark module as saved
-  const markModuleAsSaved = (moduleName: string) => {
-    setModuleStates(prev => ({
-      ...prev,
-      [moduleName]: {
-        hasUnsavedChanges: false,
-        hasBeenSaved: true
-      }
-    }))
-  }
-
-  // Function to render module status indicator
-  const renderModuleStatus = (moduleName: string) => {
-    const state = moduleStates[moduleName]
-    if (!state) return null
-    if (state.hasUnsavedChanges) {
-      return <Circle className="h-2 w-2 fill-yellow-500 text-yellow-500" />
-    }
-    if (state.hasBeenSaved) {
-      return <Circle className="h-2 w-2 fill-green-500 text-green-500" />
-    }
-    return null
-  }
-
-  const [listingTypes, setListingTypes] = useState<string[]>(
-    listing.listingType ? [listing.listingType] : ['Sale'] // Default to 'Sale' if none selected
-  )
-  const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false)
-  const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([])
-  const [garageType, setGarageType] = useState(listing.garageType ?? "")
-  const [garageSpaces, setGarageSpaces] = useState(listing.garageSpaces ?? 1)
-  const [garageInBuilding, setGarageInBuilding] = useState(listing.garageInBuilding ?? false)
-  const [garageNumber, setGarageNumber] = useState(listing.garageNumber ?? "")
-  const [garageSize, setGarageSize] = useState(listing.garageSize ?? 0)
-  const [yearBuilt, setYearBuilt] = useState(listing.yearBuilt ?? "")
-  const [disabledAccessible, setDisabledAccessible] = useState(listing.disabledAccessible ?? false)
-  const [securityDoor, setSecurityDoor] = useState(listing.securityDoor ?? false)
-  const [alarm, setAlarm] = useState(listing.alarm ?? false)
-  const [videoIntercom, setVideoIntercom] = useState(listing.videoIntercom ?? false)
-  const [securityGuard, setSecurityGuard] = useState(listing.securityGuard ?? false)
-  const [conciergeService, setConciergeService] = useState(listing.conciergeService ?? false)
-
-  const getPropertyTypeText = (type: string) => {
-    switch (type) {
-      case 'garaje':
-        return 'Garaje'
-      default:
-        return type
-    }
-  }
-
-  const generateTitle = () => {
-    const type = getPropertyTypeText(listing.propertyType ?? 'garaje')
-    const street = listing.street ?? ''
-    const neighborhood = listing.neighborhood ? `(${listing.neighborhood})` : ''
-    return `${type} en ${street} ${neighborhood}`.trim()
-  }
-
+  // Update module states when property type change is detected
   useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        const agentsList = await getAllAgents()
-        setAgents(agentsList.map(agent => ({
-          id: Number(agent.id),
-          name: agent.name
-        })))
-      } catch (error) {
-        console.error("Error fetching agents:", error)
-      }
+    if (hasPropertyTypeChanged) {
+      setModuleStates(prev => ({
+        ...prev,
+        basicInfo: {
+          ...prev.basicInfo,
+          saveState: "modified",
+          hasChanges: true
+        }
+      }))
     }
-    fetchAgents()
-  }, [])
+  }, [hasPropertyTypeChanged])
 
-  const toggleListingType = (type: string) => {
-    setListingTypes(prev => {
-      if (prev.length === 1 && prev.includes(type)) {
-        return prev
+  // Function to update module state
+  const updateModuleState = (moduleName: ModuleName, hasChanges: boolean) => {
+    setModuleStates(prev => {
+      const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+      return {
+      ...prev,
+      [moduleName]: {
+          ...currentState,
+          saveState: hasChanges ? "modified" : "idle",
+          hasChanges,
+          lastSaved: currentState.lastSaved
+        }
       }
-      if (prev.includes(type)) {
-        return prev.filter(t => t !== type)
-      }
-      return [...prev, type]
     })
-    updateModuleState('basicInfo', true)
   }
 
   // Function to save module data
-  const saveModule = async (moduleName: string) => {
+  const saveModule = async (moduleName: ModuleName) => {
+    setModuleStates(prev => {
+      const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+      return {
+      ...prev,
+      [moduleName]: {
+          ...currentState,
+          saveState: "saving",
+          hasChanges: currentState.hasChanges
+        }
+      }
+    })
+
     try {
       const propertyId = Number(listing.propertyId)
       const listingId = Number(listing.listingId)
@@ -149,7 +121,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
       switch (moduleName) {
         case 'basicInfo':
           listingData = {
-            listingType: listingTypes[0],
+            listingType,
             isBankOwned,
             price: (document.getElementById('price') as HTMLInputElement)?.value
           }
@@ -162,6 +134,17 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
           propertyData = {
             garageSize: Number((document.getElementById('garageSize') as HTMLInputElement)?.value),
             yearBuilt: Number((document.getElementById('yearBuilt') as HTMLInputElement)?.value)
+  }
+          break
+
+        case 'location':
+          propertyData = {
+            street: (document.getElementById('street') as HTMLInputElement)?.value,
+            addressDetails: (document.getElementById('addressDetails') as HTMLInputElement)?.value,
+            postalCode: (document.getElementById('postalCode') as HTMLInputElement)?.value,
+            city,
+            province,
+            municipality
           }
           break
 
@@ -197,39 +180,156 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
         await updateListing(listingId, listingData)
       }
 
-      // Update module state
-      setModuleStates(prev => ({
-        ...prev,
-        [moduleName]: {
-          hasUnsavedChanges: false,
-          hasBeenSaved: true
+      setModuleStates(prev => {
+        const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+        return {
+          ...prev,
+          [moduleName]: {
+            ...currentState,
+            saveState: "saved",
+            hasChanges: false,
+            lastSaved: new Date()
+          }
         }
-      }))
+      })
 
       toast.success('Cambios guardados correctamente')
+
+      // Reset to idle state after 2 seconds
+      setTimeout(() => {
+        setModuleStates(prev => {
+          const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+          return {
+            ...prev,
+            [moduleName]: {
+              ...currentState,
+              saveState: "idle",
+              hasChanges: currentState.hasChanges
+            }
+          }
+        })
+      }, 2000)
+
     } catch (error) {
       console.error(`Error saving ${moduleName}:`, error)
+      
+      setModuleStates(prev => {
+        const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+        return {
+          ...prev,
+          [moduleName]: {
+            ...currentState,
+            saveState: "error",
+            hasChanges: currentState.hasChanges
+          }
+        }
+      })
+
       toast.error('Error al guardar los cambios')
+
+      // Reset to modified state after 3 seconds if there are changes
+      setTimeout(() => {
+        setModuleStates(prev => {
+          const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+          return {
+            ...prev,
+            [moduleName]: {
+              ...currentState,
+              saveState: currentState.hasChanges ? "modified" : "idle",
+              hasChanges: currentState.hasChanges
+            }
+          }
+        })
+      }, 3000)
     }
+  }
+
+  const getCardStyles = (moduleName: ModuleName) => {
+    const state = moduleStates[moduleName]?.saveState
+
+    switch (state) {
+      case "modified":
+        return "ring-2 ring-yellow-500/20 shadow-lg shadow-yellow-500/10 border-yellow-500/20"
+      case "saving":
+        return "ring-2 ring-amber-500/20 shadow-lg shadow-amber-500/10 border-amber-500/20"
+      case "saved":
+        return "ring-2 ring-emerald-500/20 shadow-lg shadow-emerald-500/10 border-emerald-500/20"
+      case "error":
+        return "ring-2 ring-red-500/20 shadow-lg shadow-red-500/10 border-red-500/20"
+      default:
+        return "hover:shadow-lg transition-all duration-300"
+    }
+  }
+
+  const [listingType, setListingType] = useState<string>(
+    listing.listingType || 'Sale' // Default to 'Sale' if none selected
+  )
+  const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false)
+  const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([])
+  const [garageType, setGarageType] = useState(listing.garageType ?? "")
+  const [garageSpaces, setGarageSpaces] = useState(listing.garageSpaces ?? 1)
+  const [garageInBuilding, setGarageInBuilding] = useState(listing.garageInBuilding ?? false)
+  const [garageNumber, setGarageNumber] = useState(listing.garageNumber ?? "")
+  const [garageSize, setGarageSize] = useState(listing.garageSize ?? 0)
+  const [yearBuilt, setYearBuilt] = useState(listing.yearBuilt ?? "")
+  const [disabledAccessible, setDisabledAccessible] = useState(listing.disabledAccessible ?? false)
+  const [securityDoor, setSecurityDoor] = useState(listing.securityDoor ?? false)
+  const [alarm, setAlarm] = useState(listing.alarm ?? false)
+  const [videoIntercom, setVideoIntercom] = useState(listing.videoIntercom ?? false)
+  const [securityGuard, setSecurityGuard] = useState(listing.securityGuard ?? false)
+  const [conciergeService, setConciergeService] = useState(listing.conciergeService ?? false)
+  const [city, setCity] = useState(listing.city ?? "")
+  const [province, setProvince] = useState(listing.province ?? "")
+  const [municipality, setMunicipality] = useState(listing.municipality ?? "")
+
+  const getPropertyTypeText = (type: string) => {
+    switch (type) {
+      case 'garaje':
+        return 'Garaje'
+      default:
+        return type
+    }
+  }
+
+  const generateTitle = () => {
+    const type = getPropertyTypeText(listing.propertyType ?? 'garaje')
+    const street = listing.street ?? ''
+    const neighborhood = listing.neighborhood ? `(${listing.neighborhood})` : ''
+    return `${type} en ${street} ${neighborhood}`.trim()
+  }
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const agentsList = await getAllAgents()
+        setAgents(agentsList.map(agent => ({
+          id: Number(agent.id),
+          name: agent.name
+        })))
+      } catch (error) {
+        console.error("Error fetching agents:", error)
+      }
+    }
+    fetchAgents()
+  }, [])
+
+  const handleListingTypeChange = (type: string) => {
+    setListingType(type)
+    updateModuleState('basicInfo', true)
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
-      <Card className="p-4">
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.basicInfo?.saveState || "idle"} 
+          onSave={() => saveModule("basicInfo")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN BÁSICA</h3>
-            {renderModuleStatus('basicInfo')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => saveModule('basicInfo')}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -245,24 +345,18 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
             <div className="flex gap-2">
               <Button
                 type="button"
-                variant={listingTypes.includes('Sale') ? "default" : "outline"}
+                variant={listingType === 'Sale' ? "default" : "outline"}
                 size="sm"
-                onClick={() => {
-                  toggleListingType('Sale')
-                  updateModuleState('basicInfo', true)
-                }}
+                onClick={() => handleListingTypeChange('Sale')}
                 className="flex-1"
               >
                 Venta
               </Button>
               <Button
                 type="button"
-                variant={listingTypes.includes('Rent') ? "default" : "outline"}
+                variant={listingType === 'Rent' ? "default" : "outline"}
                 size="sm"
-                onClick={() => {
-                  toggleListingType('Rent')
-                  updateModuleState('basicInfo', true)
-                }}
+                onClick={() => handleListingTypeChange('Rent')}
                 className="flex-1"
               >
                 Alquiler
@@ -330,20 +424,15 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
       </Card>
 
       {/* Property Details */}
-      <Card className="p-4">
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("propertyDetails"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.propertyDetails?.saveState || "idle"} 
+          onSave={() => saveModule("propertyDetails")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">DETALLES DE LA PROPIEDAD</h3>
-            {renderModuleStatus('propertyDetails')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => saveModule('propertyDetails')}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -379,21 +468,108 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
         </div>
       </Card>
 
+      {/* Location */}
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("location"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.location?.saveState || "idle"} 
+          onSave={() => saveModule("location")} 
+        />
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">UBICACIÓN</h3>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="street" className="text-sm">Calle</Label>
+            <Input 
+              id="street" 
+              defaultValue={listing.street} 
+              className="h-8 text-gray-500"
+              onChange={() => updateModuleState('location', true)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="addressDetails" className="text-sm">Detalles de la dirección</Label>
+            <Input 
+              id="addressDetails" 
+              defaultValue={listing.addressDetails} 
+              className="h-8 text-gray-500" 
+              placeholder="Referencias, etc."
+              onChange={() => updateModuleState('location', true)}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="postalCode" className="text-sm">Código Postal</Label>
+              <Input 
+                id="postalCode" 
+                defaultValue={listing.postalCode} 
+                className="h-8 text-gray-500"
+                onChange={() => updateModuleState('location', true)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="neighborhood" className="text-sm">Barrio</Label>
+              <Input 
+                id="neighborhood" 
+                defaultValue={listing.neighborhood} 
+                className="h-8 bg-muted" 
+                disabled 
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="city" className="text-sm">Ciudad</Label>
+              <Input 
+                id="city" 
+                value={city} 
+                onChange={(e) => {
+                  setCity(e.target.value)
+                  updateModuleState('location', true)
+                }} 
+                className="h-8 text-gray-500" 
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="municipality" className="text-sm">Municipio</Label>
+              <Input 
+                id="municipality" 
+                value={municipality} 
+                onChange={(e) => {
+                  setMunicipality(e.target.value)
+                  updateModuleState('location', true)
+                }} 
+                className="h-8 text-gray-500" 
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="province" className="text-sm">Provincia</Label>
+            <Input 
+              id="province" 
+              value={province} 
+              onChange={(e) => {
+                setProvince(e.target.value)
+                updateModuleState('location', true)
+              }} 
+              className="h-8 text-gray-500" 
+            />
+          </div>
+        </div>
+      </Card>
+
       {/* Features */}
-      <Card className="p-4">
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("features"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.features?.saveState || "idle"} 
+          onSave={() => saveModule("features")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">CARACTERÍSTICAS</h3>
-            {renderModuleStatus('features')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => saveModule('features')}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-6">
           {/* Garage Type and Spaces */}
@@ -546,20 +722,15 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
       </Card>
 
       {/* Description */}
-      <Card className="p-4 col-span-2">
+      <Card className={cn("relative p-4 col-span-2 transition-all duration-500 ease-out", getCardStyles("description"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.description?.saveState || "idle"} 
+          onSave={() => saveModule("description")} 
+        />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">DESCRIPCIÓN</h3>
-            {renderModuleStatus('description')}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 hover:bg-transparent group"
-            onClick={() => saveModule('description')}
-          >
-            <Save className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
