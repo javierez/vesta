@@ -48,7 +48,7 @@ export function PropertyHeader({
               </Badge>
             )}
           </div>
-          <div className="flex items-center text-muted-foreground">
+          <div className="flex items-center text-muted-foreground mt-2">
             <MapPin className="h-4 w-4 mr-1" />
             <p>
               {street}, {city}, {province} {postalCode}

@@ -547,50 +547,13 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     }
   }
 
-  // Add this near the top of the component, after the useState declarations
-  useEffect(() => {
-    const handleModuleSave = (event: CustomEvent<{ saveId: string }>) => {
-      const { saveId } = event.detail
-      if (saveId === 'basicInfo') {
-        saveModule('basicInfo')
-      } else if (saveId === 'propertyDetails') {
-        saveModule('propertyDetails')
-      } else if (saveId === 'location') {
-        saveModule('location')
-      } else if (saveId === 'features') {
-        saveModule('features')
-      } else if (saveId === 'contactInfo') {
-        saveModule('contactInfo')
-      } else if (saveId === 'orientation') {
-        saveModule('orientation')
-      } else if (saveId === 'additionalCharacteristics') {
-        saveModule('additionalCharacteristics')
-      } else if (saveId === 'premiumFeatures') {
-        saveModule('premiumFeatures')
-      } else if (saveId === 'additionalSpaces') {
-        saveModule('additionalSpaces')
-      } else if (saveId === 'materials') {
-        saveModule('materials')
-      } else if (saveId === 'description') {
-        saveModule('description')
-      } else if (saveId === 'rentalProperties') {
-        saveModule('rentalProperties')
-      }
-    }
-
-    window.addEventListener('module-save', handleModuleSave as EventListener)
-    return () => {
-      window.removeEventListener('module-save', handleModuleSave as EventListener)
-    }
-  }, [])
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
         <ModernSaveIndicator 
           state={moduleStates.basicInfo?.saveState || "idle"} 
-          saveId="basicInfo"
+          onSave={() => saveModule("basicInfo")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -695,7 +658,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("propertyDetails"))}>
         <ModernSaveIndicator 
           state={moduleStates.propertyDetails?.saveState || "idle"} 
-          saveId="propertyDetails"
+          onSave={() => saveModule("propertyDetails")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -752,7 +715,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("location"))}>
         <ModernSaveIndicator 
           state={moduleStates.location?.saveState || "idle"} 
-          saveId="location"
+          onSave={() => saveModule("location")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -844,7 +807,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("features"))}>
         <ModernSaveIndicator 
           state={moduleStates.features?.saveState || "idle"} 
-          saveId="features"
+          onSave={() => saveModule("features")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -1080,7 +1043,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("contactInfo"))}>
         <ModernSaveIndicator 
           state={moduleStates.contactInfo?.saveState || "idle"} 
-          saveId="contactInfo"
+          onSave={() => saveModule("contactInfo")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -1148,7 +1111,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("orientation"))}>
         <ModernSaveIndicator 
           state={moduleStates.orientation?.saveState || "idle"} 
-          saveId="orientation"
+          onSave={() => saveModule("orientation")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -1205,7 +1168,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("additionalCharacteristics"))}>
           <ModernSaveIndicator 
             state={moduleStates.additionalCharacteristics?.saveState || "idle"} 
-            saveId="additionalCharacteristics"
+            onSave={() => saveModule("additionalCharacteristics")} 
           />
           <div className="flex justify-between items-center">
             <button
@@ -1451,7 +1414,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("premiumFeatures"))}>
           <ModernSaveIndicator 
             state={moduleStates.premiumFeatures?.saveState || "idle"} 
-            saveId="premiumFeatures"
+            onSave={() => saveModule("premiumFeatures")} 
           />
           <div className="flex justify-between items-center">
             <button
@@ -1661,7 +1624,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("additionalSpaces"))}>
           <ModernSaveIndicator 
             state={moduleStates.additionalSpaces?.saveState || "idle"} 
-            saveId="additionalSpaces"
+            onSave={() => saveModule("additionalSpaces")} 
           />
           <div className="flex justify-between items-center">
             <button
@@ -1849,7 +1812,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("materials"))}>
           <ModernSaveIndicator 
             state={moduleStates.materials?.saveState || "idle"} 
-            saveId="materials"
+            onSave={() => saveModule("materials")} 
           />
           <div className="flex justify-between items-center">
             <button
@@ -1989,7 +1952,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       <Card className={cn("relative p-4 col-span-2 transition-all duration-500 ease-out", getCardStyles("description"))}>
         <ModernSaveIndicator 
           state={moduleStates.description?.saveState || "idle"} 
-          saveId="description"
+          onSave={() => saveModule("description")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -2014,7 +1977,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
           <ModernSaveIndicator 
             state={moduleStates.rentalProperties?.saveState || "idle"} 
-            saveId="rentalProperties"
+            onSave={() => saveModule("rentalProperties")} 
           />
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-2">

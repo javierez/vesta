@@ -331,35 +331,13 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
     updateModuleState('basicInfo', true)
   }
 
-  useEffect(() => {
-    const handleModuleSave = (event: CustomEvent<{ saveId: string }>) => {
-      const { saveId } = event.detail
-      if (saveId === 'basicInfo') {
-        handleSave('basicInfo')
-      } else if (saveId === 'propertyDetails') {
-        handleSave('propertyDetails')
-      } else if (saveId === 'location') {
-        handleSave('location')
-      } else if (saveId === 'features') {
-        handleSave('features')
-      } else if (saveId === 'description') {
-        handleSave('description')
-      }
-    }
-
-    window.addEventListener('module-save', handleModuleSave as EventListener)
-    return () => {
-      window.removeEventListener('module-save', handleModuleSave as EventListener)
-    }
-  }, [])
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
         <ModernSaveIndicator 
-          state={modules.basicInfo?.saveState || "idle"} 
-          saveId="basicInfo"
+          state={modules.basicInfo.saveState} 
+          onSave={() => handleSave("basicInfo")} 
         />
         
         <div className="flex justify-between items-center mb-3">
@@ -461,8 +439,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       {/* Property Details */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("propertyDetails"))}>
         <ModernSaveIndicator 
-          state={modules.propertyDetails?.saveState || "idle"} 
-          saveId="propertyDetails"
+          state={modules.propertyDetails.saveState} 
+          onSave={() => handleSave("propertyDetails")} 
         />
         
         <div className="flex justify-between items-center mb-3">
@@ -486,8 +464,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       {/* Location */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("location"))}>
         <ModernSaveIndicator 
-          state={modules.location?.saveState || "idle"} 
-          saveId="location"
+          state={modules.location.saveState} 
+          onSave={() => handleSave("location")} 
         />
         
         <div className="flex justify-between items-center mb-3">
@@ -578,8 +556,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       {/* Features */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("features"))}>
         <ModernSaveIndicator 
-          state={modules.features?.saveState || "idle"} 
-          saveId="features"
+          state={modules.features.saveState} 
+          onSave={() => handleSave("features")} 
         />
         
         <div className="flex justify-between items-center mb-3">
@@ -668,8 +646,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       {/* Description */}
       <Card className={cn("relative p-4 col-span-2 transition-all duration-500 ease-out", getCardStyles("description"))}>
         <ModernSaveIndicator 
-          state={modules.description?.saveState || "idle"} 
-          saveId="description"
+          state={modules.description.saveState} 
+          onSave={() => handleSave("description")} 
         />
         
         <div className="flex justify-between items-center mb-3">

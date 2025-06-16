@@ -8,11 +8,11 @@ type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
 interface ModernSaveIndicatorProps {
   state: SaveState
-  saveId: string // Unique identifier for the save action
+  onSave: () => Promise<void>
   className?: string
 }
 
-export function ModernSaveIndicator({ state, saveId, className }: ModernSaveIndicatorProps) {
+export function ModernSaveIndicator({ state, onSave, className }: ModernSaveIndicatorProps) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -21,11 +21,7 @@ export function ModernSaveIndicator({ state, saveId, className }: ModernSaveIndi
 
   const handleClick = async () => {
     if (state === "modified") {
-      // Dispatch a custom event that the parent can listen to
-      const event = new CustomEvent('module-save', { 
-        detail: { saveId } 
-      })
-      window.dispatchEvent(event)
+      await onSave()
     }
   }
 

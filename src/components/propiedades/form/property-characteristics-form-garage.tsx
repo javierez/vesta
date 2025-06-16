@@ -318,49 +318,13 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
     updateModuleState('basicInfo', true)
   }
 
-  useEffect(() => {
-    const handleModuleSave = (event: CustomEvent<{ saveId: string }>) => {
-      const { saveId } = event.detail
-      if (saveId === 'basicInfo') {
-        saveModule('basicInfo')
-      } else if (saveId === 'propertyDetails') {
-        saveModule('propertyDetails')
-      } else if (saveId === 'location') {
-        saveModule('location')
-      } else if (saveId === 'features') {
-        saveModule('features')
-      } else if (saveId === 'contactInfo') {
-        saveModule('contactInfo')
-      } else if (saveId === 'orientation') {
-        saveModule('orientation')
-      } else if (saveId === 'additionalCharacteristics') {
-        saveModule('additionalCharacteristics')
-      } else if (saveId === 'premiumFeatures') {
-        saveModule('premiumFeatures')
-      } else if (saveId === 'additionalSpaces') {
-        saveModule('additionalSpaces')
-      } else if (saveId === 'materials') {
-        saveModule('materials')
-      } else if (saveId === 'description') {
-        saveModule('description')
-      } else if (saveId === 'rentalProperties') {
-        saveModule('rentalProperties')
-      }
-    }
-
-    window.addEventListener('module-save', handleModuleSave as EventListener)
-    return () => {
-      window.removeEventListener('module-save', handleModuleSave as EventListener)
-    }
-  }, [])
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
         <ModernSaveIndicator 
           state={moduleStates.basicInfo?.saveState || "idle"} 
-          saveId="basicInfo"
+          onSave={() => saveModule("basicInfo")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -463,7 +427,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("propertyDetails"))}>
         <ModernSaveIndicator 
           state={moduleStates.propertyDetails?.saveState || "idle"} 
-          saveId="propertyDetails"
+          onSave={() => saveModule("propertyDetails")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -508,7 +472,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("location"))}>
         <ModernSaveIndicator 
           state={moduleStates.location?.saveState || "idle"} 
-          saveId="location"
+          onSave={() => saveModule("location")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -600,7 +564,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("features"))}>
         <ModernSaveIndicator 
           state={moduleStates.features?.saveState || "idle"} 
-          saveId="features"
+          onSave={() => saveModule("features")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -761,7 +725,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
       <Card className={cn("relative p-4 col-span-2 transition-all duration-500 ease-out", getCardStyles("description"))}>
         <ModernSaveIndicator 
           state={moduleStates.description?.saveState || "idle"} 
-          saveId="description"
+          onSave={() => saveModule("description")} 
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -776,200 +740,6 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
               className="min-h-[200px] resize-y text-gray-500"
               placeholder="Describe las características principales del garaje, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
               onChange={() => updateModuleState('description', true)}
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Contact Info */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("contactInfo"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.contactInfo?.saveState || "idle"} 
-          saveId="contactInfo"
-        />
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN DE CONTACTO</h3>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="agents" className="text-sm">Agente</Label>
-            <Select 
-              value={agents.find(a => a.id === Number(listing.agentId))?.name}
-              onValueChange={(value) => {
-                // Handle agent change
-              }}
-            >
-              <SelectTrigger className="h-8 text-gray-500">
-                <SelectValue placeholder="Seleccionar agente" />
-              </SelectTrigger>
-              <SelectContent>
-                {agents.map(agent => (
-                  <SelectItem key={agent.id} value={agent.name}>{agent.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </Card>
-
-      {/* Orientation */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("orientation"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.orientation?.saveState || "idle"} 
-          saveId="orientation"
-        />
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">ORIENTACIÓN</h3>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="orientation" className="text-sm">Orientación</Label>
-            <Input 
-              id="orientation" 
-              value={listing.orientation} 
-              onChange={(e) => {
-                // Handle orientation change
-              }} 
-              className="h-8 text-gray-500" 
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Additional Characteristics */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("additionalCharacteristics"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.additionalCharacteristics?.saveState || "idle"} 
-          saveId="additionalCharacteristics"
-        />
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">CARACTERÍSTICAS ADICIONALES</h3>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="additionalCharacteristics" className="text-sm">Detalles adicionales</Label>
-            <Textarea 
-              id="additionalCharacteristics" 
-              defaultValue={listing.additionalCharacteristics} 
-              className="min-h-[200px] resize-y text-gray-500"
-              placeholder="Describe cualquier característica adicional que pueda ser relevante para la propiedad."
-              onChange={(e) => {
-                // Handle additional characteristics change
-              }}
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Premium Features */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("premiumFeatures"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.premiumFeatures?.saveState || "idle"} 
-          saveId="premiumFeatures"
-        />
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">CARACTERÍSTICAS PREMIUM</h3>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="premiumFeatures" className="text-sm">Características premium</Label>
-            <Textarea 
-              id="premiumFeatures" 
-              defaultValue={listing.premiumFeatures} 
-              className="min-h-[200px] resize-y text-gray-500"
-              placeholder="Describe las características premium de la propiedad."
-              onChange={(e) => {
-                // Handle premium features change
-              }}
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Additional Spaces */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("additionalSpaces"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.additionalSpaces?.saveState || "idle"} 
-          saveId="additionalSpaces"
-        />
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">ESPACIOS ADICIONALES</h3>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="additionalSpaces" className="text-sm">Detalles de los espacios adicionales</Label>
-            <Textarea 
-              id="additionalSpaces" 
-              defaultValue={listing.additionalSpaces} 
-              className="min-h-[200px] resize-y text-gray-500"
-              placeholder="Describe los espacios adicionales de la propiedad."
-              onChange={(e) => {
-                // Handle additional spaces change
-              }}
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Materials */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("materials"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.materials?.saveState || "idle"} 
-          saveId="materials"
-        />
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">MATERIALES</h3>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="materials" className="text-sm">Detalles de los materiales</Label>
-            <Textarea 
-              id="materials" 
-              defaultValue={listing.materials} 
-              className="min-h-[200px] resize-y text-gray-500"
-              placeholder="Describe los materiales utilizados en la construcción de la propiedad."
-              onChange={(e) => {
-                // Handle materials change
-              }}
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Rental Properties */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.rentalProperties?.saveState || "idle"} 
-          saveId="rentalProperties"
-        />
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES DE ALQUILER</h3>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="rentalProperties" className="text-sm">Detalles de alquiler</Label>
-            <Textarea 
-              id="rentalProperties" 
-              defaultValue={listing.rentalProperties} 
-              className="min-h-[200px] resize-y text-gray-500"
-              placeholder="Describe las características de alquiler de la propiedad."
-              onChange={(e) => {
-                // Handle rental properties change
-              }}
             />
           </div>
         </div>
