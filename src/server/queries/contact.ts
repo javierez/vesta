@@ -2,8 +2,9 @@
 
 import { db } from "../db"
 import { contacts } from "../db/schema"
-import { eq, and, or, like } from "drizzle-orm"
+import { eq, and, or, like, sql } from "drizzle-orm"
 import type { Contact } from "../../lib/data"
+import { listingContacts } from "../db/schema"
 
 // Create a new contact
 export async function createContact(data: Omit<Contact, "contactId" | "createdAt" | "updatedAt">) {
@@ -180,6 +181,89 @@ export async function listContacts(
     return allContacts;
   } catch (error) {
     console.error("Error listing contacts:", error);
+    throw error;
+  }
+}
+
+// Get all potential owners (active contacts)
+export async function getAllPotentialOwners() {
+  try {
+    const owners = await db
+      .select({
+        id: contacts.contactId,
+        name: sql<string>`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`
+      })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.isActive, true)
+        )
+      )
+      .orderBy(sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`);
+
+    return owners;
+  } catch (error) {
+    console.error("Error fetching potential owners:", error);
+    throw error;
+  }
+}
+
+// Get current owners for a specific listing
+export async function getCurrentListingOwners(listingId: number) {
+  try {
+    const owners = await db
+      .select({
+        id: contacts.contactId,
+        name: sql<string>`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(listingContacts.listingId, BigInt(listingId)),
+          eq(listingContacts.contactType, 'owner'),
+          eq(listingContacts.isActive, true),
+          eq(contacts.isActive, true)
+        )
+      )
+      .orderBy(sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`);
+
+    return owners;
+  } catch (error) {
+    console.error("Error fetching current listing owners:", error);
+    throw error;
+  }
+}
+
+// Update listing owners - replaces all existing owner relationships for a listing
+export async function updateListingOwners(listingId: number, ownerIds: number[]) {
+  try {
+    // First, deactivate all existing owner relationships for this listing
+    await db
+      .update(listingContacts)
+      .set({ isActive: false })
+      .where(
+        and(
+          eq(listingContacts.listingId, BigInt(listingId)),
+          eq(listingContacts.contactType, 'owner')
+        )
+      );
+
+    // Then, create new active relationships for the selected owners
+    if (ownerIds.length > 0) {
+      const newRelationships = ownerIds.map(ownerId => ({
+        listingId: BigInt(listingId),
+        contactId: BigInt(ownerId),
+        contactType: 'owner' as const,
+        isActive: true
+      }));
+
+      await db.insert(listingContacts).values(newRelationships);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating listing owners:", error);
     throw error;
   }
 } 

@@ -8,8 +8,9 @@ import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import { useState, useEffect } from "react"
-import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle } from "lucide-react"
+import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle, Search, BanknoteIcon } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
+import { getAllPotentialOwners, getCurrentListingOwners, updateListingOwners } from "~/server/queries/contact"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
 import { PropertyCharacteristicsFormGarage } from "./property-characteristics-form-garage"
@@ -21,6 +22,7 @@ import { updateListing } from "~/server/queries/listing"
 import { toast } from "sonner"
 import { PropertyTitle } from "./common/property-title"
 import { ModernSaveIndicator } from "./common/modern-save-indicator"
+import { Separator } from "~/components/ui/separator"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -131,7 +133,8 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           }
           propertyData = {
             propertyType,
-            cadastralReference: (document.getElementById('cadastralReference') as HTMLInputElement)?.value
+            cadastralReference: (document.getElementById('cadastralReference') as HTMLInputElement)?.value,
+            newConstruction
           }
           break
 
@@ -172,12 +175,27 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             airConditioningType: isAirConditioning ? airConditioningType : null,
             isFurnished
           }
+          listingData = {
+            optionalGaragePrice: Math.round(Number((document.getElementById('optionalGaragePrice') as HTMLInputElement)?.value)),
+            optionalStorageRoomPrice: Math.round(Number((document.getElementById('optionalStorageRoomPrice') as HTMLInputElement)?.value))
+          }
           break
 
         case 'contactInfo':
-          listingData = {
-            agentId: BigInt((document.getElementById('agent') as HTMLSelectElement)?.value)
+          if (!selectedAgentId) {
+            throw new Error("Please select an agent")
           }
+          if (selectedOwnerIds.length === 0) {
+            throw new Error("Please select at least one owner")
+          }
+          
+          // Update listing with agent
+          listingData = {
+            agentId: BigInt(selectedAgentId)
+          }
+          
+          // Update owner relationships separately
+          await updateListingOwners(listingId, selectedOwnerIds.map(id => Number(id)))
           break
 
         case 'orientation':
@@ -199,7 +217,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             doubleGlazing,
             alarm,
             securityDoor,
-            lastRenovationYear,
+            lastRenovationYear: lastRenovationYear ? Math.min(Math.max(Number(lastRenovationYear), -32768), 32767) : null,
             kitchenType,
             hotWaterType,
             openKitchen,
@@ -400,7 +418,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const [doubleGlazing, setDoubleGlazing] = useState(listing.doubleGlazing ?? false)
   const [alarm, setAlarm] = useState(listing.alarm ?? false)
   const [securityDoor, setSecurityDoor] = useState(listing.securityDoor ?? false)
-  const [lastRenovationYear, setLastRenovationYear] = useState(listing.lastRenovationYear ?? "")
+  const [lastRenovationYear, setLastRenovationYear] = useState(listing.lastRenovationYear ?? listing.yearBuilt ?? "")
   const [kitchenType, setKitchenType] = useState(listing.kitchenType ?? "")
   const [hotWaterType, setHotWaterType] = useState(listing.hotWaterType ?? "")
   const [openKitchen, setOpenKitchen] = useState(listing.openKitchen ?? false)
@@ -440,6 +458,18 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const [showPremiumFeatures, setShowPremiumFeatures] = useState(false)
   const [showAdditionalSpaces, setShowAdditionalSpaces] = useState(false)
   const [showMaterials, setShowMaterials] = useState(false)
+  const [optionalGaragePrice, setOptionalGaragePrice] = useState(listing.optionalGaragePrice ?? 0)
+  const [optionalStorageRoomPrice, setOptionalStorageRoomPrice] = useState(listing.optionalStorageRoomPrice ?? 0)
+  const [selectedAgentId, setSelectedAgentId] = useState(listing.agent?.id?.toString() ?? "")
+  const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[]>([])
+  const [owners, setOwners] = useState<Array<{id: number, name: string}>>([])
+  const [ownerSearch, setOwnerSearch] = useState("")
+  const [newConstruction, setNewConstruction] = useState(listing.newConstruction ?? false)
+
+  // Filter owners based on search
+  const filteredOwners = owners.filter(owner => 
+    owner.name.toLowerCase().includes(ownerSearch.toLowerCase())
+  )
 
   const heatingOptions = [
     "Si, Sin especificar",
@@ -497,6 +527,26 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     }
     fetchAgents()
   }, [])
+
+  useEffect(() => {
+    const fetchOwners = async () => {
+      try {
+        // Get all potential owners for the dropdown
+        const potentialOwners = await getAllPotentialOwners()
+        setOwners(potentialOwners.map(owner => ({
+          id: Number(owner.id),
+          name: owner.name
+        })))
+
+        // Get current owners for this listing
+        const currentOwners = await getCurrentListingOwners(Number(listing.listingId))
+        setSelectedOwnerIds(currentOwners.map(owner => owner.id.toString()))
+      } catch (error) {
+        console.error("Error fetching owners:", error)
+      }
+    }
+    fetchOwners()
+  }, [listing.listingId])
 
   const toggleListingType = (type: string) => {
     setListingTypes([type]) // Replace the current type with the new one
@@ -641,21 +691,34 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
 
           <div className="border-t border-border my-2" />
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button
-              type="button"
               variant={isBankOwned ? "default" : "outline"}
               size="sm"
+              className="h-7 text-xs"
               onClick={() => {
                 setIsBankOwned(!isBankOwned)
                 updateModuleState('basicInfo', true)
               }}
-              className="flex-1"
             >
-              <Building2 className="h-4 w-4 mr-2" />
-              Piso de Banco
+              <BanknoteIcon className="h-3.5 w-3.5 mr-1" />
+              Piso de banco
+            </Button>
+            <Button
+              variant={newConstruction ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => {
+                setNewConstruction(!newConstruction)
+                updateModuleState('basicInfo', true)
+              }}
+            >
+              <Building2 className="h-3.5 w-3.5 mr-1" />
+              Obra nueva
             </Button>
           </div>
+
+          <div className="border-t border-border my-2" />
         </div>
       </Card>
 
@@ -915,6 +978,22 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                   />
                 </div>
               </div>
+              <div className="space-y-1">
+                <Label htmlFor="optionalGaragePrice" className="text-xs">Precio</Label>
+                <Input 
+                  id="optionalGaragePrice" 
+                  type="number" 
+                  value={Math.round(optionalGaragePrice)}
+                  onChange={(e) => {
+                    setOptionalGaragePrice(Math.round(Number(e.target.value)))
+                    updateModuleState('features', true)
+                  }}
+                  className="h-7 text-xs" 
+                  min="0"
+                  step="1"
+                  placeholder="0"
+                />
+              </div>
             </div>
           )}
           <div className="flex items-center space-x-2">
@@ -963,6 +1042,22 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                     placeholder="T-45"
                   />
                 </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="optionalStorageRoomPrice" className="text-xs">Precio</Label>
+                <Input 
+                  id="optionalStorageRoomPrice" 
+                  type="number" 
+                  value={Math.round(optionalStorageRoomPrice)}
+                  onChange={(e) => {
+                    setOptionalStorageRoomPrice(Math.round(Number(e.target.value)))
+                    updateModuleState('features', true)
+                  }}
+                  className="h-7 text-xs" 
+                  min="0"
+                  step="1"
+                  placeholder="0"
+                />
               </div>
             </div>
           )}
@@ -1068,57 +1163,94 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           </div>
         </div>
         <div className="space-y-3">
-          {listing.owner && (
-            <div className="space-y-1.5">
-              <Label htmlFor="owner" className="text-sm">Propietario</Label>
-              <div className="flex gap-2">
-                <Input 
-                  id="owner" 
-                  defaultValue={listing.owner} 
-                  className="h-8 text-gray-500"
-                  onChange={() => updateModuleState('contactInfo', true)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 relative group hover:bg-primary/10"
-                  onClick={() => console.log('Navigate to owner page')}
-                >
-                  <User className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="absolute -top-1 -right-1 h-2 w-2 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Button>
-              </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="owners" className="text-sm">Propietarios</Label>
+            <div className="flex gap-2">
+              <Select 
+                value={selectedOwnerIds[0]} // We'll handle multiple selection differently
+                onValueChange={(value) => {
+                  if (!selectedOwnerIds.includes(value)) {
+                    setSelectedOwnerIds([...selectedOwnerIds, value])
+                    updateModuleState('contactInfo', true)
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 text-gray-500 flex-1">
+                  <SelectValue placeholder="Añadir propietario" />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="flex items-center px-3 pb-2">
+                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                    <input
+                      className="flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                      placeholder="Buscar propietario..."
+                      value={ownerSearch}
+                      onChange={(e) => setOwnerSearch(e.target.value)}
+                    />
+                  </div>
+                  <Separator className="mb-2" />
+                  {filteredOwners.map((owner) => (
+                    <SelectItem 
+                      key={owner.id} 
+                      value={owner.id.toString()}
+                      disabled={selectedOwnerIds.includes(owner.id.toString())}
+                    >
+                      {owner.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+            {/* Display selected owners */}
+            {selectedOwnerIds.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {selectedOwnerIds.map((ownerId) => {
+                  const owner = owners.find(o => o.id.toString() === ownerId)
+                  return owner ? (
+                    <div key={ownerId} className="flex items-center justify-between bg-muted/50 px-2 py-1 rounded-md">
+                      <span className="text-sm">{owner.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => {
+                          setSelectedOwnerIds(selectedOwnerIds.filter(id => id !== ownerId))
+                          updateModuleState('contactInfo', true)
+                        }}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ) : null
+                })}
+              </div>
+            )}
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="agent" className="text-sm">Agente</Label>
             <div className="flex gap-2">
               <Select 
-                defaultValue={listing.agent?.id?.toString()}
-                onValueChange={() => updateModuleState('contactInfo', true)}
+                value={selectedAgentId} 
+                onValueChange={(value) => {
+                  setSelectedAgentId(value)
+                  updateModuleState('contactInfo', true)
+                }}
               >
                 <SelectTrigger className="h-8 text-gray-500 flex-1">
                   <SelectValue placeholder="Seleccionar agente" />
                 </SelectTrigger>
                 <SelectContent>
                   {agents.map((agent) => (
-                    <SelectItem key={agent.id} value={agent.id.toString()}>
+                    <SelectItem 
+                      key={agent.id} 
+                      value={agent.id.toString()}
+                    >
                       {agent.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 relative group hover:bg-primary/10"
-                onClick={() => console.log('Navigate to agent page')}
-              >
-                <User className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                <span className="absolute -top-1 -right-1 h-2 w-2 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-              </Button>
             </div>
           </div>
         </div>
@@ -1329,7 +1461,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                     <h4 className="text-xs font-medium text-muted-foreground">Cocina</h4>
                     <div className="space-y-1.5">
                       <Label htmlFor="kitchenType" className="text-sm">Tipo de cocina</Label>
-                      <Select value={kitchenType} onValueChange={setKitchenType}>
+                      <Select value={kitchenType} onValueChange={(value) => {
+                        setKitchenType(value)
+                        updateModuleState('additionalCharacteristics', true)
+                      }}>
                         <SelectTrigger className="h-8 text-gray-500">
                           <SelectValue placeholder="Seleccionar tipo" />
                         </SelectTrigger>
@@ -1394,7 +1529,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                     <h4 className="text-xs font-medium text-muted-foreground">Servicios</h4>
                     <div className="space-y-1.5">
                       <Label htmlFor="hotWaterType" className="text-sm">Agua caliente</Label>
-                      <Select value={hotWaterType} onValueChange={setHotWaterType}>
+                      <Select value={hotWaterType} onValueChange={(value) => {
+                        setHotWaterType(value)
+                        updateModuleState('additionalCharacteristics', true)
+                      }}>
                         <SelectTrigger className="h-8 text-gray-500">
                           <SelectValue placeholder="Seleccionar tipo" />
                         </SelectTrigger>
@@ -1807,7 +1945,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                     <h4 className="text-xs font-medium text-muted-foreground">Empotrados</h4>
                     <div className="space-y-1.5">
                       <Label htmlFor="builtInWardrobes" className="text-sm">Armarios empotrados</Label>
-                      <Select value={builtInWardrobes} onValueChange={setBuiltInWardrobes}>
+                      <Select value={builtInWardrobes} onValueChange={(value) => {
+                        setBuiltInWardrobes(value)
+                        updateModuleState('additionalSpaces', true)
+                      }}>
                         <SelectTrigger className="h-8 text-gray-500">
                           <SelectValue placeholder="Seleccionar tipo" />
                         </SelectTrigger>
