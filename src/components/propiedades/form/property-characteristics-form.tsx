@@ -23,6 +23,7 @@ import { toast } from "sonner"
 import { PropertyTitle } from "./common/property-title"
 import { ModernSaveIndicator } from "./common/modern-save-indicator"
 import { Separator } from "~/components/ui/separator"
+import Image from "next/image"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -144,7 +145,9 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             bathrooms: Number((document.getElementById('bathrooms') as HTMLInputElement)?.value),
             squareMeter: Number((document.getElementById('squareMeter') as HTMLInputElement)?.value),
             builtSurfaceArea: Math.round(Number((document.getElementById('builtSurfaceArea') as HTMLInputElement)?.value)),
-            yearBuilt: Number((document.getElementById('yearBuilt') as HTMLInputElement)?.value)
+            yearBuilt: Number((document.getElementById('yearBuilt') as HTMLInputElement)?.value),
+            lastRenovationYear: lastRenovationYear ? Math.min(Math.max(Number(lastRenovationYear), -32768), 32767) : null,
+            buildingFloors: buildingFloors
           }
           break
 
@@ -217,7 +220,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             doubleGlazing,
             alarm,
             securityDoor,
-            lastRenovationYear: lastRenovationYear ? Math.min(Math.max(Number(lastRenovationYear), -32768), 32767) : null,
             kitchenType,
             hotWaterType,
             openKitchen,
@@ -601,7 +603,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN BÁSICA</h3>
+            <h3 className="text-sm font-semibold tracking-wide">RESUMEN DEL INMUEBLE</h3>
           </div>
         </div>
         <div className="space-y-3">
@@ -742,7 +744,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">DETALLES DE LA PROPIEDAD</h3>
+            <h3 className="text-sm font-semibold tracking-wide">DISTRIBUCIÓN Y SUPERFICIE</h3>
           </div>
         </div>
         <div className="space-y-3">
@@ -768,27 +770,29 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               onChange={() => updateModuleState('propertyDetails', true)}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="squareMeter" className="text-sm">Superficie (m²)</Label>
-            <Input 
-              id="squareMeter" 
-              type="number" 
-              defaultValue={listing.squareMeter} 
-              className="h-8 text-gray-500"
-              onChange={() => updateModuleState('propertyDetails', true)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="builtSurfaceArea" className="text-sm">Superficie Construida (m²)</Label>
-            <Input 
-              id="builtSurfaceArea" 
-              type="number" 
-              defaultValue={Math.round(listing.builtSurfaceArea)} 
-              className="h-8 text-gray-500"
-              min="0"
-              step="1"
-              onChange={() => updateModuleState('propertyDetails', true)}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="squareMeter" className="text-sm">Superficie (m²)</Label>
+              <Input 
+                id="squareMeter" 
+                type="number" 
+                defaultValue={listing.squareMeter} 
+                className="h-8 text-gray-500"
+                onChange={() => updateModuleState('propertyDetails', true)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="builtSurfaceArea" className="text-sm">Construida (m²)</Label>
+              <Input 
+                id="builtSurfaceArea" 
+                type="number" 
+                defaultValue={Math.round(listing.builtSurfaceArea)} 
+                className="h-8 text-gray-500"
+                min="0"
+                step="1"
+                onChange={() => updateModuleState('propertyDetails', true)}
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="yearBuilt" className="text-sm">Año de Construcción</Label>
@@ -798,6 +802,36 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               defaultValue={listing.yearBuilt} 
               className="h-8 text-gray-500"
               onChange={() => updateModuleState('propertyDetails', true)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="lastRenovationYear" className="text-sm">Año última reforma</Label>
+            <Input 
+              id="lastRenovationYear" 
+              type="number" 
+              value={lastRenovationYear}
+              onChange={(e) => {
+                setLastRenovationYear(e.target.value)
+                updateModuleState('propertyDetails', true)
+              }}
+              className="h-8 text-gray-500" 
+              min="1900"
+              max={new Date().getFullYear()}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="buildingFloors" className="text-sm">Plantas edificio</Label>
+            <Input 
+              id="buildingFloors" 
+              type="number" 
+              value={buildingFloors}
+              onChange={(e) => {
+                setBuildingFloors(parseInt(e.target.value))
+                updateModuleState('propertyDetails', true)
+              }}
+              className="h-8 text-gray-500" 
+              min="1"
+              step="1"
             />
           </div>
         </div>
@@ -810,9 +844,21 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           onSave={() => saveModule("location")} 
         />
         <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">UBICACIÓN</h3>
-          </div>
+          <h3 className="text-sm font-semibold tracking-wide">DIRECCIÓN DEL INMUEBLE</h3>
+          <a 
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${listing.street}, ${city}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center h-8 w-8 rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+          >
+            <Image
+              src="/logos/googlemapsicon.png"
+              alt="Google Maps"
+              width={16}
+              height={16}
+              className="object-contain"
+            />
+          </a>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -903,7 +949,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">CARACTERÍSTICAS</h3>
+            <h3 className="text-sm font-semibold tracking-wide">EQUIPAMIENTO Y SERVICIOS</h3>
           </div>
         </div>
         <div className="space-y-3">
@@ -1177,7 +1223,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         />
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN DE CONTACTO</h3>
+            <h3 className="text-sm font-semibold tracking-wide">DATOS DE CONTACTO</h3>
           </div>
         </div>
         <div className="space-y-3">
@@ -1564,21 +1610,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="lastRenovationYear" className="text-sm">Año última reforma</Label>
-                      <Input 
-                        id="lastRenovationYear" 
-                        type="number" 
-                        value={lastRenovationYear}
-                        onChange={(e) => {
-                          setLastRenovationYear(e.target.value)
-                          updateModuleState('additionalCharacteristics', true)
-                        }}
-                        className="h-8 text-gray-500" 
-                        min="1900"
-                        max={new Date().getFullYear()}
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1600,7 +1631,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             >
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                  Características premium
+                  Extras de Lujo y Confort
                 </h3>
               </div>
               <ChevronDown 
@@ -1810,7 +1841,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             >
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                  Espacios adicionales
+                Zonas y Espacios Complementarios
                 </h3>
               </div>
               <ChevronDown 
@@ -1941,21 +1972,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                         }}
                         className="h-8 text-gray-500" 
                         min="0"
-                        step="1"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="buildingFloors" className="text-sm">Plantas edificio</Label>
-                      <Input 
-                        id="buildingFloors" 
-                        type="number" 
-                        value={buildingFloors}
-                        onChange={(e) => {
-                          setBuildingFloors(parseInt(e.target.value))
-                          updateModuleState('additionalSpaces', true)
-                        }}
-                        className="h-8 text-gray-500" 
-                        min="1"
                         step="1"
                       />
                     </div>
@@ -2091,33 +2107,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                           <SelectItem value="microcemento">Microcemento</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                  </div>
-
-                  {/* Security Features */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">Seguridad</h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="doubleGlazing" 
-                        checked={doubleGlazing}
-                        onCheckedChange={(checked) => {
-                          setDoubleGlazing(checked as boolean)
-                          updateModuleState('materials', true)
-                        }} 
-                      />
-                      <Label htmlFor="doubleGlazing" className="text-sm">Doble acristalamiento</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="securityDoor" 
-                        checked={securityDoor}
-                        onCheckedChange={(checked) => {
-                          setSecurityDoor(checked as boolean)
-                          updateModuleState('materials', true)
-                        }} 
-                      />
-                      <Label htmlFor="securityDoor" className="text-sm">Puerta blindada</Label>
                     </div>
                   </div>
                 </div>
