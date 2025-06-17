@@ -8,7 +8,7 @@ import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import { useState, useEffect } from "react"
-import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle, Search, BanknoteIcon, Link } from "lucide-react"
+import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle, Search, BanknoteIcon, Link, Sparkles, Loader2, MoreVertical } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
 import { getAllPotentialOwners, getCurrentListingOwners, updateListingOwners } from "~/server/queries/contact"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
@@ -24,6 +24,21 @@ import { PropertyTitle } from "./common/property-title"
 import { ModernSaveIndicator } from "./common/modern-save-indicator"
 import { Separator } from "~/components/ui/separator"
 import Image from "next/image"
+import { generatePropertyDescription } from '~/server/openai/property_descriptions'
+import { ExternalLinkPopup } from "~/components/ui/external-link-popup"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "~/components/ui/dialog"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -467,6 +482,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const [owners, setOwners] = useState<Array<{id: number, name: string}>>([])
   const [ownerSearch, setOwnerSearch] = useState("")
   const [newConstruction, setNewConstruction] = useState(listing.newConstruction ?? false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [description, setDescription] = useState(listing.description || '')
+  const [isCatastroPopupOpen, setIsCatastroPopupOpen] = useState(false)
+  const [isMapsPopupOpen, setIsMapsPopupOpen] = useState(false)
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
+  const [signature, setSignature] = useState("")
 
   // Filter owners based on search
   const filteredOwners = owners.filter(owner => 
@@ -559,6 +580,32 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     const params = new URLSearchParams(searchParams.toString())
     params.set('type', newType)
     router.push(`?${params.toString()}`)
+  }
+
+  const handleGenerateDescription = async () => {
+    try {
+      setIsGenerating(true)
+      const generatedDescription = await generatePropertyDescription(listing)
+      setDescription(generatedDescription)
+      // Update the textarea value
+      const descriptionTextarea = document.getElementById('description') as HTMLTextAreaElement
+      if (descriptionTextarea) {
+        descriptionTextarea.value = generatedDescription
+        // Trigger the change event to mark the module as modified
+        updateModuleState('description', true)
+      }
+    } catch (error) {
+      console.error('Error generating description:', error)
+      // You might want to show a toast notification here
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  // Add this function to handle signature changes
+  const handleSignatureChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setSignature(e.target.value)
+    updateModuleState('description', true)
   }
 
   // If property type is garage, render the garage form
@@ -691,14 +738,18 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 onChange={() => updateModuleState('basicInfo', true)}
               />
               {listing.cadastralReference && (
-                <a 
-                  href={`https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCConCiud.aspx?UrbRus=U&RefC=${listing.cadastralReference}&esBice=&RCBice1=&RCBice2=&DenoBice=&from=OVCBusqueda&pest=rc&RCCompleta=${listing.cadastralReference}&final=&del=24&mun=900`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center h-8 w-8 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                <button 
+                  onClick={() => setIsCatastroPopupOpen(true)}
+                  className="flex items-center justify-center h-8 w-8 rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
-                  <Link className="h-4 w-4" />
-                </a>
+                  <Image
+                    src="/logos/logo-catastro.png"
+                    alt="Catastro"
+                    width={20}
+                    height={20}
+                    className="object-contain"
+                  />
+                </button>
               )}
             </div>
           </div>
@@ -845,10 +896,8 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         />
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-sm font-semibold tracking-wide">DIRECCIÓN DEL INMUEBLE</h3>
-          <a 
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${listing.street}, ${city}`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button 
+            onClick={() => setIsMapsPopupOpen(true)}
             className="flex items-center justify-center h-8 w-8 rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
           >
             <Image
@@ -858,7 +907,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               height={16}
               className="object-contain"
             />
-          </a>
+          </button>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -2116,7 +2165,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         </Card>
       </div>
 
-      {/* Description */}
+      {/* Description Module */}
       <Card className={cn("relative p-4 col-span-2 transition-all duration-500 ease-out", getCardStyles("description"))}>
         <ModernSaveIndicator 
           state={moduleStates.description?.saveState || "idle"} 
@@ -2126,33 +2175,99 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">DESCRIPCIÓN</h3>
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsSignatureDialogOpen(true)}>
+                Añadir Firma
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <div className="space-y-3">
           <div className="space-y-1.5">
+            <Label htmlFor="description" className="text-sm">Descripción</Label>
             <Textarea 
               id="description" 
-              defaultValue={listing.description} 
-              className="min-h-[200px] resize-y text-gray-500"
+              defaultValue={description}
+              className="min-h-[200px] resize-y border-gray-200 focus:border-gray-400 focus:ring-gray-300 transition-colors"
               placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
               onChange={() => updateModuleState('description', true)}
             />
           </div>
+          <div className="pt-6 flex justify-center">
+            <Button
+              type="button"
+              onClick={handleGenerateDescription}
+              disabled={isGenerating}
+              className="group relative overflow-hidden bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white font-medium px-6 py-2.5 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generando descripción...
+                </>
+              ) : (
+                <>
+                  Asistente de descripción
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </Card>
 
-      {/* Rental Properties - Only shown when listing type is Rent */}
-      {listingTypes[0] === 'Rent' && (
-        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
-          <ModernSaveIndicator 
-            state={moduleStates.rentalProperties?.saveState || "idle"} 
-            onSave={() => saveModule("rentalProperties")} 
-          />
-          <div className="flex justify-between items-center mb-3">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES DEL ALQUILER</h3>
-            </div>
+      <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Añadir Firma</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Escribe tu firma aquí..."
+              value={signature}
+              onChange={handleSignatureChange}
+              className="min-h-[100px] resize-y"
+            />
           </div>
-          <div className="space-y-3">
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSignatureDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => {
+              // Here you can add logic to append the signature to the description
+              const descriptionTextarea = document.getElementById('description') as HTMLTextAreaElement
+              if (descriptionTextarea) {
+                descriptionTextarea.value = descriptionTextarea.value + "\n\n" + signature
+                setDescription(descriptionTextarea.value)
+                updateModuleState('description', true)
+              }
+              setIsSignatureDialogOpen(false)
+            }}>
+              Añadir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rental Properties Module */}
+      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
+        <ModernSaveIndicator 
+          state={moduleStates.rentalProperties?.saveState || "idle"} 
+          onSave={() => saveModule("rentalProperties")} 
+        />
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES DEL ALQUILER</h3>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-4 items-center">
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="studentFriendly" 
@@ -2187,8 +2302,20 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
             </div>
           </div>
-        </Card>
-      )}
+        </div>
+      </Card>
+      <ExternalLinkPopup
+        isOpen={isCatastroPopupOpen}
+        onClose={() => setIsCatastroPopupOpen(false)}
+        url={`https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCConCiud.aspx?UrbRus=U&RefC=${listing.cadastralReference}&esBice=&RCBice1=&RCBice2=&DenoBice=&from=OVCBusqueda&pest=rc&RCCompleta=${listing.cadastralReference}&final=&del=24&mun=900`}
+        title="Catastro Reference"
+      />
+      <ExternalLinkPopup
+        isOpen={isMapsPopupOpen}
+        onClose={() => setIsMapsPopupOpen(false)}
+        url={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${listing.street}, ${city}`)}`}
+        title="Google Maps Location"
+      />
     </div>
   )
 } 
