@@ -8,7 +8,7 @@ import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import { useState, useEffect, useCallback } from "react"
-import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle } from "lucide-react"
+import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle, Link } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
 import { Textarea } from "~/components/ui/textarea"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -457,13 +457,25 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
 
           <div className="space-y-1.5">
             <Label htmlFor="cadastralReference" className="text-sm">Referencia Catastral</Label>
-            <Input 
-              id="cadastralReference" 
-              type="text" 
-              defaultValue={listing.cadastralReference} 
-              className="h-8 text-gray-500"
-              onChange={() => updateModuleState('basicInfo', true)}
-            />
+            <div className="flex gap-2">
+              <Input 
+                id="cadastralReference" 
+                type="text" 
+                defaultValue={listing.cadastralReference} 
+                className="h-8 text-gray-500"
+                onChange={() => updateModuleState('basicInfo', true)}
+              />
+              {listing.cadastralReference && (
+                <a 
+                  href={`https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCConCiud.aspx?UrbRus=U&RefC=${listing.cadastralReference}&esBice=&RCBice1=&RCBice2=&DenoBice=&from=OVCBusqueda&pest=rc&RCCompleta=${listing.cadastralReference}&final=&del=24&mun=900`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center h-8 w-8 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Link className="h-4 w-4" />
+                </a>
+              )}
+            </div>
           </div>
 
           <div className="border-t border-border my-2" />
@@ -480,7 +492,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
               className="flex-1"
             >
               <Building2 className="h-4 w-4 mr-2" />
-              Piso de Banco
+              Propiedad de Banco
             </Button>
           </div>
         </div>
