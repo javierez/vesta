@@ -68,21 +68,22 @@ export const properties = singlestoreTable("properties", {
   propertyId: bigint("property_id", { mode: "bigint" }).primaryKey().autoincrement(),
 
   // Basic Information
-  referenceNumber: varchar("reference_number", { length: 20 }).notNull(),
-  title: varchar("title", { length: 255 }).notNull(),
-  description: text("description").notNull(),
-  propertyType: varchar("property_type", { length: 20 }).notNull(),
+  referenceNumber: varchar("reference_number", { length: 32 }),
+  title: varchar("title", { length: 255 }),
+  description: text("description"),
+  propertyType: varchar("property_type", { length: 20 }).default("piso"),
+  formPosition: int("form_position").notNull().default(1),
 
   // Property Specifications
   bedrooms: smallint("bedrooms"),
   bathrooms: decimal("bathrooms", { precision: 3, scale: 1 }),
-  squareMeter: int("square_meter").notNull(),
+  squareMeter: int("square_meter"),
   yearBuilt: smallint("year_built"),
   cadastralReference: varchar("cadastral_reference", { length: 255 }),
   builtSurfaceArea: decimal("built_surface_area", { precision: 10, scale: 2 }),
 
   // Location Information
-  street: varchar("street", { length: 255 }).notNull(),
+  street: varchar("street", { length: 255 }),
   addressDetails: varchar("address_details", { length: 255 }),
   postalCode: varchar("postal_code", { length: 20 }),
   neighborhoodId: bigint("neighborhood_id", { mode: "bigint" }),
@@ -181,7 +182,7 @@ export const properties = singlestoreTable("properties", {
 export const propertyImages = singlestoreTable("property_images", {
   propertyImageId: bigint("property_image_id", { mode: "bigint" }).primaryKey().autoincrement(),
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(),
-  referenceNumber: varchar("reference_number", { length: 20 }).notNull(),
+  referenceNumber: varchar("reference_number", { length: 32 }).notNull(),
   imageUrl: varchar("image_url", { length: 255 }).notNull(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),

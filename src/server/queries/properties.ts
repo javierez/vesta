@@ -7,11 +7,10 @@ import { cache } from 'react'
 import type { Property, PropertyImage } from "../../lib/data"
 
 // Create a new property
-export async function createProperty(data: Omit<Property, "propertyId" | "createdAt" | "updatedAt">) {
+export async function createProperty(data: Omit<Property, "propertyId" | "createdAt" | "updatedAt" | "referenceNumber" | "formPosition">) {
   try {
     const [result] = await db.insert(properties).values({
       ...data,
-      isActive: true,
     }).$returningId();
     if (!result) throw new Error("Failed to create property");
     const [newProperty] = await db
@@ -31,12 +30,7 @@ export async function getPropertyById(propertyId: number) {
     const [property] = await db
       .select()
       .from(properties)
-      .where(
-        and(
-          eq(properties.propertyId, BigInt(propertyId)),
-          eq(properties.isActive, true)
-        )
-      );
+      .where(eq(properties.propertyId, BigInt(propertyId)));
     return property;
   } catch (error) {
     console.error("Error fetching property:", error);
@@ -44,21 +38,30 @@ export async function getPropertyById(propertyId: number) {
   }
 }
 
+// Get properties by form position (useful for finding incomplete forms)
+export async function getPropertiesByFormPosition(formPosition: number) {
+  try {
+    const propertiesList = await db
+      .select()
+      .from(properties)
+      .where(eq(properties.formPosition, formPosition));
+    return propertiesList;
+  } catch (error) {
+    console.error("Error fetching properties by form position:", error);
+    throw error;
+  }
+}
+
 // Update property
 export async function updateProperty(
   propertyId: number,
-  data: Omit<Partial<Property>, "propertyId" | "createdAt" | "updatedAt">
+  data: Omit<Partial<Property>, "propertyId" | "createdAt" | "updatedAt" | "referenceNumber">
 ) {
   try {
     await db
       .update(properties)
       .set(data)
-      .where(
-        and(
-          eq(properties.propertyId, BigInt(propertyId)),
-          eq(properties.isActive, true)
-        )
-      );
+      .where(eq(properties.propertyId, BigInt(propertyId)));
     const [updatedProperty] = await db
       .select()
       .from(properties)
@@ -66,6 +69,20 @@ export async function updateProperty(
     return updatedProperty;
   } catch (error) {
     console.error("Error updating property:", error);
+    throw error;
+  }
+}
+
+// Update form position for a property
+export async function updatePropertyFormPosition(propertyId: number, formPosition: number) {
+  try {
+    await db
+      .update(properties)
+      .set({ formPosition })
+      .where(eq(properties.propertyId, BigInt(propertyId)));
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating property form position:", error);
     throw error;
   }
 }
@@ -103,7 +120,7 @@ export async function listProperties(
   limit = 10, 
   filters?: {
     propertyType?: string;
-    neighborhoodId?: string;
+    neighborhoodId?: number;
     bedrooms?: number;
     minSquareMeter?: number;
     maxSquareMeter?: number;
@@ -120,7 +137,7 @@ export async function listProperties(
         whereConditions.push(eq(properties.propertyType, filters.propertyType));
       }
       if (filters.neighborhoodId) {
-        whereConditions.push(eq(properties.neighborhoodId, filters.neighborhoodId));
+        whereConditions.push(eq(properties.neighborhoodId, BigInt(filters.neighborhoodId)));
       }
       if (filters.bedrooms) {
         whereConditions.push(eq(properties.bedrooms, filters.bedrooms));
@@ -160,11 +177,21 @@ export async function listProperties(
 }
 
 // Property Images CRUD operations
-export async function addPropertyImage(data: Omit<PropertyImage, "propertyImageId" | "createdAt" | "updatedAt">) {
+export async function addPropertyImage(data: Omit<PropertyImage, "propertyImageId" | "createdAt" | "updatedAt" | "referenceNumber">) {
   try {
+    // Get the property to get its reference number
+    const [property] = await db
+      .select({ referenceNumber: properties.referenceNumber })
+      .from(properties)
+      .where(eq(properties.propertyId, data.propertyId));
+    
+    if (!property || property.referenceNumber === null) {
+      throw new Error("Property not found or reference number is null");
+    }
+
     const [result] = await db.insert(propertyImages).values({
       ...data,
-      isActive: true,
+      referenceNumber: property.referenceNumber,
     }).$returningId();
     if (!result) throw new Error("Failed to add property image");
     const [newImage] = await db

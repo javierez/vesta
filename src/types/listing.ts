@@ -43,3 +43,4 @@ export type ListingOverview = {
   imageUrl2: string | null
   s3key2: string | null
 } 
+

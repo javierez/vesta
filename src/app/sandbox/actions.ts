@@ -11,7 +11,7 @@ import { sql } from "drizzle-orm"
 
 // Helper function to convert property to DB format
 function toDbProperty(property: Property) {
-  return {
+  const dbProperty: any = {
     title: property.title,
     description: property.description,
     propertyType: property.propertyType,
@@ -23,23 +23,25 @@ function toDbProperty(property: Property) {
     exterior: property.exterior,
     bright: property.bright,
     isActive: true,
-    referenceNumber: property.referenceNumber,
     hasHeating: property.hasHeating,
     hasElevator: property.hasElevator,
     hasGarage: property.hasGarage,
     hasStorageRoom: property.hasStorageRoom,
-    // Optional fields with defaults
-    addressDetails: property.addressDetails,
-    postalCode: property.postalCode,
-    neighborhoodId: property.neighborhoodId,
-    latitude: property.latitude,
-    longitude: property.longitude,
-    energyCertification: property.energyCertification,
-    heatingType: property.heatingType,
-    yearBuilt: property.yearBuilt,
-    cadastralReference: property.cadastralReference,
-    builtSurfaceArea: property.builtSurfaceArea,
   }
+
+  // Only add optional fields if they are defined
+  if (property.addressDetails) dbProperty.addressDetails = property.addressDetails;
+  if (property.postalCode) dbProperty.postalCode = property.postalCode;
+  if (property.neighborhoodId) dbProperty.neighborhoodId = property.neighborhoodId;
+  if (property.latitude) dbProperty.latitude = property.latitude;
+  if (property.longitude) dbProperty.longitude = property.longitude;
+  if (property.energyCertification) dbProperty.energyCertification = property.energyCertification;
+  if (property.heatingType) dbProperty.heatingType = property.heatingType;
+  if (property.yearBuilt) dbProperty.yearBuilt = property.yearBuilt;
+  if (property.cadastralReference) dbProperty.cadastralReference = property.cadastralReference;
+  if (property.builtSurfaceArea) dbProperty.builtSurfaceArea = property.builtSurfaceArea;
+
+  return dbProperty;
 }
 
 // Seed locations data
@@ -186,7 +188,7 @@ export async function seedDatabase() {
           propertyId: BigInt(createdProperty.propertyId),
           agentId: mockListing?.agentId || BigInt(1),
           listingType: mockListing?.listingType || 'Sale',
-          price: mockListing?.price || property.price,
+          price: mockListing?.price || property.price || "0",
           status: mockListing?.status || 'Active',
           isActive: mockListing?.isActive ?? true,
           isFeatured: mockListing?.isFeatured ?? false,

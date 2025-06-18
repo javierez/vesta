@@ -28,17 +28,18 @@ export type Location = {
 export type Property = {
   propertyId: bigint;
   referenceNumber: string;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   propertyType: string;
-  price: string;
+  formPosition: number;
+  price?: string;
   bedrooms?: number;
   bathrooms?: string;
-  squareMeter: number;
+  squareMeter?: number;
   yearBuilt?: number;
   cadastralReference?: string;
-  builtSurfaceArea?: number;
-  street: string;
+  builtSurfaceArea?: string;
+  street?: string;
   addressDetails?: string;
   postalCode?: string;
   neighborhoodId?: bigint;
@@ -139,13 +140,14 @@ export const properties: Property[] = [
     title: "Piso en Avenida Ordoño II (Centro Ciudad)",
     description: "Beautiful apartment with stunning views of the city center",
     propertyType: "piso",
+    formPosition: 1,
     price: "350000",
     bedrooms: 3,
     bathrooms: "2",
     squareMeter: 120,
     yearBuilt: 2020,
     cadastralReference: "123456789ABC",
-    builtSurfaceArea: 110,
+    builtSurfaceArea: "110",
     street: "Avenida Ordoño II, 15",
     postalCode: "24001",
     neighborhoodId: BigInt(1), // Centro Ciudad
@@ -168,13 +170,14 @@ export const properties: Property[] = [
     title: "Piso en Calle Ancha (Casco Antiguo)",
     description: "Renovated apartment in historic building near the Cathedral",
     propertyType: "piso",
+    formPosition: 2,
     price: "275000",
     bedrooms: 2,
     bathrooms: "1",
     squareMeter: 85,
     yearBuilt: 1960,
     cadastralReference: "987654321XYZ",
-    builtSurfaceArea: 75,
+    builtSurfaceArea: "75",
     street: "Calle Ancha, 8",
     postalCode: "24003",
     neighborhoodId: BigInt(9), // Casco Antiguo
@@ -197,13 +200,14 @@ export const properties: Property[] = [
     title: "Local en Avenida de la Facultad (Las Ventas)",
     description: "Prime location commercial property near university area",
     propertyType: "local",
+    formPosition: 3,
     price: "450000",
     bedrooms: 0,
     bathrooms: "1",
     squareMeter: 150,
     yearBuilt: 1990,
     cadastralReference: "456789123DEF",
-    builtSurfaceArea: 150,
+    builtSurfaceArea: "150",
     street: "Avenida de la Facultad, 25",
     postalCode: "24004",
     neighborhoodId: BigInt(10), // Las Ventas
@@ -226,13 +230,14 @@ export const properties: Property[] = [
     title: "Casa en Calle La Lastra (La Chantría- La Lastra)",
     description: "Large family home with garden in quiet residential area",
     propertyType: "casa",
+    formPosition: 4,
     price: "550000",
     bedrooms: 4,
     bathrooms: "3",
     squareMeter: 250,
     yearBuilt: 2005,
     cadastralReference: "789123456GHI",
-    builtSurfaceArea: 220,
+    builtSurfaceArea: "220",
     street: "Calle La Lastra, 12",
     postalCode: "24005",
     neighborhoodId: BigInt(2), // La Chantría- La Lastra
@@ -255,13 +260,14 @@ export const properties: Property[] = [
     title: "Garaje en Calle Padre Isla (Centro Ciudad)",
     description: "Convenient parking space in central location",
     propertyType: "garaje",
+    formPosition: 5,
     price: "25000",
     bedrooms: 0,
     bathrooms: "0",
     squareMeter: 20,
     yearBuilt: 2010,
     cadastralReference: "321654987JKL",
-    builtSurfaceArea: 20,
+    builtSurfaceArea: "20",
     street: "Calle Padre Isla, 5",
     postalCode: "24002",
     neighborhoodId: BigInt(1), // Centro Ciudad
