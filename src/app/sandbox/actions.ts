@@ -12,6 +12,7 @@ import { sql } from "drizzle-orm"
 // Helper function to convert property to DB format
 function toDbProperty(property: Property) {
   const dbProperty: any = {
+    referenceNumber: property.referenceNumber,
     title: property.title,
     description: property.description,
     propertyType: property.propertyType,

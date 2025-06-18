@@ -7,7 +7,7 @@ import { cache } from 'react'
 import type { Property, PropertyImage } from "../../lib/data"
 
 // Create a new property
-export async function createProperty(data: Omit<Property, "propertyId" | "createdAt" | "updatedAt" | "referenceNumber" | "formPosition">) {
+export async function createProperty(data: Omit<Property, "propertyId" | "createdAt" | "updatedAt" | "formPosition">) {
   try {
     const [result] = await db.insert(properties).values({
       ...data,
