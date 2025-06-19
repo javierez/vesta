@@ -5,12 +5,43 @@ import { properties, propertyImages } from "../db/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { cache } from 'react'
 import type { Property, PropertyImage } from "../../lib/data"
+import { retrieveCadastralData } from "../cadastral/retrieve_cadastral"
+
+// Generate a unique reference number
+export async function generateReferenceNumber(): Promise<string> {
+  try {
+    // Get the current year
+    const currentYear = new Date().getFullYear();
+    
+    // Get the count of properties for this year
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(properties)
+      .where(sql`YEAR(${properties.createdAt}) = ${currentYear}`);
+    
+    const count = result?.count || 0;
+    
+    // Format: VESTA-YYYY-XXXXXX (e.g., VESTA-2024-000001)
+    const referenceNumber = `VESTA${currentYear}${String(count + 1).padStart(6, '0')}`;
+    
+    return referenceNumber;
+  } catch (error) {
+    console.error("Error generating reference number:", error);
+    // Fallback: timestamp-based reference
+    const timestamp = Date.now();
+    return `VESTA-${timestamp}`;
+  }
+}
 
 // Create a new property
-export async function createProperty(data: Omit<Property, "propertyId" | "createdAt" | "updatedAt" | "formPosition">) {
+export async function createProperty(data: Omit<Property, "propertyId" | "createdAt" | "updatedAt" | "formPosition" | "referenceNumber">) {
   try {
+    // Generate a unique reference number
+    const referenceNumber = await generateReferenceNumber();
+    
     const [result] = await db.insert(properties).values({
       ...data,
+      referenceNumber,
     }).$returningId();
     if (!result) throw new Error("Failed to create property");
     const [newProperty] = await db
@@ -231,6 +262,56 @@ export async function deletePropertyImage(imageId: number) {
     return { success: true };
   } catch (error) {
     console.error("Error deleting property image:", error);
+    throw error;
+  }
+}
+
+// Create a property with minimal data (just cadastral reference)
+export async function createPropertyFromCadastral(cadastralReference: string) {
+  try {
+    // First, retrieve cadastral data from the API
+    const cadastralData = await retrieveCadastralData(cadastralReference);
+    
+    // Generate a unique reference number
+    const referenceNumber = await generateReferenceNumber();
+    
+    // Create property with cadastral data and sensible defaults
+    const propertyData = {
+      cadastralReference,
+      referenceNumber,
+      propertyType: cadastralData?.propertyType || "piso" as const,
+      formPosition: 1, // Starting form position
+      hasHeating: false,
+      hasElevator: false,
+      hasGarage: false,
+      hasStorageRoom: false,
+      isActive: true,
+      // Add cadastral data if available
+      ...(cadastralData && {
+        street: cadastralData.street,
+        addressDetails: cadastralData.addressDetails,
+        squareMeter: cadastralData.squareMeter,
+        builtSurfaceArea: cadastralData.builtSurfaceArea.toString(),
+        yearBuilt: cadastralData.yearBuilt,
+        municipality: cadastralData.municipality,
+        neighborhood: cadastralData.neighborhood,
+        postalCode: cadastralData.postalCode,
+      })
+    };
+
+    const [result] = await db.insert(properties).values(propertyData).$returningId();
+    if (!result) throw new Error("Failed to create property");
+    
+    const [newProperty] = await db
+      .select()
+      .from(properties)
+      .where(eq(properties.propertyId, BigInt(result.propertyId)));
+    
+    if (!newProperty) throw new Error("Failed to retrieve created property");
+    
+    return newProperty;
+  } catch (error) {
+    console.error("Error creating property from cadastral:", error);
     throw error;
   }
 } 
