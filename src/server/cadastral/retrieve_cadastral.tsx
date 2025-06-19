@@ -1,5 +1,7 @@
 'use server'
 
+import { retrieveGeocodingData } from "../googlemaps/retrieve_geo"
+
 // Types for the cadastral API response (updated to match actual API)
 interface CadastralResponse {
   consulta_dnprcResult: {
@@ -88,6 +90,8 @@ interface FormattedCadastralData {
   municipality: string;
   neighborhood: string;
   postalCode: string;
+  latitude?: string;
+  longitude?: string;
 }
 
 // Format street type abbreviations to full names
@@ -174,6 +178,11 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
     // Build the street address
     const street = `${formattedStreetType} ${formattedStreetName}, ${dir.pnp}`;
     
+    // Get geocoding data from Google Maps API
+    const fullAddress = `${street}, ${dt.nm}, ${dt.np}, España`;
+    console.log('🗺️ Getting geocoding data for full address:', fullAddress);
+    const geoData = await retrieveGeocodingData(fullAddress);
+    
     // Build address details (floor, door, etc.)
     const addressDetails = `${loint.es}ª ${loint.pt}º ${loint.pu}`;
 
@@ -205,6 +214,10 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
     const constructionType = data.consulta_dnprcResult.bico.lcons[0]?.lcd;
     const propertyType = getPropertyType(debi.luso, constructionType);
 
+    // Use better neighborhood data from Google if available, otherwise fallback to cadastral data
+    const neighborhood = geoData?.neighborhood || dt.nm;
+    const municipality = geoData?.municipality || dt.nm;
+
     // Format the response
     const formattedData: FormattedCadastralData = {
       street,
@@ -213,12 +226,14 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
       builtSurfaceArea,
       yearBuilt,
       propertyType,
-      municipality: dt.nm,
-      neighborhood: dt.nm, // Using municipality as neighborhood since API doesn't provide specific neighborhood
-      postalCode: dt.locs.lous.lourb.dp
+      municipality,
+      neighborhood,
+      postalCode: dt.locs.lous.lourb.dp,
+      latitude: geoData?.latitude,
+      longitude: geoData?.longitude
     };
 
-    console.log('✅ Formatted cadastral data:', formattedData);
+    console.log('✅ Formatted cadastral data with geocoding:', formattedData);
 
     return formattedData;
 

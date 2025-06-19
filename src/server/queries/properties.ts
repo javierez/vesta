@@ -296,6 +296,8 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
         municipality: cadastralData.municipality,
         neighborhood: cadastralData.neighborhood,
         postalCode: cadastralData.postalCode,
+        ...(cadastralData.latitude && { latitude: cadastralData.latitude }),
+        ...(cadastralData.longitude && { longitude: cadastralData.longitude }),
       })
     };
 
