@@ -15,15 +15,6 @@ import { createPropertyFromCadastral, createPropertyFromLocation } from "~/serve
 interface BaseFormData {
   // Initial questions
   cadastralReference: string
-  propertySheetFilled: boolean
-
-  // Basic Information
-  referenceNumber: number
-  title: string
-  price: string
-  listingType: string
-  status: string
-  propertyType: string
 
   // Location
   street: string
@@ -39,119 +30,12 @@ interface BaseFormData {
   // Property Specifications
   squareMeter: string
   builtSurfaceArea: string
-  bedrooms: string
-  bathrooms: string
   yearBuilt: string
-  buildingFloors: string
-  energyCertification: string
-
-  // Construction & Renovation
-  brandNew: boolean
-  newConstruction: boolean
-  underConstruction: boolean
-  needsRenovation: boolean
-  lastRenovationYear: string
-
-  // Features & Amenities
-  hasHeating: boolean
-  heatingType: string
-  hotWaterType: string
-  airConditioningType: string
-  hasElevator: boolean
-  disabledAccessible: boolean
-  vpo: boolean
-
-  // Security Features
-  videoIntercom: boolean
-  conciergeService: boolean
-  securityGuard: boolean
-  alarm: boolean
-  securityDoor: boolean
-  doubleGlazing: boolean
-  satelliteDish: boolean
-
-  // Kitchen Features
-  kitchenType: string
-  openKitchen: boolean
-  frenchKitchen: boolean
-  furnishedKitchen: boolean
-  pantry: boolean
-
-  // Garage & Storage
-  hasGarage: boolean
-  garageType: string
-  garageSpaces: string
-  garageInBuilding: boolean
-  elevatorToGarage: boolean
-  garageNumber: string
-  hasStorageRoom: boolean
-  storageRoomSize: string
-  storageRoomNumber: string
-
-  // Additional Spaces
-  terrace: boolean
-  terraceSize: string
-  balconyCount: string
-  galleryCount: string
-  livingRoomSize: string
-  wineCellar: boolean
-  wineCellarSize: string
-
-  // Views & Exterior
-  exterior: boolean
-  bright: boolean
-  views: boolean
-  mountainViews: boolean
-  seaViews: boolean
-  beachfront: boolean
-
-  // Premium Features
-  garden: boolean
-  pool: boolean
-  jacuzzi: boolean
-  hydromassage: boolean
-  homeAutomation: boolean
-  musicSystem: boolean
-  fireplace: boolean
-
-  // Additional Features
-  laundryRoom: boolean
-  coveredClothesline: boolean
-  builtInWardrobes: boolean
-  mainFloorType: string
-  shutterType: string
-  carpentryType: string
-  windowType: string
-  orientation: string
-
-  // Rental Specific
-  isFurnished: boolean
-  furnitureQuality: string
-  optionalGarage: boolean
-  optionalGaragePrice: string
-  optionalStorageRoom: boolean
-  optionalStorageRoomPrice: string
-  studentFriendly: boolean
-  petsAllowed: boolean
-  appliancesIncluded: boolean
-
-  // Additional Info
-  hasKeys: boolean
-  isFeatured: boolean
-  isBankOwned: boolean
-  viewCount: string
-  inquiryCount: string
+  propertyType: string
 }
 
 const initialFormData: BaseFormData = {
   cadastralReference: "",
-  propertySheetFilled: false,
-  referenceNumber: 0,
-  title: "",
-  price: "",
-  listingType: "Sale",
-  status: "available",
-  propertyType: "piso",
   street: "",
   addressDetails: "",
   postalCode: "",
@@ -163,86 +47,8 @@ const initialFormData: BaseFormData = {
   longitude: "",
   squareMeter: "",
   builtSurfaceArea: "",
-  bedrooms: "",
-  bathrooms: "",
   yearBuilt: "",
-  buildingFloors: "",
-  energyCertification: "",
-  brandNew: false,
-  newConstruction: false,
-  underConstruction: false,
-  needsRenovation: false,
-  lastRenovationYear: "",
-  hasHeating: false,
-  heatingType: "",
-  hotWaterType: "",
-  airConditioningType: "",
-  hasElevator: false,
-  disabledAccessible: false,
-  vpo: false,
-  videoIntercom: false,
-  conciergeService: false,
-  securityGuard: false,
-  alarm: false,
-  securityDoor: false,
-  doubleGlazing: false,
-  satelliteDish: false,
-  kitchenType: "",
-  openKitchen: false,
-  frenchKitchen: false,
-  furnishedKitchen: false,
-  pantry: false,
-  hasGarage: false,
-  garageType: "",
-  garageSpaces: "",
-  garageInBuilding: false,
-  elevatorToGarage: false,
-  garageNumber: "",
-  hasStorageRoom: false,
-  storageRoomSize: "",
-  storageRoomNumber: "",
-  terrace: false,
-  terraceSize: "",
-  balconyCount: "",
-  galleryCount: "",
-  livingRoomSize: "",
-  wineCellar: false,
-  wineCellarSize: "",
-  exterior: false,
-  bright: false,
-  views: false,
-  mountainViews: false,
-  seaViews: false,
-  beachfront: false,
-  garden: false,
-  pool: false,
-  jacuzzi: false,
-  hydromassage: false,
-  homeAutomation: false,
-  musicSystem: false,
-  fireplace: false,
-  laundryRoom: false,
-  coveredClothesline: false,
-  builtInWardrobes: false,
-  mainFloorType: "",
-  shutterType: "",
-  carpentryType: "",
-  windowType: "",
-  orientation: "",
-  isFurnished: false,
-  furnitureQuality: "",
-  optionalGarage: false,
-  optionalGaragePrice: "",
-  optionalStorageRoom: false,
-  optionalStorageRoomPrice: "",
-  studentFriendly: false,
-  petsAllowed: false,
-  appliancesIncluded: false,
-  hasKeys: false,
-  isFeatured: false,
-  isBankOwned: false,
-  viewCount: "",
-  inquiryCount: "",
+  propertyType: "piso",
 }
 
 // Step definitions
@@ -276,8 +82,6 @@ export default function PropertyIdentificationForm() {
   const [showCadastralTooltip, setShowCadastralTooltip] = useState(false)
   const [showUploadTooltip, setShowUploadTooltip] = useState(false)
   const [isCreatingProperty, setIsCreatingProperty] = useState(false)
-  const [createdProperty, setCreatedProperty] = useState<any>(null)
-  const [fieldsAutoPopulated, setFieldsAutoPopulated] = useState(false)
   const router = useRouter()
 
   // Close tooltip when clicking outside
@@ -305,11 +109,6 @@ export default function PropertyIdentificationForm() {
     return stepConfigurations[propertyType] || simplifiedSteps
   }, [formData.propertyType])
 
-  // Reset to step 2 (location) when property type changes after basic info
-  const handlePropertyTypeChange = (newPropertyType: string) => {
-    setFormData((prev) => ({ ...prev, propertyType: newPropertyType }))
-  }
-
   const updateFormData = (field: keyof BaseFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
@@ -322,21 +121,12 @@ export default function PropertyIdentificationForm() {
     updateFormData(field, e.target.value)
   }
 
-  const handleSelectChange = (field: keyof BaseFormData) => (value: string) => {
-    updateFormData(field, value)
-  }
-
-  const handleCheckboxChange = (field: keyof BaseFormData) => (checked: boolean) => {
-    updateFormData(field, checked)
-  }
-
   // Client-side function that calls the server action for cadastral reference
   const handleCreatePropertyFromCadastral = async (cadastralReference: string) => {
     try {
       setIsCreatingProperty(true)
       // Call the server action
       const newProperty = await createPropertyFromCadastral(cadastralReference);
-      setCreatedProperty(newProperty);
       console.log("Property created from cadastral:", newProperty);
       
       // Automatically populate form fields with cadastral data
@@ -359,7 +149,6 @@ export default function PropertyIdentificationForm() {
           yearBuilt: newProperty.yearBuilt?.toString() || "",
           propertyType: newProperty.propertyType || "piso",
         }));
-        setFieldsAutoPopulated(true)
       }
       
       return newProperty; // Return the property data for redirection
@@ -386,7 +175,6 @@ export default function PropertyIdentificationForm() {
       setIsCreatingProperty(true)
       // Call the server action
       const newProperty = await createPropertyFromLocation(locationData);
-      setCreatedProperty(newProperty);
       console.log("Property created from location:", newProperty);
       
       return newProperty; // Return the property data for redirection
@@ -448,10 +236,10 @@ export default function PropertyIdentificationForm() {
       }
     }
     
-    // Only proceed to next step if there are more steps available
-    if (currentStep < currentSteps.length - 1) {
+    // If we're on step 0 without cadastral reference, go to next step
+    if (currentStep === 0) {
       setDirection("forward")
-      setCurrentStep((prev) => prev + 1)
+      setCurrentStep(1)
     }
   }
 
@@ -460,11 +248,6 @@ export default function PropertyIdentificationForm() {
       setDirection("backward")
       setCurrentStep((prev) => prev - 1)
     }
-  }
-
-  const handleSubmit = () => {
-    console.log("Form submitted:", formData)
-    alert("¡Formulario enviado correctamente!")
   }
 
   // Get property type display name
@@ -677,31 +460,6 @@ export default function PropertyIdentificationForm() {
       </div>
     )
   }
-
-  // Effect to update form when createdProperty changes
-  useEffect(() => {
-    if (createdProperty && currentStep === 1) {
-      // If we're on the location step and have created property data, populate the form
-      setFormData(prev => ({
-        ...prev,
-        // Location fields
-        street: createdProperty.street || prev.street,
-        addressDetails: createdProperty.addressDetails || prev.addressDetails,
-        postalCode: createdProperty.postalCode || prev.postalCode,
-        city: createdProperty.city || prev.city, // Now populated from cadastral data
-        province: createdProperty.province || prev.province, // Now populated from cadastral data
-        municipality: createdProperty.municipality || prev.municipality, // Now populated from cadastral data
-        neighborhood: createdProperty.neighborhood || prev.neighborhood, // Now populated from cadastral data
-        latitude: createdProperty.latitude?.toString() || prev.latitude,
-        longitude: createdProperty.longitude?.toString() || prev.longitude,
-        // Property specifications
-        squareMeter: createdProperty.squareMeter?.toString() || prev.squareMeter,
-        builtSurfaceArea: createdProperty.builtSurfaceArea?.toString() || prev.builtSurfaceArea,
-        yearBuilt: createdProperty.yearBuilt?.toString() || prev.yearBuilt,
-        propertyType: createdProperty.propertyType || prev.propertyType,
-      }));
-    }
-  }, [createdProperty, currentStep]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
