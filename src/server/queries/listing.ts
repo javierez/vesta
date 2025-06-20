@@ -600,4 +600,31 @@ export async function getListingDetails(listingId: number) {
   }
 }
 
+// Create a default listing for a newly created property
+export async function createDefaultListing(propertyId: number) {
+  try {
+    const listingData = {
+      propertyId: BigInt(propertyId),
+      agentId: BigInt(1), // Default agent ID
+      listingType: "Sale" as const,
+      price: "50000", // Default price as string (decimal type)
+      status: "En Proceso" as const, // Default status in Spanish
+      // All other fields will be null/undefined by default
+    };
+
+    const [result] = await db.insert(listings).values(listingData).$returningId();
+    if (!result) throw new Error("Failed to create default listing");
+    
+    const [newListing] = await db
+      .select()
+      .from(listings)
+      .where(eq(listings.listingId, BigInt(result.listingId)));
+    
+    return newListing;
+  } catch (error) {
+    console.error("Error creating default listing:", error);
+    throw error;
+  }
+}
+
 

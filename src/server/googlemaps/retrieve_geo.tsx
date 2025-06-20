@@ -20,12 +20,16 @@ interface FormattedGeoData {
   longitude: string;
   neighborhood?: string;
   neighborhoodId?: number;
+  city?: string;
+  municipality?: string;
+  province?: string;
 }
 
 // Retrieve geocoding data from OpenStreetMap Nominatim API
 export async function retrieveGeocodingData(address: string): Promise<FormattedGeoData | null> {
   try {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&addressdetails=1`;
+    console.log(url);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -76,7 +80,10 @@ export async function retrieveGeocodingData(address: string): Promise<FormattedG
       latitude: result.lat,
       longitude: result.lon,
       neighborhood,
-      neighborhoodId
+      neighborhoodId,
+      city: addressData.city,
+      municipality: addressData.city,
+      province: addressData.province || addressData.state
     };
 
     return formattedData;

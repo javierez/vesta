@@ -55,6 +55,8 @@ interface FormattedCadastralData {
   latitude?: string;
   longitude?: string;
   neighborhoodId?: number;
+  city?: string;
+  province?: string;
 }
 
 // Format street type abbreviations to full names
@@ -146,7 +148,9 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
     const propertyType = getPropertyType(debi.luso, constructionType);
 
     const neighborhood = geoData?.neighborhood || dt.nm;
-    const municipality = dt.nm;
+    const municipality = geoData?.municipality || dt.nm;
+    const city = geoData?.city || dt.np;
+    const province = geoData?.province || dt.np;
 
     const formattedData: FormattedCadastralData = {
       street,
@@ -160,7 +164,9 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
       postalCode: dt.locs.lous.lourb.dp,
       latitude: geoData?.latitude,
       longitude: geoData?.longitude,
-      neighborhoodId: geoData?.neighborhoodId
+      neighborhoodId: geoData?.neighborhoodId,
+      city,
+      province
     };
 
     return formattedData;

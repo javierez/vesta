@@ -6,7 +6,7 @@ import { properties as dbProperties, listings as dbListings, propertyImages, loc
 import { createProperty } from "~/server/queries/properties"
 import { createListing } from "~/server/queries/listing"
 import { createPropertyImage } from "~/server/queries/property_images"
-import { createLocation } from "~/server/queries/location"
+import { createLocation } from "~/server/queries/locations"
 import { sql } from "drizzle-orm"
 
 // Helper function to convert property to DB format

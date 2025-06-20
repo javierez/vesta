@@ -13,10 +13,15 @@ const globalForDb = globalThis as unknown as {
   conn: Pool | undefined;
 };
 
+// Use IP address instead of hostname to avoid DNS resolution issues
+const host = env.SINGLESTORE_HOST === 'svc-741fe687-0339-4cf5-99fb-de8e02574507-dml.aws-virginia-8.svc.singlestore.com' 
+  ? '3.221.29.223' 
+  : env.SINGLESTORE_HOST;
+
 const conn =
   globalForDb.conn ?? 
   createPool({
-    host: env.SINGLESTORE_HOST,
+    host: host,
     port: parseInt(env.SINGLESTORE_PORT),
     user: env.SINGLESTORE_USER,
     password: env.SINGLESTORE_PASS,

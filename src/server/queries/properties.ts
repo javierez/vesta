@@ -6,6 +6,8 @@ import { eq, and, sql } from "drizzle-orm"
 import { cache } from 'react'
 import type { Property, PropertyImage } from "../../lib/data"
 import { retrieveCadastralData } from "../cadastral/retrieve_cadastral"
+import { createDefaultListing } from "./listing"
+import { retrieveGeocodingData } from "../googlemaps/retrieve_geo"
 
 // Generate a unique reference number
 export async function generateReferenceNumber(): Promise<string> {
@@ -274,6 +276,8 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
     
     // Generate a unique reference number
     const referenceNumber = await generateReferenceNumber();
+
+    //console.log('cadastralData', cadastralData)
     
     // Create property with cadastral data and sensible defaults
     const propertyData = {
@@ -285,7 +289,7 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
       hasElevator: false,
       hasGarage: false,
       hasStorageRoom: false,
-      isActive: true,
+      isActive: false,
       // Add cadastral data if available
       ...(cadastralData && {
         street: cadastralData.street,
@@ -293,8 +297,6 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
         squareMeter: cadastralData.squareMeter,
         builtSurfaceArea: cadastralData.builtSurfaceArea.toString(),
         yearBuilt: cadastralData.yearBuilt,
-        municipality: cadastralData.municipality,
-        neighborhood: cadastralData.neighborhood,
         postalCode: cadastralData.postalCode,
         ...(cadastralData.latitude && { latitude: cadastralData.latitude }),
         ...(cadastralData.longitude && { longitude: cadastralData.longitude }),
@@ -303,6 +305,7 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
     };
 
     const [result] = await db.insert(properties).values(propertyData).$returningId();
+    
     if (!result) throw new Error("Failed to create property");
     
     const [newProperty] = await db
@@ -312,9 +315,97 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
     
     if (!newProperty) throw new Error("Failed to retrieve created property");
     
-    return newProperty;
+    // Create a default listing for the new property and get the listing ID
+    const newListing = await createDefaultListing(Number(newProperty.propertyId));
+    
+    if (!newListing) throw new Error("Failed to create default listing");
+    
+    return {
+      ...newProperty,
+      // Add location data from cadastral for form population
+      city: cadastralData?.city,
+      province: cadastralData?.province,
+      municipality: cadastralData?.municipality,
+      neighborhood: cadastralData?.neighborhood,
+      // Add the listing ID for redirection
+      listingId: Number(newListing.listingId),
+    };
   } catch (error) {
     console.error("Error creating property from cadastral:", error);
+    throw error;
+  }
+}
+
+// Create a property from manual location data
+export async function createPropertyFromLocation(locationData: {
+  street: string;
+  addressDetails?: string;
+  postalCode: string;
+  city?: string;
+  province?: string;
+  municipality?: string;
+  neighborhood?: string;
+  propertyType?: string;
+}) {
+  try {
+    // First, retrieve geocoding data from the address
+    const fullAddress = `${locationData.street}, ${locationData.postalCode}, ${locationData.city || ''}, ${locationData.province || ''}`.trim();
+    console.log("fullAddress", fullAddress);
+    const geocodingData = await retrieveGeocodingData(fullAddress);
+    
+    // Generate a unique reference number
+    const referenceNumber = await generateReferenceNumber();
+    
+    // Create property with location data and sensible defaults (similar to cadastral version)
+    const propertyData = {
+      referenceNumber,
+      propertyType: locationData.propertyType || "piso" as const,
+      formPosition: 1, // Starting form position
+      hasHeating: false,
+      hasElevator: false,
+      hasGarage: false,
+      hasStorageRoom: false,
+      isActive: false,
+      // Add location data
+      street: locationData.street,
+      addressDetails: locationData.addressDetails || "",
+      postalCode: locationData.postalCode,
+      // Add geocoding data if available
+      ...(geocodingData && {
+        latitude: geocodingData.latitude,
+        longitude: geocodingData.longitude,
+        ...(geocodingData.neighborhoodId && { neighborhoodId: BigInt(geocodingData.neighborhoodId) }),
+      })
+    };
+
+    const [result] = await db.insert(properties).values(propertyData).$returningId();
+    
+    if (!result) throw new Error("Failed to create property");
+    
+    const [newProperty] = await db
+      .select()
+      .from(properties)
+      .where(eq(properties.propertyId, BigInt(result.propertyId)));
+    
+    if (!newProperty) throw new Error("Failed to retrieve created property");
+    
+    // Create a default listing for the new property and get the listing ID
+    const newListing = await createDefaultListing(Number(newProperty.propertyId));
+    
+    if (!newListing) throw new Error("Failed to create default listing");
+    
+    return {
+      ...newProperty,
+      // Add location data from geocoding for form population
+      city: geocodingData?.city || locationData.city,
+      province: geocodingData?.province || locationData.province,
+      municipality: geocodingData?.municipality || locationData.municipality,
+      neighborhood: geocodingData?.neighborhood || locationData.neighborhood,
+      // Add the listing ID for redirection
+      listingId: Number(newListing.listingId),
+    };
+  } catch (error) {
+    console.error("Error creating property from location:", error);
     throw error;
   }
 } 
