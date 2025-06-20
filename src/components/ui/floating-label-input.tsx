@@ -30,11 +30,18 @@ export function FloatingLabelInput({
 }: FloatingLabelInputProps) {
   const [isFocused, setIsFocused] = useState(false)
   const hasValue = value.length > 0
+  const shouldShowLabel = isFocused || hasValue
 
   return (
-    <div className="relative">
+    <motion.div 
+      className="relative"
+      animate={{ 
+        marginTop: shouldShowLabel ? "32px" : "10px"
+      }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+    >
       <AnimatePresence>
-        {(hasValue || isFocused) && (
+        {shouldShowLabel && (
           <motion.label
             htmlFor={id}
             initial={{ opacity: 0, y: 0, scale: 1 }}
@@ -56,7 +63,7 @@ export function FloatingLabelInput({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        placeholder={hasValue || isFocused ? "" : placeholder}
+        placeholder={shouldShowLabel ? "" : placeholder}
         disabled={disabled}
         required={required}
         className={cn(
@@ -64,6 +71,6 @@ export function FloatingLabelInput({
           className
         )}
       />
-    </div>
+    </motion.div>
   )
 } 

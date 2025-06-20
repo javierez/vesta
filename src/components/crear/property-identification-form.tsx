@@ -173,8 +173,52 @@ export default function PropertyIdentificationForm() {
   }) => {
     try {
       setIsCreatingProperty(true)
-      // Call the server action
-      const newProperty = await createPropertyFromLocation(locationData);
+      
+      // First, validate address using Nominatim with just street and city
+      const addressString = [
+        locationData.street,
+        locationData.city
+      ].filter(Boolean).join(', ')
+      
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`
+      
+      const response = await fetch(nominatimUrl)
+      const nominatimResults = await response.json()
+      
+      if (nominatimResults.length === 0) {
+        alert("La dirección introducida no se ha encontrado. Por favor, verifica que la dirección y ciudad sean correctos.");
+        return null
+      }
+      
+      const result = nominatimResults[0]
+      console.log("Nominatim validation successful:", result)
+      
+      // Auto-fill missing fields with Nominatim data
+      const enrichedLocationData = {
+        ...locationData,
+        postalCode: locationData.postalCode || result.address?.postcode || "",
+        city: locationData.city || result.address?.city || result.address?.town || "",
+        province: locationData.province || result.address?.state || "",
+        municipality: locationData.municipality || result.address?.city || result.address?.town || "",
+        neighborhood: locationData.neighborhood || result.address?.suburb || "",
+        latitude: result.lat || "",
+        longitude: result.lon || ""
+      }
+      
+      // Update form data with enriched information
+      setFormData(prev => ({
+        ...prev,
+        postalCode: enrichedLocationData.postalCode,
+        city: enrichedLocationData.city,
+        province: enrichedLocationData.province,
+        municipality: enrichedLocationData.municipality,
+        neighborhood: enrichedLocationData.neighborhood,
+        latitude: enrichedLocationData.latitude,
+        longitude: enrichedLocationData.longitude
+      }))
+      
+      // Call the server action with enriched data
+      const newProperty = await createPropertyFromLocation(enrichedLocationData);
       console.log("Property created from location:", newProperty);
       
       return newProperty; // Return the property data for redirection
@@ -194,7 +238,7 @@ export default function PropertyIdentificationForm() {
         const newProperty = await handleCreatePropertyFromCadastral(formData.cadastralReference.trim());
         
         if (newProperty && newProperty.listingId) {
-          router.push(`/propiedades/crear/${newProperty.listingId}`);
+          router.push(`/propiedades/crear/${newProperty.listingId}?method=catastro`);
           return;
         }
       } catch (error) {
@@ -210,10 +254,6 @@ export default function PropertyIdentificationForm() {
         alert("Por favor, introduce la dirección de la propiedad.");
         return;
       }
-      if (!formData.postalCode.trim()) {
-        alert("Por favor, introduce el código postal.");
-        return;
-      }
       
       try {
         const newProperty = await handleCreatePropertyFromLocation({
@@ -226,8 +266,13 @@ export default function PropertyIdentificationForm() {
           neighborhood: formData.neighborhood.trim(),
         });
         
+        // If Nominatim validation failed, newProperty will be null
+        if (!newProperty) {
+          return; // Don't proceed with redirect
+        }
+        
         if (newProperty && newProperty.listingId) {
-          router.push(`/propiedades/crear/${newProperty.listingId}`);
+          router.push(`/propiedades/crear/${newProperty.listingId}?method=manual`);
           return;
         }
       } catch (error) {
@@ -241,6 +286,63 @@ export default function PropertyIdentificationForm() {
       setDirection("forward")
       setCurrentStep(1)
     }
+  }
+
+  const autoCompleteAddress = async () => {
+    if (!formData.street.trim()) {
+      alert("Por favor, introduce al menos la dirección de la propiedad.");
+      return;
+    }
+    
+    try {
+      setIsCreatingProperty(true)
+      
+      // Use Nominatim to auto-complete missing fields
+      const addressString = [
+        formData.street.trim(),
+        formData.city.trim()
+      ].filter(Boolean).join(', ')
+      
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`
+      
+      const response = await fetch(nominatimUrl)
+      const nominatimResults = await response.json()
+      
+      if (nominatimResults.length === 0) {
+        alert("No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.");
+        return
+      }
+      
+      const result = nominatimResults[0]
+      console.log("Nominatim auto-completion successful:", result)
+      
+      // Update form data with Nominatim results
+      setFormData(prev => ({
+        ...prev,
+        postalCode: prev.postalCode || result.address?.postcode || "",
+        city: prev.city || result.address?.city || result.address?.town || "",
+        province: prev.province || result.address?.state || "",
+        municipality: prev.municipality || result.address?.city || result.address?.town || "",
+        neighborhood: prev.neighborhood || result.address?.suburb || "",
+        latitude: result.lat || "",
+        longitude: result.lon || ""
+      }))
+      
+    } catch (error) {
+      console.error("Error auto-completing address:", error);
+      alert("Error al autocompletar la dirección. Por favor, inténtalo de nuevo.");
+    } finally {
+      setIsCreatingProperty(false)
+    }
+  }
+
+  // Check if all location fields are filled
+  const areAllLocationFieldsFilled = () => {
+    return formData.street.trim() && 
+           formData.postalCode.trim() && 
+           formData.city.trim() && 
+           formData.province.trim() && 
+           formData.municipality.trim()
   }
 
   const prevStep = () => {
@@ -365,55 +467,43 @@ export default function PropertyIdentificationForm() {
 
       case "location":
         return (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <FloatingLabelInput
-                id="street"
-                value={formData.street}
-                onChange={handleInputChange("street")}
-                placeholder="Dirección"
-              />
-            </div>
-            <div className="space-y-2">
-              <FloatingLabelInput
-                id="addressDetails"
-                value={formData.addressDetails}
-                onChange={handleInputChange("addressDetails")}
-                placeholder="Piso, puerta, otro"
-              />
-            </div>
-            <div className="space-y-2">
-              <FloatingLabelInput
-                id="postalCode"
-                value={formData.postalCode}
-                onChange={handleInputChange("postalCode")}
-                placeholder="Código Postal"
-              />
-            </div>
-            <div className="space-y-2">
-              <FloatingLabelInput
-                id="city"
-                value={formData.city}
-                onChange={handleInputChange("city")}
-                placeholder="Ciudad"
-              />
-            </div>
-            <div className="space-y-2">
-              <FloatingLabelInput
-                id="province"
-                value={formData.province}
-                onChange={handleInputChange("province")}
-                placeholder="Provincia"
-              />
-            </div>
-            <div className="space-y-2">
-              <FloatingLabelInput
-                id="municipality"
-                value={formData.municipality}
-                onChange={handleInputChange("municipality")}
-                placeholder="Municipio"
-              />
-            </div>
+          <div>
+            <FloatingLabelInput
+              id="street"
+              value={formData.street}
+              onChange={handleInputChange("street")}
+              placeholder="Dirección"
+            />
+            <FloatingLabelInput
+              id="addressDetails"
+              value={formData.addressDetails}
+              onChange={handleInputChange("addressDetails")}
+              placeholder="Piso, puerta, otro"
+            />
+            <FloatingLabelInput
+              id="postalCode"
+              value={formData.postalCode}
+              onChange={handleInputChange("postalCode")}
+              placeholder="Código Postal"
+            />
+            <FloatingLabelInput
+              id="city"
+              value={formData.city}
+              onChange={handleInputChange("city")}
+              placeholder="Ciudad"
+            />
+            <FloatingLabelInput
+              id="province"
+              value={formData.province}
+              onChange={handleInputChange("province")}
+              placeholder="Provincia"
+            />
+            <FloatingLabelInput
+              id="municipality"
+              value={formData.municipality}
+              onChange={handleInputChange("municipality")}
+              placeholder="Municipio"
+            />
           </div>
         )
 
@@ -431,48 +521,17 @@ export default function PropertyIdentificationForm() {
     }
   }
 
-  // Modern step indicator component
-  const StepIndicator = () => {
-    // Always show 15 steps regardless of actual step count
-    const totalSteps = 15
-    const currentStepIndex = currentStep
-
-    return (
-      <div className="flex items-center justify-center space-x-2 mb-8">
-        {Array.from({ length: totalSteps }, (_, index) => (
-          <div key={index} className="flex items-center">
-            <div
-              className={cn(
-                "w-2 h-2 rounded-full transition-all duration-300",
-                index === currentStepIndex ? "bg-amber-700 scale-125" : index < currentStepIndex ? "bg-amber-600" : "bg-gray-300",
-              )}
-            />
-            {index < totalSteps - 1 && (
-              <div
-                className={cn(
-                  "w-4 h-0.5 mx-1 transition-all duration-300",
-                  index < currentStepIndex ? "bg-amber-600" : "bg-gray-300",
-                )}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-2xl mx-auto">
         <Card className="p-6">
-          <div className="mb-16">
-            <h1 className="text-xl font-semibold text-gray-900 mb-6 text-center mb-16">ALTA NUEVO INMUEBLE</h1>
-            <StepIndicator />
+          <div className="mb-4">
+            <h1 className="text-xl font-semibold text-gray-900 mb-6 text-center">ALTA NUEVO INMUEBLE</h1>
           </div>
 
           <div className="mb-6">
             {currentSteps[currentStep]?.id !== "initial" && (
-              <h2 className="text-md font-medium text-gray-900 mb-8">{currentSteps[currentStep]?.title || "Step"}</h2>
+              <h2 className="text-md font-medium text-gray-900 mb-4">{currentSteps[currentStep]?.title || "Step"}</h2>
             )}
             <AnimatePresence mode="wait">
               <motion.div
@@ -498,23 +557,43 @@ export default function PropertyIdentificationForm() {
               <span>Anterior</span>
             </Button>
 
-            <Button 
-              onClick={nextStep} 
-              disabled={isCreatingProperty}
-              className="flex items-center space-x-2 h-8"
-            >
-              {isCreatingProperty ? (
-                <>
-                  <Loader className="h-4 w-4 animate-spin" />
-                  <span>Creando propiedad...</span>
-                </>
-              ) : (
-                <>
-                  <span>Siguiente</span>
-                  <ChevronRight className="h-4 w-4" />
-                </>
-              )}
-            </Button>
+            {currentStep === 1 && !areAllLocationFieldsFilled() ? (
+              <Button 
+                onClick={autoCompleteAddress} 
+                disabled={isCreatingProperty || !formData.street.trim()}
+                className="flex items-center space-x-2 h-8"
+              >
+                {isCreatingProperty ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin" />
+                    <span>Autocompletando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Autocompletar</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button 
+                onClick={nextStep} 
+                disabled={isCreatingProperty}
+                className="flex items-center space-x-2 h-8"
+              >
+                {isCreatingProperty ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin" />
+                    <span>Creando propiedad...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Siguiente</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </Card>
       </div>
