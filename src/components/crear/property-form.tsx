@@ -56,10 +56,10 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   const [formData, setFormData] = useState<BaseFormData>(initialFormData)
   const [direction, setDirection] = useState<"forward" | "backward">("forward")
   const [showListingTypeTooltip, setShowListingTypeTooltip] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
   const [agents, setAgents] = useState<Array<{id: number, name: string}>>([])
   const [contacts, setContacts] = useState<Array<{id: number, name: string}>>([])
   const [contactSearch, setContactSearch] = useState("")
+  const [saveError, setSaveError] = useState<string | null>(null)
   const router = useRouter()
 
   // Close tooltip when clicking outside
@@ -151,25 +151,31 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   )
 
   const nextStep = async () => {
+    // Validate required fields
+    if (!formData.price.trim()) {
+      alert("Por favor, introduce el precio de la propiedad.")
+      return
+    }
+
+    if (!formData.agentId) {
+      alert("Por favor, selecciona un agente.")
+      return
+    }
+
+    if (formData.selectedContactIds.length === 0) {
+      alert("Por favor, selecciona al menos un contacto.")
+      return
+    }
+
+    // Clear any previous save errors
+    setSaveError(null)
+
+    // Immediately proceed to next step
+    setDirection("forward")
+    setCurrentStep((prev) => prev + 1)
+
+    // Save data in the background without blocking the UI
     try {
-      setIsSaving(true)
-
-      // Validate required fields
-      if (!formData.price.trim()) {
-        alert("Por favor, introduce el precio de la propiedad.")
-        return
-      }
-
-      if (!formData.agentId) {
-        alert("Por favor, selecciona un agente.")
-        return
-      }
-
-      if (formData.selectedContactIds.length === 0) {
-        alert("Por favor, selecciona al menos un contacto.")
-        return
-      }
-
       // Update property form position to 2
       await updateProperty(Number(listingId), { formPosition: 2 })
 
@@ -182,16 +188,9 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
       // Update listing contacts
       await updateListingOwners(Number(listingId), formData.selectedContactIds.map(id => Number(id)))
-
-      // Navigate to next step or complete
-      setDirection("forward")
-      setCurrentStep((prev) => prev + 1)
-      
     } catch (error) {
       console.error("Error saving form data:", error)
-      alert("Error al guardar los datos. Por favor, inténtalo de nuevo.")
-    } finally {
-      setIsSaving(false)
+      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
     }
   }
 
@@ -458,11 +457,26 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
             </AnimatePresence>
           </div>
 
+          {/* Save Error Notification */}
+          {saveError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
+            >
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <p className="text-sm text-red-700">{saveError}</p>
+              </div>
+            </motion.div>
+          )}
+
           <div className="flex justify-between pt-4 border-t">
             <Button
               variant="outline"
               onClick={prevStep}
-              disabled={currentStep === 0 || isSaving}
+              disabled={currentStep === 0}
               className="flex items-center space-x-2 h-8"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -471,20 +485,10 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
             <Button 
               onClick={nextStep} 
-              disabled={isSaving}
               className="flex items-center space-x-2 h-8"
             >
-              {isSaving ? (
-                <>
-                  <Loader className="h-4 w-4 animate-spin" />
-                  <span>Guardando...</span>
-                </>
-              ) : (
-                <>
-                  <span>Siguiente</span>
-                  <ChevronRight className="h-4 w-4" />
-                </>
-              )}
+              <span>Siguiente</span>
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </Card>

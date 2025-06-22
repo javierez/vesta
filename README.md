@@ -10,3 +10,4 @@ Tasks
 
 
 - Property Page: placeholder image para imágenes cuando no cargan
+- Waiting state after catastral 'login'
