@@ -20,3 +20,65 @@ export function formatPrice(price: string | number): string {
     maximumFractionDigits: 0
   }).format(numPrice)
 }
+
+// Form input formatting utilities
+export const formFormatters = {
+  // Format price for form inputs with € symbol
+  formatPriceInput: (value: string | number): string => {
+    if (!value) return ""
+    const numericValue = typeof value === 'string' ? value.replace(/[^\d]/g, "") : value.toString()
+    if (!numericValue) return ""
+    const number = parseInt(numericValue, 10)
+    return number.toLocaleString('es-ES') + " €"
+  },
+
+  // Get numeric value from formatted price
+  getNumericPrice: (formattedValue: string): string => {
+    return formattedValue.replace(/[^\d]/g, "")
+  },
+
+  // Format area measurements with m² symbol
+  formatAreaInput: (value: string | number): string => {
+    if (!value) return ""
+    const numericValue = typeof value === 'string' ? value.replace(/[^\d]/g, "") : value.toString()
+    if (!numericValue) return ""
+    return `${numericValue} m²`
+  },
+
+  // Get numeric value from formatted area
+  getNumericArea: (formattedValue: string): string => {
+    return formattedValue.replace(/[^\d]/g, "")
+  },
+
+  // Handle price input change with formatting
+  handlePriceInputChange: (
+    setValue: (value: string) => void
+  ) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numericValue = formFormatters.getNumericPrice(e.target.value)
+    setValue(numericValue)
+  },
+
+  // Handle area input change with formatting
+  handleAreaInputChange: (
+    setValue: (value: string) => void
+  ) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numericValue = formFormatters.getNumericArea(e.target.value)
+    setValue(numericValue)
+  },
+
+  // Handle numeric area input change (for number fields)
+  handleNumericAreaInputChange: (
+    setValue: (value: number) => void
+  ) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numericValue = formFormatters.getNumericArea(e.target.value)
+    setValue(numericValue ? parseInt(numericValue) : 0)
+  },
+
+  // Handle numeric price input change (for number fields)
+  handleNumericPriceInputChange: (
+    setValue: (value: number) => void
+  ) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numericValue = formFormatters.getNumericPrice(e.target.value)
+    setValue(numericValue ? parseInt(numericValue) : 0)
+  }
+}

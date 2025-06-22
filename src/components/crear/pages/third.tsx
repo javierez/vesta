@@ -307,25 +307,34 @@ export default function ThirdPage({ listingId, onNext, onBack }: ThirdPageProps)
       )}
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between pt-4 border-t">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          disabled={!onBack}
-          className="flex items-center space-x-2 h-8"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span>Anterior</span>
-        </Button>
+      <motion.div
+        className="flex justify-between pt-4 border-t"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.3 }}
+      >
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            disabled={!onBack}
+            className="flex items-center space-x-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span>Anterior</span>
+          </Button>
+        </motion.div>
 
-        <Button 
-          onClick={handleNext} 
-          className="flex items-center space-x-2 h-8"
-        >
-          <span>Siguiente</span>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button 
+            onClick={handleNext} 
+            className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
+          >
+            <span>Siguiente</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }

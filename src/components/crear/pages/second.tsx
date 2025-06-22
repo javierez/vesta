@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Loader } from "lucide-react"
 import { motion } from "framer-motion"
 import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
+import { formFormatters } from "~/lib/utils"
 import FormSkeleton from "./form-skeleton"
 
 interface SecondPageProps {
@@ -85,32 +86,14 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
   }
 
   // Custom handler for square meter with formatting
-  const handleSquareMeterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    // Only allow numbers
-    const numericValue = value.replace(/[^\d]/g, "")
-    updateFormData("squareMeter", numericValue)
-  }
-
-  // Format square meter value for display
-  const getSquareMeterDisplayValue = () => {
-    if (!formData.squareMeter) return ""
-    return `${formData.squareMeter} m²`
-  }
+  const handleSquareMeterChange = formFormatters.handleAreaInputChange((value) => 
+    updateFormData("squareMeter", value)
+  )
 
   // Custom handler for built surface area with formatting
-  const handleBuiltSurfaceAreaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    // Only allow numbers
-    const numericValue = value.replace(/[^\d]/g, "")
-    updateFormData("builtSurfaceArea", numericValue)
-  }
-
-  // Format built surface area value for display
-  const getBuiltSurfaceAreaDisplayValue = () => {
-    if (!formData.builtSurfaceArea) return ""
-    return `${formData.builtSurfaceArea} m²`
-  }
+  const handleBuiltSurfaceAreaChange = formFormatters.handleAreaInputChange((value) => 
+    updateFormData("builtSurfaceArea", value)
+  )
 
   const handleNext = async () => {
     // Validate required fields based on property type
@@ -248,7 +231,7 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
         </label>
         <Input
           id="squareMeter"
-          value={getSquareMeterDisplayValue()}
+          value={formFormatters.formatAreaInput(formData.squareMeter)}
           onChange={handleSquareMeterChange}
           placeholder={propertyType === "garage" ? "Medidas en metros cuadrados" : "Metros cuadrados"}
           type="text"
@@ -264,7 +247,7 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
           </label>
           <Input
             id="builtSurfaceArea"
-            value={getBuiltSurfaceAreaDisplayValue()}
+            value={formFormatters.formatAreaInput(formData.builtSurfaceArea)}
             onChange={handleBuiltSurfaceAreaChange}
             placeholder="Metros cuadrados construidos"
             type="text"
@@ -347,25 +330,34 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
       )}
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between pt-4 border-t">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          disabled={!onBack}
-          className="flex items-center space-x-2 h-8"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span>Anterior</span>
-        </Button>
+      <motion.div
+        className="flex justify-between pt-4 border-t"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.3 }}
+      >
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            disabled={!onBack}
+            className="flex items-center space-x-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span>Anterior</span>
+          </Button>
+        </motion.div>
 
-        <Button 
-          onClick={handleNext} 
-          className="flex items-center space-x-2 h-8"
-        >
-          <span>Siguiente</span>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button 
+            onClick={handleNext} 
+            className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
+          >
+            <span>Siguiente</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }

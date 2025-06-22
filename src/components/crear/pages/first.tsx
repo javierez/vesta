@@ -6,7 +6,7 @@ import { Input } from "~/components/ui/input"
 import { Card } from "~/components/ui/card"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { ChevronLeft, ChevronRight, Info, Loader, Plus, User } from "lucide-react"
-import { cn } from "~/lib/utils"
+import { cn, formFormatters } from "~/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { getAllAgents, getListingDetails } from "~/server/queries/listing"
@@ -130,23 +130,9 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
     updateFormData(field, e.target.value)
   }
 
-  // Format price with thousand separators and € symbol
-  const formatPrice = (value: string) => {
-    if (!value) return ""
-    const numericValue = value.replace(/[^\d]/g, "")
-    if (!numericValue) return ""
-    const number = parseInt(numericValue, 10)
-    return number.toLocaleString('es-ES') + " €"
-  }
-
-  // Get numeric value from formatted price
-  const getNumericPrice = (formattedValue: string) => {
-    return formattedValue.replace(/[^\d]/g, "")
-  }
-
   // Handle price input with formatting
   const handlePriceChange = (value: string) => {
-    const numericValue = getNumericPrice(value)
+    const numericValue = formFormatters.getNumericPrice(value)
     updateFormData("price", numericValue)
   }
 
@@ -227,7 +213,7 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
       {/* Price Section */}
       <FloatingLabelInput
         id="price"
-        value={formatPrice(formData.price)}
+        value={formFormatters.formatPriceInput(formData.price)}
         onChange={handlePriceChange}
         placeholder="Precio (€)"
         type="text"
@@ -441,25 +427,34 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
       )}
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between pt-4 border-t">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          disabled={!onBack}
-          className="flex items-center space-x-2 h-8"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span>Anterior</span>
-        </Button>
+      <motion.div
+        className="flex justify-between pt-4 border-t"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.3 }}
+      >
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            disabled={!onBack}
+            className="flex items-center space-x-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span>Anterior</span>
+          </Button>
+        </motion.div>
 
-        <Button 
-          onClick={handleNext} 
-          className="flex items-center space-x-2 h-8"
-        >
-          <span>Siguiente</span>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button 
+            onClick={handleNext} 
+            className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
+          >
+            <span>Siguiente</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }
