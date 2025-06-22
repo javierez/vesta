@@ -408,4 +408,61 @@ export async function createPropertyFromLocation(locationData: {
     console.error("Error creating property from location:", error);
     throw error;
   }
+}
+
+// Update property location with auto-completion data
+export async function updatePropertyLocation(
+  propertyId: number,
+  locationData: {
+    street: string;
+    addressDetails: string;
+    postalCode: string;
+    city: string;
+    province: string;
+    municipality: string;
+    neighborhood: string;
+  }
+) {
+  try {
+    // Import findOrCreateLocation here to avoid client-side bundling
+    const { findOrCreateLocation } = await import("./locations");
+    
+    let neighborhoodId: number | undefined;
+
+    // Create/update location record if we have complete location data
+    if (locationData.city && locationData.province && locationData.municipality && locationData.neighborhood) {
+      try {
+        neighborhoodId = await findOrCreateLocation({
+          city: locationData.city,
+          province: locationData.province,
+          municipality: locationData.municipality,
+          neighborhood: locationData.neighborhood,
+        });
+        console.log("Location created/updated with neighborhoodId:", neighborhoodId);
+      } catch (error) {
+        console.error("Error creating/updating location:", error);
+        // Continue without neighborhoodId if there's an error
+      }
+    }
+
+    // Update property with address details and neighborhoodId if available
+    const updateData: any = {
+      formPosition: 4,
+      street: locationData.street,
+      addressDetails: locationData.addressDetails,
+      postalCode: locationData.postalCode,
+    };
+
+    // Add neighborhoodId if we have one
+    if (neighborhoodId) {
+      updateData.neighborhoodId = BigInt(neighborhoodId);
+    }
+
+    await updateProperty(propertyId, updateData);
+
+    return { success: true, neighborhoodId };
+  } catch (error) {
+    console.error("Error updating property location:", error);
+    throw error;
+  }
 } 

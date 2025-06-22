@@ -15,7 +15,7 @@ const globalForDb = globalThis as unknown as {
 
 // Use IP address instead of hostname to avoid DNS resolution issues
 const host = env.SINGLESTORE_HOST === 'svc-741fe687-0339-4cf5-99fb-de8e02574507-dml.aws-virginia-8.svc.singlestore.com' 
-  ? '44.195.195.99' 
+  ? '18.232.209.65' 
   : env.SINGLESTORE_HOST;
 
 const conn =
