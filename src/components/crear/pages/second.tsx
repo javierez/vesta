@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Loader } from "lucide-react"
 import { motion } from "framer-motion"
 import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
+import FormSkeleton from "./form-skeleton"
 
 interface SecondPageProps {
   listingId: string
@@ -197,12 +198,7 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="flex items-center space-x-3">
-          <Loader className="w-6 h-6 animate-spin text-gray-500" />
-          <span className="text-gray-600">Cargando datos del inmueble...</span>
-        </div>
-      </div>
+      <FormSkeleton />
     )
   }
 

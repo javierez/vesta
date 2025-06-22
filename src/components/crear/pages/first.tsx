@@ -13,6 +13,7 @@ import { getAllAgents, getListingDetails } from "~/server/queries/listing"
 import { getAllPotentialOwners, getCurrentListingOwners, updateListingOwners } from "~/server/queries/contact"
 import { updateProperty } from "~/server/queries/properties"
 import { updateListing } from "~/server/queries/listing"
+import FormSkeleton from "./form-skeleton"
 
 interface FirstPageProps {
   listingId: string
@@ -217,12 +218,7 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="flex items-center space-x-3">
-          <Loader className="w-6 h-6 animate-spin text-gray-500" />
-          <span className="text-gray-600">Cargando datos del inmueble...</span>
-        </div>
-      </div>
+      <FormSkeleton />
     )
   }
 

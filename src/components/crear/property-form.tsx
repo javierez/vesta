@@ -8,6 +8,7 @@ import { getListingDetails } from "~/server/queries/listing"
 import FirstPage from "./pages/first"
 import SecondPage from "./pages/second"
 import ThirdPage from "./pages/third"
+import FourthPage from "./pages/fourth"
 
 interface PropertyFormProps {
   listingId: string
@@ -23,6 +24,7 @@ const steps: Step[] = [
   { id: "basic", title: "Información Básica" },
   { id: "details", title: "Detalles de la Propiedad" },
   { id: "address", title: "Dirección" },
+  { id: "equipment", title: "Equipamiento y Servicios" },
 ]
 
 export default function PropertyForm({ listingId }: PropertyFormProps) {
@@ -90,6 +92,11 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     setCurrentStep(3)
   }
 
+  const handleFourthPageNext = () => {
+    setDirection("forward")
+    setCurrentStep(4)
+  }
+
   const renderStepContent = () => {
     const step = steps[currentStep]
 
@@ -121,6 +128,15 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
           <ThirdPage 
             listingId={listingId}
             onNext={handleThirdPageNext}
+            onBack={prevStep}
+          />
+        )
+
+      case "equipment":
+        return (
+          <FourthPage 
+            listingId={listingId}
+            onNext={handleFourthPageNext}
             onBack={prevStep}
           />
         )
