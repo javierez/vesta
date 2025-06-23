@@ -61,7 +61,7 @@ export function YearSlider({
     <div className="space-y-3">
       <label className="text-xs font-medium text-gray-600">{label}</label>
 
-      <div className="space-y-3 p-3 border rounded-md">
+      <div className="space-y-3 p-3 rounded-md shadow-md">
         <Slider
           value={sliderValue}
           onValueChange={handleSliderChange}
@@ -81,7 +81,7 @@ export function YearSlider({
             type="number"
             min={min}
             max={max}
-            className="h-8 w-20 text-center text-sm border-0 bg-gray-50"
+            className="h-8 w-20 text-center text-sm border-0 shadow-md"
           />
           <span className="text-xs text-gray-400">{max}</span>
         </div>

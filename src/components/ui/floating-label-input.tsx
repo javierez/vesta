@@ -67,7 +67,7 @@ export function FloatingLabelInput({
         disabled={disabled}
         required={required}
         className={cn(
-          "h-8 transition-all duration-200",
+          "h-8 transition-all duration-200 shadow-md border-0",
           className
         )}
       />

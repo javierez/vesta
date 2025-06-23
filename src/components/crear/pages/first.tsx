@@ -343,7 +343,7 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
           value={formData.agentId} 
           onValueChange={(value) => updateFormData("agentId", value)}
         >
-          <SelectTrigger className="h-10">
+          <SelectTrigger className="h-10 shadow-md border-0">
             <SelectValue placeholder="Seleccionar agente" />
           </SelectTrigger>
           <SelectContent>
@@ -382,11 +382,11 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
           placeholder="Buscar contactos..."
           value={contactSearch}
           onChange={(e) => setContactSearch(e.target.value)}
-          className="h-10"
+          className="h-10 shadow-md border-0"
         />
 
         {/* Contact List */}
-        <div className="max-h-40 overflow-y-auto space-y-1 border border-gray-200 rounded-lg p-2">
+        <div className="max-h-40 overflow-y-auto space-y-1 rounded-lg p-2 shadow-md">
           {filteredContacts.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-3">
               No se encontraron contactos

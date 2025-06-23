@@ -11,6 +11,11 @@ import ThirdPage from "./pages/third"
 import FourthPage from "./pages/fourth"
 import FifthPage from "./pages/fifth"
 import SixthPage from "./pages/sixth"
+import SeventhPage from "./pages/seventh"
+import EighthPage from "./pages/eighth"
+import NinethPage from "./pages/nineth"
+import DescriptionPage from "./pages/description"
+import RentPage from "./pages/rent"
 
 interface PropertyFormProps {
   listingId: string
@@ -29,6 +34,11 @@ const steps: Step[] = [
   { id: "equipment", title: "Equipamiento y Servicios" },
   { id: "orientation", title: "Orientación y Exposición" },
   { id: "additional", title: "Características Adicionales" },
+  { id: "luxury", title: "Lujo y Confort" },
+  { id: "spaces", title: "Espacios Complementarios" },
+  { id: "materials", title: "Materiales y Acabados" },
+  { id: "description", title: "Descripción" },
+  { id: "rent", title: "Alquiler" },
 ]
 
 export default function PropertyForm({ listingId }: PropertyFormProps) {
@@ -113,6 +123,31 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     setCurrentStep(6)
   }
 
+  const handleSeventhPageNext = () => {
+    setDirection("forward")
+    setCurrentStep(7)
+  }
+
+  const handleEighthPageNext = () => {
+    setDirection("forward")
+    setCurrentStep(8)
+  }
+
+  const handleNinethPageNext = () => {
+    setDirection("forward")
+    setCurrentStep(9)
+  }
+
+  const handleDescriptionPageNext = () => {
+    setDirection("forward")
+    setCurrentStep(10)
+  }
+
+  const handleRentPageNext = () => {
+    setDirection("forward")
+    setCurrentStep(steps.length - 1)
+  }
+
   const renderStepContent = () => {
     const step = steps[currentStep]
 
@@ -175,6 +210,51 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
           />
         )
 
+      case "luxury":
+        return (
+          <SeventhPage 
+            listingId={listingId}
+            onNext={handleSeventhPageNext}
+            onBack={prevStep}
+          />
+        )
+
+      case "spaces":
+        return (
+          <EighthPage 
+            listingId={listingId}
+            onNext={handleEighthPageNext}
+            onBack={prevStep}
+          />
+        )
+
+      case "materials":
+        return (
+          <NinethPage 
+            listingId={listingId}
+            onNext={handleNinethPageNext}
+            onBack={prevStep}
+          />
+        )
+
+      case "description":
+        return (
+          <DescriptionPage 
+            listingId={listingId}
+            onNext={handleDescriptionPageNext}
+            onBack={prevStep}
+          />
+        )
+
+      case "rent":
+        return (
+          <RentPage 
+            listingId={listingId}
+            onNext={handleRentPageNext}
+            onBack={prevStep}
+          />
+        )
+
       default:
         return (
           <div className="space-y-4">
@@ -191,7 +271,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
       <div className="max-w-2xl mx-auto">
         <Card className="p-6">
           <div className="mb-4">
-            <h1 className="text-xl font-semibold text-gray-900 mb-6 text-center">ALTA NUEVO INMUEBLE</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">ALTA NUEVO INMUEBLE</h1>
           </div>
 
           {isLoading ? (

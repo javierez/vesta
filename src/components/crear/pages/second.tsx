@@ -290,7 +290,7 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
               type="number"
               min="0"
               step="1"
-              className="h-10 placeholder:text-gray-400"
+                className="h-10 placeholder:text-gray-400 shadow-md border-0"
             />
           </div>
         </>

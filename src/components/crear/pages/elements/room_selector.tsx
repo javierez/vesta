@@ -24,7 +24,7 @@ export function RoomSelector({ type, value, onChange, label, max = 20 }: RoomSel
   return (
     <div className="space-y-1">
       <label className="text-xs font-medium text-gray-600">{label}</label>
-      <div className="flex items-center space-x-2 p-2 border rounded">
+      <div className="flex items-center space-x-2 p-2 shadow-md rounded">
         <Icon className="h-3 w-3 text-gray-500" />
         <span className="text-sm font-medium min-w-[12px] text-center">{value}</span>
         <div className="flex items-center">
