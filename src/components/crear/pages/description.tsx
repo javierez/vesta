@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Loader2, MoreVertical } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { generatePropertyDescription } from '~/server/openai/property_descriptions'
 import { getListingDetails } from "~/server/queries/listing"
+import { updateProperty } from "~/server/queries/properties"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ export default function DescriptionPage({ listingId, onNext, onBack }: Descripti
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
   const [signature, setSignature] = useState("")
   const [listingDetails, setListingDetails] = useState<any>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,6 +54,25 @@ export default function DescriptionPage({ listingId, onNext, onBack }: Descripti
     setDescription(prev => prev + "\n\n" + signature)
     setIsSignatureDialogOpen(false)
     setSignature("")
+  }
+
+  const handleNext = async () => {
+    setSaveError(null)
+    try {
+      if (listingDetails?.propertyId) {
+        await updateProperty(Number(listingDetails.propertyId), {
+          formPosition: 11, // Next step
+          description: description,
+        })
+      }
+      // Refresh listing details after saving
+      const updatedDetails = await getListingDetails(Number(listingId))
+      setListingDetails(updatedDetails)
+      onNext()
+    } catch (error) {
+      console.error("Error saving form data:", error)
+      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+    }
   }
 
   return (
@@ -83,7 +104,7 @@ export default function DescriptionPage({ listingId, onNext, onBack }: Descripti
         className="min-h-[200px] resize-y border-gray-200 focus:border-gray-400 focus:ring-gray-300 transition-colors"
         placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
       />
-      <div className="flex justify-center pt-4">
+      <div className="flex justify-center pt-2">
         <Button
           type="button"
           onClick={handleGenerateDescription}
@@ -103,6 +124,20 @@ export default function DescriptionPage({ listingId, onNext, onBack }: Descripti
           )}
         </Button>
       </div>
+
+      <AnimatePresence>
+        {saveError && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, scale: 0.95 }}
+            animate={{ opacity: 1, height: "auto", scale: 1 }}
+            exit={{ opacity: 0, height: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700"
+          >
+            {saveError}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <motion.div
         className="flex justify-between pt-4 border-t"
@@ -124,7 +159,7 @@ export default function DescriptionPage({ listingId, onNext, onBack }: Descripti
 
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button 
-            onClick={onNext} 
+            onClick={handleNext} 
             className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
           >
             <span>Siguiente</span>

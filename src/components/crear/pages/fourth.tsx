@@ -394,12 +394,12 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
               </div>
               
               <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-600">Precio mensual</Label>
+                <Label className="text-xs font-medium text-gray-600">{listingDetails?.listingType === 'Rent' ? 'Precio €/mes' : 'Precio'}</Label>
                 <Input
                   type="text"
                   value={formFormatters.formatPriceInput(formData.optionalGaragePrice)}
                   onChange={handleGaragePriceChange}
-                  placeholder="0 €"
+                  placeholder={listingDetails?.listingType === 'Rent' ? '0 €/mes' : '0 €'}
                   className="h-8 text-xs"
                 />
               </div>
@@ -485,12 +485,12 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
               </div>
               
               <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-600">Precio mensual</Label>
+                <Label className="text-xs font-medium text-gray-600">{listingDetails?.listingType === 'Rent' ? 'Precio €/mes' : 'Precio'}</Label>
                 <Input
                   type="text"
                   value={formFormatters.formatPriceInput(formData.optionalStorageRoomPrice)}
                   onChange={handleStorageRoomPriceChange}
-                  placeholder="0 €"
+                  placeholder={listingDetails?.listingType === 'Rent' ? '0 €/mes' : '0 €'}
                   className="h-8 text-xs"
                 />
               </div>

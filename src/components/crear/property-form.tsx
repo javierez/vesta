@@ -5,6 +5,7 @@ import { Card } from "~/components/ui/card"
 import { Loader } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { getListingDetails } from "~/server/queries/listing"
+import ProgressBar from "./progress-bar"
 import FirstPage from "./pages/first"
 import SecondPage from "./pages/second"
 import ThirdPage from "./pages/third"
@@ -272,6 +273,21 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         <Card className="p-6">
           <div className="mb-4">
             <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">ALTA NUEVO INMUEBLE</h1>
+            
+            {/* Progress Bar */}
+            <ProgressBar 
+              currentStep={currentStep}
+              totalSteps={steps.length}
+              steps={steps}
+              formPosition={listingDetails?.formPosition || 1}
+              onStepClick={(stepIndex) => {
+                // Only allow navigation to completed steps (backward navigation)
+                if (stepIndex < (listingDetails?.formPosition || 1)) {
+                  setDirection(stepIndex < currentStep ? "backward" : "forward")
+                  setCurrentStep(stepIndex)
+                }
+              }}
+            />
           </div>
 
           {isLoading ? (
