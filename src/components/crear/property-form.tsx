@@ -10,6 +10,7 @@ import SecondPage from "./pages/second"
 import ThirdPage from "./pages/third"
 import FourthPage from "./pages/fourth"
 import FifthPage from "./pages/fifth"
+import SixthPage from "./pages/sixth"
 
 interface PropertyFormProps {
   listingId: string
@@ -27,6 +28,7 @@ const steps: Step[] = [
   { id: "address", title: "Dirección" },
   { id: "equipment", title: "Equipamiento y Servicios" },
   { id: "orientation", title: "Orientación y Exposición" },
+  { id: "additional", title: "Características Adicionales" },
 ]
 
 export default function PropertyForm({ listingId }: PropertyFormProps) {
@@ -55,6 +57,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
             // formPosition 3 = step 2 (address)
             // formPosition 4 = step 3 (equipment)
             // formPosition 5 = step 4 (orientation)
+            // formPosition 6 = step 5 (additional characteristics)
             const stepIndex = Math.min(details.formPosition - 1, steps.length - 1)
             setCurrentStep(stepIndex)
           }
@@ -103,6 +106,11 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   const handleFifthPageNext = () => {
     setDirection("forward")
     setCurrentStep(5)
+  }
+
+  const handleSixthPageNext = () => {
+    setDirection("forward")
+    setCurrentStep(6)
   }
 
   const renderStepContent = () => {
@@ -154,6 +162,15 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
           <FifthPage 
             listingId={listingId}
             onNext={handleFifthPageNext}
+            onBack={prevStep}
+          />
+        )
+
+      case "additional":
+        return (
+          <SixthPage 
+            listingId={listingId}
+            onNext={handleSixthPageNext}
             onBack={prevStep}
           />
         )

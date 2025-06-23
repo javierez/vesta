@@ -241,11 +241,11 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
           whileTap={{ scale: 0.98 }}
           onClick={() => updateFormData("hasElevator", !formData.hasElevator)}
           className={`
-            w-full p-3 rounded-lg border transition-all duration-200 relative overflow-hidden
+            w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
             ${
               formData.hasElevator
-                ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                : "bg-white text-gray-700 shadow-md"
             }
           `}
         >
@@ -290,11 +290,11 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
               }
             }}
             className={`
-              w-full p-3 rounded-lg border transition-all duration-200 relative overflow-hidden
+              w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
               ${
                 formData.hasGarage
-                  ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
               }
             `}
           >
@@ -426,11 +426,11 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
               }
             }}
             className={`
-              w-full p-3 rounded-lg border transition-all duration-200 relative overflow-hidden
+              w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
               ${
                 formData.hasStorageRoom
-                  ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
               }
             `}
           >
@@ -513,11 +513,11 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
               if (!newValue) updateFormData("heatingType", "")
             }}
             className={`
-              w-full p-3 rounded-lg border transition-all duration-200 relative overflow-hidden
+              w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
               ${
                 formData.hasHeating
-                  ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
               }
             `}
           >
@@ -585,11 +585,11 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
               }
             }}
             className={`
-              w-full p-3 rounded-lg border transition-all duration-200 relative overflow-hidden
+              w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
               ${
                 formData.hasAirConditioning
-                  ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
               }
             `}
           >
@@ -655,11 +655,11 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
               if (!newValue) updateFormData("furnitureQuality", "")
             }}
             className={`
-              w-full p-3 rounded-lg border transition-all duration-200 relative overflow-hidden
+              w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
               ${
                 formData.isFurnished
-                  ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
               }
             `}
           >
@@ -700,11 +700,11 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
                       whileTap={{ scale: 0.98 }}
                       onClick={() => updateFormData("furnitureQuality", option.value)}
                       className={`
-                        w-full p-2 text-xs border rounded-md transition-all duration-200 relative overflow-hidden
+                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
                         ${
                           formData.furnitureQuality === option.value
-                            ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                            : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                            : "bg-white text-gray-700 shadow-md"
                         }
                       `}
                     >

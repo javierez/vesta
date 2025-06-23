@@ -129,11 +129,11 @@ export default function FifthPage({ listingId, onNext, onBack }: FifthPageProps)
           whileTap={{ scale: 0.98 }}
           onClick={() => updateFormData("isExterior", !formData.isExterior)}
           className={`
-            w-full p-3 rounded-lg border transition-all duration-200 relative overflow-hidden
+            w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
             ${
               formData.isExterior
-                ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                : "bg-white text-gray-700 shadow-md"
             }
           `}
         >
@@ -162,11 +162,11 @@ export default function FifthPage({ listingId, onNext, onBack }: FifthPageProps)
           whileTap={{ scale: 0.98 }}
           onClick={() => updateFormData("isBright", !formData.isBright)}
           className={`
-            w-full p-3 rounded-lg border transition-all duration-200 relative overflow-hidden
+            w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
             ${
               formData.isBright
-                ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                : "bg-white text-gray-700 shadow-md"
             }
           `}
         >

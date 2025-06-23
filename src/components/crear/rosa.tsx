@@ -20,7 +20,7 @@ const directions = [
 ]
 
 export function CompassRose({ value, onChange }: CompassRoseProps) {
-  const selectedDirection = directions.find((d) => d.value === value)
+  const selectedDirection = directions.find((d) => d.value === value) || directions[0] // Default to north
 
   return (
     <div className="flex flex-col items-center space-y-6">
@@ -77,7 +77,7 @@ export function CompassRose({ value, onChange }: CompassRoseProps) {
 
         {/* Direction buttons */}
         {directions.map((direction, index) => {
-          const isSelected = value === direction.value
+          const isSelected = value === direction.value || (!value && direction.value === "norte")
           const radius = 100
           const x = Math.cos((direction.angle - 90) * (Math.PI / 180)) * radius
           const y = Math.sin((direction.angle - 90) * (Math.PI / 180)) * radius
@@ -137,7 +137,7 @@ export function CompassRose({ value, onChange }: CompassRoseProps) {
               )}
 
               <motion.span
-                className={`relative z-10 ${isSelected ? "text-white" : "text-gray-700"}`}
+                className={`relative z-10 ${isSelected ? "text-white" : "text-gray-500"}`}
                 animate={
                   isSelected
                     ? {
@@ -188,12 +188,7 @@ export function CompassRose({ value, onChange }: CompassRoseProps) {
             className="text-center space-y-2"
           >
             <div className="flex items-center justify-center space-x-2">
-              <motion.div
-                className={`w-3 h-3 rounded-full ${selectedDirection.color.replace("bg-", "bg-")}`}
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 0.5 }}
-              />
-              <p className="text-lg font-semibold text-gray-900">{selectedDirection.fullName}</p>
+              <p className="text-lg font-semibold text-gray-900 tracking-widest uppercase">{selectedDirection.fullName}</p>
             </div>
           </motion.div>
         ) : (

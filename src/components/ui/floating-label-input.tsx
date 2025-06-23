@@ -44,11 +44,11 @@ export function FloatingLabelInput({
         {shouldShowLabel && (
           <motion.label
             htmlFor={id}
-            initial={{ opacity: 0, y: 0, scale: 1 }}
-            animate={{ opacity: 1, y: -12, scale: 0.85 }}
-            exit={{ opacity: 0, y: 0, scale: 1 }}
+            initial={{ opacity: 0, y: 0 }}
+            animate={{ opacity: 1, y: -12 }}
+            exit={{ opacity: 0, y: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute -left-2 -top-2 text-xs font-medium text-gray-600 bg-white px-1 z-10"
+            className="absolute -left-1 -top-2 text-xs font-medium text-gray-600 bg-white px-1 z-10"
           >
             {placeholder}
             {required && <span className="text-red-500 ml-1">*</span>}

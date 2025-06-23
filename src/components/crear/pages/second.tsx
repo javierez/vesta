@@ -9,6 +9,9 @@ import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
 import { formFormatters } from "~/lib/utils"
 import FormSkeleton from "./form-skeleton"
+import { RoomSelector } from "./elements/room_selector"
+import { YearSlider } from "./elements/year_slider"
+import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 
 interface SecondPageProps {
   listingId: string
@@ -94,6 +97,17 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
   const handleBuiltSurfaceAreaChange = formFormatters.handleAreaInputChange((value) => 
     updateFormData("builtSurfaceArea", value)
   )
+
+  // Custom handlers for FloatingLabelInput (string-based onChange)
+  const handleSquareMeterStringChange = (value: string) => {
+    const numericValue = formFormatters.getNumericArea(value)
+    updateFormData("squareMeter", numericValue)
+  }
+
+  const handleBuiltSurfaceAreaStringChange = (value: string) => {
+    const numericValue = formFormatters.getNumericArea(value)
+    updateFormData("builtSurfaceArea", numericValue)
+  }
 
   const handleNext = async () => {
     // Validate required fields based on property type
@@ -191,34 +205,20 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
       {propertyType !== "solar" && (
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="bedrooms" className="text-sm font-medium text-gray-900">
-              {propertyType === "local" ? "Espacios" : "Habitaciones"}
-            </label>
-            <Input
-              id="bedrooms"
-              value={formData.bedrooms}
-              onChange={handleEventInputChange("bedrooms")}
-              placeholder={propertyType === "local" ? "Número de espacios" : "Número de habitaciones"}
-              type="number"
-              min="0"
-              step="1"
-              className="h-10 placeholder:text-gray-400"
+            <RoomSelector
+              type="bedrooms"
+              value={Number(formData.bedrooms) || 0}
+              onChange={val => updateFormData("bedrooms", val.toString())}
+              label={propertyType === "local" ? "Espacios" : "Habitaciones"}
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="bathrooms" className="text-sm font-medium text-gray-900">
-              Baños
-            </label>
-            <Input
-              id="bathrooms"
-              value={formData.bathrooms}
-              onChange={handleEventInputChange("bathrooms")}
-              placeholder="Número de baños"
-              type="number"
-              min="0"
-              step="1"
-              className="h-10 placeholder:text-gray-400"
+            <RoomSelector
+              type="bathrooms"
+              value={Number(formData.bathrooms) || 0}
+              onChange={val => updateFormData("bathrooms", val.toString())}
+              label="Baños"
             />
           </div>
         </div>
@@ -226,14 +226,11 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
 
       {/* Square Meter - Show for all property types */}
       <div className="space-y-2">
-        <label htmlFor="squareMeter" className="text-sm font-medium text-gray-900">
-          {propertyType === "garage" ? "Medidas" : "Superficie"}
-        </label>
-        <Input
+        <FloatingLabelInput
           id="squareMeter"
           value={formFormatters.formatAreaInput(formData.squareMeter)}
-          onChange={handleSquareMeterChange}
-          placeholder={propertyType === "garage" ? "Medidas en metros cuadrados" : "Metros cuadrados"}
+          onChange={handleSquareMeterStringChange}
+          placeholder={propertyType === "garage" ? "Medidas en metros cuadrados" : "Superficie útil"}
           type="text"
           className="h-10 placeholder:text-gray-400"
         />
@@ -242,14 +239,11 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
       {/* Built Surface Area - Only show for piso, casa, local */}
       {propertyType !== "solar" && propertyType !== "garage" && (
         <div className="space-y-2">
-          <label htmlFor="builtSurfaceArea" className="text-sm font-medium text-gray-900">
-            Superficie Construida
-          </label>
-          <Input
+          <FloatingLabelInput
             id="builtSurfaceArea"
             value={formFormatters.formatAreaInput(formData.builtSurfaceArea)}
-            onChange={handleBuiltSurfaceAreaChange}
-            placeholder="Metros cuadrados construidos"
+            onChange={handleBuiltSurfaceAreaStringChange}
+            placeholder="Superficie construida"
             type="text"
             className="h-10 placeholder:text-gray-400"
           />
@@ -259,19 +253,13 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
       {/* Year Built - Show for all property types except solar */}
       {propertyType !== "solar" && (
         <div className="space-y-2">
-          <label htmlFor="yearBuilt" className="text-sm font-medium text-gray-900">
-            Año de Construcción
-          </label>
-          <Input
-            id="yearBuilt"
-            value={formData.yearBuilt}
-            onChange={handleEventInputChange("yearBuilt")}
-            placeholder="Año de construcción"
-            type="number"
-            min="1900"
+          <YearSlider
+            label="Año de Construcción"
+            value={Number(formData.yearBuilt) || 2000}
+            onChange={val => updateFormData("yearBuilt", val.toString())}
+            min={1900}
             max={new Date().getFullYear()}
-            step="1"
-            className="h-10 placeholder:text-gray-400"
+            placeholder="Año de construcción"
           />
         </div>
       )}
@@ -280,24 +268,18 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
       {propertyType !== "solar" && propertyType !== "garage" && (
         <>
           <div className="space-y-2">
-            <label htmlFor="lastRenovationYear" className="text-sm font-medium text-gray-900">
-              Año de Última Reforma
-            </label>
-            <Input
-              id="lastRenovationYear"
-              value={formData.lastRenovationYear}
-              onChange={handleEventInputChange("lastRenovationYear")}
-              placeholder="Año de última reforma"
-              type="number"
-              min="1900"
+            <YearSlider
+              label="Año de Última Reforma"
+              value={Number(formData.lastRenovationYear) || 2000}
+              onChange={val => updateFormData("lastRenovationYear", val.toString())}
+              min={1900}
               max={new Date().getFullYear()}
-              step="1"
-              className="h-10 placeholder:text-gray-400"
+              placeholder="Año de última reforma"
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="buildingFloors" className="text-sm font-medium text-gray-900">
+            <label htmlFor="buildingFloors" className="text-xs font-medium text-gray-600">
               Plantas del Edificio
             </label>
             <Input
