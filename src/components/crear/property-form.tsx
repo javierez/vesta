@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card } from "~/components/ui/card"
-import { Loader } from "lucide-react"
+import { Loader, Building2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { getListingDetails } from "~/server/queries/listing"
 import ProgressBar from "./progress-bar"
@@ -308,7 +308,16 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
       <div className="max-w-2xl mx-auto">
         <Card className="p-6">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 mb-8 text-center">ALTA NUEVO INMUEBLE</h1>
+
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-700 to-yellow-800 bg-clip-text text-transparent mb-3 mt-2 text-center">
+              ALTA NUEVO INMUEBLE
+            </h1>
+
+            <div className="w-24 h-1 bg-gradient-to-r from-gray-700 to-yellow-800 mx-auto rounded-full mb-4"></div>
+
+            <p className="text-gray-500 text-center mb-8">
+              Completa la información del inmueble paso a paso
+            </p>
             
             {/* Progress Bar */}
             <ProgressBar 
