@@ -35,6 +35,7 @@ export default function NinethPage({ listingId, onNext, onBack }: NinethPageProp
   const [saveError, setSaveError] = useState<string | null>(null)
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   const updateFormData = (field: keyof NinethPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -66,16 +67,23 @@ export default function NinethPage({ listingId, onNext, onBack }: NinethPageProp
   }, [listingId])
 
   const handleNext = async () => {
+    setSaving(true)
     setSaveError(null)
     try {
       if (listingDetails?.propertyId) {
-        await updateProperty(Number(listingDetails.propertyId), {
-          formPosition: 10, // Next step
+        const updateData: any = {
           mainFloorType: formData.mainFloorType,
           shutterType: formData.shutterType,
           carpentryType: formData.carpentryType,
           windowType: formData.windowType,
-        })
+        }
+
+        // Only update formPosition if current position is lower than 10
+        if (!listingDetails.formPosition || listingDetails.formPosition < 10) {
+          updateData.formPosition = 10
+        }
+
+        await updateProperty(Number(listingDetails.propertyId), updateData)
       }
       // Refresh listing details after saving
       const updatedDetails = await getListingDetails(Number(listingId))
@@ -84,10 +92,11 @@ export default function NinethPage({ listingId, onNext, onBack }: NinethPageProp
     } catch (error) {
       console.error("Error saving form data:", error)
       setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+      setSaving(false)
     }
   }
 
-  if (isLoading) {
+  if (isLoading || saving) {
     return <FormSkeleton />
   }
 

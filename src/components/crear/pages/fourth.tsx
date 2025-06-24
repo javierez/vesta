@@ -99,6 +99,7 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
   const [saveError, setSaveError] = useState<string | null>(null)
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   const updateFormData = (field: keyof FourthPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -161,15 +162,15 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
   }, [listingId])
 
   const handleNext = async () => {
-    // Clear any previous save errors
-    setSaveError(null)
-
-    // Save data in the background without blocking the UI
+    setSaving(true)
     try {
+      // Clear any previous save errors
+      setSaveError(null)
+
+      // Save data in the background without blocking the UI
       // Update property with equipment and services data
       if (listingDetails?.propertyId) {
-        await updateProperty(Number(listingDetails.propertyId), {
-          formPosition: 5,
+        const updateData: any = {
           hasElevator: formData.hasElevator,
           // Garage data - only save if hasGarage is true
           hasGarage: formData.hasGarage,
@@ -186,7 +187,14 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
           heatingType: formData.hasHeating ? formData.heatingType : "",
           // Air conditioning data - only save if hasAirConditioning is true
           airConditioningType: formData.hasAirConditioning ? formData.airConditioningType : "",
-        })
+        }
+
+        // Only update formPosition if current position is lower than 5
+        if (!listingDetails.formPosition || listingDetails.formPosition < 5) {
+          updateData.formPosition = 5
+        }
+
+        await updateProperty(Number(listingDetails.propertyId), updateData)
       }
 
       // Update listing with optional prices - only save if the related service is enabled
@@ -204,13 +212,12 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
     } catch (error) {
       console.error("Error saving form data:", error)
       setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+      setSaving(false)
     }
   }
 
-  if (isLoading) {
-    return (
-      <FormSkeleton />
-    )
+  if (isLoading || saving) {
+    return <FormSkeleton />
   }
 
   return (

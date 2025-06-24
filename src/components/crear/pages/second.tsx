@@ -12,6 +12,7 @@ import FormSkeleton from "./form-skeleton"
 import { RoomSelector } from "./elements/room_selector"
 import { YearSlider } from "./elements/year_slider"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
+import { cn } from "~/lib/utils"
 
 interface SecondPageProps {
   listingId: string
@@ -28,6 +29,7 @@ interface SecondPageFormData {
   yearBuilt: string
   lastRenovationYear: string
   buildingFloors: string
+  isRenovated: boolean
 }
 
 const initialFormData: SecondPageFormData = {
@@ -38,6 +40,7 @@ const initialFormData: SecondPageFormData = {
   yearBuilt: "",
   lastRenovationYear: "",
   buildingFloors: "",
+  isRenovated: false,
 }
 
 export default function SecondPage({ listingId, onNext, onBack }: SecondPageProps) {
@@ -45,6 +48,7 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
   const [saveError, setSaveError] = useState<string | null>(null)
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [propertyType, setPropertyType] = useState<string>("")
 
   // Fetch listing details on component mount
@@ -69,6 +73,10 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
             yearBuilt: details.yearBuilt ? details.yearBuilt.toString() : "",
             lastRenovationYear: details.lastRenovationYear ? details.lastRenovationYear.toString() : "",
             buildingFloors: details.buildingFloors ? details.buildingFloors.toString() : "",
+            // Set isRenovated based on whether lastRenovationYear is different from yearBuilt
+            isRenovated: details.lastRenovationYear && details.yearBuilt 
+              ? details.lastRenovationYear !== details.yearBuilt
+              : false,
           }))
         }
       } catch (error) {
@@ -158,15 +166,20 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
 
     // Clear any previous save errors
     setSaveError(null)
+    setSaving(true)
 
     // Save data in the background without blocking the UI
     try {
       // Update property with details
       if (listingDetails?.propertyId) {
         const updateData: any = {
-          formPosition: 3,
           squareMeter: Number(formData.squareMeter),
           yearBuilt: Number(formData.yearBuilt),
+        }
+
+        // Only update formPosition if current position is lower than 3
+        if (!listingDetails.formPosition || listingDetails.formPosition < 3) {
+          updateData.formPosition = 3
         }
 
         // Only include fields that are relevant for the property type
@@ -174,7 +187,10 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
           updateData.bedrooms = Number(formData.bedrooms)
           updateData.bathrooms = Number(formData.bathrooms)
           updateData.builtSurfaceArea = formData.builtSurfaceArea ? Number(formData.builtSurfaceArea).toString() : ""
-          updateData.lastRenovationYear = formData.lastRenovationYear ? Number(formData.lastRenovationYear) : undefined
+          // Set renovation year to construction year if not renovated, otherwise use selected year
+          updateData.lastRenovationYear = formData.isRenovated 
+            ? (formData.lastRenovationYear ? Number(formData.lastRenovationYear) : Number(formData.yearBuilt))
+            : Number(formData.yearBuilt)
           updateData.buildingFloors = formData.buildingFloors ? Number(formData.buildingFloors) : undefined
         }
 
@@ -190,13 +206,12 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
     } catch (error) {
       console.error("Error saving form data:", error)
       setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+      setSaving(false)
     }
   }
 
-  if (isLoading) {
-    return (
-      <FormSkeleton />
-    )
+  if (isLoading || saving) {
+    return <FormSkeleton />
   }
 
   return (
@@ -264,19 +279,65 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
         </div>
       )}
 
+      {/* Renovation Question - Only show for piso, casa, local */}
+      {propertyType !== "solar" && propertyType !== "garage" && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-gray-900">¿Reformado?</h3>
+          <div className="relative bg-gray-100 rounded-lg p-1 h-8">
+            <motion.div
+              className="absolute top-1 left-1 w-[calc(50%-2px)] h-6 bg-white rounded-md shadow-sm"
+              animate={{
+                x: formData.isRenovated ? "calc(100% - 5px)" : 0
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            />
+            <div className="relative flex h-full">
+              <button
+                onClick={() => {
+                  updateFormData("isRenovated", false)
+                  // Set renovation year to construction year when "No" is selected
+                  updateFormData("lastRenovationYear", formData.yearBuilt)
+                }}
+                className={cn(
+                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
+                  !formData.isRenovated
+                    ? "text-gray-900"
+                    : "text-gray-600"
+                )}
+              >
+                No
+              </button>
+              <button
+                onClick={() => updateFormData("isRenovated", true)}
+                className={cn(
+                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
+                  formData.isRenovated
+                    ? "text-gray-900"
+                    : "text-gray-600"
+                )}
+              >
+                Sí
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Last Renovation Year and Building Floors - Only show for piso, casa, local */}
       {propertyType !== "solar" && propertyType !== "garage" && (
         <>
-          <div className="space-y-2">
-            <YearSlider
-              label="Año de Última Reforma"
-              value={Number(formData.lastRenovationYear) || 2000}
-              onChange={val => updateFormData("lastRenovationYear", val.toString())}
-              min={1900}
-              max={new Date().getFullYear()}
-              placeholder="Año de última reforma"
-            />
-          </div>
+          {formData.isRenovated && (
+            <div className="space-y-2">
+              <YearSlider
+                label="Año de Última Reforma"
+                value={Number(formData.lastRenovationYear) || 2000}
+                onChange={val => updateFormData("lastRenovationYear", val.toString())}
+                min={1900}
+                max={new Date().getFullYear()}
+                placeholder="Año de última reforma"
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <label htmlFor="buildingFloors" className="text-xs font-medium text-gray-600">

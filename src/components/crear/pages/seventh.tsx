@@ -53,6 +53,7 @@ export default function SeventhPage({ listingId, onNext, onBack }: SeventhPagePr
   const [saveError, setSaveError] = useState<string | null>(null)
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   const updateFormData = (field: keyof SeventhPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -93,11 +94,11 @@ export default function SeventhPage({ listingId, onNext, onBack }: SeventhPagePr
   }, [listingId])
 
   const handleNext = async () => {
+    setSaving(true)
     setSaveError(null)
     try {
       if (listingDetails?.propertyId) {
-        await updateProperty(Number(listingDetails.propertyId), {
-          formPosition: 8, // Next step
+        const updateData: any = {
           views: formData.views,
           mountainViews: formData.mountainViews,
           seaViews: formData.seaViews,
@@ -111,7 +112,14 @@ export default function SeventhPage({ listingId, onNext, onBack }: SeventhPagePr
           musicSystem: formData.musicSystem,
           laundryRoom: formData.laundryRoom,
           coveredClothesline: formData.coveredClothesline,
-        })
+        }
+
+        // Only update formPosition if current position is lower than 8
+        if (!listingDetails.formPosition || listingDetails.formPosition < 8) {
+          updateData.formPosition = 8
+        }
+
+        await updateProperty(Number(listingDetails.propertyId), updateData)
       }
       // Refresh listing details after saving
       const updatedDetails = await getListingDetails(Number(listingId))
@@ -120,10 +128,11 @@ export default function SeventhPage({ listingId, onNext, onBack }: SeventhPagePr
     } catch (error) {
       console.error("Error saving form data:", error)
       setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+      setSaving(false)
     }
   }
 
-  if (isLoading) {
+  if (isLoading || saving) {
     return <FormSkeleton />
   }
 

@@ -34,6 +34,7 @@ export default function FifthPage({ listingId, onNext, onBack }: FifthPageProps)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   const updateFormData = (field: keyof FifthPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -68,19 +69,25 @@ export default function FifthPage({ listingId, onNext, onBack }: FifthPageProps)
   }, [listingId])
 
   const handleNext = async () => {
-    // Clear any previous save errors
-    setSaveError(null)
-
-    // Save data in the background without blocking the UI
+    setSaving(true)
     try {
-      // Update property with orientation and exposure data
+      // Clear any previous save errors
+      setSaveError(null)
+
+      // Save data in the background without blocking the UI
       if (listingDetails?.propertyId) {
-        await updateProperty(Number(listingDetails.propertyId), {
-          formPosition: 6,
+        const updateData: any = {
           exterior: formData.isExterior,
           bright: formData.isBright,
           orientation: formData.orientation,
-        })
+        }
+
+        // Only update formPosition if current position is lower than 6
+        if (!listingDetails.formPosition || listingDetails.formPosition < 6) {
+          updateData.formPosition = 6
+        }
+
+        await updateProperty(Number(listingDetails.propertyId), updateData)
       }
 
       // Refresh listing details after saving
@@ -92,13 +99,12 @@ export default function FifthPage({ listingId, onNext, onBack }: FifthPageProps)
     } catch (error) {
       console.error("Error saving form data:", error)
       setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+      setSaving(false)
     }
   }
 
-  if (isLoading) {
-    return (
-      <FormSkeleton />
-    )
+  if (isLoading || saving) {
+    return <FormSkeleton />
   }
 
   return (

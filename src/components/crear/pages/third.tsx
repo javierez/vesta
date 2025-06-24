@@ -240,7 +240,7 @@ export default function ThirdPage({ listingId, onNext, onBack }: ThirdPageProps)
         id="province"
         value={formData.province}
         onChange={handleInputChange("province")}
-        placeholder="Provincia"
+        placeholder="Comunidad"
         disabled={true}
       />
       <FloatingLabelInput
@@ -278,18 +278,6 @@ export default function ThirdPage({ listingId, onNext, onBack }: ThirdPageProps)
           )}
         </Button>
       </div>
-
-      {/* Auto-completion Success Message */}
-      {autoCompletionSuccess && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="text-center text-sm text-green-600"
-        >
-          ✓ Actualizado
-        </motion.div>
-      )}
 
       {/* Save Error Notification */}
       {saveError && (

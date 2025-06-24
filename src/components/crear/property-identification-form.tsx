@@ -496,7 +496,7 @@ export default function PropertyIdentificationForm() {
               id="province"
               value={formData.province}
               onChange={handleInputChange("province")}
-              placeholder="Provincia"
+              placeholder="Comunidad"
             />
             <FloatingLabelInput
               id="municipality"

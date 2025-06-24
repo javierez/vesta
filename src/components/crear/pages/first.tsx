@@ -6,7 +6,8 @@ import { Input } from "~/components/ui/input"
 import { Card } from "~/components/ui/card"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { ChevronLeft, ChevronRight, Info, Loader, Plus, User } from "lucide-react"
-import { cn, formFormatters } from "~/lib/utils"
+import { cn } from "~/lib/utils"
+import { formFormatters } from "~/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { getAllAgents, getListingDetails } from "~/server/queries/listing"
@@ -47,6 +48,19 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  // Fallback price formatting functions in case formFormatters is undefined
+  const formatPriceInput = (value: string | number): string => {
+    if (!value) return ""
+    const numericValue = typeof value === 'string' ? value.replace(/[^\d]/g, "") : value.toString()
+    if (!numericValue) return ""
+    return `${numericValue} €`
+  }
+
+  const getNumericPrice = (formattedValue: string): string => {
+    return formattedValue.replace(/[^\d]/g, "")
+  }
 
   // Close tooltip when clicking outside
   useEffect(() => {
@@ -132,7 +146,7 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
 
   // Handle price input with formatting
   const handlePriceChange = (value: string) => {
-    const numericValue = formFormatters.getNumericPrice(value)
+    const numericValue = formFormatters?.getNumericPrice(value) || getNumericPrice(value)
     updateFormData("price", numericValue)
   }
 
@@ -160,15 +174,22 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
 
     // Clear any previous save errors
     setSaveError(null)
+    setSaving(true)
 
     // Save data in the background without blocking the UI
     try {
       // Update property form position to 2 and property type
       if (listingDetails?.propertyId) {
-        await updateProperty(Number(listingDetails.propertyId), { 
-          formPosition: 2,
+        const updateData: any = {
           propertyType: formData.propertyType
-        })
+        }
+        
+        // Only update formPosition if current position is lower than 2
+        if (!listingDetails.formPosition || listingDetails.formPosition < 2) {
+          updateData.formPosition = 2
+        }
+        
+        await updateProperty(Number(listingDetails.propertyId), updateData)
       }
 
       // Update listing with price, listing type, and agent
@@ -190,6 +211,7 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
     } catch (error) {
       console.error("Error saving form data:", error)
       setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+      setSaving(false)
     }
   }
 
@@ -202,7 +224,7 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
     }))
   }
 
-  if (isLoading) {
+  if (isLoading || saving) {
     return (
       <FormSkeleton />
     )
@@ -213,7 +235,7 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
       {/* Price Section */}
       <FloatingLabelInput
         id="price"
-        value={formFormatters.formatPriceInput(formData.price)}
+        value={formFormatters?.formatPriceInput(formData.price) || formatPriceInput(formData.price)}
         onChange={handlePriceChange}
         placeholder="Precio (€)"
         type="text"

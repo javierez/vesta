@@ -66,10 +66,8 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
             // formPosition 1 = step 0 (basic info)
             // formPosition 2 = step 1 (property details)
             // formPosition 3 = step 2 (address)
-            // formPosition 4 = step 3 (equipment)
-            // formPosition 5 = step 4 (orientation)
-            // formPosition 6 = step 5 (additional characteristics)
-            const stepIndex = Math.min(details.formPosition - 1, steps.length - 1)
+            // etc.
+            const stepIndex = Math.max(0, Math.min(details.formPosition - 1, steps.length - 1))
             setCurrentStep(stepIndex)
           }
         }
@@ -81,6 +79,14 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     }
     fetchData()
   }, [listingId])
+
+  // Sync currentStep with formPosition when listingDetails updates
+  useEffect(() => {
+    if (listingDetails?.formPosition) {
+      const stepIndex = Math.max(0, Math.min(listingDetails.formPosition - 1, steps.length - 1))
+      setCurrentStep(stepIndex)
+    }
+  }, [listingDetails?.formPosition])
 
   const nextStep = () => {
     setDirection("forward")
@@ -94,59 +100,89 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     }
   }
 
+  const goToStep = (stepIndex: number) => {
+    const formPosition = listingDetails?.formPosition || 1
+    // Only allow navigation to completed steps (backward navigation)
+    if (stepIndex < formPosition) {
+      setDirection(stepIndex < currentStep ? "backward" : "forward")
+      setCurrentStep(stepIndex)
+    }
+  }
+
+  // Refresh listing details after form updates
+  const refreshListingDetails = async () => {
+    try {
+      const details = await getListingDetails(Number(listingId))
+      setListingDetails(details)
+    } catch (error) {
+      console.error("Error refreshing listing details:", error)
+    }
+  }
+
   const handleFirstPageNext = () => {
     setDirection("forward")
     setCurrentStep(1)
+    refreshListingDetails()
   }
 
   const handleSecondPageNext = () => {
     setDirection("forward")
     setCurrentStep(2)
+    refreshListingDetails()
   }
 
   const handleThirdPageNext = () => {
     setDirection("forward")
     setCurrentStep(3)
+    refreshListingDetails()
   }
 
   const handleFourthPageNext = () => {
     setDirection("forward")
     setCurrentStep(4)
+    refreshListingDetails()
   }
 
   const handleFifthPageNext = () => {
     setDirection("forward")
     setCurrentStep(5)
+    refreshListingDetails()
   }
 
   const handleSixthPageNext = () => {
     setDirection("forward")
     setCurrentStep(6)
+    refreshListingDetails()
   }
 
   const handleSeventhPageNext = () => {
     setDirection("forward")
     setCurrentStep(7)
+    refreshListingDetails()
   }
 
   const handleEighthPageNext = () => {
     setDirection("forward")
     setCurrentStep(8)
+    refreshListingDetails()
   }
 
   const handleNinethPageNext = () => {
     setDirection("forward")
     setCurrentStep(9)
+    refreshListingDetails()
   }
 
   const handleDescriptionPageNext = () => {
     setDirection("forward")
     setCurrentStep(10)
+    refreshListingDetails()
   }
 
   const handleRentPageNext = () => {
     setDirection("forward")
     setCurrentStep(steps.length - 1)
+    refreshListingDetails()
   }
 
   const renderStepContent = () => {
@@ -272,7 +308,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
       <div className="max-w-2xl mx-auto">
         <Card className="p-6">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">ALTA NUEVO INMUEBLE</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-8 text-center">ALTA NUEVO INMUEBLE</h1>
             
             {/* Progress Bar */}
             <ProgressBar 
@@ -280,13 +316,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
               totalSteps={steps.length}
               steps={steps}
               formPosition={listingDetails?.formPosition || 1}
-              onStepClick={(stepIndex) => {
-                // Only allow navigation to completed steps (backward navigation)
-                if (stepIndex < (listingDetails?.formPosition || 1)) {
-                  setDirection(stepIndex < currentStep ? "backward" : "forward")
-                  setCurrentStep(stepIndex)
-                }
-              }}
+              onStepClick={goToStep}
             />
           </div>
 

@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { Checkbox } from "~/components/ui/checkbox"
 import { ChevronLeft, ChevronRight, GraduationCap, PawPrint, Zap, Car, Package } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { getListingDetails } from "~/server/queries/listing"
-import { updateListing } from "~/server/queries/listing"
+import { updateListing, createListing } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
 import FormSkeleton from "./form-skeleton"
 import { cn, formFormatters } from "~/lib/utils"
@@ -26,6 +27,7 @@ interface RentPageFormData {
   duplicateForRent: boolean
   optionalGaragePrice: number
   optionalStorageRoomPrice: number
+  rentalPrice: number
 }
 
 const initialFormData: RentPageFormData = {
@@ -35,14 +37,17 @@ const initialFormData: RentPageFormData = {
   duplicateForRent: false,
   optionalGaragePrice: 0,
   optionalStorageRoomPrice: 0,
+  rentalPrice: 0,
 }
 
 export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
+  const router = useRouter()
   const [formData, setFormData] = useState<RentPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaleListing, setIsSaleListing] = useState(false)
+  const [isFinishing, setIsFinishing] = useState(false)
 
   const updateFormData = (field: keyof RentPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -55,6 +60,10 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
 
   const handleStorageRoomPriceChange = formFormatters.handleNumericPriceInputChange((value) => 
     updateFormData("optionalStorageRoomPrice", value)
+  )
+
+  const handleRentalPriceChange = formFormatters.handleNumericPriceInputChange((value) => 
+    updateFormData("rentalPrice", value)
   )
 
   // Fetch listing details on component mount
@@ -73,6 +82,7 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
             appliancesIncluded: details.appliancesIncluded || false,
             optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
             optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
+            rentalPrice: Number(details.price) || 0,
           }))
         }
       } catch (error) {
@@ -86,7 +96,17 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
 
   const handleNext = async () => {
     setSaveError(null)
+    setIsFinishing(true)
+    
     try {
+      // Validate rental price if creating rental listing
+      if (isSaleListing && formData.duplicateForRent && formData.rentalPrice <= 0) {
+        setSaveError("Por favor, introduce el precio del alquiler.")
+        setIsFinishing(false)
+        return
+      }
+
+      // Save current listing data
       if (listingDetails?.listingId) {
         await updateListing(Number(listingDetails.listingId), {
           studentFriendly: formData.studentFriendly,
@@ -96,30 +116,43 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
           optionalStorageRoomPrice: formData.optionalStorageRoomPrice ? Math.round(formData.optionalStorageRoomPrice).toString() : "0",
         })
       }
-      if (listingDetails?.propertyId) {
-        await updateProperty(Number(listingDetails.propertyId), {
-          formPosition: 12, // Next step
-        })
+
+      // Handle different scenarios based on listing type and user selection
+      if (isSaleListing) {
+        if (formData.duplicateForRent) {
+          // Create a new rental listing with the same property_id
+          await createListing({
+            propertyId: BigInt(listingDetails.propertyId),
+            agentId: BigInt(listingDetails.agentId),
+            listingType: "Rent",
+            price: Math.round(formData.rentalPrice).toString(), // Use the rental price
+            status: "Active",
+            isFeatured: false,
+            isBankOwned: false,
+            viewCount: 0,
+            inquiryCount: 0,
+            isActive: true,
+            optionalStorageRoom: listingDetails.hasStorageRoom || false,
+            hasKeys: false,
+            studentFriendly: formData.studentFriendly,
+            petsAllowed: formData.petsAllowed,
+            appliancesIncluded: formData.appliancesIncluded,
+            optionalGaragePrice: formData.optionalGaragePrice ? Math.round(formData.optionalGaragePrice).toString() : "0",
+            optionalStorageRoomPrice: formData.optionalStorageRoomPrice ? Math.round(formData.optionalStorageRoomPrice).toString() : "0",
+          })
+        }
+        // For both "Solo Venta" and "También Alquiler", navigate to propiedades
+        router.push("/propiedades")
+      } else {
+        // If it's already a rent listing, just navigate to propiedades
+        router.push("/propiedades")
       }
       
-      // Handle the toggle selection
-      if (formData.duplicateForRent) {
-        handleDuplicateForRent()
-      }
-      
-      // Refresh listing details after saving
-      const updatedDetails = await getListingDetails(Number(listingId))
-      setListingDetails(updatedDetails)
-      onNext()
     } catch (error) {
       console.error("Error saving form data:", error)
       setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+      setIsFinishing(false)
     }
-  }
-
-  const handleDuplicateForRent = () => {
-    // Mockup function - will be implemented later
-    console.log("Duplicate listing for rent")
   }
 
   if (isLoading) {
@@ -152,7 +185,7 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
         >
           <div className="relative bg-gray-100 rounded-lg p-1 h-12 w-full max-w-sm">
             <motion.div
-              className="absolute top-1 left-1 w-[calc(50%-2px)] h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-md shadow-sm"
+              className="absolute top-1 left-1 w-[calc(50%-2px)] h-10 bg-gradient-to-r from-blue-400 to-yellow-300 rounded-md shadow-sm"
               animate={{
                 x: formData.duplicateForRent ? "calc(100% - 5px)" : 0
               }}
@@ -166,7 +199,7 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
                   "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
                   !formData.duplicateForRent
                     ? "text-white"
-                    : "text-gray-600"
+                    : "text-gray-400"
                 )}
               >
                 Solo Venta
@@ -178,7 +211,7 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
                   "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
                   formData.duplicateForRent
                     ? "text-white"
-                    : "text-gray-600"
+                    : "text-gray-400"
                 )}
               >
                 También Alquiler
@@ -195,6 +228,20 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.3 }}
           >
+            {/* Rental Price - Mandatory */}
+            <div className="p-4 rounded-lg border-2 bg-blue-50 shadow-md">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-medium text-gray-700">Precio del Alquiler</h4>
+              </div> 
+              <Input
+                type="text"
+                value={formFormatters.formatPriceInput(formData.rentalPrice)}
+                onChange={handleRentalPriceChange}
+                placeholder="0 €"
+                className="h-10 text-sm shadow-md border-0 bg-white"
+              />
+            </div>
+
             {/* Garage Price */}
             {listingDetails?.hasGarage && (
               <div className="p-4 rounded-lg">
@@ -317,10 +364,10 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button 
               onClick={handleNext} 
+              disabled={isFinishing}
               className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
             >
-              <span>Siguiente</span>
-              <ChevronRight className="h-4 w-4" />
+              <span>{isFinishing ? "Finalizando..." : "Finalizar"}</span>
             </Button>
           </motion.div>
         </motion.div>
@@ -435,10 +482,10 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button 
             onClick={handleNext} 
+            disabled={isFinishing}
             className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
           >
-            <span>Siguiente</span>
-            <ChevronRight className="h-4 w-4" />
+            <span>{isFinishing ? "Finalizando..." : "Finalizar"}</span>
           </Button>
         </motion.div>
       </motion.div>

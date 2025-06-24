@@ -28,8 +28,7 @@ export const formFormatters = {
     if (!value) return ""
     const numericValue = typeof value === 'string' ? value.replace(/[^\d]/g, "") : value.toString()
     if (!numericValue) return ""
-    const number = parseInt(numericValue, 10)
-    return number.toLocaleString('es-ES') + " €"
+    return `${numericValue} €`
   },
 
   // Get numeric value from formatted price
@@ -80,5 +79,18 @@ export const formFormatters = {
   ) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const numericValue = formFormatters.getNumericPrice(e.target.value)
     setValue(numericValue ? parseInt(numericValue) : 0)
+  },
+
+  // Handle number input with leading zero removal
+  handleNumberInput: (
+    setValue: (value: number) => void
+  ) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numericValue = parseInt(e.target.value) || 0
+    setValue(numericValue)
+  },
+
+  // Format number for display (removes leading zeros, shows empty string for 0)
+  formatNumberDisplay: (value: number): string => {
+    return value === 0 ? "0" : value.toString()
   }
 }

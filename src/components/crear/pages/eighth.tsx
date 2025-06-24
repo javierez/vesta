@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
 import FormSkeleton from "./form-skeleton"
+import { formFormatters } from "~/lib/utils"
 
 interface EighthPageProps {
   listingId: string
@@ -44,6 +45,7 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
   const [saveError, setSaveError] = useState<string | null>(null)
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   const updateFormData = (field: keyof EighthPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -79,11 +81,11 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
   }, [listingId])
 
   const handleNext = async () => {
+    setSaving(true)
     setSaveError(null)
     try {
       if (listingDetails?.propertyId) {
-        await updateProperty(Number(listingDetails.propertyId), {
-          formPosition: 9, // Next step
+        const updateData: any = {
           terrace: formData.terrace,
           terraceSize: formData.terraceSize,
           wineCellar: formData.wineCellar,
@@ -92,7 +94,14 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
           balconyCount: formData.balconyCount,
           galleryCount: formData.galleryCount,
           builtInWardrobes: formData.builtInWardrobes,
-        })
+        }
+
+        // Only update formPosition if current position is lower than 9
+        if (!listingDetails.formPosition || listingDetails.formPosition < 9) {
+          updateData.formPosition = 9
+        }
+
+        await updateProperty(Number(listingDetails.propertyId), updateData)
       }
       // Refresh listing details after saving
       const updatedDetails = await getListingDetails(Number(listingId))
@@ -101,10 +110,11 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
     } catch (error) {
       console.error("Error saving form data:", error)
       setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+      setSaving(false)
     }
   }
 
-  if (isLoading) {
+  if (isLoading || saving) {
     return <FormSkeleton />
   }
 
@@ -147,8 +157,8 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
                 <input
                   id="terraceSize"
                   type="number"
-                  value={formData.terraceSize}
-                  onChange={e => updateFormData("terraceSize", parseInt(e.target.value) || 0)}
+                  value={formFormatters.formatNumberDisplay(formData.terraceSize)}
+                  onChange={formFormatters.handleNumberInput((value) => updateFormData("terraceSize", value))}
                   className="h-8 w-full rounded border border-gray-300 px-2 text-gray-700 shadow-md border-0"
                   min="0"
                   step="1"
@@ -160,8 +170,8 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
               <input
                 id="balconyCount"
                 type="number"
-                value={formData.balconyCount}
-                onChange={e => updateFormData("balconyCount", parseInt(e.target.value) || 0)}
+                value={formFormatters.formatNumberDisplay(formData.balconyCount)}
+                onChange={formFormatters.handleNumberInput((value) => updateFormData("balconyCount", value))}
                 className="h-8 w-full rounded border border-gray-300 px-2 text-gray-700 shadow-md border-0"
                 min="0"
                 step="1"
@@ -172,8 +182,8 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
               <input
                 id="galleryCount"
                 type="number"
-                value={formData.galleryCount}
-                onChange={e => updateFormData("galleryCount", parseInt(e.target.value) || 0)}
+                value={formFormatters.formatNumberDisplay(formData.galleryCount)}
+                onChange={formFormatters.handleNumberInput((value) => updateFormData("galleryCount", value))}
                 className="h-8 w-full rounded border border-gray-300 px-2 text-gray-700 shadow-md border-0"
                 min="0"
                 step="1"
@@ -199,8 +209,8 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
                 <input
                   id="wineCellarSize"
                   type="number"
-                  value={formData.wineCellarSize}
-                  onChange={e => updateFormData("wineCellarSize", parseInt(e.target.value) || 0)}
+                  value={formFormatters.formatNumberDisplay(formData.wineCellarSize)}
+                  onChange={formFormatters.handleNumberInput((value) => updateFormData("wineCellarSize", value))}
                   className="h-8 w-full rounded border border-gray-300 px-2 text-gray-700 shadow-md border-0"
                   min="0"
                   step="1"
@@ -222,8 +232,8 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
               <input
                 id="livingRoomSize"
                 type="number"
-                value={formData.livingRoomSize}
-                onChange={e => updateFormData("livingRoomSize", parseInt(e.target.value) || 0)}
+                value={formFormatters.formatNumberDisplay(formData.livingRoomSize)}
+                onChange={formFormatters.handleNumberInput((value) => updateFormData("livingRoomSize", value))}
                 className="h-8 w-full rounded border border-gray-300 px-2 text-gray-700 shadow-md border-0"
                 min="0"
                 step="1"

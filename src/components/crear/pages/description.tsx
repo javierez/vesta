@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
+import FormSkeleton from "./form-skeleton"
 
 interface DescriptionPageProps {
   listingId: string
@@ -28,6 +29,7 @@ export default function DescriptionPage({ listingId, onNext, onBack }: Descripti
   const [signature, setSignature] = useState("")
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,13 +59,18 @@ export default function DescriptionPage({ listingId, onNext, onBack }: Descripti
   }
 
   const handleNext = async () => {
+    setSaving(true)
     setSaveError(null)
     try {
       if (listingDetails?.propertyId) {
-        await updateProperty(Number(listingDetails.propertyId), {
-          formPosition: 11, // Next step
+        const updateData: any = {
           description: description,
-        })
+        }
+        // Only update formPosition if current position is lower than 11
+        if (!listingDetails.formPosition || listingDetails.formPosition < 11) {
+          updateData.formPosition = 11
+        }
+        await updateProperty(Number(listingDetails.propertyId), updateData)
       }
       // Refresh listing details after saving
       const updatedDetails = await getListingDetails(Number(listingId))
@@ -72,7 +79,12 @@ export default function DescriptionPage({ listingId, onNext, onBack }: Descripti
     } catch (error) {
       console.error("Error saving form data:", error)
       setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+      setSaving(false)
     }
+  }
+
+  if (saving) {
+    return <FormSkeleton />
   }
 
   return (

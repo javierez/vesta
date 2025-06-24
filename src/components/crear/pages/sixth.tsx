@@ -74,6 +74,7 @@ export default function SixthPage({ listingId, onNext, onBack }: SixthPageProps)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   const updateFormData = (field: keyof SixthPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -116,11 +117,11 @@ export default function SixthPage({ listingId, onNext, onBack }: SixthPageProps)
   }, [listingId])
 
   const handleNext = async () => {
+    setSaving(true)
     setSaveError(null)
     try {
       if (listingDetails?.propertyId) {
-        await updateProperty(Number(listingDetails.propertyId), {
-          formPosition: 7, // Next step
+        const updateData: any = {
           securityDoor: formData.securityDoor,
           alarm: formData.alarm,
           videoIntercom: formData.videoIntercom,
@@ -136,7 +137,14 @@ export default function SixthPage({ listingId, onNext, onBack }: SixthPageProps)
           furnishedKitchen: formData.furnishedKitchen,
           pantry: formData.pantry,
           hotWaterType: formData.hotWaterType,
-        })
+        }
+
+        // Only update formPosition if current position is lower than 7
+        if (!listingDetails.formPosition || listingDetails.formPosition < 7) {
+          updateData.formPosition = 7
+        }
+
+        await updateProperty(Number(listingDetails.propertyId), updateData)
       }
       // Refresh listing details after saving
       const updatedDetails = await getListingDetails(Number(listingId))
@@ -145,10 +153,11 @@ export default function SixthPage({ listingId, onNext, onBack }: SixthPageProps)
     } catch (error) {
       console.error("Error saving form data:", error)
       setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+      setSaving(false)
     }
   }
 
-  if (isLoading) {
+  if (isLoading || saving) {
     return <FormSkeleton />
   }
 
