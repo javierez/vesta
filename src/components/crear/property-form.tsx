@@ -88,15 +88,59 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     }
   }, [listingDetails?.formPosition])
 
+  // Define which steps are skipped for each property type
+  const getSkippedSteps = (propertyType: string): number[] => {
+    if (propertyType === "solar") {
+      // Solar properties skip: fourth (3), fifth (4), sixth (5), eighth (7), nineth (8)
+      return [3, 4, 5, 7, 8]
+    } else if (propertyType === "garage") {
+      // Garage properties skip: fifth (4), seventh (6), eighth (7), nineth (8)
+      return [4, 6, 7, 8]
+    }
+    return []
+  }
+
+  // Get the next non-skipped step
+  const getNextNonSkippedStep = (currentStepIndex: number): number => {
+    const propertyType = listingDetails?.propertyType || ""
+    const skippedSteps = getSkippedSteps(propertyType)
+    
+    let nextStep = currentStepIndex + 1
+    
+    // Keep incrementing until we find a non-skipped step
+    while (skippedSteps.includes(nextStep) && nextStep < steps.length) {
+      nextStep++
+    }
+    
+    return Math.min(nextStep, steps.length - 1)
+  }
+
+  // Get the previous non-skipped step
+  const getPrevNonSkippedStep = (currentStepIndex: number): number => {
+    const propertyType = listingDetails?.propertyType || ""
+    const skippedSteps = getSkippedSteps(propertyType)
+    
+    let prevStep = currentStepIndex - 1
+    
+    // Keep decrementing until we find a non-skipped step
+    while (skippedSteps.includes(prevStep) && prevStep >= 0) {
+      prevStep--
+    }
+    
+    return Math.max(prevStep, 0)
+  }
+
   const nextStep = () => {
     setDirection("forward")
-    setCurrentStep((prev) => prev + 1)
+    const nextStepIndex = getNextNonSkippedStep(currentStep)
+    setCurrentStep(nextStepIndex)
   }
 
   const prevStep = () => {
     if (currentStep > 0) {
       setDirection("backward")
-      setCurrentStep((prev) => prev - 1)
+      const prevStepIndex = getPrevNonSkippedStep(currentStep)
+      setCurrentStep(prevStepIndex)
     }
   }
 
@@ -109,6 +153,14 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     }
   }
 
+  // Smart navigation function that automatically skips to next non-skipped step
+  const navigateToNextStep = () => {
+    setDirection("forward")
+    const nextStepIndex = getNextNonSkippedStep(currentStep)
+    setCurrentStep(nextStepIndex)
+    refreshListingDetails()
+  }
+
   // Refresh listing details after form updates
   const refreshListingDetails = async () => {
     try {
@@ -117,72 +169,6 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     } catch (error) {
       console.error("Error refreshing listing details:", error)
     }
-  }
-
-  const handleFirstPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(1)
-    refreshListingDetails()
-  }
-
-  const handleSecondPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(2)
-    refreshListingDetails()
-  }
-
-  const handleThirdPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(3)
-    refreshListingDetails()
-  }
-
-  const handleFourthPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(4)
-    refreshListingDetails()
-  }
-
-  const handleFifthPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(5)
-    refreshListingDetails()
-  }
-
-  const handleSixthPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(6)
-    refreshListingDetails()
-  }
-
-  const handleSeventhPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(7)
-    refreshListingDetails()
-  }
-
-  const handleEighthPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(8)
-    refreshListingDetails()
-  }
-
-  const handleNinethPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(9)
-    refreshListingDetails()
-  }
-
-  const handleDescriptionPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(10)
-    refreshListingDetails()
-  }
-
-  const handleRentPageNext = () => {
-    setDirection("forward")
-    setCurrentStep(steps.length - 1)
-    refreshListingDetails()
   }
 
   const renderStepContent = () => {
@@ -197,7 +183,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <FirstPage 
             listingId={listingId}
-            onNext={handleFirstPageNext}
+            onNext={navigateToNextStep}
             onBack={currentStep > 0 ? prevStep : undefined}
           />
         )
@@ -206,7 +192,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <SecondPage 
             listingId={listingId}
-            onNext={handleSecondPageNext}
+            onNext={navigateToNextStep}
             onBack={prevStep}
           />
         )
@@ -215,7 +201,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <ThirdPage 
             listingId={listingId}
-            onNext={handleThirdPageNext}
+            onNext={navigateToNextStep}
             onBack={prevStep}
           />
         )
@@ -224,7 +210,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <FourthPage 
             listingId={listingId}
-            onNext={handleFourthPageNext}
+            onNext={navigateToNextStep}
             onBack={prevStep}
           />
         )
@@ -233,7 +219,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <FifthPage 
             listingId={listingId}
-            onNext={handleFifthPageNext}
+            onNext={navigateToNextStep}
             onBack={prevStep}
           />
         )
@@ -242,7 +228,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <SixthPage 
             listingId={listingId}
-            onNext={handleSixthPageNext}
+            onNext={navigateToNextStep}
             onBack={prevStep}
           />
         )
@@ -251,7 +237,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <SeventhPage 
             listingId={listingId}
-            onNext={handleSeventhPageNext}
+            onNext={navigateToNextStep}
             onBack={prevStep}
           />
         )
@@ -260,7 +246,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <EighthPage 
             listingId={listingId}
-            onNext={handleEighthPageNext}
+            onNext={navigateToNextStep}
             onBack={prevStep}
           />
         )
@@ -269,7 +255,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <NinethPage 
             listingId={listingId}
-            onNext={handleNinethPageNext}
+            onNext={navigateToNextStep}
             onBack={prevStep}
           />
         )
@@ -278,7 +264,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <DescriptionPage 
             listingId={listingId}
-            onNext={handleDescriptionPageNext}
+            onNext={navigateToNextStep}
             onBack={prevStep}
           />
         )
@@ -287,7 +273,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         return (
           <RentPage 
             listingId={listingId}
-            onNext={handleRentPageNext}
+            onNext={navigateToNextStep}
             onBack={prevStep}
           />
         )
@@ -326,6 +312,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
               steps={steps}
               formPosition={listingDetails?.formPosition || 1}
               onStepClick={goToStep}
+              propertyType={listingDetails?.propertyType || ""}
             />
           </div>
 

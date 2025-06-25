@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Check } from "lucide-react"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 
 interface ProgressBarProps {
   currentStep: number
@@ -13,6 +13,7 @@ interface ProgressBarProps {
   showPercentage?: boolean
   showStepTitles?: boolean
   variant?: "default" | "compact" | "detailed"
+  propertyType?: string
 }
 
 export default function ProgressBar({ 
@@ -23,24 +24,76 @@ export default function ProgressBar({
   onStepClick,
   showPercentage = false,
   showStepTitles = false,
-  variant = "default"
+  variant = "default",
+  propertyType = ""
 }: ProgressBarProps) {
   const [hoveredStep, setHoveredStep] = useState<number | null>(null)
 
-  // Use formPosition to determine which step is current
-  const actualCurrentStep = (formPosition || 1) - 1
-  const lastAccessibleIndex = (formPosition || 1) - 1
-  const progressPercentage = ((actualCurrentStep + 1) / totalSteps) * 100
+  // Define which steps are skipped for each property type
+  const skippedSteps = useMemo(() => {
+    if (propertyType === "solar") {
+      // Solar properties skip: fourth (3), fifth (4), sixth (5), eighth (7), nineth (8)
+      return [3, 4, 5, 7, 8]
+    } else if (propertyType === "garage") {
+      // Garage properties skip: fifth (4), seventh (6), eighth (7), nineth (8)
+      return [4, 6, 7, 8]
+    }
+    return []
+  }, [propertyType])
+
+  // Create filtered steps array that excludes skipped steps
+  const filteredSteps = useMemo(() => {
+    return steps.filter((_, index) => !skippedSteps.includes(index))
+  }, [steps, skippedSteps])
+
+  // Map current step to filtered step index
+  const getFilteredStepIndex = (originalStepIndex: number): number => {
+    let filteredIndex = 0
+    for (let i = 0; i <= originalStepIndex; i++) {
+      if (!skippedSteps.includes(i)) {
+        filteredIndex++
+      }
+    }
+    return filteredIndex - 1 // -1 because we want the index, not count
+  }
+
+  // Map filtered step index back to original step index
+  const getOriginalStepIndex = (filteredStepIndex: number): number => {
+    let originalIndex = 0
+    let filteredCount = 0
+    
+    while (filteredCount <= filteredStepIndex && originalIndex < steps.length) {
+      if (!skippedSteps.includes(originalIndex)) {
+        filteredCount++
+      }
+      originalIndex++
+    }
+    
+    return originalIndex - 1
+  }
+
+  // Get the current filtered step index
+  const currentFilteredStep = getFilteredStepIndex(currentStep)
+  const actualCurrentStep = currentFilteredStep
+  const lastAccessibleIndex = getFilteredStepIndex((formPosition || 1) - 1)
+  const progressPercentage = ((actualCurrentStep + 1) / filteredSteps.length) * 100
+
+  // Debug logging
+  if (propertyType && skippedSteps.length > 0) {
+    console.log(`ProgressBar Debug - Property: ${propertyType}, Skipped: [${skippedSteps.join(', ')}], Current: ${currentStep}, Filtered: ${currentFilteredStep}, Total: ${filteredSteps.length}`)
+  }
 
   const handleStepClick = (stepIndex: number) => {
     if (!onStepClick) return
-    if (stepIndex < formPosition) {
-      onStepClick(stepIndex)
+    const originalStepIndex = getOriginalStepIndex(stepIndex)
+    if (originalStepIndex < formPosition) {
+      onStepClick(originalStepIndex)
     }
   }
 
   const isStepClickable = (stepIndex: number) => {
-    return stepIndex < formPosition
+    const originalStepIndex = getOriginalStepIndex(stepIndex)
+    return originalStepIndex < formPosition
   }
 
   return (
@@ -49,7 +102,7 @@ export default function ProgressBar({
       {showPercentage && (
         <div className="flex justify-between items-center mb-4">
           <span className="text-sm font-medium text-gray-600">
-            Step {actualCurrentStep + 1} of {totalSteps}
+            Step {actualCurrentStep + 1} of {filteredSteps.length}
           </span>
           <span className="text-sm font-semibold text-blue-600">
             {Math.round(progressPercentage)}%
@@ -71,7 +124,7 @@ export default function ProgressBar({
 
         {/* Step Indicators */}
         <div className="relative flex justify-between w-full z-10" style={{ minHeight: 40 }}>
-          {steps.map((step, index) => {
+          {filteredSteps.map((step, index) => {
             const isCompleted = index < actualCurrentStep
             const isCurrent = index === actualCurrentStep
             const isClickable = isStepClickable(index)

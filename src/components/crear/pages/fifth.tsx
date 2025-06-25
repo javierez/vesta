@@ -51,7 +51,13 @@ export default function FifthPage({ listingId, onNext, onBack }: FifthPageProps)
           const details = await getListingDetails(Number(listingId))
           setListingDetails(details)
           
-          // Pre-populate form with existing data
+          // For solar and garage properties, skip this page entirely
+          if (details.propertyType === "solar" || details.propertyType === "garage") {
+            onNext()
+            return
+          }
+          
+          // Pre-populate form with existing data for other property types
           setFormData(prev => ({
             ...prev,
             isExterior: details.exterior || false,
@@ -66,7 +72,7 @@ export default function FifthPage({ listingId, onNext, onBack }: FifthPageProps)
       }
     }
     fetchData()
-  }, [listingId])
+  }, [listingId, onNext])
 
   const handleNext = async () => {
     setSaving(true)

@@ -75,6 +75,7 @@ export default function SixthPage({ listingId, onNext, onBack }: SixthPageProps)
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [propertyType, setPropertyType] = useState<string>("")
 
   const updateFormData = (field: keyof SixthPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -88,6 +89,14 @@ export default function SixthPage({ listingId, onNext, onBack }: SixthPageProps)
         if (listingId) {
           const details = await getListingDetails(Number(listingId))
           setListingDetails(details)
+          setPropertyType(details.propertyType || "")
+          
+          // For solar properties, skip this page entirely
+          if (details.propertyType === "solar") {
+            onNext()
+            return
+          }
+          
           setFormData(prev => ({
             ...prev,
             securityDoor: details.securityDoor || false,
@@ -114,7 +123,7 @@ export default function SixthPage({ listingId, onNext, onBack }: SixthPageProps)
       }
     }
     fetchData()
-  }, [listingId])
+  }, [listingId, onNext])
 
   const handleNext = async () => {
     setSaving(true)
@@ -228,78 +237,86 @@ export default function SixthPage({ listingId, onNext, onBack }: SixthPageProps)
               <Checkbox id="disabledAccessible" checked={formData.disabledAccessible} onCheckedChange={checked => updateFormData("disabledAccessible", !!checked)} />
               <Label htmlFor="disabledAccessible" className="text-sm">Accesible</Label>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="satelliteDish" checked={formData.satelliteDish} onCheckedChange={checked => updateFormData("satelliteDish", !!checked)} />
-              <Label htmlFor="satelliteDish" className="text-sm">Antena</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="doubleGlazing" checked={formData.doubleGlazing} onCheckedChange={checked => updateFormData("doubleGlazing", !!checked)} />
-              <Label htmlFor="doubleGlazing" className="text-sm">Doble acristalamiento</Label>
-            </div>
+            {propertyType !== "garage" && (
+              <>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="satelliteDish" checked={formData.satelliteDish} onCheckedChange={checked => updateFormData("satelliteDish", !!checked)} />
+                  <Label htmlFor="satelliteDish" className="text-sm">Antena</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="doubleGlazing" checked={formData.doubleGlazing} onCheckedChange={checked => updateFormData("doubleGlazing", !!checked)} />
+                  <Label htmlFor="doubleGlazing" className="text-sm">Doble acristalamiento</Label>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Kitchen Features */}
-        <div className="space-y-4 p-4 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-medium text-gray-600">Cocina</h4>
-            <CookingPot className="h-4 w-4 text-gray-400" />
+        {/* Kitchen Features - Hide for garage properties */}
+        {propertyType !== "garage" && (
+          <div className="space-y-4 p-4 rounded-lg shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-gray-600">Cocina</h4>
+              <CookingPot className="h-4 w-4 text-gray-400" />
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="kitchenType" className="text-sm">Tipo de cocina</Label>
+                <Select value={formData.kitchenType} onValueChange={value => updateFormData("kitchenType", value)}>
+                  <SelectTrigger className="h-8 text-gray-500">
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kitchenTypeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="openKitchen" checked={formData.openKitchen} onCheckedChange={checked => updateFormData("openKitchen", !!checked)} />
+                <Label htmlFor="openKitchen" className="text-sm">Cocina abierta</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="frenchKitchen" checked={formData.frenchKitchen} onCheckedChange={checked => updateFormData("frenchKitchen", !!checked)} />
+                <Label htmlFor="frenchKitchen" className="text-sm">Cocina francesa</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="furnishedKitchen" checked={formData.furnishedKitchen} onCheckedChange={checked => updateFormData("furnishedKitchen", !!checked)} />
+                <Label htmlFor="furnishedKitchen" className="text-sm">Cocina amueblada</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="pantry" checked={formData.pantry} onCheckedChange={checked => updateFormData("pantry", !!checked)} />
+                <Label htmlFor="pantry" className="text-sm">Despensa</Label>
+              </div>
+            </div>
           </div>
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="kitchenType" className="text-sm">Tipo de cocina</Label>
-              <Select value={formData.kitchenType} onValueChange={value => updateFormData("kitchenType", value)}>
-                <SelectTrigger className="h-8 text-gray-500">
-                  <SelectValue placeholder="Seleccionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {kitchenTypeOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="openKitchen" checked={formData.openKitchen} onCheckedChange={checked => updateFormData("openKitchen", !!checked)} />
-              <Label htmlFor="openKitchen" className="text-sm">Cocina abierta</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="frenchKitchen" checked={formData.frenchKitchen} onCheckedChange={checked => updateFormData("frenchKitchen", !!checked)} />
-              <Label htmlFor="frenchKitchen" className="text-sm">Cocina francesa</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="furnishedKitchen" checked={formData.furnishedKitchen} onCheckedChange={checked => updateFormData("furnishedKitchen", !!checked)} />
-              <Label htmlFor="furnishedKitchen" className="text-sm">Cocina amueblada</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="pantry" checked={formData.pantry} onCheckedChange={checked => updateFormData("pantry", !!checked)} />
-              <Label htmlFor="pantry" className="text-sm">Despensa</Label>
-            </div>
-          </div>
-        </div>
+        )}
 
-        {/* Utilities */}
-        <div className="space-y-4 p-4 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-medium text-gray-600">Servicios</h4>
-            <Droplets className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="hotWaterType" className="text-sm">Agua caliente</Label>
-              <Select value={formData.hotWaterType} onValueChange={value => updateFormData("hotWaterType", value)}>
-                <SelectTrigger className="h-8 text-gray-500">
-                  <SelectValue placeholder="Seleccionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {hotWaterTypeOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {/* Utilities - Hide for garage properties */}
+        {propertyType !== "garage" && (
+          <div className="space-y-4 p-4 rounded-lg shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-gray-600">Servicios</h4>
+              <Droplets className="h-4 w-4 text-gray-400" />
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="hotWaterType" className="text-sm">Agua caliente</Label>
+                <Select value={formData.hotWaterType} onValueChange={value => updateFormData("hotWaterType", value)}>
+                  <SelectTrigger className="h-8 text-gray-500">
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hotWaterTypeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </motion.div>
 
       <AnimatePresence>

@@ -217,7 +217,7 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
   return (
     <div className="space-y-6">
       {/* Bedrooms and Bathrooms - Only show for piso, casa, local, garage */}
-      {propertyType !== "solar" && (
+      {propertyType !== "solar" && propertyType !== "garage" && (
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <RoomSelector

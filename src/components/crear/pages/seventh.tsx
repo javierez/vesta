@@ -54,6 +54,7 @@ export default function SeventhPage({ listingId, onNext, onBack }: SeventhPagePr
   const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [propertyType, setPropertyType] = useState<string>("")
 
   const updateFormData = (field: keyof SeventhPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -67,6 +68,14 @@ export default function SeventhPage({ listingId, onNext, onBack }: SeventhPagePr
         if (listingId) {
           const details = await getListingDetails(Number(listingId))
           setListingDetails(details)
+          setPropertyType(details.propertyType || "")
+          
+          // For garage properties, skip this page entirely
+          if (details.propertyType === "garage") {
+            onNext()
+            return
+          }
+          
           setFormData(prev => ({
             ...prev,
             views: details.views || false,
@@ -91,7 +100,7 @@ export default function SeventhPage({ listingId, onNext, onBack }: SeventhPagePr
       }
     }
     fetchData()
-  }, [listingId])
+  }, [listingId, onNext])
 
   const handleNext = async () => {
     setSaving(true)
@@ -184,81 +193,89 @@ export default function SeventhPage({ listingId, onNext, onBack }: SeventhPagePr
           </div>
         </div>
 
-        {/* Wellness */}
-        <div className="space-y-4 p-4 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-medium text-gray-600">Bienestar</h4>
-            <Sparkles className="h-4 w-4 text-gray-400" />
+        {/* Wellness - Hide for solar properties */}
+        {propertyType !== "solar" && (
+          <div className="space-y-4 p-4 rounded-lg shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-gray-600">Bienestar</h4>
+              <Sparkles className="h-4 w-4 text-gray-400" />
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox id="jacuzzi" checked={formData.jacuzzi} onCheckedChange={checked => updateFormData("jacuzzi", !!checked)} />
+                <Label htmlFor="jacuzzi" className="text-sm">Jacuzzi</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="hydromassage" checked={formData.hydromassage} onCheckedChange={checked => updateFormData("hydromassage", !!checked)} />
+                <Label htmlFor="hydromassage" className="text-sm">Hidromasaje</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="fireplace" checked={formData.fireplace} onCheckedChange={checked => updateFormData("fireplace", !!checked)} />
+                <Label htmlFor="fireplace" className="text-sm">Chimenea</Label>
+              </div>
+            </div>
           </div>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox id="jacuzzi" checked={formData.jacuzzi} onCheckedChange={checked => updateFormData("jacuzzi", !!checked)} />
-              <Label htmlFor="jacuzzi" className="text-sm">Jacuzzi</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="hydromassage" checked={formData.hydromassage} onCheckedChange={checked => updateFormData("hydromassage", !!checked)} />
-              <Label htmlFor="hydromassage" className="text-sm">Hidromasaje</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="fireplace" checked={formData.fireplace} onCheckedChange={checked => updateFormData("fireplace", !!checked)} />
-              <Label htmlFor="fireplace" className="text-sm">Chimenea</Label>
-            </div>
-          </div>
-        </div>
+        )}
 
-        {/* Outdoor Features */}
-        <div className="space-y-4 p-4 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-medium text-gray-600">Exterior</h4>
-            <Trees className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox id="garden" checked={formData.garden} onCheckedChange={checked => updateFormData("garden", !!checked)} />
-              <Label htmlFor="garden" className="text-sm">Jardín</Label>
+        {/* Outdoor Features - Hide for solar properties */}
+        {propertyType !== "solar" && (
+          <div className="space-y-4 p-4 rounded-lg shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-gray-600">Exterior</h4>
+              <Trees className="h-4 w-4 text-gray-400" />
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="pool" checked={formData.pool} onCheckedChange={checked => updateFormData("pool", !!checked)} />
-              <Label htmlFor="pool" className="text-sm">Piscina</Label>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox id="garden" checked={formData.garden} onCheckedChange={checked => updateFormData("garden", !!checked)} />
+                <Label htmlFor="garden" className="text-sm">Jardín</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="pool" checked={formData.pool} onCheckedChange={checked => updateFormData("pool", !!checked)} />
+                <Label htmlFor="pool" className="text-sm">Piscina</Label>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Smart Home */}
-        <div className="space-y-4 p-4 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-medium text-gray-600">Domótica</h4>
-            <Zap className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox id="homeAutomation" checked={formData.homeAutomation} onCheckedChange={checked => updateFormData("homeAutomation", !!checked)} />
-              <Label htmlFor="homeAutomation" className="text-sm">Domótica</Label>
+        {/* Smart Home - Hide for solar properties */}
+        {propertyType !== "solar" && (
+          <div className="space-y-4 p-4 rounded-lg shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-gray-600">Domótica</h4>
+              <Zap className="h-4 w-4 text-gray-400" />
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="musicSystem" checked={formData.musicSystem} onCheckedChange={checked => updateFormData("musicSystem", !!checked)} />
-              <Label htmlFor="musicSystem" className="text-sm">Sistema de música</Label>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox id="homeAutomation" checked={formData.homeAutomation} onCheckedChange={checked => updateFormData("homeAutomation", !!checked)} />
+                <Label htmlFor="homeAutomation" className="text-sm">Domótica</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="musicSystem" checked={formData.musicSystem} onCheckedChange={checked => updateFormData("musicSystem", !!checked)} />
+                <Label htmlFor="musicSystem" className="text-sm">Sistema de música</Label>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Utility Rooms */}
-        <div className="space-y-4 p-4 rounded-lg shadow-md col-span-full">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-medium text-gray-600">Estancias</h4>
-            <WashingMachine className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="flex items-center space-x-2">
-              <Checkbox id="laundryRoom" checked={formData.laundryRoom} onCheckedChange={checked => updateFormData("laundryRoom", !!checked)} />
-              <Label htmlFor="laundryRoom" className="text-sm">Lavadero</Label>
+        {/* Utility Rooms - Hide for solar properties */}
+        {propertyType !== "solar" && (
+          <div className="space-y-4 p-4 rounded-lg shadow-md col-span-full">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-gray-600">Estancias</h4>
+              <WashingMachine className="h-4 w-4 text-gray-400" />
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="coveredClothesline" checked={formData.coveredClothesline} onCheckedChange={checked => updateFormData("coveredClothesline", !!checked)} />
-              <Label htmlFor="coveredClothesline" className="text-sm">Tendedero cubierto</Label>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="flex items-center space-x-2">
+                <Checkbox id="laundryRoom" checked={formData.laundryRoom} onCheckedChange={checked => updateFormData("laundryRoom", !!checked)} />
+                <Label htmlFor="laundryRoom" className="text-sm">Lavadero</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="coveredClothesline" checked={formData.coveredClothesline} onCheckedChange={checked => updateFormData("coveredClothesline", !!checked)} />
+                <Label htmlFor="coveredClothesline" className="text-sm">Tendedero cubierto</Label>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </motion.div>
 
       <AnimatePresence>

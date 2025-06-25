@@ -49,6 +49,13 @@ export default function NinethPage({ listingId, onNext, onBack }: NinethPageProp
         if (listingId) {
           const details = await getListingDetails(Number(listingId))
           setListingDetails(details)
+          
+          // For solar and garage properties, skip this page entirely
+          if (details.propertyType === "solar" || details.propertyType === "garage") {
+            onNext()
+            return
+          }
+          
           setFormData(prev => ({
             ...prev,
             mainFloorType: details.mainFloorType || "",
@@ -64,7 +71,7 @@ export default function NinethPage({ listingId, onNext, onBack }: NinethPageProp
       }
     }
     fetchData()
-  }, [listingId])
+  }, [listingId, onNext])
 
   const handleNext = async () => {
     setSaving(true)

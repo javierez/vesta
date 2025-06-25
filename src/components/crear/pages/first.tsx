@@ -32,7 +32,7 @@ interface FirstPageFormData {
 }
 
 const initialFormData: FirstPageFormData = {
-  price: "",
+  price: "50000",
   listingType: "Sale",
   propertyType: "piso",
   agentId: "",
@@ -237,7 +237,7 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
         id="price"
         value={formFormatters?.formatPriceInput(formData.price) || formatPriceInput(formData.price)}
         onChange={handlePriceChange}
-        placeholder="Precio (€)"
+        placeholder="Precio"
         type="text"
       />
 
@@ -300,12 +300,13 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
         <h3 className="text-md font-medium text-gray-900">Tipo de Propiedad</h3>
         <div className="relative bg-gray-100 rounded-lg p-1 h-10">
           <motion.div
-            className="absolute top-1 left-1 w-[calc(25%-2px)] h-8 bg-white rounded-md shadow-sm"
+            className="absolute top-1 left-1 w-[calc(20%-2px)] h-8 bg-white rounded-md shadow-sm"
             animate={{
               x: formData.propertyType === "piso" ? 0 : 
                  formData.propertyType === "casa" ? "100%" :
                  formData.propertyType === "local" ? "200%" :
-                 "300%"
+                 formData.propertyType === "solar" ? "300%" :
+                 "400%"
             }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
@@ -353,6 +354,17 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
               )}
             >
               Solar
+            </button>
+            <button
+              onClick={() => updateFormData("propertyType", "garage")}
+              className={cn(
+                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
+                formData.propertyType === "garage"
+                  ? "text-gray-900"
+                  : "text-gray-600"
+              )}
+            >
+              Garaje
             </button>
           </div>
         </div>

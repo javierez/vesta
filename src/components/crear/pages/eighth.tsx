@@ -59,6 +59,13 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
         if (listingId) {
           const details = await getListingDetails(Number(listingId))
           setListingDetails(details)
+          
+          // For solar and garage properties, skip this page entirely
+          if (details.propertyType === "solar" || details.propertyType === "garage") {
+            onNext()
+            return
+          }
+          
           setFormData(prev => ({
             ...prev,
             terrace: details.terrace || false,
@@ -78,7 +85,7 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
       }
     }
     fetchData()
-  }, [listingId])
+  }, [listingId, onNext])
 
   const handleNext = async () => {
     setSaving(true)
