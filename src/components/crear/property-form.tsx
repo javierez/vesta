@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { Card } from "~/components/ui/card"
-import { Loader, Building2 } from "lucide-react"
+import { Loader, Building2, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useRouter } from "next/navigation"
 import { getListingDetails, getAllAgents } from "~/server/queries/listing"
 import { getAllPotentialOwners, getCurrentListingOwners } from "~/server/queries/contact"
 import ProgressBar from "./progress-bar"
@@ -90,6 +91,7 @@ interface GlobalFormData {
 }
 
 export default function PropertyForm({ listingId }: PropertyFormProps) {
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [direction, setDirection] = useState<"forward" | "backward">("forward")
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -103,6 +105,11 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     currentContacts: [],
     staticOptions: STATIC_FORM_OPTIONS
   })
+
+  // Handle form close
+  const handleCloseForm = () => {
+    router.push('/propiedades')
+  }
 
   // Pre-fetch ALL data once - no more redundant API calls in child components
   useEffect(() => {
@@ -333,16 +340,25 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-2xl mx-auto">
-        <Card className="p-6">
+        <Card className="p-6 relative">
+          {/* Close Button */}
+          <button
+            onClick={handleCloseForm}
+            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200 z-10"
+            aria-label="Cerrar formulario"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
           <div className="mb-4">
 
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-700 to-yellow-800 bg-clip-text text-transparent mb-3 mt-2 text-center">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-700 to-yellow-800 bg-clip-text text-transparent mb-3 mt-2 text-center tracking-tight">
               ALTA NUEVO INMUEBLE
             </h1>
 
             <div className="w-24 h-1 bg-gradient-to-r from-gray-700 to-yellow-800 mx-auto rounded-full mb-4"></div>
 
-            <p className="text-gray-500 text-center mb-8">
+            <p className="text-gray-500 text-center mb-8 text-sm tracking-tight">
               Completa la información del inmueble paso a paso
             </p>
             

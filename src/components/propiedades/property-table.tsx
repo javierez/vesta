@@ -9,26 +9,16 @@ import {
   TableRow,
 } from "~/components/ui/table"
 import { formatPrice } from "~/lib/utils"
-import { Button } from "~/components/ui/button"
-import { ExternalLink, Pencil, Map, ArrowUpDown, Bath, Bed, Square, User, Building2 } from "lucide-react"
-import Link from "next/link"
+import { Map, Bath, Bed, Square, User, Building2 } from "lucide-react"
 import { Badge } from "~/components/ui/badge"
 import { cn } from "~/lib/utils"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { handleImageError } from "~/lib/images"
 import type { ListingOverview } from "~/types/listing"
 
 interface PropertyTableProps {
   listings: ListingOverview[]
-}
-
-const propertyTypeColors: Record<string, string> = {
-  piso: "bg-sky-50 text-sky-700 border-sky-200",
-  casa: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  local: "bg-orange-50 text-orange-700 border-orange-200",
-  solar: "bg-amber-50 text-amber-700 border-amber-200",
-  garaje: "bg-slate-50 text-slate-700 border-slate-200"
 }
 
 const statusColors: Record<string, string> = {
@@ -44,7 +34,7 @@ const statusLabels: Record<string, string> = {
 }
 
 export function PropertyTable({ listings }: PropertyTableProps) {
-  const [sortField, setSortField] = useState<string | null>(null)
+  const router = useRouter()
   const defaultPlaceholder = "/properties/suburban-dream.png"
 
   const getPropertyTypeLabel = (type: string | null) => {
@@ -80,7 +70,11 @@ export function PropertyTable({ listings }: PropertyTableProps) {
           </TableHeader>
           <TableBody>
             {listings.map((listing) => (
-              <TableRow key={listing.listingId.toString()}>
+              <TableRow 
+                key={listing.listingId.toString()}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => router.push(`/propiedades/${listing.listingId}`)}
+              >
                 <TableCell className="w-[100px] min-w-[100px] py-0">
                   <div className="relative w-[72px] h-[48px] rounded-md overflow-hidden">
                     <Image
@@ -147,7 +141,7 @@ export function PropertyTable({ listings }: PropertyTableProps) {
                     {listing.propertyType !== "local" && listing.propertyType !== "garaje" && listing.bathrooms !== null && (
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Bath className="mr-1 h-4 w-4" />
-                        {listing.bathrooms}
+                        {Math.floor(Number(listing.bathrooms))}
                       </div>
                     )}
                     {listing.squareMeter !== null && (

@@ -80,10 +80,18 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
     if (globalFormData?.listingDetails) {
       const details = globalFormData.listingDetails
       
+      // Convert price from float to integer for display
+      let displayPrice = ""
+      if (details.price) {
+        // If price is a float (e.g., 3.00), convert to integer
+        const priceValue = typeof details.price === 'number' ? details.price : parseFloat(details.price)
+        displayPrice = Math.floor(priceValue).toString()
+      }
+      
       // Pre-populate form with existing data
       setFormData(prev => ({
         ...prev,
-        price: details.price || "",
+        price: displayPrice,
         listingType: details.listingType || "Sale",
         propertyType: details.propertyType || "piso",
         agentId: details.agentId ? details.agentId.toString() : "",

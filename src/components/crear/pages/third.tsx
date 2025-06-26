@@ -5,7 +5,7 @@ import { Button } from "~/components/ui/button"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { ChevronLeft, ChevronRight, Loader, CheckCircle } from "lucide-react"
 import { motion } from "framer-motion"
-import { updatePropertyLocation } from "~/server/queries/properties"
+import { updatePropertyLocation, updateProperty } from "~/server/queries/properties"
 import { useSearchParams } from "next/navigation"
 import FormSkeleton from "./form-skeleton"
 
@@ -80,6 +80,33 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
 
   const handleInputChange = (field: keyof ThirdPageFormData) => (value: string) => {
     updateFormData(field, value)
+  }
+
+  // Function to get property type text (similar to property-characteristics-form.tsx)
+  const getPropertyTypeText = (type: string) => {
+    switch (type) {
+      case 'piso':
+        return 'Piso'
+      case 'casa':
+        return 'Casa'
+      case 'local':
+        return 'Local'
+      case 'solar':
+        return 'Solar'
+      case 'garaje':
+        return 'Garaje'
+      default:
+        return type
+    }
+  }
+
+  // Function to generate title (similar to property-characteristics-form.tsx)
+  const generateTitle = () => {
+    const type = getPropertyTypeText(globalFormData?.listingDetails?.propertyType || 'piso')
+    const street = formData.street || globalFormData?.listingDetails?.street || ''
+    const neighborhood = formData.neighborhood || globalFormData?.listingDetails?.neighborhood ? 
+      `(${formData.neighborhood || globalFormData?.listingDetails?.neighborhood})` : ''
+    return `${type} en ${street} ${neighborhood}`.trim()
   }
 
   const autoCompleteAddress = async () => {
@@ -166,6 +193,7 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
     if (globalFormData?.listingDetails?.propertyId) {
       console.log("Saving third page location data") // Debug log
       
+      // First save the location data
       updatePropertyLocation(Number(globalFormData.listingDetails.propertyId), {
         street: formData.street,
         addressDetails: formData.addressDetails,
@@ -176,6 +204,16 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
         neighborhood: formData.neighborhood,
       }).then(() => {
         console.log("Third page location data saved successfully") // Debug log
+        
+        // After location is saved, generate and save the title
+        const generatedTitle = generateTitle()
+        console.log("Generated title:", generatedTitle) // Debug log
+        
+        return updateProperty(Number(globalFormData.listingDetails.propertyId), {
+          title: generatedTitle
+        })
+      }).then(() => {
+        console.log("Title saved successfully") // Debug log
         // Refresh global data after successful save
         refreshListingDetails?.()
       }).catch((error: any) => {

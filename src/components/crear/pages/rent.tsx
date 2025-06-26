@@ -103,7 +103,7 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
     }
 
     // Navigate IMMEDIATELY (optimistic) - finish form instantly!
-    router.push("/propiedades")
+    router.push(`/propiedades/${globalFormData.listingDetails.listingId}`)
     
     // Save data in background (completely silent)
     saveInBackground()

@@ -1,7 +1,6 @@
 "use client"
 
 import { Input } from "~/components/ui/input"
-import { Button } from "~/components/ui/button"
 import { Search } from "lucide-react"
 import { useState } from "react"
 
@@ -40,7 +39,7 @@ export function PropertySearch({
         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder={placeholder}
-          className="pl-8 w-full"
+          className="pl-8 w-full border-0 shadow-md"
           value={value}
           onChange={handleChange}
           onKeyPress={handleKeyPress}

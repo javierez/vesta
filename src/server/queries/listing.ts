@@ -262,6 +262,9 @@ export async function listListings(
       whereConditions.push(eq(listings.isActive, true));
     }
 
+    // Always filter for Active status listings
+    whereConditions.push(eq(listings.status, 'Active'));
+
     // Create the base query with property, location, agent, and owner details
     const query = db
       .select({
@@ -398,7 +401,7 @@ export async function listListings(
       .offset(offset);
 
     // Log the results
-    console.log(`Found ${allListings.length} listings with owner information:`);
+    console.log(`Found ${allListings.length} active listings with owner information:`);
     allListings.forEach((listing, index) => {
       console.log(`${index + 1}. Listing ID: ${listing.listingId}, Property: ${listing.title}, Agent: ${listing.agentName}, Owner: ${listing.owner || 'No owner found'}`);
     });
@@ -609,8 +612,8 @@ export async function createDefaultListing(propertyId: number) {
       propertyId: BigInt(propertyId),
       agentId: BigInt(1), // Default agent ID
       listingType: "Sale" as const,
-      price: "50000", // Default price as string (decimal type)
-      status: "En Proceso" as const, // Default status in Spanish
+      price: "0", // Default price as string (decimal type)
+      status: "Draft" as const, // Default status in Spanish
       // All other fields will be null/undefined by default
     };
 
@@ -625,6 +628,33 @@ export async function createDefaultListing(propertyId: number) {
     return newListing;
   } catch (error) {
     console.error("Error creating default listing:", error);
+    throw error;
+  }
+}
+
+// Get draft listings with property and location information
+export async function getDraftListings() {
+  try {
+    const draftListings = await db
+      .select({
+        listingId: listings.listingId,
+        street: properties.street,
+        city: locations.city,
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .where(
+        and(
+          eq(listings.status, 'Draft'),
+          eq(listings.isActive, true)
+        )
+      )
+      .orderBy(listings.createdAt);
+
+    return draftListings;
+  } catch (error) {
+    console.error("Error fetching draft listings:", error);
     throw error;
   }
 }

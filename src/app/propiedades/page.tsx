@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
-import { Plus } from "lucide-react"
+import { Plus, FileText } from "lucide-react"
 import Link from "next/link"
 import { PropertyCardSkeleton } from "~/components/property-card-skeleton"
 import { PropertyFilter } from "~/components/propiedades/property-filter"
@@ -113,12 +113,19 @@ export default function PropertiesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Propiedades</h1>
-        <Button asChild>
-          <Link href="/propiedades/crear">
-            <Plus className="mr-2 h-4 w-4" />
-            Agregar Propiedad
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link href="/propiedades/crear">
+              <Plus className="mr-2 h-4 w-4" />
+              Agregar Propiedad
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/propiedades/borradores">
+              <FileText className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <PropertyFilter 
