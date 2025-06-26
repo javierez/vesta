@@ -49,7 +49,7 @@ const initialFormData: SeventhPageFormData = {
   coveredClothesline: false,
 }
 
-export default function SeventhPage({ listingId, globalFormData, onNext, onBack }: SeventhPageProps) {
+export default function SeventhPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: SeventhPageProps) {
   const [formData, setFormData] = useState<SeventhPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [propertyType, setPropertyType] = useState<string>("")
@@ -102,6 +102,10 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack 
     // Fire and forget - no await, no blocking!
     if (globalFormData?.listingDetails?.propertyId) {
       const updateData: any = {
+        views: formData.views,
+        mountainViews: formData.mountainViews,
+        seaViews: formData.seaViews,
+        beachfront: formData.beachfront,
         jacuzzi: formData.jacuzzi,
         hydromassage: formData.hydromassage,
         garden: formData.garden,
@@ -118,11 +122,19 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack 
         updateData.formPosition = 8
       }
 
-      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).catch((error: any) => {
+      console.log("Saving seventh page data:", updateData) // Debug log
+
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
+        console.log("Seventh page data saved successfully") // Debug log
+        // Refresh global data after successful save
+        refreshListingDetails?.()
+      }).catch((error: any) => {
         console.error("Error saving form data:", error)
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
       })
+    } else {
+      console.warn("No propertyId found in globalFormData.listingDetails for seventh page") // Debug log
     }
   }
 

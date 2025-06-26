@@ -28,7 +28,8 @@ interface SecondPageFormData {
   squareMeter: string
   builtSurfaceArea: string
   yearBuilt: string
-  floor: string
+  lastRenovationYear: string
+  isRenovated: boolean
   buildingFloors: string
 }
 
@@ -38,7 +39,8 @@ const initialFormData: SecondPageFormData = {
   squareMeter: "80",
   builtSurfaceArea: "85",
   yearBuilt: "2000",
-  floor: "",
+  lastRenovationYear: "",
+  isRenovated: false,
   buildingFloors: "",
 }
 
@@ -62,7 +64,8 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
         squareMeter: details.squareMeter?.toString() || "80",
         builtSurfaceArea: details.builtSurfaceArea?.toString() || "85",
         yearBuilt: details.yearBuilt?.toString() || "2000",
-        floor: details.floor?.toString() || "",
+        lastRenovationYear: details.lastRenovationYear?.toString() || "",
+        isRenovated: details.lastRenovationYear && details.lastRenovationYear !== details.yearBuilt,
         buildingFloors: details.buildingFloors?.toString() || "",
       }))
     }
@@ -154,13 +157,14 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
   // Background save function - completely silent and non-blocking
   const saveInBackground = () => {
     // Fire and forget - no await, no blocking!
-    if (globalFormData?.propertyId) {
+    if (globalFormData?.listingDetails?.propertyId) {
       const updateData: any = {
         squareMeter: Number(formData.squareMeter),
       }
 
       // Only update formPosition if current position is lower than 3
-      if (!globalFormData.formPosition || globalFormData.formPosition < 3) {
+      const currentFormPosition = globalFormData.listingDetails.formPosition || 1
+      if (currentFormPosition < 3) {
         updateData.formPosition = 3
       }
 
@@ -169,13 +173,16 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
         updateData.yearBuilt = Number(formData.yearBuilt)
         updateData.bedrooms = Number(formData.bedrooms)
         updateData.bathrooms = Number(formData.bathrooms)
-        updateData.builtSurfaceArea = formData.builtSurfaceArea ? Number(formData.builtSurfaceArea).toString() : ""
+        updateData.builtSurfaceArea = formData.builtSurfaceArea ? Number(formData.builtSurfaceArea) : null
         // Set renovation year to construction year if not renovated, otherwise use selected year
-        updateData.floor = formData.floor ? Number(formData.floor) : undefined
+        updateData.lastRenovationYear = formData.isRenovated ? Number(formData.lastRenovationYear) : Number(formData.yearBuilt)
         updateData.buildingFloors = formData.buildingFloors ? Number(formData.buildingFloors) : undefined
       }
 
-      updateProperty(Number(globalFormData.propertyId), updateData).then(() => {
+      console.log("Saving second page data:", updateData) // Debug log
+
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
+        console.log("Second page data saved successfully") // Debug log
         // Refresh global data after successful save
         refreshListingDetails?.()
       }).catch(error => {
@@ -183,6 +190,8 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
       })
+    } else {
+      console.warn("No propertyId found in globalFormData.listingDetails") // Debug log
     }
   }
 
@@ -256,42 +265,82 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
         </div>
       )}
 
-      {/* Floor - Only show for piso, casa, local */}
+      {/* Renovation Question - Only show for piso, casa, local */}
       {propertyType !== "solar" && propertyType !== "garage" && (
         <div className="space-y-2">
-          <label htmlFor="floor" className="text-xs font-medium text-gray-600">
-            Piso
-          </label>
-          <Input
-            id="floor"
-            value={formData.floor}
-            onChange={handleEventInputChange("floor")}
-            placeholder="Número de piso"
-            type="number"
-            min="0"
-            step="1"
-            className="h-10 placeholder:text-gray-400 shadow-md border-0"
-          />
+          <h3 className="text-sm font-medium text-gray-900">¿Reformado?</h3>
+          <div className="relative bg-gray-100 rounded-lg p-1 h-8">
+            <motion.div
+              className="absolute top-1 left-1 w-[calc(50%-2px)] h-6 bg-white rounded-md shadow-sm"
+              animate={{
+                x: formData.isRenovated ? "calc(100% - 5px)" : 0
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            />
+            <div className="relative flex h-full">
+              <button
+                onClick={() => {
+                  updateFormData("isRenovated", "false")
+                  // Set renovation year to construction year when "No" is selected
+                  updateFormData("lastRenovationYear", formData.yearBuilt)
+                }}
+                className={cn(
+                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
+                  !formData.isRenovated
+                    ? "text-gray-900"
+                    : "text-gray-600"
+                )}
+              >
+                No
+              </button>
+              <button
+                onClick={() => updateFormData("isRenovated", "true")}
+                className={cn(
+                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
+                  formData.isRenovated
+                    ? "text-gray-900"
+                    : "text-gray-600"
+                )}
+              >
+                Sí
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Building Floors - Only show for piso, casa, local */}
+      {/* Last Renovation Year and Building Floors - Only show for piso, casa, local */}
       {propertyType !== "solar" && propertyType !== "garage" && (
-        <div className="space-y-2">
-          <label htmlFor="buildingFloors" className="text-xs font-medium text-gray-600">
-            Plantas del Edificio
-          </label>
-          <Input
-            id="buildingFloors"
-            value={formData.buildingFloors}
-            onChange={handleEventInputChange("buildingFloors")}
-            placeholder="Número de plantas"
-            type="number"
-            min="0"
-            step="1"
-            className="h-10 placeholder:text-gray-400 shadow-md border-0"
-          />
-        </div>
+        <>
+          {formData.isRenovated && (
+            <div className="space-y-2">
+              <YearSlider
+                label="Año de Última Reforma"
+                value={Number(formData.lastRenovationYear) || 2000}
+                onChange={val => updateFormData("lastRenovationYear", val.toString())}
+                min={1900}
+                max={new Date().getFullYear()}
+                placeholder="Año de última reforma"
+              />
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label htmlFor="buildingFloors" className="text-xs font-medium text-gray-600">
+              Plantas del Edificio
+            </label>
+            <Input
+              id="buildingFloors"
+              value={formData.buildingFloors}
+              onChange={handleEventInputChange("buildingFloors")}
+              placeholder="Número de plantas"
+              type="number"
+              min="0"
+              step="1"
+              className="h-10 placeholder:text-gray-400 shadow-md border-0"
+            />
+          </div>
+        </>
       )}
 
       {/* Save Error Notification */}

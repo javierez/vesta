@@ -10,7 +10,7 @@ import { ChevronLeft, ChevronRight, GraduationCap, PawPrint, Zap, Car, Package, 
 import { motion, AnimatePresence } from "framer-motion"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { updateProperty } from "~/server/queries/properties"
-import { createListing } from "~/server/queries/listing"
+import { createListing, updateListing } from "~/server/queries/listing"
 import { formFormatters } from "~/lib/utils"
 import { cn } from "~/lib/utils"
 import { Input } from "~/components/ui/input"
@@ -123,6 +123,15 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
         console.error("Error updating property:", error)
       })
 
+      // Update the sale listing status to 'Active'
+      if (globalFormData.listingDetails.listingId) {
+        updateListing(Number(globalFormData.listingDetails.listingId), {
+          status: "Active"
+        }).catch((error: any) => {
+          console.error("Error updating sale listing status:", error)
+        })
+      }
+
       // Only create rental listing if it's a sale property and user wants to duplicate for rent
       if (isSaleListing && formData.duplicateForRent) {
         createListing({
@@ -137,7 +146,7 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
           optionalStorageRoomPrice: formData.optionalStorageRoomPrice.toString(),
           hasKeys: false,
           optionalStorageRoom: false,
-          status: "active"
+          status: "Active"
         } as any).catch((error: any) => {
           console.error("Error creating rental listing:", error)
         })
@@ -268,42 +277,44 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
 
             {/* Rental Characteristics - Hide for solar and garage properties */}
             {propertyType !== "solar" && propertyType !== "garage" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Student Friendly - Hide for local properties */}
-                {propertyType !== "local" && (
-                  <div className="space-y-4 p-4 rounded-lg shadow-md">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-xs font-medium text-gray-600">Estudiantes</h4>
-                      <GraduationCap className="h-4 w-4 text-gray-400" />
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Student Friendly - Hide for local properties */}
+                  {propertyType !== "local" && (
+                    <div className="space-y-4 p-4 rounded-lg shadow-md">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-xs font-medium text-gray-600">Estudiantes</h4>
+                        <GraduationCap className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="studentFriendly" 
+                          checked={formData.studentFriendly} 
+                          onCheckedChange={checked => updateFormData("studentFriendly", !!checked)} 
+                        />
+                        <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="studentFriendly" 
-                        checked={formData.studentFriendly} 
-                        onCheckedChange={checked => updateFormData("studentFriendly", !!checked)} 
-                      />
-                      <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
-                    </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Pets Allowed - Hide for local properties */}
-                {propertyType !== "local" && (
-                  <div className="space-y-4 p-4 rounded-lg shadow-md">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-xs font-medium text-gray-600">Mascotas</h4>
-                      <PawPrint className="h-4 w-4 text-gray-400" />
+                  {/* Pets Allowed - Hide for local properties */}
+                  {propertyType !== "local" && (
+                    <div className="space-y-4 p-4 rounded-lg shadow-md">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-xs font-medium text-gray-600">Mascotas</h4>
+                        <PawPrint className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="petsAllowed" 
+                          checked={formData.petsAllowed} 
+                          onCheckedChange={checked => updateFormData("petsAllowed", !!checked)} 
+                        />
+                        <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="petsAllowed" 
-                        checked={formData.petsAllowed} 
-                        onCheckedChange={checked => updateFormData("petsAllowed", !!checked)} 
-                      />
-                      <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Appliances Included - Show for all property types except solar and garage */}
                 <div className="space-y-4 p-4 rounded-lg shadow-md">
@@ -320,7 +331,7 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
                     <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
                   </div>
                 </div>
-              </div>
+              </>
             )}
           </motion.div>
         )}
@@ -395,42 +406,44 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
       >
         {/* Rental Characteristics - Hide for solar and garage properties */}
         {propertyType !== "solar" && propertyType !== "garage" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Student Friendly - Hide for local properties */}
-            {propertyType !== "local" && (
-              <div className="space-y-4 p-4 rounded-lg shadow-md">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-medium text-gray-600">Estudiantes</h4>
-                  <GraduationCap className="h-4 w-4 text-gray-400" />
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Student Friendly - Hide for local properties */}
+              {propertyType !== "local" && (
+                <div className="space-y-4 p-4 rounded-lg shadow-md">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-medium text-gray-600">Estudiantes</h4>
+                    <GraduationCap className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="studentFriendly" 
+                      checked={formData.studentFriendly} 
+                      onCheckedChange={checked => updateFormData("studentFriendly", !!checked)} 
+                    />
+                    <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="studentFriendly" 
-                    checked={formData.studentFriendly} 
-                    onCheckedChange={checked => updateFormData("studentFriendly", !!checked)} 
-                  />
-                  <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* Pets Allowed - Hide for local properties */}
-            {propertyType !== "local" && (
-              <div className="space-y-4 p-4 rounded-lg shadow-md">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-medium text-gray-600">Mascotas</h4>
-                  <PawPrint className="h-4 w-4 text-gray-400" />
+              {/* Pets Allowed - Hide for local properties */}
+              {propertyType !== "local" && (
+                <div className="space-y-4 p-4 rounded-lg shadow-md">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-medium text-gray-600">Mascotas</h4>
+                    <PawPrint className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="petsAllowed" 
+                      checked={formData.petsAllowed} 
+                      onCheckedChange={checked => updateFormData("petsAllowed", !!checked)} 
+                    />
+                    <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="petsAllowed" 
-                    checked={formData.petsAllowed} 
-                    onCheckedChange={checked => updateFormData("petsAllowed", !!checked)} 
-                  />
-                  <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Appliances Included - Show for all property types except solar and garage */}
             <div className="space-y-4 p-4 rounded-lg shadow-md">
@@ -447,7 +460,7 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
                 <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
               </div>
             </div>
-          </div>
+          </>
         )}
       </motion.div>
 

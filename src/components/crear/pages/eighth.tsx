@@ -42,7 +42,7 @@ const initialFormData: EighthPageFormData = {
   builtInWardrobes: false,
 }
 
-export default function EighthPage({ listingId, globalFormData, onNext, onBack }: EighthPageProps) {
+export default function EighthPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: EighthPageProps) {
   const [formData, setFormData] = useState<EighthPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [propertyType, setPropertyType] = useState<string>("")
@@ -91,12 +91,12 @@ export default function EighthPage({ listingId, globalFormData, onNext, onBack }
     if (globalFormData?.listingDetails?.propertyId) {
       const updateData: any = {
         terrace: formData.terrace,
-        terraceSize: formData.terraceSize || undefined,
+        terraceSize: formData.terraceSize,
         wineCellar: formData.wineCellar,
-        wineCellarSize: formData.wineCellarSize || undefined,
-        livingRoomSize: formData.livingRoomSize || undefined,
-        balconyCount: formData.balconyCount || undefined,
-        galleryCount: formData.galleryCount || undefined,
+        wineCellarSize: formData.wineCellarSize,
+        livingRoomSize: formData.livingRoomSize,
+        balconyCount: formData.balconyCount,
+        galleryCount: formData.galleryCount,
         builtInWardrobes: formData.builtInWardrobes,
       }
 
@@ -105,11 +105,19 @@ export default function EighthPage({ listingId, globalFormData, onNext, onBack }
         updateData.formPosition = 9
       }
 
-      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).catch((error: any) => {
+      console.log("Saving eighth page data:", updateData) // Debug log
+
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
+        console.log("Eighth page data saved successfully") // Debug log
+        // Refresh global data after successful save
+        refreshListingDetails?.()
+      }).catch((error: any) => {
         console.error("Error saving form data:", error)
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
       })
+    } else {
+      console.warn("No propertyId found in globalFormData.listingDetails for eighth page") // Debug log
     }
   }
 

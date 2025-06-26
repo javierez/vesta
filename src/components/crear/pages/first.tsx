@@ -33,7 +33,7 @@ interface FirstPageFormData {
 }
 
 const initialFormData: FirstPageFormData = {
-  price: "50000",
+  price: "",
   listingType: "Sale",
   propertyType: "piso",
   agentId: "",

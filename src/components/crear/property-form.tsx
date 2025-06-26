@@ -153,13 +153,18 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     fetchAllData()
   }, [listingId])
 
-  // Refresh only listing details (for saves)
+  // Refresh listing details and current contacts (for saves)
   const refreshListingDetails = useCallback(async () => {
     try {
-      const updatedDetails = await getListingDetails(Number(listingId))
+      const [updatedDetails, currentContacts] = await Promise.all([
+        getListingDetails(Number(listingId)),
+        getCurrentListingOwners(Number(listingId))
+      ])
+      
       setGlobalFormData(prev => ({
         ...prev,
-        listingDetails: updatedDetails
+        listingDetails: updatedDetails,
+        currentContacts: currentContacts.map(contact => contact.id.toString())
       }))
     } catch (error) {
       console.error("Error refreshing listing details:", error)
@@ -265,12 +270,9 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
       } : null
     }))
     
-    // Refresh listing details after every page to get latest data
-    // This ensures we have the most up-to-date information after saves
-    setTimeout(() => {
-      refreshListingDetails()
-    }, 100) // Small delay to allow background saves to complete
-  }, [currentStep, getNextNonSkippedStep, refreshListingDetails])
+    // Note: refreshListingDetails() is called by each page's background save
+    // No need to call it here as it can cause navigation conflicts
+  }, [currentStep, getNextNonSkippedStep])
 
   // Shared props for all form pages - no more individual data fetching!
   const sharedPageProps = useMemo(() => ({

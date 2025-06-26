@@ -31,7 +31,7 @@ const initialFormData: NinethPageFormData = {
   windowType: "",
 }
 
-export default function NinethPage({ listingId, globalFormData, onNext, onBack }: NinethPageProps) {
+export default function NinethPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: NinethPageProps) {
   const [formData, setFormData] = useState<NinethPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
 
@@ -84,11 +84,19 @@ export default function NinethPage({ listingId, globalFormData, onNext, onBack }
         updateData.formPosition = 10
       }
 
-      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).catch((error: any) => {
+      console.log("Saving nineth page data:", updateData) // Debug log
+
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
+        console.log("Nineth page data saved successfully") // Debug log
+        // Refresh global data after successful save
+        refreshListingDetails?.()
+      }).catch((error: any) => {
         console.error("Error saving form data:", error)
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
       })
+    } else {
+      console.warn("No propertyId found in globalFormData.listingDetails for nineth page") // Debug log
     }
   }
 

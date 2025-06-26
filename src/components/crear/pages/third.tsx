@@ -163,8 +163,10 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
   // Background save function - completely silent and non-blocking
   const saveInBackground = () => {
     // Fire and forget - no await, no blocking!
-    if (globalFormData?.propertyId) {
-      updatePropertyLocation(Number(globalFormData.propertyId), {
+    if (globalFormData?.listingDetails?.propertyId) {
+      console.log("Saving third page location data") // Debug log
+      
+      updatePropertyLocation(Number(globalFormData.listingDetails.propertyId), {
         street: formData.street,
         addressDetails: formData.addressDetails,
         postalCode: formData.postalCode,
@@ -173,6 +175,7 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
         municipality: formData.municipality,
         neighborhood: formData.neighborhood,
       }).then(() => {
+        console.log("Third page location data saved successfully") // Debug log
         // Refresh global data after successful save
         refreshListingDetails?.()
       }).catch((error: any) => {
@@ -180,6 +183,8 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
       })
+    } else {
+      console.warn("No propertyId found in globalFormData.listingDetails for location save") // Debug log
     }
   }
 

@@ -24,7 +24,7 @@ interface DescriptionPageProps {
   refreshListingDetails?: () => void
 }
 
-export default function DescriptionPage({ listingId, globalFormData, onNext, onBack }: DescriptionPageProps) {
+export default function DescriptionPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: DescriptionPageProps) {
   const [description, setDescription] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
@@ -77,11 +77,19 @@ export default function DescriptionPage({ listingId, globalFormData, onNext, onB
         updateData.formPosition = 11
       }
 
-      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).catch((error: any) => {
+      console.log("Saving description page data:", updateData) // Debug log
+
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
+        console.log("Description page data saved successfully") // Debug log
+        // Refresh global data after successful save
+        refreshListingDetails?.()
+      }).catch((error: any) => {
         console.error("Error saving form data:", error)
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
       })
+    } else {
+      console.warn("No propertyId found in globalFormData.listingDetails for description page") // Debug log
     }
   }
 

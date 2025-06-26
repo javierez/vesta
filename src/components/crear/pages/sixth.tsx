@@ -70,7 +70,7 @@ const hotWaterTypeOptions = [
   { value: "solar", label: "Solar" },
 ]
 
-export default function SixthPage({ listingId, globalFormData, onNext, onBack }: SixthPageProps) {
+export default function SixthPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: SixthPageProps) {
   const [formData, setFormData] = useState<SixthPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [propertyType, setPropertyType] = useState<string>("")
@@ -147,11 +147,19 @@ export default function SixthPage({ listingId, globalFormData, onNext, onBack }:
         updateData.formPosition = 7
       }
 
-      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).catch((error: any) => {
+      console.log("Saving sixth page data:", updateData) // Debug log
+
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
+        console.log("Sixth page data saved successfully") // Debug log
+        // Refresh global data after successful save
+        refreshListingDetails?.()
+      }).catch((error: any) => {
         console.error("Error saving form data:", error)
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
       })
+    } else {
+      console.warn("No propertyId found in globalFormData.listingDetails for sixth page") // Debug log
     }
   }
 
