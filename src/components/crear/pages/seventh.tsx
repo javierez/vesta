@@ -6,14 +6,15 @@ import { Label } from "~/components/ui/label"
 import { Checkbox } from "~/components/ui/checkbox"
 import { ChevronLeft, ChevronRight, Eye, Mountain, Waves, Home, Sparkles, Trees, Droplets, Flame, Music, Zap, WashingMachine, Shirt } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
 import FormSkeleton from "./form-skeleton"
 
 interface SeventhPageProps {
   listingId: string
+  globalFormData: any
   onNext: () => void
   onBack?: () => void
+  refreshListingDetails?: () => void
 }
 
 interface SeventhPageFormData {
@@ -48,100 +49,84 @@ const initialFormData: SeventhPageFormData = {
   coveredClothesline: false,
 }
 
-export default function SeventhPage({ listingId, onNext, onBack }: SeventhPageProps) {
+export default function SeventhPage({ listingId, globalFormData, onNext, onBack }: SeventhPageProps) {
   const [formData, setFormData] = useState<SeventhPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [listingDetails, setListingDetails] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [propertyType, setPropertyType] = useState<string>("")
 
   const updateFormData = (field: keyof SeventhPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // Fetch listing details on component mount
+  // Use centralized data instead of fetching
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        if (listingId) {
-          const details = await getListingDetails(Number(listingId))
-          setListingDetails(details)
-          setPropertyType(details.propertyType || "")
-          
-          // For garage properties, skip this page entirely
-          if (details.propertyType === "garage") {
-            onNext()
-            return
-          }
-          
-          setFormData(prev => ({
-            ...prev,
-            views: details.views || false,
-            mountainViews: details.mountainViews || false,
-            seaViews: details.seaViews || false,
-            beachfront: details.beachfront || false,
-            jacuzzi: details.jacuzzi || false,
-            hydromassage: details.hydromassage || false,
-            fireplace: details.fireplace || false,
-            garden: details.garden || false,
-            pool: details.pool || false,
-            homeAutomation: details.homeAutomation || false,
-            musicSystem: details.musicSystem || false,
-            laundryRoom: details.laundryRoom || false,
-            coveredClothesline: details.coveredClothesline || false,
-          }))
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setIsLoading(false)
+    if (globalFormData?.listingDetails) {
+      const details = globalFormData.listingDetails
+      setPropertyType(details.propertyType || "")
+      
+      // For garage properties, skip this page entirely
+      if (details.propertyType === "garage") {
+        onNext()
+        return
       }
+      
+      setFormData(prev => ({
+        ...prev,
+        views: details.views || false,
+        mountainViews: details.mountainViews || false,
+        seaViews: details.seaViews || false,
+        beachfront: details.beachfront || false,
+        jacuzzi: details.jacuzzi || false,
+        hydromassage: details.hydromassage || false,
+        fireplace: details.fireplace || false,
+        garden: details.garden || false,
+        pool: details.pool || false,
+        homeAutomation: details.homeAutomation || false,
+        musicSystem: details.musicSystem || false,
+        laundryRoom: details.laundryRoom || false,
+        coveredClothesline: details.coveredClothesline || false,
+      }))
     }
-    fetchData()
-  }, [listingId, onNext])
+  }, [globalFormData?.listingDetails, onNext])
 
-  const handleNext = async () => {
-    setSaving(true)
-    setSaveError(null)
-    try {
-      if (listingDetails?.propertyId) {
-        const updateData: any = {
-          views: formData.views,
-          mountainViews: formData.mountainViews,
-          seaViews: formData.seaViews,
-          beachfront: formData.beachfront,
-          jacuzzi: formData.jacuzzi,
-          hydromassage: formData.hydromassage,
-          fireplace: formData.fireplace,
-          garden: formData.garden,
-          pool: formData.pool,
-          homeAutomation: formData.homeAutomation,
-          musicSystem: formData.musicSystem,
-          laundryRoom: formData.laundryRoom,
-          coveredClothesline: formData.coveredClothesline,
-        }
+  const handleNext = () => {
+    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    onNext()
+    
+    // Save data in background (completely silent)
+    saveInBackground()
+  }
 
-        // Only update formPosition if current position is lower than 8
-        if (!listingDetails.formPosition || listingDetails.formPosition < 8) {
-          updateData.formPosition = 8
-        }
-
-        await updateProperty(Number(listingDetails.propertyId), updateData)
+  // Background save function - completely silent and non-blocking
+  const saveInBackground = () => {
+    // Fire and forget - no await, no blocking!
+    if (globalFormData?.listingDetails?.propertyId) {
+      const updateData: any = {
+        jacuzzi: formData.jacuzzi,
+        hydromassage: formData.hydromassage,
+        garden: formData.garden,
+        pool: formData.pool,
+        homeAutomation: formData.homeAutomation,
+        musicSystem: formData.musicSystem,
+        laundryRoom: formData.laundryRoom,
+        coveredClothesline: formData.coveredClothesline,
+        fireplace: formData.fireplace,
       }
-      // Refresh listing details after saving
-      const updatedDetails = await getListingDetails(Number(listingId))
-      setListingDetails(updatedDetails)
-      onNext()
-    } catch (error) {
-      console.error("Error saving form data:", error)
-      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
-      setSaving(false)
+
+      // Only update formPosition if current position is lower than 8
+      if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 8) {
+        updateData.formPosition = 8
+      }
+
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).catch((error: any) => {
+        console.error("Error saving form data:", error)
+        // Silent error - user doesn't know it failed
+        // Could implement retry logic here if needed
+      })
     }
   }
 
-  if (isLoading || saving) {
+  if (!globalFormData?.listingDetails) {
     return <FormSkeleton />
   }
 

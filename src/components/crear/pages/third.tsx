@@ -5,15 +5,16 @@ import { Button } from "~/components/ui/button"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { ChevronLeft, ChevronRight, Loader, CheckCircle } from "lucide-react"
 import { motion } from "framer-motion"
-import { getListingDetails } from "~/server/queries/listing"
 import { updatePropertyLocation } from "~/server/queries/properties"
 import { useSearchParams } from "next/navigation"
 import FormSkeleton from "./form-skeleton"
 
 interface ThirdPageProps {
   listingId: string
+  globalFormData: any
   onNext: () => void
   onBack?: () => void
+  refreshListingDetails?: () => void
 }
 
 // Form data interface for third page
@@ -37,16 +38,14 @@ const initialFormData: ThirdPageFormData = {
   neighborhood: "",
 }
 
-export default function ThirdPage({ listingId, onNext, onBack }: ThirdPageProps) {
+export default function ThirdPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: ThirdPageProps) {
   const [formData, setFormData] = useState<ThirdPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [listingDetails, setListingDetails] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false)
   const [autoCompletionSuccess, setAutoCompletionSuccess] = useState(false)
   const [hasLocationChanged, setHasLocationChanged] = useState(false)
   const searchParams = useSearchParams()
-  const method = searchParams.get('method')
+  const method = searchParams?.get('method')
 
   // Check if method is manual - if so, skip this page
   useEffect(() => {
@@ -56,39 +55,26 @@ export default function ThirdPage({ listingId, onNext, onBack }: ThirdPageProps)
     }
   }, [method, onNext])
 
-  // Fetch listing details on component mount
+  // Use centralized data instead of fetching
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Fetch listing details first
-        if (listingId) {
-          const details = await getListingDetails(Number(listingId))
-          setListingDetails(details)
-          
-          // Pre-populate form with existing data
-          setFormData(prev => ({
-            ...prev,
-            street: details.street || "",
-            addressDetails: details.addressDetails || "",
-            postalCode: details.postalCode || "",
-            city: details.city || "",
-            province: details.province || "",
-            municipality: details.municipality || "",
-            neighborhood: details.neighborhood || "",
-          }))
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setIsLoading(false)
-      }
+    if (globalFormData?.listingDetails) {
+      const details = globalFormData.listingDetails
+      
+      // Pre-populate form with existing data
+      setFormData(prev => ({
+        ...prev,
+        street: details.street || "",
+        addressDetails: details.addressDetails || "",
+        postalCode: details.postalCode || "",
+        city: details.city || "",
+        province: details.province || "",
+        municipality: details.municipality || "",
+        neighborhood: details.neighborhood || "",
+      }))
     }
-    fetchData()
-  }, [listingId])
+  }, [globalFormData?.listingDetails])
 
-  const updateFormData = (field: keyof ThirdPageFormData, value: any) => {
+  const updateFormData = (field: keyof ThirdPageFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -155,7 +141,7 @@ export default function ThirdPage({ listingId, onNext, onBack }: ThirdPageProps)
     }
   }
 
-  const handleNext = async () => {
+  const handleNext = () => {
     // Validate required fields
     if (!formData.street.trim()) {
       alert("Por favor, introduce la calle.")
@@ -167,33 +153,33 @@ export default function ThirdPage({ listingId, onNext, onBack }: ThirdPageProps)
       return
     }
 
-    // Clear any previous save errors
-    setSaveError(null)
+    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    onNext()
+    
+    // Save data in background (completely silent)
+    saveInBackground()
+  }
 
-    // Save data in the background without blocking the UI
-    try {
-      // Use the server action to update property location
-      if (listingDetails?.propertyId) {
-        await updatePropertyLocation(Number(listingDetails.propertyId), {
-          street: formData.street,
-          addressDetails: formData.addressDetails,
-          postalCode: formData.postalCode,
-          city: formData.city,
-          province: formData.province,
-          municipality: formData.municipality,
-          neighborhood: formData.neighborhood,
-        })
-      }
-
-      // Refresh listing details after saving
-      const updatedDetails = await getListingDetails(Number(listingId))
-      setListingDetails(updatedDetails)
-
-      // Proceed to next step
-      onNext()
-    } catch (error) {
-      console.error("Error saving form data:", error)
-      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
+  // Background save function - completely silent and non-blocking
+  const saveInBackground = () => {
+    // Fire and forget - no await, no blocking!
+    if (globalFormData?.propertyId) {
+      updatePropertyLocation(Number(globalFormData.propertyId), {
+        street: formData.street,
+        addressDetails: formData.addressDetails,
+        postalCode: formData.postalCode,
+        city: formData.city,
+        province: formData.province,
+        municipality: formData.municipality,
+        neighborhood: formData.neighborhood,
+      }).then(() => {
+        // Refresh global data after successful save
+        refreshListingDetails?.()
+      }).catch((error: any) => {
+        console.error("Error saving form data:", error)
+        // Silent error - user doesn't know it failed
+        // Could implement retry logic here if needed
+      })
     }
   }
 
@@ -202,10 +188,9 @@ export default function ThirdPage({ listingId, onNext, onBack }: ThirdPageProps)
     return null
   }
 
-  if (isLoading) {
-    return (
-      <FormSkeleton />
-    )
+  // Show loading only if globalFormData is not ready
+  if (!globalFormData?.listingDetails) {
+    return <FormSkeleton />
   }
 
   return (

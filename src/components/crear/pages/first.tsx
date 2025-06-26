@@ -10,16 +10,17 @@ import { cn } from "~/lib/utils"
 import { formFormatters } from "~/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { getAllAgents, getListingDetails } from "~/server/queries/listing"
-import { getAllPotentialOwners, getCurrentListingOwners, updateListingOwners } from "~/server/queries/contact"
 import { updateProperty } from "~/server/queries/properties"
 import { updateListing } from "~/server/queries/listing"
+import { updateListingOwners } from "~/server/queries/contact"
 import FormSkeleton from "./form-skeleton"
 
 interface FirstPageProps {
   listingId: string
+  globalFormData: any
   onNext: () => void
   onBack?: () => void
+  refreshListingDetails?: () => void
 }
 
 // Form data interface for first page
@@ -39,16 +40,10 @@ const initialFormData: FirstPageFormData = {
   selectedContactIds: [],
 }
 
-export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps) {
+export default function FirstPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: FirstPageProps) {
   const [formData, setFormData] = useState<FirstPageFormData>(initialFormData)
   const [showListingTypeTooltip, setShowListingTypeTooltip] = useState(false)
-  const [agents, setAgents] = useState<Array<{id: number, name: string}>>([])
-  const [contacts, setContacts] = useState<Array<{id: number, name: string}>>([])
   const [contactSearch, setContactSearch] = useState("")
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const [listingDetails, setListingDetails] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
 
   // Fallback price formatting functions in case formFormatters is undefined
   const formatPriceInput = (value: string | number): string => {
@@ -80,57 +75,22 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
     }
   }, [showListingTypeTooltip])
 
-  // Fetch listing details, agents and contacts on component mount
+  // Use centralized data instead of fetching
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Fetch listing details first
-        if (listingId) {
-          const details = await getListingDetails(Number(listingId))
-          setListingDetails(details)
-          
-          // Pre-populate form with existing data
-          setFormData(prev => ({
-            ...prev,
-            price: details.price || "",
-            listingType: details.listingType || "Sale",
-            propertyType: details.propertyType || "piso",
-            agentId: details.agentId ? details.agentId.toString() : "",
-          }))
-        }
-
-        // Fetch agents
-        const agentsList = await getAllAgents()
-        setAgents(agentsList.map(agent => ({
-          id: Number(agent.id),
-          name: agent.name
-        })))
-
-        // Fetch contacts (potential owners)
-        const contactsList = await getAllPotentialOwners()
-        setContacts(contactsList.map(contact => ({
-          id: Number(contact.id),
-          name: contact.name
-        })))
-
-        // Load current contacts for this listing
-        if (listingId) {
-          const currentContacts = await getCurrentListingOwners(Number(listingId))
-          setFormData(prev => ({
-            ...prev,
-            selectedContactIds: currentContacts.map(contact => contact.id.toString())
-          }))
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setIsLoading(false)
-      }
+    if (globalFormData?.listingDetails) {
+      const details = globalFormData.listingDetails
+      
+      // Pre-populate form with existing data
+      setFormData(prev => ({
+        ...prev,
+        price: details.price || "",
+        listingType: details.listingType || "Sale",
+        propertyType: details.propertyType || "piso",
+        agentId: details.agentId ? details.agentId.toString() : "",
+        selectedContactIds: globalFormData.currentContacts || [],
+      }))
     }
-    fetchData()
-  }, [listingId])
+  }, [globalFormData])
 
   const updateFormData = (field: keyof FirstPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -151,11 +111,11 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
   }
 
   // Filter contacts based on search
-  const filteredContacts = contacts.filter(contact => 
+  const filteredContacts = globalFormData?.contacts?.filter((contact: {id: number, name: string}) => 
     contact.name.toLowerCase().includes(contactSearch.toLowerCase())
-  )
+  ) || []
 
-  const handleNext = async () => {
+  const handleNext = () => {
     // Validate required fields
     if (!formData.price.trim()) {
       alert("Por favor, introduce el precio de la propiedad.")
@@ -172,47 +132,48 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
       return
     }
 
-    // Clear any previous save errors
-    setSaveError(null)
-    setSaving(true)
+    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    onNext()
+    
+    // Save data in background (completely silent)
+    saveInBackground()
+  }
 
-    // Save data in the background without blocking the UI
-    try {
+  // Background save function - completely silent and non-blocking
+  const saveInBackground = () => {
+    // Fire and forget - no await, no blocking!
+    Promise.all([
       // Update property form position to 2 and property type
-      if (listingDetails?.propertyId) {
+      globalFormData?.listingDetails?.propertyId ? (async () => {
         const updateData: any = {
           propertyType: formData.propertyType
         }
         
         // Only update formPosition if current position is lower than 2
-        if (!listingDetails.formPosition || listingDetails.formPosition < 2) {
+        if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 2) {
           updateData.formPosition = 2
         }
         
-        await updateProperty(Number(listingDetails.propertyId), updateData)
-      }
+        updateProperty(Number(globalFormData.listingDetails.propertyId), updateData)
+      })() : Promise.resolve(),
 
       // Update listing with price, listing type, and agent
-      await updateListing(Number(listingId), {
+      updateListing(Number(listingId), {
         price: formData.price,
         listingType: formData.listingType as "Sale" | "Rent",
         agentId: BigInt(formData.agentId)
-      })
+      }),
 
       // Update listing contacts
-      await updateListingOwners(Number(listingId), formData.selectedContactIds.map(id => Number(id)))
-
-      // Refresh listing details after saving
-      const updatedDetails = await getListingDetails(Number(listingId))
-      setListingDetails(updatedDetails)
-
-      // Proceed to next step
-      onNext()
-    } catch (error) {
+      updateListingOwners(Number(listingId), formData.selectedContactIds.map(id => Number(id)))
+    ]).then(() => {
+      // Refresh global data after successful save
+      refreshListingDetails?.()
+    }).catch(error => {
       console.error("Error saving form data:", error)
-      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
-      setSaving(false)
-    }
+      // Silent error - user doesn't know it failed
+      // Could implement retry logic here if needed
+    })
   }
 
   const toggleContact = (contactId: string) => {
@@ -224,10 +185,9 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
     }))
   }
 
-  if (isLoading || saving) {
-    return (
-      <FormSkeleton />
-    )
+  // Show loading only if globalFormData is not ready
+  if (!globalFormData?.listingDetails) {
+    return <FormSkeleton />
   }
 
   return (
@@ -381,7 +341,7 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
             <SelectValue placeholder="Seleccionar agente" />
           </SelectTrigger>
           <SelectContent>
-            {agents.map((agent) => (
+            {globalFormData?.agents?.map((agent: {id: number, name: string}) => (
               <SelectItem 
                 key={agent.id} 
                 value={agent.id.toString()}
@@ -426,7 +386,7 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
               No se encontraron contactos
             </p>
           ) : (
-            filteredContacts.map((contact) => (
+            filteredContacts.map((contact: {id: number, name: string}) => (
               <div
                 key={contact.id}
                 className={cn(
@@ -444,21 +404,6 @@ export default function FirstPage({ listingId, onNext, onBack }: FirstPageProps)
           )}
         </div>
       </div>
-
-      {/* Save Error Notification */}
-      {saveError && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="p-3 bg-red-50 border border-red-200 rounded-lg"
-        >
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            <p className="text-sm text-red-700">{saveError}</p>
-          </div>
-        </motion.div>
-      )}
 
       {/* Navigation Buttons */}
       <motion.div

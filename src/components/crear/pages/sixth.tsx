@@ -7,15 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Checkbox } from "~/components/ui/checkbox"
 import { ChevronLeft, ChevronRight, Shield, Bell, Video, UserCheck, Users, Building2, Accessibility, Satellite, Layers, CookingPot, Soup, Refrigerator, Droplets } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
 import FormSkeleton from "./form-skeleton"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 
 interface SixthPageProps {
   listingId: string
+  globalFormData: any
   onNext: () => void
   onBack?: () => void
+  refreshListingDetails?: () => void
 }
 
 interface SixthPageFormData {
@@ -69,104 +70,93 @@ const hotWaterTypeOptions = [
   { value: "solar", label: "Solar" },
 ]
 
-export default function SixthPage({ listingId, onNext, onBack }: SixthPageProps) {
+export default function SixthPage({ listingId, globalFormData, onNext, onBack }: SixthPageProps) {
   const [formData, setFormData] = useState<SixthPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [listingDetails, setListingDetails] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [propertyType, setPropertyType] = useState<string>("")
 
   const updateFormData = (field: keyof SixthPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // Fetch listing details on component mount
+  // Use centralized data instead of fetching
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        if (listingId) {
-          const details = await getListingDetails(Number(listingId))
-          setListingDetails(details)
-          setPropertyType(details.propertyType || "")
-          
-          // For solar properties, skip this page entirely
-          if (details.propertyType === "solar") {
-            onNext()
-            return
-          }
-          
-          setFormData(prev => ({
-            ...prev,
-            securityDoor: details.securityDoor || false,
-            alarm: details.alarm || false,
-            videoIntercom: details.videoIntercom || false,
-            securityGuard: details.securityGuard || false,
-            conciergeService: details.conciergeService || false,
-            vpo: details.vpo || false,
-            disabledAccessible: details.disabledAccessible || false,
-            satelliteDish: details.satelliteDish || false,
-            doubleGlazing: details.doubleGlazing || false,
-            kitchenType: details.kitchenType || "",
-            openKitchen: details.openKitchen || false,
-            frenchKitchen: details.frenchKitchen || false,
-            furnishedKitchen: details.furnishedKitchen || false,
-            pantry: details.pantry || false,
-            hotWaterType: details.hotWaterType || "",
-          }))
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setIsLoading(false)
+    if (globalFormData?.listingDetails) {
+      const details = globalFormData.listingDetails
+      setPropertyType(details.propertyType || "")
+      
+      // For solar properties, skip this page entirely
+      if (details.propertyType === "solar") {
+        onNext()
+        return
       }
+      
+      setFormData(prev => ({
+        ...prev,
+        securityDoor: details.securityDoor || false,
+        alarm: details.alarm || false,
+        videoIntercom: details.videoIntercom || false,
+        securityGuard: details.securityGuard || false,
+        conciergeService: details.conciergeService || false,
+        vpo: details.vpo || false,
+        disabledAccessible: details.disabledAccessible || false,
+        satelliteDish: details.satelliteDish || false,
+        doubleGlazing: details.doubleGlazing || false,
+        kitchenType: details.kitchenType || "",
+        openKitchen: details.openKitchen || false,
+        frenchKitchen: details.frenchKitchen || false,
+        furnishedKitchen: details.furnishedKitchen || false,
+        pantry: details.pantry || false,
+        hotWaterType: details.hotWaterType || "",
+      }))
     }
-    fetchData()
-  }, [listingId, onNext])
+  }, [globalFormData?.listingDetails, onNext])
 
-  const handleNext = async () => {
-    setSaving(true)
-    setSaveError(null)
-    try {
-      if (listingDetails?.propertyId) {
-        const updateData: any = {
-          securityDoor: formData.securityDoor,
-          alarm: formData.alarm,
-          videoIntercom: formData.videoIntercom,
-          securityGuard: formData.securityGuard,
-          conciergeService: formData.conciergeService,
-          vpo: formData.vpo,
-          disabledAccessible: formData.disabledAccessible,
-          satelliteDish: formData.satelliteDish,
-          doubleGlazing: formData.doubleGlazing,
-          kitchenType: formData.kitchenType,
-          openKitchen: formData.openKitchen,
-          frenchKitchen: formData.frenchKitchen,
-          furnishedKitchen: formData.furnishedKitchen,
-          pantry: formData.pantry,
-          hotWaterType: formData.hotWaterType,
-        }
+  const handleNext = () => {
+    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    onNext()
+    
+    // Save data in background (completely silent)
+    saveInBackground()
+  }
 
-        // Only update formPosition if current position is lower than 7
-        if (!listingDetails.formPosition || listingDetails.formPosition < 7) {
-          updateData.formPosition = 7
-        }
-
-        await updateProperty(Number(listingDetails.propertyId), updateData)
+  // Background save function - completely silent and non-blocking
+  const saveInBackground = () => {
+    // Fire and forget - no await, no blocking!
+    if (globalFormData?.listingDetails?.propertyId) {
+      const updateData: any = {
+        disabledAccessible: formData.disabledAccessible,
+        vpo: formData.vpo,
+        videoIntercom: formData.videoIntercom,
+        conciergeService: formData.conciergeService,
+        securityGuard: formData.securityGuard,
+        satelliteDish: formData.satelliteDish,
+        doubleGlazing: formData.doubleGlazing,
+        alarm: formData.alarm,
+        securityDoor: formData.securityDoor,
+        kitchenType: formData.kitchenType,
+        openKitchen: formData.openKitchen,
+        frenchKitchen: formData.frenchKitchen,
+        furnishedKitchen: formData.furnishedKitchen,
+        pantry: formData.pantry,
+        hotWaterType: formData.hotWaterType,
       }
-      // Refresh listing details after saving
-      const updatedDetails = await getListingDetails(Number(listingId))
-      setListingDetails(updatedDetails)
-      onNext()
-    } catch (error) {
-      console.error("Error saving form data:", error)
-      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
-      setSaving(false)
+
+      // Only update formPosition if current position is lower than 7
+      if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 7) {
+        updateData.formPosition = 7
+      }
+
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).catch((error: any) => {
+        console.error("Error saving form data:", error)
+        // Silent error - user doesn't know it failed
+        // Could implement retry logic here if needed
+      })
     }
   }
 
-  if (isLoading || saving) {
+  // Show loading only if globalFormData is not ready
+  if (!globalFormData?.listingDetails) {
     return <FormSkeleton />
   }
 

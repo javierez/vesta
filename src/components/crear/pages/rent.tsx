@@ -5,54 +5,82 @@ import { useRouter } from "next/navigation"
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { Checkbox } from "~/components/ui/checkbox"
-import { ChevronLeft, ChevronRight, GraduationCap, PawPrint, Zap, Car, Package } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
+import { ChevronLeft, ChevronRight, GraduationCap, PawPrint, Zap, Car, Package, Key, Heart, Utensils, Sofa } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { getListingDetails } from "~/server/queries/listing"
-import { updateListing, createListing } from "~/server/queries/listing"
+import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { updateProperty } from "~/server/queries/properties"
-import FormSkeleton from "./form-skeleton"
-import { cn, formFormatters } from "~/lib/utils"
+import { createListing } from "~/server/queries/listing"
+import { formFormatters } from "~/lib/utils"
+import { cn } from "~/lib/utils"
 import { Input } from "~/components/ui/input"
+import FormSkeleton from "./form-skeleton"
 
 interface RentPageProps {
   listingId: string
+  globalFormData: any
   onNext: () => void
   onBack?: () => void
+  refreshListingDetails?: () => void
 }
 
 interface RentPageFormData {
+  hasKeys: boolean
   studentFriendly: boolean
   petsAllowed: boolean
   appliancesIncluded: boolean
-  duplicateForRent: boolean
+  isFurnished: boolean
+  furnitureQuality: string
   optionalGaragePrice: number
   optionalStorageRoomPrice: number
   rentalPrice: number
+  duplicateForRent: boolean
 }
 
 const initialFormData: RentPageFormData = {
+  hasKeys: false,
   studentFriendly: false,
   petsAllowed: false,
   appliancesIncluded: false,
-  duplicateForRent: false,
+  isFurnished: false,
+  furnitureQuality: "",
   optionalGaragePrice: 0,
   optionalStorageRoomPrice: 0,
   rentalPrice: 0,
+  duplicateForRent: false,
 }
 
-export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
+export default function RentPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: RentPageProps) {
   const router = useRouter()
   const [formData, setFormData] = useState<RentPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [listingDetails, setListingDetails] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaleListing, setIsSaleListing] = useState(false)
-  const [isFinishing, setIsFinishing] = useState(false)
   const [propertyType, setPropertyType] = useState<string>("")
+  const [isSaleListing, setIsSaleListing] = useState<boolean>(true)
 
   const updateFormData = (field: keyof RentPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
+
+  // Use centralized data instead of fetching
+  useEffect(() => {
+    if (globalFormData?.listingDetails) {
+      const details = globalFormData.listingDetails
+      setPropertyType(details.propertyType || "")
+      setIsSaleListing(details.listingType === 'Sale')
+      setFormData(prev => ({
+        ...prev,
+        hasKeys: details.hasKeys || false,
+        studentFriendly: details.studentFriendly || false,
+        petsAllowed: details.petsAllowed || false,
+        appliancesIncluded: details.appliancesIncluded || false,
+        isFurnished: details.isFurnished || false,
+        furnitureQuality: details.furnitureQuality || "",
+        optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
+        optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
+        rentalPrice: Number(details.price) || 0,
+      }))
+    }
+  }, [globalFormData?.listingDetails])
 
   // Handle price input with formatting for garage and storage room
   const handleGaragePriceChange = formFormatters.handleNumericPriceInputChange((value) => 
@@ -67,97 +95,57 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
     updateFormData("rentalPrice", value)
   )
 
-  // Fetch listing details on component mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        if (listingId) {
-          const details = await getListingDetails(Number(listingId))
-          setListingDetails(details)
-          setPropertyType(details.propertyType || "")
-          setIsSaleListing(details.listingType === 'Sale')
-          setFormData(prev => ({
-            ...prev,
-            studentFriendly: details.studentFriendly || false,
-            petsAllowed: details.petsAllowed || false,
-            appliancesIncluded: details.appliancesIncluded || false,
-            optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
-            optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
-            rentalPrice: Number(details.price) || 0,
-          }))
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setIsLoading(false)
-      }
+  const handleNext = () => {
+    // Validate rental price if creating rental listing
+    if (isSaleListing && formData.duplicateForRent && formData.rentalPrice <= 0) {
+      alert("Por favor, introduce el precio del alquiler.")
+      return
     }
-    fetchData()
-  }, [listingId])
 
-  const handleNext = async () => {
-    setSaveError(null)
-    setIsFinishing(true)
+    // Navigate IMMEDIATELY (optimistic) - finish form instantly!
+    router.push("/propiedades")
     
-    try {
-      // Validate rental price if creating rental listing
-      if (isSaleListing && formData.duplicateForRent && formData.rentalPrice <= 0) {
-        setSaveError("Por favor, introduce el precio del alquiler.")
-        setIsFinishing(false)
-        return
-      }
+    // Save data in background (completely silent)
+    saveInBackground()
+  }
 
-      // Save current listing data
-      if (listingDetails?.listingId) {
-        await updateListing(Number(listingDetails.listingId), {
+  // Background save function - completely silent and non-blocking
+  const saveInBackground = () => {
+    // Fire and forget - no await, no blocking!
+    if (globalFormData?.listingDetails?.propertyId) {
+      // Update property form position
+      updateProperty(Number(globalFormData.listingDetails.propertyId), {
+        formPosition: (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 12) ? 12 : globalFormData.listingDetails.formPosition
+      }).then(() => {
+        // Refresh global data after successful save
+        refreshListingDetails?.()
+      }).catch((error: any) => {
+        console.error("Error updating property:", error)
+      })
+
+      // Only create rental listing if it's a sale property and user wants to duplicate for rent
+      if (isSaleListing && formData.duplicateForRent) {
+        createListing({
+          propertyId: BigInt(globalFormData.listingDetails.propertyId),
+          listingType: "Rent",
+          price: formData.rentalPrice.toString(),
+          agentId: BigInt(globalFormData.listingDetails.agentId),
           studentFriendly: formData.studentFriendly,
           petsAllowed: formData.petsAllowed,
           appliancesIncluded: formData.appliancesIncluded,
-          optionalGaragePrice: formData.optionalGaragePrice ? Math.round(formData.optionalGaragePrice).toString() : "0",
-          optionalStorageRoomPrice: formData.optionalStorageRoomPrice ? Math.round(formData.optionalStorageRoomPrice).toString() : "0",
+          optionalGaragePrice: formData.optionalGaragePrice.toString(),
+          optionalStorageRoomPrice: formData.optionalStorageRoomPrice.toString(),
+          hasKeys: false,
+          optionalStorageRoom: false,
+          status: "active"
+        } as any).catch((error: any) => {
+          console.error("Error creating rental listing:", error)
         })
       }
-
-      // Handle different scenarios based on listing type and user selection
-      if (isSaleListing) {
-        if (formData.duplicateForRent) {
-          // Create a new rental listing with the same property_id
-          await createListing({
-            propertyId: BigInt(listingDetails.propertyId),
-            agentId: BigInt(listingDetails.agentId),
-            listingType: "Rent",
-            price: Math.round(formData.rentalPrice).toString(), // Use the rental price
-            status: "Active",
-            isFeatured: false,
-            isBankOwned: false,
-            viewCount: 0,
-            inquiryCount: 0,
-            isActive: true,
-            optionalStorageRoom: listingDetails.hasStorageRoom || false,
-            hasKeys: false,
-            studentFriendly: formData.studentFriendly,
-            petsAllowed: formData.petsAllowed,
-            appliancesIncluded: formData.appliancesIncluded,
-            optionalGaragePrice: formData.optionalGaragePrice ? Math.round(formData.optionalGaragePrice).toString() : "0",
-            optionalStorageRoomPrice: formData.optionalStorageRoomPrice ? Math.round(formData.optionalStorageRoomPrice).toString() : "0",
-          })
-        }
-        // For both "Solo Venta" and "También Alquiler", navigate to propiedades
-        router.push("/propiedades")
-      } else {
-        // If it's already a rent listing, just navigate to propiedades
-        router.push("/propiedades")
-      }
-      
-    } catch (error) {
-      console.error("Error saving form data:", error)
-      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
-      setIsFinishing(false)
     }
   }
 
-  if (isLoading) {
+  if (globalFormData?.listingDetails === null) {
     return <FormSkeleton />
   }
 
@@ -245,7 +233,7 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
             </div>
 
             {/* Garage Price - Hide for solar and garage properties */}
-            {propertyType !== "solar" && propertyType !== "garage" && listingDetails?.hasGarage && (
+            {propertyType !== "solar" && propertyType !== "garage" && globalFormData?.listingDetails?.hasGarage && (
               <div className="p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-medium text-gray-600">Garaje (€/mes)</h4>
@@ -262,7 +250,7 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
             )}
 
             {/* Storage Room Price - Hide for solar and garage properties */}
-            {propertyType !== "solar" && propertyType !== "garage" && listingDetails?.hasStorageRoom && (
+            {propertyType !== "solar" && propertyType !== "garage" && globalFormData?.listingDetails?.hasStorageRoom && (
               <div className="p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-medium text-gray-600">Trastero (€/mes)</h4>
@@ -372,10 +360,9 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button 
               onClick={handleNext} 
-              disabled={isFinishing}
               className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
             >
-              <span>{isFinishing ? "Finalizando..." : "Finalizar"}</span>
+              <span>Finalizar</span>
             </Button>
           </motion.div>
         </motion.div>
@@ -499,10 +486,9 @@ export default function RentPage({ listingId, onNext, onBack }: RentPageProps) {
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button 
             onClick={handleNext} 
-            disabled={isFinishing}
             className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
           >
-            <span>{isFinishing ? "Finalizando..." : "Finalizar"}</span>
+            <span>Finalizar</span>
           </Button>
         </motion.div>
       </motion.div>

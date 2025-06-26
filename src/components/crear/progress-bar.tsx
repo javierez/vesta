@@ -86,14 +86,20 @@ export default function ProgressBar({
   const handleStepClick = (stepIndex: number) => {
     if (!onStepClick) return
     const originalStepIndex = getOriginalStepIndex(stepIndex)
-    if (originalStepIndex < formPosition) {
+    const currentFormStep = (formPosition || 1) - 1
+    
+    // Only allow clicking on the immediate next step or previous steps
+    if (originalStepIndex === currentFormStep + 1 || originalStepIndex < currentFormStep) {
       onStepClick(originalStepIndex)
     }
   }
 
   const isStepClickable = (stepIndex: number) => {
     const originalStepIndex = getOriginalStepIndex(stepIndex)
-    return originalStepIndex < formPosition
+    const currentFormStep = (formPosition || 1) - 1
+    
+    // Only allow clicking on the immediate next step or previous steps
+    return originalStepIndex === currentFormStep + 1 || originalStepIndex < currentFormStep
   }
 
   return (

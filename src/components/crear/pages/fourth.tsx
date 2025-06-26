@@ -7,7 +7,6 @@ import { Label } from "~/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { ChevronLeft, ChevronRight, Building, Car, Package, Thermometer, Wind, Sofa } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
 import { updateListing } from "~/server/queries/listing"
 import { formFormatters } from "~/lib/utils"
@@ -15,8 +14,10 @@ import FormSkeleton from "./form-skeleton"
 
 interface FourthPageProps {
   listingId: string
+  globalFormData: any
   onNext: () => void
   onBack?: () => void
+  refreshListingDetails?: () => void
 }
 
 // Form data interface for fourth page
@@ -94,12 +95,8 @@ const furnitureQualityOptions = [
   { value: "luxury", label: "Lujo", color: "bg-gray-900" },
 ]
 
-export default function FourthPage({ listingId, onNext, onBack }: FourthPageProps) {
+export default function FourthPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: FourthPageProps) {
   const [formData, setFormData] = useState<FourthPageFormData>(initialFormData)
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const [listingDetails, setListingDetails] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [propertyType, setPropertyType] = useState<string>("")
 
   const updateFormData = (field: keyof FourthPageFormData, value: any) => {
@@ -120,78 +117,70 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
     updateFormData("storageRoomSize", value)
   )
 
-  // Fetch listing details on component mount
+  // Use centralized data instead of fetching
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Fetch listing details first
-        if (listingId) {
-          const details = await getListingDetails(Number(listingId))
-          setListingDetails(details)
-          setPropertyType(details.propertyType || "")
-          
-          // For solar properties, skip this page entirely
-          if (details.propertyType === "solar") {
-            onNext()
-            return
-          }
-          
-          // For garage properties, set garage as always enabled
-          if (details.propertyType === "garage") {
-            setFormData(prev => ({
-              ...prev,
-              hasGarage: true, // Always enabled for garage properties
-              garageType: details.garageType || "",
-              garageSpaces: details.garageSpaces || 1,
-              garageInBuilding: details.garageInBuilding || false,
-              garageNumber: details.garageNumber || "",
-              optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
-            }))
-            return
-          }
-          
-          // Pre-populate form with existing data for other property types
-          setFormData(prev => ({
-            ...prev,
-            hasElevator: details.hasElevator || false,
-            hasGarage: details.hasGarage || false,
-            garageType: details.garageType || "",
-            garageSpaces: details.garageSpaces || 1,
-            garageInBuilding: details.garageInBuilding || false,
-            garageNumber: details.garageNumber || "",
-            optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
-            hasStorageRoom: details.hasStorageRoom || false,
-            storageRoomSize: details.storageRoomSize || 0,
-            storageRoomNumber: details.storageRoomNumber || "",
-            optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
-            hasHeating: details.hasHeating || false,
-            heatingType: details.heatingType || "",
-            hasAirConditioning: !!details.airConditioningType,
-            airConditioningType: details.airConditioningType || "",
-            isFurnished: details.isFurnished || false,
-            furnitureQuality: details.furnitureQuality || "",
-          }))
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setIsLoading(false)
+    if (globalFormData?.listingDetails) {
+      const details = globalFormData.listingDetails
+      setPropertyType(details.propertyType || "")
+      
+      // For solar properties, skip this page entirely
+      if (details.propertyType === "solar") {
+        onNext()
+        return
       }
+      
+      // For garage properties, set garage as always enabled
+      if (details.propertyType === "garage") {
+        setFormData(prev => ({
+          ...prev,
+          hasGarage: true, // Always enabled for garage properties
+          garageType: details.garageType || "",
+          garageSpaces: details.garageSpaces || 1,
+          garageInBuilding: details.garageInBuilding || false,
+          garageNumber: details.garageNumber || "",
+          optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
+        }))
+        return
+      }
+      
+      // Pre-populate form with existing data for other property types
+      setFormData(prev => ({
+        ...prev,
+        hasElevator: details.hasElevator || false,
+        hasGarage: details.hasGarage || false,
+        garageType: details.garageType || "",
+        garageSpaces: details.garageSpaces || 1,
+        garageInBuilding: details.garageInBuilding || false,
+        garageNumber: details.garageNumber || "",
+        optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
+        hasStorageRoom: details.hasStorageRoom || false,
+        storageRoomSize: details.storageRoomSize || 0,
+        storageRoomNumber: details.storageRoomNumber || "",
+        optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
+        hasHeating: details.hasHeating || false,
+        heatingType: details.heatingType || "",
+        hasAirConditioning: !!details.airConditioningType,
+        airConditioningType: details.airConditioningType || "",
+        isFurnished: details.isFurnished || false,
+        furnitureQuality: details.furnitureQuality || "",
+      }))
     }
-    fetchData()
-  }, [listingId, onNext])
+  }, [globalFormData?.listingDetails, onNext])
 
-  const handleNext = async () => {
-    setSaving(true)
-    try {
-      // Clear any previous save errors
-      setSaveError(null)
+  const handleNext = () => {
+    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    onNext()
+    
+    // Save data in background (completely silent)
+    saveInBackground()
+  }
 
-      // Save data in the background without blocking the UI
+  // Background save function - completely silent and non-blocking
+  const saveInBackground = () => {
+    // Fire and forget - no await, no blocking!
+    Promise.all([
       // Update property with equipment and services data
-      if (listingDetails?.propertyId) {
+      globalFormData?.listingDetails?.propertyId ? (async () => {
         const updateData: any = {
           hasElevator: formData.hasElevator,
           // Garage data - only save if hasGarage is true
@@ -212,33 +201,30 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
         }
 
         // Only update formPosition if current position is lower than 5
-        if (!listingDetails.formPosition || listingDetails.formPosition < 5) {
+        if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 5) {
           updateData.formPosition = 5
         }
 
-        await updateProperty(Number(listingDetails.propertyId), updateData)
-      }
+        updateProperty(Number(globalFormData.listingDetails.propertyId), updateData)
+      })() : Promise.resolve(),
 
       // Update listing with optional prices - only save if the related service is enabled
-      await updateListing(Number(listingId), {
+      updateListing(Number(listingId), {
         optionalGaragePrice: formData.hasGarage ? Math.round(formData.optionalGaragePrice).toString() : "0",
         optionalStorageRoomPrice: formData.hasStorageRoom ? Math.round(formData.optionalStorageRoomPrice).toString() : "0",
       })
-
-      // Refresh listing details after saving
-      const updatedDetails = await getListingDetails(Number(listingId))
-      setListingDetails(updatedDetails)
-
-      // Proceed to next step
-      onNext()
-    } catch (error) {
+    ]).then(() => {
+      // Refresh global data after successful save
+      refreshListingDetails?.()
+    }).catch(error => {
       console.error("Error saving form data:", error)
-      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
-      setSaving(false)
-    }
+      // Silent error - user doesn't know it failed
+      // Could implement retry logic here if needed
+    })
   }
 
-  if (isLoading || saving) {
+  // Show loading only if globalFormData is not ready
+  if (!globalFormData?.listingDetails) {
     return <FormSkeleton />
   }
 
@@ -436,12 +422,12 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
               </div>
               
               <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-600">{listingDetails?.listingType === 'Rent' ? 'Precio €/mes' : 'Precio'}</Label>
+                <Label className="text-xs font-medium text-gray-600">{globalFormData?.listingDetails?.listingType === 'Rent' ? 'Precio €/mes' : 'Precio'}</Label>
                 <Input
                   type="text"
                   value={formFormatters.formatPriceInput(formData.optionalGaragePrice)}
                   onChange={handleGaragePriceChange}
-                  placeholder={listingDetails?.listingType === 'Rent' ? '0 €/mes' : '0 €'}
+                  placeholder={globalFormData?.listingDetails?.listingType === 'Rent' ? '0 €/mes' : '0 €'}
                   className="h-8 text-xs"
                 />
               </div>
@@ -528,12 +514,12 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
                 </div>
                 
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">{listingDetails?.listingType === 'Rent' ? 'Precio €/mes' : 'Precio'}</Label>
+                  <Label className="text-xs font-medium text-gray-600">{globalFormData?.listingDetails?.listingType === 'Rent' ? 'Precio €/mes' : 'Precio'}</Label>
                   <Input
                     type="text"
                     value={formFormatters.formatPriceInput(formData.optionalStorageRoomPrice)}
                     onChange={handleStorageRoomPriceChange}
-                    placeholder={listingDetails?.listingType === 'Rent' ? '0 €/mes' : '0 €'}
+                    placeholder={globalFormData?.listingDetails?.listingType === 'Rent' ? '0 €/mes' : '0 €'}
                     className="h-8 text-xs"
                   />
                 </div>
@@ -774,20 +760,6 @@ export default function FourthPage({ listingId, onNext, onBack }: FourthPageProp
           </motion.div>
         )}
       </motion.div>
-
-      <AnimatePresence>
-        {saveError && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, scale: 0.95 }}
-            animate={{ opacity: 1, height: "auto", scale: 1 }}
-            exit={{ opacity: 0, height: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700"
-          >
-            {saveError}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <motion.div
         className="flex justify-between pt-4 border-t"

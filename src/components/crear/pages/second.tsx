@@ -5,7 +5,6 @@ import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { ChevronLeft, ChevronRight, Loader } from "lucide-react"
 import { motion } from "framer-motion"
-import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
 import { formFormatters } from "~/lib/utils"
 import FormSkeleton from "./form-skeleton"
@@ -16,8 +15,10 @@ import { cn } from "~/lib/utils"
 
 interface SecondPageProps {
   listingId: string
+  globalFormData: any
   onNext: () => void
   onBack?: () => void
+  refreshListingDetails?: () => void
 }
 
 // Form data interface for second page
@@ -27,68 +28,47 @@ interface SecondPageFormData {
   squareMeter: string
   builtSurfaceArea: string
   yearBuilt: string
-  lastRenovationYear: string
+  floor: string
   buildingFloors: string
-  isRenovated: boolean
 }
 
 const initialFormData: SecondPageFormData = {
-  bedrooms: "",
-  bathrooms: "",
-  squareMeter: "",
-  builtSurfaceArea: "",
-  yearBuilt: "",
-  lastRenovationYear: "",
+  bedrooms: "2",
+  bathrooms: "1",
+  squareMeter: "80",
+  builtSurfaceArea: "85",
+  yearBuilt: "2000",
+  floor: "",
   buildingFloors: "",
-  isRenovated: false,
 }
 
-export default function SecondPage({ listingId, onNext, onBack }: SecondPageProps) {
+export default function SecondPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: SecondPageProps) {
   const [formData, setFormData] = useState<SecondPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [listingDetails, setListingDetails] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [propertyType, setPropertyType] = useState<string>("")
 
-  // Fetch listing details on component mount
+  // Use centralized data instead of fetching
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Fetch listing details first
-        if (listingId) {
-          const details = await getListingDetails(Number(listingId))
-          setListingDetails(details)
-          setPropertyType(details.propertyType || "")
-          
-          // Pre-populate form with existing data
-          setFormData(prev => ({
-            ...prev,
-            bedrooms: details.bedrooms ? details.bedrooms.toString() : "",
-            bathrooms: details.bathrooms ? Math.floor(Number(details.bathrooms)).toString() : "",
-            squareMeter: details.squareMeter ? details.squareMeter.toString() : "",
-            builtSurfaceArea: details.builtSurfaceArea ? Math.floor(Number(details.builtSurfaceArea)).toString() : "",
-            yearBuilt: details.yearBuilt ? details.yearBuilt.toString() : "",
-            lastRenovationYear: details.lastRenovationYear ? details.lastRenovationYear.toString() : "",
-            buildingFloors: details.buildingFloors ? details.buildingFloors.toString() : "",
-            // Set isRenovated based on whether lastRenovationYear is different from yearBuilt
-            isRenovated: details.lastRenovationYear && details.yearBuilt 
-              ? details.lastRenovationYear !== details.yearBuilt
-              : false,
-          }))
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setIsLoading(false)
-      }
+    if (globalFormData?.listingDetails) {
+      const details = globalFormData.listingDetails
+      setPropertyType(details.propertyType || "")
+      
+      // Pre-populate form with existing data
+      setFormData(prev => ({
+        ...prev,
+        bedrooms: details.bedrooms?.toString() || "2",
+        bathrooms: details.bathrooms?.toString() || "1",
+        squareMeter: details.squareMeter?.toString() || "80",
+        builtSurfaceArea: details.builtSurfaceArea?.toString() || "85",
+        yearBuilt: details.yearBuilt?.toString() || "2000",
+        floor: details.floor?.toString() || "",
+        buildingFloors: details.buildingFloors?.toString() || "",
+      }))
     }
-    fetchData()
-  }, [listingId])
+  }, [globalFormData?.listingDetails])
 
-  const updateFormData = (field: keyof SecondPageFormData, value: any) => {
+  const updateFormData = (field: keyof SecondPageFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -117,7 +97,7 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
     updateFormData("builtSurfaceArea", numericValue)
   }
 
-  const handleNext = async () => {
+  const handleNext = () => {
     // Validate required fields based on property type
     if (propertyType === "solar") {
       // For solar, only surface is required
@@ -164,53 +144,50 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
       }
     }
 
-    // Clear any previous save errors
-    setSaveError(null)
-    setSaving(true)
+    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    onNext()
+    
+    // Save data in background (completely silent)
+    saveInBackground()
+  }
 
-    // Save data in the background without blocking the UI
-    try {
-      // Update property with details
-      if (listingDetails?.propertyId) {
-        const updateData: any = {
-          squareMeter: Number(formData.squareMeter),
-          yearBuilt: Number(formData.yearBuilt),
-        }
-
-        // Only update formPosition if current position is lower than 3
-        if (!listingDetails.formPosition || listingDetails.formPosition < 3) {
-          updateData.formPosition = 3
-        }
-
-        // Only include fields that are relevant for the property type
-        if (propertyType !== "solar") {
-          updateData.bedrooms = Number(formData.bedrooms)
-          updateData.bathrooms = Number(formData.bathrooms)
-          updateData.builtSurfaceArea = formData.builtSurfaceArea ? Number(formData.builtSurfaceArea).toString() : ""
-          // Set renovation year to construction year if not renovated, otherwise use selected year
-          updateData.lastRenovationYear = formData.isRenovated 
-            ? (formData.lastRenovationYear ? Number(formData.lastRenovationYear) : Number(formData.yearBuilt))
-            : Number(formData.yearBuilt)
-          updateData.buildingFloors = formData.buildingFloors ? Number(formData.buildingFloors) : undefined
-        }
-
-        await updateProperty(Number(listingDetails.propertyId), updateData)
+  // Background save function - completely silent and non-blocking
+  const saveInBackground = () => {
+    // Fire and forget - no await, no blocking!
+    if (globalFormData?.propertyId) {
+      const updateData: any = {
+        squareMeter: Number(formData.squareMeter),
       }
 
-      // Refresh listing details after saving
-      const updatedDetails = await getListingDetails(Number(listingId))
-      setListingDetails(updatedDetails)
+      // Only update formPosition if current position is lower than 3
+      if (!globalFormData.formPosition || globalFormData.formPosition < 3) {
+        updateData.formPosition = 3
+      }
 
-      // Proceed to next step
-      onNext()
-    } catch (error) {
-      console.error("Error saving form data:", error)
-      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
-      setSaving(false)
+      // Only include fields that are relevant for the property type
+      if (propertyType !== "solar") {
+        updateData.yearBuilt = Number(formData.yearBuilt)
+        updateData.bedrooms = Number(formData.bedrooms)
+        updateData.bathrooms = Number(formData.bathrooms)
+        updateData.builtSurfaceArea = formData.builtSurfaceArea ? Number(formData.builtSurfaceArea).toString() : ""
+        // Set renovation year to construction year if not renovated, otherwise use selected year
+        updateData.floor = formData.floor ? Number(formData.floor) : undefined
+        updateData.buildingFloors = formData.buildingFloors ? Number(formData.buildingFloors) : undefined
+      }
+
+      updateProperty(Number(globalFormData.propertyId), updateData).then(() => {
+        // Refresh global data after successful save
+        refreshListingDetails?.()
+      }).catch(error => {
+        console.error("Error saving form data:", error)
+        // Silent error - user doesn't know it failed
+        // Could implement retry logic here if needed
+      })
     }
   }
 
-  if (isLoading || saving) {
+  // Show loading only if globalFormData is not ready
+  if (!globalFormData?.listingDetails) {
     return <FormSkeleton />
   }
 
@@ -279,82 +256,42 @@ export default function SecondPage({ listingId, onNext, onBack }: SecondPageProp
         </div>
       )}
 
-      {/* Renovation Question - Only show for piso, casa, local */}
+      {/* Floor - Only show for piso, casa, local */}
       {propertyType !== "solar" && propertyType !== "garage" && (
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-gray-900">¿Reformado?</h3>
-          <div className="relative bg-gray-100 rounded-lg p-1 h-8">
-            <motion.div
-              className="absolute top-1 left-1 w-[calc(50%-2px)] h-6 bg-white rounded-md shadow-sm"
-              animate={{
-                x: formData.isRenovated ? "calc(100% - 5px)" : 0
-              }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            />
-            <div className="relative flex h-full">
-              <button
-                onClick={() => {
-                  updateFormData("isRenovated", false)
-                  // Set renovation year to construction year when "No" is selected
-                  updateFormData("lastRenovationYear", formData.yearBuilt)
-                }}
-                className={cn(
-                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
-                  !formData.isRenovated
-                    ? "text-gray-900"
-                    : "text-gray-600"
-                )}
-              >
-                No
-              </button>
-              <button
-                onClick={() => updateFormData("isRenovated", true)}
-                className={cn(
-                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
-                  formData.isRenovated
-                    ? "text-gray-900"
-                    : "text-gray-600"
-                )}
-              >
-                Sí
-              </button>
-            </div>
-          </div>
+          <label htmlFor="floor" className="text-xs font-medium text-gray-600">
+            Piso
+          </label>
+          <Input
+            id="floor"
+            value={formData.floor}
+            onChange={handleEventInputChange("floor")}
+            placeholder="Número de piso"
+            type="number"
+            min="0"
+            step="1"
+            className="h-10 placeholder:text-gray-400 shadow-md border-0"
+          />
         </div>
       )}
 
-      {/* Last Renovation Year and Building Floors - Only show for piso, casa, local */}
+      {/* Building Floors - Only show for piso, casa, local */}
       {propertyType !== "solar" && propertyType !== "garage" && (
-        <>
-          {formData.isRenovated && (
-            <div className="space-y-2">
-              <YearSlider
-                label="Año de Última Reforma"
-                value={Number(formData.lastRenovationYear) || 2000}
-                onChange={val => updateFormData("lastRenovationYear", val.toString())}
-                min={1900}
-                max={new Date().getFullYear()}
-                placeholder="Año de última reforma"
-              />
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <label htmlFor="buildingFloors" className="text-xs font-medium text-gray-600">
-              Plantas del Edificio
-            </label>
-            <Input
-              id="buildingFloors"
-              value={formData.buildingFloors}
-              onChange={handleEventInputChange("buildingFloors")}
-              placeholder="Número de plantas"
-              type="number"
-              min="0"
-              step="1"
-                className="h-10 placeholder:text-gray-400 shadow-md border-0"
-            />
-          </div>
-        </>
+        <div className="space-y-2">
+          <label htmlFor="buildingFloors" className="text-xs font-medium text-gray-600">
+            Plantas del Edificio
+          </label>
+          <Input
+            id="buildingFloors"
+            value={formData.buildingFloors}
+            onChange={handleEventInputChange("buildingFloors")}
+            placeholder="Número de plantas"
+            type="number"
+            min="0"
+            step="1"
+            className="h-10 placeholder:text-gray-400 shadow-md border-0"
+          />
+        </div>
       )}
 
       {/* Save Error Notification */}

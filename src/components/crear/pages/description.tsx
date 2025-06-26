@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Textarea } from "~/components/ui/textarea"
-import { ChevronLeft, ChevronRight, Loader2, MoreVertical } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog"
+import { ChevronLeft, ChevronRight, Wand2, Plus, MoreVertical } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { generatePropertyDescription } from '~/server/openai/property_descriptions'
-import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
+import { generatePropertyDescription } from "~/server/openai/property_descriptions"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,34 +18,32 @@ import FormSkeleton from "./form-skeleton"
 
 interface DescriptionPageProps {
   listingId: string
+  globalFormData: any
   onNext: () => void
   onBack?: () => void
+  refreshListingDetails?: () => void
 }
 
-export default function DescriptionPage({ listingId, onNext, onBack }: DescriptionPageProps) {
+export default function DescriptionPage({ listingId, globalFormData, onNext, onBack }: DescriptionPageProps) {
   const [description, setDescription] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
   const [signature, setSignature] = useState("")
-  const [listingDetails, setListingDetails] = useState<any>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
+  // Use centralized data instead of fetching
   useEffect(() => {
-    const fetchData = async () => {
-      if (listingId) {
-        const details = await getListingDetails(Number(listingId))
-        setListingDetails(details)
-        setDescription(details.description || "")
-      }
+    if (globalFormData?.listingDetails) {
+      const details = globalFormData.listingDetails
+      setDescription(details.description || "")
     }
-    fetchData()
-  }, [listingId])
+  }, [globalFormData?.listingDetails])
 
   const handleGenerateDescription = async () => {
     try {
       setIsGenerating(true)
-      const generated = await generatePropertyDescription(listingDetails)
+      const generated = await generatePropertyDescription(globalFormData.listingDetails)
       setDescription(generated)
     } finally {
       setIsGenerating(false)
@@ -58,28 +56,32 @@ export default function DescriptionPage({ listingId, onNext, onBack }: Descripti
     setSignature("")
   }
 
-  const handleNext = async () => {
-    setSaving(true)
-    setSaveError(null)
-    try {
-      if (listingDetails?.propertyId) {
-        const updateData: any = {
-          description: description,
-        }
-        // Only update formPosition if current position is lower than 11
-        if (!listingDetails.formPosition || listingDetails.formPosition < 11) {
-          updateData.formPosition = 11
-        }
-        await updateProperty(Number(listingDetails.propertyId), updateData)
+  const handleNext = () => {
+    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    onNext()
+    
+    // Save data in background (completely silent)
+    saveInBackground()
+  }
+
+  // Background save function - completely silent and non-blocking
+  const saveInBackground = () => {
+    // Fire and forget - no await, no blocking!
+    if (globalFormData?.listingDetails?.propertyId) {
+      const updateData: any = {
+        description: description,
       }
-      // Refresh listing details after saving
-      const updatedDetails = await getListingDetails(Number(listingId))
-      setListingDetails(updatedDetails)
-      onNext()
-    } catch (error) {
-      console.error("Error saving form data:", error)
-      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
-      setSaving(false)
+
+      // Only update formPosition if current position is lower than 11
+      if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 11) {
+        updateData.formPosition = 11
+      }
+
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).catch((error: any) => {
+        console.error("Error saving form data:", error)
+        // Silent error - user doesn't know it failed
+        // Could implement retry logic here if needed
+      })
     }
   }
 
@@ -125,7 +127,7 @@ export default function DescriptionPage({ listingId, onNext, onBack }: Descripti
         >
           {isGenerating ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Wand2 className="mr-2 h-4 w-4 animate-spin" />
               Generando descripción...
             </>
           ) : (

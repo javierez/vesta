@@ -5,15 +5,16 @@ import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
 import FormSkeleton from "./form-skeleton"
 import { CompassRose } from "../rosa"
 
 interface FifthPageProps {
   listingId: string
+  globalFormData: any
   onNext: () => void
   onBack?: () => void
+  refreshListingDetails?: () => void
 }
 
 // Form data interface for fifth page
@@ -29,87 +30,67 @@ const initialFormData: FifthPageFormData = {
   orientation: "",
 }
 
-export default function FifthPage({ listingId, onNext, onBack }: FifthPageProps) {
+export default function FifthPage({ listingId, globalFormData, onNext, onBack }: FifthPageProps) {
   const [formData, setFormData] = useState<FifthPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [listingDetails, setListingDetails] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
 
   const updateFormData = (field: keyof FifthPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // Fetch listing details on component mount
+  // Use centralized data instead of fetching
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Fetch listing details first
-        if (listingId) {
-          const details = await getListingDetails(Number(listingId))
-          setListingDetails(details)
-          
-          // For solar and garage properties, skip this page entirely
-          if (details.propertyType === "solar" || details.propertyType === "garage") {
-            onNext()
-            return
-          }
-          
-          // Pre-populate form with existing data for other property types
-          setFormData(prev => ({
-            ...prev,
-            isExterior: details.exterior || false,
-            isBright: details.bright || false,
-            orientation: details.orientation || "",
-          }))
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setIsLoading(false)
+    if (globalFormData?.listingDetails) {
+      const details = globalFormData.listingDetails
+      
+      // For solar and garage properties, skip this page entirely
+      if (details.propertyType === "solar" || details.propertyType === "garage") {
+        onNext()
+        return
       }
+      
+      // Pre-populate form with existing data for other property types
+      setFormData(prev => ({
+        ...prev,
+        isExterior: details.exterior || false,
+        isBright: details.bright || false,
+        orientation: details.orientation || "",
+      }))
     }
-    fetchData()
-  }, [listingId, onNext])
+  }, [globalFormData?.listingDetails, onNext])
 
-  const handleNext = async () => {
-    setSaving(true)
-    try {
-      // Clear any previous save errors
-      setSaveError(null)
+  const handleNext = () => {
+    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    onNext()
+    
+    // Save data in background (completely silent)
+    saveInBackground()
+  }
 
-      // Save data in the background without blocking the UI
-      if (listingDetails?.propertyId) {
-        const updateData: any = {
-          exterior: formData.isExterior,
-          bright: formData.isBright,
-          orientation: formData.orientation,
-        }
-
-        // Only update formPosition if current position is lower than 6
-        if (!listingDetails.formPosition || listingDetails.formPosition < 6) {
-          updateData.formPosition = 6
-        }
-
-        await updateProperty(Number(listingDetails.propertyId), updateData)
+  // Background save function - completely silent and non-blocking
+  const saveInBackground = () => {
+    // Fire and forget - no await, no blocking!
+    if (globalFormData?.listingDetails?.propertyId) {
+      const updateData: any = {
+        exterior: formData.isExterior,
+        bright: formData.isBright,
+        orientation: formData.orientation,
       }
 
-      // Refresh listing details after saving
-      const updatedDetails = await getListingDetails(Number(listingId))
-      setListingDetails(updatedDetails)
+      // Only update formPosition if current position is lower than 6
+      if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 6) {
+        updateData.formPosition = 6
+      }
 
-      // Proceed to next step
-      onNext()
-    } catch (error) {
-      console.error("Error saving form data:", error)
-      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
-      setSaving(false)
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).catch((error: any) => {
+        console.error("Error saving form data:", error)
+        // Silent error - user doesn't know it failed
+        // Could implement retry logic here if needed
+      })
     }
   }
 
-  if (isLoading || saving) {
+  if (globalFormData?.listingDetails === null) {
     return <FormSkeleton />
   }
 

@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Card } from "~/components/ui/card"
 import { Loader, Building2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { getListingDetails } from "~/server/queries/listing"
+import { getListingDetails, getAllAgents } from "~/server/queries/listing"
+import { getAllPotentialOwners, getCurrentListingOwners } from "~/server/queries/contact"
 import ProgressBar from "./progress-bar"
 import FirstPage from "./pages/first"
 import SecondPage from "./pages/second"
@@ -42,54 +43,139 @@ const steps: Step[] = [
   { id: "rent", title: "Alquiler" },
 ]
 
+// Static form options - memoized to prevent recreation
+const STATIC_FORM_OPTIONS = {
+  heatingOptions: [
+    "Si, Sin especificar",
+    "Gas Individual",
+    "Gasóleo Individual",
+    "Gas Colectivo",
+    "Gasóleo Colectivo",
+    "Eléctrica",
+    "Tarifa Nocturno",
+    "Propano",
+    "Suelo Radiante",
+    "Eléctrica por Acumulador",
+    "Placas Fotovoltaicas",
+    "Biomasa",
+    "Bomba de calor",
+    "Geotermia",
+    "Aerotermia"
+  ],
+  airConditioningOptions: [
+    { value: "central", label: "Central" },
+    { value: "split", label: "Split" },
+    { value: "portatil", label: "Portátil" },
+    { value: "conductos", label: "Conductos" },
+    { value: "cassette", label: "Cassette" },
+    { value: "ventana", label: "Ventana" },
+  ],
+  furnitureQualityOptions: [
+    { value: "basic", label: "Básico", color: "bg-gray-500" },
+    { value: "standard", label: "Estándar", color: "bg-gray-600" },
+    { value: "high", label: "Alta", color: "bg-gray-700" },
+    { value: "luxury", label: "Lujo", color: "bg-gray-900" },
+  ],
+  propertyTypes: ["piso", "casa", "local", "solar", "garage"],
+  listingTypes: ["Sale", "Rent"]
+}
+
+// Global form data interface
+interface GlobalFormData {
+  listingDetails: any
+  agents: Array<{id: number, name: string}>
+  contacts: Array<{id: number, name: string}>
+  currentContacts: string[]
+  staticOptions: typeof STATIC_FORM_OPTIONS
+}
+
 export default function PropertyForm({ listingId }: PropertyFormProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [direction, setDirection] = useState<"forward" | "backward">("forward")
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [listingDetails, setListingDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  
+  // Centralized data state - passed to all child components
+  const [globalFormData, setGlobalFormData] = useState<GlobalFormData>({
+    listingDetails: null,
+    agents: [],
+    contacts: [],
+    currentContacts: [],
+    staticOptions: STATIC_FORM_OPTIONS
+  })
 
-  // Fetch listing details on component mount
+  // Pre-fetch ALL data once - no more redundant API calls in child components
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAllData = async () => {
       try {
         setIsLoading(true)
         
-        // Fetch listing details first
-        if (listingId) {
-          const details = await getListingDetails(Number(listingId))
-          setListingDetails(details)
-          
-          // Set current step based on form position
-          if (details.formPosition) {
-            // Map form position to step index
-            // formPosition 1 = step 0 (basic info)
-            // formPosition 2 = step 1 (property details)
-            // formPosition 3 = step 2 (address)
-            // etc.
-            const stepIndex = Math.max(0, Math.min(details.formPosition - 1, steps.length - 1))
-            setCurrentStep(stepIndex)
-          }
+        // Fetch all data in parallel for maximum speed
+        const [
+          listingDetails,
+          agents,
+          contacts,
+          currentContacts
+        ] = await Promise.all([
+          getListingDetails(Number(listingId)),
+          getAllAgents(),
+          getAllPotentialOwners(),
+          getCurrentListingOwners(Number(listingId))
+        ])
+
+        // Set current step based on form position
+        if (listingDetails?.formPosition) {
+          const stepIndex = Math.max(0, Math.min(listingDetails.formPosition - 1, steps.length - 1))
+          setCurrentStep(stepIndex)
         }
+
+        // Set global form data
+        setGlobalFormData({
+          listingDetails,
+          agents: agents.map(agent => ({
+            id: Number(agent.id),
+            name: agent.name
+          })),
+          contacts: contacts.map(contact => ({
+            id: Number(contact.id),
+            name: contact.name
+          })),
+          currentContacts: currentContacts.map(contact => contact.id.toString()),
+          staticOptions: STATIC_FORM_OPTIONS
+        })
+
       } catch (error) {
         console.error("Error fetching data:", error)
       } finally {
         setIsLoading(false)
       }
     }
-    fetchData()
+    fetchAllData()
+  }, [listingId])
+
+  // Refresh only listing details (for saves)
+  const refreshListingDetails = useCallback(async () => {
+    try {
+      const updatedDetails = await getListingDetails(Number(listingId))
+      setGlobalFormData(prev => ({
+        ...prev,
+        listingDetails: updatedDetails
+      }))
+    } catch (error) {
+      console.error("Error refreshing listing details:", error)
+    }
   }, [listingId])
 
   // Sync currentStep with formPosition when listingDetails updates
   useEffect(() => {
-    if (listingDetails?.formPosition) {
-      const stepIndex = Math.max(0, Math.min(listingDetails.formPosition - 1, steps.length - 1))
+    if (globalFormData.listingDetails?.formPosition) {
+      const stepIndex = Math.max(0, Math.min(globalFormData.listingDetails.formPosition - 1, steps.length - 1))
       setCurrentStep(stepIndex)
     }
-  }, [listingDetails?.formPosition])
+  }, [globalFormData.listingDetails?.formPosition])
 
-  // Define which steps are skipped for each property type
-  const getSkippedSteps = (propertyType: string): number[] => {
+  // Memoize skipped steps calculation
+  const getSkippedSteps = useCallback((propertyType: string): number[] => {
     if (propertyType === "solar") {
       // Solar properties skip: fourth (3), fifth (4), sixth (5), eighth (7), nineth (8)
       return [3, 4, 5, 7, 8]
@@ -98,13 +184,16 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
       return [4, 6, 7, 8]
     }
     return []
-  }
+  }, [])
+
+  // Memoize skipped steps for current property type
+  const skippedSteps = useMemo(() => {
+    const propertyType = globalFormData.listingDetails?.propertyType || ""
+    return getSkippedSteps(propertyType)
+  }, [globalFormData.listingDetails?.propertyType, getSkippedSteps])
 
   // Get the next non-skipped step
-  const getNextNonSkippedStep = (currentStepIndex: number): number => {
-    const propertyType = listingDetails?.propertyType || ""
-    const skippedSteps = getSkippedSteps(propertyType)
-    
+  const getNextNonSkippedStep = useCallback((currentStepIndex: number): number => {
     let nextStep = currentStepIndex + 1
     
     // Keep incrementing until we find a non-skipped step
@@ -113,13 +202,10 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     }
     
     return Math.min(nextStep, steps.length - 1)
-  }
+  }, [skippedSteps])
 
   // Get the previous non-skipped step
-  const getPrevNonSkippedStep = (currentStepIndex: number): number => {
-    const propertyType = listingDetails?.propertyType || ""
-    const skippedSteps = getSkippedSteps(propertyType)
-    
+  const getPrevNonSkippedStep = useCallback((currentStepIndex: number): number => {
     let prevStep = currentStepIndex - 1
     
     // Keep decrementing until we find a non-skipped step
@@ -128,156 +214,109 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     }
     
     return Math.max(prevStep, 0)
-  }
+  }, [skippedSteps])
 
-  const nextStep = () => {
+  const nextStep = useCallback(() => {
     setDirection("forward")
     const nextStepIndex = getNextNonSkippedStep(currentStep)
     setCurrentStep(nextStepIndex)
-  }
+  }, [currentStep, getNextNonSkippedStep])
 
-  const prevStep = () => {
+  const prevStep = useCallback(() => {
     if (currentStep > 0) {
       setDirection("backward")
       const prevStepIndex = getPrevNonSkippedStep(currentStep)
       setCurrentStep(prevStepIndex)
     }
-  }
+  }, [currentStep, getPrevNonSkippedStep])
 
-  const goToStep = (stepIndex: number) => {
-    const formPosition = listingDetails?.formPosition || 1
-    // Only allow navigation to completed steps (backward navigation)
-    if (stepIndex < formPosition) {
+  const goToStep = useCallback((stepIndex: number) => {
+    const formPosition = globalFormData.listingDetails?.formPosition || 1
+    const currentFormStep = formPosition - 1
+    
+    // Only allow navigation to the immediate next step
+    if (stepIndex === currentFormStep + 1) {
+      setDirection("forward")
+      setCurrentStep(stepIndex)
+    }
+    // Allow backward navigation to any previous step
+    else if (stepIndex < currentFormStep) {
       setDirection(stepIndex < currentStep ? "backward" : "forward")
       setCurrentStep(stepIndex)
     }
-  }
+    // Block forward navigation beyond next step
+    // else: do nothing - navigation blocked
+  }, [currentStep, globalFormData.listingDetails?.formPosition])
 
-  // Smart navigation function that automatically skips to next non-skipped step
-  const navigateToNextStep = () => {
+  // Optimistic navigation function - navigate immediately, save in background
+  const navigateToNextStep = useCallback(() => {
+    // Navigate immediately (optimistic)
     setDirection("forward")
     const nextStepIndex = getNextNonSkippedStep(currentStep)
     setCurrentStep(nextStepIndex)
-    refreshListingDetails()
-  }
+    
+    // Update formPosition in globalFormData immediately for instant UI updates
+    const newFormPosition = nextStepIndex + 1
+    setGlobalFormData(prev => ({
+      ...prev,
+      listingDetails: prev.listingDetails ? {
+        ...prev.listingDetails,
+        formPosition: Math.max(prev.listingDetails.formPosition || 1, newFormPosition)
+      } : null
+    }))
+    
+    // Refresh listing details after every page to get latest data
+    // This ensures we have the most up-to-date information after saves
+    setTimeout(() => {
+      refreshListingDetails()
+    }, 100) // Small delay to allow background saves to complete
+  }, [currentStep, getNextNonSkippedStep, refreshListingDetails])
 
-  // Refresh listing details after form updates
-  const refreshListingDetails = async () => {
-    try {
-      const details = await getListingDetails(Number(listingId))
-      setListingDetails(details)
-    } catch (error) {
-      console.error("Error refreshing listing details:", error)
-    }
-  }
+  // Shared props for all form pages - no more individual data fetching!
+  const sharedPageProps = useMemo(() => ({
+    listingId,
+    globalFormData,
+    onNext: navigateToNextStep,
+    onBack: currentStep > 0 ? prevStep : undefined,
+    refreshListingDetails
+  }), [listingId, globalFormData, navigateToNextStep, currentStep, prevStep, refreshListingDetails])
 
-  const renderStepContent = () => {
+  const renderStepContent = useCallback(() => {
     const step = steps[currentStep]
 
     if (!step) {
       return <div>Step not found</div>
     }
 
+    // Pass shared props to eliminate individual data fetching
+    const pageProps = {
+      ...sharedPageProps,
+      onBack: step.id === "basic" && currentStep === 0 ? undefined : prevStep
+    }
+
     switch (step.id) {
       case "basic":
-        return (
-          <FirstPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={currentStep > 0 ? prevStep : undefined}
-          />
-        )
-
+        return <FirstPage {...pageProps} />
       case "details":
-        return (
-          <SecondPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={prevStep}
-          />
-        )
-
+        return <SecondPage {...pageProps} />
       case "address":
-        return (
-          <ThirdPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={prevStep}
-          />
-        )
-
+        return <ThirdPage {...pageProps} />
       case "equipment":
-        return (
-          <FourthPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={prevStep}
-          />
-        )
-
+        return <FourthPage {...pageProps} />
       case "orientation":
-        return (
-          <FifthPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={prevStep}
-          />
-        )
-
+        return <FifthPage {...pageProps} />
       case "additional":
-        return (
-          <SixthPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={prevStep}
-          />
-        )
-
+        return <SixthPage {...pageProps} />
       case "luxury":
-        return (
-          <SeventhPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={prevStep}
-          />
-        )
-
+        return <SeventhPage {...pageProps} />
       case "spaces":
-        return (
-          <EighthPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={prevStep}
-          />
-        )
-
+        return <EighthPage {...pageProps} />
       case "materials":
-        return (
-          <NinethPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={prevStep}
-          />
-        )
-
+        return <NinethPage {...pageProps} />
       case "description":
-        return (
-          <DescriptionPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={prevStep}
-          />
-        )
-
+        return <DescriptionPage {...pageProps} />
       case "rent":
-        return (
-          <RentPage 
-            listingId={listingId}
-            onNext={navigateToNextStep}
-            onBack={prevStep}
-          />
-        )
-
+        return <RentPage {...pageProps} />
       default:
         return (
           <div className="space-y-4">
@@ -287,7 +326,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
           </div>
         )
     }
-  }
+  }, [currentStep, sharedPageProps, prevStep])
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -310,9 +349,9 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
               currentStep={currentStep}
               totalSteps={steps.length}
               steps={steps}
-              formPosition={listingDetails?.formPosition || 1}
+              formPosition={globalFormData.listingDetails?.formPosition || 1}
               onStepClick={goToStep}
-              propertyType={listingDetails?.propertyType || ""}
+              propertyType={globalFormData.listingDetails?.propertyType || ""}
             />
           </div>
 
@@ -345,6 +384,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.5 }}
                   className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
                 >
                   <div className="flex items-center space-x-2">

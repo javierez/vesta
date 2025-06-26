@@ -2,20 +2,22 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
+import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { Label } from "~/components/ui/label"
 import { Checkbox } from "~/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { ChevronLeft, ChevronRight, Layout, Wine, Ruler, DoorOpen, Columns3, GalleryHorizontal, BedDouble } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { getListingDetails } from "~/server/queries/listing"
 import { updateProperty } from "~/server/queries/properties"
-import FormSkeleton from "./form-skeleton"
 import { formFormatters } from "~/lib/utils"
+import FormSkeleton from "./form-skeleton"
 
 interface EighthPageProps {
   listingId: string
+  globalFormData: any
   onNext: () => void
   onBack?: () => void
+  refreshListingDetails?: () => void
 }
 
 interface EighthPageFormData {
@@ -26,7 +28,7 @@ interface EighthPageFormData {
   livingRoomSize: number
   balconyCount: number
   galleryCount: number
-  builtInWardrobes: string
+  builtInWardrobes: boolean
 }
 
 const initialFormData: EighthPageFormData = {
@@ -37,91 +39,81 @@ const initialFormData: EighthPageFormData = {
   livingRoomSize: 0,
   balconyCount: 0,
   galleryCount: 0,
-  builtInWardrobes: "",
+  builtInWardrobes: false,
 }
 
-export default function EighthPage({ listingId, onNext, onBack }: EighthPageProps) {
+export default function EighthPage({ listingId, globalFormData, onNext, onBack }: EighthPageProps) {
   const [formData, setFormData] = useState<EighthPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [listingDetails, setListingDetails] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [propertyType, setPropertyType] = useState<string>("")
 
   const updateFormData = (field: keyof EighthPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // Fetch listing details on component mount
+  // Use centralized data instead of fetching
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        if (listingId) {
-          const details = await getListingDetails(Number(listingId))
-          setListingDetails(details)
-          
-          // For solar and garage properties, skip this page entirely
-          if (details.propertyType === "solar" || details.propertyType === "garage") {
-            onNext()
-            return
-          }
-          
-          setFormData(prev => ({
-            ...prev,
-            terrace: details.terrace || false,
-            terraceSize: details.terraceSize || 0,
-            wineCellar: details.wineCellar || false,
-            wineCellarSize: details.wineCellarSize || 0,
-            livingRoomSize: details.livingRoomSize || 0,
-            balconyCount: details.balconyCount || 0,
-            galleryCount: details.galleryCount || 0,
-            builtInWardrobes: details.builtInWardrobes || "",
-          }))
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setIsLoading(false)
+    if (globalFormData?.listingDetails) {
+      const details = globalFormData.listingDetails
+      setPropertyType(details.propertyType || "")
+      
+      // For garage properties, skip this page entirely
+      if (details.propertyType === "garage") {
+        onNext()
+        return
       }
+      
+      setFormData(prev => ({
+        ...prev,
+        terrace: details.terrace || false,
+        terraceSize: details.terraceSize || 0,
+        wineCellar: details.wineCellar || false,
+        wineCellarSize: details.wineCellarSize || 0,
+        livingRoomSize: details.livingRoomSize || 0,
+        balconyCount: details.balconyCount || 0,
+        galleryCount: details.galleryCount || 0,
+        builtInWardrobes: details.builtInWardrobes || false,
+      }))
     }
-    fetchData()
-  }, [listingId, onNext])
+  }, [globalFormData?.listingDetails, onNext])
 
-  const handleNext = async () => {
-    setSaving(true)
-    setSaveError(null)
-    try {
-      if (listingDetails?.propertyId) {
-        const updateData: any = {
-          terrace: formData.terrace,
-          terraceSize: formData.terraceSize,
-          wineCellar: formData.wineCellar,
-          wineCellarSize: formData.wineCellarSize,
-          livingRoomSize: formData.livingRoomSize,
-          balconyCount: formData.balconyCount,
-          galleryCount: formData.galleryCount,
-          builtInWardrobes: formData.builtInWardrobes,
-        }
+  const handleNext = () => {
+    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    onNext()
+    
+    // Save data in background (completely silent)
+    saveInBackground()
+  }
 
-        // Only update formPosition if current position is lower than 9
-        if (!listingDetails.formPosition || listingDetails.formPosition < 9) {
-          updateData.formPosition = 9
-        }
-
-        await updateProperty(Number(listingDetails.propertyId), updateData)
+  // Background save function - completely silent and non-blocking
+  const saveInBackground = () => {
+    // Fire and forget - no await, no blocking!
+    if (globalFormData?.listingDetails?.propertyId) {
+      const updateData: any = {
+        terrace: formData.terrace,
+        terraceSize: formData.terraceSize || undefined,
+        wineCellar: formData.wineCellar,
+        wineCellarSize: formData.wineCellarSize || undefined,
+        livingRoomSize: formData.livingRoomSize || undefined,
+        balconyCount: formData.balconyCount || undefined,
+        galleryCount: formData.galleryCount || undefined,
+        builtInWardrobes: formData.builtInWardrobes,
       }
-      // Refresh listing details after saving
-      const updatedDetails = await getListingDetails(Number(listingId))
-      setListingDetails(updatedDetails)
-      onNext()
-    } catch (error) {
-      console.error("Error saving form data:", error)
-      setSaveError("Error al guardar los datos. Los cambios podrían no haberse guardado correctamente.")
-      setSaving(false)
+
+      // Only update formPosition if current position is lower than 9
+      if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 9) {
+        updateData.formPosition = 9
+      }
+
+      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).catch((error: any) => {
+        console.error("Error saving form data:", error)
+        // Silent error - user doesn't know it failed
+        // Could implement retry logic here if needed
+      })
     }
   }
 
-  if (isLoading || saving) {
+  if (globalFormData?.listingDetails === null) {
     return <FormSkeleton />
   }
 
@@ -258,7 +250,7 @@ export default function EighthPage({ listingId, onNext, onBack }: EighthPageProp
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="builtInWardrobes" className="text-sm">Armarios empotrados</Label>
-              <Select value={formData.builtInWardrobes} onValueChange={value => updateFormData("builtInWardrobes", value)}>
+              <Select value={formData.builtInWardrobes ? "completo" : "ninguno"} onValueChange={value => updateFormData("builtInWardrobes", value === "completo")}>
                 <SelectTrigger className="h-8 text-gray-500">
                   <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
