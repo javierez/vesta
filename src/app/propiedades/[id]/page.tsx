@@ -11,6 +11,7 @@ import { Card } from "~/components/ui/card"
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump"
 import { PropertyHeader } from "~/components/propiedades/detail/property-header"
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form"
+import { PortalSelection } from "~/components/propiedades/detail/portal-selection"
 import { use } from "react"
 import { getPropertyImages } from "~/server/queries/property_images"
 import { getListingDetails } from "~/server/queries/listing"
@@ -133,6 +134,13 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             title={listing.title ?? ""} 
             propertyId={BigInt(listing.propertyId)}
             referenceNumber={listing.referenceNumber ?? ""}
+          />
+        </div>
+
+        {/* Portal Selection */}
+        <div className="pb-8 max-w-4xl mx-auto mb-8">
+          <PortalSelection 
+            listingId={listing.listingId.toString()}
           />
         </div>
 
