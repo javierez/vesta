@@ -174,7 +174,8 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             postalCode: (document.getElementById('postalCode') as HTMLInputElement)?.value,
             city,
             province,
-            municipality
+            municipality,
+            nearbyPublicTransport
           }
           break
 
@@ -195,8 +196,14 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             isFurnished
           }
           listingData = {
-            optionalGaragePrice: Math.round(Number((document.getElementById('optionalGaragePrice') as HTMLInputElement)?.value)),
-            optionalStorageRoomPrice: Math.round(Number((document.getElementById('optionalStorageRoomPrice') as HTMLInputElement)?.value))
+            optionalGaragePrice: Math.round(Number((document.getElementById('optionalGaragePrice') as HTMLInputElement)?.value) || 0),
+            optionalStorageRoomPrice: Math.round(Number((document.getElementById('optionalStorageRoomPrice') as HTMLInputElement)?.value) || 0),
+            oven,
+            microwave,
+            washingMachine,
+            fridge,
+            tv,
+            stoneware
           }
           break
 
@@ -241,7 +248,8 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             openKitchen,
             frenchKitchen,
             furnishedKitchen,
-            pantry
+            pantry,
+            suiteBathroom
           }
           break
 
@@ -259,7 +267,13 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             musicSystem,
             laundryRoom,
             coveredClothesline,
-            fireplace
+            fireplace,
+            gym,
+            sportsArea,
+            childrenArea,
+            communityPool,
+            privatePool,
+            tennisCourt
           }
           break
 
@@ -296,6 +310,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
 
         case 'rentalProperties':
           listingData = {
+            internet,
             studentFriendly,
             petsAllowed,
             appliancesIncluded
@@ -489,6 +504,25 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const [isMapsPopupOpen, setIsMapsPopupOpen] = useState(false)
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
   const [signature, setSignature] = useState("")
+
+  // New community amenity states
+  const [gym, setGym] = useState(listing.gym ?? false)
+  const [sportsArea, setSportsArea] = useState(listing.sportsArea ?? false)
+  const [childrenArea, setChildrenArea] = useState(listing.childrenArea ?? false)
+  const [suiteBathroom, setSuiteBathroom] = useState(listing.suiteBathroom ?? false)
+  const [nearbyPublicTransport, setNearbyPublicTransport] = useState(listing.nearbyPublicTransport ?? false)
+  const [communityPool, setCommunityPool] = useState(listing.communityPool ?? false)
+  const [privatePool, setPrivatePool] = useState(listing.privatePool ?? false)
+  const [tennisCourt, setTennisCourt] = useState(listing.tennisCourt ?? false)
+
+  // Appliance states from listings
+  const [internet, setInternet] = useState(listing.internet ?? false)
+  const [oven, setOven] = useState(listing.oven ?? false)
+  const [microwave, setMicrowave] = useState(listing.microwave ?? false)
+  const [washingMachine, setWashingMachine] = useState(listing.washingMachine ?? false)
+  const [fridge, setFridge] = useState(listing.fridge ?? false)
+  const [tv, setTv] = useState(listing.tv ?? false)
+  const [stoneware, setStoneware] = useState(listing.stoneware ?? false)
 
   // Filter owners based on search
   const filteredOwners = owners.filter(owner => 
@@ -1325,6 +1359,87 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               </div>
             )}
           </div>
+
+          {/* Appliances - only show when furnished */}
+          {isFurnished && (
+            <div className="space-y-2 border-t border-border pt-3">
+              <h4 className="text-xs font-medium text-muted-foreground">Electrodomésticos incluidos</h4>
+              <div className="grid grid-cols-3 gap-1">
+                <div className="flex items-center space-x-1">
+                  <Checkbox 
+                    id="oven" 
+                    checked={oven}
+                    onCheckedChange={(checked) => {
+                      setOven(checked as boolean)
+                      updateModuleState('features', true)
+                    }} 
+                    className="h-3 w-3 no-checkmark"
+                  />
+                  <Label htmlFor="oven" className="text-xs">Horno</Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Checkbox 
+                    id="microwave" 
+                    checked={microwave}
+                    onCheckedChange={(checked) => {
+                      setMicrowave(checked as boolean)
+                      updateModuleState('features', true)
+                    }} 
+                    className="h-3 w-3 no-checkmark"
+                  />
+                  <Label htmlFor="microwave" className="text-xs">Microondas</Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Checkbox 
+                    id="washingMachine" 
+                    checked={washingMachine}
+                    onCheckedChange={(checked) => {
+                      setWashingMachine(checked as boolean)
+                      updateModuleState('features', true)
+                    }} 
+                    className="h-3 w-3 no-checkmark"
+                  />
+                  <Label htmlFor="washingMachine" className="text-xs">Lavadora</Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Checkbox 
+                    id="fridge" 
+                    checked={fridge}
+                    onCheckedChange={(checked) => {
+                      setFridge(checked as boolean)
+                      updateModuleState('features', true)
+                    }} 
+                    className="h-3 w-3 no-checkmark"
+                  />
+                  <Label htmlFor="fridge" className="text-xs">Frigorífico</Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Checkbox 
+                    id="tv" 
+                    checked={tv}
+                    onCheckedChange={(checked) => {
+                      setTv(checked as boolean)
+                      updateModuleState('features', true)
+                    }} 
+                    className="h-3 w-3 no-checkmark"
+                  />
+                  <Label htmlFor="tv" className="text-xs">Televisión</Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Checkbox 
+                    id="stoneware" 
+                    checked={stoneware}
+                    onCheckedChange={(checked) => {
+                      setStoneware(checked as boolean)
+                      updateModuleState('features', true)
+                    }} 
+                    className="h-3 w-3 no-checkmark"
+                  />
+                  <Label htmlFor="stoneware" className="text-xs">Vajilla</Label>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -1847,6 +1962,44 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       />
                       <Label htmlFor="fireplace" className="text-sm">Chimenea</Label>
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="suiteBathroom" 
+                        checked={suiteBathroom}
+                        onCheckedChange={(checked) => {
+                          setSuiteBathroom(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
+                      />
+                      <Label htmlFor="suiteBathroom" className="text-sm">Baño en suite</Label>
+                    </div>
+                  </div>
+
+                  {/* Smart Home */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium text-muted-foreground">Domótica</h4>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="homeAutomation" 
+                        checked={homeAutomation}
+                        onCheckedChange={(checked) => {
+                          setHomeAutomation(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
+                      />
+                      <Label htmlFor="homeAutomation" className="text-sm">Domótica</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="musicSystem" 
+                        checked={musicSystem}
+                        onCheckedChange={(checked) => {
+                          setMusicSystem(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
+                      />
+                      <Label htmlFor="musicSystem" className="text-sm">Sistema de música</Label>
+                    </div>
                   </div>
                 </div>
 
@@ -1876,32 +2029,92 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                       />
                       <Label htmlFor="pool" className="text-sm">Piscina</Label>
                     </div>
-                  </div>
-
-                  {/* Smart Home */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">Domótica</h4>
                     <div className="flex items-center space-x-2">
                       <Checkbox 
-                        id="homeAutomation" 
-                        checked={homeAutomation}
+                        id="privatePool" 
+                        checked={privatePool}
                         onCheckedChange={(checked) => {
-                          setHomeAutomation(checked as boolean)
+                          setPrivatePool(checked as boolean)
                           updateModuleState('premiumFeatures', true)
                         }} 
                       />
-                      <Label htmlFor="homeAutomation" className="text-sm">Domótica</Label>
+                      <Label htmlFor="privatePool" className="text-sm">Piscina privada</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox 
-                        id="musicSystem" 
-                        checked={musicSystem}
+                        id="communityPool" 
+                        checked={communityPool}
                         onCheckedChange={(checked) => {
-                          setMusicSystem(checked as boolean)
+                          setCommunityPool(checked as boolean)
                           updateModuleState('premiumFeatures', true)
                         }} 
                       />
-                      <Label htmlFor="musicSystem" className="text-sm">Sistema de música</Label>
+                      <Label htmlFor="communityPool" className="text-sm">Piscina comunitaria</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="tennisCourt" 
+                        checked={tennisCourt}
+                        onCheckedChange={(checked) => {
+                          setTennisCourt(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
+                      />
+                      <Label htmlFor="tennisCourt" className="text-sm">Pista de tenis</Label>
+                    </div>
+                  </div>
+
+                  {/* Community Amenities */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium text-muted-foreground">Comunitarios</h4>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="gym" 
+                        checked={gym}
+                        onCheckedChange={(checked) => {
+                          setGym(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
+                      />
+                      <Label htmlFor="gym" className="text-sm">Gimnasio</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="sportsArea" 
+                        checked={sportsArea}
+                        onCheckedChange={(checked) => {
+                          setSportsArea(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
+                      />
+                      <Label htmlFor="sportsArea" className="text-sm">Zona deportiva</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="childrenArea" 
+                        checked={childrenArea}
+                        onCheckedChange={(checked) => {
+                          setChildrenArea(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
+                      />
+                      <Label htmlFor="childrenArea" className="text-sm">Zona infantil</Label>
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium text-muted-foreground">Ubicación</h4>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="nearbyPublicTransport" 
+                        checked={nearbyPublicTransport}
+                        onCheckedChange={(checked) => {
+                          setNearbyPublicTransport(checked as boolean)
+                          updateModuleState('premiumFeatures', true)
+                        }} 
+                      />
+                      <Label htmlFor="nearbyPublicTransport" className="text-sm">Transporte público cercano</Label>
                     </div>
                   </div>
 
@@ -2332,6 +2545,17 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         </div>
         <div className="space-y-3">
           <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="internet" 
+                checked={internet}
+                onCheckedChange={(checked) => {
+                  setInternet(checked as boolean)
+                  updateModuleState('rentalProperties', true)
+                }} 
+              />
+              <Label htmlFor="internet" className="text-sm">Internet</Label>
+            </div>
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="studentFriendly" 

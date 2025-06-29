@@ -58,13 +58,29 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
       setPropertyType(details.propertyType || "")
       setPropertySubtype(details.propertySubtype || "")
       
+      // Convert builtSurfaceArea from float to integer for display (similar to price in first.tsx)
+      let displayBuiltSurfaceArea = ""
+      if (details.builtSurfaceArea) {
+        // If builtSurfaceArea is a float (e.g., 89.00), convert to integer
+        const areaValue = typeof details.builtSurfaceArea === 'number' ? details.builtSurfaceArea : parseFloat(details.builtSurfaceArea)
+        displayBuiltSurfaceArea = Math.floor(areaValue).toString()
+      }
+      
+      // Convert squareMeter from float to integer for display (similar to price in first.tsx)
+      let displaySquareMeter = ""
+      if (details.squareMeter) {
+        // If squareMeter is a float (e.g., 80.00), convert to integer
+        const areaValue = typeof details.squareMeter === 'number' ? details.squareMeter : parseFloat(details.squareMeter)
+        displaySquareMeter = Math.floor(areaValue).toString()
+      }
+      
       // Pre-populate form with existing data
       setFormData(prev => ({
         ...prev,
         bedrooms: details.bedrooms?.toString() || "2",
         bathrooms: details.bathrooms?.toString() || "1",
-        squareMeter: details.squareMeter?.toString() || "80",
-        builtSurfaceArea: details.builtSurfaceArea?.toString() || "85",
+        squareMeter: displaySquareMeter || "80",
+        builtSurfaceArea: displayBuiltSurfaceArea || "85",
         yearBuilt: details.yearBuilt?.toString() || "2000",
         lastRenovationYear: details.lastRenovationYear?.toString() || "",
         isRenovated: details.lastRenovationYear && details.lastRenovationYear !== details.yearBuilt,

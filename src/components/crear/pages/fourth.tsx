@@ -39,6 +39,12 @@ interface FourthPageFormData {
   airConditioningType: string
   isFurnished: boolean
   furnitureQuality: string
+  oven: boolean
+  microwave: boolean
+  washingMachine: boolean
+  fridge: boolean
+  tv: boolean
+  stoneware: boolean
 }
 
 const initialFormData: FourthPageFormData = {
@@ -59,6 +65,12 @@ const initialFormData: FourthPageFormData = {
   airConditioningType: "",
   isFurnished: false,
   furnitureQuality: "",
+  oven: false,
+  microwave: false,
+  washingMachine: false,
+  fridge: false,
+  tv: false,
+  stoneware: false,
 }
 
 const heatingOptions = [
@@ -163,6 +175,12 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
         airConditioningType: details.airConditioningType || "",
         isFurnished: details.isFurnished || false,
         furnitureQuality: details.furnitureQuality || "",
+        oven: details.oven || false,
+        microwave: details.microwave || false,
+        washingMachine: details.washingMachine || false,
+        fridge: details.fridge || false,
+        tv: details.tv || false,
+        stoneware: details.stoneware || false,
       }))
     }
   }, [globalFormData?.listingDetails, onNext])
@@ -208,10 +226,19 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
         updateProperty(Number(globalFormData.listingDetails.propertyId), updateData)
       })() : Promise.resolve(),
 
-      // Update listing with optional prices - only save if the related service is enabled
+      // Update listing with optional prices and furniture data
       updateListing(Number(listingId), {
         optionalGaragePrice: formData.hasGarage ? Math.round(formData.optionalGaragePrice).toString() : "0",
         optionalStorageRoomPrice: formData.hasStorageRoom ? Math.round(formData.optionalStorageRoomPrice).toString() : "0",
+        // Furniture data - only save if isFurnished is true
+        isFurnished: formData.isFurnished,
+        furnitureQuality: formData.isFurnished ? formData.furnitureQuality : "",
+        oven: formData.isFurnished ? formData.oven : false,
+        microwave: formData.isFurnished ? formData.microwave : false,
+        washingMachine: formData.isFurnished ? formData.washingMachine : false,
+        fridge: formData.isFurnished ? formData.fridge : false,
+        tv: formData.isFurnished ? formData.tv : false,
+        stoneware: formData.isFurnished ? formData.stoneware : false,
       })
     ]).then(() => {
       // Refresh global data after successful save
@@ -687,7 +714,15 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
               onClick={() => {
                 const newValue = !formData.isFurnished
                 updateFormData("isFurnished", newValue)
-                if (!newValue) updateFormData("furnitureQuality", "")
+                if (!newValue) {
+                  updateFormData("furnitureQuality", "")
+                  updateFormData("oven", false)
+                  updateFormData("microwave", false)
+                  updateFormData("washingMachine", false)
+                  updateFormData("fridge", false)
+                  updateFormData("tv", false)
+                  updateFormData("stoneware", false)
+                }
               }}
               className={`
                 w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
@@ -753,6 +788,150 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                         <span className="relative z-10">{option.label}</span>
                       </motion.button>
                     ))}
+                  </div>
+                </div>
+
+                {/* New Furniture Items */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-600">Electrodomésticos</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => updateFormData("oven", !formData.oven)}
+                      className={`
+                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
+                        ${
+                          formData.oven
+                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                            : "bg-white text-gray-700 shadow-md"
+                        }
+                      `}
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-gray-800"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={formData.oven ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        style={{ borderRadius: "inherit" }}
+                      />
+                      <span className="relative z-10">Horno</span>
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => updateFormData("microwave", !formData.microwave)}
+                      className={`
+                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
+                        ${
+                          formData.microwave
+                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                            : "bg-white text-gray-700 shadow-md"
+                        }
+                      `}
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-gray-800"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={formData.microwave ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        style={{ borderRadius: "inherit" }}
+                      />
+                      <span className="relative z-10">Microondas</span>
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => updateFormData("washingMachine", !formData.washingMachine)}
+                      className={`
+                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
+                        ${
+                          formData.washingMachine
+                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                            : "bg-white text-gray-700 shadow-md"
+                        }
+                      `}
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-gray-800"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={formData.washingMachine ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        style={{ borderRadius: "inherit" }}
+                      />
+                      <span className="relative z-10">Lavadora</span>
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => updateFormData("fridge", !formData.fridge)}
+                      className={`
+                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
+                        ${
+                          formData.fridge
+                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                            : "bg-white text-gray-700 shadow-md"
+                        }
+                      `}
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-gray-800"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={formData.fridge ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        style={{ borderRadius: "inherit" }}
+                      />
+                      <span className="relative z-10">Frigorífico</span>
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => updateFormData("tv", !formData.tv)}
+                      className={`
+                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
+                        ${
+                          formData.tv
+                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                            : "bg-white text-gray-700 shadow-md"
+                        }
+                      `}
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-gray-800"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={formData.tv ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        style={{ borderRadius: "inherit" }}
+                      />
+                      <span className="relative z-10">TV</span>
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => updateFormData("stoneware", !formData.stoneware)}
+                      className={`
+                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
+                        ${
+                          formData.stoneware
+                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                            : "bg-white text-gray-700 shadow-md"
+                        }
+                      `}
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-gray-800"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={formData.stoneware ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        style={{ borderRadius: "inherit" }}
+                      />
+                      <span className="relative z-10">Vajilla</span>
+                    </motion.button>
                   </div>
                 </div>
               </motion.div>

@@ -48,6 +48,37 @@ export function ImageGallery({
   const [isDownloading, setIsDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
 
+  // Use the same placeholder image as property-card.tsx
+  const defaultPlaceholder = "/properties/suburban-dream.png"
+  
+  // State for managing image sources with fallbacks
+  const [imageSources, setImageSources] = useState<Record<number, string>>({})
+  const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({})
+
+  // Initialize image sources with fallbacks
+  React.useEffect(() => {
+    const sources: Record<number, string> = {}
+    initialImages.forEach((image, index) => {
+      sources[index] = image.imageUrl || defaultPlaceholder
+    })
+    setImageSources(sources)
+  }, [initialImages])
+
+  const handleImageError = (index: number) => {
+    console.log('Image failed to load:', imageSources[index])
+    setImageSources(prev => ({
+      ...prev,
+      [index]: defaultPlaceholder
+    }))
+  }
+
+  const handleImageLoad = (index: number) => {
+    setImageLoaded(prev => ({
+      ...prev,
+      [index]: true
+    }))
+  }
+
   const handleDownload = async (imageUrl: string, fileName: string) => {
     setIsDownloading(true)
     setDownloadError(null)
@@ -213,6 +244,16 @@ export function ImageGallery({
 
       const newImages = await Promise.all(uploadPromises)
       setImages(prev => [...prev, ...newImages])
+      
+      // Add new images to imageSources state
+      newImages.forEach((image, index) => {
+        const newIndex = images.length + index
+        setImageSources(prev => ({
+          ...prev,
+          [newIndex]: image.imageUrl || defaultPlaceholder
+        }))
+      })
+      
       newImages.forEach(image => onImageUploaded?.(image))
     } catch (error) {
       console.error("Error uploading images:", error)
@@ -254,12 +295,15 @@ export function ImageGallery({
             onClick={() => isSelectMode && toggleImageSelection(idx)}
           >
             <Image
-              src={image.imageUrl}
+              src={imageSources[idx] || defaultPlaceholder}
               alt={title || `Property image ${idx + 1}`}
               width={300}
               height={200}
-              className="object-cover w-full h-40"
+              className={`object-cover w-full h-40 ${(imageSources[idx] === defaultPlaceholder) ? "grayscale" : ""}`}
+              onError={() => handleImageError(idx)}
+              onLoad={() => handleImageLoad(idx)}
             />
+            {!imageLoaded[idx] && <div className="absolute inset-0 bg-muted animate-pulse" />}
             {isSelectMode ? (
               <div className="absolute top-2 left-2 bg-white/80 rounded-full p-1">
                 {selectedImages.has(idx) ? (
@@ -298,7 +342,7 @@ export function ImageGallery({
                   className="absolute bottom-2 left-2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition-all duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50"
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleDownload(image.imageUrl, `property-image-${idx + 1}.jpg`)
+                    handleDownload(imageSources[idx] || '', `property-image-${idx + 1}.jpg`)
                   }}
                   disabled={isDownloading}
                   aria-label="Descargar imagen"
@@ -438,11 +482,13 @@ export function ImageGallery({
           {expandedImage !== null && images[expandedImage] && (
             <div className="relative">
               <Image
-                src={images[expandedImage].imageUrl}
+                src={imageSources[expandedImage] || defaultPlaceholder}
                 alt={title || `Property image ${expandedImage + 1}`}
                 width={1200}
                 height={800}
-                className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
+                className={`w-full h-auto max-h-[90vh] object-contain rounded-lg ${(imageSources[expandedImage] === defaultPlaceholder) ? "grayscale" : ""}`}
+                onError={() => handleImageError(expandedImage)}
+                onLoad={() => handleImageLoad(expandedImage)}
               />
               <button
                 type="button"

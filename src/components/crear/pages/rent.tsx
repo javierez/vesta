@@ -35,6 +35,7 @@ interface RentPageFormData {
   optionalStorageRoomPrice: number
   rentalPrice: number
   duplicateForRent: boolean
+  internet: boolean
 }
 
 const initialFormData: RentPageFormData = {
@@ -48,6 +49,7 @@ const initialFormData: RentPageFormData = {
   optionalStorageRoomPrice: 0,
   rentalPrice: 0,
   duplicateForRent: false,
+  internet: false,
 }
 
 export default function RentPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: RentPageProps) {
@@ -78,6 +80,7 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
         optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
         optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
         rentalPrice: Number(details.price) || 0,
+        internet: details.internet || false,
       }))
     }
   }, [globalFormData?.listingDetails])
@@ -126,7 +129,8 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
       // Update the sale listing status to 'Active'
       if (globalFormData.listingDetails.listingId) {
         updateListing(Number(globalFormData.listingDetails.listingId), {
-          status: "Active"
+          status: "Active",
+          internet: formData.internet
         }).catch((error: any) => {
           console.error("Error updating sale listing status:", error)
         })
@@ -142,6 +146,7 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
           studentFriendly: formData.studentFriendly,
           petsAllowed: formData.petsAllowed,
           appliancesIncluded: formData.appliancesIncluded,
+          internet: formData.internet,
           optionalGaragePrice: formData.optionalGaragePrice.toString(),
           optionalStorageRoomPrice: formData.optionalStorageRoomPrice.toString(),
           hasKeys: false,
@@ -322,13 +327,23 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
                     <h4 className="text-xs font-medium text-gray-600">Electrodomésticos</h4>
                     <Zap className="h-4 w-4 text-gray-400" />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="appliancesIncluded" 
-                      checked={formData.appliancesIncluded} 
-                      onCheckedChange={checked => updateFormData("appliancesIncluded", !!checked)} 
-                    />
-                    <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="appliancesIncluded" 
+                        checked={formData.appliancesIncluded} 
+                        onCheckedChange={checked => updateFormData("appliancesIncluded", !!checked)} 
+                      />
+                      <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="internet" 
+                        checked={formData.internet} 
+                        onCheckedChange={checked => updateFormData("internet", !!checked)} 
+                      />
+                      <Label htmlFor="internet" className="text-sm">Incluye internet</Label>
+                    </div>
                   </div>
                 </div>
               </>
@@ -451,13 +466,23 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
                 <h4 className="text-xs font-medium text-gray-600">Electrodomésticos</h4>
                 <Zap className="h-4 w-4 text-gray-400" />
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="appliancesIncluded" 
-                  checked={formData.appliancesIncluded} 
-                  onCheckedChange={checked => updateFormData("appliancesIncluded", !!checked)} 
-                />
-                <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="appliancesIncluded" 
+                    checked={formData.appliancesIncluded} 
+                    onCheckedChange={checked => updateFormData("appliancesIncluded", !!checked)} 
+                  />
+                  <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="internet" 
+                    checked={formData.internet} 
+                    onCheckedChange={checked => updateFormData("internet", !!checked)} 
+                  />
+                  <Label htmlFor="internet" className="text-sm">Incluye internet</Label>
+                </div>
               </div>
             </div>
           </>

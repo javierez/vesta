@@ -43,6 +43,16 @@ function toDbProperty(property: Property) {
   if (property.cadastralReference) dbProperty.cadastralReference = property.cadastralReference;
   if (property.builtSurfaceArea) dbProperty.builtSurfaceArea = property.builtSurfaceArea;
 
+  // Add amenity fields
+  if (property.gym !== undefined) dbProperty.gym = property.gym;
+  if (property.sportsArea !== undefined) dbProperty.sportsArea = property.sportsArea;
+  if (property.childrenArea !== undefined) dbProperty.childrenArea = property.childrenArea;
+  if (property.suiteBathroom !== undefined) dbProperty.suiteBathroom = property.suiteBathroom;
+  if (property.nearbyPublicTransport !== undefined) dbProperty.nearbyPublicTransport = property.nearbyPublicTransport;
+  if (property.communityPool !== undefined) dbProperty.communityPool = property.communityPool;
+  if (property.privatePool !== undefined) dbProperty.privatePool = property.privatePool;
+  if (property.tennisCourt !== undefined) dbProperty.tennisCourt = property.tennisCourt;
+
   return dbProperty;
 }
 
@@ -195,6 +205,7 @@ export async function seedDatabase() {
           isActive: mockListing?.isActive ?? true,
           isFeatured: mockListing?.isFeatured ?? false,
           isBankOwned: mockListing?.isBankOwned ?? false,
+          visibilityMode: mockListing?.visibilityMode ?? 1,
           viewCount: mockListing?.viewCount ?? 0,
           inquiryCount: mockListing?.inquiryCount ?? 0,
           isFurnished: mockListing?.isFurnished ?? false,
@@ -206,7 +217,14 @@ export async function seedDatabase() {
           hasKeys: mockListing?.hasKeys ?? false,
           studentFriendly: mockListing?.studentFriendly ?? false,
           petsAllowed: mockListing?.petsAllowed ?? false,
-          appliancesIncluded: mockListing?.appliancesIncluded ?? false
+          appliancesIncluded: mockListing?.appliancesIncluded ?? false,
+          internet: mockListing?.internet ?? false,
+          oven: mockListing?.oven ?? false,
+          microwave: mockListing?.microwave ?? false,
+          washingMachine: mockListing?.washingMachine ?? false,
+          fridge: mockListing?.fridge ?? false,
+          tv: mockListing?.tv ?? false,
+          stoneware: mockListing?.stoneware ?? false
         });
 
         // Store the mapping of property ID to listing ID

@@ -31,6 +31,14 @@ interface SeventhPageFormData {
   musicSystem: boolean
   laundryRoom: boolean
   coveredClothesline: boolean
+  gym: boolean
+  sportsArea: boolean
+  childrenArea: boolean
+  suiteBathroom: boolean
+  nearbyPublicTransport: boolean
+  communityPool: boolean
+  privatePool: boolean
+  tennisCourt: boolean
 }
 
 const initialFormData: SeventhPageFormData = {
@@ -47,6 +55,14 @@ const initialFormData: SeventhPageFormData = {
   musicSystem: false,
   laundryRoom: false,
   coveredClothesline: false,
+  gym: false,
+  sportsArea: false,
+  childrenArea: false,
+  suiteBathroom: false,
+  nearbyPublicTransport: false,
+  communityPool: false,
+  privatePool: false,
+  tennisCourt: false,
 }
 
 export default function SeventhPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: SeventhPageProps) {
@@ -85,6 +101,14 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack,
         musicSystem: details.musicSystem || false,
         laundryRoom: details.laundryRoom || false,
         coveredClothesline: details.coveredClothesline || false,
+        gym: details.gym || false,
+        sportsArea: details.sportsArea || false,
+        childrenArea: details.childrenArea || false,
+        suiteBathroom: details.suiteBathroom || false,
+        nearbyPublicTransport: details.nearbyPublicTransport || false,
+        communityPool: details.communityPool || false,
+        privatePool: details.privatePool || false,
+        tennisCourt: details.tennisCourt || false,
       }))
     }
   }, [globalFormData?.listingDetails, onNext])
@@ -115,6 +139,14 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack,
         laundryRoom: formData.laundryRoom,
         coveredClothesline: formData.coveredClothesline,
         fireplace: formData.fireplace,
+        gym: formData.gym,
+        sportsArea: formData.sportsArea,
+        childrenArea: formData.childrenArea,
+        suiteBathroom: formData.suiteBathroom,
+        nearbyPublicTransport: formData.nearbyPublicTransport,
+        communityPool: formData.communityPool,
+        privatePool: formData.privatePool,
+        tennisCourt: formData.tennisCourt,
       }
 
       // Only update formPosition if current position is lower than 8
@@ -210,6 +242,10 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack,
                 <Checkbox id="fireplace" checked={formData.fireplace} onCheckedChange={checked => updateFormData("fireplace", !!checked)} />
                 <Label htmlFor="fireplace" className="text-sm">Chimenea</Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="suiteBathroom" checked={formData.suiteBathroom} onCheckedChange={checked => updateFormData("suiteBathroom", !!checked)} />
+                <Label htmlFor="suiteBathroom" className="text-sm">Baño en suite</Label>
+              </div>
             </div>
           </div>
         )}
@@ -230,9 +266,59 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack,
                 <Checkbox id="pool" checked={formData.pool} onCheckedChange={checked => updateFormData("pool", !!checked)} />
                 <Label htmlFor="pool" className="text-sm">Piscina</Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="privatePool" checked={formData.privatePool} onCheckedChange={checked => updateFormData("privatePool", !!checked)} />
+                <Label htmlFor="privatePool" className="text-sm">Piscina privada</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="communityPool" checked={formData.communityPool} onCheckedChange={checked => updateFormData("communityPool", !!checked)} />
+                <Label htmlFor="communityPool" className="text-sm">Piscina comunitaria</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="tennisCourt" checked={formData.tennisCourt} onCheckedChange={checked => updateFormData("tennisCourt", !!checked)} />
+                <Label htmlFor="tennisCourt" className="text-sm">Pista de tenis</Label>
+              </div>
             </div>
           </div>
         )}
+
+        {/* Community Amenities - Hide for solar properties */}
+        {propertyType !== "solar" && (
+          <div className="space-y-4 p-4 rounded-lg shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-gray-600">Comunitarios</h4>
+              <Home className="h-4 w-4 text-gray-400" />
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox id="gym" checked={formData.gym} onCheckedChange={checked => updateFormData("gym", !!checked)} />
+                <Label htmlFor="gym" className="text-sm">Gimnasio</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="sportsArea" checked={formData.sportsArea} onCheckedChange={checked => updateFormData("sportsArea", !!checked)} />
+                <Label htmlFor="sportsArea" className="text-sm">Zona deportiva</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="childrenArea" checked={formData.childrenArea} onCheckedChange={checked => updateFormData("childrenArea", !!checked)} />
+                <Label htmlFor="childrenArea" className="text-sm">Zona infantil</Label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Location Features - Show for all property types */}
+        <div className="space-y-4 p-4 rounded-lg shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs font-medium text-gray-600">Ubicación</h4>
+            <Home className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox id="nearbyPublicTransport" checked={formData.nearbyPublicTransport} onCheckedChange={checked => updateFormData("nearbyPublicTransport", !!checked)} />
+              <Label htmlFor="nearbyPublicTransport" className="text-sm">Transporte público cercano</Label>
+            </div>
+          </div>
+        </div>
 
         {/* Smart Home - Hide for solar properties */}
         {propertyType !== "solar" && (

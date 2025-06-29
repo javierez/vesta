@@ -73,4 +73,14 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Hide checkmark for compact appliance checkboxes */
+.no-checkmark input[type='checkbox']:checked::before, .no-checkmark input[type='checkbox']:checked::after {
+  display: none !important;
+}
+
+/* If using a custom Checkbox component, you may need to target the SVG or pseudo-element used for the checkmark. For example: */
+.no-checkmark svg {
+  display: none !important;
 } 

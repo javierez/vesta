@@ -113,6 +113,16 @@ export const properties = singlestoreTable("properties", {
   elevatorToGarage: boolean("elevator_to_garage"),
   garageNumber: varchar("garage_number", { length: 20 }),
 
+  // Community and Recreational Amenities
+  gym: boolean("gym").default(false),
+  sportsArea: boolean("sports_area").default(false),
+  childrenArea: boolean("children_area").default(false),
+  suiteBathroom: boolean("suite_bathroom").default(false),
+  nearbyPublicTransport: boolean("nearby_public_transport").default(false),
+  communityPool: boolean("community_pool").default(false),
+  privatePool: boolean("private_pool").default(false),
+  tennisCourt: boolean("tennis_court").default(false),
+
   // Property Characteristics
   disabledAccessible: boolean("disabled_accessible"),
   vpo: boolean("vpo"),
@@ -219,10 +229,20 @@ export const listings = singlestoreTable("listings", {
   petsAllowed: boolean("pets_allowed"),
   appliancesIncluded: boolean("appliances_included"),
 
+  // Appliances and Amenities
+  internet: boolean("internet").default(false),
+  oven: boolean("oven").default(false),
+  microwave: boolean("microwave").default(false),
+  washingMachine: boolean("washing_machine").default(false),
+  fridge: boolean("fridge").default(false),
+  tv: boolean("tv").default(false),
+  stoneware: boolean("stoneware").default(false),
+
   // Listing Status and Visibility
   isFeatured: boolean("is_featured").default(false),
   isBankOwned: boolean("is_bank_owned").default(false),
   isActive: boolean("is_active").default(true),
+  visibilityMode: smallint("visibility_mode").default(1), // 1=Exact, 2=Street, 3=Zone
 
   // Analytics
   viewCount: int("view_count").default(0),

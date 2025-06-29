@@ -190,8 +190,8 @@ export function PortalSelection({ listingId, onPlatformsChange, initialPlatforms
               "transition-all duration-300 hover:shadow-md border-2",
               getCardStyles(platform)
             )}>
-              <CardContent className="p-4">
-                <div className="flex flex-col items-center gap-4">
+              <CardContent className="p-4 h-24 flex flex-col justify-between">
+                <div className="flex flex-col items-center gap-4 flex-1 justify-center">
                   {/* Platform Logo */}
                   <div className="flex items-center justify-center">
                     <div className="relative">

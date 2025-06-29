@@ -119,6 +119,14 @@ export type Property = {
   laundryRoom?: boolean;
   coveredClothesline?: boolean;
   fireplace?: boolean;
+  gym?: boolean;
+  sportsArea?: boolean;
+  childrenArea?: boolean;
+  suiteBathroom?: boolean;
+  nearbyPublicTransport?: boolean;
+  communityPool?: boolean;
+  privatePool?: boolean;
+  tennisCourt?: boolean;
 }
 
 export type Prospect = {
@@ -164,7 +172,15 @@ export const properties: Property[] = [
     bright: true,
     isActive: true,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    gym: true,
+    sportsArea: true,
+    childrenArea: true,
+    suiteBathroom: true,
+    nearbyPublicTransport: true,
+    communityPool: true,
+    privatePool: false,
+    tennisCourt: true
   },
   {
     propertyId: BigInt(2),
@@ -195,7 +211,15 @@ export const properties: Property[] = [
     bright: true,
     isActive: true,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    gym: false,
+    sportsArea: false,
+    childrenArea: false,
+    suiteBathroom: false,
+    nearbyPublicTransport: true,
+    communityPool: false,
+    privatePool: false,
+    tennisCourt: false
   },
   {
     propertyId: BigInt(3),
@@ -226,7 +250,15 @@ export const properties: Property[] = [
     bright: true,
     isActive: true,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    gym: false,
+    sportsArea: false,
+    childrenArea: false,
+    suiteBathroom: false,
+    nearbyPublicTransport: true,
+    communityPool: false,
+    privatePool: false,
+    tennisCourt: false
   },
   {
     propertyId: BigInt(4),
@@ -257,7 +289,15 @@ export const properties: Property[] = [
     bright: true,
     isActive: true,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    gym: false,
+    sportsArea: true,
+    childrenArea: true,
+    suiteBathroom: true,
+    nearbyPublicTransport: false,
+    communityPool: false,
+    privatePool: true,
+    tennisCourt: false
   },
   {
     propertyId: BigInt(5),
@@ -288,7 +328,15 @@ export const properties: Property[] = [
     bright: false,
     isActive: true,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    gym: false,
+    sportsArea: false,
+    childrenArea: false,
+    suiteBathroom: false,
+    nearbyPublicTransport: true,
+    communityPool: false,
+    privatePool: false,
+    tennisCourt: false
   }
 ];
 
@@ -989,6 +1037,7 @@ export type Listing = {
   status: 'Active' | 'Pending' | 'Resolved';
   isFeatured: boolean;
   isBankOwned: boolean;
+  visibilityMode: number; // 1=Exact, 2=Street, 3=Zone
   viewCount: number;
   inquiryCount: number;
   isActive: boolean;
@@ -1004,6 +1053,13 @@ export type Listing = {
   studentFriendly?: boolean;
   petsAllowed?: boolean;
   appliancesIncluded?: boolean;
+  internet?: boolean;
+  oven?: boolean;
+  microwave?: boolean;
+  washingMachine?: boolean;
+  fridge?: boolean;
+  tv?: boolean;
+  stoneware?: boolean;
 };
 
 export type Contact = {
@@ -1357,6 +1413,7 @@ export const listings: Listing[] = [
     status: "Active",
     isFeatured: true,
     isBankOwned: false,
+    visibilityMode: 1,
     viewCount: 150,
     inquiryCount: 12,
     isActive: true,
@@ -1371,7 +1428,13 @@ export const listings: Listing[] = [
     hasKeys: true,
     studentFriendly: false,
     petsAllowed: true,
-    appliancesIncluded: true
+    appliancesIncluded: true,
+    internet: true,
+    oven: true,
+    microwave: true,
+    washingMachine: true,
+    fridge: true,
+    stoneware: true
   },
   {
     listingId: BigInt(2),
@@ -1382,6 +1445,7 @@ export const listings: Listing[] = [
     status: "Active",
     isFeatured: true,
     isBankOwned: false,
+    visibilityMode: 1,
     viewCount: 89,
     inquiryCount: 7,
     isActive: true,
@@ -1396,7 +1460,13 @@ export const listings: Listing[] = [
     hasKeys: true,
     studentFriendly: true,
     petsAllowed: true,
-    appliancesIncluded: true
+    appliancesIncluded: true,
+    internet: true,
+    oven: true,
+    microwave: true,
+    washingMachine: true,
+    fridge: true,
+    stoneware: true
   },
   {
     listingId: BigInt(3),
@@ -1407,6 +1477,7 @@ export const listings: Listing[] = [
     status: "Active",
     isFeatured: false,
     isBankOwned: false,
+    visibilityMode: 1,
     viewCount: 45,
     inquiryCount: 3,
     isActive: true,
@@ -1418,7 +1489,13 @@ export const listings: Listing[] = [
     hasKeys: true,
     studentFriendly: false,
     petsAllowed: false,
-    appliancesIncluded: false
+    appliancesIncluded: false,
+    internet: false,
+    oven: false,
+    microwave: false,
+    washingMachine: false,
+    fridge: false,
+    stoneware: false
   },
   {
     listingId: BigInt(4),
@@ -1429,6 +1506,7 @@ export const listings: Listing[] = [
     status: "Active",
     isFeatured: false,
     isBankOwned: false,
+    visibilityMode: 1,
     viewCount: 67,
     inquiryCount: 5,
     isActive: true,
@@ -1440,7 +1518,13 @@ export const listings: Listing[] = [
     hasKeys: true,
     studentFriendly: false,
     petsAllowed: false,
-    appliancesIncluded: false
+    appliancesIncluded: false,
+    internet: false,
+    oven: false,
+    microwave: false,
+    washingMachine: false,
+    fridge: false,
+    stoneware: false
   },
   {
     listingId: BigInt(5),
@@ -1451,6 +1535,7 @@ export const listings: Listing[] = [
     status: "Active",
     isFeatured: false,
     isBankOwned: false,
+    visibilityMode: 1,
     viewCount: 34,
     inquiryCount: 2,
     isActive: true,
@@ -1462,7 +1547,13 @@ export const listings: Listing[] = [
     hasKeys: true,
     studentFriendly: false,
     petsAllowed: false,
-    appliancesIncluded: false
+    appliancesIncluded: false,
+    internet: false,
+    oven: false,
+    microwave: false,
+    washingMachine: false,
+    fridge: false,
+    stoneware: false
   }
 ];
 
