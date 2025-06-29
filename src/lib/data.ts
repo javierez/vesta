@@ -31,6 +31,7 @@ export type Property = {
   title?: string;
   description?: string;
   propertyType: string;
+  propertySubtype?: string;
   formPosition: number;
   price?: string;
   bedrooms?: number;
@@ -140,6 +141,7 @@ export const properties: Property[] = [
     title: "Piso en Avenida Ordoño II (Centro Ciudad)",
     description: "Beautiful apartment with stunning views of the city center",
     propertyType: "piso",
+    propertySubtype: "Apartment",
     formPosition: 1,
     price: "350000",
     bedrooms: 3,
@@ -170,6 +172,7 @@ export const properties: Property[] = [
     title: "Piso en Calle Ancha (Casco Antiguo)",
     description: "Renovated apartment in historic building near the Cathedral",
     propertyType: "piso",
+    propertySubtype: "Ground floor",
     formPosition: 2,
     price: "275000",
     bedrooms: 2,
@@ -200,6 +203,7 @@ export const properties: Property[] = [
     title: "Local en Avenida de la Facultad (Las Ventas)",
     description: "Prime location commercial property near university area",
     propertyType: "local",
+    propertySubtype: "Offices",
     formPosition: 3,
     price: "450000",
     bedrooms: 0,
@@ -230,6 +234,7 @@ export const properties: Property[] = [
     title: "Casa en Calle La Lastra (La Chantría- La Lastra)",
     description: "Large family home with garden in quiet residential area",
     propertyType: "casa",
+    propertySubtype: "House",
     formPosition: 4,
     price: "550000",
     bedrooms: 4,
@@ -260,6 +265,7 @@ export const properties: Property[] = [
     title: "Garaje en Calle Padre Isla (Centro Ciudad)",
     description: "Convenient parking space in central location",
     propertyType: "garaje",
+    propertySubtype: "Individual",
     formPosition: 5,
     price: "25000",
     bedrooms: 0,

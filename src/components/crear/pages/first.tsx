@@ -28,6 +28,7 @@ interface FirstPageFormData {
   price: string
   listingType: string
   propertyType: string
+  propertySubtype: string
   agentId: string
   selectedContactIds: string[]
 }
@@ -36,6 +37,7 @@ const initialFormData: FirstPageFormData = {
   price: "",
   listingType: "Sale",
   propertyType: "piso",
+  propertySubtype: "",
   agentId: "",
   selectedContactIds: [],
 }
@@ -94,6 +96,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
         price: displayPrice,
         listingType: details.listingType || "Sale",
         propertyType: details.propertyType || "piso",
+        propertySubtype: details.propertySubtype || "",
         agentId: details.agentId ? details.agentId.toString() : "",
         selectedContactIds: globalFormData.currentContacts || [],
       }))
@@ -154,7 +157,8 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
       // Update property form position to 2 and property type
       globalFormData?.listingDetails?.propertyId ? (async () => {
         const updateData: any = {
-          propertyType: formData.propertyType
+          propertyType: formData.propertyType,
+          propertySubtype: formData.propertySubtype || null,
         }
         
         // Only update formPosition if current position is lower than 2
@@ -280,7 +284,10 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
           />
           <div className="relative flex h-full">
             <button
-              onClick={() => updateFormData("propertyType", "piso")}
+              onClick={() => {
+                updateFormData("propertyType", "piso")
+                updateFormData("propertySubtype", "")
+              }}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
                 formData.propertyType === "piso"
@@ -291,7 +298,10 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
               Piso
             </button>
             <button
-              onClick={() => updateFormData("propertyType", "casa")}
+              onClick={() => {
+                updateFormData("propertyType", "casa")
+                updateFormData("propertySubtype", "")
+              }}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
                 formData.propertyType === "casa"
@@ -302,7 +312,10 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
               Casa
             </button>
             <button
-              onClick={() => updateFormData("propertyType", "local")}
+              onClick={() => {
+                updateFormData("propertyType", "local")
+                updateFormData("propertySubtype", "")
+              }}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
                 formData.propertyType === "local"
@@ -313,7 +326,10 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
               Local
             </button>
             <button
-              onClick={() => updateFormData("propertyType", "solar")}
+              onClick={() => {
+                updateFormData("propertyType", "solar")
+                updateFormData("propertySubtype", "")
+              }}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
                 formData.propertyType === "solar"
@@ -324,7 +340,10 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
               Solar
             </button>
             <button
-              onClick={() => updateFormData("propertyType", "garage")}
+              onClick={() => {
+                updateFormData("propertyType", "garage")
+                updateFormData("propertySubtype", "")
+              }}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
                 formData.propertyType === "garage"
@@ -336,6 +355,66 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Property Subtype Section */}
+      <div className="space-y-2">
+        <h3 className="text-md font-medium text-gray-900">Subtipo de Propiedad</h3>
+        <Select 
+          value={formData.propertySubtype} 
+          onValueChange={(value) => updateFormData("propertySubtype", value)}
+        >
+          <SelectTrigger className="h-10 shadow-md border-0">
+            <SelectValue placeholder="Seleccionar subtipo" />
+          </SelectTrigger>
+          <SelectContent>
+            {formData.propertyType === "piso" && (
+              <>
+                <SelectItem value="2">Tríplex</SelectItem>
+                <SelectItem value="3">Dúplex</SelectItem>
+                <SelectItem value="5">Ático</SelectItem>
+                <SelectItem value="6">Estudio</SelectItem>
+                <SelectItem value="7">Loft</SelectItem>
+                <SelectItem value="9">Piso</SelectItem>
+                <SelectItem value="10">Apartamento</SelectItem>
+                <SelectItem value="11">Bajo</SelectItem>
+              </>
+            )}
+            {formData.propertyType === "casa" && (
+              <>
+                <SelectItem value="13">Casa</SelectItem>
+                <SelectItem value="17">Casa adosada</SelectItem>
+                <SelectItem value="19">Casa pareada</SelectItem>
+                <SelectItem value="20">Chalet</SelectItem>
+                <SelectItem value="24">Casa rústica</SelectItem>
+                <SelectItem value="27">Bungalow</SelectItem>
+              </>
+            )}
+            {formData.propertyType === "local" && (
+              <>
+                <SelectItem value="48">Residencial</SelectItem>
+                <SelectItem value="49">Otros</SelectItem>
+                <SelectItem value="50">Mixto residencial</SelectItem>
+                <SelectItem value="51">Oficinas</SelectItem>
+                <SelectItem value="72">Hotel</SelectItem>
+              </>
+            )}
+            {formData.propertyType === "solar" && (
+              <>
+                <SelectItem value="56">Suelo residencial</SelectItem>
+                <SelectItem value="60">Suelo industrial</SelectItem>
+                <SelectItem value="91">Suelo rústico</SelectItem>
+              </>
+            )}
+            {formData.propertyType === "garage" && (
+              <>
+                <SelectItem value="68">Moto</SelectItem>
+                <SelectItem value="69">Doble</SelectItem>
+                <SelectItem value="70">Individual</SelectItem>
+              </>
+            )}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Agent Section */}

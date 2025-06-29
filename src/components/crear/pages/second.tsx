@@ -49,12 +49,14 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [propertyType, setPropertyType] = useState<string>("")
+  const [propertySubtype, setPropertySubtype] = useState<string>("")
 
   // Use centralized data instead of fetching
   useEffect(() => {
     if (globalFormData?.listingDetails) {
       const details = globalFormData.listingDetails
       setPropertyType(details.propertyType || "")
+      setPropertySubtype(details.propertySubtype || "")
       
       // Pre-populate form with existing data
       setFormData(prev => ({
@@ -160,6 +162,7 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
     if (globalFormData?.listingDetails?.propertyId) {
       const updateData: any = {
         squareMeter: Number(formData.squareMeter),
+        propertySubtype: propertySubtype || null,
       }
 
       // Only update formPosition if current position is lower than 3

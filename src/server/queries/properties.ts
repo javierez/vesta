@@ -153,6 +153,7 @@ export async function listProperties(
   limit = 10, 
   filters?: {
     propertyType?: string;
+    propertySubtype?: string;
     neighborhoodId?: number;
     bedrooms?: number;
     minSquareMeter?: number;
@@ -168,6 +169,9 @@ export async function listProperties(
     if (filters) {
       if (filters.propertyType) {
         whereConditions.push(eq(properties.propertyType, filters.propertyType));
+      }
+      if (filters.propertySubtype) {
+        whereConditions.push(eq(properties.propertySubtype, filters.propertySubtype));
       }
       if (filters.neighborhoodId) {
         whereConditions.push(eq(properties.neighborhoodId, BigInt(filters.neighborhoodId)));
@@ -284,6 +288,7 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
       cadastralReference,
       referenceNumber,
       propertyType: cadastralData?.propertyType || "piso" as const,
+      propertySubtype: undefined, // Will be set by user in form
       formPosition: 1, // Starting form position
       hasHeating: false,
       hasElevator: false,
@@ -360,6 +365,7 @@ export async function createPropertyFromLocation(locationData: {
     const propertyData = {
       referenceNumber,
       propertyType: locationData.propertyType || "piso" as const,
+      propertySubtype: undefined, // Will be set by user in form
       formPosition: 1, // Starting form position
       hasHeating: false,
       hasElevator: false,

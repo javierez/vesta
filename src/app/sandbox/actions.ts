@@ -16,6 +16,7 @@ function toDbProperty(property: Property) {
     title: property.title,
     description: property.description,
     propertyType: property.propertyType,
+    propertySubtype: property.propertySubtype,
     price: property.price,
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,

@@ -151,6 +151,7 @@ export async function listListings(
     minPrice?: number;
     maxPrice?: number;
     propertyType?: string[];
+    propertySubtype?: string[];
     bedrooms?: number;
     minBathrooms?: number;
     maxBathrooms?: number;
@@ -203,6 +204,9 @@ export async function listListings(
       }
       if (filters.propertyType && filters.propertyType.length > 0) {
         whereConditions.push(sql`${properties.propertyType} IN (${filters.propertyType})`);
+      }
+      if (filters.propertySubtype && filters.propertySubtype.length > 0) {
+        whereConditions.push(sql`${properties.propertySubtype} IN (${filters.propertySubtype})`);
       }
       if (filters.bedrooms) {
         whereConditions.push(eq(properties.bedrooms, filters.bedrooms));
@@ -285,7 +289,9 @@ export async function listListings(
         // Property fields
         referenceNumber: properties.referenceNumber,
         title: properties.title,
+        description: properties.description,
         propertyType: properties.propertyType,
+        propertySubtype: properties.propertySubtype,
         formPosition: properties.formPosition,
         bedrooms: properties.bedrooms,
         bathrooms: properties.bathrooms,
@@ -478,6 +484,7 @@ export async function getListingDetails(listingId: number) {
         title: properties.title,
         description: properties.description,
         propertyType: properties.propertyType,
+        propertySubtype: properties.propertySubtype,
         formPosition: properties.formPosition,
         bedrooms: properties.bedrooms,
         bathrooms: properties.bathrooms,

@@ -72,6 +72,7 @@ export const properties = singlestoreTable("properties", {
   title: varchar("title", { length: 255 }),
   description: text("description"),
   propertyType: varchar("property_type", { length: 20 }).default("piso"),
+  propertySubtype: varchar("property_subtype", { length: 50 }),
   formPosition: int("form_position").notNull().default(1),
 
   // Property Specifications

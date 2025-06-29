@@ -149,6 +149,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           }
           propertyData = {
             propertyType,
+            propertySubtype: listing.propertySubtype,
             cadastralReference: (document.getElementById('cadastralReference') as HTMLInputElement)?.value,
             newConstruction
           }
@@ -710,6 +711,69 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 <SelectItem value="local">Local</SelectItem>
                 <SelectItem value="solar">Solar</SelectItem>
                 <SelectItem value="garaje">Garaje</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
+            <Select 
+              value={listing.propertySubtype || ""}
+              onValueChange={(value) => {
+                // Update the listing object directly for now
+                listing.propertySubtype = value
+                updateModuleState('basicInfo', true)
+              }}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Seleccionar subtipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {propertyType === "piso" && (
+                  <>
+                    <SelectItem value="Triplex">Triplex</SelectItem>
+                    <SelectItem value="Duplex">Duplex</SelectItem>
+                    <SelectItem value="Penthouse">Penthouse</SelectItem>
+                    <SelectItem value="Studio">Studio</SelectItem>
+                    <SelectItem value="Loft">Loft</SelectItem>
+                    <SelectItem value="Flat">Flat</SelectItem>
+                    <SelectItem value="Apartment">Apartment</SelectItem>
+                    <SelectItem value="Ground floor">Ground floor</SelectItem>
+                  </>
+                )}
+                {propertyType === "casa" && (
+                  <>
+                    <SelectItem value="House">House</SelectItem>
+                    <SelectItem value="Terraced house">Terraced house</SelectItem>
+                    <SelectItem value="Paired house">Paired house</SelectItem>
+                    <SelectItem value="Chalet">Chalet</SelectItem>
+                    <SelectItem value="Rustic house">Rustic house</SelectItem>
+                    <SelectItem value="Bungalow">Bungalow</SelectItem>
+                  </>
+                )}
+                {propertyType === "local" && (
+                  <>
+                    <SelectItem value="Residential">Residential</SelectItem>
+                    <SelectItem value="Others">Others</SelectItem>
+                    <SelectItem value="Mixed residential">Mixed residential</SelectItem>
+                    <SelectItem value="Offices">Offices</SelectItem>
+                    <SelectItem value="Hotel">Hotel</SelectItem>
+                  </>
+                )}
+                {propertyType === "solar" && (
+                  <>
+                    <SelectItem value="Residential land">Residential land</SelectItem>
+                    <SelectItem value="Industrial land">Industrial land</SelectItem>
+                    <SelectItem value="Rustic land">Rustic land</SelectItem>
+                  </>
+                )}
+                {propertyType === "garaje" && (
+                  <>
+                    <SelectItem value="Moto">Moto</SelectItem>
+                    <SelectItem value="Double">Double</SelectItem>
+                    <SelectItem value="Individual">Individual</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
