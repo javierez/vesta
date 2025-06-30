@@ -18,14 +18,35 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
 import Link from "next/link"
-import type { Contact } from "~/lib/data"
+
+// Extended Contact type to include contactType for the UI
+interface ExtendedContact {
+  contactId: bigint
+  firstName: string
+  lastName: string
+  email?: string
+  phone?: string
+  contactType: "demandante" | "propietario" | "banco" | "agencia"
+  isActive: boolean
+  additionalInfo?: {
+    demandType?: string
+    propertiesCount?: number
+    propertyTypes?: string[]
+    budget?: number
+    location?: string
+    notes?: string
+  }
+  lastContact?: Date
+  createdAt: Date
+  updatedAt: Date
+}
 
 interface ContactTableProps {
-  contacts: Contact[]
+  contacts: ExtendedContact[]
 }
 
 export function ContactTable({ contacts }: ContactTableProps) {
-  const getContactTypeLabel = (type: Contact['contactType']) => {
+  const getContactTypeLabel = (type: ExtendedContact['contactType']) => {
     const labels = {
       demandante: 'Demandante',
       propietario: 'Propietario',
@@ -35,7 +56,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
     return labels[type]
   }
 
-  const getContactTypeIcon = (type: Contact['contactType']) => {
+  const getContactTypeIcon = (type: ExtendedContact['contactType']) => {
     const icons = {
       demandante: Search,
       propietario: Home,
@@ -46,7 +67,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
     return <Icon className="h-4 w-4 text-muted-foreground" />
   }
 
-  const getAdditionalInfo = (contact: Contact) => {
+  const getAdditionalInfo = (contact: ExtendedContact) => {
     if (contact.contactType === 'demandante') {
       return (
         <div className="flex items-center gap-2">
@@ -106,6 +127,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
             <TableHead>Contacto</TableHead>
             <TableHead>Tipo</TableHead>
             <TableHead>Información</TableHead>
+            <TableHead>Nota</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -122,7 +144,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    <span>Último contacto: {formatDate(contact.updatedAt)}</span>
+                    <span>Último contacto: {contact.lastContact ? formatDate(contact.lastContact) : formatDate(contact.updatedAt)}</span>
                   </div>
                 </div>
               </TableCell>
@@ -146,6 +168,19 @@ export function ContactTable({ contacts }: ContactTableProps) {
               </TableCell>
               <TableCell>
                 {getAdditionalInfo(contact)}
+              </TableCell>
+              <TableCell>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-md p-2 border border-blue-100">
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 w-1.5 h-1.5 bg-blue-400 rounded-full mt-1.5"></div>
+                    <div className="flex-1">
+                      <p className="text-xs text-blue-800 font-medium">Seguimiento</p>
+                      <p className="text-xs text-blue-700 leading-tight">
+                        Requiere atención prioritaria
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </TableCell>
               <TableCell>
                 <DropdownMenu>

@@ -4,10 +4,31 @@ import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Search, LayoutGrid, Table as TableIcon } from "lucide-react"
 import { useState } from "react"
-import type { Contact } from "~/lib/data"
+
+// Extended Contact type to include contactType for the UI
+interface ExtendedContact {
+  contactId: bigint
+  firstName: string
+  lastName: string
+  email?: string
+  phone?: string
+  contactType: "demandante" | "propietario" | "banco" | "agencia"
+  isActive: boolean
+  additionalInfo?: {
+    demandType?: string
+    propertiesCount?: number
+    propertyTypes?: string[]
+    budget?: number
+    location?: string
+    notes?: string
+  }
+  lastContact?: Date
+  createdAt: Date
+  updatedAt: Date
+}
 
 interface ContactFilterProps {
-  contacts: Contact[]
+  contacts: ExtendedContact[]
   onFilterChange: (filters: {
     searchQuery: string
     status: string[]

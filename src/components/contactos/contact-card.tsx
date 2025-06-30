@@ -198,18 +198,26 @@ export function ContactCard({ contact }: ContactCardProps) {
           </div>
         )}
 
+        {/* Modern Note Section */}
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
+            <div className="flex items-start gap-2">
+              <div className="flex-shrink-0 w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <p className="text-sm text-blue-800 font-medium mb-1">Nota de seguimiento</p>
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  Contacto en proceso de seguimiento. Requiere atención prioritaria en los próximos días.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between text-xs text-gray-500 pt-2 mt-2 border-t border-gray-100">
           {contact.lastContact && (
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               <span>Último contacto: {new Date(contact.lastContact).toLocaleDateString("es-ES")}</span>
-            </div>
-          )}
-
-          {contact.createdAt && (
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              <span>Creado: {new Date(contact.createdAt).toLocaleDateString("es-ES")}</span>
             </div>
           )}
         </div>

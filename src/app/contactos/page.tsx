@@ -6,24 +6,59 @@ import { Plus } from "lucide-react"
 import Link from "next/link"
 import { ContactCard } from "~/components/contactos/contact-card"
 import { ContactCardSkeleton } from "~/components/contactos/contact-card-skeleton"
-import { contacts } from "~/lib/data"
-import type { Contact } from "~/lib/data"
 import { ContactFilter } from "~/components/contactos/contact-filter"
 import { ContactTable } from "~/components/contactos/contact-table"
+import { listContactsWithTypes } from "~/server/queries/contact"
+import type { Contact } from "~/lib/data"
+
+// Extended Contact type to include contactType for the UI
+interface ExtendedContact extends Omit<Contact, 'contactType'> {
+  contactType: "demandante" | "propietario" | "banco" | "agencia"
+}
 
 export default function ContactsPage() {
   const [isLoading, setIsLoading] = useState(true)
-  const [contactsList, setContactsList] = useState<Contact[]>([])
-  const [filteredContacts, setFilteredContacts] = useState<Contact[]>([])
+  const [contactsList, setContactsList] = useState<ExtendedContact[]>([])
+  const [filteredContacts, setFilteredContacts] = useState<ExtendedContact[]>([])
   const [view, setView] = useState<"grid" | "table">("grid")
 
   useEffect(() => {
     const fetchContacts = async () => {
       setIsLoading(true)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setContactsList(contacts)
-      setFilteredContacts(contacts)
-      setIsLoading(false)
+      try {
+        // Fetch contacts from the database with their contact types
+        const dbContacts = await listContactsWithTypes(1, 100) // Get first 100 contacts
+        
+        // Transform database contacts to include contactType for UI compatibility
+        const extendedContacts: ExtendedContact[] = dbContacts.map((contact: any) => {
+          // Map database contact types to UI contact types
+          let uiContactType: ExtendedContact['contactType'] = 'demandante';
+          if (contact.contactType === 'owner') {
+            uiContactType = 'propietario';
+          } else if (contact.contactType === 'buyer') {
+            uiContactType = 'demandante';
+          }
+          
+          return {
+            ...contact,
+            contactType: uiContactType,
+            additionalInfo: contact.additionalInfo as ExtendedContact['additionalInfo'] || {},
+            email: contact.email || undefined,
+            phone: contact.phone || undefined,
+            isActive: contact.isActive ?? true // Handle null values
+          };
+        })
+        
+        setContactsList(extendedContacts)
+        setFilteredContacts(extendedContacts)
+      } catch (error) {
+        console.error("Error fetching contacts:", error)
+        // Fallback to empty array if there's an error
+        setContactsList([])
+        setFilteredContacts([])
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     fetchContacts()
@@ -42,7 +77,7 @@ export default function ContactsPage() {
         (contact.phone?.toLowerCase() ?? "").includes(filters.searchQuery.toLowerCase())
 
       const matchesStatus = filters.status.length === 0 || filters.status.includes(contact.isActive ? "active" : "inactive")
-      const matchesType = filters.type.length === 0 // TODO: Add contact type field
+      const matchesType = filters.type.length === 0 || filters.type.includes(contact.contactType)
 
       return matchesSearch && matchesStatus && matchesType
     })

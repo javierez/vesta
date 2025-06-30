@@ -139,6 +139,87 @@ export async function deleteContact(contactId: number) {
   }
 }
 
+// List all contacts with their contact types from listingContacts
+export async function listContactsWithTypes(
+  page = 1,
+  limit = 10,
+  filters?: {
+    orgId?: number;
+    isActive?: boolean;
+  }
+) {
+  try {
+    const offset = (page - 1) * limit;
+    
+    // Build the where conditions array
+    const whereConditions = [];
+    if (filters) {
+      if (filters.orgId) {
+        whereConditions.push(eq(contacts.orgId, BigInt(filters.orgId)));
+      }
+      if (filters.isActive !== undefined) {
+        whereConditions.push(eq(contacts.isActive, filters.isActive));
+      }
+    } else {
+      // By default, only show active contacts
+      whereConditions.push(eq(contacts.isActive, true));
+    }
+
+    // Get contacts with their most recent contact type from listingContacts
+    const contactsWithTypes = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        orgId: contacts.orgId,
+        isActive: contacts.isActive,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+        contactType: listingContacts.contactType,
+      })
+      .from(contacts)
+      .leftJoin(
+        listingContacts,
+        and(
+          eq(contacts.contactId, listingContacts.contactId),
+          eq(listingContacts.isActive, true)
+        )
+      )
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(contacts.createdAt);
+
+    // Group by contact and get the most common contact type
+    const contactMap = new Map();
+    
+    contactsWithTypes.forEach(row => {
+      const contactId = row.contactId.toString();
+      
+      if (!contactMap.has(contactId)) {
+        contactMap.set(contactId, {
+          ...row,
+          contactType: row.contactType || 'demandante' // Default type if no listing contact exists
+        });
+      } else {
+        // If contact has multiple types, prioritize 'owner' over 'buyer'
+        const existing = contactMap.get(contactId);
+        if (row.contactType === 'owner' && existing.contactType !== 'owner') {
+          existing.contactType = 'owner';
+        }
+      }
+    });
+
+    return Array.from(contactMap.values());
+  } catch (error) {
+    console.error("Error listing contacts with types:", error);
+    throw error;
+  }
+}
+
 // List all contacts (with pagination and optional filters)
 export async function listContacts(
   page = 1,
