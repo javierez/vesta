@@ -49,6 +49,7 @@ interface PropertyContactInfo {
 
 interface PropertyPublication {
   PublicationId: number
+  PublicationTypeId: number
 }
 
 interface PropertyTransaction {
@@ -102,8 +103,82 @@ export async function buildFotocasaPayload(listingId: number): Promise<FotocasaP
     // Extract floor number from addressDetails (get second number if exists)
     const getFloorId = (addressDetails: string | null): number | undefined => {
       if (!addressDetails) return undefined
+      
+      // Floor mapping according to Fotocasa specification
+      const floorMapping: Record<string, number> = {
+        'basement': 1,
+        'sotano': 1,
+        'ground': 3,
+        'ground floor': 3,
+        'planta baja': 3,
+        'mezzanine': 4,
+        'entresuelo': 4,
+        'first': 6,
+        'primera': 6,
+        '1st': 6,
+        'second': 7,
+        'segunda': 7,
+        '2nd': 7,
+        'third': 8,
+        'tercera': 8,
+        '3rd': 8,
+        'fourth': 9,
+        'cuarta': 9,
+        '4th': 9,
+        'fifth': 10,
+        'quinta': 10,
+        '5th': 10,
+        'sixth': 11,
+        'sexta': 11,
+        '6th': 11,
+        'seventh': 12,
+        'septima': 12,
+        '7th': 12,
+        'eighth': 13,
+        'octava': 13,
+        '8th': 13,
+        'ninth': 14,
+        'novena': 14,
+        '9th': 14,
+        'tenth': 15,
+        'decima': 15,
+        '10th': 15,
+        'penthouse': 22,
+        'atico': 22,
+        'other': 31
+      }
+      
+      // Convert to lowercase for case-insensitive matching
+      const lowerAddress = addressDetails.toLowerCase()
+      
+      // Try to match floor descriptions
+      for (const [floorDesc, floorId] of Object.entries(floorMapping)) {
+        if (lowerAddress.includes(floorDesc)) {
+          return floorId
+        }
+      }
+      
+      // If no specific floor description found, try to extract number and map it
       const numbers = addressDetails.match(/\d+/g)
-      return numbers && numbers.length > 1 && numbers[1] ? parseInt(numbers[1]) : undefined
+      if (numbers && numbers.length > 0) {
+        const floorNumber = parseInt(numbers[0])
+        
+        // Map numeric floors to IDs
+        if (floorNumber === 0) return 3 // Ground floor
+        if (floorNumber === 1) return 6 // First
+        if (floorNumber === 2) return 7 // Second
+        if (floorNumber === 3) return 8 // Third
+        if (floorNumber === 4) return 9 // Fourth
+        if (floorNumber === 5) return 10 // Fifth
+        if (floorNumber === 6) return 11 // Sixth
+        if (floorNumber === 7) return 12 // Seventh
+        if (floorNumber === 8) return 13 // Eighth
+        if (floorNumber === 9) return 14 // Ninth
+        if (floorNumber === 10) return 15 // Tenth
+        if (floorNumber > 10) return 16 // Tenth upwards
+      }
+      
+      return undefined
     }
 
     // Extract street name (text before first comma)
@@ -417,7 +492,7 @@ export async function buildFotocasaPayload(listingId: number): Promise<FotocasaP
       AgencyReference: listing.referenceNumber || listing.listingId.toString(),
       TypeId: PROPERTY_TYPE_MAPPING[listing.propertyType || 'piso'] || 1,
       SubTypeId: PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype || listing.propertyType || 'piso'] || 2,
-      ContactTypeId: 2, // Agency contact (hardcoded for now)
+      ContactTypeId: 3, // Agency contact (hardcoded for now)
       PropertyAddress: propertyAddress,
       PropertyDocument: propertyDocuments.length > 0 ? propertyDocuments : undefined,
       PropertyFeature: propertyFeatures,
@@ -425,7 +500,8 @@ export async function buildFotocasaPayload(listingId: number): Promise<FotocasaP
       PropertyTransaction: propertyTransaction,
       PropertyPublications: [
         {
-          PublicationId: 31 // Fotocasa publication ID
+          PublicationId: 31, // Fotocasa publication ID
+          PublicationTypeId: 2
         }
       ]
     }
