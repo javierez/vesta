@@ -447,7 +447,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             <Input 
               id="price" 
               type="number" 
-              defaultValue={parseInt(listing.price)} 
+              defaultValue={listing.price && !isNaN(Number(listing.price)) ? parseInt(listing.price.toString()) : ''} 
               className="h-8 text-gray-500" 
               min="0"
               step="1"

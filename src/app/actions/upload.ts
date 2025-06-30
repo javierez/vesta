@@ -1,7 +1,7 @@
 'use server'
 
 import { uploadImageToS3 } from "~/lib/s3"
-import { createPropertyImage, getPropertyImageById } from "~/server/queries/property_images"
+import { createPropertyImage, getPropertyImageById, updatePropertyImage } from "~/server/queries/property_images"
 import type { PropertyImage } from "~/lib/data"
 import { DeleteObjectCommand } from "@aws-sdk/client-s3"
 import { and, eq } from "drizzle-orm"
@@ -86,5 +86,21 @@ export async function deletePropertyImage(imageKey: string, propertyId: bigint) 
   } catch (error) {
     console.error("Error deleting image:", error);
     throw new Error("Failed to delete image");
+  }
+}
+
+export async function updateImageOrders(
+  updates: Array<{ propertyImageId: bigint; imageOrder: number }>
+): Promise<void> {
+  try {
+    // Update each image's order in the database
+    await Promise.all(
+      updates.map(({ propertyImageId, imageOrder }) =>
+        updatePropertyImage(propertyImageId, { imageOrder })
+      )
+    )
+  } catch (error) {
+    console.error("Error updating image orders:", error)
+    throw error
   }
 } 

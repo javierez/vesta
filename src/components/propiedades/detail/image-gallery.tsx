@@ -3,11 +3,11 @@
 import * as React from "react"
 import { useState } from "react"
 import Image from "next/image"
-import { Plus, Trash2, Maximize2, X, Download, CheckSquare2, Square } from "lucide-react"
+import { Plus, Trash2, Maximize2, X, Download, CheckSquare2, Square, GripVertical } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import type { PropertyImage } from "~/lib/data"
-import { uploadPropertyImage, deletePropertyImage } from "~/app/actions/upload"
+import { uploadPropertyImage, deletePropertyImage, updateImageOrders } from "~/app/actions/upload"
 import {
   Dialog,
   DialogContent,
@@ -47,6 +47,13 @@ export function ImageGallery({
   const [isSelectMode, setIsSelectMode] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [isUpdatingOrder, setIsUpdatingOrder] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [pendingImages, setPendingImages] = useState<PropertyImage[]>([])
 
   // Use the same placeholder image as property-card.tsx
   const defaultPlaceholder = "/properties/suburban-dream.png"
@@ -84,71 +91,30 @@ export function ImageGallery({
     setDownloadError(null)
     
     try {
-      // First try to fetch the image
-      const response = await fetch(imageUrl)
-      if (!response.ok) {
-        throw new Error(`Failed to download image: ${response.statusText}`)
-      }
+      // Extract file extension from URL or default to jpg
+      const urlExtension = imageUrl.split('.').pop()?.toLowerCase()
+      const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+      const extension = validExtensions.includes(urlExtension || '') ? urlExtension : 'jpg'
       
-      // Get the blob from the response
-      const blob = await response.blob()
+      // Ensure filename has proper extension
+      const finalFileName = fileName.endsWith(`.${extension}`) ? fileName : `${fileName}.${extension}`
       
-      // Create a blob URL
-      const blobUrl = window.URL.createObjectURL(blob)
-      
-      // Create and trigger download
+      // Create a temporary link element for download
       const a = document.createElement('a')
+      a.href = imageUrl
+      a.download = finalFileName
       a.style.display = 'none'
-      a.href = blobUrl
-      a.download = fileName
       
       // Append to body, click, and remove
       document.body.appendChild(a)
       a.click()
-      
-      // Clean up
-      window.URL.revokeObjectURL(blobUrl)
       document.body.removeChild(a)
+      
+      // Small delay to ensure download starts
+      await new Promise(resolve => setTimeout(resolve, 100))
     } catch (error) {
       console.error("Error downloading image:", error)
       setDownloadError(error instanceof Error ? error.message : 'Failed to download image')
-      
-      // If fetch fails, try XMLHttpRequest as fallback
-      try {
-        const xhr = new XMLHttpRequest()
-        xhr.open('GET', imageUrl, true)
-        xhr.responseType = 'blob'
-        
-        xhr.onload = function() {
-          if (xhr.status === 200) {
-            const blob = xhr.response
-            const blobUrl = window.URL.createObjectURL(blob)
-            
-            const a = document.createElement('a')
-            a.style.display = 'none'
-            a.href = blobUrl
-            a.download = fileName
-            
-            document.body.appendChild(a)
-            a.click()
-            
-            window.URL.revokeObjectURL(blobUrl)
-            document.body.removeChild(a)
-            setDownloadError(null)
-          } else {
-            setDownloadError(`Failed to download image: ${xhr.statusText}`)
-          }
-        }
-        
-        xhr.onerror = function() {
-          setDownloadError('Network error occurred while downloading')
-        }
-        
-        xhr.send()
-      } catch (fallbackError) {
-        console.error("Fallback download failed:", fallbackError)
-        setDownloadError('All download methods failed')
-      }
     } finally {
       setIsDownloading(false)
     }
@@ -223,11 +189,17 @@ export function ImageGallery({
         }, 200)
 
         try {
+          // Calculate the next image order based on existing images
+          const maxImageOrder = images.length > 0 
+            ? Math.max(...images.map(img => (img.imageOrder ?? 0))) 
+            : 0
+          const nextImageOrder = maxImageOrder + index + 1
+          
           const newImage = await uploadPropertyImage(
             file,
             propertyId,
             referenceNumber,
-            images.length + index
+            nextImageOrder
           )
           
           clearInterval(progressInterval)
@@ -243,10 +215,11 @@ export function ImageGallery({
       })
 
       const newImages = await Promise.all(uploadPromises)
-      setImages(prev => [...prev, ...newImages])
+      const validImages = newImages.filter((image): image is PropertyImage => image !== undefined)
+      setImages(prev => [...prev, ...validImages])
       
       // Add new images to imageSources state
-      newImages.forEach((image, index) => {
+      validImages.forEach((image, index) => {
         const newIndex = images.length + index
         setImageSources(prev => ({
           ...prev,
@@ -254,7 +227,10 @@ export function ImageGallery({
         }))
       })
       
-      newImages.forEach(image => onImageUploaded?.(image))
+      // Call the callback for each uploaded image
+      validImages.forEach(image => {
+        onImageUploaded?.(image as any)
+      })
     } catch (error) {
       console.error("Error uploading images:", error)
       // TODO: Show error toast
@@ -281,19 +257,143 @@ export function ImageGallery({
     }
   }
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (isSelectMode) return
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', index.toString())
+    
+    // Add visual feedback to the dragged element
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5'
+    }
+  }
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+    
+    // Reset visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1'
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverIndex(index)
+  }
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    setDragOverIndex(null)
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      return
+    }
+
+    // Create a new array with reordered images
+    const newImages = [...images]
+    const draggedImage = newImages[draggedIndex]
+    
+    if (!draggedImage) return
+    
+    // Remove the dragged image and insert it at the new position
+    newImages.splice(draggedIndex, 1)
+    newImages.splice(dropIndex, 0, draggedImage)
+    
+    // Update the local state immediately for better UX
+    setImages(newImages)
+    setPendingImages(newImages)
+    setHasUnsavedChanges(true)
+    
+    // Update the imageSources state to match the new order
+    const newImageSources: Record<number, string> = {}
+    newImages.forEach((image, index) => {
+      newImageSources[index] = image.imageUrl || defaultPlaceholder
+    })
+    setImageSources(newImageSources)
+    
+    setDraggedIndex(null)
+  }
+
+  const handleSaveOrder = async () => {
+    if (!hasUnsavedChanges || pendingImages.length === 0) return
+    
+    setIsUpdatingOrder(true)
+    
+    try {
+      // Prepare the updates for the database
+      const updates = pendingImages.map((image, index) => ({
+        propertyImageId: image.propertyImageId,
+        imageOrder: index + 1 // 1-based indexing
+      }))
+      
+      // Update the database
+      await updateImageOrders(updates)
+      
+      setHasUnsavedChanges(false)
+      setPendingImages([])
+    } catch (error) {
+      console.error("Error updating image order:", error)
+      // Revert the local state if the database update failed
+      setImages(initialImages)
+      setHasUnsavedChanges(false)
+      setPendingImages([])
+      // TODO: Show error toast
+    } finally {
+      setIsUpdatingOrder(false)
+    }
+  }
+
+  const handleCancelOrder = () => {
+    setImages(initialImages)
+    setHasUnsavedChanges(false)
+    setPendingImages([])
+    
+    // Reset imageSources to original order
+    const originalImageSources: Record<number, string> = {}
+    initialImages.forEach((image, index) => {
+      originalImageSources[index] = image.imageUrl || defaultPlaceholder
+    })
+    setImageSources(originalImageSources)
+  }
+
   return (
     <div className="space-y-4">
+      {/* Help text for drag and drop */}
+      {images.length > 1 && (
+        <p className="text-sm text-gray-500 text-center">
+          Arrastra y suelta las imágenes para reordenarlas
+        </p>
+      )}
+
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {images.map((image, idx) => (
           <div 
             key={image.propertyImageId.toString()} 
             className={cn(
-              "relative group rounded-lg overflow-hidden border bg-muted",
+              "relative group rounded-lg overflow-hidden border bg-muted transition-all duration-200",
               isSelectMode && "cursor-pointer",
-              selectedImages.has(idx) && "ring-2 ring-primary/50"
+              selectedImages.has(idx) && "ring-2 ring-primary/50",
+              dragOverIndex === idx && "ring-2 ring-blue-400 scale-105",
+              draggedIndex === idx && "opacity-50 scale-95",
+              !isSelectMode && "cursor-move"
             )}
+            draggable={!isSelectMode && !isUpdatingOrder}
+            onDragStart={(e) => handleDragStart(e, idx)}
+            onDragEnd={handleDragEnd}
+            onDragOver={(e) => handleDragOver(e, idx)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, idx)}
             onClick={() => isSelectMode && toggleImageSelection(idx)}
           >
+            
             <Image
               src={imageSources[idx] || defaultPlaceholder}
               alt={title || `Property image ${idx + 1}`}
@@ -304,6 +404,7 @@ export function ImageGallery({
               onLoad={() => handleImageLoad(idx)}
             />
             {!imageLoaded[idx] && <div className="absolute inset-0 bg-muted animate-pulse" />}
+            
             {isSelectMode ? (
               <div className="absolute top-2 left-2 bg-white/80 rounded-full p-1">
                 {selectedImages.has(idx) ? (
@@ -354,6 +455,13 @@ export function ImageGallery({
                   )}
                 </button>
               </>
+            )}
+            
+            {/* Loading overlay for order updates */}
+            {isUpdatingOrder && (
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              </div>
             )}
           </div>
         ))}
@@ -418,7 +526,7 @@ export function ImageGallery({
               className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
             >
               <Download className="h-4 w-4 mr-1.5" />
-              {selectedImages.size}
+              Descargar
             </Button>
             <Button
               variant="ghost"
@@ -428,7 +536,27 @@ export function ImageGallery({
               className="text-red-500 hover:text-red-600 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4 mr-1.5" />
-              {selectedImages.size}
+              Eliminar
+            </Button>
+          </>
+        ) : hasUnsavedChanges ? (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelOrder}
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSaveOrder}
+              disabled={isUpdatingOrder}
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            >
+              {isUpdatingOrder ? "Guardando..." : "Guardar"}
             </Button>
           </>
         ) : (

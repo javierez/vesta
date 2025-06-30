@@ -141,6 +141,10 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         <div className="pb-8 max-w-4xl mx-auto mb-8">
           <PortalSelection 
             listingId={listing.listingId.toString()}
+            fotocasa={listing.fotocasa ?? undefined}
+            idealista={listing.idealista ?? undefined}
+            habitaclia={listing.habitaclia ?? undefined}
+            milanuncios={listing.milanuncios ?? undefined}
           />
         </div>
 

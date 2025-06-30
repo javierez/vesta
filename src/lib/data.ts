@@ -1060,6 +1060,12 @@ export type Listing = {
   fridge?: boolean;
   tv?: boolean;
   stoneware?: boolean;
+  fotocasa?: boolean;
+  idealista?: boolean;
+  habitaclia?: boolean;
+  pisoscom?: boolean;
+  yaencontre?: boolean;
+  milanuncios?: boolean;
 };
 
 export type Contact = {
@@ -1434,7 +1440,13 @@ export const listings: Listing[] = [
     microwave: true,
     washingMachine: true,
     fridge: true,
-    stoneware: true
+    stoneware: true,
+    fotocasa: false,
+    idealista: false,
+    habitaclia: false,
+    pisoscom: false,
+    yaencontre: false,
+    milanuncios: false
   },
   {
     listingId: BigInt(2),
@@ -1466,7 +1478,13 @@ export const listings: Listing[] = [
     microwave: true,
     washingMachine: true,
     fridge: true,
-    stoneware: true
+    stoneware: true,
+    fotocasa: false,
+    idealista: false,
+    habitaclia: false,
+    pisoscom: false,
+    yaencontre: false,
+    milanuncios: false
   },
   {
     listingId: BigInt(3),
@@ -1495,7 +1513,13 @@ export const listings: Listing[] = [
     microwave: false,
     washingMachine: false,
     fridge: false,
-    stoneware: false
+    stoneware: false,
+    fotocasa: false,
+    idealista: false,
+    habitaclia: false,
+    pisoscom: false,
+    yaencontre: false,
+    milanuncios: false
   },
   {
     listingId: BigInt(4),
@@ -1524,7 +1548,13 @@ export const listings: Listing[] = [
     microwave: false,
     washingMachine: false,
     fridge: false,
-    stoneware: false
+    stoneware: false,
+    fotocasa: false,
+    idealista: false,
+    habitaclia: false,
+    pisoscom: false,
+    yaencontre: false,
+    milanuncios: false
   },
   {
     listingId: BigInt(5),
@@ -1553,7 +1583,13 @@ export const listings: Listing[] = [
     microwave: false,
     washingMachine: false,
     fridge: false,
-    stoneware: false
+    stoneware: false,
+    fotocasa: false,
+    idealista: false,
+    habitaclia: false,
+    pisoscom: false,
+    yaencontre: false,
+    milanuncios: false
   }
 ];
 

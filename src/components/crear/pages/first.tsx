@@ -370,47 +370,47 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
           <SelectContent>
             {formData.propertyType === "piso" && (
               <>
-                <SelectItem value="2">Tríplex</SelectItem>
-                <SelectItem value="3">Dúplex</SelectItem>
-                <SelectItem value="5">Ático</SelectItem>
-                <SelectItem value="6">Estudio</SelectItem>
-                <SelectItem value="7">Loft</SelectItem>
-                <SelectItem value="9">Piso</SelectItem>
-                <SelectItem value="10">Apartamento</SelectItem>
-                <SelectItem value="11">Bajo</SelectItem>
+                <SelectItem value="Tríplex">Tríplex</SelectItem>
+                <SelectItem value="Dúplex">Dúplex</SelectItem>
+                <SelectItem value="Ático">Ático</SelectItem>
+                <SelectItem value="Estudio">Estudio</SelectItem>
+                <SelectItem value="Loft">Loft</SelectItem>
+                <SelectItem value="Piso">Piso</SelectItem>
+                <SelectItem value="Apartamento">Apartamento</SelectItem>
+                <SelectItem value="Bajo">Bajo</SelectItem>
               </>
             )}
             {formData.propertyType === "casa" && (
               <>
-                <SelectItem value="13">Casa</SelectItem>
-                <SelectItem value="17">Casa adosada</SelectItem>
-                <SelectItem value="19">Casa pareada</SelectItem>
-                <SelectItem value="20">Chalet</SelectItem>
-                <SelectItem value="24">Casa rústica</SelectItem>
-                <SelectItem value="27">Bungalow</SelectItem>
+                <SelectItem value="Casa">Casa</SelectItem>
+                <SelectItem value="Casa adosada">Casa adosada</SelectItem>
+                <SelectItem value="Casa pareada">Casa pareada</SelectItem>
+                <SelectItem value="Chalet">Chalet</SelectItem>
+                <SelectItem value="Casa rústica">Casa rústica</SelectItem>
+                <SelectItem value="Bungalow">Bungalow</SelectItem>
               </>
             )}
             {formData.propertyType === "local" && (
               <>
-                <SelectItem value="48">Residencial</SelectItem>
-                <SelectItem value="49">Otros</SelectItem>
-                <SelectItem value="50">Mixto residencial</SelectItem>
-                <SelectItem value="51">Oficinas</SelectItem>
-                <SelectItem value="72">Hotel</SelectItem>
+                <SelectItem value="Residencial">Residencial</SelectItem>
+                <SelectItem value="Otros">Otros</SelectItem>
+                <SelectItem value="Mixto residencial">Mixto residencial</SelectItem>
+                <SelectItem value="Oficinas">Oficinas</SelectItem>
+                <SelectItem value="Hotel">Hotel</SelectItem>
               </>
             )}
             {formData.propertyType === "solar" && (
               <>
-                <SelectItem value="56">Suelo residencial</SelectItem>
-                <SelectItem value="60">Suelo industrial</SelectItem>
-                <SelectItem value="91">Suelo rústico</SelectItem>
+                <SelectItem value="Suelo residencial">Suelo residencial</SelectItem>
+                <SelectItem value="Suelo industrial">Suelo industrial</SelectItem>
+                <SelectItem value="Suelo rústico">Suelo rústico</SelectItem>
               </>
             )}
             {formData.propertyType === "garage" && (
               <>
-                <SelectItem value="68">Moto</SelectItem>
-                <SelectItem value="69">Doble</SelectItem>
-                <SelectItem value="70">Individual</SelectItem>
+                <SelectItem value="Moto">Moto</SelectItem>
+                <SelectItem value="Doble">Doble</SelectItem>
+                <SelectItem value="Individual">Individual</SelectItem>
               </>
             )}
           </SelectContent>

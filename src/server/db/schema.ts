@@ -248,6 +248,14 @@ export const listings = singlestoreTable("listings", {
   viewCount: int("view_count").default(0),
   inquiryCount: int("inquiry_count").default(0),
 
+  // Portal Publication Fields
+  fotocasa: boolean("fotocasa").default(false),
+  idealista: boolean("idealista").default(false),
+  habitaclia: boolean("habitaclia").default(false),
+  pisoscom: boolean("pisoscom").default(false),
+  yaencontre: boolean("yaencontre").default(false),
+  milanuncios: boolean("milanuncios").default(false),
+
   // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

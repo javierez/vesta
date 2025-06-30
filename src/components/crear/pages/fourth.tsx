@@ -401,8 +401,11 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                   <Label className="text-xs font-medium text-gray-600">Plazas</Label>
                   <Input
                     type="number"
-                    value={formData.garageSpaces}
-                    onChange={(e) => updateFormData("garageSpaces", parseInt(e.target.value))}
+                    value={formData.garageSpaces === 0 ? '' : formData.garageSpaces}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateFormData("garageSpaces", val === '' ? '' : parseInt(val));
+                    }}
                     min="1"
                     max="10"
                     className="h-8 text-xs"

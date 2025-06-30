@@ -224,7 +224,13 @@ export async function seedDatabase() {
           washingMachine: mockListing?.washingMachine ?? false,
           fridge: mockListing?.fridge ?? false,
           tv: mockListing?.tv ?? false,
-          stoneware: mockListing?.stoneware ?? false
+          stoneware: mockListing?.stoneware ?? false,
+          fotocasa: mockListing?.fotocasa ?? false,
+          idealista: mockListing?.idealista ?? false,
+          habitaclia: mockListing?.habitaclia ?? false,
+          pisoscom: mockListing?.pisoscom ?? false,
+          yaencontre: mockListing?.yaencontre ?? false,
+          milanuncios: mockListing?.milanuncios ?? false
         });
 
         // Store the mapping of property ID to listing ID

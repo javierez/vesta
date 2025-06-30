@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { propertyImages } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import type { PropertyImage } from "../../lib/data";
 
 // Create a new property image
@@ -39,7 +39,8 @@ export async function getPropertyImagesByReference(referenceNumber: string, isAc
     return await db
       .select()
       .from(propertyImages)
-      .where(and(...conditions));
+      .where(and(...conditions))
+      .orderBy(asc(propertyImages.imageOrder));
   } catch (error) {
     console.error("Error getting property images by reference:", error);
     throw error;
@@ -57,7 +58,8 @@ export async function getPropertyImages(propertyId: bigint, isActive = true) {
     return await db
       .select()
       .from(propertyImages)
-      .where(and(...conditions));
+      .where(and(...conditions))
+      .orderBy(asc(propertyImages.imageOrder));
   } catch (error) {
     console.error("Error getting property images:", error);
     throw error;
