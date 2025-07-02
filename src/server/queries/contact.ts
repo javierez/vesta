@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from "../db"
-import { contacts } from "../db/schema"
+import { contacts, listings, properties, locations } from "../db/schema"
 import { eq, and, or, like, sql } from "drizzle-orm"
 import type { Contact } from "../../lib/data"
 import { listingContacts } from "../db/schema"
@@ -139,7 +139,7 @@ export async function deleteContact(contactId: number) {
   }
 }
 
-// List all contacts with their contact types from listingContacts
+// List all contact-listing relationships (each contact can appear multiple times)
 export async function listContactsWithTypes(
   page = 1,
   limit = 10,
@@ -165,8 +165,8 @@ export async function listContactsWithTypes(
       whereConditions.push(eq(contacts.isActive, true));
     }
 
-    // Get contacts with their most recent contact type from listingContacts
-    const contactsWithTypes = await db
+    // Get all contact-listing relationships with property and location info
+    const contactListingRelationships = await db
       .select({
         contactId: contacts.contactId,
         firstName: contacts.firstName,
@@ -179,6 +179,58 @@ export async function listContactsWithTypes(
         createdAt: contacts.createdAt,
         updatedAt: contacts.updatedAt,
         contactType: listingContacts.contactType,
+        listingId: listingContacts.listingId,
+        listingContactId: listingContacts.listingContactId,
+        street: properties.street,
+        city: locations.city,
+        propertyType: properties.propertyType,
+        listingType: listings.listingType,
+      })
+      .from(contacts)
+      .innerJoin(
+        listingContacts,
+        and(
+          eq(contacts.contactId, listingContacts.contactId),
+          eq(listingContacts.isActive, true)
+        )
+      )
+      .innerJoin(
+        listings,
+        eq(listingContacts.listingId, listings.listingId)
+      )
+      .innerJoin(
+        properties,
+        eq(listings.propertyId, properties.propertyId)
+      )
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId)
+      )
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(contacts.createdAt);
+
+    // Also get contacts that don't have any listing relationships (to show them as 'demandante')
+    const contactsWithoutListings = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        orgId: contacts.orgId,
+        isActive: contacts.isActive,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+        contactType: sql<string>`'demandante'`,
+        listingId: sql<null>`NULL`,
+        listingContactId: sql<null>`NULL`,
+        street: sql<null>`NULL`,
+        city: sql<null>`NULL`,
+        propertyType: sql<null>`NULL`,
+        listingType: sql<null>`NULL`,
       })
       .from(contacts)
       .leftJoin(
@@ -188,32 +240,20 @@ export async function listContactsWithTypes(
           eq(listingContacts.isActive, true)
         )
       )
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .where(
+        and(
+          ...whereConditions,
+          sql`${listingContacts.contactId} IS NULL`
+        )
+      )
       .limit(limit)
       .offset(offset)
       .orderBy(contacts.createdAt);
 
-    // Group by contact and get the most common contact type
-    const contactMap = new Map();
+    // Combine both results
+    const allContacts = [...contactListingRelationships, ...contactsWithoutListings];
     
-    contactsWithTypes.forEach(row => {
-      const contactId = row.contactId.toString();
-      
-      if (!contactMap.has(contactId)) {
-        contactMap.set(contactId, {
-          ...row,
-          contactType: row.contactType || 'demandante' // Default type if no listing contact exists
-        });
-      } else {
-        // If contact has multiple types, prioritize 'owner' over 'buyer'
-        const existing = contactMap.get(contactId);
-        if (row.contactType === 'owner' && existing.contactType !== 'owner') {
-          existing.contactType = 'owner';
-        }
-      }
-    });
-
-    return Array.from(contactMap.values());
+    return allContacts;
   } catch (error) {
     console.error("Error listing contacts with types:", error);
     throw error;
@@ -345,6 +385,49 @@ export async function updateListingOwners(listingId: number, ownerIds: number[])
     return { success: true };
   } catch (error) {
     console.error("Error updating listing owners:", error);
+    throw error;
+  }
+}
+
+// Get contact by ID with type information for display
+export async function getContactByIdWithType(contactId: number) {
+  try {
+    // First get the basic contact
+    const [contact] = await db
+      .select()
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.contactId, BigInt(contactId)),
+          eq(contacts.isActive, true)
+        )
+      );
+
+    if (!contact) {
+      return null;
+    }
+
+    // Try to get the contact type from listing relationships
+    const [contactWithType] = await db
+      .select({
+        contactType: listingContacts.contactType
+      })
+      .from(listingContacts)
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.isActive, true)
+        )
+      )
+      .limit(1);
+
+    // Return contact with type (default to 'demandante' if no listing relationship)
+    return {
+      ...contact,
+      contactType: contactWithType?.contactType || 'demandante'
+    };
+  } catch (error) {
+    console.error("Error fetching contact with type:", error);
     throw error;
   }
 } 

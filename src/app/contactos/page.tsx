@@ -14,6 +14,8 @@ import type { Contact } from "~/lib/data"
 // Extended Contact type to include contactType for the UI
 interface ExtendedContact extends Omit<Contact, 'contactType'> {
   contactType: "demandante" | "propietario" | "banco" | "agencia"
+  listingId?: bigint
+  listingContactId?: bigint
 }
 
 export default function ContactsPage() {
@@ -34,7 +36,17 @@ export default function ContactsPage() {
           // Map database contact types to UI contact types
           let uiContactType: ExtendedContact['contactType'] = 'demandante';
           if (contact.contactType === 'owner') {
-            uiContactType = 'propietario';
+            if (contact.orgId) {
+              // orgId is a bigint, so convert to number for comparison
+              const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
+              if (orgIdNum < 20) {
+                uiContactType = 'banco';
+              } else {
+                uiContactType = 'agencia';
+              }
+            } else {
+              uiContactType = 'propietario';
+            }
           } else if (contact.contactType === 'buyer') {
             uiContactType = 'demandante';
           }
@@ -42,6 +54,8 @@ export default function ContactsPage() {
           return {
             ...contact,
             contactType: uiContactType,
+            listingId: contact.listingId,
+            listingContactId: contact.listingContactId,
             additionalInfo: contact.additionalInfo as ExtendedContact['additionalInfo'] || {},
             email: contact.email || undefined,
             phone: contact.phone || undefined,
@@ -113,7 +127,10 @@ export default function ContactsPage() {
       ) : view === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredContacts.map((contact) => (
-            <ContactCard key={contact.contactId.toString()} contact={contact} />
+            <ContactCard 
+              key={`${contact.contactId.toString()}-${contact.listingContactId?.toString() || 'no-listing'}`} 
+              contact={contact} 
+            />
           ))}
         </div>
       ) : (
