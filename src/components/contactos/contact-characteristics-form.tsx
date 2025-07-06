@@ -16,6 +16,7 @@ import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern
 import { Badge } from "~/components/ui/badge"
 import { contactTypeConfig } from "./contact-config"
 import { PropertyCard } from "~/components/property-card"
+import { Slider } from "~/components/ui/slider"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -38,10 +39,15 @@ interface ContactCharacteristicsFormProps {
     isActive: boolean
     additionalInfo?: {
       demandType?: string
-      propertiesCount?: number
       propertyTypes?: string[]
-      budget?: number
-      location?: string
+      minPrice?: number
+      maxPrice?: number
+      preferredArea?: string
+      minBedrooms?: number
+      minBathrooms?: number
+      urgencyLevel?: number
+      fundingReady?: boolean
+      moveInBy?: string
       notes?: string
     }
   }
@@ -66,14 +72,18 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   
   // Additional info fields
   const [demandType, setDemandType] = useState(additionalInfo.demandType || "")
-  const [budget, setBudget] = useState(additionalInfo.budget || "")
-  const [location, setLocation] = useState(additionalInfo.location || "")
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    additionalInfo.minPrice || 0,
+    additionalInfo.maxPrice || 1000000
+  ])
+  const [preferredArea, setPreferredArea] = useState(additionalInfo.preferredArea || "")
   const [propertyTypes, setPropertyTypes] = useState<string[]>(additionalInfo.propertyTypes || [])
   const [notes, setNotes] = useState(additionalInfo.notes || "")
-  const [propertiesCount, setPropertiesCount] = useState(additionalInfo.propertiesCount || "")
-
-  // UI states
-  const [showPreferences, setShowPreferences] = useState(false)
+  const [minBedrooms, setMinBedrooms] = useState(additionalInfo.minBedrooms || 0)
+  const [minBathrooms, setMinBathrooms] = useState(additionalInfo.minBathrooms || 0)
+  const [urgencyLevel, setUrgencyLevel] = useState(additionalInfo.urgencyLevel || 3)
+  const [fundingReady, setFundingReady] = useState(additionalInfo.fundingReady || false)
+  const [moveInBy, setMoveInBy] = useState(additionalInfo.moveInBy || "")
 
   // Property listings for propietario
   const [contactListings, setContactListings] = useState<any[]>([])
@@ -142,10 +152,15 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
             additionalInfo: {
               ...additionalInfo,
               demandType,
-              budget: budget ? Number(budget) : null,
-              location,
+              minPrice: priceRange[0] || null,
+              maxPrice: priceRange[1] || null,
+              preferredArea,
               propertyTypes,
-              propertiesCount: propertiesCount ? Number(propertiesCount) : null
+              minBedrooms: minBedrooms || null,
+              minBathrooms: minBathrooms || null,
+              urgencyLevel: urgencyLevel || null,
+              fundingReady,
+              moveInBy
             }
           }
           break
@@ -336,114 +351,220 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
           </div>
         </Card>
 
-        {/* Preferences - Only show for demandante */}
+        {/* Interests Form for Demandante - Similar to Properties for Propietario */}
         {contact.contactType === 'demandante' && (
-          <Card className={cn("relative p-4 transition-all duration-500 ease-out col-span-3", getCardStyles("preferences"))}>
+          <Card className={cn("relative p-4 transition-all duration-500 ease-out col-span-full", getCardStyles("preferences"))}>
             <ModernSaveIndicator 
               state={moduleStates.preferences?.saveState || "idle"} 
               onSave={() => saveModule("preferences")} 
             />
-            <div className="flex justify-between items-center">
-              <button
-                type="button"
-                onClick={() => setShowPreferences(!showPreferences)}
-                className="flex items-center justify-between group w-full"
-              >
-                <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                  Preferencias y necesidades
-                </h3>
-                <ChevronDown 
-                  className={cn(
-                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                    showPreferences && "rotate-180"
-                  )} 
-                />
-              </button>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-semibold tracking-wide">INTERESES Y PREFERENCIAS</h3>
             </div>
-            <div className={cn(
-              "grid transition-all duration-200 ease-in-out",
-              showPreferences ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"
-            )}>
-              <div className="overflow-hidden">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="demandType" className="text-sm">Tipo de demanda</Label>
-                      <Select value={demandType} onValueChange={(value) => {
-                        setDemandType(value)
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="demandType" className="text-sm font-medium">Tipo de demanda</Label>
+                  <Select value={demandType} onValueChange={(value) => {
+                    setDemandType(value)
+                    updateModuleState('preferences', true)
+                  }}>
+                    <SelectTrigger className="h-9 text-gray-500">
+                      <SelectValue placeholder="Seleccionar tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="compra">Compra</SelectItem>
+                      <SelectItem value="alquiler">Alquiler</SelectItem>
+                      <SelectItem value="venta">Venta</SelectItem>
+                      <SelectItem value="inversion">Inversión</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Rango de precio (€)</Label>
+                  <div className="space-y-4">
+                    <Slider
+                      value={priceRange}
+                      onValueChange={(value) => {
+                        setPriceRange(value as [number, number])
                         updateModuleState('preferences', true)
-                      }}>
-                        <SelectTrigger className="h-8 text-gray-500">
-                          <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="compra">Compra</SelectItem>
-                          <SelectItem value="alquiler">Alquiler</SelectItem>
-                          <SelectItem value="venta">Venta</SelectItem>
-                          <SelectItem value="inversion">Inversión</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="budget" className="text-sm">Presupuesto (€)</Label>
-                      <Input 
-                        id="budget" 
-                        type="number"
-                        value={budget}
-                        onChange={(e) => {
-                          setBudget(e.target.value)
-                          updateModuleState('preferences', true)
-                        }}
-                        className="h-8 text-gray-500"
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="location" className="text-sm">Ubicación preferida</Label>
-                      <Input 
-                        id="location" 
-                        value={location}
-                        onChange={(e) => {
-                          setLocation(e.target.value)
-                          updateModuleState('preferences', true)
-                        }}
-                        className="h-8 text-gray-500"
-                        placeholder="Ciudad, barrio, zona..."
-                      />
+                      }}
+                      max={2000000}
+                      min={0}
+                      step={10000}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>{priceRange[0].toLocaleString('es-ES')} €</span>
+                      <span>{priceRange[1].toLocaleString('es-ES')} €</span>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Tipos de propiedad de interés</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {['piso', 'casa', 'local', 'solar', 'garaje'].map((type) => (
-                          <div key={type} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`propertyType-${type}`}
-                              checked={propertyTypes.includes(type)}
-                              onCheckedChange={() => togglePropertyType(type)}
-                            />
-                            <Label htmlFor={`propertyType-${type}`} className="text-sm capitalize">
-                              {type}
-                            </Label>
-                          </div>
-                        ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="preferredArea" className="text-sm font-medium">Zona preferida</Label>
+                  <Input 
+                    id="preferredArea" 
+                    value={preferredArea}
+                    onChange={(e) => {
+                      setPreferredArea(e.target.value)
+                      updateModuleState('preferences', true)
+                    }}
+                    className="h-9 text-gray-500"
+                    placeholder="Ciudad, barrio, zona..."
+                  />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Habitaciones mínimas</Label>
+                  <div className="space-y-4">
+                    <Slider
+                      value={[minBedrooms]}
+                      onValueChange={(value) => {
+                        setMinBedrooms(value[0] || 0)
+                        updateModuleState('preferences', true)
+                      }}
+                      max={6}
+                      min={0}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>0</span>
+                      <span className="font-medium">{minBedrooms} habitaciones</span>
+                      <span>6+</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Baños mínimos</Label>
+                  <div className="space-y-4">
+                    <Slider
+                      value={[minBathrooms]}
+                      onValueChange={(value) => {
+                        setMinBathrooms(value[0] || 0)
+                        updateModuleState('preferences', true)
+                      }}
+                      max={4}
+                      min={0}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>0</span>
+                      <span className="font-medium">{minBathrooms} baños</span>
+                      <span>4+</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Nivel de urgencia</Label>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">Sin prisa</span>
+                      <span className="text-xs text-gray-500">Urgente</span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                      {[1, 2, 3, 4, 5].map((level) => {
+                        const isSelected = urgencyLevel === level
+                        const getUrgencyColor = (level: number) => {
+                          switch (level) {
+                            case 1: return 'bg-gray-200 hover:bg-gray-300'
+                            case 2: return 'bg-blue-200 hover:bg-blue-300'
+                            case 3: return 'bg-yellow-200 hover:bg-yellow-300'
+                            case 4: return 'bg-orange-200 hover:bg-orange-300'
+                            case 5: return 'bg-red-200 hover:bg-red-300'
+                            default: return 'bg-gray-200 hover:bg-gray-300'
+                          }
+                        }
+                        const getUrgencyText = (level: number) => {
+                          switch (level) {
+                            case 1: return 'Muy baja'
+                            case 2: return 'Baja'
+                            case 3: return 'Media'
+                            case 4: return 'Alta'
+                            case 5: return 'Muy alta'
+                            default: return ''
+                          }
+                        }
+                        return (
+                          <button
+                            key={level}
+                            type="button"
+                            onClick={() => {
+                              setUrgencyLevel(level)
+                              updateModuleState('preferences', true)
+                            }}
+                            className={cn(
+                              "p-3 rounded-lg border-2 transition-all duration-200 text-xs font-medium",
+                              isSelected 
+                                ? "border-gray-800 shadow-lg scale-105" 
+                                : "border-gray-200 hover:border-gray-400",
+                              getUrgencyColor(level)
+                            )}
+                          >
+                            <div className="text-center">
+                              <div className="text-lg font-bold mb-1">{level}</div>
+                              <div className="text-xs">{getUrgencyText(level)}</div>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="moveInBy" className="text-sm font-medium">Fecha de mudanza</Label>
+                  <Input 
+                    id="moveInBy" 
+                    type="date"
+                    value={moveInBy}
+                    onChange={(e) => {
+                      setMoveInBy(e.target.value)
+                      updateModuleState('preferences', true)
+                    }}
+                    className="h-9 text-gray-500"
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="fundingReady"
+                    checked={fundingReady}
+                    onCheckedChange={(checked) => {
+                      setFundingReady(checked as boolean)
+                      updateModuleState('preferences', true)
+                    }}
+                  />
+                  <Label htmlFor="fundingReady" className="text-sm font-medium">
+                    Financiación lista
+                  </Label>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Tipos de propiedad de interés</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {['piso', 'casa', 'local', 'solar', 'garaje'].map((type) => (
+                      <div key={type} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`propertyType-${type}`}
+                          checked={propertyTypes.includes(type)}
+                          onCheckedChange={() => togglePropertyType(type)}
+                        />
+                        <Label htmlFor={`propertyType-${type}`} className="text-sm capitalize">
+                          {type}
+                        </Label>
                       </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="propertiesCount" className="text-sm">Número de propiedades que posee</Label>
-                      <Input 
-                        id="propertiesCount" 
-                        type="number"
-                        value={propertiesCount}
-                        onChange={(e) => {
-                          setPropertiesCount(e.target.value)
-                          updateModuleState('preferences', true)
-                        }}
-                        className="h-8 text-gray-500"
-                        placeholder="0"
-                      />
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>

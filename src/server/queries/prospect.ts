@@ -5,14 +5,21 @@ import { createProspectHistory } from "~/server/queries/prospect-history";
 
 export type CreateProspectInput = {
   contactId: bigint;
-  sourceType: string;
-  sourceDetails?: string;
   status: string;
+  propertyType?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  preferredArea?: string;
+  minBedrooms?: number;
+  minBathrooms?: number;
+  moveInBy?: Date;
+  extras?: Record<string, any>;
+  urgencyLevel?: number;
+  fundingReady?: boolean;
+  notesInternal?: string;
 };
 
 export type UpdateProspectInput = Partial<CreateProspectInput> & {
-  status?: string;
-  listingId?: bigint;
   changedBy?: bigint;
   changeReason?: string;
 };
@@ -21,10 +28,7 @@ export type UpdateProspectInput = Partial<CreateProspectInput> & {
 export async function createProspect(input: CreateProspectInput) {
   await db
     .insert(prospects)
-    .values({
-      ...input,
-      statusUpdatedAt: new Date(),
-    });
+    .values(input);
   
   // Get the created prospect
   const [created] = await db
@@ -42,7 +46,7 @@ export async function getProspect(id: bigint) {
   const [prospect] = await db
     .select()
     .from(prospects)
-    .where(eq(prospects.prospectId, id));
+    .where(eq(prospects.id, id));
   return prospect;
 }
 
@@ -73,10 +77,9 @@ export async function updateProspect(id: bigint, input: UpdateProspectInput) {
     .update(prospects)
     .set({
       ...input,
-      statusUpdatedAt: input.status ? new Date() : undefined,
       updatedAt: new Date(),
     })
-    .where(eq(prospects.prospectId, id));
+    .where(eq(prospects.id, id));
   
   // Get the updated prospect
   return await getProspect(id);
@@ -87,7 +90,7 @@ export async function deleteProspect(id: bigint) {
   const prospect = await getProspect(id);
   await db
     .delete(prospects)
-    .where(eq(prospects.prospectId, id));
+    .where(eq(prospects.id, id));
   return prospect;
 }
 
@@ -99,12 +102,12 @@ export async function getProspectsByStatus(status: string) {
     .where(eq(prospects.status, status));
 }
 
-// Get prospects by source type
-export async function getProspectsBySourceType(sourceType: string) {
+// Get prospects by property type
+export async function getProspectsByPropertyType(propertyType: string) {
   return await db
     .select()
     .from(prospects)
-    .where(eq(prospects.sourceType, sourceType));
+    .where(eq(prospects.propertyType, propertyType));
 }
 
 // Get prospects by contact

@@ -398,13 +398,21 @@ export const documents = singlestoreTable("documents", {
 
 // Prospects table
 export const prospects = singlestoreTable("prospects", {
-  prospectId: bigint("prospect_id", { mode: "bigint" }).primaryKey().autoincrement(),
-  contactId: bigint("contact_id", { mode: "bigint" }).notNull(),
-  sourceType: varchar("source_type", { length: 50 }).notNull(),
-  sourceDetails: text("source_details"),
-  status: varchar("status", { length: 50 }).notNull(),
-  statusUpdatedAt: timestamp("status_updated_at").defaultNow().notNull(),
-  listingId: bigint("listing_id", { mode: "bigint" }),
+  id: bigint("prospect_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.id
+  status: varchar("status", { length: 50 }).notNull(), // ENUM equivalent - index this
+  listingType: varchar("listing_type", { length: 20 }), // ENUM('Sale', 'Rent') - type of listing they're looking for
+  propertyType: varchar("property_type", { length: 20 }), // ENUM('piso','casa','garaje','local','terreno')
+  minPrice: decimal("min_price", { precision: 12, scale: 2 }),
+  maxPrice: decimal("max_price", { precision: 12, scale: 2 }),
+  preferredAreas: json("preferred_areas"), // Array of neighborhood objects: [{"neighborhoodId": 1, "name": "Salamanca"}, {"neighborhoodId": 2, "name": "Retiro"}]
+  minBedrooms: smallint("min_bedrooms"), // 0-10 is enough
+  minBathrooms: smallint("min_bathrooms"), // Same
+  moveInBy: timestamp("move_in_by"), // Desired move-in date; leave NULL if "when something comes up"
+  extras: json("extras"), // { "ascensor": true, "terraza": true, "garaje": false }
+  urgencyLevel: smallint("urgency_level"), // 1-5 - homemade lead-scoring
+  fundingReady: boolean("funding_ready"), // Has mortgage/pre-approval?
+  notesInternal: text("notes_internal"), // Everything the client shouldn't see
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
