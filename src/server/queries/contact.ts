@@ -430,4 +430,97 @@ export async function getContactByIdWithType(contactId: number) {
     console.error("Error fetching contact with type:", error);
     throw error;
   }
+}
+
+// Get listings associated with a specific contact (owner)
+export async function getListingsByContact(contactId: number) {
+  try {
+    const contactListings = await db
+      .select({
+        // Listing fields
+        listingId: listings.listingId,
+        propertyId: listings.propertyId,
+        price: listings.price,
+        status: listings.status,
+        listingType: listings.listingType,
+        isActive: listings.isActive,
+        isFeatured: listings.isFeatured,
+        isBankOwned: listings.isBankOwned,
+        viewCount: listings.viewCount,
+        inquiryCount: listings.inquiryCount,
+        
+        // Property fields
+        referenceNumber: properties.referenceNumber,
+        title: properties.title,
+        propertyType: properties.propertyType,
+        bedrooms: properties.bedrooms,
+        bathrooms: properties.bathrooms,
+        squareMeter: properties.squareMeter,
+        street: properties.street,
+        addressDetails: properties.addressDetails,
+        postalCode: properties.postalCode,
+        latitude: properties.latitude,
+        longitude: properties.longitude,
+        
+        // Location fields
+        city: locations.city,
+        province: locations.province,
+        municipality: locations.municipality,
+        neighborhood: locations.neighborhood,
+        
+        // Agent information
+        agentName: sql<string>`CONCAT(u.first_name, ' ', u.last_name)`,
+        
+        // Image fields (we'll get the first and second images for each listing)
+        imageUrl: sql<string>`(
+          SELECT pi.image_url 
+          FROM property_images pi 
+          WHERE pi.property_id = ${properties.propertyId} 
+          AND pi.is_active = true 
+          AND pi.image_order = 1
+          LIMIT 1
+        )`,
+        imageUrl2: sql<string>`(
+          SELECT pi.image_url 
+          FROM property_images pi 
+          WHERE pi.property_id = ${properties.propertyId} 
+          AND pi.is_active = true 
+          AND pi.image_order = 2
+          LIMIT 1
+        )`
+      })
+      .from(listingContacts)
+      .innerJoin(
+        listings,
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listings.isActive, true)
+        )
+      )
+      .innerJoin(
+        properties,
+        eq(listings.propertyId, properties.propertyId)
+      )
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId)
+      )
+      .leftJoin(
+        sql`users u`,
+        eq(listings.agentId, sql`u.user_id`)
+      )
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.contactType, 'owner'),
+          eq(listingContacts.isActive, true)
+        )
+      )
+      .orderBy(listings.createdAt);
+
+    return contactListings;
+  } catch (error) {
+    console.error("Error fetching listings by contact:", error);
+    throw error;
+  }
 } 

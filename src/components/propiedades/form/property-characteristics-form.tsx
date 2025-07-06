@@ -1472,7 +1472,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 </SelectTrigger>
                 <SelectContent>
                   <div className="flex items-center px-3 pb-2">
-                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                     <input
                       className="flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                       placeholder="Buscar propietario..."
@@ -1499,14 +1498,21 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 {selectedOwnerIds.map((ownerId) => {
                   const owner = owners.find(o => o.id.toString() === ownerId)
                   return owner ? (
-                    <div key={ownerId} className="flex items-center justify-between bg-muted/50 px-2 py-1 rounded-md">
-                      <span className="text-sm">{owner.name}</span>
+                    <div 
+                      key={ownerId} 
+                      className="flex items-center justify-between bg-blue-50 shadow-md px-2 py-1 rounded-md cursor-pointer hover:bg-blue-100 hover:border-blue-300 transition-all duration-200"
+                      onClick={() => router.push(`/contactos/${owner.id}`)}
+                    >
+                      <span className="text-sm">
+                        {owner.name}
+                      </span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation() // Prevent triggering the parent onClick
                           setSelectedOwnerIds(selectedOwnerIds.filter(id => id !== ownerId))
                           updateModuleState('contactInfo', true)
                         }}

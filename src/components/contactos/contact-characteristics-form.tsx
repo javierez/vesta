@@ -7,12 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ChevronDown, Save, Phone, Mail, MapPin, Calendar, FileText, User, Building } from "lucide-react"
 import { Textarea } from "~/components/ui/textarea"
-import { updateContact } from "~/server/queries/contact"
+import { updateContact, getListingsByContact } from "~/server/queries/contact"
 import { toast } from "sonner"
 import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern-save-indicator"
+import { Badge } from "~/components/ui/badge"
+import { contactTypeConfig } from "./contact-config"
+import { PropertyCard } from "~/components/property-card"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -25,7 +28,23 @@ interface ModuleState {
 type ModuleName = "basicInfo" | "contactDetails" | "preferences" | "notes"
 
 interface ContactCharacteristicsFormProps {
-  contact: any
+  contact: {
+    contactId: bigint
+    firstName: string
+    lastName: string
+    email?: string
+    phone?: string
+    contactType: "demandante" | "propietario" | "banco" | "agencia"
+    isActive: boolean
+    additionalInfo?: {
+      demandType?: string
+      propertiesCount?: number
+      propertyTypes?: string[]
+      budget?: number
+      location?: string
+      notes?: string
+    }
+  }
 }
 
 export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFormProps) {
@@ -55,6 +74,34 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
 
   // UI states
   const [showPreferences, setShowPreferences] = useState(false)
+
+  // Property listings for propietario
+  const [contactListings, setContactListings] = useState<any[]>([])
+  const [isLoadingListings, setIsLoadingListings] = useState(false)
+
+  // Contact type configuration
+  const contactType = contact.contactType as keyof typeof contactTypeConfig
+  const typeConfig = contactTypeConfig[contactType] || contactTypeConfig.demandante
+  const TypeIcon = typeConfig.icon
+
+  // Load contact listings if propietario
+  useEffect(() => {
+    if (contact.contactType === 'propietario') {
+      const loadContactListings = async () => {
+        setIsLoadingListings(true)
+        try {
+          const listings = await getListingsByContact(Number(contact.contactId))
+          setContactListings(listings)
+        } catch (error) {
+          console.error('Error loading contact listings:', error)
+          toast.error('Error al cargar las propiedades del contacto')
+        } finally {
+          setIsLoadingListings(false)
+        }
+      }
+      loadContactListings()
+    }
+  }, [contact.contactId, contact.contactType])
 
   // Function to update module state
   const updateModuleState = (moduleName: ModuleName, hasChanges: boolean) => {
@@ -183,234 +230,262 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {/* Basic Information */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.basicInfo?.saveState || "idle"} 
-          onSave={() => saveModule("basicInfo")} 
-        />
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN BÁSICA</h3>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="firstName" className="text-sm">Nombre</Label>
-            <Input 
-              id="firstName" 
-              value={firstName}
-              onChange={(e) => {
-                setFirstName(e.target.value)
-                updateModuleState('basicInfo', true)
-              }}
-              className="h-8 text-gray-500"
-            />
+    <div className="space-y-6">
+      {/* Form Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Basic Information */}
+        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
+          <ModernSaveIndicator 
+            state={moduleStates.basicInfo?.saveState || "idle"} 
+            onSave={() => saveModule("basicInfo")} 
+          />
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-sm font-semibold tracking-wide">INFORMACIÓN BÁSICA</h3>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="lastName" className="text-sm">Apellidos</Label>
-            <Input 
-              id="lastName" 
-              value={lastName}
-              onChange={(e) => {
-                setLastName(e.target.value)
-                updateModuleState('basicInfo', true)
-              }}
-              className="h-8 text-gray-500"
-            />
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="firstName" className="text-sm">Nombre</Label>
+              <Input 
+                id="firstName" 
+                value={firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value)
+                  updateModuleState('basicInfo', true)
+                }}
+                className="h-8 text-gray-500"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="lastName" className="text-sm">Apellidos</Label>
+              <Input 
+                id="lastName" 
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value)
+                  updateModuleState('basicInfo', true)
+                }}
+                className="h-8 text-gray-500"
+              />
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="isActive" 
-              checked={isActive}
-              onCheckedChange={(checked) => {
-                setIsActive(checked as boolean)
-                updateModuleState('basicInfo', true)
-              }}
-            />
-            <Label htmlFor="isActive" className="text-sm">Contacto activo</Label>
-          </div>
-        </div>
-      </Card>
+        </Card>
 
-      {/* Contact Details */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("contactDetails"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.contactDetails?.saveState || "idle"} 
-          onSave={() => saveModule("contactDetails")} 
-        />
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide">DATOS DE CONTACTO</h3>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-sm">Email</Label>
-            <Input 
-              id="email" 
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                updateModuleState('contactDetails', true)
-              }}
-              className="h-8 text-gray-500"
-              placeholder="contacto@email.com"
-            />
+        {/* Contact Details */}
+        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("contactDetails"))}>
+          <ModernSaveIndicator 
+            state={moduleStates.contactDetails?.saveState || "idle"} 
+            onSave={() => saveModule("contactDetails")} 
+          />
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-sm font-semibold tracking-wide">DATOS DE CONTACTO</h3>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="phone" className="text-sm">Teléfono</Label>
-            <Input 
-              id="phone" 
-              type="tel"
-              value={phone}
-              onChange={(e) => {
-                setPhone(e.target.value)
-                updateModuleState('contactDetails', true)
-              }}
-              className="h-8 text-gray-500"
-              placeholder="+34 600 000 000"
-            />
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm">Email</Label>
+              <Input 
+                id="email" 
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  updateModuleState('contactDetails', true)
+                }}
+                className="h-8 text-gray-500"
+                placeholder="contacto@email.com"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="phone" className="text-sm">Teléfono</Label>
+              <Input 
+                id="phone" 
+                type="tel"
+                value={phone}
+                onChange={(e) => {
+                  setPhone(e.target.value)
+                  updateModuleState('contactDetails', true)
+                }}
+                className="h-8 text-gray-500"
+                placeholder="+34 600 000 000"
+              />
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
 
-      {/* Preferences */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out col-span-2", getCardStyles("preferences"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.preferences?.saveState || "idle"} 
-          onSave={() => saveModule("preferences")} 
-        />
-        <div className="flex justify-between items-center">
-          <button
-            type="button"
-            onClick={() => setShowPreferences(!showPreferences)}
-            className="flex items-center justify-between group w-full"
-          >
-            <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-              Preferencias y necesidades
-            </h3>
-            <ChevronDown 
-              className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                showPreferences && "rotate-180"
-              )} 
+        {/* Notes */}
+        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("notes"))}>
+          <ModernSaveIndicator 
+            state={moduleStates.notes?.saveState || "idle"} 
+            onSave={() => saveModule("notes")} 
+          />
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-sm font-semibold tracking-wide">NOTAS</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Textarea 
+                id="notes" 
+                value={notes}
+                onChange={(e) => {
+                  setNotes(e.target.value)
+                  updateModuleState('notes', true)
+                }}
+                className="min-h-[120px] resize-y border-gray-200 focus:border-gray-400 focus:ring-gray-300 transition-colors"
+                placeholder="Información adicional sobre el contacto..."
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Preferences - Only show for demandante */}
+        {contact.contactType === 'demandante' && (
+          <Card className={cn("relative p-4 transition-all duration-500 ease-out col-span-3", getCardStyles("preferences"))}>
+            <ModernSaveIndicator 
+              state={moduleStates.preferences?.saveState || "idle"} 
+              onSave={() => saveModule("preferences")} 
             />
-          </button>
-        </div>
-        <div className={cn(
-          "grid transition-all duration-200 ease-in-out",
-          showPreferences ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"
-        )}>
-          <div className="overflow-hidden">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="demandType" className="text-sm">Tipo de demanda</Label>
-                  <Select value={demandType} onValueChange={(value) => {
-                    setDemandType(value)
-                    updateModuleState('preferences', true)
-                  }}>
-                    <SelectTrigger className="h-8 text-gray-500">
-                      <SelectValue placeholder="Seleccionar tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="compra">Compra</SelectItem>
-                      <SelectItem value="alquiler">Alquiler</SelectItem>
-                      <SelectItem value="venta">Venta</SelectItem>
-                      <SelectItem value="inversion">Inversión</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="budget" className="text-sm">Presupuesto (€)</Label>
-                  <Input 
-                    id="budget" 
-                    type="number"
-                    value={budget}
-                    onChange={(e) => {
-                      setBudget(e.target.value)
-                      updateModuleState('preferences', true)
-                    }}
-                    className="h-8 text-gray-500"
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="location" className="text-sm">Ubicación preferida</Label>
-                  <Input 
-                    id="location" 
-                    value={location}
-                    onChange={(e) => {
-                      setLocation(e.target.value)
-                      updateModuleState('preferences', true)
-                    }}
-                    className="h-8 text-gray-500"
-                    placeholder="Ciudad, barrio, zona..."
-                  />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label className="text-sm">Tipos de propiedad de interés</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['piso', 'casa', 'local', 'solar', 'garaje'].map((type) => (
-                      <div key={type} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`propertyType-${type}`}
-                          checked={propertyTypes.includes(type)}
-                          onCheckedChange={() => togglePropertyType(type)}
-                        />
-                        <Label htmlFor={`propertyType-${type}`} className="text-sm capitalize">
-                          {type}
-                        </Label>
-                      </div>
-                    ))}
+            <div className="flex justify-between items-center">
+              <button
+                type="button"
+                onClick={() => setShowPreferences(!showPreferences)}
+                className="flex items-center justify-between group w-full"
+              >
+                <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  Preferencias y necesidades
+                </h3>
+                <ChevronDown 
+                  className={cn(
+                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                    showPreferences && "rotate-180"
+                  )} 
+                />
+              </button>
+            </div>
+            <div className={cn(
+              "grid transition-all duration-200 ease-in-out",
+              showPreferences ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"
+            )}>
+              <div className="overflow-hidden">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="demandType" className="text-sm">Tipo de demanda</Label>
+                      <Select value={demandType} onValueChange={(value) => {
+                        setDemandType(value)
+                        updateModuleState('preferences', true)
+                      }}>
+                        <SelectTrigger className="h-8 text-gray-500">
+                          <SelectValue placeholder="Seleccionar tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="compra">Compra</SelectItem>
+                          <SelectItem value="alquiler">Alquiler</SelectItem>
+                          <SelectItem value="venta">Venta</SelectItem>
+                          <SelectItem value="inversion">Inversión</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="budget" className="text-sm">Presupuesto (€)</Label>
+                      <Input 
+                        id="budget" 
+                        type="number"
+                        value={budget}
+                        onChange={(e) => {
+                          setBudget(e.target.value)
+                          updateModuleState('preferences', true)
+                        }}
+                        className="h-8 text-gray-500"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="location" className="text-sm">Ubicación preferida</Label>
+                      <Input 
+                        id="location" 
+                        value={location}
+                        onChange={(e) => {
+                          setLocation(e.target.value)
+                          updateModuleState('preferences', true)
+                        }}
+                        className="h-8 text-gray-500"
+                        placeholder="Ciudad, barrio, zona..."
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="propertiesCount" className="text-sm">Número de propiedades que posee</Label>
-                  <Input 
-                    id="propertiesCount" 
-                    type="number"
-                    value={propertiesCount}
-                    onChange={(e) => {
-                      setPropertiesCount(e.target.value)
-                      updateModuleState('preferences', true)
-                    }}
-                    className="h-8 text-gray-500"
-                    placeholder="0"
-                  />
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Tipos de propiedad de interés</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['piso', 'casa', 'local', 'solar', 'garaje'].map((type) => (
+                          <div key={type} className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`propertyType-${type}`}
+                              checked={propertyTypes.includes(type)}
+                              onCheckedChange={() => togglePropertyType(type)}
+                            />
+                            <Label htmlFor={`propertyType-${type}`} className="text-sm capitalize">
+                              {type}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="propertiesCount" className="text-sm">Número de propiedades que posee</Label>
+                      <Input 
+                        id="propertiesCount" 
+                        type="number"
+                        value={propertiesCount}
+                        onChange={(e) => {
+                          setPropertiesCount(e.target.value)
+                          updateModuleState('preferences', true)
+                        }}
+                        className="h-8 text-gray-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </Card>
+          </Card>
+        )}
+      </div>
 
-      {/* Notes */}
-      <Card className={cn("relative p-4 col-span-1 transition-all duration-500 ease-out", getCardStyles("notes"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.notes?.saveState || "idle"} 
-          onSave={() => saveModule("notes")} 
-        />
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold tracking-wide">NOTAS</h3>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="notes" className="text-sm">Observaciones</Label>
-            <Textarea 
-              id="notes" 
-              value={notes}
-              onChange={(e) => {
-                setNotes(e.target.value)
-                updateModuleState('notes', true)
-              }}
-              className="min-h-[120px] resize-y border-gray-200 focus:border-gray-400 focus:ring-gray-300 transition-colors"
-              placeholder="Información adicional sobre el contacto..."
-            />
+      {/* Property Cards for Propietario */}
+      {contact.contactType === 'propietario' && (
+        <Card className="relative p-4 transition-all duration-500 ease-out">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES ASOCIADAS</h3>
           </div>
-        </div>
-      </Card>
+          
+          {isLoadingListings ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-gray-200 rounded-lg aspect-[4/3] mb-3"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : contactListings.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {contactListings.map((listing) => (
+                <PropertyCard key={listing.listingId.toString()} listing={listing} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">No hay propiedades asociadas a este contacto</p>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   )
 }

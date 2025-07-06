@@ -9,6 +9,7 @@ import { ContactCardSkeleton } from "~/components/contactos/contact-card-skeleto
 import { ContactFilter } from "~/components/contactos/contact-filter"
 import { ContactTable } from "~/components/contactos/contact-table"
 import { listContactsWithTypes } from "~/server/queries/contact"
+import { contactUtils } from "~/lib/utils"
 import type { Contact } from "~/lib/data"
 
 // Extended Contact type to include contactType for the UI
@@ -33,33 +34,13 @@ export default function ContactsPage() {
         
         // Transform database contacts to include contactType for UI compatibility
         const extendedContacts: ExtendedContact[] = dbContacts.map((contact: any) => {
-          // Map database contact types to UI contact types
-          let uiContactType: ExtendedContact['contactType'] = 'demandante';
-          if (contact.contactType === 'owner') {
-            if (contact.orgId) {
-              // orgId is a bigint, so convert to number for comparison
-              const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
-              if (orgIdNum < 20) {
-                uiContactType = 'banco';
-              } else {
-                uiContactType = 'agencia';
-              }
-            } else {
-              uiContactType = 'propietario';
-            }
-          } else if (contact.contactType === 'buyer') {
-            uiContactType = 'demandante';
-          }
+          // Use centralized contact mapping function
+          const mappedContact = contactUtils.createExtendedContact(contact);
           
           return {
-            ...contact,
-            contactType: uiContactType,
+            ...mappedContact,
             listingId: contact.listingId,
             listingContactId: contact.listingContactId,
-            additionalInfo: contact.additionalInfo as ExtendedContact['additionalInfo'] || {},
-            email: contact.email || undefined,
-            phone: contact.phone || undefined,
-            isActive: contact.isActive ?? true // Handle null values
           };
         })
         
