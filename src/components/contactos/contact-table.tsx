@@ -23,7 +23,7 @@ interface ExtendedContact {
   lastName: string
   email?: string
   phone?: string
-  contactType: "demandante" | "propietario" | "banco" | "agencia"
+  contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado"
   isActive: boolean
   listingId?: bigint
   listingContactId?: bigint
@@ -31,6 +31,8 @@ interface ExtendedContact {
   city?: string
   propertyType?: string
   listingType?: string
+  ownerCount?: number
+  buyerCount?: number
   additionalInfo?: {
     demandType?: string
     propertiesCount?: number
@@ -143,7 +145,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
               const typeConfig = contactTypeConfig[contact.contactType]
               return (
               <TableRow 
-                key={`${contact.contactId.toString()}-${contact.listingContactId?.toString() || 'no-listing'}`}
+                key={contact.contactId.toString()}
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => router.push(`/contactos/${contact.contactId}`)}
               >
@@ -157,13 +159,74 @@ export function ContactTable({ contacts }: ContactTableProps) {
                       <Clock className="h-3 w-3" />
                       <span>{contact.lastContact ? formatDate(contact.lastContact) : formatDate(contact.updatedAt)}</span>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={cn("text-xs font-medium border rounded-full px-3 transition-colors", typeConfig.colors)}
-                    >
-                      <typeConfig.icon className="h-3 w-3 mr-1" />
-                      {typeConfig.label}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      {/* Propietario badge - show if contact has owner relationships */}
+                      {contact.ownerCount !== undefined && contact.ownerCount > 0 && (
+                        <Badge
+                          className="text-xs font-medium rounded-full px-3 bg-green-50 text-green-700 shadow-md whitespace-nowrap"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-3 w-3 mr-1"
+                          >
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9,22 9,12 15,12 15,22" />
+                          </svg>
+                          Propietario ({contact.ownerCount})
+                        </Badge>
+                      )}
+                      
+                      {/* Demandante badge - show if contact has buyer relationships */}
+                      {contact.buyerCount !== undefined && contact.buyerCount > 0 && (
+                        <Badge
+                          className="text-xs font-medium rounded-full px-3 bg-blue-50 text-blue-700 shadow-md whitespace-nowrap"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-3 w-3 mr-1"
+                          >
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                          </svg>
+                          Demandante ({contact.buyerCount})
+                        </Badge>
+                      )}
+
+                      {/* Interesado badge - show if contact has no specific relationships */}
+                      {contact.ownerCount !== undefined && contact.ownerCount === 0 && 
+                       contact.buyerCount !== undefined && contact.buyerCount === 0 && (
+                        <Badge
+                          className="text-xs font-medium rounded-full px-3 bg-orange-50 text-orange-700 shadow-md whitespace-nowrap"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-3 w-3 mr-1"
+                          >
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                          </svg>
+                          Interesado
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell className="w-[250px] min-w-[250px]">
@@ -241,12 +304,6 @@ export function ContactTable({ contacts }: ContactTableProps) {
                               <span className="truncate">{contact.city}</span>
                             </div>
                           )}
-                          {!contact.street && !contact.city && (
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <MapPin className="mr-2 h-4 w-4" />
-                              <span className="italic">Sin ubicación</span>
-                            </div>
-                          )}
                           
                           {/* Property Type and Listing Type */}
                           {(contact.propertyType || contact.listingType) && (
@@ -288,12 +345,6 @@ export function ContactTable({ contacts }: ContactTableProps) {
                           <div className="flex items-center text-sm">
                             <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
                             <span className="truncate">{contact.city}</span>
-                          </div>
-                        )}
-                        {!contact.street && !contact.city && (
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <MapPin className="mr-2 h-4 w-4" />
-                            <span className="italic">Sin ubicación</span>
                           </div>
                         )}
                         

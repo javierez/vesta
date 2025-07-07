@@ -1,3 +1,4 @@
+"use server"
 import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
 import { prospects } from "~/server/db/schema";

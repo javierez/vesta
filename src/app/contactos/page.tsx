@@ -14,9 +14,11 @@ import type { Contact } from "~/lib/data"
 
 // Extended Contact type to include contactType for the UI
 interface ExtendedContact extends Omit<Contact, 'contactType'> {
-  contactType: "demandante" | "propietario" | "banco" | "agencia"
+  contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado"
   listingId?: bigint
   listingContactId?: bigint
+  ownerCount?: number
+  buyerCount?: number
 }
 
 export default function ContactsPage() {
@@ -29,20 +31,30 @@ export default function ContactsPage() {
     const fetchContacts = async () => {
       setIsLoading(true)
       try {
-        // Fetch contacts from the database with their contact types
+        // Fetch contacts from the database with their role counts
         const dbContacts = await listContactsWithTypes(1, 100) // Get first 100 contacts
         
-        // Transform database contacts to include contactType for UI compatibility
-        const extendedContacts: ExtendedContact[] = dbContacts.map((contact: any) => {
-          // Use centralized contact mapping function
-          const mappedContact = contactUtils.createExtendedContact(contact);
-          
-          return {
-            ...mappedContact,
-            listingId: contact.listingId,
-            listingContactId: contact.listingContactId,
-          };
-        })
+        // Use the data directly from the query - contact type is already determined in the database query
+        const extendedContacts: ExtendedContact[] = dbContacts.map((contact: any) => ({
+          contactId: contact.contactId,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          email: contact.email,
+          phone: contact.phone,
+          additionalInfo: contact.additionalInfo,
+          orgId: contact.orgId,
+          isActive: contact.isActive,
+          createdAt: contact.createdAt,
+          updatedAt: contact.updatedAt,
+          contactType: contact.contactType, // This is now determined in the query
+          listingId: contact.firstListingId,
+          street: contact.street,
+          city: contact.city,
+          propertyType: contact.propertyType,
+          listingType: contact.listingType,
+          ownerCount: contact.ownerCount,
+          buyerCount: contact.buyerCount,
+        }))
         
         setContactsList(extendedContacts)
         setFilteredContacts(extendedContacts)
@@ -109,7 +121,7 @@ export default function ContactsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredContacts.map((contact) => (
             <ContactCard 
-              key={`${contact.contactId.toString()}-${contact.listingContactId?.toString() || 'no-listing'}`} 
+              key={contact.contactId.toString()} 
               contact={contact} 
             />
           ))}

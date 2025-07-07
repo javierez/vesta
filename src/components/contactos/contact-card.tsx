@@ -23,7 +23,7 @@ interface Contact {
   lastName: string
   email?: string
   phone?: string
-  contactType: "demandante" | "propietario" | "banco" | "agencia"
+  contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado"
   isActive: boolean
   listingId?: bigint
   listingContactId?: bigint
@@ -31,6 +31,8 @@ interface Contact {
   city?: string
   propertyType?: string
   listingType?: string
+  ownerCount?: number
+  buyerCount?: number
   additionalInfo?: {
     demandType?: string
     propertiesCount?: number
@@ -47,13 +49,23 @@ interface ContactCardProps {
   contact: Contact
 }
 
-
-
 export function ContactCard({ contact }: ContactCardProps) {
   const router = useRouter()
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const typeConfig = contactTypeConfig[contact.contactType]
   const TypeIcon = typeConfig.icon
+
+  // Log component initialization
+  console.log('[ContactCard] Component initialized with contact:', {
+    contactId: contact.contactId,
+    name: `${contact.firstName} ${contact.lastName}`,
+    contactType: contact.contactType,
+    hasEmail: !!contact.email,
+    hasPhone: !!contact.phone,
+    hasListing: !!contact.listingId,
+    ownerCount: contact.ownerCount,
+    buyerCount: contact.buyerCount
+  })
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -80,6 +92,76 @@ export function ContactCard({ contact }: ContactCardProps) {
             </h3>
           </div>
 
+          {/* Role badges displayed under the name in parallel */}
+          <div className="flex items-center gap-2 mt-2">
+            {/* Propietario badge - show if contact has owner relationships */}
+            {contact.ownerCount !== undefined && contact.ownerCount > 0 && (
+              <Badge
+                className="text-xs font-medium rounded-full px-3 bg-green-50 text-green-700 shadow-md whitespace-nowrap"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3 mr-1"
+                >
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9,22 9,12 15,12 15,22" />
+                </svg>
+                Propietario ({contact.ownerCount})
+              </Badge>
+            )}
+            
+            {/* Demandante badge - show if contact has buyer relationships */}
+            {contact.buyerCount !== undefined && contact.buyerCount > 0 && (
+              <Badge
+                className="text-xs font-medium rounded-full px-3 bg-blue-50 text-blue-700 shadow-md whitespace-nowrap"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3 mr-1"
+                >
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
+                Demandante ({contact.buyerCount})
+              </Badge>
+            )}
+
+            {/* Interesado badge - show if contact has no specific relationships */}
+            {contact.ownerCount !== undefined && contact.ownerCount === 0 && 
+             contact.buyerCount !== undefined && contact.buyerCount === 0 && (
+              <Badge
+                className="text-xs font-medium rounded-full px-3 bg-orange-50 text-orange-700 shadow-md whitespace-nowrap"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3 mr-1"
+                >
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
+                Interesado
+              </Badge>
+            )}
+          </div>
+
           {contact.additionalInfo?.demandType && (
             <Badge variant="secondary" className="text-xs mt-1">
               {contact.additionalInfo.demandType}
@@ -87,15 +169,7 @@ export function ContactCard({ contact }: ContactCardProps) {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className={cn("text-xs font-medium border rounded-full px-3 transition-colors", typeConfig.colors)}
-          >
-            <TypeIcon className="h-3 w-3 mr-1" />
-            {typeConfig.label}
-          </Badge>
-        </div>
+
       </CardHeader>
 
       <CardContent className="space-y-3 pt-4">
@@ -206,12 +280,6 @@ export function ContactCard({ contact }: ContactCardProps) {
                       <span className="truncate">{contact.city}</span>
                     </div>
                   )}
-                  {!contact.street && !contact.city && (
-                    <div className="flex items-center text-xs text-gray-500">
-                      <MapPin className="mr-1.5 h-3 w-3 text-gray-400 flex-shrink-0" />
-                      <span className="italic">Sin ubicación</span>
-                    </div>
-                  )}
                   
                   {/* Property Type and Listing Type */}
                   {(contact.propertyType || contact.listingType) && (
@@ -255,12 +323,6 @@ export function ContactCard({ contact }: ContactCardProps) {
                     <span className="truncate">{contact.city}</span>
                   </div>
                 )}
-                {!contact.street && !contact.city && (
-                  <div className="flex items-center text-xs text-gray-500">
-                    <MapPin className="mr-1.5 h-3 w-3 text-gray-400 flex-shrink-0" />
-                    <span className="italic">Sin ubicación</span>
-                  </div>
-                )}
                 
                 {/* Property Type and Listing Type */}
                 {(contact.propertyType || contact.listingType) && (
@@ -288,7 +350,7 @@ export function ContactCard({ contact }: ContactCardProps) {
           <div className="mt-3 pt-3 border-t border-gray-100">
             <div className="flex items-start gap-2">
               <MessageSquare className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-gray-600 line-clamp-2">{contact.additionalInfo.notes}</p>
+              <p className="text-xs text-gray-600 line-clamp-2">{contact.additionalInfo.notes}</p>
             </div>
           </div>
         )}

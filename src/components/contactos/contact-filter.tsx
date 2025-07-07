@@ -12,7 +12,7 @@ interface ExtendedContact {
   lastName: string
   email?: string
   phone?: string
-  contactType: "demandante" | "propietario" | "banco" | "agencia"
+  contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado"
   isActive: boolean
   additionalInfo?: {
     demandType?: string

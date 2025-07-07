@@ -1,4 +1,4 @@
-import { Search, Home, Landmark, Store, Building } from "lucide-react"
+import { Search, Home, Landmark, Store, Building, User } from "lucide-react"
 
 export const contactTypeConfig = {
   demandante: {
@@ -25,6 +25,13 @@ export const contactTypeConfig = {
   agencia: {
     label: "Agencia",
     icon: Store,
+    colors: "bg-orange-50 text-green-700 border-green-200",
+    lightColors: "bg-orange-50",
+    lineColor: "bg-orange-200",
+  },
+  interesado: {
+    label: "Interesado",
+    icon: User,
     colors: "bg-orange-50 text-orange-700 border-orange-200",
     lightColors: "bg-orange-50",
     lineColor: "bg-orange-200",

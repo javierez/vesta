@@ -20,6 +20,18 @@ interface ContactDetailLayoutProps {
 }
 
 export function ContactDetailLayout({ contact }: ContactDetailLayoutProps) {
+  // Transform contact to match ContactCharacteristicsForm interface
+  const transformedContact = {
+    contactId: contact.contactId,
+    firstName: contact.firstName,
+    lastName: contact.lastName,
+    email: contact.email || undefined,
+    phone: contact.phone || undefined,
+    contactType: contact.contactType as "demandante" | "propietario" | "banco" | "agencia" | "interesado",
+    isActive: contact.isActive ?? true,
+    additionalInfo: contact.additionalInfo || {}
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <ContactBreadcrumb firstName={contact.firstName} lastName={contact.lastName} />
@@ -29,7 +41,7 @@ export function ContactDetailLayout({ contact }: ContactDetailLayoutProps) {
 
       {/* Contact Form */}
       <div className="pb-16">
-        <ContactCharacteristicsForm contact={contact} />
+        <ContactCharacteristicsForm contact={transformedContact} />
       </div>
     </div>
   )

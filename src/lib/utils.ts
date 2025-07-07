@@ -95,60 +95,17 @@ export const formFormatters = {
   }
 }
 
-// Contact mapping utilities
+// Contact utilities (for UI configuration only)
 export const contactUtils = {
   /**
-   * Maps database contact type to UI contact type
-   * @param contact - Contact object with contactType and optional orgId
-   * @returns UI contact type: "demandante" | "propietario" | "banco" | "agencia"
+   * Contact type determination logic (for reference only - actual logic is in contact.ts queries):
    * 
-   * Mapping logic:
-   * - 'buyer' → 'demandante'
-   * - 'owner' with orgId < 20 → 'banco'
-   * - 'owner' with orgId >= 20 → 'agencia'
-   * - 'owner' without orgId → 'propietario'
-   * - Default fallback → 'demandante'
+   * Based on role counts and orgId:
+   * - ownerCount > 0 AND buyerCount > 0 → prioritize owner type (banco/agencia/propietario)
+   * - ownerCount > 0 + orgId < 20 → 'banco'
+   * - ownerCount > 0 + orgId >= 20 → 'agencia' 
+   * - ownerCount > 0 + no orgId → 'propietario'
+   * - buyerCount > 0 → 'demandante'
+   * - ownerCount = 0 AND buyerCount = 0 → 'interesado'
    */
-  mapContactType: (contact: {
-    contactType: string
-    orgId?: bigint | null
-  }): "demandante" | "propietario" | "banco" | "agencia" => {
-    if (contact.contactType === 'owner') {
-      if (contact.orgId) {
-        // orgId is a bigint, so convert to number for comparison
-        const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
-        if (orgIdNum < 20) {
-          return 'banco';
-        } else {
-          return 'agencia';
-        }
-      } else {
-        return 'propietario';
-      }
-    } else if (contact.contactType === 'buyer') {
-      return 'demandante';
-    }
-    
-    // Default fallback
-    return 'demandante';
-  },
-
-  /**
-   * Creates an extended contact object with mapped contact type and normalized fields
-   * @param contact - Raw contact object from database
-   * @returns Extended contact with UI-friendly contactType and normalized fields
-   */
-  createExtendedContact: (contact: any) => {
-    const uiContactType = contactUtils.mapContactType(contact);
-    
-    return {
-      ...contact,
-      contactType: uiContactType,
-      additionalInfo: contact.additionalInfo || {},
-      email: contact.email || undefined,
-      phone: contact.phone || undefined,
-      isActive: contact.isActive ?? true, // Handle null values
-      orgId: contact.orgId || undefined // Handle null values
-    };
-  }
 }

@@ -1,3 +1,4 @@
+"use server"
 import { db } from "../db"
 import { locations } from "../db/schema";
 import { eq, and } from "drizzle-orm";
@@ -221,6 +222,67 @@ export async function locationExists(locationData: LocationData): Promise<boolea
 
     return existingLocation.length > 0;
   } catch (error) {
+    throw error;
+  }
+}
+
+// Get all unique cities
+export async function getAllCities() {
+  try {
+    const cities = await db
+      .selectDistinct({ city: locations.city })
+      .from(locations)
+      .where(eq(locations.isActive, true))
+      .orderBy(locations.city);
+    return cities.map(c => c.city);
+  } catch (error) {
+    console.error("Error fetching cities:", error);
+    throw error;
+  }
+}
+
+// Get all neighborhoods for a specific city
+export async function getNeighborhoodsByCity(city: string) {
+  try {
+    const neighborhoods = await db
+      .select({
+        neighborhoodId: locations.neighborhoodId,
+        neighborhood: locations.neighborhood,
+        municipality: locations.municipality,
+        province: locations.province
+      })
+      .from(locations)
+      .where(
+        and(
+          eq(locations.city, city),
+          eq(locations.isActive, true)
+        )
+      )
+      .orderBy(locations.neighborhood);
+    return neighborhoods;
+  } catch (error) {
+    console.error("Error fetching neighborhoods by city:", error);
+    throw error;
+  }
+}
+
+// Get all locations for selection (with search capability)
+export async function getAllLocationsForSelection() {
+  try {
+    const allLocations = await db
+      .select({
+        neighborhoodId: locations.neighborhoodId,
+        neighborhood: locations.neighborhood,
+        city: locations.city,
+        municipality: locations.municipality,
+        province: locations.province
+      })
+      .from(locations)
+      .where(eq(locations.isActive, true))
+      .orderBy(locations.city, locations.neighborhood);
+    return allLocations;
+  } catch (error) {
+    console.error("Error fetching all locations for selection:", error);
     throw error;
   }
 } 

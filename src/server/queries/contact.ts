@@ -165,8 +165,8 @@ export async function listContactsWithTypes(
       whereConditions.push(eq(contacts.isActive, true));
     }
 
-    // Get all contact-listing relationships with property and location info
-    const contactListingRelationships = await db
+    // Get unique contacts with calculated role counts using LEFT JOINs and GROUP BY
+    const uniqueContacts = await db
       .select({
         contactId: contacts.contactId,
         firstName: contacts.firstName,
@@ -178,27 +178,46 @@ export async function listContactsWithTypes(
         isActive: contacts.isActive,
         createdAt: contacts.createdAt,
         updatedAt: contacts.updatedAt,
-        contactType: listingContacts.contactType,
-        listingId: listingContacts.listingId,
-        listingContactId: listingContacts.listingContactId,
-        street: properties.street,
-        city: locations.city,
-        propertyType: properties.propertyType,
-        listingType: listings.listingType,
+        // Calculate role counts using conditional aggregation
+        ownerCount: sql<number>`
+          COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END)
+        `,
+        buyerCount: sql<number>`
+          COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END)
+        `,
+        // Get basic property info from first active listing (if any)
+        firstListingId: sql<bigint | null>`
+          MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${listingContacts.listingId} END)
+        `,
+        street: sql<string | null>`
+          MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${properties.street} END)
+        `,
+        city: sql<string | null>`
+          MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${locations.city} END)
+        `,
+        propertyType: sql<string | null>`
+          MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${properties.propertyType} END)
+        `,
+        listingType: sql<string | null>`
+          MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${listings.listingType} END)
+        `,
       })
       .from(contacts)
-      .innerJoin(
+      .leftJoin(
         listingContacts,
         and(
           eq(contacts.contactId, listingContacts.contactId),
           eq(listingContacts.isActive, true)
         )
       )
-      .innerJoin(
+      .leftJoin(
         listings,
-        eq(listingContacts.listingId, listings.listingId)
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listings.isActive, true)
+        )
       )
-      .innerJoin(
+      .leftJoin(
         properties,
         eq(listings.propertyId, properties.propertyId)
       )
@@ -207,53 +226,66 @@ export async function listContactsWithTypes(
         eq(properties.neighborhoodId, locations.neighborhoodId)
       )
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(contacts.createdAt);
-
-    // Also get contacts that don't have any listing relationships (to show them as 'demandante')
-    const contactsWithoutListings = await db
-      .select({
-        contactId: contacts.contactId,
-        firstName: contacts.firstName,
-        lastName: contacts.lastName,
-        email: contacts.email,
-        phone: contacts.phone,
-        additionalInfo: contacts.additionalInfo,
-        orgId: contacts.orgId,
-        isActive: contacts.isActive,
-        createdAt: contacts.createdAt,
-        updatedAt: contacts.updatedAt,
-        contactType: sql<string>`'demandante'`,
-        listingId: sql<null>`NULL`,
-        listingContactId: sql<null>`NULL`,
-        street: sql<null>`NULL`,
-        city: sql<null>`NULL`,
-        propertyType: sql<null>`NULL`,
-        listingType: sql<null>`NULL`,
-      })
-      .from(contacts)
-      .leftJoin(
-        listingContacts,
-        and(
-          eq(contacts.contactId, listingContacts.contactId),
-          eq(listingContacts.isActive, true)
-        )
-      )
-      .where(
-        and(
-          ...whereConditions,
-          sql`${listingContacts.contactId} IS NULL`
-        )
+      .groupBy(
+        contacts.contactId,
+        contacts.firstName,
+        contacts.lastName,
+        contacts.email,
+        contacts.phone,
+        contacts.additionalInfo,
+        contacts.orgId,
+        contacts.isActive,
+        contacts.createdAt,
+        contacts.updatedAt
       )
       .limit(limit)
       .offset(offset)
       .orderBy(contacts.createdAt);
 
-    // Combine both results
-    const allContacts = [...contactListingRelationships, ...contactsWithoutListings];
-    
-    return allContacts;
+    // Transform the results to include contactType based on role counts and orgId
+    const contactsWithTypes = uniqueContacts.map((contact) => {
+      // Determine contact type based on role counts and orgId (standardized logic)
+      let contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado" = "demandante";
+      
+      // Check if contact has both owner and buyer roles
+      if (contact.ownerCount > 0 && contact.buyerCount > 0) {
+        // If has both roles, prioritize owner type but indicate they're also interested in buying
+        if (contact.orgId) {
+          const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
+          if (orgIdNum < 20) {
+            contactType = "banco";
+          } else {
+            contactType = "agencia";
+          }
+        } else {
+          contactType = "propietario";
+        }
+      } else if (contact.ownerCount > 0) {
+        // If has only owner roles, check orgId to distinguish between banco/agencia/propietario
+        if (contact.orgId) {
+          const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
+          if (orgIdNum < 20) {
+            contactType = "banco";
+          } else {
+            contactType = "agencia";
+          }
+        } else {
+          contactType = "propietario";
+        }
+      } else if (contact.buyerCount > 0) {
+        contactType = "demandante";
+      } else {
+        // If no roles at all (ownerCount = 0 and buyerCount = 0)
+        contactType = "interesado";
+      }
+
+      return {
+        ...contact,
+        contactType
+      };
+    });
+
+    return contactsWithTypes;
   } catch (error) {
     console.error("Error listing contacts with types:", error);
     throw error;
@@ -392,9 +424,20 @@ export async function updateListingOwners(listingId: number, ownerIds: number[])
 // Get contact by ID with type information for display
 export async function getContactByIdWithType(contactId: number) {
   try {
-    // First get the basic contact
+    // First, get the basic contact information
     const [contact] = await db
-      .select()
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        orgId: contacts.orgId,
+        isActive: contacts.isActive,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+      })
       .from(contacts)
       .where(
         and(
@@ -407,24 +450,70 @@ export async function getContactByIdWithType(contactId: number) {
       return null;
     }
 
-    // Try to get the contact type from listing relationships
-    const [contactWithType] = await db
-      .select({
-        contactType: listingContacts.contactType
-      })
+    // Then, get the role counts separately to avoid complex JOIN issues
+    const ownerCountResult = await db
+      .select({ count: sql<number>`COUNT(*)` })
       .from(listingContacts)
       .where(
         and(
           eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.contactType, 'owner'),
           eq(listingContacts.isActive, true)
         )
-      )
-      .limit(1);
+      );
 
-    // Return contact with type (default to 'demandante' if no listing relationship)
+    const buyerCountResult = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(listingContacts)
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.contactType, 'buyer'),
+          eq(listingContacts.isActive, true)
+        )
+      );
+
+    const ownerCount = ownerCountResult[0]?.count || 0;
+    const buyerCount = buyerCountResult[0]?.count || 0;
+
+    // Determine contact type based on role counts and orgId
+    let contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado" = "demandante";
+    
+    // Check if contact has both owner and buyer roles
+    if (ownerCount > 0 && buyerCount > 0) {
+      // If has both roles, prioritize owner type but indicate they're also interested in buying
+      if (contact.orgId) {
+        const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
+        if (orgIdNum < 20) {
+          contactType = "banco";
+        } else {
+          contactType = "agencia";
+        }
+      } else {
+        contactType = "propietario";
+      }
+    } else if (ownerCount > 0) {
+      // If has only owner roles, check orgId to distinguish between banco/agencia/propietario
+      if (contact.orgId) {
+        const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
+        if (orgIdNum < 20) {
+          contactType = "banco";
+        } else {
+          contactType = "agencia";
+        }
+      } else {
+        contactType = "propietario";
+      }
+    } else if (buyerCount > 0) {
+      contactType = "demandante";
+    } else {
+      // If no roles at all (ownerCount = 0 and buyerCount = 0)
+      contactType = "interesado";
+    }
+
     return {
       ...contact,
-      contactType: contactWithType?.contactType || 'demandante'
+      contactType
     };
   } catch (error) {
     console.error("Error fetching contact with type:", error);
@@ -467,27 +556,6 @@ export async function getListingsByContact(contactId: number) {
         province: locations.province,
         municipality: locations.municipality,
         neighborhood: locations.neighborhood,
-        
-        // Agent information
-        agentName: sql<string>`CONCAT(u.first_name, ' ', u.last_name)`,
-        
-        // Image fields (we'll get the first and second images for each listing)
-        imageUrl: sql<string>`(
-          SELECT pi.image_url 
-          FROM property_images pi 
-          WHERE pi.property_id = ${properties.propertyId} 
-          AND pi.is_active = true 
-          AND pi.image_order = 1
-          LIMIT 1
-        )`,
-        imageUrl2: sql<string>`(
-          SELECT pi.image_url 
-          FROM property_images pi 
-          WHERE pi.property_id = ${properties.propertyId} 
-          AND pi.is_active = true 
-          AND pi.image_order = 2
-          LIMIT 1
-        )`
       })
       .from(listingContacts)
       .innerJoin(
@@ -504,10 +572,6 @@ export async function getListingsByContact(contactId: number) {
       .leftJoin(
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId)
-      )
-      .leftJoin(
-        sql`users u`,
-        eq(listings.agentId, sql`u.user_id`)
       )
       .where(
         and(
