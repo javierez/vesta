@@ -4,10 +4,10 @@ import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-import { ContactCard } from "~/components/contactos/contact-card"
-import { ContactCardSkeleton } from "~/components/contactos/contact-card-skeleton"
-import { ContactFilter } from "~/components/contactos/contact-filter"
-import { ContactTable } from "~/components/contactos/contact-table"
+import { ContactCard } from "~/components/contactos/list/contact-card"
+import { ContactCardSkeleton } from "~/components/contactos/list/contact-card-skeleton"
+import { ContactFilter } from "~/components/contactos/list/contact-filter"
+import { ContactTable } from "~/components/contactos/list/contact-table"
 import { listContactsWithTypes } from "~/server/queries/contact"
 import { contactUtils } from "~/lib/utils"
 import type { Contact } from "~/lib/data"
@@ -73,8 +73,8 @@ export default function ContactsPage() {
 
   const handleFilterChange = (filters: {
     searchQuery: string
-    status: string[]
-    type: string[]
+    contactType: string[]
+    sortOrder: string
   }) => {
     const filtered = contactsList.filter((contact) => {
       const matchesSearch = 
@@ -83,13 +83,28 @@ export default function ContactsPage() {
         (contact.email?.toLowerCase() ?? "").includes(filters.searchQuery.toLowerCase()) ||
         (contact.phone?.toLowerCase() ?? "").includes(filters.searchQuery.toLowerCase())
 
-      const matchesStatus = filters.status.length === 0 || filters.status.includes(contact.isActive ? "active" : "inactive")
-      const matchesType = filters.type.length === 0 || filters.type.includes(contact.contactType)
+      const matchesContactType = filters.contactType.length === 0 || filters.contactType.includes(contact.contactType)
 
-      return matchesSearch && matchesStatus && matchesType
+      return matchesSearch && matchesContactType
     })
 
-    setFilteredContacts(filtered)
+    // Apply sorting
+    const sorted = filtered.sort((a, b) => {
+      if (filters.sortOrder === 'lastContact') {
+        // Sort by last contact date (most recent first)
+        // If lastContact is undefined, treat as very old date
+        const aDate = a.updatedAt || new Date(0)
+        const bDate = b.updatedAt || new Date(0)
+        return bDate.getTime() - aDate.getTime()
+      } else {
+        // Default alphabetical sort by full name
+        const aName = `${a.firstName} ${a.lastName}`.toLowerCase()
+        const bName = `${b.firstName} ${b.lastName}`.toLowerCase()
+        return aName.localeCompare(bName)
+      }
+    })
+
+    setFilteredContacts(sorted)
   }
 
   return (

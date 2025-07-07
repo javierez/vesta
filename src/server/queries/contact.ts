@@ -588,3 +588,110 @@ export async function getListingsByContact(contactId: number) {
     throw error;
   }
 } 
+
+// Get listings associated with a specific contact (buyer)
+export async function getListingsByContactAsBuyer(contactId: number) {
+  try {
+    const contactListings = await db
+      .select({
+        // Listing fields
+        listingId: listings.listingId,
+        propertyId: listings.propertyId,
+        price: listings.price,
+        status: listings.status,
+        listingType: listings.listingType,
+        isActive: listings.isActive,
+        isFeatured: listings.isFeatured,
+        isBankOwned: listings.isBankOwned,
+        viewCount: listings.viewCount,
+        inquiryCount: listings.inquiryCount,
+        agentName: sql<string | null>`(
+          SELECT CONCAT(u.first_name, ' ', u.last_name)
+          FROM users u
+          WHERE u.user_id = ${listings.agentId}
+        )`,
+        
+        // Property fields
+        referenceNumber: properties.referenceNumber,
+        title: properties.title,
+        propertyType: properties.propertyType,
+        bedrooms: properties.bedrooms,
+        bathrooms: properties.bathrooms,
+        squareMeter: properties.squareMeter,
+        street: properties.street,
+        addressDetails: properties.addressDetails,
+        postalCode: properties.postalCode,
+        latitude: properties.latitude,
+        longitude: properties.longitude,
+        
+        // Location fields
+        city: locations.city,
+        province: locations.province,
+        municipality: locations.municipality,
+        neighborhood: locations.neighborhood,
+
+        // Image fields
+        imageUrl: sql<string | null>`(
+          SELECT image_url 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 1
+          LIMIT 1
+        )`,
+        s3key: sql<string | null>`(
+          SELECT s3key 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 1
+          LIMIT 1
+        )`,
+        imageUrl2: sql<string | null>`(
+          SELECT image_url 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 2
+          LIMIT 1
+        )`,
+        s3key2: sql<string | null>`(
+          SELECT s3key 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 2
+          LIMIT 1
+        )`,
+      })
+      .from(listingContacts)
+      .innerJoin(
+        listings,
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listings.isActive, true)
+        )
+      )
+      .innerJoin(
+        properties,
+        eq(listings.propertyId, properties.propertyId)
+      )
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId)
+      )
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.contactType, 'buyer'),
+          eq(listingContacts.isActive, true)
+        )
+      )
+      .orderBy(listings.createdAt);
+
+    return contactListings;
+  } catch (error) {
+    console.error("Error fetching listings by contact as buyer:", error);
+    throw error;
+  }
+} 

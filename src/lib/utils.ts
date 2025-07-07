@@ -109,3 +109,85 @@ export const contactUtils = {
    * - ownerCount = 0 AND buyerCount = 0 → 'interesado'
    */
 }
+
+// Location information interface
+interface LocationData {
+  neighborhoodId: bigint
+  city: string
+  province: string
+  municipality: string
+  neighborhood: string
+}
+
+// Prospect utilities for title generation and formatting
+export const prospectUtils = {
+  /**
+   * Format currency for prospect display
+   */
+  formatCurrency: (amount: number | string | null): string => {
+    if (!amount) return 'N/A'
+    const numAmount = typeof amount === 'string' ? parseInt(amount) : amount
+    return `${numAmount.toLocaleString('es-ES')}€`
+  },
+
+  /**
+   * Generate prospect title based on location data
+   * @param listingType - 'Sale' or 'Rent' 
+   * @param propertyType - Property type (piso, casa, etc.)
+   * @param locations - Array of location data
+   * @returns Formatted title string
+   */
+  generateProspectTitle: (
+    listingType: string | null, 
+    propertyType: string | null, 
+    locations: LocationData[]
+  ): string => {
+    const operation = listingType === 'Sale' ? 'Compra' : 'Alquiler'
+    const propertyTypeText = propertyType || 'Propiedad'
+    
+    let locationText = ''
+    
+    if (locations.length === 1 && locations[0]) {
+      // Single neighborhood: show neighborhood name
+      locationText = ` en ${locations[0].neighborhood}`
+    } else if (locations.length > 1 && locations[0]) {
+      // Multiple neighborhoods: show city name
+      locationText = ` en ${locations[0].city}`
+    }
+    
+    return `${operation} de ${propertyTypeText}${locationText}`
+  },
+
+  /**
+   * Generate prospect title for mostRecentProspect data (simpler format for contact cards)
+   * @param listingType - 'Sale' or 'Rent'
+   * @param propertyType - Property type 
+   * @param preferredArea - Area name (single string)
+   * @returns Formatted title string
+   */
+  generateSimpleProspectTitle: (
+    listingType?: string, 
+    propertyType?: string, 
+    preferredArea?: string
+  ): string => {
+    const operation = listingType === 'Sale' ? 'Compra' : 'Alquiler'
+    const propertyTypeText = propertyType || 'Inmueble'
+    const locationText = preferredArea ? ` en ${preferredArea}` : ''
+    
+    return `${operation} de ${propertyTypeText}${locationText}`
+  },
+
+  /**
+   * Generate property type icon for prospects
+   */
+  getPropertyTypeIcon: (type: string | null): string => {
+    switch (type) {
+      case 'piso': return '🏢'
+      case 'casa': return '🏠'
+      case 'local': return '🏪'
+      case 'terreno': return '🌍'
+      case 'garaje': return '🅿️'
+      default: return '🏠'
+    }
+  }
+}

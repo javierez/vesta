@@ -10,16 +10,17 @@ import { cn } from "~/lib/utils"
 import { useState, useEffect } from "react"
 import { ChevronDown, Save, Phone, Mail, MapPin, Calendar, FileText, User, Building, Plus } from "lucide-react"
 import { Textarea } from "~/components/ui/textarea"
-import { updateContact, getListingsByContact } from "~/server/queries/contact"
+import { updateContact, getListingsByContact, getListingsByContactAsBuyer } from "~/server/queries/contact"
 import { toast } from "sonner"
 import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern-save-indicator"
 import { Badge } from "~/components/ui/badge"
-import { contactTypeConfig } from "./contact-config"
+import { contactTypeConfig } from "../contact-config"
 import { PropertyCard } from "~/components/property-card"
 import { Slider } from "~/components/ui/slider"
-import { ContactInterestForm, type InterestFormData } from "./contact-interest-form"
+import { ContactInterestForm, type InterestFormData } from "./forms/contact-interest-form"
 import { createProspect, updateProspect, getProspectsByContact, type CreateProspectInput, type UpdateProspectInput } from "~/server/queries/prospect"
-import { ContactProspectCompact } from "./contact-prospect-compact"
+import { ContactProspectCompact } from "./forms/contact-prospect-compact"
+import { getLocationByNeighborhoodId } from "~/server/queries/locations"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -75,10 +76,8 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   const [isActive, setIsActive] = useState(contact.isActive ?? true)
   const [additionalInfo, setAdditionalInfo] = useState(contact.additionalInfo || {})
   
-  // Interest forms state
-  const [interestForms, setInterestForms] = useState<InterestFormData[]>(
-    additionalInfo.interestForms || []
-  )
+  // Interest forms state - Start empty, only show when explicitly creating/editing
+  const [interestForms, setInterestForms] = useState<InterestFormData[]>([])
   
   // Prospects state for tracking existing prospects
   const [prospects, setProspects] = useState<any[]>([])
@@ -88,7 +87,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   // Notes state
   const [notes, setNotes] = useState(additionalInfo.notes || "")
 
-  // Property listings for propietario
+  // Property listings for propietario and demandante
   const [contactListings, setContactListings] = useState<any[]>([])
   const [isLoadingListings, setIsLoadingListings] = useState(false)
 
@@ -97,14 +96,23 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   const typeConfig = contactTypeConfig[contactType] || contactTypeConfig.demandante
   const TypeIcon = typeConfig.icon
 
-  // Load contact listings if propietario
+  // Load contact listings if propietario or demandante
   useEffect(() => {
-    if (contact.contactType === 'propietario') {
+    if (contact.contactType === 'propietario' || contact.contactType === 'demandante') {
       const loadContactListings = async () => {
         setIsLoadingListings(true)
         try {
-          const listings = await getListingsByContact(Number(contact.contactId))
-          setContactListings(listings)
+          let allListings
+          if (contact.contactType === 'propietario') {
+            allListings = await getListingsByContact(Number(contact.contactId))
+          } else {
+            // For demandante, get listings where they are the buyer
+            allListings = await getListingsByContactAsBuyer(Number(contact.contactId))
+          }
+          
+          // Only show active listings
+          const activeListings = allListings.filter(listing => listing.status === 'Active')
+          setContactListings(activeListings)
         } catch (error) {
           console.error('Error loading contact listings:', error)
           toast.error('Error al cargar las propiedades del contacto')
@@ -148,17 +156,52 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   }
 
   // Function to handle editing a prospect
-  const handleEditProspect = (prospect: any) => {
+  const handleEditProspect = async (prospect: any) => {
+    // Convert preferredAreas back to selectedNeighborhoods format
+    let selectedNeighborhoods: Array<{
+      neighborhoodId: bigint
+      neighborhood: string
+      city: string
+      municipality: string
+      province: string
+    }> = []
+
+    if (Array.isArray(prospect.preferredAreas) && prospect.preferredAreas.length > 0) {
+      // Fetch full location data for each neighborhood ID
+      const locationPromises = prospect.preferredAreas.map(async (area: any) => {
+        try {
+          const location = await getLocationByNeighborhoodId(area.neighborhoodId)
+          return location ? {
+            neighborhoodId: location.neighborhoodId,
+            neighborhood: location.neighborhood,
+            city: location.city,
+            municipality: location.municipality,
+            province: location.province
+          } : null
+        } catch (error) {
+          console.error('Error fetching location:', error)
+          return null
+        }
+      })
+
+      const locations = await Promise.all(locationPromises)
+      selectedNeighborhoods = locations.filter(loc => loc !== null) as Array<{
+        neighborhoodId: bigint
+        neighborhood: string
+        city: string
+        municipality: string
+        province: string
+      }>
+    }
+
     // Convert prospect to InterestFormData format
     const convertedForm: InterestFormData = {
       id: `prospect-${prospect.id}`,
       demandType: prospect.listingType || "",
       minPrice: prospect.minPrice ? parseInt(prospect.minPrice.toString()) : 100000,
       maxPrice: prospect.maxPrice ? parseInt(prospect.maxPrice.toString()) : 350000,
-      preferredArea: Array.isArray(prospect.preferredAreas) && prospect.preferredAreas.length > 0 
-        ? prospect.preferredAreas.map((area: any) => area.name || area.neighborhood || "").join(", ") 
-        : "",
-      selectedNeighborhoods: [],
+      preferredArea: selectedNeighborhoods.map(n => n.neighborhood).join(", "),
+      selectedNeighborhoods: selectedNeighborhoods,
       propertyTypes: prospect.propertyType ? [prospect.propertyType] : [],
       minBedrooms: prospect.minBedrooms || 0,
       minBathrooms: prospect.minBathrooms || 0,
@@ -258,13 +301,20 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
         case 'interestForms':
           // Save each interest form as a prospect
           for (const form of interestForms) {
+            // Convert selectedNeighborhoods to preferredAreas format
+            const preferredAreas = form.selectedNeighborhoods?.map(neighborhood => ({
+              neighborhoodId: Number(neighborhood.neighborhoodId),
+              name: neighborhood.neighborhood
+            })) || []
+
             const prospectData: CreateProspectInput = {
               contactId: BigInt(contactId),
               status: "active",
+              listingType: form.demandType || undefined,
               propertyType: form.propertyTypes[0] || "",
               minPrice: form.minPrice.toString(),
               maxPrice: form.maxPrice.toString(),
-              preferredArea: form.preferredArea || "",
+              preferredAreas: preferredAreas,
               minBedrooms: form.minBedrooms || 0,
               minBathrooms: form.minBathrooms || 0,
               moveInBy: form.moveInBy ? new Date(form.moveInBy) : undefined,
@@ -544,11 +594,13 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
         </Card>
       )}
 
-      {/* Property Cards for Propietario */}
-      {contact.contactType === 'propietario' && (
+      {/* Property Cards for Propietario and Demandante */}
+      {(contact.contactType === 'propietario' || contact.contactType === 'demandante') && (
         <Card className="relative p-4 transition-all duration-500 ease-out">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES ASOCIADAS</h3>
+            <h3 className="text-sm font-semibold tracking-wide">
+              {contact.contactType === 'propietario' ? 'PROPIEDADES ASOCIADAS' : 'PROPIEDADES DE INTERÉS'}
+            </h3>
           </div>
           
           {isLoadingListings ? (
@@ -573,7 +625,12 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm">No hay propiedades asociadas a este contacto</p>
+              <p className="text-sm">
+                {contact.contactType === 'propietario' 
+                  ? 'No hay propiedades asociadas a este contacto'
+                  : 'No hay propiedades de interés asociadas a este contacto'
+                }
+              </p>
             </div>
           )}
         </Card>

@@ -7,10 +7,11 @@ import { createProspectHistory } from "~/server/queries/prospect-history";
 export type CreateProspectInput = {
   contactId: bigint;
   status: string;
+  listingType?: string;
   propertyType?: string;
   minPrice?: string;
   maxPrice?: string;
-  preferredArea?: string;
+  preferredAreas?: Array<{ neighborhoodId: number; name: string }>;
   minBedrooms?: number;
   minBathrooms?: number;
   moveInBy?: Date;

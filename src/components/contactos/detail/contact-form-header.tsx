@@ -3,8 +3,9 @@
 import { Badge } from "~/components/ui/badge"
 import { Card } from "~/components/ui/card"
 import { Mail, Phone, Calendar, Copy } from "lucide-react"
-import { contactTypeConfig } from "~/components/contactos/contact-config"
+import { contactTypeConfig } from "../contact-config"
 import { useState } from "react"
+import { cn } from "~/lib/utils"
 
 interface ContactFormHeaderProps {
   contact: {
@@ -26,6 +27,36 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
   const TypeIcon = typeConfig.icon
   const [copied, setCopied] = useState<{ field: 'email' | 'phone' | null, value: string }>({ field: null, value: '' })
 
+  // Get badge colors based on contact type (matching contact-card.tsx pattern)
+  const getBadgeColors = (contactType: string) => {
+    switch (contactType) {
+      case 'demandante':
+        return contact.isActive 
+          ? "bg-blue-50 text-blue-900 hover:bg-blue-100 hover:text-blue-900"
+          : "bg-gray-100 text-gray-500"
+      case 'propietario':
+        return contact.isActive 
+          ? "bg-green-50 text-green-900 hover:bg-green-100 hover:text-green-900"
+          : "bg-gray-100 text-gray-500"
+      case 'banco':
+        return contact.isActive 
+          ? "bg-purple-50 text-purple-900 hover:bg-purple-100 hover:text-purple-900"
+          : "bg-gray-100 text-gray-500"
+      case 'agencia':
+        return contact.isActive 
+          ? "bg-orange-50 text-green-900 hover:bg-orange-100 hover:text-green-900"
+          : "bg-gray-100 text-gray-500"
+      case 'interesado':
+        return contact.isActive 
+          ? "bg-orange-50 text-orange-900 hover:bg-orange-100 hover:text-orange-900"
+          : "bg-gray-100 text-gray-500"
+      default:
+        return contact.isActive 
+          ? "bg-blue-50 text-blue-900 hover:bg-blue-100 hover:text-blue-900"
+          : "bg-gray-100 text-gray-500"
+    }
+  }
+
   function handleCopy(field: 'email' | 'phone', value: string) {
     navigator.clipboard.writeText(value)
     setCopied({ field, value })
@@ -42,8 +73,10 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
             </h1>
             <div className="flex items-center gap-3 mt-2">
               <Badge
-                variant="outline"
-                className={`text-sm font-medium border rounded-full px-3 ${typeConfig.colors}`}
+                className={cn(
+                  "text-sm font-medium rounded-full px-3 shadow-md",
+                  getBadgeColors(contact.contactType)
+                )}
               >
                 <TypeIcon className="h-4 w-4 mr-1" />
                 {typeConfig.label}

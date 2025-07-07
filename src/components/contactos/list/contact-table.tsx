@@ -13,7 +13,7 @@ import { Badge } from "~/components/ui/badge"
 import { Mail, Phone, Building2, Home, Search, Building, Landmark, Store, Circle, Clock, Calendar, MapPin, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "~/lib/utils"
-import { contactTypeConfig, formatListingType } from "./contact-config"
+import { contactTypeConfig, formatListingType } from "../contact-config"
 import { useState } from "react"
 
 // Extended Contact type to include contactType for the UI
@@ -146,14 +146,25 @@ export function ContactTable({ contacts }: ContactTableProps) {
               return (
               <TableRow 
                 key={contact.contactId.toString()}
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                className={cn(
+                  "cursor-pointer transition-colors",
+                  contact.isActive 
+                    ? "hover:bg-muted/50" 
+                    : "opacity-60 hover:bg-gray-100/50"
+                )}
                 onClick={() => router.push(`/contactos/${contact.contactId}`)}
               >
                 <TableCell className="w-[200px] min-w-[200px]">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <div className={cn("w-1 h-6 rounded-full", typeConfig.lineColor)} />
-                      <span className="font-medium">{contact.firstName} {contact.lastName}</span>
+                      <div className={cn(
+                        "w-1 h-6 rounded-full",
+                        contact.isActive ? typeConfig.lineColor : "bg-gray-300"
+                      )} />
+                      <span className={cn(
+                        "font-medium",
+                        contact.isActive ? "" : "text-gray-500"
+                      )}>{contact.firstName} {contact.lastName}</span>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
@@ -163,7 +174,12 @@ export function ContactTable({ contacts }: ContactTableProps) {
                       {/* Propietario badge - show if contact has owner relationships */}
                       {contact.ownerCount !== undefined && contact.ownerCount > 0 && (
                         <Badge
-                          className="text-xs font-medium rounded-full px-3 bg-green-50 text-green-700 shadow-md whitespace-nowrap"
+                          className={cn(
+                            "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
+                            contact.isActive 
+                              ? "bg-green-50 text-green-700" 
+                              : "bg-gray-100 text-gray-500"
+                          )}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -185,7 +201,12 @@ export function ContactTable({ contacts }: ContactTableProps) {
                       {/* Demandante badge - show if contact has buyer relationships */}
                       {contact.buyerCount !== undefined && contact.buyerCount > 0 && (
                         <Badge
-                          className="text-xs font-medium rounded-full px-3 bg-blue-50 text-blue-700 shadow-md whitespace-nowrap"
+                          className={cn(
+                            "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
+                            contact.isActive 
+                              ? "bg-blue-50 text-blue-800" 
+                              : "bg-gray-100 text-gray-500"
+                          )}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -208,7 +229,12 @@ export function ContactTable({ contacts }: ContactTableProps) {
                       {contact.ownerCount !== undefined && contact.ownerCount === 0 && 
                        contact.buyerCount !== undefined && contact.buyerCount === 0 && (
                         <Badge
-                          className="text-xs font-medium rounded-full px-3 bg-orange-50 text-orange-700 shadow-md whitespace-nowrap"
+                          className={cn(
+                            "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
+                            contact.isActive 
+                              ? "bg-orange-50 text-orange-700" 
+                              : "bg-gray-100 text-gray-500"
+                          )}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -232,11 +258,21 @@ export function ContactTable({ contacts }: ContactTableProps) {
                 <TableCell className="w-[250px] min-w-[250px]">
                   <div className="space-y-1">
                     {(contact.email || contact.phone) && (
-                      <div className="cursor-pointer hover:bg-gray-50 hover:border hover:border-gray-200 rounded-md p-2 transition-all duration-200 active:bg-gray-100 active:scale-[0.98]">
+                      <div className={cn(
+                        "cursor-pointer hover:border rounded-md p-2 transition-all duration-200 active:scale-[0.98]",
+                        contact.isActive 
+                          ? "hover:bg-gray-50 hover:border-gray-200 active:bg-gray-100" 
+                          : "hover:bg-gray-100 hover:border-gray-300 active:bg-gray-200"
+                      )}>
                         <div className="space-y-1 -m-2 p-2">
                           {contact.email && (
                             <div 
-                              className="flex items-center text-sm cursor-pointer hover:text-blue-600 transition-colors"
+                              className={cn(
+                                "flex items-center text-sm cursor-pointer transition-colors",
+                                contact.isActive 
+                                  ? "hover:text-blue-600" 
+                                  : "text-gray-400 hover:text-gray-600"
+                              )}
                               onClick={(e) => {
                                 e.stopPropagation()
                                 copyToClipboard(contact.email!, `email-${contact.contactId}`)
@@ -245,14 +281,22 @@ export function ContactTable({ contacts }: ContactTableProps) {
                               {copiedField === `email-${contact.contactId}` ? (
                                 <Check className="mr-2 h-4 w-4 text-green-600" />
                               ) : (
-                      <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+                                <Mail className={cn(
+                                  "mr-2 h-4 w-4",
+                                  contact.isActive ? "text-muted-foreground" : "text-gray-300"
+                                )} />
                               )}
                               <span className="truncate">{contact.email}</span>
-                    </div>
+                            </div>
                           )}
                           {contact.phone && (
                             <div 
-                              className="flex items-center text-sm cursor-pointer hover:text-blue-600 transition-colors"
+                              className={cn(
+                                "flex items-center text-sm cursor-pointer transition-colors",
+                                contact.isActive 
+                                  ? "hover:text-blue-600" 
+                                  : "text-gray-400 hover:text-gray-600"
+                              )}
                               onClick={(e) => {
                                 e.stopPropagation()
                                 copyToClipboard(contact.phone!, `phone-${contact.contactId}`)
@@ -261,7 +305,10 @@ export function ContactTable({ contacts }: ContactTableProps) {
                               {copiedField === `phone-${contact.contactId}` ? (
                                 <Check className="mr-2 h-4 w-4 text-green-600" />
                               ) : (
-                      <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
+                                <Phone className={cn(
+                                  "mr-2 h-4 w-4",
+                                  contact.isActive ? "text-muted-foreground" : "text-gray-300"
+                                )} />
                               )}
                               <span className="truncate">{contact.phone}</span>
                             </div>
@@ -277,7 +324,12 @@ export function ContactTable({ contacts }: ContactTableProps) {
                     {/* Address Information */}
                       {contact.listingId && (
                       <div 
-                        className="cursor-pointer hover:bg-gray-50 hover:border hover:border-gray-200 rounded-md p-2 transition-all duration-200 active:bg-gray-100 active:scale-[0.98]"
+                        className={cn(
+                          "cursor-pointer hover:border rounded-md p-2 transition-all duration-200 active:scale-[0.98]",
+                          contact.isActive 
+                            ? "hover:bg-gray-50 hover:border-gray-200 active:bg-gray-100" 
+                            : "hover:bg-gray-100 hover:border-gray-300 active:bg-gray-200"
+                        )}
                         onClick={(e) => {
                           e.stopPropagation()
                           router.push(`/propiedades/${contact.listingId}`)
@@ -285,36 +337,60 @@ export function ContactTable({ contacts }: ContactTableProps) {
                       >
                         <div className="space-y-1 -m-2 p-2">
                           {contact.street && contact.city && (
-                            <div className="flex items-center text-sm">
-                              <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <div className={cn(
+                              "flex items-center text-sm",
+                              contact.isActive ? "" : "text-gray-400"
+                            )}>
+                              <MapPin className={cn(
+                                "mr-2 h-4 w-4",
+                                contact.isActive ? "text-muted-foreground" : "text-gray-300"
+                              )} />
                               <span className="truncate">
-                                {contact.street} <span className="text-muted-foreground">({contact.city})</span>
+                                {contact.street} <span className={contact.isActive ? "text-muted-foreground" : "text-gray-400"}>({contact.city})</span>
                               </span>
                             </div>
                           )}
                           {contact.street && !contact.city && (
-                            <div className="flex items-center text-sm">
-                              <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <div className={cn(
+                              "flex items-center text-sm",
+                              contact.isActive ? "" : "text-gray-400"
+                            )}>
+                              <MapPin className={cn(
+                                "mr-2 h-4 w-4",
+                                contact.isActive ? "text-muted-foreground" : "text-gray-300"
+                              )} />
                               <span className="truncate">{contact.street}</span>
                             </div>
                           )}
                           {!contact.street && contact.city && (
-                            <div className="flex items-center text-sm">
-                              <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <div className={cn(
+                              "flex items-center text-sm",
+                              contact.isActive ? "" : "text-gray-400"
+                            )}>
+                              <MapPin className={cn(
+                                "mr-2 h-4 w-4",
+                                contact.isActive ? "text-muted-foreground" : "text-gray-300"
+                              )} />
                               <span className="truncate">{contact.city}</span>
                             </div>
                           )}
                           
                           {/* Property Type and Listing Type */}
                           {(contact.propertyType || contact.listingType) && (
-                            <div className="flex items-center text-sm">
-                              <Building className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <div className={cn(
+                              "flex items-center text-sm",
+                              contact.isActive ? "" : "text-gray-400"
+                            )}>
+                              <Building className={cn(
+                                "mr-2 h-4 w-4",
+                                contact.isActive ? "text-muted-foreground" : "text-gray-300"
+                              )} />
                               <span className="truncate">
                                 {contact.propertyType && (
                                   <span className="capitalize">{contact.propertyType}</span>
                                 )}
                                 {contact.propertyType && contact.listingType && (
-                                  <span className="text-muted-foreground"> • </span>
+                                  <span className={contact.isActive ? "text-muted-foreground" : "text-gray-400"}> • </span>
                                 )}
                                 {contact.listingType && (
                                   <span>{formatListingType(contact.listingType)}</span>
@@ -328,36 +404,60 @@ export function ContactTable({ contacts }: ContactTableProps) {
                     {!contact.listingId && (
                       <div className="space-y-1">
                         {contact.street && contact.city && (
-                          <div className="flex items-center text-sm">
-                            <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <div className={cn(
+                            "flex items-center text-sm",
+                            contact.isActive ? "" : "text-gray-400"
+                          )}>
+                            <MapPin className={cn(
+                              "mr-2 h-4 w-4",
+                              contact.isActive ? "text-muted-foreground" : "text-gray-300"
+                            )} />
                             <span className="truncate">
-                              {contact.street} <span className="text-muted-foreground">({contact.city})</span>
+                              {contact.street} <span className={contact.isActive ? "text-muted-foreground" : "text-gray-400"}>({contact.city})</span>
                             </span>
                           </div>
                         )}
                         {contact.street && !contact.city && (
-                          <div className="flex items-center text-sm">
-                            <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <div className={cn(
+                            "flex items-center text-sm",
+                            contact.isActive ? "" : "text-gray-400"
+                          )}>
+                            <MapPin className={cn(
+                              "mr-2 h-4 w-4",
+                              contact.isActive ? "text-muted-foreground" : "text-gray-300"
+                            )} />
                             <span className="truncate">{contact.street}</span>
                           </div>
                         )}
                         {!contact.street && contact.city && (
-                          <div className="flex items-center text-sm">
-                            <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <div className={cn(
+                            "flex items-center text-sm",
+                            contact.isActive ? "" : "text-gray-400"
+                          )}>
+                            <MapPin className={cn(
+                              "mr-2 h-4 w-4",
+                              contact.isActive ? "text-muted-foreground" : "text-gray-300"
+                            )} />
                             <span className="truncate">{contact.city}</span>
                           </div>
                         )}
                         
                         {/* Property Type and Listing Type */}
                         {(contact.propertyType || contact.listingType) && (
-                          <div className="flex items-center text-sm">
-                            <Building className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <div className={cn(
+                            "flex items-center text-sm",
+                            contact.isActive ? "" : "text-gray-400"
+                          )}>
+                            <Building className={cn(
+                              "mr-2 h-4 w-4",
+                              contact.isActive ? "text-muted-foreground" : "text-gray-300"
+                            )} />
                             <span className="truncate">
                               {contact.propertyType && (
                                 <span className="capitalize">{contact.propertyType}</span>
                               )}
                               {contact.propertyType && contact.listingType && (
-                                <span className="text-muted-foreground"> • </span>
+                                <span className={contact.isActive ? "text-muted-foreground" : "text-gray-400"}> • </span>
                               )}
                               {contact.listingType && (
                                 <span>{formatListingType(contact.listingType)}</span>
@@ -371,15 +471,36 @@ export function ContactTable({ contacts }: ContactTableProps) {
                 </TableCell>
                 <TableCell className="w-[150px] min-w-[150px]">
                   {/* Recordatorios (Checklist) Section - Mock Data for Table */}
-                  <div className="bg-gray-50 rounded-md p-1 border border-gray-200 min-h-[40px] flex flex-col gap-0.5">
+                  <div className={cn(
+                    "rounded-md p-1 border min-h-[40px] flex flex-col gap-0.5",
+                    contact.isActive 
+                      ? "bg-gray-50 border-gray-200" 
+                      : "bg-gray-100 border-gray-200"
+                  )}>
                     {/* Mock checklist items, compact */}
                     <div className="flex items-center gap-0.5">
-                      <span className="w-2 h-2 rounded-full border border-gray-300 bg-gray-50 inline-block" />
-                      <span className="text-[10px] text-gray-800">Llamar seguimiento</span>
+                      <span className={cn(
+                        "w-2 h-2 rounded-full border inline-block",
+                        contact.isActive 
+                          ? "border-gray-300 bg-gray-50" 
+                          : "border-gray-200 bg-gray-200"
+                      )} />
+                      <span className={cn(
+                        "text-[10px]",
+                        contact.isActive ? "text-gray-800" : "text-gray-500"
+                      )}>Llamar seguimiento</span>
                     </div>
                     <div className="flex items-center gap-0.5">
-                      <span className="w-2 h-2 rounded-full border border-gray-300 bg-gray-50 inline-block" />
-                      <span className="text-[10px] text-gray-800">Enviar propuesta</span>
+                      <span className={cn(
+                        "w-2 h-2 rounded-full border inline-block",
+                        contact.isActive 
+                          ? "border-gray-300 bg-gray-50" 
+                          : "border-gray-200 bg-gray-200"
+                      )} />
+                      <span className={cn(
+                        "text-[10px]",
+                        contact.isActive ? "text-gray-800" : "text-gray-500"
+                      )}>Enviar propuesta</span>
                     </div>
                   </div>
                 </TableCell>

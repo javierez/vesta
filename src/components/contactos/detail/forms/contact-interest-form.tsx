@@ -131,13 +131,20 @@ export function ContactInterestForm({
   const handleSave = async () => {
     setSaveStatus('saving')
     try {
+      // Convert selectedNeighborhoods to preferredAreas format
+      const preferredAreas = localData.selectedNeighborhoods?.map(neighborhood => ({
+        neighborhoodId: Number(neighborhood.neighborhoodId),
+        name: neighborhood.neighborhood
+      })) || []
+
       const prospectData: CreateProspectInput = {
         contactId: contactId,
         status: "active",
+        listingType: localData.demandType || undefined,
         propertyType: localData.propertyTypes[0] || "",
         minPrice: localData.minPrice.toString(),
         maxPrice: localData.maxPrice.toString(),
-        preferredArea: localData.preferredArea || "",
+        preferredAreas: preferredAreas,
         minBedrooms: localData.minBedrooms || 0,
         minBathrooms: localData.minBathrooms || 0,
         moveInBy: localData.moveInBy ? new Date(localData.moveInBy) : undefined,

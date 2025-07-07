@@ -1,8 +1,8 @@
 'use client'
 
-import { ContactBreadcrumb } from "~/components/contactos/contact-breadcrumb"
+import { ContactBreadcrumb } from "./contact-breadcrumb"
 import { ContactFormHeader } from "./contact-form-header"
-import { ContactCharacteristicsForm } from "~/components/contactos/contact-characteristics-form"
+import { ContactCharacteristicsForm } from "./contact-characteristics-form"
 
 interface ContactDetailLayoutProps {
   contact: {
