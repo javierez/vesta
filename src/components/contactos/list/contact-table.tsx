@@ -44,6 +44,7 @@ interface ExtendedContact {
   lastContact?: Date
   createdAt: Date
   updatedAt: Date
+  prospectTitle?: string | null
 }
 
 interface ContactTableProps {

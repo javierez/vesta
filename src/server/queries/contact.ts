@@ -1,10 +1,11 @@
 'use server'
 
 import { db } from "../db"
-import { contacts, listings, properties, locations } from "../db/schema"
+import { contacts, listings, properties, locations, prospects } from "../db/schema"
 import { eq, and, or, like, sql } from "drizzle-orm"
 import type { Contact } from "../../lib/data"
 import { listingContacts } from "../db/schema"
+import { prospectUtils } from "../../lib/utils"
 
 // Create a new contact
 export async function createContact(data: Omit<Contact, "contactId" | "createdAt" | "updatedAt">) {
@@ -201,6 +202,50 @@ export async function listContactsWithTypes(
         listingType: sql<string | null>`
           MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${listings.listingType} END)
         `,
+        // Get latest prospect information for title generation using subqueries
+        // Only fetch prospect data when contact has no owner or buyer roles (interesado stage)
+        latestProspectListingType: sql<string | null>`
+          CASE 
+            WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) = 0 
+             AND COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) = 0
+            THEN (
+              SELECT p.listing_type 
+              FROM prospects p 
+              WHERE p.contact_id = ${contacts.contactId} 
+              ORDER BY p.created_at DESC 
+              LIMIT 1
+            )
+            ELSE NULL
+          END
+        `,
+        latestProspectPropertyType: sql<string | null>`
+          CASE 
+            WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) = 0 
+             AND COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) = 0
+            THEN (
+              SELECT p.property_type 
+              FROM prospects p 
+              WHERE p.contact_id = ${contacts.contactId} 
+              ORDER BY p.created_at DESC 
+              LIMIT 1
+            )
+            ELSE NULL
+          END
+        `,
+        latestProspectPreferredAreas: sql<string | null>`
+          CASE 
+            WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) = 0 
+             AND COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) = 0
+            THEN (
+              SELECT p.preferred_areas 
+              FROM prospects p 
+              WHERE p.contact_id = ${contacts.contactId} 
+              ORDER BY p.created_at DESC 
+              LIMIT 1
+            )
+            ELSE NULL
+          END
+        `,
       })
       .from(contacts)
       .leftJoin(
@@ -279,9 +324,38 @@ export async function listContactsWithTypes(
         contactType = "interesado";
       }
 
+      // Generate prospect title for interesado contacts using the prospect data
+      let prospectTitle: string | null = null;
+      if (contactType === "interesado" && 
+          (contact.latestProspectListingType || contact.latestProspectPropertyType || contact.latestProspectPreferredAreas)) {
+        
+        // Parse preferred areas from JSON string
+        let preferredArea: string | undefined;
+        if (contact.latestProspectPreferredAreas) {
+          try {
+            const areas = JSON.parse(contact.latestProspectPreferredAreas);
+            if (Array.isArray(areas) && areas.length > 0) {
+              // Take the first area name
+              preferredArea = areas[0]?.name || areas[0]?.neighborhood;
+            }
+          } catch (e) {
+            // If parsing fails, use the raw string
+            preferredArea = contact.latestProspectPreferredAreas;
+          }
+        }
+
+        // Use the utility function from utils.ts to generate the title
+        prospectTitle = prospectUtils.generateSimpleProspectTitle(
+          contact.latestProspectListingType || undefined,
+          contact.latestProspectPropertyType || undefined,
+          preferredArea
+        );
+      }
+
       return {
         ...contact,
-        contactType
+        contactType,
+        prospectTitle
       };
     });
 

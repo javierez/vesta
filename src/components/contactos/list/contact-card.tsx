@@ -43,7 +43,9 @@ interface Contact {
   }
   lastContact?: Date
   createdAt?: Date
-  // New field for prospect information
+  // Generated prospect title for interesado contacts
+  prospectTitle?: string | null
+  // Legacy field for prospect information (keeping for backward compatibility)
   mostRecentProspect?: {
     listingType?: string
     propertyType?: string
@@ -64,18 +66,6 @@ export function ContactCard({ contact }: ContactCardProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const typeConfig = contactTypeConfig[contact.contactType]
   const TypeIcon = typeConfig.icon
-
-  // Log component initialization
-  console.log('[ContactCard] Component initialized with contact:', {
-    contactId: contact.contactId,
-    name: `${contact.firstName} ${contact.lastName}`,
-    contactType: contact.contactType,
-    hasEmail: !!contact.email,
-    hasPhone: !!contact.phone,
-    hasListing: !!contact.listingId,
-    ownerCount: contact.ownerCount,
-    buyerCount: contact.buyerCount
-  })
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -135,7 +125,7 @@ export function ContactCard({ contact }: ContactCardProps) {
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9,22 9,12 15,12 15,22" />
                 </svg>
-                Propietario ({contact.ownerCount})
+                Propietario{contact.ownerCount > 1 ? ` (${contact.ownerCount})` : ''}
               </Badge>
             )}
             
@@ -162,7 +152,7 @@ export function ContactCard({ contact }: ContactCardProps) {
                   <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                 </svg>
-                Demandante ({contact.buyerCount})
+                Demandante{contact.buyerCount > 1 ? ` (${contact.buyerCount})` : ''}
               </Badge>
             )}
 
@@ -471,7 +461,7 @@ export function ContactCard({ contact }: ContactCardProps) {
           </div>
         </div>
 
-        {contact.additionalInfo?.notes && (
+        {(contact.additionalInfo?.notes || contact.prospectTitle || contact.mostRecentProspect) && (
           <div className="mt-3 pt-3 border-t border-gray-100">
             <div className="flex items-start gap-2">
               <MessageSquare className={cn(
@@ -482,21 +472,33 @@ export function ContactCard({ contact }: ContactCardProps) {
                 "text-xs line-clamp-2",
                 contact.isActive ? "text-gray-600" : "text-gray-400"
               )}>
-                {/* For interesado contacts, show the title of the most recent search request */}
-                {contact.contactType === 'interesado' && contact.mostRecentProspect ? (
+                {contact.prospectTitle ? (
+                  // Use the pre-generated prospect title from the query
+                  contact.prospectTitle
+                ) : contact.mostRecentProspect ? (
+                  // Fallback to legacy prospect data (for backward compatibility)
                   (() => {
-                    const title = prospectUtils.generateSimpleProspectTitle(
-                      contact.mostRecentProspect.listingType,
-                      contact.mostRecentProspect.propertyType,
-                      contact.mostRecentProspect.preferredArea
+                    const locations = contact.mostRecentProspect.preferredArea ? [{
+                      neighborhoodId: BigInt(0), // placeholder id since we only have the name
+                      city: contact.mostRecentProspect.preferredArea,
+                      province: "",
+                      municipality: "",
+                      neighborhood: contact.mostRecentProspect.preferredArea
+                    }] : []
+                    
+                    const title = prospectUtils.generateProspectTitle(
+                      contact.mostRecentProspect.listingType ?? null,
+                      contact.mostRecentProspect.propertyType ?? null,
+                      locations
                     )
                     const priceRange = contact.mostRecentProspect.minPrice && contact.mostRecentProspect.maxPrice
                       ? ` • ${prospectUtils.formatCurrency(contact.mostRecentProspect.minPrice)} - ${prospectUtils.formatCurrency(contact.mostRecentProspect.maxPrice)}`
                       : ''
+                    
                     return `${title}${priceRange}`
                   })()
                 ) : (
-                  contact.additionalInfo.notes
+                  contact.additionalInfo?.notes
                 )}
               </p>
             </div>

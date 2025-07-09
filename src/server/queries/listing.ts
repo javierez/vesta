@@ -724,4 +724,35 @@ export async function getDraftListings() {
   }
 }
 
+// Delete a draft listing
+export async function deleteDraftListing(listingId: number) {
+  try {
+    // First verify it's actually a draft
+    const [draft] = await db
+      .select()
+      .from(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.status, 'Draft'),
+          eq(listings.isActive, true)
+        )
+      );
+
+    if (!draft) {
+      throw new Error("Draft listing not found or not a draft");
+    }
+
+    // Delete the draft listing
+    await db
+      .delete(listings)
+      .where(eq(listings.listingId, BigInt(listingId)));
+
+    return { success: true, message: 'Borrador eliminado correctamente' };
+  } catch (error) {
+    console.error("Error deleting draft listing:", error);
+    throw error;
+  }
+}
+
 

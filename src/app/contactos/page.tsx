@@ -19,6 +19,7 @@ interface ExtendedContact extends Omit<Contact, 'contactType'> {
   listingContactId?: bigint
   ownerCount?: number
   buyerCount?: number
+  prospectTitle?: string | null
 }
 
 export default function ContactsPage() {
@@ -54,6 +55,7 @@ export default function ContactsPage() {
           listingType: contact.listingType,
           ownerCount: contact.ownerCount,
           buyerCount: contact.buyerCount,
+          prospectTitle: contact.prospectTitle, // Generated title for interesado contacts
         }))
         
         setContactsList(extendedContacts)
