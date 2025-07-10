@@ -186,6 +186,10 @@ export async function listContactsWithTypes(
         buyerCount: sql<number>`
           COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END)
         `,
+        // Count prospects for this contact
+        prospectCount: sql<number>`
+          (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId})
+        `,
         // Get basic property info from first active listing (if any)
         firstListingId: sql<bigint | null>`
           MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${listingContacts.listingId} END)
@@ -287,10 +291,11 @@ export async function listContactsWithTypes(
       .offset(offset)
       .orderBy(contacts.createdAt);
 
-    // Transform the results to include contactType based on role counts and orgId
+    // Transform the results to include contactType based on role counts, orgId, and prospect count
     const contactsWithTypes = uniqueContacts.map((contact) => {
-      // Determine contact type based on role counts and orgId (standardized logic)
+      // Determine contact type based on role counts, orgId, and prospect count
       let contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado" = "demandante";
+      let hasInterests = contact.prospectCount > 0;
       
       // Check if contact has both owner and buyer roles
       if (contact.ownerCount > 0 && contact.buyerCount > 0) {
@@ -323,6 +328,9 @@ export async function listContactsWithTypes(
         // If no roles at all (ownerCount = 0 and buyerCount = 0)
         contactType = "interesado";
       }
+      
+      // Note: hasInterests is available for UI logic to show interest forms
+      // even for contacts that are already propietario/demandante
 
       // Generate prospect title for interesado contacts using the prospect data
       let prospectTitle: string | null = null;
@@ -352,11 +360,38 @@ export async function listContactsWithTypes(
         );
       }
 
-      return {
+      const contactData = {
         ...contact,
         contactType,
-        prospectTitle
+        prospectTitle,
+        prospectCount: contact.prospectCount,
+        // Additional role flags for UI
+        isOwner: contact.ownerCount > 0,
+        isBuyer: contact.buyerCount > 0,
+        isInteresado: contact.prospectCount > 0,
+        // Role counts for display
+        ownerCount: contact.ownerCount,
+        buyerCount: contact.buyerCount
       };
+
+      // Log contact roles for debugging
+      console.log(`📋 Contact: ${contact.firstName} ${contact.lastName}`, {
+        contactId: contact.contactId.toString(),
+        contactType,
+        roles: {
+          ownerCount: contact.ownerCount,
+          buyerCount: contact.buyerCount,
+          prospectCount: contact.prospectCount
+        },
+        flags: {
+          isOwner: contact.ownerCount > 0,
+          isBuyer: contact.buyerCount > 0,
+          isInteresado: contact.prospectCount > 0
+        },
+        orgId: contact.orgId?.toString() || 'null'
+      });
+
+      return contactData;
     });
 
     return contactsWithTypes;

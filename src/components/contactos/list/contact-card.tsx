@@ -33,6 +33,11 @@ interface Contact {
   listingType?: string
   ownerCount?: number
   buyerCount?: number
+  prospectCount?: number
+  // Server-provided role flags
+  isOwner?: boolean
+  isBuyer?: boolean
+  isInteresado?: boolean
   additionalInfo?: {
     demandType?: string
     propertiesCount?: number
@@ -64,8 +69,56 @@ interface ContactCardProps {
 export function ContactCard({ contact }: ContactCardProps) {
   const router = useRouter()
   const [copiedField, setCopiedField] = useState<string | null>(null)
-  const typeConfig = contactTypeConfig[contact.contactType]
-  const TypeIcon = typeConfig.icon
+  
+  // Determine card color/gradient based on role flags
+  const getCardColor = () => {
+    const roles = []
+    if (contact.isOwner) roles.push('owner')
+    if (contact.isBuyer) roles.push('buyer') 
+    if (contact.isInteresado) roles.push('interested')
+    
+    // Multiple roles - create gradients with lighter colors
+    if (roles.length > 1) {
+      const colors = []
+      if (contact.isOwner) colors.push('from-green-200')
+      if (contact.isBuyer) colors.push('via-blue-200')
+      if (contact.isInteresado) colors.push('to-orange-200')
+      
+      if (roles.length === 2) {
+        // Two roles: simple gradient
+        if (contact.isOwner && contact.isBuyer) return "bg-gradient-to-r from-green-200 to-blue-200"
+        if (contact.isOwner && contact.isInteresado) return "bg-gradient-to-r from-green-200 to-orange-200"
+        if (contact.isBuyer && contact.isInteresado) return "bg-gradient-to-r from-blue-200 to-orange-200"
+      } else if (roles.length === 3) {
+        // Three roles: three-color gradient
+        return "bg-gradient-to-r from-green-200 via-blue-200 to-orange-200"
+      }
+    }
+    
+    // Single role - solid colors with lighter variants
+    if (contact.isOwner) return "bg-green-200"
+    if (contact.isBuyer) return "bg-blue-200" 
+    if (contact.isInteresado) return "bg-orange-200"
+    
+    // Fallback
+    return "bg-gray-200"
+  }
+
+  // Debug log for client-side verification
+  console.log(`🎯 Client Card: ${contact.firstName} ${contact.lastName}`, {
+    contactId: contact.contactId.toString(),
+    contactType: contact.contactType,
+    flags: {
+      isOwner: contact.isOwner,
+      isBuyer: contact.isBuyer,
+      isInteresado: contact.isInteresado
+    },
+    counts: {
+      ownerCount: contact.ownerCount,
+      buyerCount: contact.buyerCount,
+      prospectCount: contact.prospectCount
+    }
+  })
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -87,7 +140,7 @@ export function ContactCard({ contact }: ContactCardProps) {
       )}
       onClick={() => router.push(`/contactos/${contact.contactId}`)}
     >
-      <div className={cn("h-2", contact.isActive ? typeConfig.lightColors : "bg-gray-300")} />
+      <div className={cn("h-2", contact.isActive ? getCardColor() : "bg-gray-300")} />
 
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 pt-4">
         <div>
@@ -101,9 +154,9 @@ export function ContactCard({ contact }: ContactCardProps) {
           </div>
 
           {/* Role badges displayed under the name in parallel */}
-          <div className="flex items-center gap-2 mt-2">
-            {/* Propietario badge - show if contact has owner relationships */}
-            {contact.ownerCount !== undefined && contact.ownerCount > 0 && (
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {/* Propietario badge - always show if contact is owner */}
+            {contact.isOwner === true && (
               <Badge
                 className={cn(
                   "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
@@ -125,12 +178,12 @@ export function ContactCard({ contact }: ContactCardProps) {
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9,22 9,12 15,12 15,22" />
                 </svg>
-                Propietario{contact.ownerCount > 1 ? ` (${contact.ownerCount})` : ''}
+                Propietario{(contact.ownerCount && contact.ownerCount > 1) ? ` (${contact.ownerCount})` : ''}
               </Badge>
             )}
             
-            {/* Demandante badge - show if contact has buyer relationships */}
-            {contact.buyerCount !== undefined && contact.buyerCount > 0 && (
+            {/* Demandante badge - always show if contact is buyer */}
+            {contact.isBuyer === true && (
               <Badge
                 className={cn(
                   "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
@@ -152,13 +205,12 @@ export function ContactCard({ contact }: ContactCardProps) {
                   <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                 </svg>
-                Demandante{contact.buyerCount > 1 ? ` (${contact.buyerCount})` : ''}
+                Demandante{(contact.buyerCount && contact.buyerCount > 1) ? ` (${contact.buyerCount})` : ''}
               </Badge>
             )}
 
-            {/* Interesado badge - show if contact has no specific relationships */}
-            {contact.ownerCount !== undefined && contact.ownerCount === 0 && 
-             contact.buyerCount !== undefined && contact.buyerCount === 0 && (
+            {/* Interesado badge - always show if contact has interests */}
+            {contact.isInteresado === true && (
               <Badge
                 className={cn(
                   "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
@@ -180,7 +232,34 @@ export function ContactCard({ contact }: ContactCardProps) {
                   <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                 </svg>
-                Interesado
+                Interesado{(contact.prospectCount && contact.prospectCount > 1) ? ` (${contact.prospectCount})` : ''}
+              </Badge>
+            )}
+
+            {/* Fallback Interesado badge - only show if ALL flags are false/undefined */}
+            {(contact.isOwner !== true && contact.isBuyer !== true && contact.isInteresado !== true) && (
+              <Badge
+                className={cn(
+                  "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
+                  contact.isActive 
+                    ? "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-800" 
+                    : "bg-gray-100 text-gray-500"
+                )}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3 mr-1"
+                >
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
+                Sin clasificar
               </Badge>
             )}
           </div>

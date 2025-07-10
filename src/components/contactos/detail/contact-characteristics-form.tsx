@@ -198,13 +198,13 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
     const convertedForm: InterestFormData = {
       id: `prospect-${prospect.id}`,
       demandType: prospect.listingType || "",
-      minPrice: prospect.minPrice ? parseInt(prospect.minPrice.toString()) : 100000,
-      maxPrice: prospect.maxPrice ? parseInt(prospect.maxPrice.toString()) : 350000,
+      maxPrice: prospect.maxPrice ? parseInt(prospect.maxPrice.toString()) : 200000,
       preferredArea: selectedNeighborhoods.map(n => n.neighborhood).join(", "),
       selectedNeighborhoods: selectedNeighborhoods,
       propertyTypes: prospect.propertyType ? [prospect.propertyType] : [],
       minBedrooms: prospect.minBedrooms || 0,
       minBathrooms: prospect.minBathrooms || 0,
+      minSquareMeters: prospect.minSquareMeters || 80,
       urgencyLevel: prospect.urgencyLevel || 3,
       fundingReady: prospect.fundingReady || false,
       moveInBy: (prospect.moveInBy ? prospect.moveInBy.toISOString().split('T')[0] : "") as string,
@@ -239,13 +239,13 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
     const newForm: InterestFormData = {
       id: `form-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       demandType: "",
-      minPrice: 100000,
-      maxPrice: 350000,
+      maxPrice: 150000,
       preferredArea: "",
       selectedNeighborhoods: [],
       propertyTypes: [],
       minBedrooms: 0,
       minBathrooms: 0,
+      minSquareMeters: 80,
       urgencyLevel: 3,
       fundingReady: false,
       moveInBy: "",
@@ -312,11 +312,11 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
               status: "active",
               listingType: form.demandType || undefined,
               propertyType: form.propertyTypes[0] || "",
-              minPrice: form.minPrice.toString(),
               maxPrice: form.maxPrice.toString(),
               preferredAreas: preferredAreas,
               minBedrooms: form.minBedrooms || 0,
               minBathrooms: form.minBathrooms || 0,
+              minSquareMeters: form.minSquareMeters || 0,
               moveInBy: form.moveInBy ? new Date(form.moveInBy) : undefined,
               extras: form.extras || {},
               urgencyLevel: form.urgencyLevel || 3,
@@ -526,8 +526,8 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
         </Card>
       </div>
 
-      {/* Interest Forms Section - Now for both demandante and interesado */}
-      {(contact.contactType === 'demandante' || contact.contactType === 'interesado' || (contact.contactType !== 'propietario')) && (
+      {/* Interest Forms Section - For demandante and interesado */}
+      {(contact.contactType === 'demandante' || contact.contactType === 'interesado') && (
         <Card className="relative p-4 transition-all duration-500 ease-out">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-sm font-semibold tracking-wide">SOLICITUDES DE BÚSQUEDA</h3>
@@ -631,6 +631,74 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
                   : 'No hay propiedades de interés asociadas a este contacto'
                 }
               </p>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Interest Forms Section - For propietario contacts */}
+      {contact.contactType === 'propietario' && (
+        <Card className="relative p-4 transition-all duration-500 ease-out">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-semibold tracking-wide">SOLICITUDES DE BÚSQUEDA</h3>
+            {!showNewForm && interestForms.length === 0 && (
+              <Button
+                onClick={createNewForm}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Añadir solicitud
+              </Button>
+            )}
+          </div>
+          
+          {/* Show saved prospects in compact view - Always visible */}
+          {prospects.length > 0 && (
+            <div className="space-y-3 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {prospects.map((prospect) => (
+                  <ContactProspectCompact
+                    key={prospect.id.toString()}
+                    prospect={prospect}
+                    onEdit={handleEditProspect}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Show edit form when editing or creating new */}
+          {(showNewForm || interestForms.length > 0) && (
+            <div className="space-y-6">
+              {interestForms.map((form, index) => (
+                <div key={form.id} className="space-y-4">
+                  <ContactInterestForm
+                    data={form}
+                    onUpdate={(data) => updateInterestForm(form.id, data)}
+                    onRemove={() => {
+                      setInterestForms([])
+                      setShowNewForm(false)
+                      setEditingProspectId(null)
+                    }}
+                    isRemovable={true}
+                    index={index}
+                    contactId={contact.contactId}
+                    onSaved={handleFormSaved}
+                    onDeleted={handleFormSaved}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Empty state */}
+          {prospects.length === 0 && !showNewForm && interestForms.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <User className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">No hay solicitudes de búsqueda configuradas</p>
+              <p className="text-xs text-gray-400 mt-1">Haz clic en "Añadir solicitud" para crear la primera solicitud</p>
             </div>
           )}
         </Card>

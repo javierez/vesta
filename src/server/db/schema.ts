@@ -408,6 +408,8 @@ export const prospects = singlestoreTable("prospects", {
   preferredAreas: json("preferred_areas"), // Array of neighborhood objects: [{"neighborhoodId": 1, "name": "Salamanca"}, {"neighborhoodId": 2, "name": "Retiro"}]
   minBedrooms: smallint("min_bedrooms"), // 0-10 is enough
   minBathrooms: smallint("min_bathrooms"), // Same
+  minSquareMeters: int("min_square_meters"),
+  maxSquareMeters: int("max_square_meters"),
   moveInBy: timestamp("move_in_by"), // Desired move-in date; leave NULL if "when something comes up"
   extras: json("extras"), // { "ascensor": true, "terraza": true, "garaje": false }
   urgencyLevel: smallint("urgency_level"), // 1-5 - homemade lead-scoring

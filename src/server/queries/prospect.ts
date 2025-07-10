@@ -14,6 +14,8 @@ export type CreateProspectInput = {
   preferredAreas?: Array<{ neighborhoodId: number; name: string }>;
   minBedrooms?: number;
   minBathrooms?: number;
+  minSquareMeters?: number;
+  maxSquareMeters?: number;
   moveInBy?: Date;
   extras?: Record<string, any>;
   urgencyLevel?: number;

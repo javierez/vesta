@@ -22,7 +22,6 @@ import { toast } from "sonner"
 export interface InterestFormData {
   id: string
   demandType: string
-  minPrice: number
   maxPrice: number
   preferredArea: string
   selectedNeighborhoods: Array<{
@@ -35,6 +34,7 @@ export interface InterestFormData {
   propertyTypes: string[]
   minBedrooms: number
   minBathrooms: number
+  minSquareMeters: number
   urgencyLevel: number
   fundingReady: boolean
   moveInBy: string
@@ -142,11 +142,11 @@ export function ContactInterestForm({
         status: "active",
         listingType: localData.demandType || undefined,
         propertyType: localData.propertyTypes[0] || "",
-        minPrice: localData.minPrice.toString(),
         maxPrice: localData.maxPrice.toString(),
         preferredAreas: preferredAreas,
         minBedrooms: localData.minBedrooms || 0,
         minBathrooms: localData.minBathrooms || 0,
+        minSquareMeters: localData.minSquareMeters || 0,
         moveInBy: localData.moveInBy ? new Date(localData.moveInBy) : undefined,
         extras: localData.extras || {},
         urgencyLevel: localData.urgencyLevel || 3,
@@ -317,7 +317,7 @@ export function ContactInterestForm({
             </div>
             
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Rango de precio (€)</Label>
+              <Label className="text-sm font-medium">Precio máximo (€)</Label>
               <div className="space-y-4">
                 {(() => {
                   const propertyType = localData.propertyTypes[0] || ""
@@ -328,63 +328,32 @@ export function ContactInterestForm({
                   return (
                     <>
                       <div className="relative">
-                <Slider
-                  value={[localData.minPrice, localData.maxPrice]}
-                  onValueChange={(value) => {
-                    const newMinPrice = value[0] || 100000
-                    const newMaxPrice = value[1] || 350000
-                    
-                    // Ensure min doesn't exceed max
-                    if (newMinPrice <= newMaxPrice) {
-                      updateLocalData({ 
-                        minPrice: newMinPrice, 
-                        maxPrice: newMaxPrice 
-                      })
-                    }
-                  }}
-                  max={maxLimit}
-                  min={minLimit}
-                  step={10000}
-                  className="w-full"
-                />
+                        <Slider
+                          value={[localData.maxPrice]}
+                          onValueChange={(value) => {
+                            const newMaxPrice = value[0] || 200000
+                            updateLocalData({ maxPrice: newMaxPrice })
+                          }}
+                          max={maxLimit}
+                          min={minLimit}
+                          step={10000}
+                          className="w-full"
+                        />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs text-gray-600">Precio mínimo</Label>
-                          <Input
-                            type="text"
-                            value={localData.minPrice.toLocaleString('es-ES')}
-                            onChange={(e) => {
-                              const value = parseInt(e.target.value.replace(/\D/g, '')) || 100000
-                              const maxPrice = localData.maxPrice
-                              if (value <= maxPrice) {
-                                updateLocalData({ minPrice: value })
-                              }
-                            }}
-                            className="h-8 text-sm"
-                            placeholder="100.000"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs text-gray-600">Precio máximo</Label>
+                      <div className="flex justify-center">
+                        <div className="w-32">
                           <Input
                             type="text"
                             value={localData.maxPrice.toLocaleString('es-ES')}
                             onChange={(e) => {
-                              const value = parseInt(e.target.value.replace(/\D/g, '')) || 350000
-                              const minPrice = localData.minPrice
-                              if (value >= minPrice) {
-                                updateLocalData({ maxPrice: value })
-                              }
+                              const value = parseInt(e.target.value.replace(/\D/g, '')) || 200000
+                              updateLocalData({ maxPrice: value })
                             }}
-                            className="h-8 text-sm"
-                            placeholder="350.000"
+                            className="h-8 text-sm text-center"
+                            placeholder="€200.000"
                           />
                         </div>
-                </div>
-                      <p className="text-xs text-gray-400 text-center">
-                        Desliza para ajustar o escribe los valores manualmente
-                      </p>
+                      </div>
                     </>
                   )
                 })()}
@@ -474,26 +443,63 @@ export function ContactInterestForm({
               const propertyType = localData.propertyTypes[0] || ""
               const shouldShowRooms = propertyType !== "garaje" && propertyType !== "terreno" && propertyType !== "solar"
               
-              return shouldShowRooms ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <RoomSelector
-                    type="bedrooms"
-                    value={localData.minBedrooms}
-                    onChange={(value) => updateLocalData({ minBedrooms: value })}
-                    label="Habitaciones mínimas"
-                    max={6}
-                  />
-                  
-                  <RoomSelector
-                    type="bathrooms"
-                    value={localData.minBathrooms}
-                    onChange={(value) => updateLocalData({ minBathrooms: value })}
-                    label="Baños mínimos"
-                  max={4}
-                />
-                </div>
-              ) : null
+              if (shouldShowRooms) {
+                return (
+                  <div className="grid grid-cols-2 gap-4">
+                    <RoomSelector
+                      type="bedrooms"
+                      value={localData.minBedrooms}
+                      onChange={(value) => updateLocalData({ minBedrooms: value })}
+                      label="Habitaciones mínimas"
+                      max={6}
+                    />
+                    
+                    <RoomSelector
+                      type="bathrooms"
+                      value={localData.minBathrooms}
+                      onChange={(value) => updateLocalData({ minBathrooms: value })}
+                      label="Baños mínimos"
+                      max={4}
+                    />
+                  </div>
+                )
+              }
+              return null
             })()}
+            
+            {/* Square Meters Minimum */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Metros cuadrados mínimos (m²)</Label>
+              <div className="space-y-4">
+                <div className="relative">
+                  <Slider
+                    value={[localData.minSquareMeters || 80]}
+                    onValueChange={(value) => {
+                      const newMinSquareMeters = value[0] || 80
+                      updateLocalData({ minSquareMeters: newMinSquareMeters })
+                    }}
+                    max={500}
+                    min={20}
+                    step={10}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex justify-center">
+                  <div className="w-24">
+                    <Input
+                      type="text"
+                      value={localData.minSquareMeters || 80}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value.replace(/\D/g, '')) || 80
+                        updateLocalData({ minSquareMeters: value })
+                      }}
+                      className="h-8 text-sm text-center"
+                      placeholder="80m²"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
 

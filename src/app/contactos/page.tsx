@@ -19,6 +19,11 @@ interface ExtendedContact extends Omit<Contact, 'contactType'> {
   listingContactId?: bigint
   ownerCount?: number
   buyerCount?: number
+  prospectCount?: number
+  // Server-provided role flags
+  isOwner?: boolean
+  isBuyer?: boolean
+  isInteresado?: boolean
   prospectTitle?: string | null
 }
 
@@ -55,6 +60,11 @@ export default function ContactsPage() {
           listingType: contact.listingType,
           ownerCount: contact.ownerCount,
           buyerCount: contact.buyerCount,
+          prospectCount: contact.prospectCount, // NEW: Include prospect count
+          // NEW: Include server-calculated role flags
+          isOwner: contact.isOwner,
+          isBuyer: contact.isBuyer,
+          isInteresado: contact.isInteresado,
           prospectTitle: contact.prospectTitle, // Generated title for interesado contacts
         }))
         
