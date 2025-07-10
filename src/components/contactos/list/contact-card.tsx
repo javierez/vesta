@@ -16,6 +16,7 @@ import Link from "next/link"
 import { cn, prospectUtils } from "~/lib/utils"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { CONTACT_PALETTE, getContactCardColor, getContactBadgeColor } from "./color/contact-colors"
 
 interface Contact {
   contactId: bigint
@@ -70,40 +71,6 @@ export function ContactCard({ contact }: ContactCardProps) {
   const router = useRouter()
   const [copiedField, setCopiedField] = useState<string | null>(null)
   
-  // Determine card color/gradient based on role flags
-  const getCardColor = () => {
-    const roles = []
-    if (contact.isOwner) roles.push('owner')
-    if (contact.isBuyer) roles.push('buyer') 
-    if (contact.isInteresado) roles.push('interested')
-    
-    // Multiple roles - create gradients with lighter colors
-    if (roles.length > 1) {
-      const colors = []
-      if (contact.isOwner) colors.push('from-green-200')
-      if (contact.isBuyer) colors.push('via-blue-200')
-      if (contact.isInteresado) colors.push('to-orange-200')
-      
-      if (roles.length === 2) {
-        // Two roles: simple gradient
-        if (contact.isOwner && contact.isBuyer) return "bg-gradient-to-r from-green-200 to-blue-200"
-        if (contact.isOwner && contact.isInteresado) return "bg-gradient-to-r from-green-200 to-orange-200"
-        if (contact.isBuyer && contact.isInteresado) return "bg-gradient-to-r from-blue-200 to-orange-200"
-      } else if (roles.length === 3) {
-        // Three roles: three-color gradient
-        return "bg-gradient-to-r from-green-200 via-blue-200 to-orange-200"
-      }
-    }
-    
-    // Single role - solid colors with lighter variants
-    if (contact.isOwner) return "bg-green-200"
-    if (contact.isBuyer) return "bg-blue-200" 
-    if (contact.isInteresado) return "bg-orange-200"
-    
-    // Fallback
-    return "bg-gray-200"
-  }
-
   // Debug log for client-side verification
   console.log(`🎯 Client Card: ${contact.firstName} ${contact.lastName}`, {
     contactId: contact.contactId.toString(),
@@ -140,7 +107,8 @@ export function ContactCard({ contact }: ContactCardProps) {
       )}
       onClick={() => router.push(`/contactos/${contact.contactId}`)}
     >
-      <div className={cn("h-2", contact.isActive ? getCardColor() : "bg-gray-300")} />
+      {/* Colored line using palette or gradient */}
+      <div style={getContactCardColor(contact)} className="h-2 w-full" />
 
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 pt-4">
         <div>
@@ -159,11 +127,10 @@ export function ContactCard({ contact }: ContactCardProps) {
             {contact.isOwner === true && (
               <Badge
                 className={cn(
-                  "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
-                  contact.isActive 
-                    ? "bg-green-50 text-green-900 hover:bg-green-100 hover:text-green-900" 
-                    : "bg-gray-100 text-gray-500"
+                  "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap border border-gray-200",
+                  getContactBadgeColor('owner', contact.isActive)
                 )}
+                style={{ background: CONTACT_PALETTE.earth }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -186,11 +153,10 @@ export function ContactCard({ contact }: ContactCardProps) {
             {contact.isBuyer === true && (
               <Badge
                 className={cn(
-                  "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
-                  contact.isActive 
-                    ? "bg-blue-50 text-blue-900 hover:bg-blue-100 hover:text-blue-900" 
-                    : "bg-gray-100 text-gray-500"
+                  "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap border border-gray-200",
+                  getContactBadgeColor('buyer', contact.isActive)
                 )}
+                style={{ background: CONTACT_PALETTE.moss }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -213,11 +179,10 @@ export function ContactCard({ contact }: ContactCardProps) {
             {contact.isInteresado === true && (
               <Badge
                 className={cn(
-                  "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
-                  contact.isActive 
-                    ? "bg-orange-50 text-orange-900 hover:bg-orange-100 hover:text-orange-900" 
-                    : "bg-gray-100 text-gray-500"
+                  "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap border border-gray-200",
+                  getContactBadgeColor('interested', contact.isActive)
                 )}
+                style={{ background: CONTACT_PALETTE.sage }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -240,11 +205,10 @@ export function ContactCard({ contact }: ContactCardProps) {
             {(contact.isOwner !== true && contact.isBuyer !== true && contact.isInteresado !== true) && (
               <Badge
                 className={cn(
-                  "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
-                  contact.isActive 
-                    ? "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-800" 
-                    : "bg-gray-100 text-gray-500"
+                  "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap border border-gray-200",
+                  getContactBadgeColor('unclassified', contact.isActive)
                 )}
+                style={{ background: CONTACT_PALETTE.sand }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

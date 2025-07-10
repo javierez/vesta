@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation"
 import { cn } from "~/lib/utils"
 import { contactTypeConfig, formatListingType } from "../contact-config"
 import { useState } from "react"
+import { CONTACT_PALETTE, getContactCardColor, getContactBadgeColor } from "./color/contact-colors"
 
 // Extended Contact type to include contactType for the UI
 interface ExtendedContact {
@@ -33,6 +34,11 @@ interface ExtendedContact {
   listingType?: string
   ownerCount?: number
   buyerCount?: number
+  prospectCount?: number
+  // Server-provided role flags
+  isOwner?: boolean
+  isBuyer?: boolean
+  isInteresado?: boolean
   additionalInfo?: {
     demandType?: string
     propertiesCount?: number
@@ -143,7 +149,6 @@ export function ContactTable({ contacts }: ContactTableProps) {
           </TableHeader>
           <TableBody>
             {contacts.map((contact) => {
-              const typeConfig = contactTypeConfig[contact.contactType]
               return (
               <TableRow 
                 key={contact.contactId.toString()}
@@ -158,10 +163,10 @@ export function ContactTable({ contacts }: ContactTableProps) {
                 <TableCell className="w-[200px] min-w-[200px]">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "w-1 h-6 rounded-full",
-                        contact.isActive ? typeConfig.lineColor : "bg-gray-300"
-                      )} />
+                      <div 
+                        className="w-1 h-6 rounded-full"
+                        style={getContactCardColor(contact)}
+                      />
                       <span className={cn(
                         "font-medium",
                         contact.isActive ? "" : "text-gray-500"
@@ -172,15 +177,14 @@ export function ContactTable({ contacts }: ContactTableProps) {
                       <span>{contact.lastContact ? formatDate(contact.lastContact) : formatDate(contact.updatedAt)}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {/* Propietario badge - show if contact has owner relationships */}
-                      {contact.ownerCount !== undefined && contact.ownerCount > 0 && (
+                      {/* Propietario badge - always show if contact is owner */}
+                      {contact.isOwner === true && (
                         <Badge
                           className={cn(
-                            "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
-                            contact.isActive 
-                              ? "bg-green-50 text-green-700" 
-                              : "bg-gray-100 text-gray-500"
+                            "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap border border-gray-200",
+                            getContactBadgeColor('owner', contact.isActive)
                           )}
+                          style={{ background: CONTACT_PALETTE.earth }}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -195,19 +199,18 @@ export function ContactTable({ contacts }: ContactTableProps) {
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                             <polyline points="9,22 9,12 15,12 15,22" />
                           </svg>
-                          Propietario ({contact.ownerCount})
+                          Propietario{(contact.ownerCount && contact.ownerCount > 1) ? ` (${contact.ownerCount})` : ''}
                         </Badge>
                       )}
                       
-                      {/* Demandante badge - show if contact has buyer relationships */}
-                      {contact.buyerCount !== undefined && contact.buyerCount > 0 && (
+                      {/* Demandante badge - always show if contact is buyer */}
+                      {contact.isBuyer === true && (
                         <Badge
                           className={cn(
-                            "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
-                            contact.isActive 
-                              ? "bg-blue-50 text-blue-800" 
-                              : "bg-gray-100 text-gray-500"
+                            "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap border border-gray-200",
+                            getContactBadgeColor('buyer', contact.isActive)
                           )}
+                          style={{ background: CONTACT_PALETTE.moss }}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -222,20 +225,18 @@ export function ContactTable({ contacts }: ContactTableProps) {
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                             <circle cx="9" cy="7" r="4" />
                           </svg>
-                          Demandante ({contact.buyerCount})
+                          Demandante{(contact.buyerCount && contact.buyerCount > 1) ? ` (${contact.buyerCount})` : ''}
                         </Badge>
                       )}
 
-                      {/* Interesado badge - show if contact has no specific relationships */}
-                      {contact.ownerCount !== undefined && contact.ownerCount === 0 && 
-                       contact.buyerCount !== undefined && contact.buyerCount === 0 && (
+                      {/* Interesado badge - always show if contact has interests */}
+                      {contact.isInteresado === true && (
                         <Badge
                           className={cn(
-                            "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap",
-                            contact.isActive 
-                              ? "bg-orange-50 text-orange-700" 
-                              : "bg-gray-100 text-gray-500"
+                            "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap border border-gray-200",
+                            getContactBadgeColor('interested', contact.isActive)
                           )}
+                          style={{ background: CONTACT_PALETTE.sage }}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -250,7 +251,33 @@ export function ContactTable({ contacts }: ContactTableProps) {
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                             <circle cx="9" cy="7" r="4" />
                           </svg>
-                          Interesado
+                          Interesado{(contact.prospectCount && contact.prospectCount > 1) ? ` (${contact.prospectCount})` : ''}
+                        </Badge>
+                      )}
+
+                      {/* Fallback Interesado badge - only show if ALL flags are false/undefined */}
+                      {(contact.isOwner !== true && contact.isBuyer !== true && contact.isInteresado !== true) && (
+                        <Badge
+                          className={cn(
+                            "text-xs font-medium rounded-full px-3 shadow-md whitespace-nowrap border border-gray-200",
+                            getContactBadgeColor('unclassified', contact.isActive)
+                          )}
+                          style={{ background: CONTACT_PALETTE.sand }}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-3 w-3 mr-1"
+                          >
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                          </svg>
+                          Sin clasificar
                         </Badge>
                       )}
                     </div>
