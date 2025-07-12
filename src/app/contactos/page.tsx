@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-import { ContactCard } from "~/components/contactos/list/contact-card"
-import { ContactCardSkeleton } from "~/components/contactos/list/contact-card-skeleton"
+import { useSearchParams } from "next/navigation"
+
 import { ContactFilter } from "~/components/contactos/list/contact-filter"
 import { ContactTable } from "~/components/contactos/list/contact-table"
 import { listContactsWithTypes } from "~/server/queries/contact"
@@ -14,7 +14,6 @@ import type { Contact } from "~/lib/data"
 
 // Extended Contact type to include contactType for the UI
 interface ExtendedContact extends Omit<Contact, 'contactType'> {
-  contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado"
   listingId?: bigint
   listingContactId?: bigint
   ownerCount?: number
@@ -24,23 +23,44 @@ interface ExtendedContact extends Omit<Contact, 'contactType'> {
   isOwner?: boolean
   isBuyer?: boolean
   isInteresado?: boolean
-  prospectTitle?: string | null
+  // All prospect titles (array)
+  prospectTitles?: string[]
 }
 
 export default function ContactsPage() {
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
   const [contactsList, setContactsList] = useState<ExtendedContact[]>([])
-  const [filteredContacts, setFilteredContacts] = useState<ExtendedContact[]>([])
-  const [view, setView] = useState<"grid" | "table">("grid")
+
+  // Get filter parameters from URL
+  const getFiltersFromUrl = () => {
+    const roles = searchParams.get('roles')
+    const q = searchParams.get('q')
+    const sort = searchParams.get('sort')
+    const lastContact = searchParams.get('lastContact')
+    
+    return {
+      roles: roles ? roles.split(',') : [],
+      searchQuery: q || '',
+      sortOrder: sort || 'alphabetical',
+      lastContactFilter: lastContact || 'all'
+    }
+  }
 
   useEffect(() => {
     const fetchContacts = async () => {
       setIsLoading(true)
       try {
-        // Fetch contacts from the database with their role counts
-        const dbContacts = await listContactsWithTypes(1, 100) // Get first 100 contacts
+        const filters = getFiltersFromUrl()
         
-        // Use the data directly from the query - contact type is already determined in the database query
+        // Fetch contacts from the database with filters
+        const dbContacts = await listContactsWithTypes(1, 100, {
+          searchQuery: filters.searchQuery,
+          roles: filters.roles,
+          lastContactFilter: filters.lastContactFilter
+        })
+        
+        // Use the data directly from the query
         const extendedContacts: ExtendedContact[] = dbContacts.map((contact: any) => ({
           contactId: contact.contactId,
           firstName: contact.firstName,
@@ -52,7 +72,6 @@ export default function ContactsPage() {
           isActive: contact.isActive,
           createdAt: contact.createdAt,
           updatedAt: contact.updatedAt,
-          contactType: contact.contactType, // This is now determined in the query
           listingId: contact.firstListingId,
           street: contact.street,
           city: contact.city,
@@ -60,63 +79,52 @@ export default function ContactsPage() {
           listingType: contact.listingType,
           ownerCount: contact.ownerCount,
           buyerCount: contact.buyerCount,
-          prospectCount: contact.prospectCount, // NEW: Include prospect count
-          // NEW: Include server-calculated role flags
+          prospectCount: contact.prospectCount,
+          // Server-calculated role flags
           isOwner: contact.isOwner,
           isBuyer: contact.isBuyer,
           isInteresado: contact.isInteresado,
-          prospectTitle: contact.prospectTitle, // Generated title for interesado contacts
+          // All prospect titles from the query
+          prospectTitles: contact.prospectTitles || [],
         }))
         
-        setContactsList(extendedContacts)
-        setFilteredContacts(extendedContacts)
+        // Apply sorting
+        const sortedContacts = extendedContacts.sort((a, b) => {
+          if (filters.sortOrder === 'lastContact') {
+            // Sort by last contact date (most recent first)
+            const aDate = a.updatedAt || new Date(0)
+            const bDate = b.updatedAt || new Date(0)
+            return bDate.getTime() - aDate.getTime()
+          } else {
+            // Default alphabetical sort by full name
+            const aName = `${a.firstName} ${a.lastName}`.toLowerCase()
+            const bName = `${b.firstName} ${b.lastName}`.toLowerCase()
+            return aName.localeCompare(bName)
+          }
+        })
+        
+        setContactsList(sortedContacts)
       } catch (error) {
         console.error("Error fetching contacts:", error)
         // Fallback to empty array if there's an error
         setContactsList([])
-        setFilteredContacts([])
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchContacts()
-  }, [])
+  }, [searchParams]) // Re-fetch when URL parameters change
 
   const handleFilterChange = (filters: {
     searchQuery: string
-    contactType: string[]
+    roles: string[]
     sortOrder: string
+    lastContactFilter: string
   }) => {
-    const filtered = contactsList.filter((contact) => {
-      const matchesSearch = 
-        contact.firstName.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        contact.lastName.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        (contact.email?.toLowerCase() ?? "").includes(filters.searchQuery.toLowerCase()) ||
-        (contact.phone?.toLowerCase() ?? "").includes(filters.searchQuery.toLowerCase())
-
-      const matchesContactType = filters.contactType.length === 0 || filters.contactType.includes(contact.contactType)
-
-      return matchesSearch && matchesContactType
-    })
-
-    // Apply sorting
-    const sorted = filtered.sort((a, b) => {
-      if (filters.sortOrder === 'lastContact') {
-        // Sort by last contact date (most recent first)
-        // If lastContact is undefined, treat as very old date
-        const aDate = a.updatedAt || new Date(0)
-        const bDate = b.updatedAt || new Date(0)
-        return bDate.getTime() - aDate.getTime()
-      } else {
-        // Default alphabetical sort by full name
-        const aName = `${a.firstName} ${a.lastName}`.toLowerCase()
-        const bName = `${b.firstName} ${b.lastName}`.toLowerCase()
-        return aName.localeCompare(bName)
-      }
-    })
-
-    setFilteredContacts(sorted)
+    // The filtering is now handled by the database query and URL parameters
+    // This function is called by the ContactFilter component to update the URL
+    // The useEffect above will re-fetch data when URL changes
   }
 
   return (
@@ -134,27 +142,16 @@ export default function ContactsPage() {
       <ContactFilter 
         contacts={contactsList}
         onFilterChange={handleFilterChange}
-        view={view}
-        onViewChange={setView}
       />
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-4">
           {Array.from({ length: 6 }).map((_, index) => (
-            <ContactCardSkeleton key={index} />
-          ))}
-        </div>
-      ) : view === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredContacts.map((contact) => (
-            <ContactCard 
-              key={contact.contactId.toString()} 
-              contact={contact} 
-            />
+            <div key={index} className="h-16 bg-muted animate-pulse rounded" />
           ))}
         </div>
       ) : (
-        <ContactTable contacts={filteredContacts} />
+        <ContactTable contacts={contactsList} />
       )}
     </div>
   )

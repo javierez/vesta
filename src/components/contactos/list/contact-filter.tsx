@@ -12,15 +12,16 @@ import { Badge } from "~/components/ui/badge"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { 
   Search, 
-  LayoutGrid, 
-  Table as TableIcon, 
   Filter, 
   X, 
   Check, 
   ChevronDown,
-  ArrowUpDown 
+  ArrowUpDown,
+  Calendar
 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { motion } from "framer-motion"
+import { cn } from "~/lib/utils"
 
 // Extended Contact type to include contactType for the UI
 interface ExtendedContact {
@@ -29,7 +30,6 @@ interface ExtendedContact {
   lastName: string
   email?: string
   phone?: string
-  contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado"
   isActive: boolean
   additionalInfo?: {
     demandType?: string
@@ -42,49 +42,72 @@ interface ExtendedContact {
   lastContact?: Date
   createdAt: Date
   updatedAt: Date
-  prospectTitle?: string | null
+  // All prospect titles (array)
+  prospectTitles?: string[]
 }
 
 interface ContactFilterProps {
   contacts: ExtendedContact[]
   onFilterChange: (filters: {
     searchQuery: string
-    contactType: string[]
+    roles: string[]
     sortOrder: string
+    lastContactFilter: string
   }) => void
-  view: "grid" | "table"
-  onViewChange: (view: "grid" | "table") => void
 }
 
 export function ContactFilter({
   contacts,
   onFilterChange,
-  view,
-  onViewChange,
 }: ContactFilterProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState("")
-  const [contactTypeFilters, setContactTypeFilters] = useState<string[]>([])
+  const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState("alphabetical")
+  const [lastContactFilter, setLastContactFilter] = useState("all")
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    contactType: true,
+    lastContact: true,
     sortOrder: true
   })
 
   // Initialize filters from URL on mount
   useEffect(() => {
-    const contactType = searchParams.get('contactType')
+    const roles = searchParams.get('roles')
     const sort = searchParams.get('sort')
     const q = searchParams.get('q')
+    const lastContact = searchParams.get('lastContact')
 
-    setContactTypeFilters(contactType ? contactType.split(',') : [])
+    // Handle URL initialization - if roles contains 'buyer' or 'interested', set to 'buyer'
+    if (roles) {
+      const roleArray = roles.split(',')
+      if (roleArray.includes('buyer') || roleArray.includes('interested')) {
+        setSelectedRole('buyer')
+      } else if (roleArray.includes('owner')) {
+        setSelectedRole('owner')
+      } else {
+        setSelectedRole(roleArray[0] || null)
+      }
+    } else {
+      setSelectedRole(null)
+    }
     setSortOrder(sort || 'alphabetical')
     setSearchQuery(q || '')
-  }, [searchParams])
+    setLastContactFilter(lastContact || 'all')
+    
+    // Clean up any view parameter from URL since we only have table view
+    if (searchParams.get('view')) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('view')
+      router.replace(`/contactos?${params.toString()}`)
+    }
+  }, [searchParams, router])
 
-  const updateUrlParams = (newContactTypeFilters: string[], newSortOrder: string, newSearchQuery: string) => {
+  const updateUrlParams = (newSelectedRole: string | null, newSortOrder: string, newSearchQuery: string, newLastContactFilter: string) => {
     const params = new URLSearchParams(searchParams.toString())
+    
+    // Remove any view parameter since we only have table view now
+    params.delete('view')
     
     // Update search query
     if (newSearchQuery) {
@@ -93,11 +116,15 @@ export function ContactFilter({
       params.delete('q')
     }
 
-    // Update contactType
-    if (newContactTypeFilters.length > 0) {
-      params.set('contactType', newContactTypeFilters.join(','))
+    // Update roles
+    if (newSelectedRole) {
+      // When 'buyer' is selected, include both 'buyer' and 'interested' in URL
+      const rolesForUrl = newSelectedRole === 'buyer' 
+        ? 'buyer,interested' 
+        : newSelectedRole
+      params.set('roles', rolesForUrl)
     } else {
-      params.delete('contactType')
+      params.delete('roles')
     }
 
     // Update sort order
@@ -105,6 +132,13 @@ export function ContactFilter({
       params.set('sort', newSortOrder)
     } else {
       params.delete('sort')
+    }
+
+    // Update last contact filter
+    if (newLastContactFilter !== 'all') {
+      params.set('lastContact', newLastContactFilter)
+    } else {
+      params.delete('lastContact')
     }
 
     // Reset to first page when filters change
@@ -115,34 +149,81 @@ export function ContactFilter({
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
-    updateUrlParams(contactTypeFilters, sortOrder, value)
+    updateUrlParams(selectedRole, sortOrder, value, lastContactFilter)
+    
+    // When 'buyer' is selected, include both 'buyer' and 'interested'
+    const rolesToFilter = selectedRole === 'buyer' 
+      ? ['buyer', 'interested'] 
+      : selectedRole === 'owner' 
+        ? ['owner'] 
+        : []
+    
     onFilterChange({
       searchQuery: value,
-      contactType: contactTypeFilters,
+      roles: rolesToFilter,
       sortOrder,
+      lastContactFilter,
     })
   }
 
-  const toggleContactTypeFilter = (value: string) => {
-    const newFilters = contactTypeFilters.includes(value)
-      ? contactTypeFilters.filter(v => v !== value)
-      : [...contactTypeFilters, value]
-    setContactTypeFilters(newFilters)
-    updateUrlParams(newFilters, sortOrder, searchQuery)
+  const toggleRoleFilter = (value: string) => {
+    // Only allow 'buyer' and 'owner' values
+    if (value !== 'buyer' && value !== 'owner') return
+    
+    const newSelectedRole = selectedRole === value ? null : value
+    setSelectedRole(newSelectedRole)
+    updateUrlParams(newSelectedRole, sortOrder, searchQuery, lastContactFilter)
+    
+    // When 'buyer' is selected, include both 'buyer' and 'interested'
+    const rolesToFilter = newSelectedRole === 'buyer' 
+      ? ['buyer', 'interested'] 
+      : newSelectedRole === 'owner' 
+        ? ['owner'] 
+        : []
+    
     onFilterChange({
       searchQuery,
-      contactType: newFilters,
+      roles: rolesToFilter,
       sortOrder,
+      lastContactFilter,
     })
   }
 
   const handleSortOrderChange = (value: string) => {
     setSortOrder(value)
-    updateUrlParams(contactTypeFilters, value, searchQuery)
+    updateUrlParams(selectedRole, value, searchQuery, lastContactFilter)
+    
+    // When 'buyer' is selected, include both 'buyer' and 'interested'
+    const rolesToFilter = selectedRole === 'buyer' 
+      ? ['buyer', 'interested'] 
+      : selectedRole === 'owner' 
+        ? ['owner'] 
+        : []
+    
     onFilterChange({
       searchQuery,
-      contactType: contactTypeFilters,
+      roles: rolesToFilter,
       sortOrder: value,
+      lastContactFilter,
+    })
+  }
+
+  const handleLastContactFilterChange = (value: string) => {
+    setLastContactFilter(value)
+    updateUrlParams(selectedRole, sortOrder, searchQuery, value)
+    
+    // When 'buyer' is selected, include both 'buyer' and 'interested'
+    const rolesToFilter = selectedRole === 'buyer' 
+      ? ['buyer', 'interested'] 
+      : selectedRole === 'owner' 
+        ? ['owner'] 
+        : []
+    
+    onFilterChange({
+      searchQuery,
+      roles: rolesToFilter,
+      sortOrder,
+      lastContactFilter: value,
     })
   }
 
@@ -153,17 +234,37 @@ export function ContactFilter({
     }))
   }
 
-  const clearContactTypeFilters = () => {
-    setContactTypeFilters([])
-    updateUrlParams([], sortOrder, searchQuery)
+  const clearRoleFilters = () => {
+    setSelectedRole(null)
+    updateUrlParams(null, sortOrder, searchQuery, lastContactFilter)
     onFilterChange({
       searchQuery,
-      contactType: [],
+      roles: [],
       sortOrder,
+      lastContactFilter,
     })
   }
 
-  const activeFiltersCount = contactTypeFilters.length
+  const clearLastContactFilter = () => {
+    setLastContactFilter('all')
+    updateUrlParams(selectedRole, sortOrder, searchQuery, 'all')
+    
+    // When 'buyer' is selected, include both 'buyer' and 'interested'
+    const rolesToFilter = selectedRole === 'buyer' 
+      ? ['buyer', 'interested'] 
+      : selectedRole === 'owner' 
+        ? ['owner'] 
+        : []
+    
+    onFilterChange({
+      searchQuery,
+      roles: rolesToFilter,
+      sortOrder,
+      lastContactFilter: 'all',
+    })
+  }
+
+  const activeFiltersCount = (selectedRole ? 1 : 0) + (lastContactFilter !== 'all' ? 1 : 0)
 
   const FilterOption = ({ value, label, isSelected, onClick }: { 
     value: string, 
@@ -236,139 +337,170 @@ export function ContactFilter({
     </div>
   )
 
-  const handleViewChange = () => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('view', view === "grid" ? "table" : "grid")
-    router.push(`/contactos?${params.toString()}`)
-    onViewChange(view === "grid" ? "table" : "grid")
-  }
-
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div className="flex flex-1 items-center space-x-2">
-        <div className="relative flex-1 md:max-w-sm">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar contactos..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
+    <div className="space-y-4">
+      {/* Search Bar and Controls */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-1 items-center space-x-2">
+          <div className="relative flex-1 md:max-w-sm">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar contactos..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+          </div>
+          
+          {/* Role Filter Toggle */}
+          <div className="relative bg-gray-100 rounded-lg p-1 h-10 flex-1 max-w-md">
+            {selectedRole && (
+              <motion.div
+                className="absolute top-1 left-1 h-8 bg-white rounded-md shadow-sm"
+                animate={{
+                  width: "calc(50% - 2px)",
+                  x: (() => {
+                    const buttonOrder = ['buyer', 'owner']
+                    const selectedIndex = buttonOrder.indexOf(selectedRole)
+                    return `${selectedIndex * 100}%`
+                  })()
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+            )}
+            <div className="relative flex h-full">
+              <button
+                onClick={() => toggleRoleFilter('buyer')}
+                className={cn(
+                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
+                  selectedRole === 'buyer'
+                    ? "text-gray-900"
+                    : "text-gray-600"
+                )}
+              >
+                Demandante
+              </button>
+              <button
+                onClick={() => toggleRoleFilter('owner')}
+                className={cn(
+                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
+                  selectedRole === 'owner'
+                    ? "text-gray-900"
+                    : "text-gray-600"
+                )}
+              >
+                Propietario
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center space-x-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="icon" className="relative">
-              <ArrowUpDown className="h-4 w-4" />
-              {sortOrder !== 'alphabetical' && (
-                <Badge variant="secondary" className="absolute -top-1 -right-1 rounded-sm px-1 font-normal">
-                  1
-                </Badge>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-0" align="end">
-            <div className="flex flex-col">
-              <ScrollArea className="h-[200px]">
-                <div className="p-4 space-y-6">
-                  <FilterCategory title="Ordenar por" category="sortOrder">
-                    <SortOption 
-                      value="alphabetical" 
-                      label="Alfabéticamente" 
-                      isSelected={sortOrder === 'alphabetical'}
-                      onClick={() => handleSortOrderChange('alphabetical')}
-                    />
-                    <SortOption 
-                      value="lastContact" 
-                      label="Último contacto" 
-                      isSelected={sortOrder === 'lastContact'}
-                      onClick={() => handleSortOrderChange('lastContact')}
-                    />
-                  </FilterCategory>
-                </div>
-              </ScrollArea>
-            </div>
-          </PopoverContent>
-        </Popover>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleViewChange}
-          title={view === "grid" ? "Ver como tabla" : "Ver como cuadrícula"}
-        >
-          {view === "grid" ? (
-            <TableIcon className="h-4 w-4" />
-          ) : (
-            <LayoutGrid className="h-4 w-4" />
-          )}
-        </Button>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="relative">
-              <Filter className="mr-2 h-4 w-4" />
-              Filtros
-              {activeFiltersCount > 0 && (
-                <Badge variant="secondary" className="ml-2 rounded-sm px-1 font-normal">
-                  {activeFiltersCount}
-                </Badge>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-0" align="end">
-            <div className="flex flex-col">
-              <ScrollArea className="h-[400px]">
-                <div className="p-4 space-y-6">
-                  <FilterCategory title="Tipo de contacto" category="contactType">
-                    <FilterOption 
-                      value="demandante" 
-                      label="Demandante" 
-                      isSelected={contactTypeFilters.includes('demandante')}
-                      onClick={() => toggleContactTypeFilter('demandante')}
-                    />
-                    <FilterOption 
-                      value="propietario" 
-                      label="Propietario" 
-                      isSelected={contactTypeFilters.includes('propietario')}
-                      onClick={() => toggleContactTypeFilter('propietario')}
-                    />
-                    <FilterOption 
-                      value="banco" 
-                      label="Banco" 
-                      isSelected={contactTypeFilters.includes('banco')}
-                      onClick={() => toggleContactTypeFilter('banco')}
-                    />
-                    <FilterOption 
-                      value="agencia" 
-                      label="Agencia" 
-                      isSelected={contactTypeFilters.includes('agencia')}
-                      onClick={() => toggleContactTypeFilter('agencia')}
-                    />
-                    <FilterOption 
-                      value="interesado" 
-                      label="Interesado" 
-                      isSelected={contactTypeFilters.includes('interesado')}
-                      onClick={() => toggleContactTypeFilter('interesado')}
-                    />
-                  </FilterCategory>
-                </div>
-              </ScrollArea>
-              {activeFiltersCount > 0 && (
-                <div className="p-2 border-t">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={clearContactTypeFilters} 
-                    className="w-full h-7 text-xs"
-                  >
-                    <X className="mr-1.5 h-3.5 w-3.5" />
-                    Borrar filtros
-                  </Button>
-                </div>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
+        
+        <div className="flex items-center space-x-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon" className="relative">
+                <ArrowUpDown className="h-4 w-4" />
+                {sortOrder !== 'alphabetical' && (
+                  <Badge variant="secondary" className="absolute -top-1 -right-1 rounded-sm px-1 font-normal">
+                    1
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0 max-h-[80vh]" align="end">
+              <div className="flex flex-col">
+                <ScrollArea className="max-h-[60vh]">
+                  <div className="p-4 space-y-6">
+                    <FilterCategory title="Ordenar por" category="sortOrder">
+                      <SortOption 
+                        value="alphabetical" 
+                        label="Alfabéticamente" 
+                        isSelected={sortOrder === 'alphabetical'}
+                        onClick={() => handleSortOrderChange('alphabetical')}
+                      />
+                      <SortOption 
+                        value="lastContact" 
+                        label="Último contacto" 
+                        isSelected={sortOrder === 'lastContact'}
+                        onClick={() => handleSortOrderChange('lastContact')}
+                      />
+                    </FilterCategory>
+                  </div>
+                </ScrollArea>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="relative">
+                <Filter className="mr-2 h-4 w-4" />
+                Filtros
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 rounded-sm px-1 font-normal">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0 max-h-[80vh]" align="end">
+              <div className="flex flex-col">
+                <ScrollArea className="max-h-[60vh]">
+                  <div className="p-4 space-y-6">
+                    <FilterCategory title="Último contacto" category="lastContact">
+                      <FilterOption 
+                        value="today" 
+                        label="Hoy" 
+                        isSelected={lastContactFilter === 'today'}
+                        onClick={() => handleLastContactFilterChange('today')}
+                      />
+                      <FilterOption 
+                        value="week" 
+                        label="Última semana" 
+                        isSelected={lastContactFilter === 'week'}
+                        onClick={() => handleLastContactFilterChange('week')}
+                      />
+                      <FilterOption 
+                        value="month" 
+                        label="Último mes" 
+                        isSelected={lastContactFilter === 'month'}
+                        onClick={() => handleLastContactFilterChange('month')}
+                      />
+                      <FilterOption 
+                        value="quarter" 
+                        label="Últimos 3 meses" 
+                        isSelected={lastContactFilter === 'quarter'}
+                        onClick={() => handleLastContactFilterChange('quarter')}
+                      />
+                      <FilterOption 
+                        value="year" 
+                        label="Último año" 
+                        isSelected={lastContactFilter === 'year'}
+                        onClick={() => handleLastContactFilterChange('year')}
+                      />
+                    </FilterCategory>
+                  </div>
+                </ScrollArea>
+                {activeFiltersCount > 0 && (
+                  <div className="p-2 border-t">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        clearRoleFilters()
+                        clearLastContactFilter()
+                      }} 
+                      className="w-full h-7 text-xs"
+                    >
+                      <X className="mr-1.5 h-3.5 w-3.5" />
+                      Borrar filtros
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
     </div>
   )

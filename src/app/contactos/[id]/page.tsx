@@ -20,6 +20,15 @@ interface ExtendedContact {
   createdAt: Date
   orgId?: bigint
   additionalInfo?: any
+  // Role counts and flags for badge display
+  ownerCount?: number
+  buyerCount?: number
+  prospectCount?: number
+  isOwner?: boolean
+  isBuyer?: boolean
+  isInteresado?: boolean
+  // All prospect titles (array)
+  prospectTitles?: string[]
   [key: string]: any
 }
 
@@ -37,8 +46,9 @@ export default async function ContactPage({ params }: ContactPageProps) {
       ...contact,
       contactId: contact.contactId,
       createdAt: contact.createdAt,
-      orgId: contact.orgId
-    } as ExtendedContact;
+      orgId: contact.orgId,
+      prospectTitles: contact.prospectTitles || []
+          } as ExtendedContact;
 
     return <ContactDetailLayout contact={extendedContact} />
   } catch (error) {

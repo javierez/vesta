@@ -147,6 +147,9 @@ export async function listContactsWithTypes(
   filters?: {
     orgId?: number;
     isActive?: boolean;
+    roles?: string[]; // Changed from contactType to roles
+    searchQuery?: string;
+    lastContactFilter?: string;
   }
 ) {
   try {
@@ -160,6 +163,16 @@ export async function listContactsWithTypes(
       }
       if (filters.isActive !== undefined) {
         whereConditions.push(eq(contacts.isActive, filters.isActive));
+      }
+      if (filters.searchQuery) {
+        whereConditions.push(
+          or(
+            like(contacts.firstName, `%${filters.searchQuery}%`),
+            like(contacts.lastName, `%${filters.searchQuery}%`),
+            like(contacts.email, `%${filters.searchQuery}%`),
+            like(contacts.phone, `%${filters.searchQuery}%`)
+          )
+        );
       }
     } else {
       // By default, only show active contacts
@@ -206,50 +219,6 @@ export async function listContactsWithTypes(
         listingType: sql<string | null>`
           MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${listings.listingType} END)
         `,
-        // Get latest prospect information for title generation using subqueries
-        // Only fetch prospect data when contact has no owner or buyer roles (interesado stage)
-        latestProspectListingType: sql<string | null>`
-          CASE 
-            WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) = 0 
-             AND COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) = 0
-            THEN (
-              SELECT p.listing_type 
-              FROM prospects p 
-              WHERE p.contact_id = ${contacts.contactId} 
-              ORDER BY p.created_at DESC 
-              LIMIT 1
-            )
-            ELSE NULL
-          END
-        `,
-        latestProspectPropertyType: sql<string | null>`
-          CASE 
-            WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) = 0 
-             AND COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) = 0
-            THEN (
-              SELECT p.property_type 
-              FROM prospects p 
-              WHERE p.contact_id = ${contacts.contactId} 
-              ORDER BY p.created_at DESC 
-              LIMIT 1
-            )
-            ELSE NULL
-          END
-        `,
-        latestProspectPreferredAreas: sql<string | null>`
-          CASE 
-            WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) = 0 
-             AND COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) = 0
-            THEN (
-              SELECT p.preferred_areas 
-              FROM prospects p 
-              WHERE p.contact_id = ${contacts.contactId} 
-              ORDER BY p.created_at DESC 
-              LIMIT 1
-            )
-            ELSE NULL
-          END
-        `,
       })
       .from(contacts)
       .leftJoin(
@@ -291,81 +260,81 @@ export async function listContactsWithTypes(
       .offset(offset)
       .orderBy(contacts.createdAt);
 
-    // Transform the results to include contactType based on role counts, orgId, and prospect count
-    const contactsWithTypes = uniqueContacts.map((contact) => {
-      // Determine contact type based on role counts, orgId, and prospect count
-      let contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado" = "demandante";
-      let hasInterests = contact.prospectCount > 0;
-      
-      // Check if contact has both owner and buyer roles
-      if (contact.ownerCount > 0 && contact.buyerCount > 0) {
-        // If has both roles, prioritize owner type but indicate they're also interested in buying
-        if (contact.orgId) {
-          const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
-          if (orgIdNum < 20) {
-            contactType = "banco";
-          } else {
-            contactType = "agencia";
-          }
-        } else {
-          contactType = "propietario";
-        }
-      } else if (contact.ownerCount > 0) {
-        // If has only owner roles, check orgId to distinguish between banco/agencia/propietario
-        if (contact.orgId) {
-          const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
-          if (orgIdNum < 20) {
-            contactType = "banco";
-          } else {
-            contactType = "agencia";
-          }
-        } else {
-          contactType = "propietario";
-        }
-      } else if (contact.buyerCount > 0) {
-        contactType = "demandante";
-      } else {
-        // If no roles at all (ownerCount = 0 and buyerCount = 0)
-        contactType = "interesado";
-      }
-      
-      // Note: hasInterests is available for UI logic to show interest forms
-      // even for contacts that are already propietario/demandante
+    // OPTIMIZATION: Batch fetch all prospects for all contacts in one query
+    const contactIds = uniqueContacts.map(c => c.contactId);
+    const allProspects = await db
+      .select({
+        contactId: prospects.contactId,
+        listingType: prospects.listingType,
+        propertyType: prospects.propertyType,
+        preferredAreas: prospects.preferredAreas,
+        createdAt: prospects.createdAt
+      })
+      .from(prospects)
+      .where(
+        and(
+          sql`${prospects.contactId} IN (${contactIds.join(',')})`,
+          sql`${prospects.contactId} IS NOT NULL`
+        )
+      )
+      .orderBy(sql`${prospects.createdAt} DESC`);
 
-      // Generate prospect title for interesado contacts using the prospect data
-      let prospectTitle: string | null = null;
-      if (contactType === "interesado" && 
-          (contact.latestProspectListingType || contact.latestProspectPropertyType || contact.latestProspectPreferredAreas)) {
-        
-        // Parse preferred areas from JSON string
-        let preferredArea: string | undefined;
-        if (contact.latestProspectPreferredAreas) {
-          try {
-            const areas = JSON.parse(contact.latestProspectPreferredAreas);
-            if (Array.isArray(areas) && areas.length > 0) {
-              // Take the first area name
-              preferredArea = areas[0]?.name || areas[0]?.neighborhood;
+    // Group prospects by contactId for faster lookup
+    const prospectsByContact = allProspects.reduce((acc, prospect) => {
+      const contactId = prospect.contactId.toString();
+      if (!acc[contactId]) {
+        acc[contactId] = [];
+      }
+      acc[contactId].push(prospect);
+      return acc;
+    }, {} as Record<string, typeof allProspects>);
+
+    // For each contact, process their prospects
+    const contactsWithProspects = uniqueContacts.map((contact) => {
+      const contactId = contact.contactId.toString();
+      const contactProspects = prospectsByContact[contactId] || [];
+      
+      // Generate titles for prospects (limit to most recent 5 for performance)
+      const prospectTitles = contactProspects
+        .slice(0, 5) // Limit to 5 most recent prospects
+        .map(prospect => {
+          let preferredArea: string | undefined;
+          if (prospect.preferredAreas) {
+            let areas: any[] = [];
+            if (typeof prospect.preferredAreas === 'string') {
+              try {
+                areas = JSON.parse(prospect.preferredAreas);
+              } catch (e) {
+                preferredArea = prospect.preferredAreas;
+              }
+            } else if (Array.isArray(prospect.preferredAreas)) {
+              areas = prospect.preferredAreas;
             }
-          } catch (e) {
-            // If parsing fails, use the raw string
-            preferredArea = contact.latestProspectPreferredAreas;
-          }
-        }
 
-        // Use the utility function from utils.ts to generate the title
-        prospectTitle = prospectUtils.generateSimpleProspectTitle(
-          contact.latestProspectListingType || undefined,
-          contact.latestProspectPropertyType || undefined,
-          preferredArea
-        );
-      }
+            if (Array.isArray(areas) && areas.length > 0) {
+              if (areas.length === 1) {
+                preferredArea = areas[0]?.name;
+              } else if (areas.length > 1) {
+                preferredArea = contact.city || areas[0]?.name;
+              }
+            }
+          }
+
+          const title = prospectUtils.generateSimpleProspectTitle(
+            prospect.listingType || undefined,
+            prospect.propertyType || undefined,
+            preferredArea
+          );
+
+          return title;
+        })
+        .filter(title => title.trim() !== ''); // Remove empty titles
 
       const contactData = {
         ...contact,
-        contactType,
-        prospectTitle,
+        prospectTitles, // Now an array of all prospect titles
         prospectCount: contact.prospectCount,
-        // Additional role flags for UI
+        // Role flags for UI - based on counts
         isOwner: contact.ownerCount > 0,
         isBuyer: contact.buyerCount > 0,
         isInteresado: contact.prospectCount > 0,
@@ -374,27 +343,59 @@ export async function listContactsWithTypes(
         buyerCount: contact.buyerCount
       };
 
-      // Log contact roles for debugging
-      console.log(`📋 Contact: ${contact.firstName} ${contact.lastName}`, {
-        contactId: contact.contactId.toString(),
-        contactType,
-        roles: {
-          ownerCount: contact.ownerCount,
-          buyerCount: contact.buyerCount,
-          prospectCount: contact.prospectCount
-        },
-        flags: {
-          isOwner: contact.ownerCount > 0,
-          isBuyer: contact.buyerCount > 0,
-          isInteresado: contact.prospectCount > 0
-        },
-        orgId: contact.orgId?.toString() || 'null'
-      });
-
       return contactData;
     });
 
-    return contactsWithTypes;
+    // Apply role filtering after determining role flags
+    let filteredContacts = contactsWithProspects;
+    if (filters?.roles && filters.roles.length > 0) {
+      filteredContacts = filteredContacts.filter(contact => {
+        // Check if contact has any of the requested roles
+        return filters.roles!.some(role => {
+          switch (role) {
+            case 'owner':
+              return contact.isOwner;
+            case 'buyer':
+              return contact.isBuyer;
+            case 'interested':
+              return contact.isInteresado;
+            default:
+              return false;
+          }
+        });
+      });
+    }
+
+    // Apply last contact date filtering
+    if (filters?.lastContactFilter && filters.lastContactFilter !== 'all') {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const quarterAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+      const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+
+      filteredContacts = filteredContacts.filter(contact => {
+        const lastContactDate = contact.updatedAt; // Using updatedAt as proxy for last contact
+        
+        switch (filters.lastContactFilter) {
+          case 'today':
+            return lastContactDate >= today;
+          case 'week':
+            return lastContactDate >= weekAgo;
+          case 'month':
+            return lastContactDate >= monthAgo;
+          case 'quarter':
+            return lastContactDate >= quarterAgo;
+          case 'year':
+            return lastContactDate >= yearAgo;
+          default:
+            return true;
+        }
+      });
+    }
+
+    return filteredContacts;
   } catch (error) {
     console.error("Error listing contacts with types:", error);
     throw error;
@@ -585,44 +586,88 @@ export async function getContactByIdWithType(contactId: number) {
     const ownerCount = ownerCountResult[0]?.count || 0;
     const buyerCount = buyerCountResult[0]?.count || 0;
 
-    // Determine contact type based on role counts and orgId
-    let contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado" = "demandante";
+    // Get prospect count
+    const prospectCountResult = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(prospects)
+      .where(eq(prospects.contactId, BigInt(contactId)));
+
+    const prospectCount = prospectCountResult[0]?.count || 0;
+
+    // Get all prospect titles for this contact
+    let prospectTitles: string[] = [];
     
-    // Check if contact has both owner and buyer roles
-    if (ownerCount > 0 && buyerCount > 0) {
-      // If has both roles, prioritize owner type but indicate they're also interested in buying
-      if (contact.orgId) {
-        const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
-        if (orgIdNum < 20) {
-          contactType = "banco";
-        } else {
-          contactType = "agencia";
+    if (prospectCount > 0) {
+      const contactProspects = await db
+        .select({
+          listingType: prospects.listingType,
+          propertyType: prospects.propertyType,
+          preferredAreas: prospects.preferredAreas,
+          createdAt: prospects.createdAt
+        })
+        .from(prospects)
+        .where(eq(prospects.contactId, BigInt(contactId)))
+        .orderBy(sql`${prospects.createdAt} DESC`);
+
+      prospectTitles = contactProspects.map(prospect => {
+                let preferredArea: string | undefined;
+        if (prospect.preferredAreas) {
+          let areas: any[] = [];
+          
+          if (typeof prospect.preferredAreas === 'string') {
+            try {
+              areas = JSON.parse(prospect.preferredAreas);
+            } catch (e) {
+              preferredArea = prospect.preferredAreas;
+            }
+          } else if (Array.isArray(prospect.preferredAreas)) {
+            areas = prospect.preferredAreas;
+          }
+          
+          if (Array.isArray(areas) && areas.length > 0) {
+            if (areas.length === 1) {
+              preferredArea = areas[0]?.name;
+            } else if (areas.length > 1) {
+              preferredArea = areas[0]?.name;
+            }
+          }
         }
-      } else {
-        contactType = "propietario";
-      }
-    } else if (ownerCount > 0) {
-      // If has only owner roles, check orgId to distinguish between banco/agencia/propietario
-      if (contact.orgId) {
-        const orgIdNum = typeof contact.orgId === 'bigint' ? Number(contact.orgId) : contact.orgId;
-        if (orgIdNum < 20) {
-          contactType = "banco";
-        } else {
-          contactType = "agencia";
-        }
-      } else {
-        contactType = "propietario";
-      }
-    } else if (buyerCount > 0) {
-      contactType = "demandante";
-    } else {
-      // If no roles at all (ownerCount = 0 and buyerCount = 0)
-      contactType = "interesado";
+
+        const title = prospectUtils.generateSimpleProspectTitle(
+          prospect.listingType || undefined,
+          prospect.propertyType || undefined,
+          preferredArea
+        );
+
+        // Log each prospect title generation for individual contact (simplified)
+        console.log(`🔍 Individual Prospect Title for Contact ${contactId}:`, {
+          areasCount: Array.isArray(prospect.preferredAreas) ? prospect.preferredAreas.length : 0,
+          parsedPreferredArea: preferredArea,
+          generatedTitle: title
+        });
+
+        return title;
+      }).filter(title => title.trim() !== '');
+
+      // Log final prospect titles array for individual contact
+      console.log(`📝 Final prospectTitles for Contact ${contactId}:`, {
+        contactId: contactId.toString(),
+        prospectCount: prospectCount,
+        prospectTitlesCount: prospectTitles.length,
+        prospectTitles: prospectTitles
+      });
     }
 
     return {
       ...contact,
-      contactType
+      prospectTitles, // Now an array of all prospect titles
+      // Include role counts and flags for UI consistency
+      ownerCount,
+      buyerCount,
+      prospectCount,
+      isOwner: ownerCount > 0,
+      isBuyer: buyerCount > 0,
+      isInteresado: prospectCount > 0
     };
   } catch (error) {
     console.error("Error fetching contact with type:", error);

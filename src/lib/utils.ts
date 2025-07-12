@@ -174,7 +174,17 @@ export const prospectUtils = {
     const propertyTypeText = propertyType || 'Inmueble'
     const locationText = preferredArea ? ` en ${preferredArea}` : ''
     
-    return `${operation} de ${propertyTypeText}${locationText}`
+    const finalTitle = `${operation} de ${propertyTypeText}${locationText}`
+    
+    // Log the title generation process (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🎯 generateSimpleProspectTitle:`, {
+        input: { listingType, propertyType, preferredArea },
+        finalTitle
+      });
+    }
+    
+    return finalTitle
   },
 
   /**
