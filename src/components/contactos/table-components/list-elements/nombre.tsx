@@ -60,7 +60,7 @@ export function Nombre({
         />
         <span 
           className={cn(
-            "font-medium truncate max-w-[140px]",
+            "font-medium truncate",
             isActive ? "" : "text-gray-500"
           )}
           title={fullName}

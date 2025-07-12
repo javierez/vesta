@@ -63,7 +63,7 @@ export function ContactFilter({
   const router = useRouter()
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedRole, setSelectedRole] = useState<string | null>(null)
+  const [selectedRole, setSelectedRole] = useState<string | null>('owner')
   const [sortOrder, setSortOrder] = useState("alphabetical")
   const [lastContactFilter, setLastContactFilter] = useState("all")
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
@@ -86,10 +86,10 @@ export function ContactFilter({
       } else if (roleArray.includes('owner')) {
         setSelectedRole('owner')
       } else {
-        setSelectedRole(roleArray[0] || null)
+        setSelectedRole(roleArray[0] || 'owner')
       }
     } else {
-      setSelectedRole(null)
+      setSelectedRole('owner')
     }
     setSortOrder(sort || 'alphabetical')
     setSearchQuery(q || '')
@@ -124,7 +124,8 @@ export function ContactFilter({
         : newSelectedRole
       params.set('roles', rolesForUrl)
     } else {
-      params.delete('roles')
+      // Default to 'owner' when no role is selected
+      params.set('roles', 'owner')
     }
 
     // Update sort order
@@ -156,7 +157,7 @@ export function ContactFilter({
       ? ['buyer', 'interested'] 
       : selectedRole === 'owner' 
         ? ['owner'] 
-        : []
+        : ['owner'] // Default to owner
     
     onFilterChange({
       searchQuery: value,
@@ -179,7 +180,7 @@ export function ContactFilter({
       ? ['buyer', 'interested'] 
       : newSelectedRole === 'owner' 
         ? ['owner'] 
-        : []
+        : ['owner'] // Default to owner
     
     onFilterChange({
       searchQuery,
@@ -198,7 +199,7 @@ export function ContactFilter({
       ? ['buyer', 'interested'] 
       : selectedRole === 'owner' 
         ? ['owner'] 
-        : []
+        : ['owner'] // Default to owner
     
     onFilterChange({
       searchQuery,
@@ -217,7 +218,7 @@ export function ContactFilter({
       ? ['buyer', 'interested'] 
       : selectedRole === 'owner' 
         ? ['owner'] 
-        : []
+        : ['owner'] // Default to owner
     
     onFilterChange({
       searchQuery,
@@ -235,11 +236,11 @@ export function ContactFilter({
   }
 
   const clearRoleFilters = () => {
-    setSelectedRole(null)
-    updateUrlParams(null, sortOrder, searchQuery, lastContactFilter)
+    setSelectedRole('owner')
+    updateUrlParams('owner', sortOrder, searchQuery, lastContactFilter)
     onFilterChange({
       searchQuery,
-      roles: [],
+      roles: ['owner'],
       sortOrder,
       lastContactFilter,
     })
@@ -254,7 +255,7 @@ export function ContactFilter({
       ? ['buyer', 'interested'] 
       : selectedRole === 'owner' 
         ? ['owner'] 
-        : []
+        : ['owner'] // Default to owner
     
     onFilterChange({
       searchQuery,
@@ -360,7 +361,7 @@ export function ContactFilter({
                 animate={{
                   width: "calc(50% - 2px)",
                   x: (() => {
-                    const buttonOrder = ['buyer', 'owner']
+                    const buttonOrder = ['owner', 'buyer']
                     const selectedIndex = buttonOrder.indexOf(selectedRole)
                     return `${selectedIndex * 100}%`
                   })()
@@ -369,17 +370,6 @@ export function ContactFilter({
               />
             )}
             <div className="relative flex h-full">
-              <button
-                onClick={() => toggleRoleFilter('buyer')}
-                className={cn(
-                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
-                  selectedRole === 'buyer'
-                    ? "text-gray-900"
-                    : "text-gray-600"
-                )}
-              >
-                Demandante
-              </button>
               <button
                 onClick={() => toggleRoleFilter('owner')}
                 className={cn(
@@ -390,6 +380,17 @@ export function ContactFilter({
                 )}
               >
                 Propietario
+              </button>
+              <button
+                onClick={() => toggleRoleFilter('buyer')}
+                className={cn(
+                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
+                  selectedRole === 'buyer'
+                    ? "text-gray-900"
+                    : "text-gray-600"
+                )}
+              >
+                Demandante
               </button>
             </div>
           </div>

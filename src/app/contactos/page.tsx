@@ -6,8 +6,8 @@ import { Plus } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 
-import { ContactFilter } from "~/components/contactos/list/contact-filter"
-import { ContactTable } from "~/components/contactos/list/contact-table"
+import { ContactFilter } from "~/components/contactos/table-components/contact-filter"
+import { ContactSpreadsheetTable } from "~/components/contactos/table/contact-table"
 import { listContactsWithTypes } from "~/server/queries/contact"
 import { contactUtils } from "~/lib/utils"
 import type { Contact } from "~/lib/data"
@@ -151,7 +151,9 @@ export default function ContactsPage() {
           ))}
         </div>
       ) : (
-        <ContactTable contacts={contactsList} />
+        <div className="space-y-6">
+          <ContactSpreadsheetTable contacts={contactsList} />
+        </div>
       )}
     </div>
   )

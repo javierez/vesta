@@ -7,7 +7,7 @@ import { Mail, Phone, Calendar, Copy, User } from "lucide-react"
 import { contactTypeConfig } from "../contact-config"
 import { useState } from "react"
 import { cn } from "~/lib/utils"
-import { CONTACT_PALETTE, getContactBadgeColor } from "../list/color/contact-colors"
+import { CONTACT_PALETTE, getContactBadgeColor } from "../table-components/color/contact-colors"
 
 interface ContactFormHeaderProps {
   contact: {
