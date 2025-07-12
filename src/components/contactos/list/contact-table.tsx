@@ -125,14 +125,14 @@ export function ContactTable({ contacts }: ContactTableProps) {
 
   return (
     <div className="rounded-md border">
-      <div className="overflow-x-auto">
-        <Table>
+      <div className="overflow-x-auto overflow-y-visible">
+        <Table className="table-auto min-w-full" style={{ minWidth: '1000px' }}>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px] min-w-[100px] max-w-[100px]">Nombre</TableHead>
-              <TableHead className="w-[250px] min-w-[250px]">Contacto</TableHead>
-              <TableHead className="w-[200px] min-w-[200px]">Inmueble</TableHead>
-              <TableHead className="w-[150px] min-w-[150px]">Recordatorios</TableHead>
+              <TableHead className="w-[200px] min-w-[100px] resize-x overflow-hidden whitespace-nowrap">Nombre</TableHead>
+              <TableHead className="w-[300px] min-w-[200px] resize-x overflow-hidden whitespace-nowrap">Contacto</TableHead>
+              <TableHead className="w-[350px] min-w-[250px] resize-x overflow-hidden whitespace-nowrap">Inmueble</TableHead>
+              <TableHead className="w-[200px] min-w-[150px] resize-x overflow-hidden whitespace-nowrap">Recordatorios</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -148,7 +148,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
                 )}
                 onClick={() => router.push(`/contactos/${contact.contactId}`)}
               >
-                <TableCell>
+                <TableCell className="min-w-[100px]">
                   <Nombre
                     firstName={contact.firstName}
                     lastName={contact.lastName}
@@ -160,7 +160,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
                     isInteresado={contact.isInteresado}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="min-w-[200px]">
                   <Contacto
                     email={contact.email}
                     phone={contact.phone}
@@ -168,7 +168,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
                     contactId={contact.contactId}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="min-w-[250px]">
                   <div className="space-y-1">
                     {/* Address Information */}
                       {contact.listingId && (
@@ -318,7 +318,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
                     )}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="min-w-[150px]">
                   {/* Recordatorios (Checklist) Section - Mock Data for Table */}
                   <div className={cn(
                     "rounded-md p-1 border min-h-[40px] flex flex-col gap-0.5",
