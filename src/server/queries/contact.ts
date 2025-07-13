@@ -2,10 +2,57 @@
 
 import { db } from "../db"
 import { contacts, listings, properties, locations, prospects } from "../db/schema"
-import { eq, and, or, like, sql } from "drizzle-orm"
+import { eq, and, or, like, sql, inArray } from "drizzle-orm"
 import type { Contact } from "../../lib/data"
 import { listingContacts } from "../db/schema"
 import { prospectUtils } from "../../lib/utils"
+
+// Helper function to get preferred area from prospect data
+async function getPreferredAreaFromProspect(prospect: any): Promise<string | undefined> {
+  if (!prospect.preferredAreas) {
+    return undefined;
+  }
+
+  let areas: any[] = [];
+  
+  if (typeof prospect.preferredAreas === 'string') {
+    try {
+      areas = JSON.parse(prospect.preferredAreas);
+    } catch (e) {
+      return prospect.preferredAreas;
+    }
+  } else if (Array.isArray(prospect.preferredAreas)) {
+    areas = prospect.preferredAreas;
+  }
+
+  if (!Array.isArray(areas) || areas.length === 0) {
+    return undefined;
+  }
+
+  // If only one area, use its name
+  if (areas.length === 1) {
+    return areas[0]?.name;
+  }
+
+  // If more than one area, get the city from the first neighborhood ID
+  if (areas.length > 1 && areas[0]?.neighborhoodId) {
+    try {
+      const [location] = await db
+        .select({ city: locations.city })
+        .from(locations)
+        .where(eq(locations.neighborhoodId, BigInt(areas[0].neighborhoodId)))
+        .limit(1);
+      
+      return location?.city || areas[0]?.name;
+    } catch (error) {
+      console.error("Error fetching city for neighborhood:", error);
+      return areas[0]?.name; // Fallback to name if city lookup fails
+    }
+  }
+
+  // Fallback to first area name
+  return areas[0]?.name;
+}
 
 // Create a new contact
 export async function createContact(data: Omit<Contact, "contactId" | "createdAt" | "updatedAt">) {
@@ -143,7 +190,7 @@ export async function deleteContact(contactId: number) {
 // List all contact-listing relationships (each contact can appear multiple times)
 export async function listContactsWithTypes(
   page = 1,
-  limit = 10,
+  limit = 100,
   filters?: {
     orgId?: number;
     isActive?: boolean;
@@ -192,7 +239,7 @@ export async function listContactsWithTypes(
         isActive: contacts.isActive,
         createdAt: contacts.createdAt,
         updatedAt: contacts.updatedAt,
-        // Calculate role counts using conditional aggregation
+        // Calculate role counts and flags using conditional aggregation
         ownerCount: sql<number>`
           COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END)
         `,
@@ -203,21 +250,15 @@ export async function listContactsWithTypes(
         prospectCount: sql<number>`
           (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId})
         `,
-        // Get basic property info from first active listing (if any)
-        firstListingId: sql<bigint | null>`
-          MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${listingContacts.listingId} END)
+        // Calculate role flags directly in SQL for better performance
+        isOwner: sql<boolean>`
+          CASE WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0 THEN true ELSE false END
         `,
-        street: sql<string | null>`
-          MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${properties.street} END)
+        isBuyer: sql<boolean>`
+          CASE WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0 THEN true ELSE false END
         `,
-        city: sql<string | null>`
-          MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${locations.city} END)
-        `,
-        propertyType: sql<string | null>`
-          MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${properties.propertyType} END)
-        `,
-        listingType: sql<string | null>`
-          MAX(CASE WHEN ${listingContacts.isActive} = true THEN ${listings.listingType} END)
+        isInteresado: sql<boolean>`
+          CASE WHEN (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId}) > 0 THEN true ELSE false END
         `,
       })
       .from(contacts)
@@ -260,8 +301,13 @@ export async function listContactsWithTypes(
       .offset(offset)
       .orderBy(contacts.createdAt);
 
-    // OPTIMIZATION: Batch fetch all prospects for all contacts in one query
+    console.log('🔄 Unique contacts:', uniqueContacts);
+
+
     const contactIds = uniqueContacts.map(c => c.contactId);
+    console.log('🔄 Contact IDs:', contactIds);
+    
+    // Use the inArray function from drizzle-orm for proper IN clause handling
     const allProspects = await db
       .select({
         contactId: prospects.contactId,
@@ -272,13 +318,50 @@ export async function listContactsWithTypes(
       })
       .from(prospects)
       .where(
+        contactIds.length > 0 ? inArray(prospects.contactId, contactIds) : undefined
+      )
+      .orderBy(prospects.createdAt);
+
+    console.log('🔄 All prospects:', allProspects);
+
+    // OPTIMIZATION: Batch fetch all listings for all contacts in one query    
+    const allContactListings = await db
+      .select({
+        contactId: listingContacts.contactId,
+        listingId: listingContacts.listingId,
+        contactType: listingContacts.contactType,
+        street: properties.street,
+        city: locations.city,
+        propertyType: properties.propertyType,
+        listingType: listings.listingType,
+        status: listings.status,
+        createdAt: listings.createdAt
+      })
+      .from(listingContacts)
+      .innerJoin(
+        listings,
         and(
-          sql`${prospects.contactId} IN (${contactIds.join(',')})`,
-          sql`${prospects.contactId} IS NOT NULL`
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listings.isActive, true)
         )
       )
-      .orderBy(sql`${prospects.createdAt} DESC`);
+      .innerJoin(
+        properties,
+        eq(listings.propertyId, properties.propertyId)
+      )
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId)
+      )
+      .where(
+        and(
+          contactIds.length > 0 ? inArray(listingContacts.contactId, contactIds) : undefined,
+          eq(listingContacts.isActive, true)
+        )
+      )
+      .orderBy(listings.createdAt);
 
+    console.log('🔄 All contact listings:', allContactListings);
     // Group prospects by contactId for faster lookup
     const prospectsByContact = allProspects.reduce((acc, prospect) => {
       const contactId = prospect.contactId.toString();
@@ -289,62 +372,81 @@ export async function listContactsWithTypes(
       return acc;
     }, {} as Record<string, typeof allProspects>);
 
-    // For each contact, process their prospects
-    const contactsWithProspects = uniqueContacts.map((contact) => {
+
+    console.log('🔄 Prospects by contact:', prospectsByContact);
+
+    // Group listings by contactId for faster lookup
+    const listingsByContact = allContactListings.reduce((acc, listing) => {
+      const contactId = listing.contactId.toString();
+      if (!acc[contactId]) {
+        acc[contactId] = [];
+      }
+      acc[contactId].push(listing);
+      return acc;
+    }, {} as Record<string, typeof allContactListings>);
+
+    console.log('🔄 Listings by contact:', listingsByContact);
+
+    // For each contact, process their prospects and listings
+    const contactsWithProspects = await Promise.all(uniqueContacts.map(async (contact) => {
       const contactId = contact.contactId.toString();
       const contactProspects = prospectsByContact[contactId] || [];
+      const allContactListings = listingsByContact[contactId] || [];
+      
+      // Filter listings based on the role filter
+      let filteredListings = allContactListings;
+      if (filters?.roles && filters.roles.length > 0) {
+        filteredListings = allContactListings.filter(listing => {
+          return filters.roles!.some(role => {
+            switch (role) {
+              case 'owner':
+                return listing.contactType === 'owner';
+              case 'buyer':
+                return listing.contactType === 'buyer';
+              default:
+                return false;
+            }
+          });
+        });
+      }
+      
+
       
       // Generate titles for prospects (limit to most recent 5 for performance)
-      const prospectTitles = contactProspects
-        .slice(0, 5) // Limit to 5 most recent prospects
-        .map(prospect => {
-          let preferredArea: string | undefined;
-          if (prospect.preferredAreas) {
-            let areas: any[] = [];
-            if (typeof prospect.preferredAreas === 'string') {
-              try {
-                areas = JSON.parse(prospect.preferredAreas);
-              } catch (e) {
-                preferredArea = prospect.preferredAreas;
-              }
-            } else if (Array.isArray(prospect.preferredAreas)) {
-              areas = prospect.preferredAreas;
-            }
+      const prospectTitles = await Promise.all(
+        contactProspects
+          .slice(0, 5) // Limit to 5 most recent prospects
+          .map(async prospect => {
+            const preferredArea = await getPreferredAreaFromProspect(prospect);
 
-            if (Array.isArray(areas) && areas.length > 0) {
-              if (areas.length === 1) {
-                preferredArea = areas[0]?.name;
-              } else if (areas.length > 1) {
-                preferredArea = contact.city || areas[0]?.name;
-              }
-            }
-          }
+            const title = prospectUtils.generateSimpleProspectTitle(
+              prospect.listingType || undefined,
+              prospect.propertyType || undefined,
+              preferredArea
+            );
 
-          const title = prospectUtils.generateSimpleProspectTitle(
-            prospect.listingType || undefined,
-            prospect.propertyType || undefined,
-            preferredArea
-          );
-
-          return title;
-        })
-        .filter(title => title.trim() !== ''); // Remove empty titles
+            return title;
+          })
+      ).then(titles => titles.filter(title => title.trim() !== '')); // Remove empty titles
 
       const contactData = {
         ...contact,
         prospectTitles, // Now an array of all prospect titles
         prospectCount: contact.prospectCount,
-        // Role flags for UI - based on counts
-        isOwner: contact.ownerCount > 0,
-        isBuyer: contact.buyerCount > 0,
-        isInteresado: contact.prospectCount > 0,
-        // Role counts for display
+        // Filtered listings based on role context
+        allListings: filteredListings,
+        // Role flags and counts are now calculated in SQL
         ownerCount: contact.ownerCount,
-        buyerCount: contact.buyerCount
+        buyerCount: contact.buyerCount,
+        isOwner: contact.isOwner,
+        isBuyer: contact.isBuyer,
+        isInteresado: contact.isInteresado
       };
 
+
+
       return contactData;
-    });
+    }));
 
     // Apply role filtering after determining role flags
     let filteredContacts = contactsWithProspects;
@@ -356,9 +458,8 @@ export async function listContactsWithTypes(
             case 'owner':
               return contact.isOwner;
             case 'buyer':
-              return contact.isBuyer;
-            case 'interested':
-              return contact.isInteresado;
+              // Buyer includes both actual buyers and interested people
+              return contact.isBuyer || contact.isInteresado;
             default:
               return false;
           }
@@ -394,6 +495,8 @@ export async function listContactsWithTypes(
         }
       });
     }
+
+
 
     return filteredContacts;
   } catch (error) {
@@ -609,53 +712,21 @@ export async function getContactByIdWithType(contactId: number) {
         .where(eq(prospects.contactId, BigInt(contactId)))
         .orderBy(sql`${prospects.createdAt} DESC`);
 
-      prospectTitles = contactProspects.map(prospect => {
-                let preferredArea: string | undefined;
-        if (prospect.preferredAreas) {
-          let areas: any[] = [];
-          
-          if (typeof prospect.preferredAreas === 'string') {
-            try {
-              areas = JSON.parse(prospect.preferredAreas);
-            } catch (e) {
-              preferredArea = prospect.preferredAreas;
-            }
-          } else if (Array.isArray(prospect.preferredAreas)) {
-            areas = prospect.preferredAreas;
-          }
-          
-          if (Array.isArray(areas) && areas.length > 0) {
-            if (areas.length === 1) {
-              preferredArea = areas[0]?.name;
-            } else if (areas.length > 1) {
-              preferredArea = areas[0]?.name;
-            }
-          }
-        }
+      prospectTitles = await Promise.all(
+        contactProspects.map(async prospect => {
+          const preferredArea = await getPreferredAreaFromProspect(prospect);
 
-        const title = prospectUtils.generateSimpleProspectTitle(
-          prospect.listingType || undefined,
-          prospect.propertyType || undefined,
-          preferredArea
-        );
+          const title = prospectUtils.generateSimpleProspectTitle(
+            prospect.listingType || undefined,
+            prospect.propertyType || undefined,
+            preferredArea
+          );
 
-        // Log each prospect title generation for individual contact (simplified)
-        console.log(`🔍 Individual Prospect Title for Contact ${contactId}:`, {
-          areasCount: Array.isArray(prospect.preferredAreas) ? prospect.preferredAreas.length : 0,
-          parsedPreferredArea: preferredArea,
-          generatedTitle: title
-        });
+          return title;
+        })
+      ).then(titles => titles.filter(title => title.trim() !== ''));
 
-        return title;
-      }).filter(title => title.trim() !== '');
 
-      // Log final prospect titles array for individual contact
-      console.log(`📝 Final prospectTitles for Contact ${contactId}:`, {
-        contactId: contactId.toString(),
-        prospectCount: prospectCount,
-        prospectTitlesCount: prospectTitles.length,
-        prospectTitles: prospectTitles
-      });
     }
 
     return {

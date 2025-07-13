@@ -29,6 +29,17 @@ interface ExtendedContact {
   isInteresado?: boolean
   // All prospect titles (array)
   prospectTitles?: string[]
+  // All listings for this contact
+  allListings?: Array<{
+    listingId: bigint
+    contactType: string
+    street?: string
+    city?: string
+    propertyType?: string
+    listingType?: string
+    status?: string
+    createdAt: Date
+  }>
   [key: string]: any
 }
 
@@ -47,8 +58,12 @@ export default async function ContactPage({ params }: ContactPageProps) {
       contactId: contact.contactId,
       createdAt: contact.createdAt,
       orgId: contact.orgId,
-      prospectTitles: contact.prospectTitles || []
-          } as ExtendedContact;
+      prospectTitles: contact.prospectTitles || [],
+      // Add allListings if available
+      allListings: (contact as any).allListings || [],
+      // Set a default contactType since it's required by the interface
+      contactType: "interesado" as const
+    } as ExtendedContact;
 
     return <ContactDetailLayout contact={extendedContact} />
   } catch (error) {

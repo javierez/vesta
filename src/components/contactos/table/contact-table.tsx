@@ -16,12 +16,14 @@ import { cn } from "~/lib/utils"
 import { formatListingType } from "../contact-config"
 import { Nombre } from "../table-components/list-elements/nombre"
 import { Contacto } from "../table-components/list-elements/contacto"
+import { Propiedades } from "../table-components/list-elements/propiedades"
+import { Recordatorios } from "../table-components/list-elements/recordatorios"
 
 // Default column widths (in pixels)
 const DEFAULT_COLUMN_WIDTHS = {
   nombre: 160,
   contacto: 160,
-  inmueble: 160,
+  propiedades: 160,
   recordatorios: 160
 } as const
 
@@ -29,7 +31,7 @@ const DEFAULT_COLUMN_WIDTHS = {
 const MIN_COLUMN_WIDTHS = {
   nombre: 80,
   contacto: 80,
-  inmueble: 100,
+  propiedades: 100,
   recordatorios: 100
 } as const
 
@@ -41,12 +43,6 @@ interface ExtendedContact {
   email?: string
   phone?: string
   isActive: boolean
-  listingId?: bigint
-  listingContactId?: bigint
-  street?: string
-  city?: string
-  propertyType?: string
-  listingType?: string
   ownerCount?: number
   buyerCount?: number
   prospectCount?: number
@@ -65,13 +61,24 @@ interface ExtendedContact {
   createdAt: Date
   updatedAt: Date
   prospectTitles?: string[]
+  allListings?: Array<{
+    listingId: bigint
+    contactType: string
+    street?: string
+    city?: string
+    propertyType?: string
+    listingType?: string
+    status?: string
+    createdAt: Date
+  }>
 }
 
 interface ContactSpreadsheetTableProps {
   contacts: ExtendedContact[]
+  currentFilter?: string[]
 }
 
-export function ContactSpreadsheetTable({ contacts }: ContactSpreadsheetTableProps) {
+export function ContactSpreadsheetTable({ contacts, currentFilter = [] }: ContactSpreadsheetTableProps) {
   const router = useRouter()
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
   const [isResizing, setIsResizing] = useState<string | null>(null)
@@ -158,9 +165,11 @@ export function ContactSpreadsheetTable({ contacts }: ContactSpreadsheetTablePro
                 <div className="truncate">Contacto</div>
                 <ResizeHandle column="contacto" />
               </TableHead>
-              <TableHead className="relative" style={getColumnStyle('inmueble')}>
-                <div className="truncate">Inmueble</div>
-                <ResizeHandle column="inmueble" />
+              <TableHead className="relative" style={getColumnStyle('propiedades')}>
+                <div className="truncate">
+                  {currentFilter.includes('buyer') || currentFilter.includes('interested') ? 'Demandas' : 'Propiedades'}
+                </div>
+                <ResizeHandle column="propiedades" />
               </TableHead>
               <TableHead className="relative" style={getColumnStyle('recordatorios')}>
                 <div className="truncate">Recordatorios</div>
@@ -206,135 +215,22 @@ export function ContactSpreadsheetTable({ contacts }: ContactSpreadsheetTablePro
                   </div>
                 </TableCell>
                 
-                <TableCell className="overflow-hidden" style={getColumnStyle('inmueble')}>
-                  <div className="space-y-1">
-                    {contact.listingId && (
-                      <div 
-                        className={cn(
-                          "cursor-pointer hover:border rounded-md p-2 transition-all duration-200 active:scale-[0.98]",
-                          contact.isActive 
-                            ? "hover:bg-gray-50 hover:border-gray-200 active:bg-gray-100" 
-                            : "hover:bg-gray-100 hover:border-gray-300 active:bg-gray-200"
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/propiedades/${contact.listingId}`)
-                        }}
-                      >
-                        <div className="space-y-1 -m-2 p-2">
-                          {(contact.street || contact.city) && (
-                            <div className={cn(
-                              "flex items-center text-sm",
-                              contact.isActive ? "" : "text-gray-400"
-                            )}>
-                              <MapPin className={cn(
-                                "mr-2 h-4 w-4 flex-shrink-0",
-                                contact.isActive ? "text-muted-foreground" : "text-gray-300"
-                              )} />
-                              <span className="truncate">
-                                {contact.street} {contact.city && <span className={contact.isActive ? "text-muted-foreground" : "text-gray-400"}>({contact.city})</span>}
-                              </span>
-                            </div>
-                          )}
-                          {(contact.propertyType || contact.listingType) && (
-                            <div className={cn(
-                              "flex items-center text-sm",
-                              contact.isActive ? "" : "text-gray-400"
-                            )}>
-                              <Building className={cn(
-                                "mr-2 h-4 w-4 flex-shrink-0",
-                                contact.isActive ? "text-muted-foreground" : "text-gray-300"
-                              )} />
-                              <span className="truncate">
-                                {contact.propertyType && (
-                                  <span className="capitalize">{contact.propertyType}</span>
-                                )}
-                                {contact.propertyType && contact.listingType && (
-                                  <span className={contact.isActive ? "text-muted-foreground" : "text-gray-400"}> • </span>
-                                )}
-                                {contact.listingType && (
-                                  <span>{formatListingType(contact.listingType)}</span>
-                                )}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {!contact.listingId && (
-                      <div className="space-y-1">
-                        {(contact.street || contact.city) && (
-                          <div className={cn(
-                            "flex items-center text-sm",
-                            contact.isActive ? "" : "text-gray-400"
-                          )}>
-                            <MapPin className={cn(
-                              "mr-2 h-4 w-4 flex-shrink-0",
-                              contact.isActive ? "text-muted-foreground" : "text-gray-300"
-                            )} />
-                            <span className="truncate">
-                              {contact.street} {contact.city && <span className={contact.isActive ? "text-muted-foreground" : "text-gray-400"}>({contact.city})</span>}
-                            </span>
-                          </div>
-                        )}
-                        {(contact.propertyType || contact.listingType) && (
-                          <div className={cn(
-                            "flex items-center text-sm",
-                            contact.isActive ? "" : "text-gray-400"
-                          )}>
-                            <Building className={cn(
-                              "mr-2 h-4 w-4 flex-shrink-0",
-                              contact.isActive ? "text-muted-foreground" : "text-gray-300"
-                            )} />
-                            <span className="truncate">
-                              {contact.propertyType && (
-                                <span className="capitalize">{contact.propertyType}</span>
-                              )}
-                              {contact.propertyType && contact.listingType && (
-                                <span className={contact.isActive ? "text-muted-foreground" : "text-gray-400"}> • </span>
-                              )}
-                              {contact.listingType && (
-                                <span>{formatListingType(contact.listingType)}</span>
-                              )}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                <TableCell className="overflow-hidden" style={getColumnStyle('propiedades')}>
+                  <div className="truncate">
+                    <Propiedades
+                      isActive={contact.isActive}
+                      allListings={contact.allListings}
+                      currentFilter={currentFilter}
+                      prospectTitles={contact.prospectTitles}
+                    />
                   </div>
                 </TableCell>
                 
                 <TableCell className="overflow-hidden" style={getColumnStyle('recordatorios')}>
-                  <div className={cn(
-                    "rounded-md p-1 border min-h-[40px] flex flex-col gap-0.5",
-                    contact.isActive 
-                      ? "bg-gray-50 border-gray-200" 
-                      : "bg-gray-100 border-gray-200"
-                  )}>
-                    <div className="flex items-center gap-0.5">
-                      <span className={cn(
-                        "w-2 h-2 rounded-full border inline-block flex-shrink-0",
-                        contact.isActive 
-                          ? "border-gray-300 bg-gray-50" 
-                          : "border-gray-200 bg-gray-200"
-                      )} />
-                      <span className={cn(
-                        "text-[10px] truncate",
-                        contact.isActive ? "text-gray-800" : "text-gray-500"
-                      )}>Llamar seguimiento</span>
-                    </div>
-                    <div className="flex items-center gap-0.5">
-                      <span className={cn(
-                        "w-2 h-2 rounded-full border inline-block flex-shrink-0",
-                        contact.isActive 
-                          ? "border-gray-300 bg-gray-50" 
-                          : "border-gray-200 bg-gray-200"
-                      )} />
-                      <span className={cn(
-                        "text-[10px] truncate",
-                        contact.isActive ? "text-gray-800" : "text-gray-500"
-                      )}>Enviar propuesta</span>
-                    </div>
+                  <div className="truncate">
+                    <Recordatorios
+                      isActive={contact.isActive}
+                    />
                   </div>
                 </TableCell>
               </TableRow>

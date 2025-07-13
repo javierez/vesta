@@ -14,8 +14,6 @@ import type { Contact } from "~/lib/data"
 
 // Extended Contact type to include contactType for the UI
 interface ExtendedContact extends Omit<Contact, 'contactType'> {
-  listingId?: bigint
-  listingContactId?: bigint
   ownerCount?: number
   buyerCount?: number
   prospectCount?: number
@@ -25,6 +23,17 @@ interface ExtendedContact extends Omit<Contact, 'contactType'> {
   isInteresado?: boolean
   // All prospect titles (array)
   prospectTitles?: string[]
+  // All listings for this contact
+  allListings?: Array<{
+    listingId: bigint
+    contactType: string
+    street?: string
+    city?: string
+    propertyType?: string
+    listingType?: string
+    status?: string
+    createdAt: Date
+  }>
 }
 
 export default function ContactsPage() {
@@ -72,11 +81,6 @@ export default function ContactsPage() {
           isActive: contact.isActive,
           createdAt: contact.createdAt,
           updatedAt: contact.updatedAt,
-          listingId: contact.firstListingId,
-          street: contact.street,
-          city: contact.city,
-          propertyType: contact.propertyType,
-          listingType: contact.listingType,
           ownerCount: contact.ownerCount,
           buyerCount: contact.buyerCount,
           prospectCount: contact.prospectCount,
@@ -86,6 +90,8 @@ export default function ContactsPage() {
           isInteresado: contact.isInteresado,
           // All prospect titles from the query
           prospectTitles: contact.prospectTitles || [],
+          // All listings for this contact
+          allListings: contact.allListings || [],
         }))
         
         // Apply sorting
@@ -152,7 +158,10 @@ export default function ContactsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <ContactSpreadsheetTable contacts={contactsList} />
+          <ContactSpreadsheetTable 
+            contacts={contactsList} 
+            currentFilter={getFiltersFromUrl().roles}
+          />
         </div>
       )}
     </div>

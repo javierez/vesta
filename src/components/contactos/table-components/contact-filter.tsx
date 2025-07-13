@@ -265,7 +265,7 @@ export function ContactFilter({
     })
   }
 
-  const activeFiltersCount = (selectedRole ? 1 : 0) + (lastContactFilter !== 'all' ? 1 : 0)
+  const activeFiltersCount = (lastContactFilter !== 'all' ? 1 : 0)
 
   const FilterOption = ({ value, label, isSelected, onClick }: { 
     value: string, 
@@ -359,7 +359,7 @@ export function ContactFilter({
               <motion.div
                 className="absolute top-1 left-1 h-8 bg-white rounded-md shadow-sm"
                 animate={{
-                  width: "calc(50% - 2px)",
+                  width: "calc(50% - 4px)",
                   x: (() => {
                     const buttonOrder = ['owner', 'buyer']
                     const selectedIndex = buttonOrder.indexOf(selectedRole)
