@@ -520,29 +520,29 @@ export async function listListingsCompact(
         squareMeter: properties.squareMeter,
         city: locations.city,
         agentName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
-        ownerName: sql<string>`(
-          SELECT CONCAT(c.first_name, ' ', c.last_name)
-          FROM listing_contacts lc
-          JOIN contacts c ON lc.contact_id = c.contact_id
-          WHERE lc.listing_id = ${listings.listingId}
-          AND lc.contact_type = 'owner'
-          AND lc.is_active = true
-          AND c.is_active = true
-          LIMIT 1
-        )`,
-        imageUrl: sql<string>`(
-          SELECT image_url 
-          FROM property_images 
-          WHERE property_id = ${properties.propertyId} 
-          AND is_active = true 
-          AND image_order = 1
-          LIMIT 1
-        )`
+        isOwned: sql<boolean>`CASE WHEN ${listingContacts.contactId} IS NOT NULL THEN true ELSE false END`,
+        imageUrl: propertyImages.imageUrl
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
-      .leftJoin(users, eq(listings.agentId, users.userId));
+      .leftJoin(users, eq(listings.agentId, users.userId))
+      .leftJoin(
+        listingContacts, 
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listingContacts.contactType, 'owner'),
+          eq(listingContacts.isActive, true)
+        )
+      )
+      .leftJoin(
+        propertyImages,
+        and(
+          eq(propertyImages.propertyId, properties.propertyId),
+          eq(propertyImages.isActive, true),
+          eq(propertyImages.imageOrder, 1)
+        )
+      );
 
     // Apply where conditions
     const filteredQuery = whereConditions.length > 0 

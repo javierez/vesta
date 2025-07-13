@@ -7,9 +7,9 @@ import { Input } from "~/components/ui/input"
 import { Textarea } from "~/components/ui/textarea"
 import { Card } from "~/components/ui/card"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
-import { ChevronLeft, ChevronRight, User, Home, Loader } from "lucide-react"
+import { ChevronLeft, ChevronRight, User, Home, Loader, AlertTriangle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { createContact } from "~/server/queries/contact"
+import { createContactWithListings } from "~/server/queries/contact"
 import { listListingsCompact } from "~/server/queries/listing"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { Checkbox } from "~/components/ui/checkbox"
@@ -18,6 +18,7 @@ import { Badge } from "~/components/ui/badge"
 import { Search, Map, Bath, Bed, Square, Filter, Check } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover"
 import { ScrollArea } from "~/components/ui/scroll-area"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog"
 import Image from "next/image"
 import type { ListingOverview } from "~/types/listing"
 import { cn } from "~/lib/utils"
@@ -79,7 +80,7 @@ interface ListingData {
   squareMeter: number | null
   city: string | null
   agentName: string | null
-  ownerName: string | null
+  isOwned: boolean
   imageUrl: string | null
 }
 
@@ -107,6 +108,9 @@ export default function ContactForm() {
   })
   const [listings, setListings] = useState<ListingData[]>([])
   const [isLoadingListings, setIsLoadingListings] = useState(false)
+  const [showOwnershipDialog, setShowOwnershipDialog] = useState(false)
+  const [ownershipAction, setOwnershipAction] = useState<'change' | 'add' | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
   const router = useRouter()
 
   // Fetch listings on component mount
@@ -172,24 +176,50 @@ export default function ContactForm() {
 
   const validatePropertyStep = () => {
     if (formData.selectedListings.length === 0) {
-      alert("Por favor, selecciona al menos una propiedad para asociar al contacto.")
+      setValidationError("Por favor, selecciona al menos una propiedad para asociar al contacto.")
       return false
     }
+    setValidationError(null)
     return true
   }
 
   const handleCreateContact = async () => {
     if (!validatePropertyStep()) return
 
+    // Check if any selected listing is owned
+    const ownedListings = formData.selectedListings.filter(listingId => {
+      const listing = listings.find(l => l.listingId === listingId)
+      return listing?.isOwned
+    })
+
+    // Only show ownership dialog if:
+    // 1. There are owned listings selected AND
+    // 2. The contact type is 'owner' (not 'buyer')
+    if (ownedListings.length > 0 && formData.contactType === 'owner') {
+      // Show ownership confirmation dialog
+      setShowOwnershipDialog(true)
+      return
+    }
+
+    // Proceed with contact creation (for buyers or non-owned properties)
+    await createContactProcess()
+  }
+
+  const createContactProcess = async () => {
     try {
       setIsCreating(true)
       
       // Prepare additional info based on form data
       const additionalInfo: any = {}
       
-      // Store selected listings and contact type
+      // Store selected listings and contact type for reference
       additionalInfo.selectedListings = formData.selectedListings.map(id => id.toString())
       additionalInfo.contactType = formData.contactType
+
+      // Add ownership action if specified
+      if (ownershipAction) {
+        additionalInfo.ownershipAction = ownershipAction
+      }
 
       // Add notes if provided
       if (formData.notes.trim()) {
@@ -206,11 +236,15 @@ export default function ContactForm() {
         isActive: true,
       }
 
-      const newContact = await createContact(contactData)
-      console.log("Contact created:", newContact)
-
-      // TODO: Link the contact to the selected listings with the specified contact type
-      // This would require a separate server action to create the listing-contact relationships
+      // Use the new function that handles both contact creation and listing relationships
+      const newContact = await createContactWithListings(
+        contactData,
+        formData.selectedListings,
+        formData.contactType,
+        ownershipAction || undefined
+      )
+      
+      console.log("Contact created with listings:", newContact)
 
       // Redirect to contact detail page
       if (newContact && newContact.contactId) {
@@ -223,7 +257,16 @@ export default function ContactForm() {
       alert("Error al crear el contacto. Por favor, inténtalo de nuevo.")
     } finally {
       setIsCreating(false)
+      setShowOwnershipDialog(false)
+      setOwnershipAction(null)
     }
+  }
+
+  const handleOwnershipAction = (action: 'change' | 'add') => {
+    setOwnershipAction(action)
+    setShowOwnershipDialog(false)
+    // Proceed with contact creation
+    createContactProcess()
   }
 
   const nextStep = async () => {
@@ -458,8 +501,16 @@ export default function ContactForm() {
 
             {/* Property List */}
             <div className="space-y-4">
-              <div className="text-sm text-gray-600">
-                {formData.selectedListings.length} propiedades seleccionadas
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  {formData.selectedListings.length} propiedades seleccionadas
+                </div>
+                {validationError && (
+                  <div className="flex items-center space-x-2 text-red-600 text-sm">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>{validationError}</span>
+                  </div>
+                )}
               </div>
               <ScrollArea className="h-[400px]">
                 <div className="space-y-2">
@@ -468,89 +519,97 @@ export default function ContactForm() {
                       <Loader className="h-6 w-6 animate-spin" />
                     </div>
                   ) : filteredListings.length > 0 ? (
-                    filteredListings.map((listing: ListingData) => (
-                      <div
-                        key={listing.listingId.toString()}
-                        className={`p-4 rounded-lg cursor-pointer transition-all duration-200 ${
-                          formData.selectedListings.includes(listing.listingId)
-                            ? 'shadow-sm'
-                            : ''
-                        }`}
-                        style={formData.selectedListings.includes(listing.listingId) ? {
-                          backgroundColor: 'rgba(149,113,79,0.1)'
-                        } : {
-                          backgroundColor: 'transparent'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!formData.selectedListings.includes(listing.listingId)) {
-                            e.currentTarget.style.backgroundColor = 'rgba(149,113,79,0.02)'
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!formData.selectedListings.includes(listing.listingId)) {
-                            e.currentTarget.style.backgroundColor = 'transparent'
-                          }
-                        }}
-                        onClick={() => handleListingSelection(
-                          listing.listingId, 
-                          !formData.selectedListings.includes(listing.listingId)
-                        )}
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="relative w-16 h-12 rounded overflow-hidden flex-shrink-0">
-                            <Image
-                              src={listing.imageUrl || "/properties/suburban-dream.png"}
-                              alt={listing.title || "Property image"}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium truncate">{listing.title}</h4>
-                              <div className="flex items-center space-x-2">
-                                <Badge variant="secondary" className={statusColors[listing.listingType]}>
-                                  {statusLabels[listing.listingType]}
-                                </Badge>
+                    filteredListings.map((listing: ListingData) => {
+                      console.log('listing.imageUrl:', listing.imageUrl);
+                      return (
+                        <div
+                          key={listing.listingId.toString()}
+                          className={`p-4 rounded-lg cursor-pointer transition-all duration-200 ${
+                            formData.selectedListings.includes(listing.listingId)
+                              ? 'shadow-sm'
+                              : ''
+                          }`}
+                          style={formData.selectedListings.includes(listing.listingId) ? {
+                            backgroundColor: 'rgba(149,113,79,0.1)'
+                          } : {
+                            backgroundColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!formData.selectedListings.includes(listing.listingId)) {
+                              e.currentTarget.style.backgroundColor = 'rgba(149,113,79,0.02)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!formData.selectedListings.includes(listing.listingId)) {
+                              e.currentTarget.style.backgroundColor = 'transparent'
+                            }
+                          }}
+                          onClick={() => handleListingSelection(
+                            listing.listingId, 
+                            !formData.selectedListings.includes(listing.listingId)
+                          )}
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="relative w-16 h-12 rounded overflow-hidden flex-shrink-0">
+                              <Image
+                                src={listing.imageUrl || "/properties/suburban-dream.png"}
+                                alt={listing.title || "Property image"}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium truncate">{listing.title}</h4>
+                                <div className="flex flex-col items-end space-y-1">
+                                  <Badge variant="secondary" className={statusColors[listing.listingType]}>
+                                    {statusLabels[listing.listingType]}
+                                  </Badge>
+                                  {listing.isOwned && formData.contactType === 'owner' && (
+                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                      En propiedad
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
-                              <span>{listing.referenceNumber}</span>
-                              {listing.city && (
-                                <div className="flex items-center">
-                                  <Map className="h-3 w-3 mr-1" />
-                                  {listing.city}
-                                </div>
-                              )}
-                              <span className="font-medium text-gray-900">
-                                {formatPrice(listing.price)}€
-                                {listing.listingType === "Rent" ? "/mes" : ""}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
-                              {listing.bedrooms && (
-                                <div className="flex items-center">
-                                  <Bed className="h-3 w-3 mr-1" />
-                                  {listing.bedrooms}
-                                </div>
-                              )}
-                              {listing.bathrooms && (
-                                <div className="flex items-center">
-                                  <Bath className="h-3 w-3 mr-1" />
-                                  {Math.floor(Number(listing.bathrooms))}
-                                </div>
-                              )}
-                              {listing.squareMeter && (
-                                <div className="flex items-center">
-                                  <Square className="h-3 w-3 mr-1" />
-                                  {listing.squareMeter}m²
-                                </div>
-                              )}
+                              <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+                                <span>{listing.referenceNumber}</span>
+                                {listing.city && (
+                                  <div className="flex items-center">
+                                    <Map className="h-3 w-3 mr-1" />
+                                    {listing.city}
+                                  </div>
+                                )} 
+                                <span className="font-medium text-gray-900">
+                                  {formatPrice(listing.price)}€
+                                  {listing.listingType === "Rent" ? "/mes" : ""}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+                                {(listing.propertyType !== "garaje" && listing.propertyType !== "solar" && listing.propertyType !== "local" && listing.bedrooms) && (
+                                  <div className="flex items-center">
+                                    <Bed className="h-3 w-3 mr-1" />
+                                    {listing.bedrooms}
+                                  </div>
+                                )}
+                                {(listing.propertyType !== "garaje" && listing.propertyType !== "solar" && listing.bathrooms) && (
+                                  <div className="flex items-center">
+                                    <Bath className="h-3 w-3 mr-1" />
+                                    {Math.floor(Number(listing.bathrooms))}
+                                  </div>
+                                )}
+                                {listing.squareMeter && (
+                                  <div className="flex items-center">
+                                    <Square className="h-3 w-3 mr-1" />
+                                    {listing.squareMeter}m²
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      )
+                    })
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       No se encontraron propiedades
@@ -631,7 +690,7 @@ export default function ContactForm() {
 
             <Button 
               onClick={nextStep} 
-              disabled={isCreating}
+              disabled={isCreating || (currentStep === 1 && formData.selectedListings.length === 0)}
               className="flex items-center space-x-2 h-10"
             >
               {isCreating ? (
@@ -649,6 +708,57 @@ export default function ContactForm() {
           </div>
         </Card>
       </div>
+
+      {/* Ownership Confirmation Dialog */}
+      <Dialog open={showOwnershipDialog} onOpenChange={setShowOwnershipDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <DialogTitle>Confirmar acción de propiedad</DialogTitle>
+            </div>
+            <DialogDescription className="pt-2">
+              Has seleccionado propiedades que ya tienen propietario registrado. 
+              ¿Qué acción deseas realizar?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-1 gap-3">
+              <Button
+                variant="outline"
+                className="h-auto p-4 flex flex-col items-start space-y-2 text-left"
+                onClick={() => handleOwnershipAction('change')}
+              >
+                <div className="font-medium text-gray-900">Cambio de Propietario</div>
+                <div className="text-sm text-gray-500">
+                  Reemplazar el propietario actual con el nuevo contacto
+                </div>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="h-auto p-4 flex flex-col items-start space-y-2 text-left"
+                onClick={() => handleOwnershipAction('add')}
+              >
+                <div className="font-medium text-gray-900">Adición de Propietario</div>
+                <div className="text-sm text-gray-500">
+                  Agregar el nuevo contacto como propietario adicional
+                </div>
+              </Button>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowOwnershipDialog(false)}
+            >
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

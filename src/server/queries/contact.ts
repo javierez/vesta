@@ -73,6 +73,75 @@ export async function createContact(data: Omit<Contact, "contactId" | "createdAt
   }
 }
 
+// Create a new contact with listing relationships
+export async function createContactWithListings(
+  contactData: Omit<Contact, "contactId" | "createdAt" | "updatedAt">,
+  selectedListings: bigint[],
+  contactType: 'owner' | 'buyer',
+  ownershipAction?: 'change' | 'add'
+) {
+  try {
+    // First, create the contact
+    const [result] = await db.insert(contacts).values({
+      ...contactData,
+      isActive: true,
+    }).$returningId();
+    
+    if (!result) throw new Error("Failed to create contact");
+    
+    const newContactId = BigInt(result.contactId);
+    
+    // Handle listing relationships
+    if (selectedListings.length > 0) {
+      // If contact type is owner and we have an ownership action
+      if (contactType === 'owner' && ownershipAction) {
+        for (const listingId of selectedListings) {
+          if (ownershipAction === 'change') {
+            // Deactivate all existing owner relationships for this listing
+            await db
+              .update(listingContacts)
+              .set({ isActive: false })
+              .where(
+                and(
+                  eq(listingContacts.listingId, listingId),
+                  eq(listingContacts.contactType, 'owner')
+                )
+              );
+          }
+          // For both 'change' and 'add', create new owner relationship
+          await db.insert(listingContacts).values({
+            listingId: listingId,
+            contactId: newContactId,
+            contactType: 'owner',
+            isActive: true
+          });
+        }
+      } else {
+        // For buyers or owners without ownership conflict, just create relationships
+        const relationships = selectedListings.map(listingId => ({
+          listingId: listingId,
+          contactId: newContactId,
+          contactType: contactType,
+          isActive: true
+        }));
+        
+        await db.insert(listingContacts).values(relationships);
+      }
+    }
+    
+    // Return the created contact
+    const [newContact] = await db
+      .select()
+      .from(contacts)
+      .where(eq(contacts.contactId, newContactId));
+    
+    return newContact;
+  } catch (error) {
+    console.error("Error creating contact with listings:", error);
+    throw error;
+  }
+}
+
 // Get contact by ID
 export async function getContactById(contactId: number) {
   try {
