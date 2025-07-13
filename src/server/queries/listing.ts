@@ -466,6 +466,102 @@ export async function listListings(
   }
 }
 
+// Compact version of listListings for contact form - returns only essential fields
+export async function listListingsCompact(
+  filters?: {
+    status?: 'Active' | 'Pending' | 'Sold';
+    listingType?: 'Sale' | 'Rent';
+    propertyType?: string[];
+    searchQuery?: string;
+  }
+) {
+  try {
+    // Build the where conditions array
+    const whereConditions = [];
+    
+    if (filters) {
+      if (filters.status) {
+        whereConditions.push(sql`${listings.status} IN (${filters.status})`);
+      }
+      if (filters.listingType) {
+        whereConditions.push(sql`${listings.listingType} IN (${filters.listingType})`);
+      }
+      if (filters.propertyType && filters.propertyType.length > 0) {
+        whereConditions.push(sql`${properties.propertyType} IN (${filters.propertyType})`);
+      }
+      if (filters.searchQuery) {
+        whereConditions.push(
+          sql`(
+            ${properties.title} LIKE ${`%${filters.searchQuery}%`} OR
+            ${properties.referenceNumber} LIKE ${`%${filters.searchQuery}%`} OR
+            ${properties.street} LIKE ${`%${filters.searchQuery}%`} OR
+            ${locations.city} LIKE ${`%${filters.searchQuery}%`} OR
+            ${locations.province} LIKE ${`%${filters.searchQuery}%`}
+          )`
+        );
+      }
+    }
+    
+    // Always show active listings only
+    whereConditions.push(eq(listings.isActive, true));
+    whereConditions.push(eq(listings.status, 'Active'));
+
+    // Create the compact query with only essential fields
+    const query = db
+      .select({
+        listingId: listings.listingId,
+        title: properties.title,
+        referenceNumber: properties.referenceNumber,
+        price: listings.price,
+        listingType: listings.listingType,
+        propertyType: properties.propertyType,
+        bedrooms: properties.bedrooms,
+        bathrooms: properties.bathrooms,
+        squareMeter: properties.squareMeter,
+        city: locations.city,
+        agentName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+        ownerName: sql<string>`(
+          SELECT CONCAT(c.first_name, ' ', c.last_name)
+          FROM listing_contacts lc
+          JOIN contacts c ON lc.contact_id = c.contact_id
+          WHERE lc.listing_id = ${listings.listingId}
+          AND lc.contact_type = 'owner'
+          AND lc.is_active = true
+          AND c.is_active = true
+          LIMIT 1
+        )`,
+        imageUrl: sql<string>`(
+          SELECT image_url 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 1
+          LIMIT 1
+        )`
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(users, eq(listings.agentId, users.userId));
+
+    // Apply where conditions
+    const filteredQuery = whereConditions.length > 0 
+      ? query.where(and(...whereConditions))
+      : query;
+
+    // Get all listings ordered by featured first, then by creation date
+    const compactListings = await filteredQuery
+      .orderBy(sql`${listings.isFeatured} DESC, ${listings.createdAt} DESC`);
+
+    console.log(`Found ${compactListings.length} compact listings for contact form`);
+    
+    return compactListings;
+  } catch (error) {
+    console.error("Error listing compact listings:", error);
+    return [];
+  }
+}
+
 // Get all active agents
 export async function getAllAgents() {
   try {
