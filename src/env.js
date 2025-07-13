@@ -21,6 +21,8 @@ export const env = createEnv({
 		AWS_SECRET_ACCESS_KEY: z.string(),
 		AWS_REGION: z.string(),
 		AWS_S3_BUCKET: z.string(),
+		// Fotocasa Configuration
+		FOTOCASA_API_KEY: z.string(),
 	},
 
   /**
@@ -49,6 +51,8 @@ export const env = createEnv({
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_REGION: process.env.AWS_REGION,
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
+    // Fotocasa Configuration
+    FOTOCASA_API_KEY: process.env.FOTOCASA_API_KEY,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

@@ -2,6 +2,9 @@
 
 import { getListingDetails } from "../queries/listing"
 import { getPropertyImages } from "../queries/property_images"
+import { env } from "~/env"
+
+const FOTOCASA_API_KEY = env.FOTOCASA_API_KEY
 
 // Fotocasa API Types
 interface FotocasaProperty {
