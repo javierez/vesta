@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
@@ -14,6 +12,7 @@ import { updateProperty } from "~/server/queries/properties"
 import { updateListing } from "~/server/queries/listing"
 import { updateListingOwners } from "~/server/queries/contact"
 import FormSkeleton from "./form-skeleton"
+import ContactPopup from "./contact-popup"
 
 interface FirstPageProps {
   listingId: string
@@ -46,6 +45,8 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
   const [formData, setFormData] = useState<FirstPageFormData>(initialFormData)
   const [showListingTypeTooltip, setShowListingTypeTooltip] = useState(false)
   const [contactSearch, setContactSearch] = useState("")
+  const [showContactPopup, setShowContactPopup] = useState(false)
+  const [localContacts, setLocalContacts] = useState<{id: number, name: string}[]>([])
 
   // Fallback price formatting functions in case formFormatters is undefined
   const formatPriceInput = (value: string | number): string => {
@@ -103,6 +104,13 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
     }
   }, [globalFormData])
 
+  // Sync local contacts with global data
+  useEffect(() => {
+    if (globalFormData?.contacts) {
+      setLocalContacts(globalFormData.contacts)
+    }
+  }, [globalFormData?.contacts])
+
   const updateFormData = (field: keyof FirstPageFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
@@ -121,10 +129,10 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
     updateFormData("price", numericValue)
   }
 
-  // Filter contacts based on search
-  const filteredContacts = globalFormData?.contacts?.filter((contact: {id: number, name: string}) => 
+  // Filter contacts based on search (using local contacts for immediate updates)
+  const filteredContacts = localContacts.filter((contact: {id: number, name: string}) => 
     contact.name.toLowerCase().includes(contactSearch.toLowerCase())
-  ) || []
+  )
 
   const handleNext = () => {
     // Validate required fields
@@ -195,6 +203,29 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
         ? prev.selectedContactIds.filter(id => id !== contactId)
         : [...prev.selectedContactIds, contactId]
     }))
+  }
+
+  const handleContactCreated = (newContact: any) => {
+    console.log("New contact created:", newContact)
+    
+    // Immediately add the new contact to local state for instant UI update
+    if (newContact?.contactId && newContact?.firstName && newContact?.lastName) {
+      const newContactForList = {
+        id: Number(newContact.contactId),
+        name: `${newContact.firstName} ${newContact.lastName}`
+      }
+      
+      setLocalContacts(prev => [...prev, newContactForList])
+      
+      // Auto-select the new contact
+      setFormData(prev => ({
+        ...prev,
+        selectedContactIds: [...prev.selectedContactIds, newContact.contactId.toString()]
+      }))
+    }
+    
+    // Also refresh the global data for consistency
+    refreshListingDetails?.()
   }
 
   // Show loading only if globalFormData is not ready
@@ -448,10 +479,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
             variant="outline"
             size="sm"
             className="flex items-center space-x-2 h-8"
-            onClick={() => {
-              // TODO: Open contact creation modal
-              alert("Funcionalidad de crear contacto próximamente")
-            }}
+            onClick={() => setShowContactPopup(true)}
           >
             <Plus className="w-3 h-3" />
             <span>Agregar</span>
@@ -521,6 +549,13 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
           </Button>
         </motion.div>
       </motion.div>
+
+      {/* Contact Creation Popup */}
+      <ContactPopup
+        isOpen={showContactPopup}
+        onClose={() => setShowContactPopup(false)}
+        onContactCreated={handleContactCreated}
+      />
     </div>
   )
 }
