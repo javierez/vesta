@@ -518,7 +518,7 @@ export async function buildFotocasaPayload(listingId: number): Promise<FotocasaP
 }
 
 // Server action to be called when confirming Fotocasa portal
-export async function publishToFotocasa(listingId: number): Promise<{ success: boolean; payload?: FotocasaProperty; error?: string }> {
+export async function publishToFotocasa(listingId: number): Promise<{ success: boolean; payload?: FotocasaProperty; error?: string; response?: any }> {
   try {
     console.log(`Publishing listing ${listingId} to Fotocasa...`)
     
@@ -528,12 +528,34 @@ export async function publishToFotocasa(listingId: number): Promise<{ success: b
     // Log the payload for debugging
     console.log("Fotocasa Payload:", JSON.stringify(payload, null, 2))
     
-    // Here you would make the actual API call to Fotocasa
-    // For now, we'll just return success with the payload
+    // Make the API call to Fotocasa
+    const response = await fetch('https://imports.gw.fotocasa.pro/api/property', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Api-Key': FOTOCASA_API_KEY
+      },
+      body: JSON.stringify(payload)
+    })
     
-    return {
-      success: true,
-      payload
+    const responseData = await response.json()
+    
+    // Log the response for debugging
+    console.log("Fotocasa API Response:", responseData)
+    
+    // Check if the request was successful
+    if (response.ok && responseData.StatusCode === 201) {
+      return {
+        success: true,
+        payload,
+        response: responseData
+      }
+    } else {
+      return {
+        success: false,
+        error: responseData.Message || `HTTP ${response.status}: ${response.statusText}`,
+        response: responseData
+      }
     }
     
   } catch (error) {
