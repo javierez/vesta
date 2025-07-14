@@ -562,6 +562,29 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
+            <Select 
+              value={listing.propertySubtype || ""}
+              onValueChange={(value) => {
+                // Update the listing object directly for now
+                listing.propertySubtype = value
+                updateModuleState('basicInfo', true)
+              }}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Seleccionar subtipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Residencial">Residencial</SelectItem>
+                <SelectItem value="Otros">Otros</SelectItem>
+                <SelectItem value="Mixto residencial">Mixto residencial</SelectItem>
+                <SelectItem value="Oficinas">Oficinas</SelectItem>
+                <SelectItem value="Hotel">Hotel</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="price" className="text-sm">Precio</Label>
             <Input 
               id="price" 

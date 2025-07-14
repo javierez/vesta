@@ -444,6 +444,27 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
+            <Select 
+              value={listing.propertySubtype || ""}
+              onValueChange={(value) => {
+                // Update the listing object directly for now
+                listing.propertySubtype = value
+                updateModuleState('basicInfo', true)
+              }}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Seleccionar subtipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Moto">Moto</SelectItem>
+                <SelectItem value="Double">Double</SelectItem>
+                <SelectItem value="Individual">Individual</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="price" className="text-sm">Precio</Label>
             <Input 
               id="price" 

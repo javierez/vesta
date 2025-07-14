@@ -765,32 +765,32 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               <SelectContent>
                 {propertyType === "piso" && (
                   <>
-                    <SelectItem value="Triplex">Triplex</SelectItem>
-                    <SelectItem value="Duplex">Duplex</SelectItem>
-                    <SelectItem value="Penthouse">Penthouse</SelectItem>
-                    <SelectItem value="Studio">Studio</SelectItem>
+                    <SelectItem value="Tríplex">Tríplex</SelectItem>
+                    <SelectItem value="Dúplex">Dúplex</SelectItem>
+                    <SelectItem value="Ático">Ático</SelectItem>
+                    <SelectItem value="Estudio">Estudio</SelectItem>
                     <SelectItem value="Loft">Loft</SelectItem>
-                    <SelectItem value="Flat">Flat</SelectItem>
-                    <SelectItem value="Apartment">Apartment</SelectItem>
-                    <SelectItem value="Ground floor">Ground floor</SelectItem>
+                    <SelectItem value="Piso">Piso</SelectItem>
+                    <SelectItem value="Apartamento">Apartamento</SelectItem>
+                    <SelectItem value="Bajo">Bajo</SelectItem>
                   </>
                 )}
                 {propertyType === "casa" && (
                   <>
-                    <SelectItem value="House">House</SelectItem>
-                    <SelectItem value="Terraced house">Terraced house</SelectItem>
-                    <SelectItem value="Paired house">Paired house</SelectItem>
+                    <SelectItem value="Casa">Casa</SelectItem>
+                    <SelectItem value="Casa adosada">Casa adosada</SelectItem>
+                    <SelectItem value="Casa pareada">Casa pareada</SelectItem>
                     <SelectItem value="Chalet">Chalet</SelectItem>
-                    <SelectItem value="Rustic house">Rustic house</SelectItem>
+                    <SelectItem value="Casa rústica">Casa rústica</SelectItem>
                     <SelectItem value="Bungalow">Bungalow</SelectItem>
                   </>
                 )}
                 {propertyType === "local" && (
                   <>
-                    <SelectItem value="Residential">Residential</SelectItem>
-                    <SelectItem value="Others">Others</SelectItem>
-                    <SelectItem value="Mixed residential">Mixed residential</SelectItem>
-                    <SelectItem value="Offices">Offices</SelectItem>
+                    <SelectItem value="Residencial">Residencial</SelectItem>
+                    <SelectItem value="Otros">Otros</SelectItem>
+                    <SelectItem value="Mixto residencial">Mixto residencial</SelectItem>
+                    <SelectItem value="Oficinas">Oficinas</SelectItem>
                     <SelectItem value="Hotel">Hotel</SelectItem>
                   </>
                 )}

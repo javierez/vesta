@@ -443,6 +443,27 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
+            <Select 
+              value={listing.propertySubtype || ""}
+              onValueChange={(value) => {
+                // Update the listing object directly for now
+                listing.propertySubtype = value
+                updateModuleState('basicInfo', true)
+              }}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Seleccionar subtipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Residential land">Residential land</SelectItem>
+                <SelectItem value="Industrial land">Industrial land</SelectItem>
+                <SelectItem value="Rustic land">Rustic land</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="price" className="text-sm">Precio</Label>
             <Input 
               id="price" 

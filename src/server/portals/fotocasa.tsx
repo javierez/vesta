@@ -63,32 +63,53 @@ interface PropertyTransaction {
 
 // Property type mapping (from our schema to Fotocasa)
 const PROPERTY_TYPE_MAPPING: Record<string, number> = {
-  'piso': 1,
-  'casa': 2,
-  'chalet': 2,
-  'duplex': 3,
-  'atico': 4,
-  'estudio': 5,
-  'loft': 6,
-  'oficina': 7,
-  'local': 8,
-  'garaje': 10,
-  'trastero': 12
+  'piso': 1,          // Flat
+  'casa': 2,          // House
+  'local': 3,         // Commercial store
+  'oficina': 4,       // Office
+  'edificio': 5,      // Building
+  'solar': 6,         // Land
+  'industrial': 7,    // Industrial building
+  'garaje': 8,        // Garage
+  'trastero': 12      // Storage room
 }
 
-// Property subtype mapping (basic mapping - can be expanded)
+// Property subtype mapping (matching Fotocasa documentation)
 const PROPERTY_SUBTYPE_MAPPING: Record<string, number> = {
-  'piso': 2,
-  'casa': 3,
-  'chalet': 4,
-  'duplex': 5,
-  'atico': 6,
-  'estudio': 7,
-  'loft': 9,
-  'oficina': 10,
-  'local': 11,
-  'garaje': 13,
-  'trastero': 17
+  // Flat subtypes
+  'Tríplex': 2,
+  'Dúplex': 3,
+  'Ático': 5,
+  'Estudio': 6,
+  'Loft': 7,
+  'Piso': 9,
+  'Apartamento': 10,
+  'Bajo': 11,
+  
+  // House subtypes
+  'Casa': 13,
+  'Casa adosada': 17,
+  'Casa pareada': 19,
+  'Chalet': 20,
+  'Casa rústica': 24,
+  'Bungalow': 27,
+  
+  // Building subtypes
+  'Residencial': 48,
+  'Otros': 49,
+  'Mixto residencial': 50,
+  'Oficinas': 51,
+  'Hotel': 72,
+  
+  // Land subtypes
+  'Suelo residencial': 56,
+  'Suelo industrial': 60,
+  'Suelo rústico': 91,
+  
+  // Garage subtypes
+  'Moto': 68,
+  'Doble': 69,
+  'Individual': 70
 }
 
 // Transaction type mapping
@@ -494,7 +515,7 @@ export async function buildFotocasaPayload(listingId: number): Promise<FotocasaP
       ExternalId: listing.listingId.toString(),
       AgencyReference: listing.referenceNumber || listing.listingId.toString(),
       TypeId: PROPERTY_TYPE_MAPPING[listing.propertyType || 'piso'] || 1,
-      SubTypeId: PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype || listing.propertyType || 'piso'] || 2,
+      SubTypeId: PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype || 'Piso'] || 9, // Default to Flat (9) if no subtype
       ContactTypeId: 3, // Agency contact (hardcoded for now)
       PropertyAddress: propertyAddress,
       PropertyDocument: propertyDocuments.length > 0 ? propertyDocuments : undefined,
