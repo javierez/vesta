@@ -12,6 +12,7 @@ import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-bre
 import { PropertyHeader } from "~/components/propiedades/detail/property-header"
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form"
 import { PortalSelection } from "~/components/propiedades/detail/portal-selection"
+import { EnergyCertificate } from "~/components/propiedades/detail/energy-certificate"
 import { use } from "react"
 import { getPropertyImages } from "~/server/queries/property_images"
 import { getListingDetails } from "~/server/queries/listing"
@@ -52,28 +53,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     imageOrder: img.imageOrder
   }))
 
-  const getEnergyCertificationColor = (cert: string | null | undefined) => {
-    if (!cert) return "bg-gray-300"
 
-    switch (cert) {
-      case "A":
-        return "bg-green-500"
-      case "B":
-        return "bg-green-400"
-      case "C":
-        return "bg-yellow-400"
-      case "D":
-        return "bg-yellow-500"
-      case "E":
-        return "bg-orange-400"
-      case "F":
-        return "bg-orange-500"
-      case "G":
-        return "bg-red-500"
-      default:
-        return "bg-gray-300"
-    }
-  }
 
   // Map coordinates
   const mapCoordinates = {
@@ -157,6 +137,15 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               <PropertyCharacteristicsForm listing={listing} />
             </div>
           </div>
+        </div>
+
+        {/* Energy Certificate Section */}
+        <div className="pb-8 max-w-4xl mx-auto mb-8">
+          <EnergyCertificate 
+            energyRating={listing.energyCertification || null}
+            uploadedFile={null}
+            propertyId={listing.propertyId}
+          />
         </div>
       </div>
     </>

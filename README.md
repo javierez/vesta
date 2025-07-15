@@ -35,6 +35,8 @@ Tasks
 
 
 Checks:
-- add Hot water
 - add certificado energético
 - add status: renovado, necesita renovación
+
+- I think we don't delete pictures in AWS, just in database
+- Create allowance for documents
