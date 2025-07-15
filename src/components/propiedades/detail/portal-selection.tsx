@@ -16,6 +16,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "~/components/ui/dropdown-menu"
 import { publishToFotocasa } from "~/server/portals/fotocasa"
 
@@ -28,6 +32,7 @@ interface Platform {
   status: "active" | "pending" | "error" | "inactive"
   description?: string
   isDefault?: boolean // Whether this platform is enabled by default
+  visibilityMode?: number // For Fotocasa visibility mode (1=Exact, 2=Street, 3=Zone)
 }
 
 interface PortalSelectionProps {
@@ -91,6 +96,9 @@ export function PortalSelection({
   const [isLoading, setIsLoading] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [initialPlatformStates, setInitialPlatformStates] = useState<Record<string, boolean>>({})
+  const [visibilityModes, setVisibilityModes] = useState<Record<string, number>>({
+    fotocasa: 1 // Default to Exact
+  })
 
   // Initialize platforms based on portal fields and defaults
   useEffect(() => {
@@ -121,7 +129,8 @@ export function PortalSelection({
           ...config,
           isActive,
           status,
-          lastSync: portalValue ? new Date() : undefined
+          lastSync: portalValue ? new Date() : undefined,
+          visibilityMode: config.id === 'fotocasa' ? visibilityModes.fotocasa : undefined
         }
       })
       
@@ -217,6 +226,30 @@ export function PortalSelection({
     }
   }
 
+  const handleVisibilityModeChange = (platformId: string, mode: number) => {
+    setVisibilityModes(prev => ({
+      ...prev,
+      [platformId]: mode
+    }))
+    
+    const updatedPlatforms = platforms.map(platform => 
+      platform.id === platformId 
+        ? { ...platform, visibilityMode: mode }
+        : platform
+    )
+    setPlatforms(updatedPlatforms)
+    setHasUnsavedChanges(true)
+  }
+
+  const getVisibilityModeLabel = (mode: number) => {
+    switch (mode) {
+      case 1: return "Exacta"
+      case 2: return "Calle"
+      case 3: return "Zona"
+      default: return "Exacta"
+    }
+  }
+
   const getStatusIcon = (status: Platform["status"]) => {
     switch (status) {
       case "active":
@@ -301,6 +334,27 @@ export function PortalSelection({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    {platform.id === 'fotocasa' && (
+                      <>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            Visibilidad: {getVisibilityModeLabel(visibilityModes.fotocasa ?? 1)}
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuItem onClick={() => handleVisibilityModeChange('fotocasa', 1)}>
+                              Exacta
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleVisibilityModeChange('fotocasa', 2)}>
+                              Calle
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleVisibilityModeChange('fotocasa', 3)}>
+                              Zona
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
                     <DropdownMenuItem>
                       Configurar sincronización
                     </DropdownMenuItem>

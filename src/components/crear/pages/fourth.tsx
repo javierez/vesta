@@ -3,7 +3,7 @@ import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { ChevronLeft, ChevronRight, Building, Car, Package, Thermometer, Wind, Sofa } from "lucide-react"
+import { ChevronLeft, ChevronRight, Building, Car, Package, Thermometer, Wind, Sofa, Droplet } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import { updateListing } from "~/server/queries/listing"
@@ -33,6 +33,8 @@ interface FourthPageFormData {
   optionalStorageRoomPrice: number
   hasHeating: boolean
   heatingType: string
+  hasHotWater: boolean
+  hotWaterType: string
   hasAirConditioning: boolean
   airConditioningType: string
   isFurnished: boolean
@@ -59,6 +61,8 @@ const initialFormData: FourthPageFormData = {
   optionalStorageRoomPrice: 0,
   hasHeating: false,
   heatingType: "",
+  hasHotWater: false,
+  hotWaterType: "",
   hasAirConditioning: false,
   airConditioningType: "",
   isFurnished: false,
@@ -169,6 +173,8 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
         optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
         hasHeating: details.hasHeating || false,
         heatingType: details.heatingType || "",
+        hasHotWater: details.hasHotWater || false,
+        hotWaterType: details.hotWaterType || "",
         hasAirConditioning: !!details.airConditioningType,
         airConditioningType: details.airConditioningType || "",
         isFurnished: details.isFurnished || false,
@@ -212,6 +218,9 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
           // Heating data - only save if hasHeating is true
           hasHeating: formData.hasHeating,
           heatingType: formData.hasHeating ? formData.heatingType : "",
+          // Hot water data - only save if hasHotWater is true
+          hasHotWater: formData.hasHotWater,
+          hotWaterType: formData.hasHotWater ? formData.hotWaterType : "",
           // Air conditioning data - only save if hasAirConditioning is true
           airConditioningType: formData.hasAirConditioning ? formData.airConditioningType : "",
         }
@@ -621,6 +630,78 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                         <SelectItem key={option} value={option}>{option}</SelectItem>
                       ))}
                     </SelectContent>
+                  </Select>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Hot Water - Hide for garage properties */}
+        {propertyType !== "garage" && (
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                const newValue = !formData.hasHotWater
+                updateFormData("hasHotWater", newValue)
+                if (!newValue) updateFormData("hotWaterType", "")
+              }}
+              className={`
+                w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
+                ${
+                  formData.hasHotWater
+                    ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
+                    : "bg-white text-gray-700 shadow-md"
+                }
+              `}
+            >
+              <motion.div
+                className="absolute inset-0 bg-gray-800"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={formData.hasHotWater ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                style={{ borderRadius: "inherit" }}
+              />
+                             <div className="flex items-center space-x-3 relative z-10">
+                 <Droplet className="h-4 w-4" />
+                 <span className="text-sm font-medium">Agua Caliente</span>
+               </div>
+              {formData.hasHotWater && (
+                <span className="absolute top-3.5 right-2 w-4 h-4 flex items-center justify-center rounded-full bg-white/90 border border-gray-300 z-20">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M3 6.5L5.2 8.5L9 4.5" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+              )}
+            </motion.button>
+            
+            {formData.hasHotWater && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="ml-6 space-y-3 border-l-2 pl-4"
+              >
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-600">Tipo</Label>
+                  <Select 
+                    value={formData.hotWaterType} 
+                    onValueChange={(value) => updateFormData("hotWaterType", value)}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Seleccionar tipo de agua caliente" />
+                    </SelectTrigger>
+                                         <SelectContent>
+                       {heatingOptions.map(option => (
+                         <SelectItem key={option} value={option}>{option}</SelectItem>
+                       ))}
+                     </SelectContent>
                   </Select>
                 </div>
               </motion.div>

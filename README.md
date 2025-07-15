@@ -35,5 +35,6 @@ Tasks
 
 
 Checks:
-- check for the propertsubtype (forms and fotocasa functionality)
-- check for the new listingtype (forms and fotocasa)
+- add Hot water
+- add certificado energético
+- add status: renovado, necesita renovación

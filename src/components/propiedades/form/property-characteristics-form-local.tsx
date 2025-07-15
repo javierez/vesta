@@ -141,6 +141,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             isFurnished,
             hasHeating: isHeating,
             heatingType,
+            hotWaterType: isHotWater ? hotWaterType : null,
             airConditioningType: isAirConditioning ? airConditioningType : null
           }
           break
@@ -194,7 +195,6 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             securityDoor,
             lastRenovationYear: lastRenovationYear ? Math.min(Math.max(Number(lastRenovationYear), -32768), 32767) : yearBuilt,
             kitchenType,
-            hotWaterType,
             openKitchen,
             frenchKitchen,
             furnishedKitchen,
@@ -325,6 +325,8 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
   const [isFurnished, setIsFurnished] = useState(listing.isFurnished ?? false)
   const [isHeating, setIsHeating] = useState(listing.hasHeating ?? false)
   const [heatingType, setHeatingType] = useState(listing.heatingType ?? "")
+  const [isHotWater, setIsHotWater] = useState(!!listing.hotWaterType)
+  const [hotWaterType, setHotWaterType] = useState(listing.hotWaterType ?? "")
   const [isAirConditioning, setIsAirConditioning] = useState(!!listing.airConditioningType)
   const [airConditioningType, setAirConditioningType] = useState(listing.airConditioningType ?? "")
   const [isExterior, setIsExterior] = useState(listing.exterior ?? false)
@@ -350,7 +352,6 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
   const [securityDoor, setSecurityDoor] = useState(listing.securityDoor ?? false)
   const [lastRenovationYear, setLastRenovationYear] = useState(listing.lastRenovationYear ?? "")
   const [kitchenType, setKitchenType] = useState(listing.kitchenType ?? "")
-  const [hotWaterType, setHotWaterType] = useState(listing.hotWaterType ?? "")
   const [openKitchen, setOpenKitchen] = useState(listing.openKitchen ?? false)
   const [frenchKitchen, setFrenchKitchen] = useState(listing.frenchKitchen ?? false)
   const [furnishedKitchen, setFurnishedKitchen] = useState(listing.furnishedKitchen ?? false)
@@ -1080,6 +1081,37 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
           )}
           <div className="flex items-center space-x-2">
             <Checkbox 
+              id="hasHotWater" 
+              checked={isHotWater}
+              onCheckedChange={(checked) => {
+                setIsHotWater(!!checked)
+                if (!checked) {
+                  setHotWaterType("")
+                }
+                updateModuleState('features', true)
+              }} 
+            />
+            <Label htmlFor="hasHotWater" className="text-sm">Agua caliente</Label>
+          </div>
+          {isHotWater && (
+            <div className="ml-6 mt-1">
+              <Select value={hotWaterType} onValueChange={(value) => {
+                setHotWaterType(value)
+                updateModuleState('features', true)
+              }}>
+                <SelectTrigger className="h-6 text-xs text-gray-500 mt-1 px-2 py-0">
+                  <SelectValue placeholder="Seleccionar tipo de agua caliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {heatingOptions.map(option => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="flex items-center space-x-2">
+            <Checkbox 
               id="hasAirConditioning" 
               checked={isAirConditioning}
               onCheckedChange={(checked) => {
@@ -1515,22 +1547,6 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
                   {/* Utilities */}
                   <div className="space-y-2">
                     <h4 className="text-xs font-medium text-muted-foreground">Servicios</h4>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="hotWaterType" className="text-sm">Agua caliente</Label>
-                      <Select value={hotWaterType} onValueChange={(value) => {
-                        setHotWaterType(value)
-                        updateModuleState('additionalCharacteristics', true)
-                      }}>
-                        <SelectTrigger className="h-8 text-gray-500">
-                          <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="individual">Individual</SelectItem>
-                          <SelectItem value="central">Central</SelectItem>
-                          <SelectItem value="solar">Solar</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="lastRenovationYear" className="text-sm">Última reforma</Label>
                       <Input 

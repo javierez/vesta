@@ -193,6 +193,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             storageRoomNumber,
             hasHeating: isHeating,
             heatingType,
+            hotWaterType: isHotWater ? hotWaterType : null,
             airConditioningType: isAirConditioning ? airConditioningType : null,
             isFurnished
           }
@@ -245,7 +246,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             alarm,
             securityDoor,
             kitchenType,
-            hotWaterType,
             openKitchen,
             frenchKitchen,
             furnishedKitchen,
@@ -427,6 +427,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const [isFurnished, setIsFurnished] = useState(listing.isFurnished ?? false)
   const [isHeating, setIsHeating] = useState(listing.hasHeating ?? false)
   const [heatingType, setHeatingType] = useState(listing.heatingType ?? "")
+  const [isHotWater, setIsHotWater] = useState(!!listing.hotWaterType)
   const [isAirConditioning, setIsAirConditioning] = useState(!!listing.airConditioningType)
   const [airConditioningType, setAirConditioningType] = useState(listing.airConditioningType ?? "")
   const [studentFriendly, setStudentFriendly] = useState(listing.studentFriendly ?? false)
@@ -1374,6 +1375,33 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             </div>
           )}
           <div className="flex items-center space-x-2">
+            <Checkbox id="hasHotWater" checked={isHotWater} onCheckedChange={checked => {
+              setIsHotWater(!!checked)
+              if (!checked) {
+                setHotWaterType("")
+              }
+              updateModuleState('features', true)
+            }} />
+            <Label htmlFor="hasHotWater" className="text-sm">Agua caliente</Label>
+          </div>
+          {isHotWater && (
+            <div className="ml-6 mt-2">
+              <Select value={hotWaterType} onValueChange={(value) => {
+                setHotWaterType(value)
+                updateModuleState('features', true)
+              }}>
+                <SelectTrigger className="h-6 text-xs text-gray-500 mt-1 px-2 py-0">
+                  <SelectValue placeholder="Seleccionar tipo de agua caliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {heatingOptions.map(option => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="flex items-center space-x-2">
             <Checkbox 
               id="hasAirConditioning" 
               checked={isAirConditioning}
@@ -1905,27 +1933,6 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                         }} 
                       />
                       <Label htmlFor="pantry" className="text-sm">Despensa</Label>
-                    </div>
-                  </div>
-
-                  {/* Utilities */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">Servicios</h4>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="hotWaterType" className="text-sm">Agua caliente</Label>
-                      <Select value={hotWaterType} onValueChange={(value) => {
-                        setHotWaterType(value)
-                        updateModuleState('additionalCharacteristics', true)
-                      }}>
-                        <SelectTrigger className="h-8 text-gray-500">
-                          <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="individual">Individual</SelectItem>
-                          <SelectItem value="central">Central</SelectItem>
-                          <SelectItem value="solar">Solar</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                 </div>
