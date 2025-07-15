@@ -2,6 +2,13 @@
  * Represents a combined view of listing data including property details, location, and images
  * This type is used for displaying listing information in the UI
  */
+export type ListingType =
+  | 'Sale'           // Venta
+  | 'Rent'           // Alquiler
+  | 'RentWithOption' // Alquiler con opción a compra
+  | 'RoomSharing'    // Compartir habitación
+  | 'Transfer'       // Transferencia
+
 export type ListingOverview = {
   // Listing fields
   listingId: bigint
@@ -11,7 +18,7 @@ export type ListingOverview = {
   ownerName: string | null
   price: string
   status: string
-  listingType: string
+  listingType: ListingType
   isActive: boolean | null
   isFeatured: boolean | null
   isBankOwned: boolean | null

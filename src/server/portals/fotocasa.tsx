@@ -114,8 +114,11 @@ const PROPERTY_SUBTYPE_MAPPING: Record<string, number> = {
 
 // Transaction type mapping
 const TRANSACTION_TYPE_MAPPING: Record<string, number> = {
-  'Sale': 1,
-  'Rent': 3
+  'Sale': 1,              // Buy
+  'Rent': 3,              // Rent
+  'Transfer': 4,          // Transfer
+  'RoomSharing': 7,       // Share
+  'RentWithOption': 9     // Rent with buy option
 }
 
 export async function buildFotocasaPayload(listingId: number): Promise<FotocasaProperty> {

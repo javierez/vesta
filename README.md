@@ -29,3 +29,11 @@ Tasks
 
 - Lead
 - Deal
+
+
+
+
+
+Checks:
+- check for the propertsubtype (forms and fotocasa functionality)
+- check for the new listingtype (forms and fotocasa)

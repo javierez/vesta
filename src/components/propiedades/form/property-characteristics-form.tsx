@@ -39,6 +39,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog"
+import type { ListingType } from "~/types/listing"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -611,6 +612,29 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     updateModuleState('basicInfo', true)
   }
 
+  const handleSecondaryListingType = (type: 'RentWithOption' | 'RoomSharing' | 'Transfer') => {
+    if (type === 'RentWithOption') {
+      if (listingTypes[0] === 'RentWithOption') {
+        setListingTypes(['Rent'])
+      } else {
+        setListingTypes(['RentWithOption'])
+      }
+    } else if (type === 'RoomSharing') {
+      if (listingTypes[0] === 'RoomSharing') {
+        setListingTypes(['Rent'])
+      } else {
+        setListingTypes(['RoomSharing'])
+      }
+    } else if (type === 'Transfer') {
+      if (listingTypes[0] === 'Transfer') {
+        setListingTypes(['Sale'])
+      } else {
+        setListingTypes(['Transfer'])
+      }
+    }
+    updateModuleState('basicInfo', true)
+  }
+
   const handlePropertyTypeChange = (newType: string) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set('type', newType)
@@ -675,6 +699,9 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     }
   }
 
+  // Add this near the top of the component, after listingTypes is defined
+  const currentListingType = listingTypes[0] ?? "";
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
@@ -702,7 +729,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             <div className="flex gap-2">
               <Button
                 type="button"
-                variant={listingTypes[0] === 'Sale' ? "default" : "outline"}
+                variant={['Sale', 'Transfer'].includes(currentListingType) ? "default" : "outline"}
                 size="sm"
                 onClick={() => {
                   toggleListingType('Sale')
@@ -714,7 +741,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               </Button>
               <Button
                 type="button"
-                variant={listingTypes[0] === 'Rent' ? "default" : "outline"}
+                variant={['Rent', 'RentWithOption', 'RoomSharing'].includes(currentListingType) ? "default" : "outline"}
                 size="sm"
                 onClick={() => {
                   toggleListingType('Rent')
@@ -726,6 +753,58 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               </Button>
             </div>
           </div>
+
+          {/* Secondary checkboxes, vertical for rent types */}
+          {['Rent', 'RentWithOption', 'RoomSharing'].includes(currentListingType) && (
+            <div className="flex flex-col gap-2 ml-2 items-start">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="roomSharingProperty"
+                  checked={currentListingType === 'RoomSharing'}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      handleSecondaryListingType('RoomSharing')
+                    } else {
+                      toggleListingType('Rent')
+                    }
+                  }}
+                />
+                <Label htmlFor="roomSharingProperty" className="text-xs text-gray-700 select-none cursor-pointer">Compartir habitación</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="rentWithOptionProperty"
+                  checked={currentListingType === 'RentWithOption'}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      handleSecondaryListingType('RentWithOption')
+                    } else {
+                      toggleListingType('Rent')
+                    }
+                  }}
+                />
+                <Label htmlFor="rentWithOptionProperty" className="text-xs text-gray-700 select-none cursor-pointer">Alquiler con opción a compra</Label>
+              </div>
+            </div>
+          )}
+          {['Sale', 'Transfer'].includes(currentListingType) && (
+            <div className="flex flex-row gap-6 ml-2 items-center">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="transferProperty"
+                  checked={currentListingType === 'Transfer'}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      handleSecondaryListingType('Transfer')
+                    } else {
+                      toggleListingType('Sale')
+                    }
+                  }}
+                />
+                <Label htmlFor="transferProperty" className="text-xs text-gray-700 select-none cursor-pointer">Transferencia</Label>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="propertyType" className="text-sm">Tipo de Propiedad</Label>
@@ -752,7 +831,11 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           <div className="space-y-1.5">
             <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
             <Select 
-              value={listing.propertySubtype || ""}
+              value={listing.propertySubtype ?? (
+                propertyType === "piso" ? "Piso" :
+                propertyType === "casa" ? "Casa" :
+                ""
+              )}
               onValueChange={(value) => {
                 // Update the listing object directly for now
                 listing.propertySubtype = value

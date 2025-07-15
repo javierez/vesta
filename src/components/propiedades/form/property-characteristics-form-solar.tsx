@@ -317,6 +317,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
   const [ownerSearch, setOwnerSearch] = useState("")
   const [selectedAgentId, setSelectedAgentId] = useState<string>("")
 
+  const currentListingType = listingType ?? "";
+
   // Filter owners based on search
   const filteredOwners = owners.filter(owner => 
     owner.name.toLowerCase().includes(ownerSearch.toLowerCase())
@@ -397,7 +399,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             <div className="flex gap-2">
               <Button
                 type="button"
-                variant={listingType === 'Sale' ? "default" : "outline"}
+                variant={['Sale', 'Transfer'].includes(currentListingType) ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleListingTypeChange('Sale')}
                 className="flex-1"
@@ -406,7 +408,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
               </Button>
               <Button
                 type="button"
-                variant={listingType === 'Rent' ? "default" : "outline"}
+                variant={['Rent', 'RentWithOption', 'RoomSharing'].includes(currentListingType) ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleListingTypeChange('Rent')}
                 className="flex-1"
@@ -415,6 +417,61 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
               </Button>
             </div>
           </div>
+          {/* Secondary checkboxes for Rent types */}
+          {['Rent', 'RentWithOption', 'RoomSharing'].includes(currentListingType) && (
+            <div className="flex flex-col gap-2 ml-2 items-start">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="roomSharingSolar"
+                  checked={currentListingType === 'RoomSharing'}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setListingType('RoomSharing')
+                    } else {
+                      setListingType('Rent')
+                    }
+                    updateModuleState('basicInfo', true)
+                  }}
+                />
+                <Label htmlFor="roomSharingSolar" className="text-xs text-gray-700 select-none cursor-pointer">Compartir habitación</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="rentWithOptionSolar"
+                  checked={currentListingType === 'RentWithOption'}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setListingType('RentWithOption')
+                    } else {
+                      setListingType('Rent')
+                    }
+                    updateModuleState('basicInfo', true)
+                  }}
+                />
+                <Label htmlFor="rentWithOptionSolar" className="text-xs text-gray-700 select-none cursor-pointer">Alquiler con opción a compra</Label>
+              </div>
+            </div>
+          )}
+          {/* Secondary checkbox for Sale types */}
+          {['Sale', 'Transfer'].includes(currentListingType) && (
+            <div className="flex flex-row gap-6 ml-2 items-center">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="transferSolar"
+                  checked={currentListingType === 'Transfer'}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setListingType('Transfer')
+                    } else {
+                      setListingType('Sale')
+                    }
+                    updateModuleState('basicInfo', true)
+                  }}
+                />
+                <Label htmlFor="transferSolar" className="text-xs text-gray-700 select-none cursor-pointer">Transferencia</Label>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="propertyType" className="text-sm">Tipo de Propiedad</Label>
@@ -445,7 +502,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
           <div className="space-y-1.5">
             <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
             <Select 
-              value={listing.propertySubtype || ""}
+              value={listing.propertySubtype || "Residential land"}
               onValueChange={(value) => {
                 // Update the listing object directly for now
                 listing.propertySubtype = value

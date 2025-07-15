@@ -13,6 +13,7 @@ import { updateListing } from "~/server/queries/listing"
 import { updateListingOwners } from "~/server/queries/contact"
 import FormSkeleton from "./form-skeleton"
 import ContactPopup from "./contact-popup"
+import { Checkbox } from "~/components/ui/checkbox"
 
 interface FirstPageProps {
   listingId: string
@@ -47,6 +48,9 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
   const [contactSearch, setContactSearch] = useState("")
   const [showContactPopup, setShowContactPopup] = useState(false)
   const [localContacts, setLocalContacts] = useState<{id: number, name: string}[]>([])
+  const [roomSharing, setRoomSharing] = useState(false)
+  const [rentWithOption, setRentWithOption] = useState(false)
+  const [allowsTransfer, setAllowsTransfer] = useState(false)
 
   // Fallback price formatting functions in case formFormatters is undefined
   const formatPriceInput = (value: string | number): string => {
@@ -133,6 +137,49 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
   const filteredContacts = localContacts.filter((contact: {id: number, name: string}) => 
     contact.name.toLowerCase().includes(contactSearch.toLowerCase())
   )
+
+  // Update the toggle logic and state management
+  const handleListingTypeTab = (type: string) => {
+    // Reset all secondary toggles
+    setRoomSharing(false)
+    setRentWithOption(false)
+    setAllowsTransfer(false)
+    updateFormData("listingType", type)
+  }
+
+  const handleSecondaryToggle = (type: 'RentWithOption' | 'RoomSharing' | 'Transfer') => {
+    if (type === 'RentWithOption') {
+      if (formData.listingType === 'RentWithOption') {
+        updateFormData('listingType', 'Rent')
+        setRentWithOption(false)
+      } else {
+        updateFormData('listingType', 'RentWithOption')
+        setRentWithOption(true)
+        setRoomSharing(false)
+        setAllowsTransfer(false)
+      }
+    } else if (type === 'RoomSharing') {
+      if (formData.listingType === 'RoomSharing') {
+        updateFormData('listingType', 'Rent')
+        setRoomSharing(false)
+      } else {
+        updateFormData('listingType', 'RoomSharing')
+        setRoomSharing(true)
+        setRentWithOption(false)
+        setAllowsTransfer(false)
+      }
+    } else if (type === 'Transfer') {
+      if (formData.listingType === 'Transfer') {
+        updateFormData('listingType', 'Sale')
+        setAllowsTransfer(false)
+      } else {
+        updateFormData('listingType', 'Transfer')
+        setAllowsTransfer(true)
+        setRoomSharing(false)
+        setRentWithOption(false)
+      }
+    }
+  }
 
   const handleNext = () => {
     // Validate required fields
@@ -267,16 +314,16 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
           <motion.div
             className="absolute top-1 left-1 w-[calc(50%-2px)] h-8 bg-white rounded-md shadow-sm"
             animate={{
-              x: formData.listingType === "Sale" ? 0 : "calc(100% - 5px)"
+              x: formData.listingType === "Sale" || formData.listingType === "Transfer" ? 0 : "calc(100% - 5px)"
             }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
           <div className="relative flex h-full">
             <button
-              onClick={() => updateFormData("listingType", "Sale")}
+              onClick={() => handleListingTypeTab("Sale")}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
-                formData.listingType === "Sale"
+                formData.listingType === "Sale" || formData.listingType === "Transfer"
                   ? "text-gray-900"
                   : "text-gray-600"
               )}
@@ -284,10 +331,10 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
               Venta
             </button>
             <button
-              onClick={() => updateFormData("listingType", "Rent")}
+              onClick={() => handleListingTypeTab("Rent")}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
-                formData.listingType === "Rent"
+                formData.listingType === "Rent" || formData.listingType === "RentWithOption" || formData.listingType === "RoomSharing"
                   ? "text-gray-900"
                   : "text-gray-600"
               )}
@@ -297,6 +344,57 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
           </div>
         </div>
       </div>
+      {/* Replace the secondary toggles with checkboxes */}
+      {["Rent", "RentWithOption", "RoomSharing"].includes(formData.listingType) && (
+        <div className="flex flex-row gap-6 mb-6 ml-6 items-center">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="roomSharing"
+              checked={formData.listingType === 'RoomSharing'}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  updateFormData('listingType', 'RoomSharing')
+                } else {
+                  updateFormData('listingType', 'Rent')
+                }
+              }}
+            />
+            <label htmlFor="roomSharing" className="text-xs text-gray-700 select-none cursor-pointer">Compartir habitación</label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="rentWithOption"
+              checked={formData.listingType === 'RentWithOption'}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  updateFormData('listingType', 'RentWithOption')
+                } else {
+                  updateFormData('listingType', 'Rent')
+                }
+              }}
+            />
+            <label htmlFor="rentWithOption" className="text-xs text-gray-700 select-none cursor-pointer">Alquiler con opción a compra</label>
+          </div>
+        </div>
+      )}
+      {["Sale", "Transfer"].includes(formData.listingType) && (
+        <div className="flex flex-row gap-6 mb-6 ml-6 items-center">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="transfer"
+              checked={formData.listingType === 'Transfer'}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  updateFormData('listingType', 'Transfer')
+                } else {
+                  updateFormData('listingType', 'Sale')
+                }
+              }}
+            />
+            <label htmlFor="transfer" className="text-xs text-gray-700 select-none cursor-pointer">Transferencia</label>
+          </div>
+        </div>
+      )}
 
       {/* Property Type Section */}
       <div className="space-y-2">
@@ -392,7 +490,14 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
       <div className="space-y-2">
         <h3 className="text-md font-medium text-gray-900">Subtipo de Propiedad</h3>
         <Select 
-          value={formData.propertySubtype} 
+          value={formData.propertySubtype || (
+            formData.propertyType === "piso" ? "Piso" :
+            formData.propertyType === "casa" ? "Casa" :
+            formData.propertyType === "local" ? "Otros" :
+            formData.propertyType === "solar" ? "Suelo residencial" :
+            formData.propertyType === "garage" || formData.propertyType === "garaje" ? "Individual" :
+            ""
+          )}
           onValueChange={(value) => updateFormData("propertySubtype", value)}
         >
           <SelectTrigger className="h-10 shadow-md border-0">
@@ -437,7 +542,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
                 <SelectItem value="Suelo rústico">Suelo rústico</SelectItem>
               </>
             )}
-            {formData.propertyType === "garage" && (
+            {(formData.propertyType === "garage" || formData.propertyType === "garaje") && (
               <>
                 <SelectItem value="Moto">Moto</SelectItem>
                 <SelectItem value="Doble">Doble</SelectItem>

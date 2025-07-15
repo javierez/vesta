@@ -317,7 +317,8 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
     }
   }
 
-  const [listingType, setListingType] = useState(listing.listingType ?? 'Sale')
+  const [listingType, setListingType] = useState<string>(listing.listingType || 'Sale')
+  const currentListingType = listingType ?? "";
   const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false)
   const [newConstruction, setNewConstruction] = useState(listing.newConstruction ?? false)
   const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([])
@@ -516,24 +517,79 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             <div className="flex gap-2">
               <Button
                 type="button"
-                variant={listingType === 'Sale' ? "default" : "outline"}
+                variant={['Sale', 'Transfer'].includes(currentListingType) ? "default" : "outline"}
                 size="sm"
-                onClick={() => handleListingTypeChange('Sale')}
+                onClick={() => setListingType('Sale')}
                 className="flex-1"
               >
                 Venta
               </Button>
               <Button
                 type="button"
-                variant={listingType === 'Rent' ? "default" : "outline"}
+                variant={['Rent', 'RentWithOption', 'RoomSharing'].includes(currentListingType) ? "default" : "outline"}
                 size="sm"
-                onClick={() => handleListingTypeChange('Rent')}
+                onClick={() => setListingType('Rent')}
                 className="flex-1"
               >
                 Alquiler
               </Button>
             </div>
           </div>
+          {/* Secondary checkboxes for Rent types */}
+          {['Rent', 'RentWithOption', 'RoomSharing'].includes(currentListingType) && (
+            <div className="flex flex-col gap-2 ml-2 items-start">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="roomSharingLocal"
+                  checked={currentListingType === 'RoomSharing'}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setListingType('RoomSharing')
+                    } else {
+                      setListingType('Rent')
+                    }
+                    updateModuleState('basicInfo', true)
+                  }}
+                />
+                <Label htmlFor="roomSharingLocal" className="text-xs text-gray-700 select-none cursor-pointer">Compartir habitación</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="rentWithOptionLocal"
+                  checked={currentListingType === 'RentWithOption'}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setListingType('RentWithOption')
+                    } else {
+                      setListingType('Rent')
+                    }
+                    updateModuleState('basicInfo', true)
+                  }}
+                />
+                <Label htmlFor="rentWithOptionLocal" className="text-xs text-gray-700 select-none cursor-pointer">Alquiler con opción a compra</Label>
+              </div>
+            </div>
+          )}
+          {/* Secondary checkbox for Sale types */}
+          {['Sale', 'Transfer'].includes(currentListingType) && (
+            <div className="flex flex-row gap-6 ml-2 items-center">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="transferLocal"
+                  checked={currentListingType === 'Transfer'}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setListingType('Transfer')
+                    } else {
+                      setListingType('Sale')
+                    }
+                    updateModuleState('basicInfo', true)
+                  }}
+                />
+                <Label htmlFor="transferLocal" className="text-xs text-gray-700 select-none cursor-pointer">Transferencia</Label>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="propertyType" className="text-sm">Tipo de Propiedad</Label>
@@ -564,7 +620,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
           <div className="space-y-1.5">
             <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
             <Select 
-              value={listing.propertySubtype || ""}
+              value={listing.propertySubtype || "Otros"}
               onValueChange={(value) => {
                 // Update the listing object directly for now
                 listing.propertySubtype = value
