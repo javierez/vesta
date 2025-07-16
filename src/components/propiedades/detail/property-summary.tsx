@@ -1,5 +1,6 @@
 "use client"
 
+import React, { useState } from "react"
 import { Card, CardContent } from "~/components/ui/card"
 import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
@@ -21,7 +22,6 @@ import {
   Zap,
   FileText,
 } from "lucide-react"
-import { useState } from "react"
 
 // Add date formatting function
 const formatDate = (date: Date) => {

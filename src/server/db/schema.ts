@@ -381,16 +381,27 @@ export const documents = singlestoreTable("documents", {
     .primaryKey()
     .autoincrement(),
   filename: varchar("filename", { length: 255 }).notNull(),
-  fileType: varchar("file_type", { length: 50 }).notNull(),           // e.g. "PDF", "Image"
-  fileUrl: varchar("file_url", { length: 2048 }).notNull(),
-  userId: bigint("user_id", { mode: "bigint" }).notNull(),            // FK → users.user_id
+  fileType: varchar("file_type", { length: 50 }).notNull(),           // e.g. "PDF", "DOC", "Image"
+  fileUrl: varchar("file_url", { length: 2048 }).notNull(),           // Public S3 URL
+  userId: bigint("user_id", { mode: "bigint" }).notNull(),            // FK → users.user_id (who uploaded)
+  
+  // Entity relationships (only one should be set per document)
+  propertyId: bigint("property_id", { mode: "bigint" }),              // FK → properties.property_id (nullable)
   contactId: bigint("contact_id", { mode: "bigint" }),                // FK → contacts.contact_id (nullable)
-  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
   listingId: bigint("listing_id", { mode: "bigint" }),                // FK → listings.listing_id (nullable)
   leadId: bigint("lead_id", { mode: "bigint" }),                      // FK → leads.lead_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }),                      // FK → deals.deal_id (nullable)
   appointmentId: bigint("appointment_id", { mode: "bigint" }),        // FK → appointments.appointment_id (nullable)
   prospectId: bigint("prospect_id", { mode: "bigint" }),              // FK → prospects.prospect_id (nullable)
+  
+  // AWS S3 fields (similar to property_images)
+  documentKey: varchar("document_key", { length: 2048 }).notNull(),   // S3 object key for operations
+  s3key: varchar("s3key", { length: 2048 }).notNull(),                // S3 storage key
+  documentTag: varchar("document_tag", { length: 255 }),              // Category/type tag (e.g., "contract", "ID", "deed")
+  documentOrder: int("document_order").default(0).notNull(),          // Display order within entity
+  
+  // System fields
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

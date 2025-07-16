@@ -1,7 +1,6 @@
 "use client"
 
-import * as React from "react"
-import { useState } from "react"
+import React, { useState } from "react"
 import Image from "next/image"
 import { Plus, Trash2, Maximize2, X, Download, CheckSquare2, Square, GripVertical } from "lucide-react"
 import { Button } from "~/components/ui/button"

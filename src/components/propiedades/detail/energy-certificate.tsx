@@ -1,13 +1,14 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { Upload, FileText, X, Check, AlertTriangle } from 'lucide-react'
+import { Upload, FileText, X, Check, AlertTriangle, ExternalLink } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Badge } from '~/components/ui/badge'
 import { ModernSaveIndicator } from '~/components/propiedades/form/common/modern-save-indicator'
 import { cn } from '~/lib/utils'
 import { updateProperty } from '~/server/queries/properties'
+import { uploadDocument } from '~/app/actions/upload'
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -16,13 +17,18 @@ interface EnergyCertificateProps {
   uploadedFile?: string | null
   className?: string
   propertyId?: bigint
+  userId?: bigint
+  listingId?: bigint
+  referenceNumber?: string
 }
 
 export function EnergyCertificate({ 
   energyRating, 
   uploadedFile, 
   className = "",
-  propertyId
+  propertyId,
+  userId,
+  referenceNumber
 }: EnergyCertificateProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -30,8 +36,9 @@ export function EnergyCertificate({
   const [currentRating, setCurrentRating] = useState(energyRating)
   const [pendingRating, setPendingRating] = useState<string | null>(null)
   const [saveState, setSaveState] = useState<SaveState>("idle")
-  
-  const hasUploadedCertificate = !!uploadedFile
+  const [uploadedDocumentUrl, setUploadedDocumentUrl] = useState<string | null>(uploadedFile || null)
+  const hasUploadedCertificate = !!uploadedDocumentUrl
+
 
   const getEnergyRatingColor = (rating: string | null | undefined, isActive: boolean = false) => {
     if (!rating) return "bg-gray-300"
@@ -75,14 +82,14 @@ export function EnergyCertificate({
     }
   }
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsDragOver(false)
     
     const files = Array.from(e.dataTransfer.files)
     const pdfFile = files.find(file => file.type === 'application/pdf')
     
-    if (pdfFile) {
+    if (pdfFile && userId && referenceNumber) {
       setIsUploading(true)
       setUploadProgress(0)
       
@@ -97,19 +104,42 @@ export function EnergyCertificate({
         })
       }, 200)
       
-      // TODO: Implement file upload logic
-      console.log('Energy certificate uploaded:', pdfFile.name)
-      
-      // Simulate upload completion
-      setTimeout(() => {
+      try {
+        // Upload the energy certificate document (no listingId/contactId)
+        const uploadedDocument = await uploadDocument(
+          pdfFile,
+          userId,
+          referenceNumber,
+          1, // documentOrder
+          'energy_certificate', // documentTag
+          undefined, // contactId
+          undefined, // listingId  
+          undefined, // leadId
+          undefined, // dealId
+          undefined, // appointmentId
+          propertyId // propertyId
+        )
+        
+        clearInterval(progressInterval)
         setUploadProgress(100)
+                
+        // Store the uploaded document URL for preview
+        setUploadedDocumentUrl(uploadedDocument.fileUrl)
+        
+        // Show completion for a moment then hide
         setTimeout(() => {
           setIsUploading(false)
           setUploadProgress(0)
         }, 500)
-      }, 2000)
+        
+      } catch (error) {
+        clearInterval(progressInterval)
+        console.error('Error uploading energy certificate:', error)
+        setIsUploading(false)
+        setUploadProgress(0)
+      }
     }
-  }, [])
+  }, [userId, referenceNumber])
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -121,9 +151,9 @@ export function EnergyCertificate({
     setIsDragOver(false)
   }, [])
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file && file.type === 'application/pdf') {
+    if (file && file.type === 'application/pdf' && userId && referenceNumber) {
       setIsUploading(true)
       setUploadProgress(0)
       
@@ -138,19 +168,42 @@ export function EnergyCertificate({
         })
       }, 200)
       
-      // TODO: Implement file upload logic
-      console.log('Energy certificate uploaded:', file.name)
-      
-      // Simulate upload completion
-      setTimeout(() => {
+      try {
+        // Upload the energy certificate document (no listingId/contactId)
+        const uploadedDocument = await uploadDocument(
+          file,
+          userId,
+          referenceNumber,
+          1, // documentOrder
+          'energy_certificate', // documentTag
+          undefined, // contactId
+          undefined, // listingId  
+          undefined, // leadId
+          undefined, // dealId
+          undefined, // appointmentId
+          propertyId // propertyId
+        )
+        
+        clearInterval(progressInterval)
         setUploadProgress(100)
+                
+        // Store the uploaded document URL for preview
+        setUploadedDocumentUrl(uploadedDocument.fileUrl)
+        
+        // Show completion for a moment then hide
         setTimeout(() => {
           setIsUploading(false)
           setUploadProgress(0)
         }, 500)
-      }, 2000)
+        
+      } catch (error) {
+        clearInterval(progressInterval)
+        console.error('Error uploading energy certificate:', error)
+        setIsUploading(false)
+        setUploadProgress(0)
+      }
     }
-  }, [])
+  }, [userId, referenceNumber])
 
   const handleArrowClick = (rating: string) => {
     if (rating !== currentRating) {
@@ -273,10 +326,14 @@ export function EnergyCertificate({
         <div className="flex flex-col">          
           {/* File Drop Zone */}
           <div
-            className={`border-2 border-dashed rounded-lg transition-colors flex-1 min-h-[200px] ${
-              isDragOver 
-                ? 'border-blue-400 bg-blue-50' 
-                : 'border-gray-200 hover:border-gray-300'
+            className={`transition-colors flex-1 min-h-[200px] ${
+              hasUploadedCertificate 
+                ? 'border-0' 
+                : `border-2 border-dashed rounded-lg ${
+                    isDragOver 
+                      ? 'border-blue-400 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`
             }`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -295,10 +352,41 @@ export function EnergyCertificate({
                 <p className="text-sm text-gray-600 mt-2">Subiendo certificado...</p>
               </div>
             ) : hasUploadedCertificate ? (
-              <div className="flex flex-col items-center justify-center h-full">
-                <Check className="h-8 w-8 text-green-600 mb-3" />
-                <p className="text-sm font-medium text-green-700">Certificado subido</p>
-                <p className="text-xs text-gray-500">{uploadedFile}</p>
+              <div className="relative h-full group rounded-lg overflow-hidden">
+                {/* PDF Preview - Full space */}
+                <iframe
+                  src={uploadedDocumentUrl!}
+                  className="w-full h-full border-0"
+                  title="Energy Certificate Preview"
+                  onError={() => console.log('Iframe load error')}
+                />
+                
+                {/* Transparent overlay with controls - only visible on hover */}
+                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  {/* Bottom controls */}
+                  <div className="absolute bottom-3 right-3 flex gap-2">
+                    <button
+                      onClick={() => window.open(uploadedDocumentUrl!, '_blank')}
+                      className="bg-white/80 hover:bg-white text-gray-700 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
+                      title="Abrir en nueva pestaña"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setUploadedDocumentUrl(null)}
+                      className="bg-white/80 hover:bg-red-50 text-red-600 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
+                      title="Eliminar certificado"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Bottom status indicator */}
+                  <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg">
+                    <Check className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-700">Certificado subido</span>
+                  </div>
+                </div>
               </div>
             ) : (
               <label className="flex flex-col items-center justify-center h-full cursor-pointer group">

@@ -2,7 +2,7 @@
 
 import { Input } from "~/components/ui/input"
 import { Search } from "lucide-react"
-import { useState } from "react"
+import React, { useState } from "react"
 
 interface PropertySearchProps {
   onSearchChange: (value: string) => void

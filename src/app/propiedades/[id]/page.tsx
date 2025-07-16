@@ -16,6 +16,7 @@ import { EnergyCertificate } from "~/components/propiedades/detail/energy-certif
 import { use } from "react"
 import { getPropertyImages } from "~/server/queries/property_images"
 import { getListingDetails } from "~/server/queries/listing"
+import { getEnergyCertificate } from "~/server/queries/document"
 import type { PropertyImage } from "~/lib/data"
 import { Label } from "~/components/ui/label"
 import { Input } from "~/components/ui/input"
@@ -33,6 +34,9 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   if (!listing) {
     notFound()
   }
+
+  // Get energy certificate document
+  const energyCertificate = await getEnergyCertificate(Number(listing.propertyId))
 
   // Get all property images with proper fallback
   const propertyImages = await getPropertyImages(BigInt(listing.propertyId))
@@ -143,8 +147,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         <div className="pb-8 max-w-4xl mx-auto mb-8">
           <EnergyCertificate 
             energyRating={listing.energyCertification || null}
-            uploadedFile={null}
+            uploadedFile={energyCertificate?.fileUrl || null}
             propertyId={listing.propertyId}
+            userId={listing.agentId || BigInt(1)} // TODO: Get from auth context
+            listingId={listing.listingId}
+            referenceNumber={listing.referenceNumber || ""}
           />
         </div>
       </div>

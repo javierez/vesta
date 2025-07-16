@@ -79,4 +79,68 @@ export async function uploadImageToS3(
     console.error("Error uploading to S3:", error);
     throw error;
   }
+}
+
+export async function uploadDocumentToS3(
+  file: File,
+  referenceNumber: string,
+  documentOrder: number,
+  documentTag?: string
+): Promise<{
+  fileUrl: string;
+  s3key: string;
+  documentKey: string;
+  filename: string;
+  fileType: string;
+  documentTag?: string;
+  documentOrder: number;
+}> {
+  try {
+    if (!file) {
+      throw new Error("No file provided");
+    }
+    if (!referenceNumber) {
+      throw new Error("No reference number provided");
+    }
+
+    // Get file extension
+    const fileExtension = file.name.split('.').pop();
+    if (!fileExtension) {
+      throw new Error("Could not determine file extension");
+    }
+
+    // Create the S3 key: referenceNumber/documents/document_{order}_{nanoid}.{ext}
+    const documentKey = `${referenceNumber}/documents/document_${documentOrder}_${nanoid(6)}.${fileExtension}`;
+    const s3key = `s3://${process.env.AWS_S3_BUCKET}/${documentKey}`;
+
+    // Convert File to Buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Upload to S3
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET!,
+        Key: documentKey,
+        Body: buffer,
+        ContentType: file.type,
+      })
+    );
+
+    // Build the public S3 URL
+    const fileUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${documentKey}`;
+
+    return {
+      fileUrl,
+      s3key,
+      documentKey,
+      filename: file.name,
+      fileType: file.type,
+      documentTag,
+      documentOrder,
+    };
+  } catch (error) {
+    console.error("Error uploading document to S3:", error);
+    throw error;
+  }
 } 

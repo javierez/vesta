@@ -1162,6 +1162,12 @@ export type Document = {
   leadId?: bigint;
   dealId?: bigint;
   appointmentId?: bigint;
+  propertyId?: bigint;
+  // Add these fields to match schema
+  documentKey: string;
+  s3key: string;
+  documentTag?: string;
+  documentOrder: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -1723,6 +1729,10 @@ export const documents: Document[] = [
     uploadedAt: new Date("2024-03-15"),
     listingId: BigInt(1),
     dealId: BigInt(1),
+    documentKey: "property_deed.pdf",
+    s3key: "s3://inmobiliariaacropolis/documents/property_deed.pdf",
+    documentTag: "property deed",
+    documentOrder: 1,
     isActive: true,
     createdAt: new Date("2024-03-15"),
     updatedAt: new Date("2024-03-15")
@@ -1737,6 +1747,10 @@ export const documents: Document[] = [
     uploadedAt: new Date("2024-03-16"),
     listingId: BigInt(2),
     leadId: BigInt(2),
+    documentKey: "rental_agreement.pdf",
+    s3key: "s3://inmobiliariaacropolis/documents/rental_agreement.pdf",
+    documentTag: "rental agreement",
+    documentOrder: 2,
     isActive: true,
     createdAt: new Date("2024-03-16"),
     updatedAt: new Date("2024-03-16")
