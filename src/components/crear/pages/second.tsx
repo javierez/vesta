@@ -29,6 +29,7 @@ interface SecondPageFormData {
   lastRenovationYear: string
   isRenovated: boolean
   buildingFloors: string
+  conservationStatus: number
 }
 
 const initialFormData: SecondPageFormData = {
@@ -40,6 +41,7 @@ const initialFormData: SecondPageFormData = {
   lastRenovationYear: "",
   isRenovated: false,
   buildingFloors: "",
+  conservationStatus: 1,
 }
 
 export default function SecondPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: SecondPageProps) {
@@ -83,11 +85,12 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
         lastRenovationYear: details.lastRenovationYear?.toString() || "",
         isRenovated: details.lastRenovationYear && details.lastRenovationYear !== details.yearBuilt,
         buildingFloors: details.buildingFloors?.toString() || "",
+        conservationStatus: details.conservationStatus || 1,
       }))
     }
   }, [globalFormData?.listingDetails])
 
-  const updateFormData = (field: keyof SecondPageFormData, value: string) => {
+  const updateFormData = (field: keyof SecondPageFormData, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -195,6 +198,9 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
         updateData.lastRenovationYear = formData.isRenovated ? Number(formData.lastRenovationYear) : Number(formData.yearBuilt)
         updateData.buildingFloors = formData.buildingFloors ? Number(formData.buildingFloors) : undefined
       }
+      
+      // Add conservation status for all property types
+      updateData.conservationStatus = formData.conservationStatus
 
       console.log("Saving second page data:", updateData) // Debug log
 
@@ -341,6 +347,81 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
               />
             </div>
           )}
+
+      {/* Conservation Status - Show for all property types */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-gray-900">Estado de Conservación</h3>
+        <div className="relative bg-gray-100 rounded-lg p-1 h-10">
+          <motion.div
+            className="absolute top-1 left-1 w-[calc(20%-2px)] h-8 bg-white rounded-md shadow-sm"
+            animate={{
+              x: formData.conservationStatus === 3 ? 0 : 
+                 formData.conservationStatus === 6 ? "100%" :
+                 formData.conservationStatus === 1 ? "200%" :
+                 formData.conservationStatus === 2 ? "300%" :
+                 "400%"
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          />
+          <div className="relative flex h-full">
+            <button
+              onClick={() => updateFormData("conservationStatus", 3)}
+              className={cn(
+                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
+                formData.conservationStatus === 3
+                  ? "text-gray-900"
+                  : "text-gray-600"
+              )}
+            >
+              Nuevo
+            </button>
+            <button
+              onClick={() => updateFormData("conservationStatus", 6)}
+              className={cn(
+                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
+                formData.conservationStatus === 6
+                  ? "text-gray-900"
+                  : "text-gray-600"
+              )}
+            >
+              Reformado
+            </button>
+            <button
+              onClick={() => updateFormData("conservationStatus", 1)}
+              className={cn(
+                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
+                formData.conservationStatus === 1
+                  ? "text-gray-900"
+                  : "text-gray-600"
+              )}
+            >
+              Bueno
+            </button>
+            <button
+              onClick={() => updateFormData("conservationStatus", 2)}
+              className={cn(
+                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
+                formData.conservationStatus === 2
+                  ? "text-gray-900"
+                  : "text-gray-600"
+              )}
+            >
+              Regular
+            </button>
+            <button
+              onClick={() => updateFormData("conservationStatus", 4)}
+              className={cn(
+                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
+                formData.conservationStatus === 4
+                  ? "text-gray-900"
+                  : "text-gray-600"
+              )}
+            >
+              Reformar
+            </button>
+          </div>
+        </div>
+      </div>
 
           <div className="space-y-2">
             <label htmlFor="buildingFloors" className="text-xs font-medium text-gray-600">

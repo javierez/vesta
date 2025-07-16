@@ -8,13 +8,26 @@ import { Badge } from '~/components/ui/badge'
 import { ModernSaveIndicator } from '~/components/propiedades/form/common/modern-save-indicator'
 import { cn } from '~/lib/utils'
 import { updateProperty } from '~/server/queries/properties'
-import { uploadDocument } from '~/app/actions/upload'
+import { uploadDocument, deleteDocument } from '~/app/actions/upload'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '~/components/ui/dialog'
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
 interface EnergyCertificateProps {
   energyRating?: string | null
   uploadedFile?: string | null
+  uploadedDocument?: {
+    docId: bigint
+    documentKey: string
+    fileUrl: string
+  } | null
   className?: string
   propertyId?: bigint
   userId?: bigint
@@ -25,6 +38,7 @@ interface EnergyCertificateProps {
 export function EnergyCertificate({ 
   energyRating, 
   uploadedFile, 
+  uploadedDocument,
   className = "",
   propertyId,
   userId,
@@ -36,9 +50,11 @@ export function EnergyCertificate({
   const [currentRating, setCurrentRating] = useState(energyRating)
   const [pendingRating, setPendingRating] = useState<string | null>(null)
   const [saveState, setSaveState] = useState<SaveState>("idle")
-  const [uploadedDocumentUrl, setUploadedDocumentUrl] = useState<string | null>(uploadedFile || null)
+  const [uploadedDocumentUrl, setUploadedDocumentUrl] = useState<string | null>(uploadedFile || uploadedDocument?.fileUrl || null)
+  const [currentDocument, setCurrentDocument] = useState(uploadedDocument)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const hasUploadedCertificate = !!uploadedDocumentUrl
-
 
   const getEnergyRatingColor = (rating: string | null | undefined, isActive: boolean = false) => {
     if (!rating) return "bg-gray-300"
@@ -126,6 +142,13 @@ export function EnergyCertificate({
         // Store the uploaded document URL for preview
         setUploadedDocumentUrl(uploadedDocument.fileUrl)
         
+        // Store the complete document info for deletion
+        setCurrentDocument({
+          docId: uploadedDocument.docId,
+          documentKey: uploadedDocument.documentKey,
+          fileUrl: uploadedDocument.fileUrl
+        })
+        
         // Show completion for a moment then hide
         setTimeout(() => {
           setIsUploading(false)
@@ -189,6 +212,13 @@ export function EnergyCertificate({
                 
         // Store the uploaded document URL for preview
         setUploadedDocumentUrl(uploadedDocument.fileUrl)
+        
+        // Store the complete document info for deletion
+        setCurrentDocument({
+          docId: uploadedDocument.docId,
+          documentKey: uploadedDocument.documentKey,
+          fileUrl: uploadedDocument.fileUrl
+        })
         
         // Show completion for a moment then hide
         setTimeout(() => {
@@ -373,7 +403,7 @@ export function EnergyCertificate({
                       <ExternalLink className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => setUploadedDocumentUrl(null)}
+                      onClick={() => setShowDeleteDialog(true)}
                       className="bg-white/80 hover:bg-red-50 text-red-600 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
                       title="Eliminar certificado"
                     >
@@ -409,6 +439,56 @@ export function EnergyCertificate({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar certificado energético?</DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer. El certificado energético se eliminará permanentemente.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!currentDocument) {
+                  // If no document info, just clear the URL (fallback)
+                  setUploadedDocumentUrl(null)
+                  setShowDeleteDialog(false)
+                  return
+                }
+                
+                setIsDeleting(true)
+                try {
+                  // Delete from both S3 and database
+                  await deleteDocument(currentDocument.documentKey, currentDocument.docId)
+                  
+                  // Clear the local state
+                  setUploadedDocumentUrl(null)
+                  setCurrentDocument(null)
+                  setShowDeleteDialog(false)
+                } catch (error) {
+                  console.error('Error deleting document:', error)
+                  // TODO: Show error toast
+                } finally {
+                  setIsDeleting(false)
+                }
+              }}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

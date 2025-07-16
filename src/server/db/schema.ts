@@ -82,6 +82,7 @@ export const properties = singlestoreTable("properties", {
   yearBuilt: smallint("year_built"),
   cadastralReference: varchar("cadastral_reference", { length: 255 }),
   builtSurfaceArea: decimal("built_surface_area", { precision: 10, scale: 2 }),
+  conservationStatus: smallint("conservation_status").default(1), // 1=Good, 2=Pretty good, 3=Almost new, 4=Needs renovation, 6=Renovated
 
   // Location Information
   street: varchar("street", { length: 255 }),

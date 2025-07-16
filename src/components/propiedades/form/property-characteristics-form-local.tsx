@@ -142,7 +142,8 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             hasHeating: isHeating,
             heatingType,
             hotWaterType: isHotWater ? hotWaterType : null,
-            airConditioningType: isAirConditioning ? airConditioningType : null
+            airConditioningType: isAirConditioning ? airConditioningType : null,
+            conservationStatus: listing.conservationStatus || 1
           }
           break
 
@@ -492,7 +493,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
   }, [listing.listingId, listing.agentId])
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Basic Information */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
         <ModernSaveIndicator 
@@ -787,6 +788,28 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               }}
             />
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="conservationStatus" className="text-sm">Estado de conservación</Label>
+            <Select 
+              value={listing.conservationStatus?.toString() || "1"} 
+              onValueChange={(value) => {
+                // Update the listing object directly for now
+                listing.conservationStatus = parseInt(value)
+                updateModuleState('propertyDetails', true)
+              }}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Seleccionar estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">Nuevo</SelectItem>
+                <SelectItem value="6">Reformado</SelectItem>
+                <SelectItem value="1">Bueno</SelectItem>
+                <SelectItem value="2">Regular</SelectItem>
+                <SelectItem value="4">Reformar</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </Card>
 
@@ -821,7 +844,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               onChange={() => updateModuleState('location', true)}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="postalCode" className="text-sm">Código Postal</Label>
               <Input 
@@ -841,7 +864,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="city" className="text-sm">Ciudad</Label>
               <Input 
@@ -921,7 +944,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
           </div>
           {hasGarage && (
             <div className="ml-6 mt-1 space-y-2 border-l-2 pl-3">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label htmlFor="garageType" className="text-xs">Tipo</Label>
                   <Select value={garageType} onValueChange={(value) => {
@@ -1011,7 +1034,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
           </div>
           {hasStorageRoom && (
             <div className="ml-6 mt-1 space-y-2 border-l-2 pl-3">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label htmlFor="storageRoomSize" className="text-xs">Nº de trastero</Label>
                   <Input
@@ -1334,7 +1357,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
       </Card>
 
       {/* Additional Characteristics and Premium Features */}
-      <div className="grid grid-cols-2 gap-4 col-span-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 col-span-full">
         {/* Additional Characteristics */}
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("additionalCharacteristics"))}>
           <ModernSaveIndicator 
@@ -1365,7 +1388,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             showAdditionalCharacteristics ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"
           )}>
             <div className="overflow-hidden">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   {/* Security Features */}
                   <div className="space-y-2">
@@ -1600,7 +1623,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             showPremiumFeatures ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"
           )}>
             <div className="overflow-hidden">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   {/* Views */}
                   <div className="space-y-2">
@@ -1768,7 +1791,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
       </div>
 
       {/* Description */}
-      <Card className={cn("relative p-4 col-span-2 transition-all duration-500 ease-out", getCardStyles("description"))}>
+      <Card className={cn("relative p-4 col-span-full transition-all duration-500 ease-out", getCardStyles("description"))}>
         <ModernSaveIndicator 
           state={moduleStates.description?.saveState || "idle"} 
           onSave={() => saveModule("description")} 

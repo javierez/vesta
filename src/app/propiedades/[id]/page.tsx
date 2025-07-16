@@ -147,7 +147,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         <div className="pb-8 max-w-4xl mx-auto mb-8">
           <EnergyCertificate 
             energyRating={listing.energyCertification || null}
-            uploadedFile={energyCertificate?.fileUrl || null}
+            uploadedDocument={energyCertificate ? {
+              docId: energyCertificate.docId,
+              documentKey: energyCertificate.documentKey,
+              fileUrl: energyCertificate.fileUrl
+            } : null}
             propertyId={listing.propertyId}
             userId={listing.agentId || BigInt(1)} // TODO: Get from auth context
             listingId={listing.listingId}

@@ -35,8 +35,6 @@ Tasks
 
 
 Checks:
-- add certificado energético
-- add status: renovado, necesita renovación
-
-- I think we don't delete pictures in AWS, just in database
-- Create allowance for documents
+- Adjust forms to make them similar to the casa/piso one (!)
+- Add images and videos to Fotocasa integration
+- Add videos and links to the property
