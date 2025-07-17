@@ -1815,7 +1815,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
       </Card>
 
       {/* Rental Properties - Only shown when listing type includes Rent */}
-      {listingType === 'Rent' && (
+      {!(listingType === 'Sale' || listingType === 'Transfer') && (
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
           <ModernSaveIndicator 
             state={moduleStates.rentalProperties?.saveState || "idle"} 

@@ -833,13 +833,8 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           <div className="space-y-1.5">
             <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
             <Select 
-              value={listing.propertySubtype ?? (
-                propertyType === "piso" ? "Piso" :
-                propertyType === "casa" ? "Casa" :
-                ""
-              )}
+              value={listing.propertySubtype ?? (propertyType === "piso" ? "Piso" : propertyType === "casa" ? "Casa" : "")}
               onValueChange={(value) => {
-                // Update the listing object directly for now
                 listing.propertySubtype = value
                 updateModuleState('basicInfo', true)
               }}
@@ -2652,65 +2647,67 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       </Dialog>
 
       {/* Rental Properties Module */}
-      <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
-        <ModernSaveIndicator 
-          state={moduleStates.rentalProperties?.saveState || "idle"} 
-          onSave={() => saveModule("rentalProperties")} 
-        />
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES DEL ALQUILER</h3>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2 sm:gap-4 items-center">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="internet" 
-                checked={internet}
-                onCheckedChange={(checked) => {
-                  setInternet(checked as boolean)
-                  updateModuleState('rentalProperties', true)
-                }} 
-              />
-              <Label htmlFor="internet" className="text-sm">Internet</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="studentFriendly" 
-                checked={studentFriendly}
-                onCheckedChange={(checked) => {
-                  setStudentFriendly(checked as boolean)
-                  updateModuleState('rentalProperties', true)
-                }} 
-              />
-              <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="petsAllowed" 
-                checked={petsAllowed}
-                onCheckedChange={(checked) => {
-                  setPetsAllowed(checked as boolean)
-                  updateModuleState('rentalProperties', true)
-                }} 
-              />
-              <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="appliancesIncluded" 
-                checked={appliancesIncluded}
-                onCheckedChange={(checked) => {
-                  setAppliancesIncluded(checked as boolean)
-                  updateModuleState('rentalProperties', true)
-                }} 
-              />
-              <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
+      {!(currentListingType === 'Sale' || currentListingType === 'Transfer') && (
+        <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
+          <ModernSaveIndicator 
+            state={moduleStates.rentalProperties?.saveState || "idle"} 
+            onSave={() => saveModule("rentalProperties")} 
+          />
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold tracking-wide">PROPIEDADES DEL ALQUILER</h3>
             </div>
           </div>
-        </div>
-      </Card>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2 sm:gap-4 items-center">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="internet" 
+                  checked={internet}
+                  onCheckedChange={(checked) => {
+                    setInternet(checked as boolean)
+                    updateModuleState('rentalProperties', true)
+                  }} 
+                />
+                <Label htmlFor="internet" className="text-sm">Internet</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="studentFriendly" 
+                  checked={studentFriendly}
+                  onCheckedChange={(checked) => {
+                    setStudentFriendly(checked as boolean)
+                    updateModuleState('rentalProperties', true)
+                  }} 
+                />
+                <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="petsAllowed" 
+                  checked={petsAllowed}
+                  onCheckedChange={(checked) => {
+                    setPetsAllowed(checked as boolean)
+                    updateModuleState('rentalProperties', true)
+                  }} 
+                />
+                <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="appliancesIncluded" 
+                  checked={appliancesIncluded}
+                  onCheckedChange={(checked) => {
+                    setAppliancesIncluded(checked as boolean)
+                    updateModuleState('rentalProperties', true)
+                  }} 
+                />
+                <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
       <ExternalLinkPopup
         isOpen={isCatastroPopupOpen}
         onClose={() => setIsCatastroPopupOpen(false)}

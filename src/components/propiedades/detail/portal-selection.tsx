@@ -33,6 +33,7 @@ interface Platform {
   description?: string
   isDefault?: boolean // Whether this platform is enabled by default
   visibilityMode?: number // For Fotocasa visibility mode (1=Exact, 2=Street, 3=Zone)
+  hidePrice?: boolean // For Fotocasa hide price option
 }
 
 interface PortalSelectionProps {
@@ -99,6 +100,9 @@ export function PortalSelection({
   const [visibilityModes, setVisibilityModes] = useState<Record<string, number>>({
     fotocasa: 1 // Default to Exact
   })
+  const [hidePriceModes, setHidePriceModes] = useState<Record<string, boolean>>({
+    fotocasa: false // Default to show price
+  })
 
   // Initialize platforms based on portal fields and defaults
   useEffect(() => {
@@ -130,7 +134,8 @@ export function PortalSelection({
           isActive,
           status,
           lastSync: portalValue ? new Date() : undefined,
-          visibilityMode: config.id === 'fotocasa' ? visibilityModes.fotocasa : undefined
+          visibilityMode: config.id === 'fotocasa' ? visibilityModes.fotocasa : undefined,
+          hidePrice: config.id === 'fotocasa' ? hidePriceModes.fotocasa : undefined
         }
       })
       
@@ -191,7 +196,7 @@ export function PortalSelection({
       if (portalUpdates.fotocasa) {
         console.log('Publishing to Fotocasa...')
         try {
-          const fotocasaResult = await publishToFotocasa(Number(listingId))
+          const fotocasaResult = await publishToFotocasa(Number(listingId), visibilityModes.fotocasa || 1, hidePriceModes.fotocasa || false)
           if (fotocasaResult.success) {
             console.log('Successfully published to Fotocasa')
           } else {
@@ -235,6 +240,21 @@ export function PortalSelection({
     const updatedPlatforms = platforms.map(platform => 
       platform.id === platformId 
         ? { ...platform, visibilityMode: mode }
+        : platform
+    )
+    setPlatforms(updatedPlatforms)
+    setHasUnsavedChanges(true)
+  }
+
+  const handleHidePriceChange = (platformId: string, hidePrice: boolean) => {
+    setHidePriceModes(prev => ({
+      ...prev,
+      [platformId]: hidePrice
+    }))
+    
+    const updatedPlatforms = platforms.map(platform => 
+      platform.id === platformId 
+        ? { ...platform, hidePrice }
         : platform
     )
     setPlatforms(updatedPlatforms)
@@ -353,17 +373,23 @@ export function PortalSelection({
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                         <DropdownMenuSeparator />
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            Ocultar precio: {hidePriceModes.fotocasa ? 'Sí' : 'No'}
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuItem onClick={() => handleHidePriceChange('fotocasa', true)}>
+                              Sí
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleHidePriceChange('fotocasa', false)}>
+                              No
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuSeparator />
                       </>
                     )}
-                    <DropdownMenuItem>
-                      Configurar sincronización
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      Ver estadísticas
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      Historial de cambios
-                    </DropdownMenuItem>
+
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

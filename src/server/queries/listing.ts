@@ -715,6 +715,7 @@ export async function getListingDetails(listingId: number) {
         communityPool: properties.communityPool,
         privatePool: properties.privatePool,
         tennisCourt: properties.tennisCourt,
+        conservationStatus: properties.conservationStatus,
         
         // Location fields
         city: locations.city,

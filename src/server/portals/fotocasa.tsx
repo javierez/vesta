@@ -121,7 +121,19 @@ const TRANSACTION_TYPE_MAPPING: Record<string, number> = {
   'RentWithOption': 9     // Rent with buy option
 }
 
-export async function buildFotocasaPayload(listingId: number): Promise<FotocasaProperty> {
+// Orientation mapping (Spanish to Fotocasa IDs)
+const ORIENTATION_MAPPING: Record<string, number> = {
+  'noreste': 1,    // North east
+  'oeste': 2,      // West
+  'norte': 3,      // North
+  'suroeste': 4,   // South west
+  'este': 5,       // East
+  'sureste': 6,    // South east
+  'noroeste': 7,   // North west
+  'sur': 8         // South
+}
+
+export async function buildFotocasaPayload(listingId: number, visibilityMode: number = 1, hidePrice: boolean = false): Promise<FotocasaProperty> {
   try {
     // Get listing details and property images
     const listing = await getListingDetails(listingId)
@@ -227,7 +239,7 @@ export async function buildFotocasaPayload(listingId: number): Promise<FotocasaP
       FloorId: getFloorId(listing.addressDetails),
       x: listing.longitude ? parseFloat(listing.longitude.toString()) : 0,
       y: listing.latitude ? parseFloat(listing.latitude.toString()) : 0,
-      VisibilityModeId: listing.visibilityMode || 1, // 1=Exact, 2=Street, 3=Zone
+      VisibilityModeId: visibilityMode, // 1=Exact, 2=Street, 3=Zone
       Street: getStreetName(listing.street),
       Number: getStreetNumber(listing.street, listing.addressDetails)
     }]
@@ -487,6 +499,25 @@ export async function buildFotocasaPayload(listingId: number): Promise<FotocasaP
       })
     }
 
+    // Orientation (FeatureId: 28)
+    if (listing.orientation) {
+      const orientationId = ORIENTATION_MAPPING[listing.orientation.toLowerCase()]
+      if (orientationId) {
+        propertyFeatures.push({
+          FeatureId: 28,
+          DecimalValue: orientationId
+        })
+      }
+    }
+
+    // Conservation Status (FeatureId: 249)
+    if (listing.conservationStatus) {
+      propertyFeatures.push({
+        FeatureId: 249,
+        DecimalValue: listing.conservationStatus
+      })
+    }
+
     // Build PropertyDocument (images) - use actual imageOrder from database
     const propertyDocuments: PropertyDocument[] = images
       .sort((a, b) => (a.imageOrder || 0) - (b.imageOrder || 0)) // Ensure proper order
@@ -512,7 +543,7 @@ export async function buildFotocasaPayload(listingId: number): Promise<FotocasaP
     const propertyTransaction: PropertyTransaction[] = [{
       TransactionTypeId: TRANSACTION_TYPE_MAPPING[listing.listingType] || 1,
       Price: parseFloat(listing.price.toString()),
-      ShowPrice: true
+      ShowPrice: !hidePrice // ShowPrice is true when hidePrice is false
     }]
 
     // Build the complete payload
@@ -544,12 +575,10 @@ export async function buildFotocasaPayload(listingId: number): Promise<FotocasaP
 }
 
 // Server action to be called when confirming Fotocasa portal
-export async function publishToFotocasa(listingId: number): Promise<{ success: boolean; payload?: FotocasaProperty; error?: string; response?: any }> {
-  try {
-    console.log(`Publishing listing ${listingId} to Fotocasa...`)
-    
+export async function publishToFotocasa(listingId: number, visibilityMode: number = 1, hidePrice: boolean = false): Promise<{ success: boolean; payload?: FotocasaProperty; error?: string; response?: any }> {
+  try {    
     // Build the payload
-    const payload = await buildFotocasaPayload(listingId)
+    const payload = await buildFotocasaPayload(listingId, visibilityMode, hidePrice)
     
     // Log the payload for debugging
     console.log("Fotocasa Payload:", JSON.stringify(payload, null, 2))
