@@ -487,12 +487,14 @@ export async function buildFotocasaPayload(listingId: number): Promise<FotocasaP
       })
     }
 
-    // Build PropertyDocument (images)
-    const propertyDocuments: PropertyDocument[] = images.map((image, index) => ({
-      TypeId: 1, // Image type
-      Url: image.imageUrl,
-      SortingId: index + 1
-    }))
+    // Build PropertyDocument (images) - use actual imageOrder from database
+    const propertyDocuments: PropertyDocument[] = images
+      .sort((a, b) => (a.imageOrder || 0) - (b.imageOrder || 0)) // Ensure proper order
+      .map((image) => ({
+        TypeId: 1, // Image type
+        Url: image.imageUrl,
+        SortingId: image.imageOrder || 1 // Use actual order set by user in gallery
+      }))
 
     // Build PropertyContactInfo (hardcoded for now - should come from agent/owner data)
     const propertyContactInfo: PropertyContactInfo[] = [

@@ -1,7 +1,4 @@
-
-Tasks
-- Contacts: Adding a contact from the form questionnaire (x)
-- Contacts: Refining contact section: grid and table (x)
+# TODOs: 
 
 - Rent: Rent Assistant (xxx)
 - Rent: fianza (x)
@@ -19,16 +16,11 @@ Tasks
 
 - Logos: remove background and get palette.
 
-
-
-
 - Prospect: 
 
+- Lead: 
 
-
-
-- Lead
-- Deal
+- Deal: 
 
 
 
@@ -38,3 +30,6 @@ Checks:
 - Adjust forms to make them similar to the casa/piso one (!)
 - Add images and videos to Fotocasa integration
 - Add videos and links to the property
+- Review Fotocasa integration
+- Truncate property table
+- Listing Types: find synonyms
