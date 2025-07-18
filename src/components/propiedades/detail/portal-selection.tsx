@@ -7,7 +7,7 @@ import { Card, CardContent } from "~/components/ui/card"
 import { Switch } from "~/components/ui/switch"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
-import { CheckCircle2, AlertCircle, MoreVertical } from "lucide-react"
+import { CheckCircle2, AlertCircle, MoreVertical, RefreshCcw } from "lucide-react"
 import { cn } from "~/lib/utils"
 import { updateListing } from "~/server/queries/listing"
 import { toast } from "sonner"
@@ -21,7 +21,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "~/components/ui/dropdown-menu"
-import { publishToFotocasa, deleteFromFotocasa } from "~/server/portals/fotocasa"
+import { publishToFotocasa, deleteFromFotocasa, updateFotocasa } from "~/server/portals/fotocasa"
 
 interface Platform {
   id: string
@@ -103,6 +103,7 @@ export function PortalSelection({
   const [hidePriceModes, setHidePriceModes] = useState<Record<string, boolean>>({
     fotocasa: false // Default to show price
   })
+  const [refreshingPlatforms, setRefreshingPlatforms] = useState<Record<string, boolean>>({})
 
   // Initialize platforms based on portal fields and defaults
   useEffect(() => {
@@ -112,9 +113,9 @@ export function PortalSelection({
       const initializedPlatforms = platformConfig.map(config => {
         const portalValue = portalValues[config.id as keyof typeof portalValues] || false
         
-        // All platforms start as inactive by default, regardless of database values or defaults
-        let status: Platform["status"] = "inactive"
-        let isActive = false
+        // Use actual database values to determine initial state
+        let status: Platform["status"] = portalValue ? "active" : "inactive"
+        let isActive = portalValue
         
         return {
           ...config,
@@ -199,6 +200,26 @@ export function PortalSelection({
           console.error('Error calling Fotocasa API:', error)
           toast.error('Error al conectar con Fotocasa')
         }
+      } else if (currentFotocasaState && previousFotocasaState) {
+        // Fotocasa is already active - check if settings changed and update if needed
+        const currentVisibilityMode = visibilityModes.fotocasa || 1
+        const currentHidePrice = hidePriceModes.fotocasa || false
+        
+        // For now, we'll always update when Fotocasa is active and settings might have changed
+        // In a more sophisticated implementation, you'd compare with previous settings
+        console.log('Updating Fotocasa settings...')
+        try {
+          const fotocasaResult = await updateFotocasa(Number(listingId), currentVisibilityMode, currentHidePrice)
+          if (fotocasaResult.success) {
+            console.log('Successfully updated Fotocasa')
+          } else {
+            console.error('Failed to update Fotocasa:', fotocasaResult.error)
+            toast.error('Error al actualizar Fotocasa')
+          }
+        } catch (error) {
+          console.error('Error calling Fotocasa update API:', error)
+          toast.error('Error al conectar con Fotocasa para actualizar')
+        }
       } else if (!currentFotocasaState && previousFotocasaState) {
         // Fotocasa is being disabled - delete from Fotocasa
         console.log('Deleting from Fotocasa...')
@@ -266,6 +287,68 @@ export function PortalSelection({
     )
     setPlatforms(updatedPlatforms)
     setHasUnsavedChanges(true)
+  }
+
+  const handleRefresh = async (platformId: string) => {
+    // Only allow refresh if platform is active
+    const platform = platforms.find(p => p.id === platformId)
+    if (!platform?.isActive) {
+      toast.error(`${platform?.name} no está activo`)
+      return
+    }
+
+    setRefreshingPlatforms(prev => ({ ...prev, [platformId]: true }))
+
+    try {
+      if (platformId === 'fotocasa') {
+        console.log(`Refreshing ${platformId}...`)
+        const result = await updateFotocasa(
+          Number(listingId), 
+          visibilityModes.fotocasa || 1, 
+          hidePriceModes.fotocasa || false
+        )
+        
+        if (result.success) {
+          console.log(`Successfully refreshed ${platformId}`)
+          toast.success(`${platform.name} actualizado correctamente`)
+          
+          // Update platform status to active
+          const updatedPlatforms = platforms.map(p => 
+            p.id === platformId 
+              ? { ...p, status: 'active' as const, lastSync: new Date() }
+              : p
+          )
+          setPlatforms(updatedPlatforms)
+        } else {
+          console.error(`Failed to refresh ${platformId}:`, result.error)
+          toast.error(`Error al actualizar ${platform.name}: ${result.error}`)
+          
+          // Update platform status to error
+          const updatedPlatforms = platforms.map(p => 
+            p.id === platformId 
+              ? { ...p, status: 'error' as const }
+              : p
+          )
+          setPlatforms(updatedPlatforms)
+        }
+      } else {
+        // For other platforms, show not implemented message
+        toast.info(`Actualización de ${platform.name} no implementada aún`)
+      }
+    } catch (error) {
+      console.error(`Error refreshing ${platformId}:`, error)
+      toast.error(`Error al conectar con ${platform?.name}`)
+      
+      // Update platform status to error
+      const updatedPlatforms = platforms.map(p => 
+        p.id === platformId 
+          ? { ...p, status: 'error' as const }
+          : p
+      )
+      setPlatforms(updatedPlatforms)
+    } finally {
+      setRefreshingPlatforms(prev => ({ ...prev, [platformId]: false }))
+    }
   }
 
   const getVisibilityModeLabel = (mode: number) => {
@@ -357,6 +440,7 @@ export function PortalSelection({
             )}>
               {/* Settings Burger Button - Inside Top Right Corner, Only on Hover */}
               <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                {/* Settings Burger Button */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
@@ -404,6 +488,24 @@ export function PortalSelection({
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
+              </div>
+              {/* Refresh Button - Bottom Right Corner, Only on Hover */}
+              <div className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0 hover:bg-gray-100"
+                  aria-label={`Refrescar ${platform.name}`}
+                  tabIndex={-1}
+                  type="button"
+                  onClick={() => handleRefresh(platform.id)}
+                  disabled={refreshingPlatforms[platform.id]}
+                >
+                  <RefreshCcw className={cn(
+                    "h-3 w-3 text-gray-600",
+                    refreshingPlatforms[platform.id] && "animate-spin"
+                  )} />
+                </Button>
               </div>
 
               <CardContent className="p-4 h-24 flex flex-col justify-between">

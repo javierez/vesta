@@ -676,6 +676,56 @@ export async function publishToFotocasa(listingId: number, visibilityMode: numbe
   }
 }
 
+// Server action to update existing listing on Fotocasa
+export async function updateFotocasa(listingId: number, visibilityMode: number = 1, hidePrice: boolean = false): Promise<{ success: boolean; payload?: FotocasaProperty; error?: string; response?: any }> {
+  try {    
+    // Build the payload (same as create operation)
+    const payload = await buildFotocasaPayload(listingId, visibilityMode, hidePrice)
+    
+    // Log the payload for debugging
+    console.log("Fotocasa Update Payload:", JSON.stringify(payload, null, 2))
+    console.log(`Updating listing ${listingId} on Fotocasa`)
+    
+    // Make the PUT API call to Fotocasa
+    // According to Fotocasa API docs: PUT api/property (no URI parameters)
+    const response = await fetch('https://imports.gw.fotocasa.pro/api/property', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Api-Key': FOTOCASA_API_KEY
+      },
+      body: JSON.stringify(payload)
+    })
+    
+    const responseData = await response.json()
+    
+    // Log the response for debugging
+    console.log("Fotocasa Update API Response:", responseData)
+    
+    // Check if the request was successful
+    if (response.ok && responseData.StatusCode === 200) {
+      return {
+        success: true,
+        payload,
+        response: responseData
+      }
+    } else {
+      return {
+        success: false,
+        error: responseData.Message || `HTTP ${response.status}: ${response.statusText}`,
+        response: responseData
+      }
+    }
+    
+  } catch (error) {
+    console.error("Error updating on Fotocasa:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    }
+  }
+}
+
 // Server action to delete listing from Fotocasa
 export async function deleteFromFotocasa(listingId: number): Promise<{ success: boolean; error?: string; response?: any }> {
   try {

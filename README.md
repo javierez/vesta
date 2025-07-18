@@ -35,9 +35,11 @@ Checks:
 
 
 
-FOTOCASA INTEGRATION
-- are we passing the visibility mode correctly?
-- superficie de parecela does not appear in the api docs
-- address always redirects me to plaza Regla 6, why?
+### FOTOCASA INTEGRATION
+Errors or doubts
+- superficie de parecela does not appear in the api docs (!)
+- being extremely careful with locations
+
+Changes 
 - add other multimedia material
-- subtypes are not being saved (form)
+

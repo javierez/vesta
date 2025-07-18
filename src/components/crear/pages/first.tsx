@@ -415,7 +415,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
             <button
               onClick={() => {
                 updateFormData("propertyType", "piso")
-                updateFormData("propertySubtype", "")
+                updateFormData("propertySubtype", "Piso")
               }}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
@@ -429,7 +429,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
             <button
               onClick={() => {
                 updateFormData("propertyType", "casa")
-                updateFormData("propertySubtype", "")
+                updateFormData("propertySubtype", "Casa")
               }}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
@@ -443,7 +443,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
             <button
               onClick={() => {
                 updateFormData("propertyType", "local")
-                updateFormData("propertySubtype", "")
+                updateFormData("propertySubtype", "Otros")
               }}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
@@ -457,7 +457,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
             <button
               onClick={() => {
                 updateFormData("propertyType", "solar")
-                updateFormData("propertySubtype", "")
+                updateFormData("propertySubtype", "Suelo residencial")
               }}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
@@ -471,7 +471,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
             <button
               onClick={() => {
                 updateFormData("propertyType", "garage")
-                updateFormData("propertySubtype", "")
+                updateFormData("propertySubtype", "Individual")
               }}
               className={cn(
                 "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
