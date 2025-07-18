@@ -5,6 +5,7 @@ import { Upload, FileText, X, Check, AlertTriangle, ExternalLink } from 'lucide-
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Badge } from '~/components/ui/badge'
+import { FloatingLabelInput } from '~/components/ui/floating-label-input'
 import { ModernSaveIndicator } from '~/components/propiedades/form/common/modern-save-indicator'
 import { cn } from '~/lib/utils'
 import { updateProperty } from '~/server/queries/properties'
@@ -33,27 +34,45 @@ interface EnergyCertificateProps {
   userId?: bigint
   listingId?: bigint
   referenceNumber?: string
+  // New props for database fields
+  energyCertificateStatus?: string | null
+  energyConsumptionScale?: string | null
+  energyConsumptionValue?: number | null
+  emissionsScale?: string | null
+  emissionsValue?: number | null
 }
 
 export function EnergyCertificate({ 
-  energyRating, 
   uploadedFile, 
   uploadedDocument,
   className = "",
   propertyId,
   userId,
-  referenceNumber
+  referenceNumber,
+  energyCertificateStatus,
+  energyConsumptionScale,
+  energyConsumptionValue,
+  emissionsScale,
+  emissionsValue
 }: EnergyCertificateProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number>(0)
-  const [currentRating, setCurrentRating] = useState(energyRating)
-  const [pendingRating, setPendingRating] = useState<string | null>(null)
   const [saveState, setSaveState] = useState<SaveState>("idle")
   const [uploadedDocumentUrl, setUploadedDocumentUrl] = useState<string | null>(uploadedFile || uploadedDocument?.fileUrl || null)
   const [currentDocument, setCurrentDocument] = useState(uploadedDocument)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  
+  // New state for energy certificate fields
+  const [certificateStatus, setCertificateStatus] = useState(energyCertificateStatus || (uploadedDocumentUrl ? 'uploaded' : 'en_tramite'))
+  const [consumptionScale, setConsumptionScale] = useState(energyConsumptionScale)
+  const [consumptionValue, setConsumptionValue] = useState(energyConsumptionValue?.toString() || '')
+  const [emissionScale, setEmissionScale] = useState(emissionsScale)
+  const [emissionValue, setEmissionValue] = useState(emissionsValue?.toString() || '')
+  const [pendingConsumptionScale, setPendingConsumptionScale] = useState<string | null>(null)
+  const [pendingEmissionScale, setPendingEmissionScale] = useState<string | null>(null)
+  
   const hasUploadedCertificate = !!uploadedDocumentUrl
 
   const getEnergyRatingColor = (rating: string | null | undefined, isActive: boolean = false) => {
@@ -74,28 +93,15 @@ export function EnergyCertificate({
 
   const getArrowWidth = (rating: string) => {
     const widths = {
-      "A": "w-40",
-      "B": "w-48", 
-      "C": "w-56",
-      "D": "w-64",
-      "E": "w-72",
-      "F": "w-80",
-      "G": "w-96"
+      "A": "w-32",
+      "B": "w-36", 
+      "C": "w-40",
+      "D": "w-44",
+      "E": "w-48",
+      "F": "w-52",
+      "G": "w-56"
     }
-    return widths[rating as keyof typeof widths] || "w-56"
-  }
-
-  const getEnergyRatingText = (rating: string | null | undefined) => {
-    if (!rating) return "Sin calificación"
-    
-    switch (rating.toUpperCase()) {
-      case "A":
-        return "A más eficiente"
-      case "G":
-        return "G menos eficiente"
-      default:
-        return rating.toUpperCase()
-    }
+    return widths[rating as keyof typeof widths] || "w-40"
   }
 
   const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
@@ -109,7 +115,6 @@ export function EnergyCertificate({
       setIsUploading(true)
       setUploadProgress(0)
       
-      // Simulate progress updates like in image gallery
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
@@ -121,35 +126,31 @@ export function EnergyCertificate({
       }, 200)
       
       try {
-        // Upload the energy certificate document (no listingId/contactId)
         const uploadedDocument = await uploadDocument(
           pdfFile,
           userId,
           referenceNumber,
-          1, // documentOrder
-          'energy_certificate', // documentTag
-          undefined, // contactId
-          undefined, // listingId  
-          undefined, // leadId
-          undefined, // dealId
-          undefined, // appointmentId
-          propertyId // propertyId
+          1,
+          'energy_certificate',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          propertyId
         )
         
         clearInterval(progressInterval)
         setUploadProgress(100)
-                
-        // Store the uploaded document URL for preview
         setUploadedDocumentUrl(uploadedDocument.fileUrl)
-        
-        // Store the complete document info for deletion
         setCurrentDocument({
           docId: uploadedDocument.docId,
           documentKey: uploadedDocument.documentKey,
           fileUrl: uploadedDocument.fileUrl
         })
+        setCertificateStatus('uploaded')
+        setSaveState("modified")
         
-        // Show completion for a moment then hide
         setTimeout(() => {
           setIsUploading(false)
           setUploadProgress(0)
@@ -180,7 +181,6 @@ export function EnergyCertificate({
       setIsUploading(true)
       setUploadProgress(0)
       
-      // Simulate progress updates like in image gallery
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
@@ -192,35 +192,31 @@ export function EnergyCertificate({
       }, 200)
       
       try {
-        // Upload the energy certificate document (no listingId/contactId)
         const uploadedDocument = await uploadDocument(
           file,
           userId,
           referenceNumber,
-          1, // documentOrder
-          'energy_certificate', // documentTag
-          undefined, // contactId
-          undefined, // listingId  
-          undefined, // leadId
-          undefined, // dealId
-          undefined, // appointmentId
-          propertyId // propertyId
+          1,
+          'energy_certificate',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          propertyId
         )
         
         clearInterval(progressInterval)
         setUploadProgress(100)
-                
-        // Store the uploaded document URL for preview
         setUploadedDocumentUrl(uploadedDocument.fileUrl)
-        
-        // Store the complete document info for deletion
         setCurrentDocument({
           docId: uploadedDocument.docId,
           documentKey: uploadedDocument.documentKey,
           fileUrl: uploadedDocument.fileUrl
         })
+        setCertificateStatus('uploaded')
+        setSaveState("modified")
         
-        // Show completion for a moment then hide
         setTimeout(() => {
           setIsUploading(false)
           setUploadProgress(0)
@@ -235,36 +231,78 @@ export function EnergyCertificate({
     }
   }, [userId, referenceNumber])
 
-  const handleArrowClick = (rating: string) => {
-    if (rating !== currentRating) {
-      setPendingRating(rating)
+  const handleConsumptionScaleClick = (rating: string) => {
+    if (rating !== consumptionScale) {
+      setPendingConsumptionScale(rating)
       setSaveState("modified")
     }
   }
 
+  const handleEmissionScaleClick = (rating: string) => {
+    if (rating !== emissionScale) {
+      setPendingEmissionScale(rating)
+      setSaveState("modified")
+    }
+  }
+
+  const handleConsumptionValueChange = (value: string) => {
+    setConsumptionValue(value)
+    setSaveState("modified")
+  }
+
+  const handleEmissionValueChange = (value: string) => {
+    setEmissionValue(value)
+    setSaveState("modified")
+  }
+
+  const handleStatusChange = (status: string) => {
+    setCertificateStatus(status)
+    setSaveState("modified")
+  }
+
   const handleSave = async () => {
-    if (!pendingRating || !propertyId) return
+    if (!propertyId) return
     
     setSaveState("saving")
     try {
-      // Update the energy certification in the properties table
-      await updateProperty(Number(propertyId), {
-        energyCertification: pendingRating
-      })
+      const updateData: any = {
+        energyCertificateStatus: certificateStatus
+      }
       
-      setCurrentRating(pendingRating)
-      setPendingRating(null)
+      if (pendingConsumptionScale) {
+        updateData.energyConsumptionScale = pendingConsumptionScale
+      }
+      if (pendingEmissionScale) {
+        updateData.emissionsScale = pendingEmissionScale
+      }
+      if (consumptionValue) {
+        updateData.energyConsumptionValue = parseFloat(consumptionValue)
+      }
+      if (emissionValue) {
+        updateData.emissionsValue = parseFloat(emissionValue)
+      }
+      
+      await updateProperty(Number(propertyId), updateData)
+      
+      // Update local state
+      if (pendingConsumptionScale) {
+        setConsumptionScale(pendingConsumptionScale)
+        setPendingConsumptionScale(null)
+      }
+      if (pendingEmissionScale) {
+        setEmissionScale(pendingEmissionScale)
+        setPendingEmissionScale(null)
+      }
+      
       setSaveState("saved")
       
-      // Reset to idle after 2 seconds
       setTimeout(() => {
         setSaveState("idle")
       }, 2000)
     } catch (error) {
-      console.error('Error saving energy rating:', error)
+      console.error('Error saving energy certificate data:', error)
       setSaveState("error")
       
-      // Reset to modified after 3 seconds
       setTimeout(() => {
         setSaveState("modified")
       }, 3000)
@@ -293,70 +331,16 @@ export function EnergyCertificate({
         onSave={handleSave} 
       />
       
-      {/* First Row: Title */}
+      {/* Title */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold">Certificado Energético</h3>
       </div>
 
-      {/* Second Row: Two Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Column 1: Energy Efficiency Visualization */}
-        <div className="flex flex-col">          
-          <div className="bg-white rounded-lg p-4 flex-1 flex flex-col justify-center">
-            <div className="space-y-1">
-              {(() => {
-                const displayRating = pendingRating || currentRating
-                return ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((rating, index) => {
-                  const isCurrentRating = displayRating?.toUpperCase() === rating
-                  const isActive = displayRating ? isCurrentRating : false
-                  const backgroundColor = getEnergyRatingColor(rating, isActive)
-                  const arrowWidth = getArrowWidth(rating)
-                  
-                  return (
-                    <div key={rating} className="relative flex">
-                      <button
-                        onClick={() => handleArrowClick(rating)}
-                        className={`
-                          h-8 flex items-center justify-start px-3 text-white font-bold text-sm
-                          ${backgroundColor}
-                          ${isCurrentRating ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
-                          ${rating === 'A' ? 'rounded-tl-lg' : ''}
-                          ${rating === 'G' ? 'rounded-bl-lg' : ''}
-                          ${arrowWidth}
-                          transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer
-                        `}
-                        style={{
-                          clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)'
-                        }}
-                      >
-                        <span className="text-white">
-                          {rating}
-                        </span>
-                      </button>
-                    </div>
-                  )
-                })
-              })()}
-            </div>
-            
-            {/* Subtle warning message at the bottom */}
-            {!hasUploadedCertificate && (
-              <div className="flex items-center gap-1.5 mt-3 p-2 bg-amber-50/50 border border-amber-100 rounded-md">
-                <AlertTriangle className="h-3 w-3 text-amber-500" />
-                <p className="text-xs text-amber-600">
-                  Sin certificado subido
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Column 2: Document Placeholder */}
-        <div className="flex flex-col">          
-          {/* File Drop Zone */}
+      {/* Top Row: File Upload/Preview - Centered */}
+      <div className="flex justify-center mb-8">
+        <div className="w-full max-w-md">
           <div
-            className={`transition-colors flex-1 min-h-[200px] ${
+            className={`transition-colors ${
               hasUploadedCertificate 
                 ? 'border-0' 
                 : `border-2 border-dashed rounded-lg ${
@@ -364,13 +348,13 @@ export function EnergyCertificate({
                       ? 'border-blue-400 bg-blue-50' 
                       : 'border-gray-200 hover:border-gray-300'
                   }`
-            }`}
+            } min-h-[300px] flex items-center justify-center`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
           >
             {isUploading ? (
-              <div className="flex flex-col items-center justify-center h-full px-4">
+              <div className="flex flex-col items-center justify-center h-full w-full px-4">
                 <div className="w-full space-y-2">
                   <div className="h-0.5 w-full bg-gray-100 rounded-full overflow-hidden">
                     <div 
@@ -382,19 +366,15 @@ export function EnergyCertificate({
                 <p className="text-sm text-gray-600 mt-2">Subiendo certificado...</p>
               </div>
             ) : hasUploadedCertificate ? (
-              <div className="relative h-full group rounded-lg overflow-hidden">
-                {/* PDF Preview - Full space */}
+              <div className="relative group rounded-lg overflow-hidden h-[420px] min-h-[420px] w-full">
                 <iframe
                   src={uploadedDocumentUrl!}
                   className="w-full h-full border-0"
                   title="Energy Certificate Preview"
                   onError={() => console.log('Iframe load error')}
                 />
-                
-                {/* Transparent overlay with controls - only visible on hover */}
-                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  {/* Bottom controls */}
-                  <div className="absolute bottom-3 right-3 flex gap-2">
+                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                  <div className="absolute bottom-3 right-3 flex gap-2 pointer-events-auto">
                     <button
                       onClick={() => window.open(uploadedDocumentUrl!, '_blank')}
                       className="bg-white/80 hover:bg-white text-gray-700 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
@@ -410,16 +390,14 @@ export function EnergyCertificate({
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-                  
-                  {/* Bottom status indicator */}
-                  <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg">
+                  <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg pointer-events-auto">
                     <Check className="h-4 w-4 text-green-600" />
                     <span className="text-sm font-medium text-green-700">Certificado subido</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center h-full cursor-pointer group">
+              <label className="flex flex-1 flex-col items-center justify-center h-full w-full cursor-pointer group">
                 <input
                   type="file"
                   accept=".pdf"
@@ -428,7 +406,7 @@ export function EnergyCertificate({
                   id="energy-certificate-upload"
                 />
                 <FileText className="h-8 w-8 text-gray-400 group-hover:text-gray-500 mb-3 transition-colors duration-200" />
-                <span className="text-sm text-gray-400 group-hover:text-gray-500 font-medium transition-colors duration-200 mb-2">
+                <span className="text-sm text-gray-400 group-hover:text-gray-500 font-medium transition-colors duration-200 mb-2 text-center">
                   Subir certificado PDF
                 </span>
                 <p className="text-xs text-gray-400 text-center px-4">
@@ -439,6 +417,121 @@ export function EnergyCertificate({
           </div>
         </div>
       </div>
+
+      {/* Status Buttons - Show only if no certificate uploaded */}
+      {!hasUploadedCertificate && (
+        <div className="flex justify-center gap-4 mb-8">
+          <Button 
+            variant={certificateStatus === 'en_tramite' ? 'default' : 'outline'} 
+            onClick={() => handleStatusChange('en_tramite')}
+          >
+            En trámite
+          </Button>
+          <Button 
+            variant={certificateStatus === 'exento' ? 'default' : 'outline'} 
+            onClick={() => handleStatusChange('exento')}
+          >
+            Exento
+          </Button>
+        </div>
+      )}
+
+      {/* Energy Scales and Values - Show only if certificate uploaded */}
+      {hasUploadedCertificate && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Energy Consumption */}
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold text-center">Eficiencia de Consumo</h4>
+            <div className="bg-white rounded-lg p-4">
+              <div className="space-y-1">
+                {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((rating) => {
+                  const displayRating = pendingConsumptionScale || consumptionScale
+                  const isCurrentRating = displayRating?.toUpperCase() === rating
+                  const isActive = displayRating ? isCurrentRating : false
+                  const backgroundColor = getEnergyRatingColor(rating, isActive)
+                  const arrowWidth = getArrowWidth(rating)
+                  
+                  return (
+                    <div key={rating} className="relative flex">
+                      <button
+                        onClick={() => handleConsumptionScaleClick(rating)}
+                        className={`
+                          h-8 flex items-center justify-start px-3 text-white font-bold text-sm
+                          ${backgroundColor}
+                          ${isCurrentRating ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
+                          ${rating === 'A' ? 'rounded-tl-lg' : ''}
+                          ${rating === 'G' ? 'rounded-bl-lg' : ''}
+                          ${arrowWidth}
+                          transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer
+                        `}
+                        style={{
+                          clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)'
+                        }}
+                      >
+                        <span className="text-white">{rating}</span>
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            <FloatingLabelInput
+              id="consumptionValue"
+              value={consumptionValue}
+              onChange={handleConsumptionValueChange}
+              placeholder="Valor (kWh/m² año)"
+              type="number"
+              required
+            />
+          </div>
+
+          {/* Energy Emissions */}
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold text-center">Eficiencia de Emisiones</h4>
+            <div className="bg-white rounded-lg p-4">
+              <div className="space-y-1">
+                {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((rating) => {
+                  const displayRating = pendingEmissionScale || emissionScale
+                  const isCurrentRating = displayRating?.toUpperCase() === rating
+                  const isActive = displayRating ? isCurrentRating : false
+                  const backgroundColor = getEnergyRatingColor(rating, isActive)
+                  const arrowWidth = getArrowWidth(rating)
+                  
+                  return (
+                    <div key={rating} className="relative flex">
+                      <button
+                        onClick={() => handleEmissionScaleClick(rating)}
+                        className={`
+                          h-8 flex items-center justify-start px-3 text-white font-bold text-sm
+                          ${backgroundColor}
+                          ${isCurrentRating ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
+                          ${rating === 'A' ? 'rounded-tl-lg' : ''}
+                          ${rating === 'G' ? 'rounded-bl-lg' : ''}
+                          ${arrowWidth}
+                          transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer
+                        `}
+                        style={{
+                          clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)'
+                        }}
+                      >
+                        <span className="text-white">{rating}</span>
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            <FloatingLabelInput
+              id="emissionValue"
+              value={emissionValue}
+              onChange={handleEmissionValueChange}
+              placeholder="Valor (kg CO₂/m² año)"
+              type="number"
+              required
+            />
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -460,7 +553,6 @@ export function EnergyCertificate({
               variant="destructive"
               onClick={async () => {
                 if (!currentDocument) {
-                  // If no document info, just clear the URL (fallback)
                   setUploadedDocumentUrl(null)
                   setShowDeleteDialog(false)
                   return
@@ -468,16 +560,14 @@ export function EnergyCertificate({
                 
                 setIsDeleting(true)
                 try {
-                  // Delete from both S3 and database
                   await deleteDocument(currentDocument.documentKey, currentDocument.docId)
-                  
-                  // Clear the local state
                   setUploadedDocumentUrl(null)
                   setCurrentDocument(null)
+                  setCertificateStatus('en_tramite')
+                  setSaveState("modified")
                   setShowDeleteDialog(false)
                 } catch (error) {
                   console.error('Error deleting document:', error)
-                  // TODO: Show error toast
                 } finally {
                   setIsDeleting(false)
                 }

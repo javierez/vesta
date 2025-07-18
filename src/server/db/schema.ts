@@ -94,6 +94,11 @@ export const properties = singlestoreTable("properties", {
 
   // Energy and Heating
   energyCertification: text("energy_certification"),
+  energyCertificateStatus: varchar("energy_certificate_status", { length: 20 }), // 'uploaded', 'en_tramite', 'exento'
+  energyConsumptionScale: varchar("energy_consumption_scale", { length: 2 }), // A-G
+  energyConsumptionValue: decimal("energy_consumption_value", { precision: 6, scale: 2 }), // kWh/m² año
+  emissionsScale: varchar("emissions_scale", { length: 2 }), // A-G
+  emissionsValue: decimal("emissions_value", { precision: 6, scale: 2 }), // kg CO2/m² año
   hasHeating: boolean("has_heating").default(false),
   heatingType: varchar("heating_type", { length: 50 }),
 

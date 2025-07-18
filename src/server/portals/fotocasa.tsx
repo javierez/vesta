@@ -518,6 +518,60 @@ export async function buildFotocasaPayload(listingId: number, visibilityMode: nu
       })
     }
 
+    // --- ENERGY CERTIFICATE FIELDS (Fotocasa) ---
+    const listingAny = listing as any;
+    // Consumption efficiency scale (FeatureId: 323)
+    if (listingAny.energyConsumptionScale) {
+      const scaleMap = { 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7 };
+      const scaleKey = (String(listingAny.energyConsumptionScale).toUpperCase()) as keyof typeof scaleMap;
+      const scaleValue = scaleMap[scaleKey];
+      if (scaleValue) {
+        propertyFeatures.push({ FeatureId: 323, DecimalValue: scaleValue })
+      }
+    }
+    // Emissions efficiency scale (FeatureId: 324)
+    if (listingAny.emissionsScale) {
+      const scaleMap = { 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7 };
+      const scaleKey = listingAny.emissionsScale.toUpperCase() as keyof typeof scaleMap;
+      const scaleValue = scaleMap[scaleKey];
+      if (scaleValue) {
+        propertyFeatures.push({ FeatureId: 324, DecimalValue: scaleValue })
+      }
+    }
+    // Consumption efficiency value (FeatureId: 325)
+    if (listingAny.energyConsumptionValue != null) {
+      propertyFeatures.push({ FeatureId: 325, DecimalValue: Number(listingAny.energyConsumptionValue) })
+    }
+    // Emissions efficiency value (FeatureId: 326)
+    if (listingAny.emissionsValue != null) {
+      propertyFeatures.push({ FeatureId: 326, DecimalValue: Number(listingAny.emissionsValue) })
+    }
+    // Energy certificate status (FeatureId: 327)
+    if (listingAny.energyCertificateStatus) {
+      const statusMap = { 'available': 1, 'en_tramite': 2, 'exento': 3, 'uploaded': 1 };
+      const statusKey = listingAny.energyCertificateStatus.toLowerCase() as keyof typeof statusMap;
+      const statusValue = statusMap[statusKey];
+      if (statusValue) {
+        propertyFeatures.push({ FeatureId: 327, DecimalValue: statusValue })
+      }
+    }
+
+    // --- HEATING & HOT WATER FIELDS (Fotocasa) ---
+    // Heating (FeatureId: 320)
+    if (listingAny.heatingType && !isNaN(Number(listingAny.heatingType))) {
+      const heatingId = Number(listingAny.heatingType)
+      if (heatingId >= 1 && heatingId <= 6) {
+        propertyFeatures.push({ FeatureId: 320, DecimalValue: heatingId })
+      }
+    }
+    // Hot water (FeatureId: 321)
+    if (listingAny.hotWaterType && !isNaN(Number(listingAny.hotWaterType))) {
+      const hotWaterId = Number(listingAny.hotWaterType)
+      if (hotWaterId >= 1 && hotWaterId <= 6) {
+        propertyFeatures.push({ FeatureId: 321, DecimalValue: hotWaterId })
+      }
+    }
+
     // Build PropertyDocument (images) - use actual imageOrder from database
     const propertyDocuments: PropertyDocument[] = images
       .sort((a, b) => (a.imageOrder || 0) - (b.imageOrder || 0)) // Ensure proper order
@@ -615,6 +669,59 @@ export async function publishToFotocasa(listingId: number, visibilityMode: numbe
     
   } catch (error) {
     console.error("Error publishing to Fotocasa:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    }
+  }
+}
+
+// Server action to delete listing from Fotocasa
+export async function deleteFromFotocasa(listingId: number): Promise<{ success: boolean; error?: string; response?: any }> {
+  try {
+    // Convert listingId to base64 encoded string
+    const externalId = listingId.toString()
+    const base64ExternalId = Buffer.from(externalId).toString('base64')
+    
+    console.log(`Deleting listing ${listingId} from Fotocasa (base64: ${base64ExternalId})`)
+    
+    // Make the DELETE API call to Fotocasa
+    const response = await fetch(`https://imports.gw.fotocasa.pro/api/v2/property/${base64ExternalId}`, {
+      method: 'DELETE',
+      headers: {
+        'Api-Key': FOTOCASA_API_KEY
+      }
+    })
+    
+    // Log the response for debugging
+    console.log("Fotocasa DELETE API Response status:", response.status)
+    
+    // Check if the request was successful
+    if (response.ok) {
+      console.log('Successfully deleted from Fotocasa')
+      return {
+        success: true,
+        response: { status: response.status }
+      }
+    } else {
+      // Try to get response body for error details
+      let responseData
+      try {
+        responseData = await response.json()
+      } catch {
+        responseData = { message: `HTTP ${response.status}: ${response.statusText}` }
+      }
+      
+      console.error('Failed to delete from Fotocasa:', responseData)
+      return {
+        success: false,
+        error: responseData.Message || responseData.message || `HTTP ${response.status}: ${response.statusText}`,
+        response: responseData
+      }
+    }
+    
+  } catch (error) {
+    console.error("Error deleting from Fotocasa:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error"

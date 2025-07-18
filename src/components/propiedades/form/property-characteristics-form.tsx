@@ -533,21 +533,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   )
 
   const heatingOptions = [
-    "Si, Sin especificar",
-    "Gas Individual",
-    "Gasóleo Individual",
-    "Gas Colectivo",
-    "Gasóleo Colectivo",
-    "Eléctrica",
-    "Tarifa Nocturno",
-    "Propano",
-    "Suelo Radiante",
-    "Eléctrica por Acumulador",
-    "Placas Fotovoltaicas",
-    "Biomasa",
-    "Bomba de calor",
-    "Geotermia",
-    "Aerotermia"
+    { id: 1, label: "Gas natural" },
+    { id: 2, label: "Eléctrico" },
+    { id: 3, label: "Gasóleo" },
+    { id: 4, label: "Butano" },
+    { id: 5, label: "Propano" },
+    { id: 6, label: "Solar" }
   ]
 
   const getPropertyTypeText = (type: string) => {
@@ -1386,7 +1377,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 </SelectTrigger>
                 <SelectContent>
                   {heatingOptions.map(option => (
-                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                    <SelectItem key={option.id} value={option.id.toString()}>{option.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1413,7 +1404,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 </SelectTrigger>
                 <SelectContent>
                   {heatingOptions.map(option => (
-                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                    <SelectItem key={option.id} value={option.id.toString()}>{option.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

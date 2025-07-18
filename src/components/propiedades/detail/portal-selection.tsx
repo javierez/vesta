@@ -21,7 +21,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "~/components/ui/dropdown-menu"
-import { publishToFotocasa } from "~/server/portals/fotocasa"
+import { publishToFotocasa, deleteFromFotocasa } from "~/server/portals/fotocasa"
 
 interface Platform {
   id: string
@@ -112,22 +112,9 @@ export function PortalSelection({
       const initializedPlatforms = platformConfig.map(config => {
         const portalValue = portalValues[config.id as keyof typeof portalValues] || false
         
+        // All platforms start as inactive by default, regardless of database values or defaults
         let status: Platform["status"] = "inactive"
         let isActive = false
-        
-        if (portalValue === true) {
-          // If portal value is true from database, it's active (confirmed)
-          status = "active"
-          isActive = true
-        } else if (portalValue === false && config.isDefault) {
-          // If portal value is false but it's a default portal, it's pending (needs confirmation)
-          status = "pending"
-          isActive = true
-        } else {
-          // If portal value is false and it's not a default portal, it's inactive
-          status = "inactive"
-          isActive = false
-        }
         
         return {
           ...config,
@@ -192,8 +179,13 @@ export function PortalSelection({
       // Update the listing with the new portal values
       await updateListing(Number(listingId), portalUpdates)
 
-      // Call portal-specific actions for activated portals
-      if (portalUpdates.fotocasa) {
+      // Get the previous states to check what changed
+      const previousFotocasaState = initialPlatformStates.fotocasa
+      const currentFotocasaState = portalUpdates.fotocasa
+
+      // Call portal-specific actions based on state changes
+      if (currentFotocasaState && !previousFotocasaState) {
+        // Fotocasa is being enabled - publish to Fotocasa
         console.log('Publishing to Fotocasa...')
         try {
           const fotocasaResult = await publishToFotocasa(Number(listingId), visibilityModes.fotocasa || 1, hidePriceModes.fotocasa || false)
@@ -206,6 +198,21 @@ export function PortalSelection({
         } catch (error) {
           console.error('Error calling Fotocasa API:', error)
           toast.error('Error al conectar con Fotocasa')
+        }
+      } else if (!currentFotocasaState && previousFotocasaState) {
+        // Fotocasa is being disabled - delete from Fotocasa
+        console.log('Deleting from Fotocasa...')
+        try {
+          const fotocasaResult = await deleteFromFotocasa(Number(listingId))
+          if (fotocasaResult.success) {
+            console.log('Successfully deleted from Fotocasa')
+          } else {
+            console.error('Failed to delete from Fotocasa:', fotocasaResult.error)
+            toast.error('Error al eliminar de Fotocasa')
+          }
+        } catch (error) {
+          console.error('Error calling Fotocasa delete API:', error)
+          toast.error('Error al conectar con Fotocasa para eliminar')
         }
       }
 
@@ -295,12 +302,19 @@ export function PortalSelection({
   }
 
   const getCardStyles = (platform: Platform) => {
-    if (platform.status === "active") {
-      return "border-green-200 bg-green-50/50"
-    } else if (platform.status === "pending") {
-      return "border-amber-200 bg-amber-50/50"
+    const initialActive = initialPlatformStates[platform.id]
+    const currentActive = platform.isActive
+    if (currentActive) {
+      if (initialActive) {
+        // Was active and is still active (even if toggled off and on again before saving)
+        return "bg-green-50/80"
+      } else {
+        // Was inactive, now active (pending save)
+        return "bg-amber-50/80"
+      }
     } else {
-      return "border-gray-200 hover:border-gray-300"
+      // Inactive
+      return "hover:border-gray-300"
     }
   }
 
@@ -338,7 +352,7 @@ export function PortalSelection({
             transition={{ delay: 0.1 * index, duration: 0.3 }}
           >
             <Card className={cn(
-              "transition-all duration-300 hover:shadow-md border-2 relative group",
+              "transition-all duration-300 hover:shadow-md relative group",
               getCardStyles(platform)
             )}>
               {/* Settings Burger Button - Inside Top Right Corner, Only on Hover */}
@@ -386,10 +400,8 @@ export function PortalSelection({
                             </DropdownMenuItem>
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
-                        <DropdownMenuSeparator />
                       </>
                     )}
-
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

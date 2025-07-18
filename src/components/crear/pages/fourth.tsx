@@ -76,21 +76,12 @@ const initialFormData: FourthPageFormData = {
 }
 
 const heatingOptions = [
-  "Si, Sin especificar",
-  "Gas Individual",
-  "Gasóleo Individual",
-  "Gas Colectivo",
-  "Gasóleo Colectivo",
-  "Eléctrica",
-  "Tarifa Nocturno",
-  "Propano",
-  "Suelo Radiante",
-  "Eléctrica por Acumulador",
-  "Placas Fotovoltaicas",
-  "Biomasa",
-  "Bomba de calor",
-  "Geotermia",
-  "Aerotermia"
+  { id: 1, label: "Gas natural" },
+  { id: 2, label: "Eléctrico" },
+  { id: 3, label: "Gasóleo" },
+  { id: 4, label: "Butano" },
+  { id: 5, label: "Propano" },
+  { id: 6, label: "Solar" }
 ]
 
 const airConditioningOptions = [
@@ -617,9 +608,9 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                 className="ml-6 space-y-3 border-l-2 pl-4"
               >
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Tipo</Label>
-                  <Select 
-                    value={formData.heatingType} 
+                  <Label className="text-xs font-medium text-gray-600">Tipo de calefacción</Label>
+                  <Select
+                    value={formData.heatingType}
                     onValueChange={(value) => updateFormData("heatingType", value)}
                   >
                     <SelectTrigger className="h-8 text-xs">
@@ -627,7 +618,7 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                     </SelectTrigger>
                     <SelectContent>
                       {heatingOptions.map(option => (
-                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                        <SelectItem key={option.id} value={option.id.toString()}>{option.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -689,9 +680,9 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                 className="ml-6 space-y-3 border-l-2 pl-4"
               >
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Tipo</Label>
-                  <Select 
-                    value={formData.hotWaterType} 
+                  <Label className="text-xs font-medium text-gray-600">Tipo de agua caliente</Label>
+                  <Select
+                    value={formData.hotWaterType}
                     onValueChange={(value) => updateFormData("hotWaterType", value)}
                   >
                     <SelectTrigger className="h-8 text-xs">
@@ -699,7 +690,7 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                     </SelectTrigger>
                                          <SelectContent>
                        {heatingOptions.map(option => (
-                         <SelectItem key={option} value={option}>{option}</SelectItem>
+                         <SelectItem key={option.id} value={option.id.toString()}>{option.label}</SelectItem>
                        ))}
                      </SelectContent>
                   </Select>

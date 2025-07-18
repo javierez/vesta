@@ -28,8 +28,16 @@
 
 Checks:
 - Adjust forms to make them similar to the casa/piso one (!)
-- Add images and videos to Fotocasa integration
 - Add videos and links to the property
 - Review Fotocasa integration
 - Truncate property table
 - Listing Types: find synonyms
+
+
+
+FOTOCASA INTEGRATION
+- are we passing the visibility mode correctly?
+- superficie de parecela does not appear in the api docs
+- address always redirects me to plaza Regla 6, why?
+- add other multimedia material
+- subtypes are not being saved (form)

@@ -32,7 +32,6 @@ interface SixthPageFormData {
   frenchKitchen: boolean
   furnishedKitchen: boolean
   pantry: boolean
-  hotWaterType: string
 }
 
 const initialFormData: SixthPageFormData = {
@@ -50,7 +49,6 @@ const initialFormData: SixthPageFormData = {
   frenchKitchen: false,
   furnishedKitchen: false,
   pantry: false,
-  hotWaterType: "",
 }
 
 const kitchenTypeOptions = [
@@ -60,12 +58,6 @@ const kitchenTypeOptions = [
   { value: "carbon", label: "Carbón" },
   { value: "electrico", label: "Eléctrico" },
   { value: "mixto", label: "Mixto" },
-]
-
-const hotWaterTypeOptions = [
-  { value: "individual", label: "Individual" },
-  { value: "central", label: "Central" },
-  { value: "solar", label: "Solar" },
 ]
 
 export default function SixthPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: SixthPageProps) {
@@ -105,7 +97,6 @@ export default function SixthPage({ listingId, globalFormData, onNext, onBack, r
         frenchKitchen: details.frenchKitchen || false,
         furnishedKitchen: details.furnishedKitchen || false,
         pantry: details.pantry || false,
-        hotWaterType: details.hotWaterType || "",
       }))
     }
   }, [globalFormData?.listingDetails, onNext])
@@ -137,7 +128,6 @@ export default function SixthPage({ listingId, globalFormData, onNext, onBack, r
         frenchKitchen: formData.frenchKitchen,
         furnishedKitchen: formData.furnishedKitchen,
         pantry: formData.pantry,
-        hotWaterType: formData.hotWaterType,
       }
 
       // Only update formPosition if current position is lower than 7
@@ -290,29 +280,6 @@ export default function SixthPage({ listingId, globalFormData, onNext, onBack, r
         )}
 
         {/* Utilities - Hide for garage properties */}
-        {propertyType !== "garage" && (
-          <div className="space-y-4 p-4 rounded-lg shadow-md">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-gray-600">Servicios</h4>
-              <Droplets className="h-4 w-4 text-gray-400" />
-            </div>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="hotWaterType" className="text-sm">Agua caliente</Label>
-                <Select value={formData.hotWaterType} onValueChange={value => updateFormData("hotWaterType", value)}>
-                  <SelectTrigger className="h-8 text-gray-500">
-                    <SelectValue placeholder="Seleccionar tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {hotWaterTypeOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        )}
       </motion.div>
 
       <AnimatePresence>

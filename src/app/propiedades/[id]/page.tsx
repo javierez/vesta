@@ -156,6 +156,19 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             userId={listing.agentId || BigInt(1)} // TODO: Get from auth context
             listingId={listing.listingId}
             referenceNumber={listing.referenceNumber || ""}
+            energyCertificateStatus={listing.energyCertificateStatus || null}
+            energyConsumptionScale={listing.energyConsumptionScale || null}
+            energyConsumptionValue={
+              listing.energyConsumptionValue !== null && listing.energyConsumptionValue !== undefined
+                ? parseFloat(listing.energyConsumptionValue)
+                : null
+            }
+            emissionsScale={listing.emissionsScale || null}
+            emissionsValue={
+              listing.emissionsValue !== null && listing.emissionsValue !== undefined
+                ? parseFloat(listing.emissionsValue)
+                : null
+            }
           />
         </div>
       </div>

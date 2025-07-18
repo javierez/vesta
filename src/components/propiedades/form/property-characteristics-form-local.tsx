@@ -395,21 +395,12 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
   const [optionalStorageRoomPrice, setOptionalStorageRoomPrice] = useState(listing.optionalStorageRoomPrice ?? 0)
 
   const heatingOptions = [
-    "Si, Sin especificar",
-    "Gas Individual",
-    "Gasóleo Individual",
-    "Gas Colectivo",
-    "Gasóleo Colectivo",
-    "Eléctrica",
-    "Tarifa Nocturno",
-    "Propano",
-    "Suelo Radiante",
-    "Eléctrica por Acumulador",
-    "Placas Fotovoltaicas",
-    "Biomasa",
-    "Bomba de calor",
-    "Geotermia",
-    "Aerotermia"
+    { id: 1, label: "Gas natural" },
+    { id: 2, label: "Eléctrico" },
+    { id: 3, label: "Gasóleo" },
+    { id: 4, label: "Butano" },
+    { id: 5, label: "Propano" },
+    { id: 6, label: "Solar" }
   ]
 
   const getPropertyTypeText = (type: string) => {
@@ -1092,12 +1083,9 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
                   <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="central">Central</SelectItem>
-                  <SelectItem value="individual">Individual</SelectItem>
-                  <SelectItem value="gas">Gas</SelectItem>
-                  <SelectItem value="electrico">Eléctrico</SelectItem>
-                  <SelectItem value="aerotermia">Aerotermia</SelectItem>
-                  <SelectItem value="suelo">Suelo radiante</SelectItem>
+                  {heatingOptions.map(option => (
+                    <SelectItem key={option.id} value={option.id.toString()}>{option.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1127,7 +1115,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
                 </SelectTrigger>
                 <SelectContent>
                   {heatingOptions.map(option => (
-                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                    <SelectItem key={option.id} value={option.id.toString()}>{option.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
