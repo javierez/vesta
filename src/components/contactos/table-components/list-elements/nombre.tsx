@@ -13,6 +13,7 @@ interface NombreProps {
   isOwner?: boolean
   isBuyer?: boolean
   isInteresado?: boolean
+  notes?: string
 }
 
 export function Nombre({ 
@@ -23,7 +24,8 @@ export function Nombre({
   updatedAt, 
   isOwner, 
   isBuyer, 
-  isInteresado
+  isInteresado,
+  notes
 }: NombreProps) {
   const formatRelativeTime = (date: Date) => {
     const now = new Date()
@@ -76,6 +78,15 @@ export function Nombre({
           {lastContact ? formatRelativeTime(lastContact) : formatRelativeTime(updatedAt)}
         </span>
       </div>
+
+      {/* Notes */}
+      {notes && (
+        <div className="text-xs text-muted-foreground">
+          <span className="truncate italic" title={notes}>
+            {notes}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

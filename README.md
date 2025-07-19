@@ -17,7 +17,8 @@
 - Logos: remove background and get palette.
 
 
-Should I do a operations page?
+### Should I do a operations page?
+With and without tasks to do. Each of it with its process and its documents
 - Prospect: 
 - Lead: 
 - Deal: 

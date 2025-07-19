@@ -200,6 +200,7 @@ export function ContactSpreadsheetTable({ contacts, currentFilter = [] }: Contac
                       isOwner={contact.isOwner}
                       isBuyer={contact.isBuyer}
                       isInteresado={contact.isInteresado}
+                      notes={contact.additionalInfo?.notes}
                     />
                   </div>
                 </TableCell>
