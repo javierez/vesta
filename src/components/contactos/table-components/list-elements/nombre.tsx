@@ -1,6 +1,6 @@
 "use client"
 
-import { Clock } from "lucide-react"
+import { Clock, MessageSquare } from "lucide-react"
 import { cn } from "~/lib/utils"
 import { getContactCardColor } from "../color/contact-colors"
 
@@ -81,7 +81,8 @@ export function Nombre({
 
       {/* Notes */}
       {notes && (
-        <div className="text-xs text-muted-foreground">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <MessageSquare className="h-3 w-3 flex-shrink-0" />
           <span className="truncate italic" title={notes}>
             {notes}
           </span>

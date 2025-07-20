@@ -16,6 +16,7 @@ import { cn } from "~/lib/utils"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import type { ListingOverview } from "~/types/listing"
+import { formatListingType } from "../contactos/contact-config"
 
 interface PropertyTableProps {
   listings: ListingOverview[]
@@ -45,12 +46,6 @@ const statusColors: Record<string, string> = {
   "Sale": "bg-amber-50 text-amber-700 border-amber-200",
   "Rent": "bg-amber-50 text-amber-700 border-amber-200",
   "Sold": "bg-slate-50 text-slate-700 border-slate-200"
-}
-
-const statusLabels: Record<string, string> = {
-  "Sale": "En Venta",
-  "Rent": "En Alquiler",
-  "Sold": "Vendido"
 }
 
 export function PropertyTable({ listings }: PropertyTableProps) {
@@ -230,13 +225,13 @@ export function PropertyTable({ listings }: PropertyTableProps) {
                 <TableCell className="overflow-hidden" style={getColumnStyle('estado')}>
                   <div className="truncate">
                     <Badge variant="secondary" className={cn("font-normal", statusColors[listing.listingType])}>
-                      <span className="truncate">{statusLabels[listing.listingType]}</span>
+                      <span className="truncate">{formatListingType(listing.listingType)}</span>
                     </Badge>
                   </div>
                 </TableCell>
                 <TableCell className="overflow-hidden text-right" style={getColumnStyle('precio')}>
                   <div className="truncate font-medium">
-                    {formatPrice(listing.price)}€{listing.listingType === "Rent" ? "/mes" : ""}
+                    {formatPrice(listing.price)}€{["Rent", "RentWithOption", "RoomSharing"].includes(listing.listingType) ? "/mes" : ""}
                   </div>
                 </TableCell>
                 <TableCell className="overflow-hidden" style={getColumnStyle('caracteristicas')}>

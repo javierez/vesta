@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, CopyObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { nanoid } from "nanoid";
 
 // Validate required environment variables
@@ -109,8 +109,15 @@ export async function uploadDocumentToS3(
       throw new Error("Could not determine file extension");
     }
 
-    // Create the S3 key: referenceNumber/documents/document_{order}_{nanoid}.{ext}
-    const documentKey = `${referenceNumber}/documents/document_${documentOrder}_${nanoid(6)}.${fileExtension}`;
+    // Create the S3 key with descriptive naming based on document tag
+    let documentKey: string;
+    if (documentTag === 'energy_certificate') {
+      documentKey = `${referenceNumber}/documents/certificado_energetico_${nanoid(6)}.${fileExtension}`;
+    } else if (documentTag === 'ficha_propiedad') {
+      documentKey = `${referenceNumber}/documents/ficha_propiedad_${nanoid(6)}.${fileExtension}`;
+    } else {
+      documentKey = `${referenceNumber}/documents/document_${documentOrder}_${nanoid(6)}.${fileExtension}`;
+    }
     const s3key = `s3://${process.env.AWS_S3_BUCKET}/${documentKey}`;
 
     // Convert File to Buffer
@@ -141,6 +148,90 @@ export async function uploadDocumentToS3(
     };
   } catch (error) {
     console.error("Error uploading document to S3:", error);
+    throw error;
+  }
+}
+
+export async function renameS3Folder(
+  tempReferenceNumber: string,
+  newReferenceNumber: string
+): Promise<Array<{
+  oldKey: string;
+  newKey: string;
+  newUrl: string;
+  newS3key: string;
+}>> {
+  try {
+    if (!tempReferenceNumber || !newReferenceNumber) {
+      throw new Error("Both temporary and new reference numbers are required");
+    }
+
+    const bucket = process.env.AWS_S3_BUCKET!;
+    const results: Array<{
+      oldKey: string;
+      newKey: string;
+      newUrl: string;
+      newS3key: string;
+    }> = [];
+
+    // List all objects in the temporary folder
+    const listCommand = new ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: `${tempReferenceNumber}/`,
+    });
+
+    const listedObjects = await s3Client.send(listCommand);
+
+    if (!listedObjects.Contents || listedObjects.Contents.length === 0) {
+      console.log(`No objects found in temporary folder: ${tempReferenceNumber}`);
+      return results;
+    }
+
+    // Copy each object to the new location
+    for (const object of listedObjects.Contents) {
+      if (!object.Key) continue;
+
+      // Create the new key by replacing the temp reference with the new one
+      const newKey = object.Key.replace(
+        `${tempReferenceNumber}/`,
+        `${newReferenceNumber}/`
+      );
+
+      // Copy the object to the new location
+      const copyCommand = new CopyObjectCommand({
+        Bucket: bucket,
+        CopySource: `${bucket}/${object.Key}`,
+        Key: newKey,
+      });
+
+      await s3Client.send(copyCommand);
+
+      // Delete the original object
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: object.Key,
+      });
+
+      await s3Client.send(deleteCommand);
+
+      // Generate the new URL and S3 key
+      const newUrl = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${newKey}`;
+      const newS3key = `s3://${bucket}/${newKey}`;
+
+      results.push({
+        oldKey: object.Key,
+        newKey,
+        newUrl,
+        newS3key,
+      });
+
+      console.log(`Moved ${object.Key} to ${newKey}`);
+    }
+
+    console.log(`Successfully renamed folder from ${tempReferenceNumber} to ${newReferenceNumber}`);
+    return results;
+  } catch (error) {
+    console.error("Error renaming S3 folder:", error);
     throw error;
   }
 } 

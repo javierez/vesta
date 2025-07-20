@@ -9,6 +9,7 @@ import { Bed, Bath, SquareIcon as SquareFoot, MapPin, Hash, User } from "lucide-
 import { Button } from "~/components/ui/button"
 import { handleImageError } from "~/lib/images"
 import { formatPrice } from "~/lib/utils"
+import { formatListingType } from "./contactos/contact-config"
 
 type Listing = {
   // Listing fields
@@ -154,7 +155,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
           
           {/* Top Right - Status */}
           <Badge className="absolute top-2 right-2 z-10 text-sm">
-            {listing.listingType === "Sale" ? "En Venta" : listing.listingType === "Rent" ? "En Alquiler" : "Vendido"}
+            {formatListingType(listing.listingType)}
           </Badge>
           
           {/* Bottom Center - Reference Number */}
@@ -178,7 +179,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
               <h3 className="font-semibold text-base line-clamp-1">{listing.street}</h3>
             </div>
             <p className="font-bold text-base">
-              {formatPrice(listing.price)}€{listing.listingType === "Rent" ? "/mes" : ""}
+              {formatPrice(listing.price)}€{["Rent", "RentWithOption", "RoomSharing"].includes(listing.listingType) ? "/mes" : ""}
             </p>
           </div>
 

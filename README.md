@@ -36,13 +36,13 @@ Checks:
 
 
 
-### FOTOCASA INTEGRATION
-Errors or doubts
-- When I 'publish', I just upload info, but it does not get published
-- superficie de parecela does not appear in the api docs (!)
-- being extremely careful with locations
-- Fotocasa; Habitaclia; Milanuncios
-- Leads API
+    ### FOTOCASA INTEGRATION
+    Errors or doubts
+    - When I 'publish', I just upload info, but it does not get published
+    - superficie de parecela does not appear in the api docs (!)
+    - being extremely careful with locations
+    - Fotocasa; Habitaclia; Milanuncios
+    - Leads API
 
 Changes 
 - add multimedia material (videos, tours)

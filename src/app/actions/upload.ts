@@ -1,6 +1,6 @@
 'use server'
 
-import { uploadImageToS3, uploadDocumentToS3 } from "~/lib/s3"
+import { uploadImageToS3, uploadDocumentToS3, renameS3Folder } from "~/lib/s3"
 import { createPropertyImage, getPropertyImageById, updatePropertyImage } from "~/server/queries/property_images"
 import { createDocument, getDocumentById, updateDocument, deleteDocument as softDeleteDocument, updateDocumentOrders } from "~/server/queries/document"
 import type { PropertyImage, Document } from "~/lib/data"
@@ -218,5 +218,75 @@ export async function updateDocumentOrdersAction(
   } catch (error) {
     console.error("Error updating document orders:", error)
     throw error
+  }
+} 
+
+export async function renameDocumentFolder(
+  tempReferenceNumber: string,
+  newReferenceNumber: string,
+  documentIds: bigint[]
+): Promise<Array<{
+  docId: bigint;
+  newUrl: string;
+  newDocumentKey: string;
+  newS3key: string;
+}>> {
+  try {
+    // 1. Rename the folder in S3
+    const renamedFiles = await renameS3Folder(tempReferenceNumber, newReferenceNumber);
+
+    if (renamedFiles.length === 0) {
+      console.log("No files to rename");
+      return [];
+    }
+
+    // 2. Update database records with new URLs and keys
+    const results: Array<{
+      docId: bigint;
+      newUrl: string;
+      newDocumentKey: string;
+      newS3key: string;
+    }> = [];
+
+    for (const renamedFile of renamedFiles) {
+      // Find the corresponding document in the database by matching the old key
+      const [document] = await db
+        .select()
+        .from(documents)
+        .where(
+          and(
+            eq(documents.documentKey, renamedFile.oldKey),
+            eq(documents.isActive, true)
+          )
+        );
+
+      if (document) {
+        // Update the document record with new URLs and keys
+        await db
+          .update(documents)
+          .set({
+            fileUrl: renamedFile.newUrl,
+            documentKey: renamedFile.newKey,
+            s3key: renamedFile.newS3key,
+            updatedAt: new Date(),
+          })
+          .where(eq(documents.docId, document.docId));
+
+        results.push({
+          docId: document.docId,
+          newUrl: renamedFile.newUrl,
+          newDocumentKey: renamedFile.newKey,
+          newS3key: renamedFile.newS3key,
+        });
+
+        console.log(`Updated document ${document.docId} with new URL: ${renamedFile.newUrl}`);
+      }
+    }
+
+    console.log(`Successfully renamed folder and updated ${results.length} documents`);
+    return results;
+  } catch (error) {
+    console.error("Error renaming document folder:", error);
+    throw error;
   }
 } 

@@ -1,15 +1,24 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Card } from "~/components/ui/card"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
-import { ChevronLeft, ChevronRight, Info, Loader } from "lucide-react"
+import { ChevronLeft, ChevronRight, Info, Loader, Upload, FileText, X, Check, ExternalLink } from "lucide-react"
 import { cn } from "~/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { createPropertyFromCadastral, createPropertyFromLocation } from "~/server/queries/properties"
+import { uploadDocument, deleteDocument, renameDocumentFolder } from "~/app/actions/upload"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog"
 
 // Base form data interface
 interface BaseFormData {
@@ -83,6 +92,26 @@ export default function PropertyIdentificationForm() {
   const [showUploadTooltip, setShowUploadTooltip] = useState(false)
   const [isCreatingProperty, setIsCreatingProperty] = useState(false)
   const router = useRouter()
+  
+  // File upload state
+  const [uploadedDocuments, setUploadedDocuments] = useState<Array<{
+    docId: bigint
+    documentKey: string
+    fileUrl: string
+    filename: string
+    fileType: string
+  }>>([])
+  // Add state to track the temporary reference number
+  const [tempReferenceNumber, setTempReferenceNumber] = useState<string>("")
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<number>(0)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [documentToDelete, setDocumentToDelete] = useState<{
+    docId: bigint
+    documentKey: string
+  } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Close tooltip when clicking outside
   useEffect(() => {
@@ -128,6 +157,38 @@ export default function PropertyIdentificationForm() {
       // Call the server action
       const newProperty = await createPropertyFromCadastral(cadastralReference);
       console.log("Property created from cadastral:", newProperty);
+      
+      // Rename S3 folder if we have uploaded documents
+      if (uploadedDocuments.length > 0 && tempReferenceNumber && newProperty.referenceNumber) {
+        try {
+          const documentIds = uploadedDocuments.map(doc => doc.docId);
+          const renamedDocuments = await renameDocumentFolder(
+            tempReferenceNumber,
+            newProperty.referenceNumber,
+            documentIds
+          );
+          
+          // Update the uploadedDocuments state with new URLs
+          setUploadedDocuments(prev => 
+            prev.map(doc => {
+              const renamed = renamedDocuments.find(r => r.docId === doc.docId);
+              if (renamed) {
+                return {
+                  ...doc,
+                  documentKey: renamed.newDocumentKey,
+                  fileUrl: renamed.newUrl
+                };
+              }
+              return doc;
+            })
+          );
+          
+          console.log(`Successfully renamed ${renamedDocuments.length} documents`);
+        } catch (renameError) {
+          console.error("Error renaming S3 folder:", renameError);
+          // Continue with property creation even if renaming fails
+        }
+      }
       
       // Automatically populate form fields with cadastral data
       if (newProperty) {
@@ -220,6 +281,38 @@ export default function PropertyIdentificationForm() {
       // Call the server action with enriched data
       const newProperty = await createPropertyFromLocation(enrichedLocationData);
       console.log("Property created from location:", newProperty);
+      
+      // Rename S3 folder if we have uploaded documents
+      if (uploadedDocuments.length > 0 && tempReferenceNumber && newProperty.referenceNumber) {
+        try {
+          const documentIds = uploadedDocuments.map(doc => doc.docId);
+          const renamedDocuments = await renameDocumentFolder(
+            tempReferenceNumber,
+            newProperty.referenceNumber,
+            documentIds
+          );
+          
+          // Update the uploadedDocuments state with new URLs
+          setUploadedDocuments(prev => 
+            prev.map(doc => {
+              const renamed = renamedDocuments.find(r => r.docId === doc.docId);
+              if (renamed) {
+                return {
+                  ...doc,
+                  documentKey: renamed.newDocumentKey,
+                  fileUrl: renamed.newUrl
+                };
+              }
+              return doc;
+            })
+          );
+          
+          console.log(`Successfully renamed ${renamedDocuments.length} documents`);
+        } catch (renameError) {
+          console.error("Error renaming S3 folder:", renameError);
+          // Continue with property creation even if renaming fails
+        }
+      }
       
       return newProperty; // Return the property data for redirection
     } catch (error) {
@@ -345,6 +438,122 @@ export default function PropertyIdentificationForm() {
            formData.municipality.trim()
   }
 
+  // File upload handlers
+  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    
+    const files = Array.from(e.dataTransfer.files)
+    
+    for (const file of files) {
+      if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+        await handleFileUpload(file)
+      }
+    }
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragOver(false)
+  }, [])
+
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      for (const file of Array.from(files)) {
+        if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+          await handleFileUpload(file)
+        }
+      }
+    }
+    // Reset the input value so the same file can be selected again
+    e.target.value = ''
+  }, [])
+
+  const handleFileUpload = async (file: File) => {
+    setIsUploading(true)
+    setUploadProgress(0)
+    
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval)
+          return prev
+        }
+        return prev + 10
+      })
+    }, 200)
+    
+    try {
+      // Generate a temporary reference number if we don't have one yet
+      let currentTempRef = tempReferenceNumber;
+      if (!currentTempRef) {
+        currentTempRef = `temp_${Date.now()}`;
+        setTempReferenceNumber(currentTempRef);
+      }
+      
+      const userId = BigInt(1) // You may want to get this from context or props
+      
+      const uploadedDocument = await uploadDocument(
+        file,
+        userId,
+        currentTempRef,
+        uploadedDocuments.length + 1,
+        'ficha_propiedad'
+      )
+      
+      clearInterval(progressInterval)
+      setUploadProgress(100)
+      
+      setUploadedDocuments(prev => [...prev, {
+        docId: uploadedDocument.docId,
+        documentKey: uploadedDocument.documentKey,
+        fileUrl: uploadedDocument.fileUrl,
+        filename: uploadedDocument.filename,
+        fileType: uploadedDocument.fileType
+      }])
+      
+      setTimeout(() => {
+        setIsUploading(false)
+        setUploadProgress(0)
+      }, 500)
+      
+    } catch (error) {
+      clearInterval(progressInterval)
+      console.error('Error uploading document:', error)
+      setIsUploading(false)
+      setUploadProgress(0)
+      alert('Error al subir el archivo. Por favor, inténtalo de nuevo.')
+    }
+  }
+
+  const handleDeleteDocument = async (docId: bigint, documentKey: string) => {
+    setDocumentToDelete({ docId, documentKey })
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDeleteDocument = async () => {
+    if (!documentToDelete) return
+    
+    setIsDeleting(true)
+    try {
+      await deleteDocument(documentToDelete.documentKey, documentToDelete.docId)
+      setUploadedDocuments(prev => prev.filter(doc => doc.docId !== documentToDelete.docId))
+      setShowDeleteDialog(false)
+      setDocumentToDelete(null)
+    } catch (error) {
+      console.error('Error deleting document:', error)
+      alert('Error al eliminar el archivo. Por favor, inténtalo de nuevo.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const prevStep = () => {
     if (currentStep > 0) {
       setDirection("backward")
@@ -423,44 +632,134 @@ export default function PropertyIdentificationForm() {
                   )}
                 </div>
               </div>
-              <div
-                className="bg-gray-50 rounded-lg p-6 text-center hover:bg-gray-100 transition-colors cursor-pointer group border border-dashed border-gray-300 hover:border-gray-400"
-                onClick={() => document.getElementById("fileInput")?.click()}
-              >
-                <div className="space-y-3">
-                  <div className="mx-auto w-10 h-10 bg-white rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm">
-                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Subir documentos o tomar foto</p>
-                    <p className="text-xs text-gray-500">PDF, DOC, JPG, PNG o usar cámara</p>
+
+              {/* Upload Area or Document Preview */}
+              {uploadedDocuments.length === 0 && !isUploading ? (
+                <div
+                  className={`transition-colors border-2 border-dashed rounded-lg min-h-[200px] flex items-center justify-center ${
+                    isDragOver 
+                      ? 'border-blue-400 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300 bg-gray-50 hover:bg-gray-100'
+                  } cursor-pointer group`}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onClick={() => document.getElementById("fichaPropiedadInput")?.click()}
+                >
+                  <div className="space-y-3 text-center">
+                    <div className="mx-auto w-10 h-10 bg-white rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm">
+                      <Upload className="w-5 h-5 text-gray-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Subir documentos o tomar foto</p>
+                      <p className="text-xs text-gray-500">PDF, JPG, PNG o usar cámara</p>
+                    </div>
                   </div>
                 </div>
-                <input
-                  id="fileInput"
-                  type="file"
-                  multiple
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={(e) => {
-                    console.log("Files selected:", e.target.files)
-                    // Handle both file uploads and camera captures
-                    if (e.target.files && e.target.files.length > 0) {
-                      Array.from(e.target.files).forEach(file => {
-                        console.log("File:", file.name, "Type:", file.type, "Size:", file.size)
-                      })
-                    }
-                  }}
-                />
-              </div>
+              ) : isUploading ? (
+                <div className="border border-gray-200 rounded-lg p-6 min-h-[200px] flex items-center justify-center">
+                  <div className="w-full max-w-md space-y-4">
+                    <div className="w-full space-y-2">
+                      <div className="h-0.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gray-400 transition-all duration-300 ease-out"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 text-center">Subiendo archivo...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {uploadedDocuments.map((document, index) => (
+                    <div key={document.docId.toString()} className="border border-gray-200 rounded-lg overflow-hidden">
+                      {document.fileType === 'application/pdf' ? (
+                        <div className="relative group h-[300px]">
+                          <iframe
+                            src={document.fileUrl}
+                            className="w-full h-full border-0"
+                            title={`Document Preview ${index + 1}`}
+                          />
+                          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                            <div className="absolute bottom-3 right-3 flex gap-2 pointer-events-auto">
+                              <button
+                                onClick={() => window.open(document.fileUrl, '_blank')}
+                                className="bg-white/80 hover:bg-white text-gray-700 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
+                                title="Abrir en nueva pestaña"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteDocument(document.docId, document.documentKey)}
+                                className="bg-white/80 hover:bg-red-50 text-red-600 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
+                                title="Eliminar documento"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg pointer-events-auto">
+                              <FileText className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-medium text-blue-700">{document.filename}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative group h-[300px]">
+                          <img
+                            src={document.fileUrl}
+                            alt={`Document ${index + 1}`}
+                            className="w-full h-full object-contain bg-gray-50"
+                          />
+                          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                            <div className="absolute bottom-3 right-3 flex gap-2 pointer-events-auto">
+                              <button
+                                onClick={() => window.open(document.fileUrl, '_blank')}
+                                className="bg-white/80 hover:bg-white text-gray-700 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
+                                title="Abrir en nueva pestaña"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteDocument(document.docId, document.documentKey)}
+                                className="bg-white/80 hover:bg-red-50 text-red-600 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
+                                title="Eliminar documento"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg pointer-events-auto">
+                              <FileText className="h-4 w-4 text-green-600" />
+                              <span className="text-sm font-medium text-green-700">{document.filename}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {/* Add more files button */}
+                  <button
+                    onClick={() => document.getElementById("fichaPropiedadInput")?.click()}
+                    className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors group"
+                  >
+                    <div className="flex items-center justify-center space-x-2 text-gray-600 group-hover:text-gray-700">
+                      <Upload className="h-4 w-4" />
+                      <span className="text-sm font-medium">Añadir más archivos</span>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              <input
+                id="fichaPropiedadInput"
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
             </div>
           </div>
         )
@@ -596,6 +895,33 @@ export default function PropertyIdentificationForm() {
             )}
           </div>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>¿Eliminar documento?</DialogTitle>
+              <DialogDescription>
+                Esta acción no se puede deshacer. El documento se eliminará permanentemente.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDeleteDocument}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Eliminando..." : "Eliminar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

@@ -40,12 +40,15 @@ export const contactTypeConfig = {
 
 export const formatListingType = (listingType: string) => {
   const typeMap: Record<string, string> = {
-    'sale': 'Vender',
+    'sale': 'Venta',
     'sold': 'Vendido',
-    'rent': 'Alquilar',
-    'rented': 'Alquilado'
+    'rent': 'Alquiler',
+    'rented': 'Alquilado',
+    'RentWithOption': 'Alquiler con opción a compra',
+    'RoomSharing': 'Compartir habitación',
+    'Transfer': 'Transferencia'
   }
-  return typeMap[listingType.toLowerCase()] || listingType
+  return typeMap[listingType.toLowerCase()] || typeMap[listingType] || listingType
 }
 
 export const formatCurrency = (amount: number) => {
