@@ -22,6 +22,7 @@ type ContactListing = {
 };
 
 interface ExtendedContact {
+  [key: string]: unknown; // <-- Add this line
   contactId: bigint;
   firstName: string;
   lastName: string;
