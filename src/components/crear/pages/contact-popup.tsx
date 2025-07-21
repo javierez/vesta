@@ -4,13 +4,13 @@ import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { Textarea } from "~/components/ui/textarea"
 import { Label } from "~/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/components/ui/dialog"
-import { Loader, User, X } from "lucide-react"
+import { Loader, User } from "lucide-react"
 import { createContact } from "~/server/queries/contact"
 
 interface ContactPopupProps {
   isOpen: boolean
   onClose: () => void
-  onContactCreated: (contact: any) => void
+  onContactCreated: (contact: unknown) => void // Use 'unknown' instead of 'any' for type safety
 }
 
 interface ContactFormData {

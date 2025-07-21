@@ -2,7 +2,7 @@ import InmueblesPublicadosCard from "~/components/dashboard/InmueblesPublicadosC
 import OperacionesEnCursoCard from "~/components/dashboard/OperacionesEnCursoCard"
 import AccionesRapidasCard from "~/components/dashboard/AccionesRapidasCard"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
-import { DollarSign, TrendingUp } from "lucide-react"
+import { TrendingUp } from "lucide-react"
 
 export default function Home() {
   return (

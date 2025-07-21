@@ -9,11 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table"
-import { Badge } from "~/components/ui/badge"
-import { Building2, Home, Search, Building, Landmark, Store, Circle, Calendar, MapPin } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "~/lib/utils"
-import { formatListingType } from "../contact-config"
 import { Nombre } from "../table-components/list-elements/nombre"
 import { Contacto } from "../table-components/list-elements/contacto"
 import { Propiedades } from "../table-components/list-elements/propiedades"

@@ -15,7 +15,6 @@ import {
   Check, 
   ChevronDown,
   ArrowUpDown,
-  Calendar
 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
@@ -45,7 +44,6 @@ interface ExtendedContact {
 }
 
 interface ContactFilterProps {
-  contacts: ExtendedContact[]
   onFilterChange: (filters: {
     searchQuery: string
     roles: string[]
@@ -55,7 +53,6 @@ interface ContactFilterProps {
 }
 
 export function ContactFilter({
-  contacts,
   onFilterChange,
 }: ContactFilterProps) {
   const router = useRouter()
@@ -84,14 +81,14 @@ export function ContactFilter({
       } else if (roleArray.includes('owner')) {
         setSelectedRole('owner')
       } else {
-        setSelectedRole(roleArray[0] || 'owner')
+        setSelectedRole(roleArray[0] ?? 'owner')
       }
     } else {
       setSelectedRole('owner')
     }
-    setSortOrder(sort || 'alphabetical')
-    setSearchQuery(q || '')
-    setLastContactFilter(lastContact || 'all')
+    setSortOrder(sort ?? 'alphabetical')
+    setSearchQuery(q ?? '')
+    setLastContactFilter(lastContact ?? 'all')
     
     // Clean up any view parameter from URL since we only have table view
     if (searchParams.get('view')) {

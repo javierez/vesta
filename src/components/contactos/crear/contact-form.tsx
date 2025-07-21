@@ -140,13 +140,13 @@ export default function ContactForm() {
     updateFormData(field, e.target.value)
   }
 
-  const handleListingSelection = (listingId: bigint, checked: boolean) => {
+  const handleListingSelection = (listingId: bigint, _checked: boolean) => {
     setFormData((prev) => {
       const currentArray = prev.selectedListings
-      if (checked) {
-        return { ...prev, selectedListings: [...currentArray, listingId] }
-      } else {
+      if (currentArray.includes(listingId)) {
         return { ...prev, selectedListings: currentArray.filter(item => item !== listingId) }
+      } else {
+        return { ...prev, selectedListings: [...currentArray, listingId] }
       }
     })
   }
@@ -464,7 +464,7 @@ export default function ContactForm() {
                               <Checkbox
                                 id={`listing-${type}`}
                                 checked={filters.listingType.includes(type)}
-                                onCheckedChange={(checked) => toggleFilter('listingType', type)}
+                                onCheckedChange={(_checked) => toggleFilter('listingType', type)}
                               />
                               <Label htmlFor={`listing-${type}`} className="text-sm">
                                 {statusLabels[type]}
@@ -479,7 +479,7 @@ export default function ContactForm() {
                               <Checkbox
                                 id={`property-${type}`}
                                 checked={filters.propertyType.includes(type)}
-                                onCheckedChange={(checked) => toggleFilter('propertyType', type)}
+                                onCheckedChange={(_checked) => toggleFilter('propertyType', type)}
                               />
                               <Label htmlFor={`property-${type}`} className="text-sm">
                                 {getPropertyTypeLabel(type)}
@@ -547,7 +547,7 @@ export default function ContactForm() {
                           <div className="flex items-center space-x-4">
                             <div className="relative w-16 h-12 rounded overflow-hidden flex-shrink-0">
                               <Image
-                                src={listing.imageUrl || "/properties/suburban-dream.png"}
+                                src={listing.imageUrl ?? "/properties/suburban-dream.png"}
                                 alt={listing.title || "Property image"}
                                 fill
                                 className="object-cover"

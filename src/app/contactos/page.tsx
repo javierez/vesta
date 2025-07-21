@@ -72,9 +72,9 @@ export default function ContactsPage() {
     
     return {
       roles: roles ? roles.split(',') : [],
-      searchQuery: q || '',
-      sortOrder: sort || 'alphabetical',
-      lastContactFilter: lastContact || 'all'
+      searchQuery: q ?? '',
+      sortOrder: sort ?? 'alphabetical',
+      lastContactFilter: lastContact ?? 'all'
     }
   }
 
@@ -90,7 +90,8 @@ export default function ContactsPage() {
           roles: filters.roles,
           lastContactFilter: filters.lastContactFilter
         });
-        const dbContacts: DbContact[] = rawContacts.map((c: any) => ({
+        // Type assertion for safety
+        const dbContacts: DbContact[] = (rawContacts as DbContact[]).map((c) => ({
           ...c,
           email: c.email ?? undefined,
           orgId: c.orgId ?? undefined,
@@ -146,9 +147,10 @@ export default function ContactsPage() {
     }
 
     fetchContacts()
-  }, [searchParams]) // Re-fetch when URL parameters change
+  }, [searchParams, getFiltersFromUrl]) // Add getFiltersFromUrl as dependency
 
-  const handleFilterChange = (filters: {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleFilterChange = (_filters: {
     searchQuery: string
     roles: string[]
     sortOrder: string
@@ -172,7 +174,6 @@ export default function ContactsPage() {
       </div>
 
       <ContactFilter 
-        contacts={contactsList}
         onFilterChange={handleFilterChange}
       />
 

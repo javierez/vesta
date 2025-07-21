@@ -1,7 +1,5 @@
 "use client"
 
-import { motion } from "framer-motion"
-
 export default function FormSkeleton() {
   return (
     <div className="space-y-6">
@@ -23,7 +21,7 @@ export default function FormSkeleton() {
         </div>
 
         {/* Single input fields */}
-        {[...Array(4)].map((_, index) => (
+        {[...Array(4) as number[]].map((_, index) => (
           <div key={index} className="space-y-2">
             <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
             <div className="h-10 bg-gray-200 rounded-md animate-pulse"></div>
@@ -44,7 +42,7 @@ export default function FormSkeleton() {
           </div>
           <div className="h-10 bg-gray-200 rounded-md animate-pulse"></div>
           <div className="border border-gray-200 rounded-lg p-2 space-y-2">
-            {[...Array(3)].map((_, index) => (
+            {[...Array(3) as number[]].map((_, index) => (
               <div key={index} className="flex items-center space-x-2 p-2">
                 <div className="w-4 h-4 bg-gray-200 rounded-full animate-pulse"></div>
                 <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>

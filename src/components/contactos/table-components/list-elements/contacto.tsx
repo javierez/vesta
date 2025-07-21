@@ -81,7 +81,7 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
                   )}
                   onClick={(e) => {
                     e.stopPropagation()
-                    copyToClipboard(email, `email-${contactId}`)
+                    void copyToClipboard(email, `email-${contactId}`)
                   }}
                   title="Copiar email"
                 >
@@ -147,7 +147,7 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
                   )}
                   onClick={(e) => {
                     e.stopPropagation()
-                    copyToClipboard(phone, `phone-${contactId}`)
+                    void copyToClipboard(phone, `phone-${contactId}`)
                   }}
                   title="Copiar teléfono"
                 >

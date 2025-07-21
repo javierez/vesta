@@ -57,7 +57,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
       contactId: contact.contactId,
       createdAt: contact.createdAt,
       // Ensure orgId is undefined if null, to match the type
-      orgId: contact.orgId !== null ? contact.orgId : undefined,
+      orgId: contact.orgId ?? undefined,
       additionalInfo: (contact as { additionalInfo?: Contact["additionalInfo"] }).additionalInfo,
       prospectTitles: (contact as { prospectTitles?: string[] }).prospectTitles ?? [],
       allListings: (contact as { allListings?: ContactListing[] }).allListings ?? [],

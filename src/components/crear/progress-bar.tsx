@@ -6,7 +6,6 @@ import { useState, useMemo } from "react"
 
 interface ProgressBarProps {
   currentStep: number
-  totalSteps: number
   steps: Array<{ id: string; title: string }>
   formPosition?: number
   onStepClick?: (stepIndex: number) => void
@@ -18,7 +17,6 @@ interface ProgressBarProps {
 
 export default function ProgressBar({ 
   currentStep, 
-  totalSteps, 
   steps, 
   formPosition = 1, 
   onStepClick,
@@ -75,7 +73,6 @@ export default function ProgressBar({
   // Get the current filtered step index
   const currentFilteredStep = getFilteredStepIndex(currentStep)
   const actualCurrentStep = currentFilteredStep
-  const lastAccessibleIndex = getFilteredStepIndex((formPosition || 1) - 1)
   const progressPercentage = ((actualCurrentStep + 1) / filteredSteps.length) * 100
 
   // Debug logging
