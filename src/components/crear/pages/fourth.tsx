@@ -126,7 +126,7 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
   useEffect(() => {
     if (globalFormData?.listingDetails) {
       const details = globalFormData.listingDetails
-      setPropertyType(details.propertyType || "")
+      setPropertyType(details.propertyType ?? "")
       
       // For solar properties, skip this page entirely
       if (details.propertyType === "solar") {
@@ -139,11 +139,11 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
         setFormData(prev => ({
           ...prev,
           hasGarage: true, // Always enabled for garage properties
-          garageType: details.garageType || "",
-          garageSpaces: details.garageSpaces || 1,
-          garageInBuilding: details.garageInBuilding || false,
-          garageNumber: details.garageNumber || "",
-          optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
+          garageType: details.garageType ?? "",
+          garageSpaces: details.garageSpaces ?? 1,
+          garageInBuilding: details.garageInBuilding ?? false,
+          garageNumber: details.garageNumber ?? "",
+          optionalGaragePrice: Number(details.optionalGaragePrice) ?? 0,
         }))
         return
       }
@@ -151,31 +151,31 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
       // Pre-populate form with existing data for other property types
       setFormData(prev => ({
         ...prev,
-        hasElevator: details.hasElevator || false,
-        hasGarage: details.hasGarage || false,
-        garageType: details.garageType || "",
-        garageSpaces: details.garageSpaces || 1,
-        garageInBuilding: details.garageInBuilding || false,
-        garageNumber: details.garageNumber || "",
-        optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
-        hasStorageRoom: details.hasStorageRoom || false,
-        storageRoomSize: details.storageRoomSize || 0,
-        storageRoomNumber: details.storageRoomNumber || "",
-        optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
-        hasHeating: details.hasHeating || false,
-        heatingType: details.heatingType || "",
-        hasHotWater: details.hasHotWater || false,
-        hotWaterType: details.hotWaterType || "",
+        hasElevator: details.hasElevator ?? false,
+        hasGarage: details.hasGarage ?? false,
+        garageType: details.garageType ?? "",
+        garageSpaces: details.garageSpaces ?? 1,
+        garageInBuilding: details.garageInBuilding ?? false,
+        garageNumber: details.garageNumber ?? "",
+        optionalGaragePrice: Number(details.optionalGaragePrice) ?? 0,
+        hasStorageRoom: details.hasStorageRoom ?? false,
+        storageRoomSize: details.storageRoomSize ?? 0,
+        storageRoomNumber: details.storageRoomNumber ?? "",
+        optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) ?? 0,
+        hasHeating: details.hasHeating ?? false,
+        heatingType: details.heatingType ?? "",
+        hasHotWater: details.hasHotWater ?? false,
+        hotWaterType: details.hotWaterType ?? "",
         hasAirConditioning: !!details.airConditioningType,
-        airConditioningType: details.airConditioningType || "",
-        isFurnished: details.isFurnished || false,
-        furnitureQuality: details.furnitureQuality || "",
-        oven: details.oven || false,
-        microwave: details.microwave || false,
-        washingMachine: details.washingMachine || false,
-        fridge: details.fridge || false,
-        tv: details.tv || false,
-        stoneware: details.stoneware || false,
+        airConditioningType: details.airConditioningType ?? "",
+        isFurnished: details.isFurnished ?? false,
+        furnitureQuality: details.furnitureQuality ?? "",
+        oven: details.oven ?? false,
+        microwave: details.microwave ?? false,
+        washingMachine: details.washingMachine ?? false,
+        fridge: details.fridge ?? false,
+        tv: details.tv ?? false,
+        stoneware: details.stoneware ?? false,
       }))
     }
   }, [globalFormData?.listingDetails, onNext])

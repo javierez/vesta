@@ -3,7 +3,7 @@ import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { Checkbox } from "~/components/ui/checkbox"
-import { ChevronLeft, ChevronRight, Shield, Bell, Video, UserCheck, Users, Building2, Accessibility, Satellite, Layers, CookingPot, Soup, Refrigerator, Droplets } from "lucide-react"
+import { ChevronLeft, ChevronRight, Shield, Building2, CookingPot } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import FormSkeleton from "./form-skeleton"
@@ -73,7 +73,7 @@ export default function SixthPage({ listingId, globalFormData, onNext, onBack, r
   useEffect(() => {
     if (globalFormData?.listingDetails) {
       const details = globalFormData.listingDetails
-      setPropertyType(details.propertyType || "")
+      setPropertyType(details.propertyType ?? "")
       
       // For solar properties, skip this page entirely
       if (details.propertyType === "solar") {
@@ -83,20 +83,20 @@ export default function SixthPage({ listingId, globalFormData, onNext, onBack, r
       
       setFormData(prev => ({
         ...prev,
-        securityDoor: details.securityDoor || false,
-        alarm: details.alarm || false,
-        videoIntercom: details.videoIntercom || false,
-        securityGuard: details.securityGuard || false,
-        conciergeService: details.conciergeService || false,
-        vpo: details.vpo || false,
-        disabledAccessible: details.disabledAccessible || false,
-        satelliteDish: details.satelliteDish || false,
-        doubleGlazing: details.doubleGlazing || false,
-        kitchenType: details.kitchenType || "",
-        openKitchen: details.openKitchen || false,
-        frenchKitchen: details.frenchKitchen || false,
-        furnishedKitchen: details.furnishedKitchen || false,
-        pantry: details.pantry || false,
+        securityDoor: details.securityDoor ?? false,
+        alarm: details.alarm ?? false,
+        videoIntercom: details.videoIntercom ?? false,
+        securityGuard: details.securityGuard ?? false,
+        conciergeService: details.conciergeService ?? false,
+        vpo: details.vpo ?? false,
+        disabledAccessible: details.disabledAccessible ?? false,
+        satelliteDish: details.satelliteDish ?? false,
+        doubleGlazing: details.doubleGlazing ?? false,
+        kitchenType: details.kitchenType ?? "",
+        openKitchen: details.openKitchen ?? false,
+        frenchKitchen: details.frenchKitchen ?? false,
+        furnishedKitchen: details.furnishedKitchen ?? false,
+        pantry: details.pantry ?? false,
       }))
     }
   }, [globalFormData?.listingDetails, onNext])

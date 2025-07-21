@@ -548,7 +548,7 @@ export default function ContactForm() {
                             <div className="relative w-16 h-12 rounded overflow-hidden flex-shrink-0">
                               <Image
                                 src={listing.imageUrl ?? "/properties/suburban-dream.png"}
-                                alt={listing.title || "Property image"}
+                                alt={listing.title ?? "Property image"}
                                 fill
                                 className="object-cover"
                               />

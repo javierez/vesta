@@ -9,7 +9,7 @@ interface PropertyTitleProps {
   neighborhood?: string
 }
 
-export function generatePropertyTitle(propertyType: string, street: string = '', neighborhood: string = '') {
+export function generatePropertyTitle(propertyType: string, street = '', neighborhood = '') {
   const getPropertyTypeText = (type: string) => {
     switch (type) {
       case 'piso':

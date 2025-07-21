@@ -15,7 +15,7 @@ interface ContactDetailLayoutProps {
     isActive: boolean | null
     createdAt: Date
     // Add other properties that ContactCharacteristicsForm might need
-    [key: string]: any
+    [key: string]: unknown
   }
 }
 
@@ -25,11 +25,11 @@ export function ContactDetailLayout({ contact }: ContactDetailLayoutProps) {
     contactId: contact.contactId,
     firstName: contact.firstName,
     lastName: contact.lastName,
-    email: contact.email || undefined,
-    phone: contact.phone || undefined,
+    email: contact.email ?? undefined,
+    phone: contact.phone ?? undefined,
     contactType: contact.contactType as "demandante" | "propietario" | "banco" | "agencia" | "interesado",
     isActive: contact.isActive ?? true,
-    additionalInfo: contact.additionalInfo || {}
+    additionalInfo: typeof contact.additionalInfo === 'object' && contact.additionalInfo !== null ? contact.additionalInfo : {}
   }
 
   return (

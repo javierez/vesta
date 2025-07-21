@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { Checkbox } from "~/components/ui/checkbox"
-import { ChevronLeft, ChevronRight, Eye, Mountain, Waves, Home, Sparkles, Trees, Droplets, Flame, Music, Zap, WashingMachine, Shirt } from "lucide-react"
+import { ChevronLeft, ChevronRight, Eye, Home, Sparkles, Trees, Zap, WashingMachine } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import FormSkeleton from "./form-skeleton"
@@ -76,7 +76,7 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack,
   useEffect(() => {
     if (globalFormData?.listingDetails) {
       const details = globalFormData.listingDetails
-      setPropertyType(details.propertyType || "")
+      setPropertyType(details.propertyType ?? "")
       
       // For garage properties, skip this page entirely
       if (details.propertyType === "garage") {
@@ -86,27 +86,27 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack,
       
       setFormData(prev => ({
         ...prev,
-        views: details.views || false,
-        mountainViews: details.mountainViews || false,
-        seaViews: details.seaViews || false,
-        beachfront: details.beachfront || false,
-        jacuzzi: details.jacuzzi || false,
-        hydromassage: details.hydromassage || false,
-        fireplace: details.fireplace || false,
-        garden: details.garden || false,
-        pool: details.pool || false,
-        homeAutomation: details.homeAutomation || false,
-        musicSystem: details.musicSystem || false,
-        laundryRoom: details.laundryRoom || false,
-        coveredClothesline: details.coveredClothesline || false,
-        gym: details.gym || false,
-        sportsArea: details.sportsArea || false,
-        childrenArea: details.childrenArea || false,
-        suiteBathroom: details.suiteBathroom || false,
-        nearbyPublicTransport: details.nearbyPublicTransport || false,
-        communityPool: details.communityPool || false,
-        privatePool: details.privatePool || false,
-        tennisCourt: details.tennisCourt || false,
+        views: details.views ?? false,
+        mountainViews: details.mountainViews ?? false,
+        seaViews: details.seaViews ?? false,
+        beachfront: details.beachfront ?? false,
+        jacuzzi: details.jacuzzi ?? false,
+        hydromassage: details.hydromassage ?? false,
+        fireplace: details.fireplace ?? false,
+        garden: details.garden ?? false,
+        pool: details.pool ?? false,
+        homeAutomation: details.homeAutomation ?? false,
+        musicSystem: details.musicSystem ?? false,
+        laundryRoom: details.laundryRoom ?? false,
+        coveredClothesline: details.coveredClothesline ?? false,
+        gym: details.gym ?? false,
+        sportsArea: details.sportsArea ?? false,
+        childrenArea: details.childrenArea ?? false,
+        suiteBathroom: details.suiteBathroom ?? false,
+        nearbyPublicTransport: details.nearbyPublicTransport ?? false,
+        communityPool: details.communityPool ?? false,
+        privatePool: details.privatePool ?? false,
+        tennisCourt: details.tennisCourt ?? false,
       }))
     }
   }, [globalFormData?.listingDetails, onNext])

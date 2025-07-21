@@ -10,7 +10,7 @@ import { Checkbox } from "~/components/ui/checkbox"
 import { ChevronLeft, ChevronRight, Info, Loader } from "lucide-react"
 import { cn } from "~/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
-import { formatPropertyReference, getDisplayReference } from "~/lib/property-utils"
+import { formatPropertyReference } from "~/lib/property-utils"
 import { createPropertyFromCadastral } from "~/server/queries/properties"
 
 // Base form data interface
@@ -392,7 +392,7 @@ export default function PropertyQuestionnaire({ listingId }: { listingId?: strin
     try {
       setIsCreatingProperty(true)
       // Call the server action
-      const newProperty = await createPropertyFromCadastral(cadastralReference);
+      await createPropertyFromCadastral(cadastralReference);
       
     } catch (error) {
       console.error("Error creating property:", error);
@@ -436,7 +436,7 @@ export default function PropertyQuestionnaire({ listingId }: { listingId?: strin
       local: "Local",
       solar: "Solar",
     }
-    return types[type] || type
+    return types[type] ?? type
   }
 
   const renderStepContent = () => {

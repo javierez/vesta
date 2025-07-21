@@ -6,8 +6,7 @@ import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Card } from "~/components/ui/card"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
-import { ChevronLeft, ChevronRight, Info, Loader, Upload, FileText, X, Check, ExternalLink } from "lucide-react"
-import { cn } from "~/lib/utils"
+import { ChevronLeft, ChevronRight, Info, Loader, Upload, FileText, X, ExternalLink } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { createPropertyFromCadastral, createPropertyFromLocation } from "~/server/queries/properties"
 import { uploadDocument, deleteDocument, renameDocumentFolder } from "~/app/actions/upload"
@@ -196,20 +195,20 @@ export default function PropertyIdentificationForm() {
         setFormData(prev => ({
           ...prev,
           // Location fields
-          street: newProperty.street || "",
-          addressDetails: newProperty.addressDetails || "",
-          postalCode: newProperty.postalCode || "",
-          city: newProperty.city || "", // Now populated from geocoding data
-          province: newProperty.province || "", // Now populated from geocoding data
-          municipality: newProperty.municipality || "", // Now populated from geocoding data
-          neighborhood: newProperty.neighborhood || "", // Now populated from geocoding data
-          latitude: newProperty.latitude?.toString() || "",
-          longitude: newProperty.longitude?.toString() || "",
+          street: newProperty.street ?? "",
+          addressDetails: newProperty.addressDetails ?? "",
+          postalCode: newProperty.postalCode ?? "",
+          city: newProperty.city ?? "", // Now populated from geocoding data
+          province: newProperty.province ?? "", // Now populated from geocoding data
+          municipality: newProperty.municipality ?? "", // Now populated from geocoding data
+          neighborhood: newProperty.neighborhood ?? "", // Now populated from geocoding data
+          latitude: newProperty.latitude?.toString() ?? "",
+          longitude: newProperty.longitude?.toString() ?? "",
           // Property specifications
-          squareMeter: newProperty.squareMeter?.toString() || "",
-          builtSurfaceArea: newProperty.builtSurfaceArea?.toString() || "",
-          yearBuilt: newProperty.yearBuilt?.toString() || "",
-          propertyType: newProperty.propertyType || "piso",
+          squareMeter: newProperty.squareMeter?.toString() ?? "",
+          builtSurfaceArea: newProperty.builtSurfaceArea?.toString() ?? "",
+          yearBuilt: newProperty.yearBuilt?.toString() ?? "",
+          propertyType: newProperty.propertyType ?? "piso",
         }));
       }
       
@@ -258,13 +257,13 @@ export default function PropertyIdentificationForm() {
       // Auto-fill missing fields with Nominatim data
       const enrichedLocationData = {
         ...locationData,
-        postalCode: locationData.postalCode || result.address?.postcode || "",
-        city: locationData.city || result.address?.city || result.address?.town || "",
-        province: locationData.province || result.address?.state || "",
-        municipality: locationData.municipality || result.address?.city || result.address?.town || "",
-        neighborhood: locationData.neighborhood || result.address?.suburb || "",
-        latitude: result.lat || "",
-        longitude: result.lon || ""
+        postalCode: locationData.postalCode ?? result.address?.postcode ?? "",
+        city: locationData.city ?? result.address?.city ?? result.address?.town ?? "",
+        province: locationData.province ?? result.address?.state ?? "",
+        municipality: locationData.municipality ?? result.address?.city ?? result.address?.town ?? "",
+        neighborhood: locationData.neighborhood ?? result.address?.suburb ?? "",
+        latitude: result.lat ?? "",
+        longitude: result.lon ?? ""
       }
       
       // Update form data with enriched information
@@ -413,13 +412,13 @@ export default function PropertyIdentificationForm() {
       // Update form data with Nominatim results
       setFormData(prev => ({
         ...prev,
-        postalCode: prev.postalCode || result.address?.postcode || "",
-        city: prev.city || result.address?.city || result.address?.town || "",
-        province: prev.province || result.address?.state || "",
-        municipality: prev.municipality || result.address?.city || result.address?.town || "",
-        neighborhood: prev.neighborhood || result.address?.suburb || "",
-        latitude: result.lat || "",
-        longitude: result.lon || ""
+        postalCode: prev.postalCode ?? result.address?.postcode ?? "",
+        city: prev.city ?? result.address?.city ?? result.address?.town ?? "",
+        province: prev.province ?? result.address?.state ?? "",
+        municipality: prev.municipality ?? result.address?.city ?? result.address?.town ?? "",
+        neighborhood: prev.neighborhood ?? result.address?.suburb ?? "",
+        latitude: result.lat ?? "",
+        longitude: result.lon ?? ""
       }))
       
     } catch (error) {

@@ -50,9 +50,9 @@ export default function FifthPage({ listingId, globalFormData, onNext, onBack, r
       // Pre-populate form with existing data for other property types
       setFormData(prev => ({
         ...prev,
-        isExterior: details.exterior || false,
-        isBright: details.bright || false,
-        orientation: details.orientation || "",
+        isExterior: details.exterior ?? false,
+        isBright: details.bright ?? false,
+        orientation: details.orientation ?? "",
       }))
     }
   }, [globalFormData?.listingDetails, onNext])

@@ -3,8 +3,7 @@
 import { Badge } from "~/components/ui/badge"
 import { Card } from "~/components/ui/card"
 import { Avatar, AvatarFallback } from "~/components/ui/avatar"
-import { Mail, Phone, Calendar, Copy, User } from "lucide-react"
-import { contactTypeConfig } from "../contact-config"
+import { Mail, Phone, Calendar, User } from "lucide-react"
 import { useState } from "react"
 import { cn } from "~/lib/utils"
 import { CONTACT_PALETTE, getContactBadgeColor } from "../table-components/color/contact-colors"
@@ -33,7 +32,7 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
   const [copied, setCopied] = useState<{ field: 'email' | 'phone' | null, value: string }>({ field: null, value: '' })
 
   function handleCopy(field: 'email' | 'phone', value: string) {
-    navigator.clipboard.writeText(value)
+    void navigator.clipboard.writeText(value)
     setCopied({ field, value })
     setTimeout(() => setCopied({ field: null, value: '' }), 1200)
   }

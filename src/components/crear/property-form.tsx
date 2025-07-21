@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { Card } from "~/components/ui/card"
-import { Loader, Building2, X } from "lucide-react"
+import { Loader, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { getListingDetails, getAllAgents } from "~/server/queries/listing"
@@ -273,7 +273,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
       ...prev,
       listingDetails: prev.listingDetails ? {
         ...prev.listingDetails,
-        formPosition: Math.max(prev.listingDetails.formPosition || 1, newFormPosition)
+        formPosition: Math.max(prev.listingDetails.formPosition ?? 1, newFormPosition)
       } : null
     }))
     

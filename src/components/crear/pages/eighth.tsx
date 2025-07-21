@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
-import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { Label } from "~/components/ui/label"
 import { Checkbox } from "~/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { ChevronLeft, ChevronRight, Layout, Wine, Ruler, DoorOpen, Columns3, GalleryHorizontal, BedDouble } from "lucide-react"
+import { ChevronLeft, ChevronRight, Layout, Wine, Ruler, BedDouble } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import { formFormatters } from "~/lib/utils"
@@ -43,9 +42,8 @@ const initialFormData: EighthPageFormData = {
 export default function EighthPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: EighthPageProps) {
   const [formData, setFormData] = useState<EighthPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [propertyType, setPropertyType] = useState<string>("")
 
-  const updateFormData = (field: keyof EighthPageFormData, value: any) => {
+  const updateFormData = (field: keyof EighthPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -53,24 +51,21 @@ export default function EighthPage({ listingId, globalFormData, onNext, onBack, 
   useEffect(() => {
     if (globalFormData?.listingDetails) {
       const details = globalFormData.listingDetails
-      setPropertyType(details.propertyType || "")
-      
       // For garage properties, skip this page entirely
       if (details.propertyType === "garage") {
         onNext()
         return
       }
-      
       setFormData(prev => ({
         ...prev,
-        terrace: details.terrace || false,
-        terraceSize: details.terraceSize || 0,
-        wineCellar: details.wineCellar || false,
-        wineCellarSize: details.wineCellarSize || 0,
-        livingRoomSize: details.livingRoomSize || 0,
-        balconyCount: details.balconyCount || 0,
-        galleryCount: details.galleryCount || 0,
-        builtInWardrobes: details.builtInWardrobes || false,
+        terrace: details.terrace ?? false,
+        terraceSize: details.terraceSize ?? 0,
+        wineCellar: details.wineCellar ?? false,
+        wineCellarSize: details.wineCellarSize ?? 0,
+        livingRoomSize: details.livingRoomSize ?? 0,
+        balconyCount: details.balconyCount ?? 0,
+        galleryCount: details.galleryCount ?? 0,
+        builtInWardrobes: details.builtInWardrobes ?? false,
       }))
     }
   }, [globalFormData?.listingDetails, onNext])

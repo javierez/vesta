@@ -36,7 +36,7 @@ export interface InterestFormData {
   urgencyLevel: number
   fundingReady: boolean
   moveInBy: string
-  extras: { [key: string]: boolean }
+  extras: Record<string, boolean>
   notes: string
 }
 
@@ -94,7 +94,7 @@ export function ContactInterestForm({
         console.error("Error loading cities:", error)
       }
     }
-    loadCities()
+    void loadCities()
   }, [])
 
   // Load neighborhoods when city changes
@@ -108,7 +108,7 @@ export function ContactInterestForm({
           console.error("Error loading neighborhoods:", error)
         }
       }
-      loadNeighborhoods()
+      void loadNeighborhoods()
     } else {
       setNeighborhoods([])
     }
@@ -142,14 +142,14 @@ export function ContactInterestForm({
         propertyType: localData.propertyTypes[0] || "",
         maxPrice: localData.maxPrice.toString(),
         preferredAreas: preferredAreas,
-        minBedrooms: localData.minBedrooms || 0,
-        minBathrooms: localData.minBathrooms || 0,
-        minSquareMeters: localData.minSquareMeters || 0,
+        minBedrooms: localData.minBedrooms ?? 0,
+        minBathrooms: localData.minBathrooms ?? 0,
+        minSquareMeters: localData.minSquareMeters ?? 0,
         moveInBy: localData.moveInBy ? new Date(localData.moveInBy) : undefined,
-        extras: localData.extras || {},
-        urgencyLevel: localData.urgencyLevel || 3,
-        fundingReady: localData.fundingReady || false,
-        notesInternal: localData.notes || ""
+        extras: localData.extras ?? {},
+        urgencyLevel: localData.urgencyLevel ?? 3,
+        fundingReady: localData.fundingReady ?? false,
+        notesInternal: localData.notes ?? ""
       }
       
       // Check if this is an existing prospect (ID starts with "prospect-")
@@ -169,7 +169,7 @@ export function ContactInterestForm({
       }, 2000)
 
       if (onSaved) {
-        onSaved()
+        void onSaved()
       }
     } catch (error) {
       console.error("Error saving prospect:", error)
@@ -203,7 +203,7 @@ export function ContactInterestForm({
       setShowDeleteDialog(false)
       
       if (onDeleted) {
-        onDeleted()
+        void onDeleted()
       }
     } catch (error) {
       console.error("Error deleting prospect:", error)
@@ -344,7 +344,7 @@ export function ContactInterestForm({
                             type="text"
                             value={localData.maxPrice.toLocaleString('es-ES')}
                             onChange={(e) => {
-                              const value = parseInt(e.target.value.replace(/\D/g, '')) || 200000
+                              const value = parseInt(e.target.value.replace(/\D/g, '')) ?? 200000
                               updateLocalData({ maxPrice: value })
                             }}
                             className="h-8 text-sm text-center"
@@ -486,9 +486,9 @@ export function ContactInterestForm({
                   <div className="w-24">
                     <Input
                       type="text"
-                      value={localData.minSquareMeters || 80}
+                      value={localData.minSquareMeters ?? 80}
                       onChange={(e) => {
-                        const value = parseInt(e.target.value.replace(/\D/g, '')) || 80
+                        const value = parseInt(e.target.value.replace(/\D/g, '')) ?? 80
                         updateLocalData({ minSquareMeters: value })
                       }}
                       className="h-8 text-sm text-center"
@@ -753,7 +753,7 @@ export function ContactInterestForm({
                   <div key={extra.key} className="flex items-center space-x-2">
                     <Checkbox 
                       id={`${data.id}-${extra.key}`}
-                      checked={localData.extras[extra.key] || false}
+                      checked={localData.extras[extra.key] ?? false}
                       onCheckedChange={(checked) => {
                         const newExtras = { ...localData.extras, [extra.key]: checked === true }
                         updateLocalData({ extras: newExtras })

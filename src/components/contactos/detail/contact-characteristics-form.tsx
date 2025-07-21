@@ -3,20 +3,16 @@
 import { Card } from "~/components/ui/card"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import { useState, useEffect } from "react"
-import { ChevronDown, Save, Phone, Mail, MapPin, Calendar, FileText, User, Building, Plus } from "lucide-react"
+import { User, Building, Plus } from "lucide-react"
 import { Textarea } from "~/components/ui/textarea"
 import { updateContact, getListingsByContact, getListingsByContactAsBuyer } from "~/server/queries/contact"
 import { toast } from "sonner"
 import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern-save-indicator"
-import { Badge } from "~/components/ui/badge"
 import { contactTypeConfig } from "../contact-config"
 import { PropertyCard } from "~/components/property-card"
-import { Slider } from "~/components/ui/slider"
 import { ContactInterestForm, type InterestFormData } from "./forms/contact-interest-form"
 import { createProspect, updateProspect, getProspectsByContact, type CreateProspectInput, type UpdateProspectInput } from "~/server/queries/prospect"
 import { ContactProspectCompact } from "./forms/contact-prospect-compact"
@@ -74,7 +70,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   const [email, setEmail] = useState(contact.email || "")
   const [phone, setPhone] = useState(contact.phone || "")
   const [isActive, setIsActive] = useState(contact.isActive ?? true)
-  const [additionalInfo, setAdditionalInfo] = useState(contact.additionalInfo || {})
+  const [additionalInfo, setAdditionalInfo] = useState(contact.additionalInfo ?? {})
   
   // Interest forms state - Start empty, only show when explicitly creating/editing
   const [interestForms, setInterestForms] = useState<InterestFormData[]>([])
@@ -85,7 +81,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   const [showNewForm, setShowNewForm] = useState(false)
   
   // Notes state
-  const [notes, setNotes] = useState(additionalInfo.notes || "")
+  const [notes, setNotes] = useState(additionalInfo.notes ?? "")
 
   // Property listings for propietario and demandante
   const [contactListings, setContactListings] = useState<any[]>([])
@@ -93,8 +89,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
 
   // Contact type configuration
   const contactType = contact.contactType as keyof typeof contactTypeConfig
-  const typeConfig = contactTypeConfig[contactType] || contactTypeConfig.demandante
-  const TypeIcon = typeConfig.icon
+  const typeConfig = contactTypeConfig[contactType] ?? contactTypeConfig.demandante
 
   // Load contact listings if propietario or demandante
   useEffect(() => {
@@ -120,7 +115,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
           setIsLoadingListings(false)
         }
       }
-      loadContactListings()
+      void loadContactListings()
     }
   }, [contact.contactId, contact.contactType])
 
@@ -135,7 +130,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
       }
     }
     
-    loadProspects()
+    void loadProspects()
   }, [contact.contactId])
 
   // Function to update module state
@@ -197,19 +192,19 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
     // Convert prospect to InterestFormData format
     const convertedForm: InterestFormData = {
       id: `prospect-${prospect.id}`,
-      demandType: prospect.listingType || "",
+      demandType: prospect.listingType ?? "",
       maxPrice: prospect.maxPrice ? parseInt(prospect.maxPrice.toString()) : 200000,
       preferredArea: selectedNeighborhoods.map(n => n.neighborhood).join(", "),
       selectedNeighborhoods: selectedNeighborhoods,
       propertyTypes: prospect.propertyType ? [prospect.propertyType] : [],
-      minBedrooms: prospect.minBedrooms || 0,
-      minBathrooms: prospect.minBathrooms || 0,
-      minSquareMeters: prospect.minSquareMeters || 80,
-      urgencyLevel: prospect.urgencyLevel || 3,
-      fundingReady: prospect.fundingReady || false,
+      minBedrooms: prospect.minBedrooms ?? 0,
+      minBathrooms: prospect.minBathrooms ?? 0,
+      minSquareMeters: prospect.minSquareMeters ?? 80,
+      urgencyLevel: prospect.urgencyLevel ?? 3,
+      fundingReady: prospect.fundingReady ?? false,
       moveInBy: (prospect.moveInBy ? prospect.moveInBy.toISOString().split('T')[0] : "") as string,
-      extras: (prospect.extras as { [key: string]: boolean }) || {},
-      notes: prospect.notesInternal || ""
+      extras: (prospect.extras as { [key: string]: boolean }) ?? {},
+      notes: prospect.notesInternal ?? ""
     }
     
     setInterestForms([convertedForm])
@@ -231,7 +226,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
         console.error('Error loading prospects:', error)
       }
     }
-    loadProspects()
+    void loadProspects()
   }
 
   // Function to create new form
@@ -255,12 +250,6 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
     setInterestForms([newForm])
     setShowNewForm(true)
     setEditingProspectId(null)
-  }
-
-  // Function to remove interest form
-  const removeInterestForm = (id: string) => {
-    setInterestForms(interestForms.filter(form => form.id !== id))
-    updateModuleState('interestForms', true)
   }
 
   // Function to update interest form
@@ -539,7 +528,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Añadir solicitud
+                A&ntilde;adir solicitud
               </Button>
             )}
           </div>
@@ -588,7 +577,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
             <div className="text-center py-8 text-gray-500">
               <User className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-sm">No hay solicitudes de búsqueda configuradas</p>
-              <p className="text-xs text-gray-400 mt-1">Haz clic en "Añadir solicitud" para crear la primera solicitud</p>
+              <p className="text-xs text-gray-400 mt-1">Haz clic en &quot;A&ntilde;adir solicitud&quot; para crear la primera solicitud</p>
             </div>
           )}
         </Card>
@@ -649,7 +638,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Añadir solicitud
+                A&ntilde;adir solicitud
               </Button>
             )}
           </div>
@@ -698,7 +687,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
             <div className="text-center py-8 text-gray-500">
               <User className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-sm">No hay solicitudes de búsqueda configuradas</p>
-              <p className="text-xs text-gray-400 mt-1">Haz clic en "Añadir solicitud" para crear la primera solicitud</p>
+              <p className="text-xs text-gray-400 mt-1">Haz clic en &quot;A&ntilde;adir solicitud&quot; para crear la primera solicitud</p>
             </div>
           )}
         </Card>

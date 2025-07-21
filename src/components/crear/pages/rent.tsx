@@ -3,10 +3,8 @@ import { useRouter } from "next/navigation"
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { Checkbox } from "~/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { ChevronLeft, ChevronRight, GraduationCap, PawPrint, Zap, Car, Package, Key, Heart, Utensils, Sofa } from "lucide-react"
+import { ChevronLeft, ChevronRight, GraduationCap, PawPrint, Zap, Car, Package } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { updateProperty } from "~/server/queries/properties"
 import { createListing, updateListing } from "~/server/queries/listing"
 import { formFormatters } from "~/lib/utils"
@@ -65,20 +63,20 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
   useEffect(() => {
     if (globalFormData?.listingDetails) {
       const details = globalFormData.listingDetails
-      setPropertyType(details.propertyType || "")
+      setPropertyType(details.propertyType ?? "")
       setIsSaleListing(details.listingType === 'Sale')
       setFormData(prev => ({
         ...prev,
-        hasKeys: details.hasKeys || false,
-        studentFriendly: details.studentFriendly || false,
-        petsAllowed: details.petsAllowed || false,
-        appliancesIncluded: details.appliancesIncluded || false,
-        isFurnished: details.isFurnished || false,
-        furnitureQuality: details.furnitureQuality || "",
-        optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
-        optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
-        rentalPrice: Number(details.price) || 0,
-        internet: details.internet || false,
+        hasKeys: details.hasKeys ?? false,
+        studentFriendly: details.studentFriendly ?? false,
+        petsAllowed: details.petsAllowed ?? false,
+        appliancesIncluded: details.appliancesIncluded ?? false,
+        isFurnished: details.isFurnished ?? false,
+        furnitureQuality: details.furnitureQuality ?? "",
+        optionalGaragePrice: Number(details.optionalGaragePrice) ?? 0,
+        optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) ?? 0,
+        rentalPrice: Number(details.price) ?? 0,
+        internet: details.internet ?? false,
       }))
     }
   }, [globalFormData?.listingDetails])

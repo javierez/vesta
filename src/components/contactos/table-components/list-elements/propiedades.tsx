@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { MapPin, Building, ChevronDown, ChevronRight, ChevronUp, HelpCircle } from "lucide-react"
+import { MapPin, Building, ChevronDown, ChevronUp, HelpCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "~/lib/utils"
 import { formatListingType } from "../../contact-config"
@@ -36,7 +36,7 @@ export function Propiedades({
   const [isProspectsExpanded, setIsProspectsExpanded] = useState(false)
   
   // Use allListings directly - no fallback needed since we always provide it
-  const displayListings = allListings || []
+  const displayListings = allListings ?? []
   
   // Check if we should show prospects (when filter is set to demandante/buyer/interested)
   const shouldShowProspects = currentFilter.includes('buyer') || currentFilter.includes('interested')

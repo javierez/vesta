@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import Image from "next/image"
-import { Plus, Trash2, Maximize2, X, Download, CheckSquare2, Square, GripVertical } from "lucide-react"
+import { Plus, Trash2, Maximize2, X, Download, CheckSquare2, Square } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import type { PropertyImage } from "~/lib/data"
@@ -15,11 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog"
-
-// Visually hidden component for accessibility
-const VisuallyHidden = ({ children }: { children: React.ReactNode }) => (
-  <span className="sr-only">{children}</span>
-)
 
 interface ImageGalleryProps {
   images: PropertyImage[]
@@ -45,7 +40,6 @@ export function ImageGallery({
   const [selectedImages, setSelectedImages] = useState<Set<number>>(new Set())
   const [isSelectMode, setIsSelectMode] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
-  const [downloadError, setDownloadError] = useState<string | null>(null)
   
   // Drag and drop state
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
@@ -65,7 +59,7 @@ export function ImageGallery({
   React.useEffect(() => {
     const sources: Record<number, string> = {}
     initialImages.forEach((image, index) => {
-      sources[index] = image.imageUrl || defaultPlaceholder
+      sources[index] = image.imageUrl ?? defaultPlaceholder
     })
     setImageSources(sources)
   }, [initialImages])
@@ -87,7 +81,6 @@ export function ImageGallery({
 
   const handleDownload = async (imageUrl: string, fileName: string) => {
     setIsDownloading(true)
-    setDownloadError(null)
     
     try {
       // Extract file extension from URL or default to jpg
@@ -113,7 +106,7 @@ export function ImageGallery({
       await new Promise(resolve => setTimeout(resolve, 100))
     } catch (error) {
       console.error("Error downloading image:", error)
-      setDownloadError(error instanceof Error ? error.message : 'Failed to download image')
+      // TODO: Show error toast
     } finally {
       setIsDownloading(false)
     }
@@ -125,7 +118,7 @@ export function ImageGallery({
       const image = images[index]
       if (image) {
         // Get the file extension from the URL
-        const extension = image.imageUrl.split('.').pop() || 'jpg'
+        const extension = image.imageUrl.split('.').pop() ?? 'jpg'
         await handleDownload(image.imageUrl, `property-image-${index + 1}.${extension}`)
       }
     }
@@ -222,7 +215,7 @@ export function ImageGallery({
         const newIndex = images.length + index
         setImageSources(prev => ({
           ...prev,
-          [newIndex]: image.imageUrl || defaultPlaceholder
+          [newIndex]: image.imageUrl ?? defaultPlaceholder
         }))
       })
       
@@ -314,7 +307,7 @@ export function ImageGallery({
     // Update the imageSources state to match the new order
     const newImageSources: Record<number, string> = {}
     newImages.forEach((image, index) => {
-      newImageSources[index] = image.imageUrl || defaultPlaceholder
+      newImageSources[index] = image.imageUrl ?? defaultPlaceholder
     })
     setImageSources(newImageSources)
     
@@ -358,7 +351,7 @@ export function ImageGallery({
     // Reset imageSources to original order
     const originalImageSources: Record<number, string> = {}
     initialImages.forEach((image, index) => {
-      originalImageSources[index] = image.imageUrl || defaultPlaceholder
+      originalImageSources[index] = image.imageUrl ?? defaultPlaceholder
     })
     setImageSources(originalImageSources)
   }
@@ -442,7 +435,7 @@ export function ImageGallery({
                   className="absolute bottom-2 left-2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition-all duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50"
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleDownload(imageSources[idx] || '', `property-image-${idx + 1}.jpg`)
+                    void handleDownload(imageSources[idx] ?? '', `property-image-${idx + 1}.jpg`)
                   }}
                   disabled={isDownloading}
                   aria-label="Descargar imagen"
@@ -609,7 +602,7 @@ export function ImageGallery({
           {expandedImage !== null && images[expandedImage] && (
             <div className="relative">
               <Image
-                src={imageSources[expandedImage] || defaultPlaceholder}
+                src={imageSources[expandedImage] ?? defaultPlaceholder}
                 alt={title || `Property image ${expandedImage + 1}`}
                 width={1200}
                 height={800}

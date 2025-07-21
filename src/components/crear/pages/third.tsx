@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
-import { ChevronLeft, ChevronRight, Loader, CheckCircle } from "lucide-react"
+import { ChevronLeft, ChevronRight, Loader } from "lucide-react"
 import { motion } from "framer-motion"
 import { updatePropertyLocation, updateProperty } from "~/server/queries/properties"
 import { useSearchParams } from "next/navigation"
@@ -40,8 +40,6 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
   const [formData, setFormData] = useState<ThirdPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false)
-  const [autoCompletionSuccess, setAutoCompletionSuccess] = useState(false)
-  const [hasLocationChanged, setHasLocationChanged] = useState(false)
   const searchParams = useSearchParams()
   const method = searchParams?.get('method')
 
@@ -61,13 +59,13 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
       // Pre-populate form with existing data
       setFormData(prev => ({
         ...prev,
-        street: details.street || "",
-        addressDetails: details.addressDetails || "",
-        postalCode: details.postalCode || "",
-        city: details.city || "",
-        province: details.province || "",
-        municipality: details.municipality || "",
-        neighborhood: details.neighborhood || "",
+        street: details.street ?? "",
+        addressDetails: details.addressDetails ?? "",
+        postalCode: details.postalCode ?? "",
+        city: details.city ?? "",
+        province: details.province ?? "",
+        municipality: details.municipality ?? "",
+        neighborhood: details.neighborhood ?? "",
       }))
     }
   }, [globalFormData?.listingDetails])
@@ -115,7 +113,6 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
     
     try {
       setIsUpdatingAddress(true)
-      setAutoCompletionSuccess(false)
       
       // Use Nominatim to auto-complete missing fields
       const addressString = [
@@ -148,14 +145,12 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
       }
       
       setFormData(newFormData)
-      setHasLocationChanged(true)
       
       // Show success feedback
-      setAutoCompletionSuccess(true)
       
       // Hide success message after 3 seconds
       setTimeout(() => {
-        setAutoCompletionSuccess(false)
+        
       }, 3000)
       
     } catch (error) {

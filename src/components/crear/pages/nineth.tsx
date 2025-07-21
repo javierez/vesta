@@ -50,10 +50,10 @@ export default function NinethPage({ listingId, globalFormData, onNext, onBack, 
       
       setFormData(prev => ({
         ...prev,
-        mainFloorType: details.mainFloorType || "",
-        shutterType: details.shutterType || "",
-        carpentryType: details.carpentryType || "",
-        windowType: details.windowType || "",
+        mainFloorType: details.mainFloorType ?? "",
+        shutterType: details.shutterType ?? "",
+        carpentryType: details.carpentryType ?? "",
+        windowType: details.windowType ?? "",
       }))
     }
   }, [globalFormData?.listingDetails, onNext])

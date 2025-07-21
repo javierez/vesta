@@ -1,10 +1,9 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { Upload, FileText, X, Check, AlertTriangle, ExternalLink } from 'lucide-react'
+import { FileText, X, Check, ExternalLink } from 'lucide-react'
 import { Card } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
-import { Badge } from '~/components/ui/badge'
 import { FloatingLabelInput } from '~/components/ui/floating-label-input'
 import { ModernSaveIndicator } from '~/components/propiedades/form/common/modern-save-indicator'
 import { cn } from '~/lib/utils'
@@ -65,11 +64,11 @@ export function EnergyCertificate({
   const [isDeleting, setIsDeleting] = useState(false)
   
   // New state for energy certificate fields
-  const [certificateStatus, setCertificateStatus] = useState(energyCertificateStatus || (uploadedDocumentUrl ? 'uploaded' : 'en_tramite'))
+  const [certificateStatus, setCertificateStatus] = useState(energyCertificateStatus ?? (uploadedDocumentUrl ? 'uploaded' : 'en_tramite'))
   const [consumptionScale, setConsumptionScale] = useState(energyConsumptionScale)
-  const [consumptionValue, setConsumptionValue] = useState(energyConsumptionValue?.toString() || '')
+  const [consumptionValue, setConsumptionValue] = useState(energyConsumptionValue?.toString() ?? '')
   const [emissionScale, setEmissionScale] = useState(emissionsScale)
-  const [emissionValue, setEmissionValue] = useState(emissionsValue?.toString() || '')
+  const [emissionValue, setEmissionValue] = useState(emissionsValue?.toString() ?? '')
   const [pendingConsumptionScale, setPendingConsumptionScale] = useState<string | null>(null)
   const [pendingEmissionScale, setPendingEmissionScale] = useState<string | null>(null)
   

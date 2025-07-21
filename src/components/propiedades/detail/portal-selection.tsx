@@ -111,12 +111,12 @@ export function PortalSelection({
       const portalValues = { fotocasa, idealista, habitaclia, milanuncios }
 
       const initializedPlatforms = platformConfig.map(config => {
-        const portalValue = portalValues[config.id as keyof typeof portalValues] || false
-        
+        const portalValue = portalValues[config.id as keyof typeof portalValues] ?? false
+
         // Use actual database values to determine initial state
-        let status: Platform["status"] = portalValue ? "active" : "inactive"
-        let isActive = portalValue
-        
+        const status: Platform["status"] = portalValue ? "active" : "inactive"
+        const isActive = portalValue
+
         return {
           ...config,
           isActive,
@@ -126,7 +126,7 @@ export function PortalSelection({
           hidePrice: config.id === 'fotocasa' ? hidePriceModes.fotocasa : undefined
         }
       })
-      
+
       setPlatforms(initializedPlatforms)
       setInitialPlatformStates(initializedPlatforms.reduce((acc, platform) => ({
         ...acc,
@@ -135,7 +135,7 @@ export function PortalSelection({
     }
 
     initializePlatforms()
-  }, [fotocasa, idealista, habitaclia, milanuncios])
+  }, [fotocasa, idealista, habitaclia, milanuncios, hidePriceModes.fotocasa, visibilityModes.fotocasa])
 
   const handlePlatformToggle = (platformId: string, isActive: boolean) => {
     const updatedPlatforms = platforms.map(platform => {
@@ -171,10 +171,10 @@ export function PortalSelection({
     try {
       // Prepare the portal field updates based on current platform states
       const portalUpdates = {
-        fotocasa: platforms.find(p => p.id === 'fotocasa')?.isActive || false,
-        idealista: platforms.find(p => p.id === 'idealista')?.isActive || false,
-        habitaclia: platforms.find(p => p.id === 'habitaclia')?.isActive || false,
-        milanuncios: platforms.find(p => p.id === 'milanuncios')?.isActive || false
+        fotocasa: platforms.find(p => p.id === 'fotocasa')?.isActive ?? false,
+        idealista: platforms.find(p => p.id === 'idealista')?.isActive ?? false,
+        habitaclia: platforms.find(p => p.id === 'habitaclia')?.isActive ?? false,
+        milanuncios: platforms.find(p => p.id === 'milanuncios')?.isActive ?? false
       }
 
       // Update the listing with the new portal values
@@ -189,7 +189,7 @@ export function PortalSelection({
         // Fotocasa is being enabled - publish to Fotocasa
         console.log('Publishing to Fotocasa...')
         try {
-          const fotocasaResult = await publishToFotocasa(Number(listingId), visibilityModes.fotocasa || 1, hidePriceModes.fotocasa || false)
+          const fotocasaResult = await publishToFotocasa(Number(listingId), visibilityModes.fotocasa ?? 1, hidePriceModes.fotocasa ?? false)
           if (fotocasaResult.success) {
             console.log('Successfully published to Fotocasa')
           } else {
@@ -202,8 +202,8 @@ export function PortalSelection({
         }
       } else if (currentFotocasaState && previousFotocasaState) {
         // Fotocasa is already active - check if settings changed and update if needed
-        const currentVisibilityMode = visibilityModes.fotocasa || 1
-        const currentHidePrice = hidePriceModes.fotocasa || false
+        const currentVisibilityMode = visibilityModes.fotocasa ?? 1
+        const currentHidePrice = hidePriceModes.fotocasa ?? false
         
         // For now, we'll always update when Fotocasa is active and settings might have changed
         // In a more sophisticated implementation, you'd compare with previous settings
@@ -304,8 +304,8 @@ export function PortalSelection({
         console.log(`Refreshing ${platformId}...`)
         const result = await updateFotocasa(
           Number(listingId), 
-          visibilityModes.fotocasa || 1, 
-          hidePriceModes.fotocasa || false
+          visibilityModes.fotocasa ?? 1, 
+          hidePriceModes.fotocasa ?? false
         )
         
         if (result.success) {
@@ -360,30 +360,6 @@ export function PortalSelection({
     }
   }
 
-  const getStatusIcon = (status: Platform["status"]) => {
-    switch (status) {
-      case "active":
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />
-      case "error":
-        return <AlertCircle className="h-4 w-4 text-red-500" />
-      default:
-        return null
-    }
-  }
-
-  const getStatusBadge = (status: Platform["status"]) => {
-    switch (status) {
-      case "active":
-        return <Badge className="bg-green-100 text-green-700 hover:bg-green-200">Activo</Badge>
-      case "pending":
-        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200">Pendiente</Badge>
-      case "error":
-        return <Badge className="bg-red-100 text-red-700 hover:bg-red-200">Error</Badge>
-      default:
-        return <Badge variant="secondary">Inactivo</Badge>
-    }
-  }
-
   const getCardStyles = (platform: Platform) => {
     const initialActive = initialPlatformStates[platform.id]
     const currentActive = platform.isActive
@@ -400,8 +376,6 @@ export function PortalSelection({
       return "hover:border-gray-300"
     }
   }
-
-  const pendingPlatformsCount = platforms.filter(p => p.status === "pending").length
 
   return (
     <motion.div

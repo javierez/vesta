@@ -149,6 +149,7 @@ export default function ContactsPage() {
     void fetchContacts() // Mark as intentionally unhandled
   }, [searchParams, getFiltersFromUrl]) // getFiltersFromUrl is now stable
 
+  // Removed unused eslint-disable directive
   const handleFilterChange = (_filters: {
     searchQuery: string
     roles: string[]

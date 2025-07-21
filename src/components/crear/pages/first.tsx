@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
-import { Card } from "~/components/ui/card"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
-import { ChevronLeft, ChevronRight, Info, Loader, Plus, User } from "lucide-react"
+import { ChevronLeft, ChevronRight, Info, Plus, User } from "lucide-react"
 import { cn } from "~/lib/utils"
 import { formFormatters } from "~/lib/utils"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { updateProperty } from "~/server/queries/properties"
 import { updateListing } from "~/server/queries/listing"
@@ -48,9 +47,6 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
   const [contactSearch, setContactSearch] = useState("")
   const [showContactPopup, setShowContactPopup] = useState(false)
   const [localContacts, setLocalContacts] = useState<{id: number, name: string}[]>([])
-  const [roomSharing, setRoomSharing] = useState(false)
-  const [rentWithOption, setRentWithOption] = useState(false)
-  const [allowsTransfer, setAllowsTransfer] = useState(false)
 
   // Fallback price formatting functions in case formFormatters is undefined
   const formatPriceInput = (value: string | number): string => {
@@ -99,11 +95,11 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
       setFormData(prev => ({
         ...prev,
         price: displayPrice,
-        listingType: details.listingType || "Sale",
-        propertyType: details.propertyType || "piso",
-        propertySubtype: details.propertySubtype || "",
+        listingType: details.listingType ?? "Sale",
+        propertyType: details.propertyType ?? "piso",
+        propertySubtype: details.propertySubtype ?? "",
         agentId: details.agentId ? details.agentId.toString() : "",
-        selectedContactIds: globalFormData.currentContacts || [],
+        selectedContactIds: globalFormData.currentContacts ?? [],
       }))
     }
   }, [globalFormData])
@@ -141,9 +137,6 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
   // Update the toggle logic and state management
   const handleListingTypeTab = (type: string) => {
     // Reset all secondary toggles
-    setRoomSharing(false)
-    setRentWithOption(false)
-    setAllowsTransfer(false)
     updateFormData("listingType", type)
   }
 
@@ -151,32 +144,20 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
     if (type === 'RentWithOption') {
       if (formData.listingType === 'RentWithOption') {
         updateFormData('listingType', 'Rent')
-        setRentWithOption(false)
       } else {
         updateFormData('listingType', 'RentWithOption')
-        setRentWithOption(true)
-        setRoomSharing(false)
-        setAllowsTransfer(false)
       }
     } else if (type === 'RoomSharing') {
       if (formData.listingType === 'RoomSharing') {
         updateFormData('listingType', 'Rent')
-        setRoomSharing(false)
       } else {
         updateFormData('listingType', 'RoomSharing')
-        setRoomSharing(true)
-        setRentWithOption(false)
-        setAllowsTransfer(false)
       }
     } else if (type === 'Transfer') {
       if (formData.listingType === 'Transfer') {
         updateFormData('listingType', 'Sale')
-        setAllowsTransfer(false)
       } else {
         updateFormData('listingType', 'Transfer')
-        setAllowsTransfer(true)
-        setRoomSharing(false)
-        setRentWithOption(false)
       }
     }
   }

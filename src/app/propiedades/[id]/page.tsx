@@ -1,25 +1,14 @@
-import Image from "next/image"
-import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Bed, Bath, SquareIcon, MapPin, Share2, Check, X, User, Building2 } from "lucide-react"
-import { Button } from "~/components/ui/button"
-import { Badge } from "~/components/ui/badge"
-import { PropertyCard } from "~/components/property-card"
 import { ImageGallery } from "~/components/propiedades/detail/image-gallery"
-import { PropertySummary } from "~/components/propiedades/detail/property-summary"
-import { Card } from "~/components/ui/card"
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump"
 import { PropertyHeader } from "~/components/propiedades/detail/property-header"
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form"
 import { PortalSelection } from "~/components/propiedades/detail/portal-selection"
 import { EnergyCertificate } from "~/components/propiedades/detail/energy-certificate"
-import { use } from "react"
 import { getPropertyImages } from "~/server/queries/property_images"
 import { getListingDetails } from "~/server/queries/listing"
 import { getEnergyCertificate } from "~/server/queries/document"
 import type { PropertyImage } from "~/lib/data"
-import { Label } from "~/components/ui/label"
-import { Input } from "~/components/ui/input"
 
 interface PropertyPageProps {
   params: Promise<{
@@ -47,23 +36,16 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     propertyImageId: img.propertyImageId,
     propertyId: img.propertyId,
     referenceNumber: img.referenceNumber,
-    imageUrl: img.imageUrl || defaultPlaceholder,
+    imageUrl: img.imageUrl ?? defaultPlaceholder,
     isActive: img.isActive ?? true,
     createdAt: img.createdAt,
     updatedAt: img.updatedAt,
     imageKey: img.imageKey,
-    imageTag: img.imageTag || undefined,
+    imageTag: img.imageTag ?? undefined,
     s3key: img.s3key,
     imageOrder: img.imageOrder
   }))
 
-
-
-  // Map coordinates
-  const mapCoordinates = {
-    lat: parseFloat(listing.latitude ?? "42.5987"),
-    lng: parseFloat(listing.longitude ?? "-5.5671")
-  }
 
   return (
     <>
@@ -146,24 +128,24 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         {/* Energy Certificate Section */}
         <div className="pb-8 max-w-4xl mx-auto mb-8">
           <EnergyCertificate 
-            energyRating={listing.energyCertification || null}
+            energyRating={listing.energyCertification ?? null}
             uploadedDocument={energyCertificate ? {
               docId: energyCertificate.docId,
               documentKey: energyCertificate.documentKey,
               fileUrl: energyCertificate.fileUrl
             } : null}
             propertyId={listing.propertyId}
-            userId={listing.agentId || BigInt(1)} // TODO: Get from auth context
+            userId={listing.agentId ?? BigInt(1)} // TODO: Get from auth context
             listingId={listing.listingId}
-            referenceNumber={listing.referenceNumber || ""}
-            energyCertificateStatus={listing.energyCertificateStatus || null}
-            energyConsumptionScale={listing.energyConsumptionScale || null}
+            referenceNumber={listing.referenceNumber ?? ""}
+            energyCertificateStatus={listing.energyCertificateStatus ?? null}
+            energyConsumptionScale={listing.energyConsumptionScale ?? null}
             energyConsumptionValue={
               listing.energyConsumptionValue !== null && listing.energyConsumptionValue !== undefined
                 ? parseFloat(listing.energyConsumptionValue)
                 : null
             }
-            emissionsScale={listing.emissionsScale || null}
+            emissionsScale={listing.emissionsScale ?? null}
             emissionsValue={
               listing.emissionsValue !== null && listing.emissionsValue !== undefined
                 ? parseFloat(listing.emissionsValue)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
-import { ChevronLeft, ChevronRight, Loader } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { motion } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import { formFormatters } from "~/lib/utils"
@@ -47,7 +47,6 @@ const initialFormData: SecondPageFormData = {
 export default function SecondPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: SecondPageProps) {
   const [formData, setFormData] = useState<SecondPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
   const [propertyType, setPropertyType] = useState<string>("")
   const [propertySubtype, setPropertySubtype] = useState<string>("")
 
@@ -55,8 +54,8 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
   useEffect(() => {
     if (globalFormData?.listingDetails) {
       const details = globalFormData.listingDetails
-      setPropertyType(details.propertyType || "")
-      setPropertySubtype(details.propertySubtype || "")
+      setPropertyType(details.propertyType ?? "")
+      setPropertySubtype(details.propertySubtype ?? "")
       
       // Convert builtSurfaceArea from float to integer for display (similar to price in first.tsx)
       let displayBuiltSurfaceArea = ""
@@ -77,15 +76,15 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
       // Pre-populate form with existing data
       setFormData(prev => ({
         ...prev,
-        bedrooms: details.bedrooms?.toString() || "2",
-        bathrooms: details.bathrooms?.toString() || "1",
-        squareMeter: displaySquareMeter || "80",
-        builtSurfaceArea: displayBuiltSurfaceArea || "85",
-        yearBuilt: details.yearBuilt?.toString() || "2000",
-        lastRenovationYear: details.lastRenovationYear?.toString() || "",
+        bedrooms: details.bedrooms?.toString() ?? "2",
+        bathrooms: details.bathrooms?.toString() ?? "1",
+        squareMeter: displaySquareMeter ?? "80",
+        builtSurfaceArea: displayBuiltSurfaceArea ?? "85",
+        yearBuilt: details.yearBuilt?.toString() ?? "2000",
+        lastRenovationYear: details.lastRenovationYear?.toString() ?? "",
         isRenovated: details.lastRenovationYear && details.lastRenovationYear !== details.yearBuilt,
-        buildingFloors: details.buildingFloors?.toString() || "",
-        conservationStatus: details.conservationStatus || 1,
+        buildingFloors: details.buildingFloors?.toString() ?? "",
+        conservationStatus: details.conservationStatus ?? 1,
       }))
     }
   }, [globalFormData?.listingDetails])

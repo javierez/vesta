@@ -5,9 +5,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { Badge } from "~/components/ui/badge"
 import { Card, CardContent, CardFooter } from "~/components/ui/card"
-import { Bed, Bath, SquareIcon as SquareFoot, MapPin, Hash, User } from "lucide-react"
+import { Bed, Bath, SquareIcon as SquareFoot, MapPin, User } from "lucide-react"
 import { Button } from "~/components/ui/button"
-import { handleImageError } from "~/lib/images"
 import { formatPrice } from "~/lib/utils"
 import { formatListingType } from "./contactos/contact-config"
 
@@ -80,10 +79,10 @@ export function PropertyCard({ listing }: PropertyCardProps) {
   // Get primary image with proper fallback
   const defaultPlaceholder = "/properties/suburban-dream.png"
   const [imageSrc, setImageSrc] = useState(
-    listing.imageUrl || defaultPlaceholder
+    listing.imageUrl ?? defaultPlaceholder
   )
   const [imageSrc2, setImageSrc2] = useState(
-    listing.imageUrl2 || defaultPlaceholder
+    listing.imageUrl2 ?? defaultPlaceholder
   )
 
   // Debug: Log the image URLs
@@ -104,11 +103,6 @@ export function PropertyCard({ listing }: PropertyCardProps) {
     setImageSrc2(defaultPlaceholder)
   }
 
-  // Format numbers consistently to avoid hydration issues
-  const formatNumber = (num: string) => {
-    return new Intl.NumberFormat('es-ES').format(parseFloat(num))
-  }
-
   return (
     <Link href={`/propiedades/${listing.propertyId.toString()}`} className="block">
       <Card
@@ -121,7 +115,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
             {/* First Image */}
             <Image
               src={imageSrc}
-              alt={listing.title || "Property image"}
+              alt={listing.title ?? "Property image"}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className={`object-cover transition-opacity duration-300 ${
@@ -135,7 +129,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
             {/* Second Image */}
             <Image
               src={imageSrc2}
-              alt={listing.title || "Property image"}
+              alt={listing.title ?? "Property image"}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className={`object-cover transition-opacity duration-300 ${
@@ -161,7 +155,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
           {/* Bottom Center - Reference Number */}
           <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-10">
             <span className="text-[10px] font-semibold tracking-widest text-white/90">
-              {listing.referenceNumber}
+              {listing.referenceNumber ?? ""}
             </span>
           </div>
           
@@ -215,7 +209,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
           <div className="flex items-center gap-1.5 group cursor-pointer transition-all">
             <User className="h-3 w-3 text-muted-foreground/80 transition-all group-hover:text-primary group-hover:scale-110" />
             <p className="text-xs text-muted-foreground/80 font-light transition-all group-hover:font-bold group-hover:text-primary group-hover:underline">
-              {listing.agentName}
+              {listing.agentName ?? ""}
             </p>
           </div>
           <Button 

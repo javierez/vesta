@@ -22,7 +22,7 @@ export default function PropertiesPage() {
   const [listings, setListings] = useState<ListingOverview[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
+  // Removed unused variable: totalCount
   const [agents, setAgents] = useState<Array<{ id: bigint, name: string }>>([])
   const [error, setError] = useState<string | null>(null)
 
@@ -39,7 +39,7 @@ export default function PropertiesPage() {
         setError("Error al cargar los agentes")
       }
     }
-    fetchAgents()
+    void fetchAgents()
   }, [])
 
   useEffect(() => {
@@ -47,7 +47,9 @@ export default function PropertiesPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const page = Number(searchParams.get('page')) ?? 1
+        const page = Number(searchParams.get('page')) || 1
+        // Use nullish coalescing for fallback
+        // const page = Number(searchParams.get('page')) ?? 1
         setCurrentPage(page)
         
         // Get all filter parameters from URL
@@ -88,7 +90,7 @@ export default function PropertiesPage() {
           }))
         )
         setTotalPages(result.totalPages)
-        setTotalCount(result.totalCount)
+        // Removed setTotalCount since totalCount is unused
 
         // If no results found, show a message
         if (result.totalCount === 0) {
@@ -103,6 +105,8 @@ export default function PropertiesPage() {
     }
 
     fetchData()
+    // Mark floating promise as intentionally unhandled
+    // void fetchData()
   }, [searchParams])
 
   const handlePageChange = (newPage: number) => {
@@ -157,4 +161,4 @@ export default function PropertiesPage() {
       )}
     </div>
   )
-} 
+}
