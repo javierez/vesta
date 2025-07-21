@@ -680,7 +680,7 @@ export default function ContactForm() {
               className="flex items-center space-x-2 h-10"
             >
               <ChevronLeft className="h-4 w-4" />
-              <span>Anterior</span>
+              <span>Anterior </span>
             </Button>
 
             <Button 
