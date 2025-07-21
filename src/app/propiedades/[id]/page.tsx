@@ -120,7 +120,19 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             {/* Columna principal */}
             <div className="space-y-4">
               {/* Características detalladas */}
-              <PropertyCharacteristicsForm listing={listing} />
+              <PropertyCharacteristicsForm listing={{
+                ...listing,
+                listingId: Number(listing.listingId),
+                propertyId: Number(listing.propertyId),
+                propertyType: listing.propertyType ?? undefined,
+                propertySubtype: listing.propertySubtype ?? undefined,
+                listingType: listing.listingType ?? undefined,
+                price: listing.price ?? undefined,
+                agent: listing.agent ? {
+                  id: Number(listing.agent.id),
+                  name: `${listing.agent.firstName} ${listing.agent.lastName}`
+                } : undefined
+              } as any} />
             </div>
           </div>
         </div>
