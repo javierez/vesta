@@ -710,7 +710,7 @@ export default function ContactForm() {
           <DialogHeader>
             <div className="flex items-center space-x-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              <DialogTitle>Confirmar acción de propiedad</DialogTitle>
+              <DialogTitle>Confirmar acción de propiedad </DialogTitle>
             </div>
             <DialogDescription className="pt-2">
               Has seleccionado propiedades que ya tienen propietario registrado. 
