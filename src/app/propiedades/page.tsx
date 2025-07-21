@@ -26,7 +26,7 @@ export default function PropertiesPage() {
   const [agents, setAgents] = useState<Array<{ id: bigint, name: string }>>([])
   const [error, setError] = useState<string | null>(null)
 
-  const view = (searchParams.get('view') || 'grid') as "grid" | "table"
+  const view = (searchParams.get('view') ?? 'grid') as "grid" | "table"
 
   // Fetch agents independently
   useEffect(() => {
@@ -47,11 +47,11 @@ export default function PropertiesPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const page = Number(searchParams.get('page')) || 1
+        const page = Number(searchParams.get('page')) ?? 1
         setCurrentPage(page)
         
         // Get all filter parameters from URL
-        const filters: Record<string, any> = {}
+        const filters: Record<string, unknown> = {}
         for (const [key, value] of searchParams.entries()) {
           if (key === 'page') continue
           if (key === 'q') {

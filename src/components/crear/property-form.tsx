@@ -181,7 +181,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   // Sync currentStep with formPosition when listingDetails updates
   useEffect(() => {
     if (globalFormData.listingDetails?.formPosition) {
-      const stepIndex = Math.max(0, Math.min(globalFormData.listingDetails.formPosition - 1, steps.length - 1))
+      const stepIndex = Math.max(0, Math.min((globalFormData.listingDetails.formPosition ?? 1) - 1, steps.length - 1))
       setCurrentStep(stepIndex)
     }
   }, [globalFormData.listingDetails?.formPosition])
@@ -200,7 +200,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
   // Memoize skipped steps for current property type
   const skippedSteps = useMemo(() => {
-    const propertyType = globalFormData.listingDetails?.propertyType || ""
+    const propertyType = globalFormData.listingDetails?.propertyType ?? ""
     return getSkippedSteps(propertyType)
   }, [globalFormData.listingDetails?.propertyType, getSkippedSteps])
 
@@ -243,7 +243,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   }, [currentStep, getPrevNonSkippedStep])
 
   const goToStep = useCallback((stepIndex: number) => {
-    const formPosition = globalFormData.listingDetails?.formPosition || 1
+    const formPosition = globalFormData.listingDetails?.formPosition ?? 1
     const currentFormStep = formPosition - 1
     
     // Only allow navigation to the immediate next step
@@ -366,9 +366,9 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
             <ProgressBar 
               currentStep={currentStep}
               steps={steps}
-              formPosition={globalFormData.listingDetails?.formPosition || 1}
+              formPosition={globalFormData.listingDetails?.formPosition ?? 1}
               onStepClick={goToStep}
-              propertyType={globalFormData.listingDetails?.propertyType || ""}
+              propertyType={globalFormData.listingDetails?.propertyType ?? ""}
             />
           </div>
 

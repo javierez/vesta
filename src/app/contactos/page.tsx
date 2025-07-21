@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "~/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
@@ -64,7 +64,7 @@ export default function ContactsPage() {
   const [contactsList, setContactsList] = useState<ExtendedContact[]>([])
 
   // Get filter parameters from URL
-  const getFiltersFromUrl = () => {
+  const getFiltersFromUrl = useCallback(() => {
     const roles = searchParams.get('roles')
     const q = searchParams.get('q')
     const sort = searchParams.get('sort')
@@ -76,7 +76,7 @@ export default function ContactsPage() {
       sortOrder: sort ?? 'alphabetical',
       lastContactFilter: lastContact ?? 'all'
     }
-  }
+  }, [searchParams])
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -146,10 +146,9 @@ export default function ContactsPage() {
       }
     }
 
-    fetchContacts()
-  }, [searchParams, getFiltersFromUrl]) // Add getFiltersFromUrl as dependency
+    void fetchContacts() // Mark as intentionally unhandled
+  }, [searchParams, getFiltersFromUrl]) // getFiltersFromUrl is now stable
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleFilterChange = (_filters: {
     searchQuery: string
     roles: string[]

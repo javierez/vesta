@@ -1,0 +1,4 @@
+---
+description: fix linter errors identified while deploying the app: do not change the UI or functionality of the file, just focus on getting rid of the bugs in the simplest way possible.
+alwaysApply: false
+---
