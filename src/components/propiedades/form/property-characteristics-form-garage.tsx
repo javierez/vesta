@@ -19,6 +19,7 @@ import { toast } from "sonner"
 import { PropertyTitle } from "./common/property-title"
 import { ModernSaveIndicator } from "./common/modern-save-indicator"
 import { getAllPotentialOwners, getCurrentListingOwners, updateListingOwners } from "~/server/queries/contact"
+import type { PropertyListing } from "~/types/property-listing"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -30,119 +31,8 @@ interface ModuleState {
 
 type ModuleName = "basicInfo" | "propertyDetails" | "location" | "features" | "description" | "contactInfo" | "orientation" | "additionalCharacteristics" | "premiumFeatures" | "additionalSpaces" | "materials" | "rentalProperties"
 
-// Unified PropertyListing interface (copy from property-characteristics-form.tsx)
-export interface PropertyListing {
-  propertyId?: number | string
-  listingId?: number | string
-  propertyType?: string
-  propertySubtype?: string
-  listingType?: string
-  price?: number | string
-  cadastralReference?: string
-  isBankOwned?: boolean
-  isFeatured?: boolean
-  newConstruction?: boolean
-  bedrooms?: number
-  bathrooms?: number
-  squareMeter?: number
-  builtSurfaceArea?: number
-  yearBuilt?: number
-  lastRenovationYear?: string
-  buildingFloors?: number
-  conservationStatus?: number
-  street?: string
-  addressDetails?: string
-  postalCode?: string
-  neighborhood?: string
-  city?: string
-  province?: string
-  municipality?: string
-  hasElevator?: boolean
-  hasGarage?: boolean
-  garageType?: string
-  garageSpaces?: number
-  garageInBuilding?: boolean
-  garageNumber?: string
-  optionalGaragePrice?: number
-  hasStorageRoom?: boolean
-  storageRoomSize?: number
-  storageRoomNumber?: string
-  optionalStorageRoomPrice?: number
-  hasHeating?: boolean
-  heatingType?: string
-  hotWaterType?: string
-  airConditioningType?: string
-  isFurnished?: boolean
-  furnitureQuality?: string
-  studentFriendly?: boolean
-  petsAllowed?: boolean
-  appliancesIncluded?: boolean
-  exterior?: boolean
-  orientation?: string
-  bright?: boolean
-  disabledAccessible?: boolean
-  vpo?: boolean
-  videoIntercom?: boolean
-  conciergeService?: boolean
-  securityGuard?: boolean
-  satelliteDish?: boolean
-  doubleGlazing?: boolean
-  alarm?: boolean
-  securityDoor?: boolean
-  kitchenType?: string
-  openKitchen?: boolean
-  frenchKitchen?: boolean
-  furnishedKitchen?: boolean
-  pantry?: boolean
-  terrace?: boolean
-  terraceSize?: number
-  wineCellar?: boolean
-  wineCellarSize?: number
-  livingRoomSize?: number
-  balconyCount?: number
-  galleryCount?: number
-  builtInWardrobes?: string
-  mainFloorType?: string
-  shutterType?: string
-  carpentryType?: string
-  windowType?: string
-  views?: boolean
-  mountainViews?: boolean
-  seaViews?: boolean
-  beachfront?: boolean
-  jacuzzi?: boolean
-  hydromassage?: boolean
-  garden?: boolean
-  pool?: boolean
-  homeAutomation?: boolean
-  musicSystem?: boolean
-  laundryRoom?: boolean
-  coveredClothesline?: boolean
-  fireplace?: boolean
-  gym?: boolean
-  sportsArea?: boolean
-  childrenArea?: boolean
-  suiteBathroom?: boolean
-  nearbyPublicTransport?: boolean
-  communityPool?: boolean
-  privatePool?: boolean
-  tennisCourt?: boolean
-  internet?: boolean
-  oven?: boolean
-  microwave?: boolean
-  washingMachine?: boolean
-  fridge?: boolean
-  tv?: boolean
-  stoneware?: boolean
-  description?: string
-  agent?: {
-    id: number
-    name: string
-  }
-}
-
 interface PropertyCharacteristicsFormGarageProps {
-  listing: any // We'll type this properly later
+  listing: PropertyListing
 }
 
 export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacteristicsFormGarageProps) {
@@ -150,14 +40,14 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
   const searchParams = useSearchParams()
 
   // Check if property type has been changed
-  const hasPropertyTypeChanged = listing.propertyType && searchParams.get('type') && 
-    listing.propertyType !== searchParams.get('type')
+  const hasPropertyTypeChanged = Boolean(listing.propertyType && searchParams.get('type') && 
+    listing.propertyType !== searchParams.get('type'))
 
   // Module states with new save state
   const [moduleStates, setModuleStates] = useState<Record<ModuleName, ModuleState>>(() => {
     // Initialize with property type change detection
     const initialState = {
-      basicInfo: { saveState: "idle" as SaveState, hasChanges: hasPropertyTypeChanged },
+      basicInfo: { saveState: "idle" as SaveState, hasChanges: Boolean(hasPropertyTypeChanged) },
       propertyDetails: { saveState: "idle" as SaveState, hasChanges: false },
       location: { saveState: "idle" as SaveState, hasChanges: false },
       features: { saveState: "idle" as SaveState, hasChanges: false },
@@ -244,9 +134,8 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
 
         case 'propertyDetails':
           propertyData = {
-            garageSize: Number((document.getElementById('garageSize') as HTMLInputElement)?.value),
             yearBuilt: Number((document.getElementById('yearBuilt') as HTMLInputElement)?.value)
-  }
+          }
           break
 
         case 'location':
@@ -398,7 +287,6 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
   const [garageSpaces, setGarageSpaces] = useState(listing.garageSpaces ?? 1)
   const [garageInBuilding, setGarageInBuilding] = useState(listing.garageInBuilding ?? false)
   const [garageNumber, setGarageNumber] = useState(listing.garageNumber ?? "")
-  const [garageSize, setGarageSize] = useState(listing.garageSize ?? 0)
   const [yearBuilt, setYearBuilt] = useState(listing.yearBuilt ?? "")
   const [disabledAccessible, setDisabledAccessible] = useState(listing.disabledAccessible ?? false)
   const [securityDoor, setSecurityDoor] = useState(listing.securityDoor ?? false)
@@ -467,20 +355,20 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
 
         // Load current owners only if we have a valid listingId
         if (listing.listingId) {
-          const currentOwners = await getCurrentListingOwners(listing.listingId)
+          const currentOwners = await getCurrentListingOwners(Number(listing.listingId))
           setSelectedOwnerIds(currentOwners.map(owner => owner.id.toString()))
 
           // Set current agent if exists
-          if (listing.agentId) {
-            setSelectedAgentId(listing.agentId.toString())
+          if (listing.agent?.id) {
+            setSelectedAgentId(listing.agent.id.toString())
           }
         }
       } catch (error) {
         console.error("Error fetching owners:", error)
       }
     }
-    fetchOwners()
-  }, [listing.listingId, listing.agentId])
+    void fetchOwners()
+  }, [listing.listingId, listing.agent?.id])
 
   const currentListingType = listingType ?? "";
 
@@ -711,21 +599,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
           </div>
         </div>
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="garageSize" className="text-sm">Medidas (m²)</Label>
-            <Input 
-              id="garageSize" 
-              type="number" 
-              value={garageSize}
-              onChange={(e) => {
-                setGarageSize(parseInt(e.target.value))
-                updateModuleState('propertyDetails', true)
-              }}
-              className="h-8 text-gray-500"
-              min="0"
-              step="1"
-            />
-          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="yearBuilt" className="text-sm">Año de Construcción</Label>
             <Input 

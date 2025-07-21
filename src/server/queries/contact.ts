@@ -9,7 +9,7 @@ import { prospectUtils } from "../../lib/utils"
 
 // Helper function to get preferred area from prospect data
 type PreferredArea = { neighborhoodId?: number | string; name?: string };
-type ProspectWithPreferredAreas = { preferredAreas?: string | PreferredArea[] };
+type ProspectWithPreferredAreas = { preferredAreas?: string | PreferredArea[] | unknown };
 async function getPreferredAreaFromProspect(prospect: ProspectWithPreferredAreas): Promise<string | undefined> {
   if (!prospect?.preferredAreas) {
     return undefined;
@@ -478,7 +478,7 @@ export async function listContactsWithTypes(
         contactProspects
           .slice(0, 5) // Limit to 5 most recent prospects
           .map(async prospect => {
-            const preferredArea = await getPreferredAreaFromProspect(prospect);
+            const preferredArea = await getPreferredAreaFromProspect(prospect as ProspectWithPreferredAreas);
 
             const title = prospectUtils.generateSimpleProspectTitle(
               prospect.listingType || undefined,
@@ -773,7 +773,7 @@ export async function getContactByIdWithType(contactId: number) {
         .orderBy(sql`${prospects.createdAt} DESC`);
       prospectTitles = await Promise.all(
         contactProspects.map(async (prospect) => {
-          const preferredArea = await getPreferredAreaFromProspect(prospect);
+          const preferredArea = await getPreferredAreaFromProspect(prospect as ProspectWithPreferredAreas);
           const title = prospectUtils.generateSimpleProspectTitle(
             prospect.listingType ?? undefined,
             prospect.propertyType ?? undefined,

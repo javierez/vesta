@@ -9,6 +9,7 @@ import { getPropertyImages } from "~/server/queries/property_images"
 import { getListingDetails } from "~/server/queries/listing"
 import { getEnergyCertificate } from "~/server/queries/document"
 import type { PropertyImage } from "~/lib/data"
+import { convertDbListingToPropertyListing } from "~/types/property-listing"
 
 interface PropertyPageProps {
   params: Promise<{
@@ -120,19 +121,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             {/* Columna principal */}
             <div className="space-y-4">
               {/* Características detalladas */}
-              <PropertyCharacteristicsForm listing={{
-                ...listing,
-                listingId: Number(listing.listingId),
-                propertyId: Number(listing.propertyId),
-                propertyType: listing.propertyType ?? undefined,
-                propertySubtype: listing.propertySubtype ?? undefined,
-                listingType: listing.listingType ?? undefined,
-                price: listing.price ?? undefined,
-                agent: listing.agent ? {
-                  id: Number(listing.agent.id),
-                  name: `${listing.agent.firstName} ${listing.agent.lastName}`
-                } : undefined
-              } as any} />
+              <PropertyCharacteristicsForm listing={convertDbListingToPropertyListing(listing)} />
             </div>
           </div>
         </div>

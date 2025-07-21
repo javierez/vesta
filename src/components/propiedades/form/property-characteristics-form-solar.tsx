@@ -18,6 +18,7 @@ import { updateListing } from "~/server/queries/listing"
 import { toast } from "sonner"
 import { ModernSaveIndicator } from "./common/modern-save-indicator"
 import { getAllPotentialOwners, getCurrentListingOwners, updateListingOwners } from "~/server/queries/contact"
+import type { PropertyListing } from "~/types/property-listing"
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -28,36 +29,6 @@ interface ModuleState {
 }
 
 type ModuleName = "basicInfo" | "propertyDetails" | "location" | "features" | "description" | "contactInfo"
-
-// 1. Add PropertyListing interface
-interface PropertyListing {
-  propertyId?: number | string
-  listingId?: number | string
-  propertyType?: string
-  propertySubtype?: string
-  listingType?: string
-  price?: number | string
-  cadastralReference?: string
-  isBankOwned?: boolean
-  agentId?: number | string
-  squareMeter?: number
-  buildableArea?: number
-  yearBuilt?: number
-  street?: string
-  addressDetails?: string
-  postalCode?: string
-  neighborhood?: string
-  city?: string
-  province?: string
-  municipality?: string
-  views?: boolean
-  mountainViews?: boolean
-  seaViews?: boolean
-  beachfront?: boolean
-  garden?: boolean
-  pool?: boolean
-  description?: string
-}
 
 // 2. Use PropertyListing for the prop
 type PropertyCharacteristicsFormSolarProps = {
@@ -381,8 +352,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
           setSelectedOwnerIds(currentOwners.map(owner => owner.id.toString()))
 
           // Set current agent if exists
-          if (listing.agentId) {
-            setSelectedAgentId(listing.agentId.toString())
+          if (listing.agent?.id) {
+            setSelectedAgentId(listing.agent.id.toString())
           }
         }
       } catch (error) {
@@ -390,7 +361,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       }
     }
     void fetchOwners()
-  }, [listing.listingId, listing.agentId])
+  }, [listing.listingId, listing.agent?.id])
 
   const handleListingTypeChange = (type: string) => {
     setListingType(type)
