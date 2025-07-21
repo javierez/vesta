@@ -1,6 +1,6 @@
 # TODOs: 
 
-- Contacts: Add comment to cotnact table
+- Separators in Property and Contact detail pages
 
 - Rent: fianza (x)
 

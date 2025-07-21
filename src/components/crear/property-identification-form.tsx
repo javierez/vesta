@@ -11,6 +11,7 @@ import { cn } from "~/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { createPropertyFromCadastral, createPropertyFromLocation } from "~/server/queries/properties"
 import { uploadDocument, deleteDocument, renameDocumentFolder } from "~/app/actions/upload"
+import { processDocumentInBackground } from "~/server/ocr/ocr-initial-form"
 import {
   Dialog,
   DialogContent,
@@ -517,6 +518,14 @@ export default function PropertyIdentificationForm() {
         filename: uploadedDocument.filename,
         fileType: uploadedDocument.fileType
       }])
+      
+      // Process document with OCR in background (fire and forget)
+      // This won't block the UI and will process the document for text extraction
+      processDocumentInBackground(uploadedDocument.documentKey)
+        .catch(error => {
+          console.error('Background OCR processing failed:', error)
+          // Don't show this error to the user since it's background processing
+        })
       
       setTimeout(() => {
         setIsUploading(false)
