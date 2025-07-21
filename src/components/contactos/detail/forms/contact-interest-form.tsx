@@ -139,7 +139,7 @@ export function ContactInterestForm({
         contactId: contactId,
         status: "active",
         listingType: localData.demandType || undefined,
-        propertyType: localData.propertyTypes[0] || "",
+        propertyType: localData.propertyTypes[0] ?? "",
         maxPrice: localData.maxPrice.toString(),
         preferredAreas: preferredAreas,
         minBedrooms: localData.minBedrooms ?? 0,
@@ -215,7 +215,7 @@ export function ContactInterestForm({
     if (localData.id.startsWith('prospect-')) {
       // For existing prospects, show operation + property type
       const operation = localData.demandType === "Sale" ? "Compra" : "Alquiler"
-      const propertyType = localData.propertyTypes[0] || "Propiedad"
+      const propertyType = localData.propertyTypes[0] ?? "Propiedad"
       return `${operation} de ${propertyType}`
     }
     // For new forms, show generic title
@@ -318,7 +318,7 @@ export function ContactInterestForm({
               <Label className="text-sm font-medium">Precio máximo (€)</Label>
               <div className="space-y-4">
                 {(() => {
-                  const propertyType = localData.propertyTypes[0] || ""
+                  const propertyType = localData.propertyTypes[0] ?? ""
                   const isPisoOrCasa = propertyType === "piso" || propertyType === "casa"
                   const minLimit = isPisoOrCasa ? 50000 : 0
                   const maxLimit = isPisoOrCasa ? 2500000 : 2000000
@@ -438,7 +438,7 @@ export function ContactInterestForm({
             </div>
             
             {(() => {
-              const propertyType = localData.propertyTypes[0] || ""
+              const propertyType = localData.propertyTypes[0] ?? ""
               const shouldShowRooms = propertyType !== "garaje" && propertyType !== "terreno" && propertyType !== "solar"
               
               if (shouldShowRooms) {
@@ -471,9 +471,9 @@ export function ContactInterestForm({
               <div className="space-y-4">
                 <div className="relative">
                   <Slider
-                    value={[localData.minSquareMeters || 80]}
+                    value={[localData.minSquareMeters ?? 80]}
                     onValueChange={(value) => {
-                      const newMinSquareMeters = value[0] || 80
+                      const newMinSquareMeters = value[0] ?? 80
                       updateLocalData({ minSquareMeters: newMinSquareMeters })
                     }}
                     max={500}

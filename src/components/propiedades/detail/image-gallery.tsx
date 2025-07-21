@@ -220,8 +220,8 @@ export function ImageGallery({
       })
       
       // Call the callback for each uploaded image
-      validImages.forEach(image => {
-        onImageUploaded?.(image as any)
+      validImages.forEach((image: PropertyImage) => {
+        onImageUploaded?.(image)
       })
     } catch (error) {
       console.error("Error uploading images:", error)
@@ -387,8 +387,8 @@ export function ImageGallery({
           >
             
             <Image
-              src={imageSources[idx] || defaultPlaceholder}
-              alt={title || `Property image ${idx + 1}`}
+              src={imageSources[idx] ?? defaultPlaceholder}
+              alt={title ?? `Property image ${idx + 1}`}
               width={300}
               height={200}
               className={`object-cover w-full h-40 ${(imageSources[idx] === defaultPlaceholder) ? "grayscale" : ""}`}
@@ -603,7 +603,7 @@ export function ImageGallery({
             <div className="relative">
               <Image
                 src={imageSources[expandedImage] ?? defaultPlaceholder}
-                alt={title || `Property image ${expandedImage + 1}`}
+                alt={title ?? `Property image ${expandedImage + 1}`}
                 width={1200}
                 height={800}
                 className={`w-full h-auto max-h-[90vh] object-contain rounded-lg ${(imageSources[expandedImage] === defaultPlaceholder) ? "grayscale" : ""}`}

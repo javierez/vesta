@@ -30,6 +30,117 @@ interface ModuleState {
 
 type ModuleName = "basicInfo" | "propertyDetails" | "location" | "features" | "description" | "contactInfo" | "orientation" | "additionalCharacteristics" | "premiumFeatures" | "additionalSpaces" | "materials" | "rentalProperties"
 
+// Unified PropertyListing interface (copy from property-characteristics-form.tsx)
+export interface PropertyListing {
+  propertyId?: number | string
+  listingId?: number | string
+  propertyType?: string
+  propertySubtype?: string
+  listingType?: string
+  price?: number | string
+  cadastralReference?: string
+  isBankOwned?: boolean
+  isFeatured?: boolean
+  newConstruction?: boolean
+  bedrooms?: number
+  bathrooms?: number
+  squareMeter?: number
+  builtSurfaceArea?: number
+  yearBuilt?: number
+  lastRenovationYear?: string
+  buildingFloors?: number
+  conservationStatus?: number
+  street?: string
+  addressDetails?: string
+  postalCode?: string
+  neighborhood?: string
+  city?: string
+  province?: string
+  municipality?: string
+  hasElevator?: boolean
+  hasGarage?: boolean
+  garageType?: string
+  garageSpaces?: number
+  garageInBuilding?: boolean
+  garageNumber?: string
+  optionalGaragePrice?: number
+  hasStorageRoom?: boolean
+  storageRoomSize?: number
+  storageRoomNumber?: string
+  optionalStorageRoomPrice?: number
+  hasHeating?: boolean
+  heatingType?: string
+  hotWaterType?: string
+  airConditioningType?: string
+  isFurnished?: boolean
+  furnitureQuality?: string
+  studentFriendly?: boolean
+  petsAllowed?: boolean
+  appliancesIncluded?: boolean
+  exterior?: boolean
+  orientation?: string
+  bright?: boolean
+  disabledAccessible?: boolean
+  vpo?: boolean
+  videoIntercom?: boolean
+  conciergeService?: boolean
+  securityGuard?: boolean
+  satelliteDish?: boolean
+  doubleGlazing?: boolean
+  alarm?: boolean
+  securityDoor?: boolean
+  kitchenType?: string
+  openKitchen?: boolean
+  frenchKitchen?: boolean
+  furnishedKitchen?: boolean
+  pantry?: boolean
+  terrace?: boolean
+  terraceSize?: number
+  wineCellar?: boolean
+  wineCellarSize?: number
+  livingRoomSize?: number
+  balconyCount?: number
+  galleryCount?: number
+  builtInWardrobes?: string
+  mainFloorType?: string
+  shutterType?: string
+  carpentryType?: string
+  windowType?: string
+  views?: boolean
+  mountainViews?: boolean
+  seaViews?: boolean
+  beachfront?: boolean
+  jacuzzi?: boolean
+  hydromassage?: boolean
+  garden?: boolean
+  pool?: boolean
+  homeAutomation?: boolean
+  musicSystem?: boolean
+  laundryRoom?: boolean
+  coveredClothesline?: boolean
+  fireplace?: boolean
+  gym?: boolean
+  sportsArea?: boolean
+  childrenArea?: boolean
+  suiteBathroom?: boolean
+  nearbyPublicTransport?: boolean
+  communityPool?: boolean
+  privatePool?: boolean
+  tennisCourt?: boolean
+  internet?: boolean
+  oven?: boolean
+  microwave?: boolean
+  washingMachine?: boolean
+  fridge?: boolean
+  tv?: boolean
+  stoneware?: boolean
+  description?: string
+  agent?: {
+    id: number
+    name: string
+  }
+}
+
 interface PropertyCharacteristicsFormGarageProps {
   listing: any // We'll type this properly later
 }
@@ -526,7 +637,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
             <Input 
               id="price" 
               type="number" 
-              defaultValue={parseInt(listing.price)} 
+              defaultValue={listing.price ? Math.round(Number(listing.price)) : undefined} 
               className="h-8 text-gray-500" 
               min="0"
               step="1"

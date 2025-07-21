@@ -138,7 +138,7 @@ export default function PropertyIdentificationForm() {
     return stepConfigurations[propertyType] || simplifiedSteps
   }, [formData.propertyType])
 
-  const updateFormData = (field: keyof BaseFormData, value: any) => {
+  const updateFormData = (field: keyof BaseFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -244,14 +244,14 @@ export default function PropertyIdentificationForm() {
       const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`
       
       const response = await fetch(nominatimUrl)
-      const nominatimResults = await response.json()
+      const nominatimResults: any[] = await response.json()
       
       if (nominatimResults.length === 0) {
         alert("La dirección introducida no se ha encontrado. Por favor, verifica que la dirección y ciudad sean correctos.");
         return null
       }
       
-      const result = nominatimResults[0]
+      const result: Record<string, any> = nominatimResults[0]
       console.log("Nominatim validation successful:", result)
       
       // Auto-fill missing fields with Nominatim data
@@ -399,26 +399,26 @@ export default function PropertyIdentificationForm() {
       const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`
       
       const response = await fetch(nominatimUrl)
-      const nominatimResults = await response.json()
+      const nominatimResults: any[] = await response.json()
       
       if (nominatimResults.length === 0) {
         alert("No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.");
         return
       }
       
-      const result = nominatimResults[0]
+      const result: Record<string, any> = nominatimResults[0]
       console.log("Nominatim auto-completion successful:", result)
       
       // Update form data with Nominatim results
       setFormData(prev => ({
         ...prev,
-        postalCode: prev.postalCode ?? result.address?.postcode ?? "",
-        city: prev.city ?? result.address?.city ?? result.address?.town ?? "",
-        province: prev.province ?? result.address?.state ?? "",
-        municipality: prev.municipality ?? result.address?.city ?? result.address?.town ?? "",
-        neighborhood: prev.neighborhood ?? result.address?.suburb ?? "",
-        latitude: result.lat ?? "",
-        longitude: result.lon ?? ""
+        postalCode: prev.postalCode ?? result?.address?.postcode ?? "",
+        city: prev.city ?? result?.address?.city ?? result?.address?.town ?? "",
+        province: prev.province ?? result?.address?.state ?? "",
+        municipality: prev.municipality ?? result?.address?.city ?? result?.address?.town ?? "",
+        neighborhood: prev.neighborhood ?? result?.address?.suburb ?? "",
+        latitude: result?.lat ?? "",
+        longitude: result?.lon ?? ""
       }))
       
     } catch (error) {
@@ -443,7 +443,7 @@ export default function PropertyIdentificationForm() {
     e.preventDefault()
     setIsDragOver(false)
     
-    const files = Array.from(e.dataTransfer.files)
+    const files: File[] = Array.from(e.dataTransfer.files)
     
     for (const file of files) {
       if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
@@ -463,7 +463,7 @@ export default function PropertyIdentificationForm() {
   }, [])
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
+    const files = e.target.files as FileList | null
     if (files) {
       for (const file of Array.from(files)) {
         if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
@@ -520,7 +520,7 @@ export default function PropertyIdentificationForm() {
       
       // Process document with OCR in background (fire and forget)
       // This won't block the UI and will process the document for text extraction
-      processDocumentInBackground(uploadedDocument.documentKey)
+      void processDocumentInBackground(uploadedDocument.documentKey)
         .catch(error => {
           console.error('Background OCR processing failed:', error)
           // Don't show this error to the user since it's background processing
@@ -578,7 +578,7 @@ export default function PropertyIdentificationForm() {
       local: "Local",
       solar: "Solar",
     }
-    return types[type] || type
+    return types[type] ?? type
   }
 
   const renderStepContent = () => {

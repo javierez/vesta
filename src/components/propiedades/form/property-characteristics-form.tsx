@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
-import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle, Search, BanknoteIcon, Link, Sparkles, Loader2, MoreVertical } from "lucide-react"
+import { Building2, ChevronDown, Circle, Loader2, MoreVertical } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
 import { getAllPotentialOwners, getCurrentListingOwners, updateListingOwners } from "~/server/queries/contact"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
@@ -39,7 +39,124 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog"
-import type { ListingType } from "~/types/listing"
+
+// Type definitions
+interface Agent {
+  id: number
+  name: string
+}
+
+interface Owner {
+  id: number
+  name: string
+}
+
+interface PropertyListing {
+  propertyId?: number | string
+  listingId?: number | string
+  propertyType?: string
+  propertySubtype?: string
+  listingType?: string
+  price?: number | string
+  cadastralReference?: string
+  isBankOwned?: boolean
+  isFeatured?: boolean
+  newConstruction?: boolean
+  bedrooms?: number
+  bathrooms?: number
+  squareMeter?: number
+  builtSurfaceArea?: number
+  yearBuilt?: number
+  lastRenovationYear?: string
+  buildingFloors?: number
+  conservationStatus?: number
+  street?: string
+  addressDetails?: string
+  postalCode?: string
+  neighborhood?: string
+  city?: string
+  province?: string
+  municipality?: string
+  hasElevator?: boolean
+  hasGarage?: boolean
+  garageType?: string
+  garageSpaces?: number
+  garageInBuilding?: boolean
+  garageNumber?: string
+  optionalGaragePrice?: number
+  hasStorageRoom?: boolean
+  storageRoomSize?: number
+  storageRoomNumber?: string
+  optionalStorageRoomPrice?: number
+  hasHeating?: boolean
+  heatingType?: string
+  hotWaterType?: string
+  airConditioningType?: string
+  isFurnished?: boolean
+  furnitureQuality?: string
+  studentFriendly?: boolean
+  petsAllowed?: boolean
+  appliancesIncluded?: boolean
+  exterior?: boolean
+  orientation?: string
+  bright?: boolean
+  disabledAccessible?: boolean
+  vpo?: boolean
+  videoIntercom?: boolean
+  conciergeService?: boolean
+  securityGuard?: boolean
+  satelliteDish?: boolean
+  doubleGlazing?: boolean
+  alarm?: boolean
+  securityDoor?: boolean
+  kitchenType?: string
+  openKitchen?: boolean
+  frenchKitchen?: boolean
+  furnishedKitchen?: boolean
+  pantry?: boolean
+  terrace?: boolean
+  terraceSize?: number
+  wineCellar?: boolean
+  wineCellarSize?: number
+  livingRoomSize?: number
+  balconyCount?: number
+  galleryCount?: number
+  builtInWardrobes?: string
+  mainFloorType?: string
+  shutterType?: string
+  carpentryType?: string
+  windowType?: string
+  views?: boolean
+  mountainViews?: boolean
+  seaViews?: boolean
+  beachfront?: boolean
+  jacuzzi?: boolean
+  hydromassage?: boolean
+  garden?: boolean
+  pool?: boolean
+  homeAutomation?: boolean
+  musicSystem?: boolean
+  laundryRoom?: boolean
+  coveredClothesline?: boolean
+  fireplace?: boolean
+  gym?: boolean
+  sportsArea?: boolean
+  childrenArea?: boolean
+  suiteBathroom?: boolean
+  nearbyPublicTransport?: boolean
+  communityPool?: boolean
+  privatePool?: boolean
+  tennisCourt?: boolean
+  internet?: boolean
+  oven?: boolean
+  microwave?: boolean
+  washingMachine?: boolean
+  fridge?: boolean
+  tv?: boolean
+  stoneware?: boolean
+  description?: string
+  agent?: Agent
+}
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -52,7 +169,7 @@ interface ModuleState {
 type ModuleName = "basicInfo" | "propertyDetails" | "location" | "features" | "description" | "contactInfo" | "orientation" | "additionalCharacteristics" | "premiumFeatures" | "additionalSpaces" | "materials" | "rentalProperties"
 
 interface PropertyCharacteristicsFormProps {
-  listing: any // We'll type this properly later
+  listing: PropertyListing
 }
 
 export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristicsFormProps) {
@@ -68,7 +185,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>(() => {
     // Initialize with property type change detection
     const initialState = {
-      basicInfo: { saveState: "idle" as SaveState, hasChanges: hasPropertyTypeChanged },
+      basicInfo: { saveState: "idle" as SaveState, hasChanges: Boolean(hasPropertyTypeChanged) },
       propertyDetails: { saveState: "idle" as SaveState, hasChanges: false },
       location: { saveState: "idle" as SaveState, hasChanges: false },
       features: { saveState: "idle" as SaveState, hasChanges: false },
@@ -107,7 +224,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   // Function to update module state
   const updateModuleState = (moduleName: ModuleName, hasChanges: boolean) => {
     setModuleStates(prev => {
-      const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+      const currentState = prev[moduleName] ?? { saveState: "idle" as SaveState, hasChanges: false }
       return {
         ...prev,
         [moduleName]: {
@@ -123,7 +240,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   // Function to save module data
   const saveModule = async (moduleName: ModuleName) => {
     setModuleStates(prev => {
-      const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+      const currentState = prev[moduleName] ?? { saveState: "idle" as SaveState, hasChanges: false }
       return {
         ...prev,
         [moduleName]: {
@@ -165,7 +282,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             yearBuilt: Number((document.getElementById('yearBuilt') as HTMLInputElement)?.value),
             lastRenovationYear: lastRenovationYear ? Math.min(Math.max(Number(lastRenovationYear), -32768), 32767) : null,
             buildingFloors: buildingFloors,
-            conservationStatus: listing.conservationStatus || 1
+            conservationStatus: listing.conservationStatus ?? 1
           }
           break
 
@@ -199,8 +316,8 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             isFurnished
           }
           listingData = {
-            optionalGaragePrice: Math.round(Number((document.getElementById('optionalGaragePrice') as HTMLInputElement)?.value) || 0),
-            optionalStorageRoomPrice: Math.round(Number((document.getElementById('optionalStorageRoomPrice') as HTMLInputElement)?.value) || 0),
+            optionalGaragePrice: Math.round(Number((document.getElementById('optionalGaragePrice') as HTMLInputElement)?.value) ?? 0),
+            optionalStorageRoomPrice: Math.round(Number((document.getElementById('optionalStorageRoomPrice') as HTMLInputElement)?.value) ?? 0),
             oven,
             microwave,
             washingMachine,
@@ -331,7 +448,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       }
 
       setModuleStates(prev => {
-        const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+        const currentState = prev[moduleName] ?? { saveState: "idle" as SaveState, hasChanges: false }
         return {
           ...prev,
           [moduleName]: {
@@ -348,7 +465,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       // Reset to idle state after 2 seconds
       setTimeout(() => {
         setModuleStates(prev => {
-          const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+          const currentState = prev[moduleName] ?? { saveState: "idle" as SaveState, hasChanges: false }
           return {
             ...prev,
             [moduleName]: {
@@ -364,7 +481,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       console.error(`Error saving ${moduleName}:`, error)
       
       setModuleStates(prev => {
-        const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+        const currentState = prev[moduleName] ?? { saveState: "idle" as SaveState, hasChanges: false }
         return {
           ...prev,
           [moduleName]: {
@@ -380,7 +497,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       // Reset to modified state after 3 seconds if there are changes
       setTimeout(() => {
         setModuleStates(prev => {
-          const currentState = prev[moduleName] || { saveState: "idle" as SaveState, hasChanges: false }
+          const currentState = prev[moduleName] ?? { saveState: "idle" as SaveState, hasChanges: false }
           return {
             ...prev,
             [moduleName]: {
@@ -424,7 +541,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   )
   const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false)
   const [isFeatured, setIsFeatured] = useState(listing.isFeatured ?? false)
-  const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([])
+  const [agents, setAgents] = useState<Agent[]>([])
   const [isFurnished, setIsFurnished] = useState(listing.isFurnished ?? false)
   const [isHeating, setIsHeating] = useState(listing.hasHeating ?? false)
   const [heatingType, setHeatingType] = useState(listing.heatingType ?? "")
@@ -498,11 +615,11 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const [optionalStorageRoomPrice, setOptionalStorageRoomPrice] = useState(listing.optionalStorageRoomPrice ?? 0)
   const [selectedAgentId, setSelectedAgentId] = useState(listing.agent?.id?.toString() ?? "")
   const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[]>([])
-  const [owners, setOwners] = useState<Array<{id: number, name: string}>>([])
+  const [owners, setOwners] = useState<Owner[]>([])
   const [ownerSearch, setOwnerSearch] = useState("")
   const [newConstruction, setNewConstruction] = useState(listing.newConstruction ?? false)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [description, setDescription] = useState(listing.description || '')
+  const [description, setDescription] = useState(listing.description ?? '')
   const [isCatastroPopupOpen, setIsCatastroPopupOpen] = useState(false)
   const [isMapsPopupOpen, setIsMapsPopupOpen] = useState(false)
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
@@ -577,7 +694,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         console.error("Error fetching agents:", error)
       }
     }
-    fetchAgents()
+    void fetchAgents()
   }, [])
 
   useEffect(() => {
@@ -591,13 +708,15 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         })))
 
         // Get current owners for this listing
-        const currentOwners = await getCurrentListingOwners(Number(listing.listingId))
-        setSelectedOwnerIds(currentOwners.map(owner => owner.id.toString()))
+        if (listing.listingId) {
+          const currentOwners = await getCurrentListingOwners(Number(listing.listingId))
+          setSelectedOwnerIds(currentOwners.map(owner => owner.id.toString()))
+        }
       } catch (error) {
         console.error("Error fetching owners:", error)
       }
     }
-    fetchOwners()
+    void fetchOwners()
   }, [listing.listingId])
 
   const toggleListingType = (type: string) => {
@@ -700,7 +819,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Basic Information */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
         <ModernSaveIndicator 
-          state={moduleStates.basicInfo?.saveState || "idle"} 
+          state={moduleStates.basicInfo?.saveState ?? "idle"} 
           onSave={() => saveModule("basicInfo")} 
         />
         <div className="flex justify-between items-center mb-3">
@@ -826,7 +945,10 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             <Select 
               value={listing.propertySubtype ?? (propertyType === "piso" ? "Piso" : propertyType === "casa" ? "Casa" : "")}
               onValueChange={(value) => {
-                listing.propertySubtype = value
+                // Note: This directly modifies the listing object - consider using state instead
+                if (listing.propertySubtype !== undefined) {
+                  listing.propertySubtype = value
+                }
                 updateModuleState('basicInfo', true)
               }}
             >
@@ -888,7 +1010,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             <Input 
               id="price" 
               type="number" 
-              defaultValue={parseInt(listing.price)} 
+              defaultValue={listing.price ? parseInt(listing.price.toString()) : undefined} 
               className="h-8 text-gray-500" 
               min="0"
               step="1"
@@ -935,7 +1057,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                 updateModuleState('basicInfo', true)
               }}
             >
-              <BanknoteIcon className="h-3.5 w-3.5 mr-1" />
+              <Building2 className="h-3.5 w-3.5 mr-1" />
               Piso de banco
             </Button>
             <Button
@@ -959,7 +1081,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Property Details */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("propertyDetails"))}>
         <ModernSaveIndicator 
-          state={moduleStates.propertyDetails?.saveState || "idle"} 
+          state={moduleStates.propertyDetails?.saveState ?? "idle"} 
           onSave={() => saveModule("propertyDetails")} 
         />
         <div className="flex justify-between items-center mb-3">
@@ -973,7 +1095,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             <Input 
               id="bedrooms" 
               type="number" 
-              defaultValue={listing.bedrooms} 
+              defaultValue={listing.bedrooms?.toString() ?? ""} 
               className="h-8 text-gray-500"
               onChange={() => updateModuleState('propertyDetails', true)}
             />
@@ -983,7 +1105,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             <Input 
               id="bathrooms" 
               type="number" 
-              defaultValue={Math.round(listing.bathrooms)} 
+              defaultValue={listing.bathrooms ? Math.round(listing.bathrooms) : undefined} 
               className="h-8 text-gray-500" 
               min="0"
               step="1"
@@ -1006,7 +1128,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
               <Input 
                 id="builtSurfaceArea" 
                 type="number" 
-                defaultValue={Math.round(listing.builtSurfaceArea)} 
+                defaultValue={listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : undefined} 
                 className="h-8 text-gray-500"
                 min="0"
                 step="1"
@@ -1057,7 +1179,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
           <div className="space-y-1.5">
             <Label htmlFor="conservationStatus" className="text-sm">Estado de conservación</Label>
             <Select 
-              value={listing.conservationStatus?.toString() || "1"} 
+              value={listing.conservationStatus?.toString() ?? "1"} 
               onValueChange={(value) => {
                 // Update the listing object directly for now
                 listing.conservationStatus = parseInt(value)
@@ -1082,7 +1204,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Location */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("location"))}>
         <ModernSaveIndicator 
-          state={moduleStates.location?.saveState || "idle"} 
+          state={moduleStates.location?.saveState ?? "idle"} 
           onSave={() => saveModule("location")} 
         />
         <div className="flex justify-between items-center mb-3">
@@ -1184,7 +1306,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Features */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("features"))}>
         <ModernSaveIndicator 
-          state={moduleStates.features?.saveState || "idle"} 
+          state={moduleStates.features?.saveState ?? "idle"} 
           onSave={() => saveModule("features")} 
         />
         <div className="flex justify-between items-center mb-3">
@@ -1566,7 +1688,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Contact Information */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("contactInfo"))}>
         <ModernSaveIndicator 
-          state={moduleStates.contactInfo?.saveState || "idle"} 
+          state={moduleStates.contactInfo?.saveState ?? "idle"} 
           onSave={() => saveModule("contactInfo")} 
         />
         <div className="flex justify-between items-center mb-3">
@@ -1677,7 +1799,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Exterior and Orientation */}
       <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("orientation"))}>
         <ModernSaveIndicator 
-          state={moduleStates.orientation?.saveState || "idle"} 
+          state={moduleStates.orientation?.saveState ?? "idle"} 
           onSave={() => saveModule("orientation")} 
         />
         <div className="flex justify-between items-center mb-3">
@@ -1737,7 +1859,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         {/* Additional Characteristics */}
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("additionalCharacteristics"))}>
           <ModernSaveIndicator 
-            state={moduleStates.additionalCharacteristics?.saveState || "idle"} 
+            state={moduleStates.additionalCharacteristics?.saveState ?? "idle"} 
             onSave={() => saveModule("additionalCharacteristics")} 
           />
           <div className="flex justify-between items-center">
@@ -1953,7 +2075,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         {/* Premium Features */}
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("premiumFeatures"))}>
           <ModernSaveIndicator 
-            state={moduleStates.premiumFeatures?.saveState || "idle"} 
+            state={moduleStates.premiumFeatures?.saveState ?? "idle"} 
             onSave={() => saveModule("premiumFeatures")} 
           />
           <div className="flex justify-between items-center">
@@ -2261,7 +2383,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         {/* Additional Spaces */}
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("additionalSpaces"))}>
           <ModernSaveIndicator 
-            state={moduleStates.additionalSpaces?.saveState || "idle"} 
+            state={moduleStates.additionalSpaces?.saveState ?? "idle"} 
             onSave={() => saveModule("additionalSpaces")} 
           />
           <div className="flex justify-between items-center">
@@ -2437,7 +2559,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
         {/* Materials and Finishes */}
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("materials"))}>
           <ModernSaveIndicator 
-            state={moduleStates.materials?.saveState || "idle"} 
+            state={moduleStates.materials?.saveState ?? "idle"} 
             onSave={() => saveModule("materials")} 
           />
           <div className="flex justify-between items-center">
@@ -2550,7 +2672,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {/* Description Module */}
       <Card className={cn("relative p-4 col-span-full transition-all duration-500 ease-out", getCardStyles("description"))}>
         <ModernSaveIndicator 
-          state={moduleStates.description?.saveState || "idle"} 
+          state={moduleStates.description?.saveState ?? "idle"} 
           onSave={() => saveModule("description")} 
         />
         <div className="flex justify-between items-center mb-3">
@@ -2641,7 +2763,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
       {!(currentListingType === 'Sale' || currentListingType === 'Transfer') && (
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("rentalProperties"))}>
           <ModernSaveIndicator 
-            state={moduleStates.rentalProperties?.saveState || "idle"} 
+            state={moduleStates.rentalProperties?.saveState ?? "idle"} 
             onSave={() => saveModule("rentalProperties")} 
           />
           <div className="flex justify-between items-center mb-3">

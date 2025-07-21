@@ -30,23 +30,135 @@ interface ModuleState {
 
 type ModuleName = "basicInfo" | "propertyDetails" | "location" | "features" | "description" | "contactInfo" | "orientation" | "additionalCharacteristics" | "premiumFeatures" | "additionalSpaces" | "materials" | "rentalProperties"
 
-interface PropertyCharacteristicsFormLocalProps {
-  listing: any // We'll type this properly later
+// Unified PropertyListing interface (copy from property-characteristics-form.tsx)
+export interface PropertyListing {
+  propertyId?: number | string
+  listingId?: number | string
+  propertyType?: string
+  propertySubtype?: string
+  listingType?: string
+  price?: number | string
+  cadastralReference?: string
+  isBankOwned?: boolean
+  isFeatured?: boolean
+  newConstruction?: boolean
+  bedrooms?: number
+  bathrooms?: number
+  squareMeter?: number
+  builtSurfaceArea?: number
+  yearBuilt?: number
+  lastRenovationYear?: string
+  buildingFloors?: number
+  conservationStatus?: number
+  street?: string
+  addressDetails?: string
+  postalCode?: string
+  neighborhood?: string
+  city?: string
+  province?: string
+  municipality?: string
+  hasElevator?: boolean
+  hasGarage?: boolean
+  garageType?: string
+  garageSpaces?: number
+  garageInBuilding?: boolean
+  garageNumber?: string
+  optionalGaragePrice?: number
+  hasStorageRoom?: boolean
+  storageRoomSize?: number
+  storageRoomNumber?: string
+  optionalStorageRoomPrice?: number
+  hasHeating?: boolean
+  heatingType?: string
+  hotWaterType?: string
+  airConditioningType?: string
+  isFurnished?: boolean
+  furnitureQuality?: string
+  studentFriendly?: boolean
+  petsAllowed?: boolean
+  appliancesIncluded?: boolean
+  exterior?: boolean
+  orientation?: string
+  bright?: boolean
+  disabledAccessible?: boolean
+  vpo?: boolean
+  videoIntercom?: boolean
+  conciergeService?: boolean
+  securityGuard?: boolean
+  satelliteDish?: boolean
+  doubleGlazing?: boolean
+  alarm?: boolean
+  securityDoor?: boolean
+  kitchenType?: string
+  openKitchen?: boolean
+  frenchKitchen?: boolean
+  furnishedKitchen?: boolean
+  pantry?: boolean
+  terrace?: boolean
+  terraceSize?: number
+  wineCellar?: boolean
+  wineCellarSize?: number
+  livingRoomSize?: number
+  balconyCount?: number
+  galleryCount?: number
+  builtInWardrobes?: string
+  mainFloorType?: string
+  shutterType?: string
+  carpentryType?: string
+  windowType?: string
+  views?: boolean
+  mountainViews?: boolean
+  seaViews?: boolean
+  beachfront?: boolean
+  jacuzzi?: boolean
+  hydromassage?: boolean
+  garden?: boolean
+  pool?: boolean
+  homeAutomation?: boolean
+  musicSystem?: boolean
+  laundryRoom?: boolean
+  coveredClothesline?: boolean
+  fireplace?: boolean
+  gym?: boolean
+  sportsArea?: boolean
+  childrenArea?: boolean
+  suiteBathroom?: boolean
+  nearbyPublicTransport?: boolean
+  communityPool?: boolean
+  privatePool?: boolean
+  tennisCourt?: boolean
+  internet?: boolean
+  oven?: boolean
+  microwave?: boolean
+  washingMachine?: boolean
+  fridge?: boolean
+  tv?: boolean
+  stoneware?: boolean
+  description?: string
+  agent?: {
+    id: number
+    name: string
+  }
+}
+
+// ... existing code ...
+// 2. Use PropertyListing for the prop
+type PropertyCharacteristicsFormLocalProps = {
+  listing: PropertyListing
 }
 
 export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteristicsFormLocalProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  // Check if property type has been changed
-  const hasPropertyTypeChanged = listing.propertyType && searchParams.get('type') && 
-    listing.propertyType !== searchParams.get('type')
+  // 3. Fix hasPropertyTypeChanged to always be boolean
+  const hasPropertyTypeChanged = Boolean(listing.propertyType && searchParams.get('type') && listing.propertyType !== searchParams.get('type'))
   
   // Module states with new save state
   const [moduleStates, setModuleStates] = useState<Record<ModuleName, ModuleState>>(() => {
     // Initialize with property type change detection
     const initialState = {
-      basicInfo: { saveState: "idle" as SaveState, hasChanges: hasPropertyTypeChanged },
+      basicInfo: { saveState: "idle" as SaveState, hasChanges: Boolean(hasPropertyTypeChanged) },
       propertyDetails: { saveState: "idle" as SaveState, hasChanges: false },
       location: { saveState: "idle" as SaveState, hasChanges: false },
       features: { saveState: "idle" as SaveState, hasChanges: false },
@@ -427,6 +539,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
     return `${type} en ${street} ${neighborhood}`.trim()
   }
 
+  // 5. Use void for unawaited async calls
   useEffect(() => {
     const fetchAgents = async () => {
       try {
@@ -439,7 +552,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
         console.error("Error fetching agents:", error)
       }
     }
-    fetchAgents()
+    void fetchAgents()
   }, [])
 
   const handleListingTypeChange = (type: string) => {
@@ -457,6 +570,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
     owner.name.toLowerCase().includes(ownerSearch.toLowerCase())
   )
 
+  // 4. Fix moduleStates to use Boolean for hasChanges
   useEffect(() => {
     const fetchOwners = async () => {
       try {
@@ -465,23 +579,19 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
           id: Number(owner.id),
           name: owner.name
         })))
-
-        // Load current owners only if we have a valid listingId
         if (listing.listingId) {
-          const currentOwners = await getCurrentListingOwners(listing.listingId)
+          const currentOwners = await getCurrentListingOwners(Number(listing.listingId))
           setSelectedOwnerIds(currentOwners.map(owner => owner.id.toString()))
-
-          // Set current agent if exists
-          if (listing.agentId) {
-            setSelectedAgentId(listing.agentId.toString())
+          if (listing.agent?.id) {
+            setSelectedAgentId(listing.agent.id.toString())
           }
         }
       } catch (error) {
         console.error("Error fetching owners:", error)
       }
     }
-    fetchOwners()
-  }, [listing.listingId, listing.agentId])
+    void fetchOwners()
+  }, [listing.listingId, listing.agent?.id])
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -613,7 +723,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
           <div className="space-y-1.5">
             <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
             <Select 
-              value={listing.propertySubtype || "Otros"}
+              value={listing.propertySubtype ?? "Otros"}
               onValueChange={(value) => {
                 // Update the listing object directly for now
                 listing.propertySubtype = value
@@ -638,7 +748,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             <Input 
               id="price" 
               type="number" 
-              defaultValue={parseInt(listing.price)} 
+              defaultValue={listing.price ? parseInt(listing.price.toString()) : ''} 
               className="h-8 text-gray-500" 
               min="0"
               step="1"
@@ -729,7 +839,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             <Input 
               id="bathrooms" 
               type="number" 
-              defaultValue={Math.round(listing.bathrooms)} 
+              defaultValue={listing.bathrooms ? Math.round(listing.bathrooms) : undefined} 
               className="h-8 text-gray-500" 
               min="0"
               step="1"
@@ -782,7 +892,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
           <div className="space-y-1.5">
             <Label htmlFor="conservationStatus" className="text-sm">Estado de conservación</Label>
             <Select 
-              value={listing.conservationStatus?.toString() || "1"} 
+              value={listing.conservationStatus?.toString() ?? "1"} 
               onValueChange={(value) => {
                 // Update the listing object directly for now
                 listing.conservationStatus = parseInt(value)

@@ -8,49 +8,41 @@ import { listingContacts } from "../db/schema"
 import { prospectUtils } from "../../lib/utils"
 
 // Helper function to get preferred area from prospect data
-async function getPreferredAreaFromProspect(prospect: any): Promise<string | undefined> {
-  if (!prospect.preferredAreas) {
+type PreferredArea = { neighborhoodId?: number | string; name?: string };
+type ProspectWithPreferredAreas = { preferredAreas?: string | PreferredArea[] };
+async function getPreferredAreaFromProspect(prospect: ProspectWithPreferredAreas): Promise<string | undefined> {
+  if (!prospect?.preferredAreas) {
     return undefined;
   }
-
-  let areas: any[] = [];
-  
+  let areas: PreferredArea[] = [];
   if (typeof prospect.preferredAreas === 'string') {
     try {
       areas = JSON.parse(prospect.preferredAreas);
-    } catch (e) {
+    } catch {
       return prospect.preferredAreas;
     }
   } else if (Array.isArray(prospect.preferredAreas)) {
     areas = prospect.preferredAreas;
   }
-
   if (!Array.isArray(areas) || areas.length === 0) {
     return undefined;
   }
-
-  // If only one area, use its name
   if (areas.length === 1) {
     return areas[0]?.name;
   }
-
-  // If more than one area, get the city from the first neighborhood ID
   if (areas.length > 1 && areas[0]?.neighborhoodId) {
     try {
       const [location] = await db
         .select({ city: locations.city })
         .from(locations)
-        .where(eq(locations.neighborhoodId, BigInt(areas[0].neighborhoodId)))
+        .where(eq(locations.neighborhoodId, BigInt(areas[0].neighborhoodId!)))
         .limit(1);
-      
-      return location?.city || areas[0]?.name;
+      return location?.city ?? areas[0]?.name;
     } catch (error) {
       console.error("Error fetching city for neighborhood:", error);
-      return areas[0]?.name; // Fallback to name if city lookup fails
+      return areas[0]?.name;
     }
   }
-
-  // Fallback to first area name
   return areas[0]?.name;
 }
 
@@ -755,8 +747,8 @@ export async function getContactByIdWithType(contactId: number) {
         )
       );
 
-    const ownerCount = ownerCountResult[0]?.count || 0;
-    const buyerCount = buyerCountResult[0]?.count || 0;
+    const ownerCount = ownerCountResult[0]?.count ?? 0;
+    const buyerCount = buyerCountResult[0]?.count ?? 0;
 
     // Get prospect count
     const prospectCountResult = await db
@@ -764,11 +756,10 @@ export async function getContactByIdWithType(contactId: number) {
       .from(prospects)
       .where(eq(prospects.contactId, BigInt(contactId)));
 
-    const prospectCount = prospectCountResult[0]?.count || 0;
+    const prospectCount = prospectCountResult[0]?.count ?? 0;
 
     // Get all prospect titles for this contact
     let prospectTitles: string[] = [];
-    
     if (prospectCount > 0) {
       const contactProspects = await db
         .select({
@@ -780,22 +771,17 @@ export async function getContactByIdWithType(contactId: number) {
         .from(prospects)
         .where(eq(prospects.contactId, BigInt(contactId)))
         .orderBy(sql`${prospects.createdAt} DESC`);
-
       prospectTitles = await Promise.all(
-        contactProspects.map(async prospect => {
+        contactProspects.map(async (prospect) => {
           const preferredArea = await getPreferredAreaFromProspect(prospect);
-
           const title = prospectUtils.generateSimpleProspectTitle(
-            prospect.listingType || undefined,
-            prospect.propertyType || undefined,
+            prospect.listingType ?? undefined,
+            prospect.propertyType ?? undefined,
             preferredArea
           );
-
           return title;
         })
       ).then(titles => titles.filter(title => title.trim() !== ''));
-
-
     }
 
     return {

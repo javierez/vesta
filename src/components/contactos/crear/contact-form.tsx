@@ -125,7 +125,7 @@ export default function ContactForm() {
       }
     }
     
-    fetchListings()
+    void fetchListings()
   }, [])
 
   const updateFormData = (field: keyof ContactFormData, value: unknown) => {

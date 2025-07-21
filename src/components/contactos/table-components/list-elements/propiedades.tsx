@@ -158,7 +158,7 @@ export function Propiedades({
           }}
         >
           <div className="space-y-1 -m-2 p-2">
-            {(listing.street || listing.city) && (
+            {(listing.street ?? listing.city) && (
               <div className={cn(
                 "flex items-center text-sm",
                 isActive ? "" : "text-gray-400"
@@ -172,7 +172,7 @@ export function Propiedades({
                 </span>
               </div>
             )}
-            {(listing.propertyType || listing.listingType) && (
+            {(listing.propertyType ?? listing.listingType) && (
               <div className={cn(
                 "flex items-center text-sm",
                 isActive ? "" : "text-gray-400"
@@ -225,7 +225,7 @@ export function Propiedades({
           }}
         >
           <div className="space-y-1 -m-2 p-2">
-            {(firstListing.street || firstListing.city) && (
+            {(firstListing.street ?? firstListing.city) && (
               <div className={cn(
                 "flex items-center text-sm",
                 isActive ? "" : "text-gray-400"
@@ -239,7 +239,7 @@ export function Propiedades({
                 </span>
               </div>
             )}
-            {(firstListing.propertyType || firstListing.listingType) && (
+            {(firstListing.propertyType ?? firstListing.listingType) && (
               <div className={cn(
                 "flex items-center text-sm",
                 isActive ? "" : "text-gray-400"
@@ -304,7 +304,7 @@ export function Propiedades({
                   }}
                 >
                   <div className="space-y-1">
-                    {(listing.street || listing.city) && (
+                    {(listing.street ?? listing.city) && (
                       <div className={cn(
                         "flex items-center text-sm",
                         isActive ? "" : "text-gray-400"
@@ -318,7 +318,7 @@ export function Propiedades({
                         </span>
                       </div>
                     )}
-                    {(listing.propertyType || listing.listingType) && (
+                    {(listing.propertyType ?? listing.listingType) && (
                       <div className={cn(
                         "flex items-center text-sm",
                         isActive ? "" : "text-gray-400"

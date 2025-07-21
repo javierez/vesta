@@ -7,12 +7,39 @@ import { motion, AnimatePresence } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import FormSkeleton from "./form-skeleton"
 
+interface ListingDetails {
+  propertyId?: number;
+  propertyType?: string;
+  views?: boolean;
+  mountainViews?: boolean;
+  seaViews?: boolean;
+  beachfront?: boolean;
+  jacuzzi?: boolean;
+  hydromassage?: boolean;
+  fireplace?: boolean;
+  garden?: boolean;
+  pool?: boolean;
+  homeAutomation?: boolean;
+  musicSystem?: boolean;
+  laundryRoom?: boolean;
+  coveredClothesline?: boolean;
+  gym?: boolean;
+  sportsArea?: boolean;
+  childrenArea?: boolean;
+  suiteBathroom?: boolean;
+  nearbyPublicTransport?: boolean;
+  communityPool?: boolean;
+  privatePool?: boolean;
+  tennisCourt?: boolean;
+  formPosition?: number;
+}
+
 interface SeventhPageProps {
-  listingId: string
-  globalFormData: any
-  onNext: () => void
-  onBack?: () => void
-  refreshListingDetails?: () => void
+  listingId: string;
+  globalFormData: { listingDetails?: ListingDetails | null };
+  onNext: () => void;
+  onBack?: () => void;
+  refreshListingDetails?: () => void;
 }
 
 interface SeventhPageFormData {
@@ -68,22 +95,20 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack,
   const [saveError, setSaveError] = useState<string | null>(null)
   const [propertyType, setPropertyType] = useState<string>("")
 
-  const updateFormData = (field: keyof SeventhPageFormData, value: any) => {
+  const updateFormData = (field: keyof SeventhPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   // Use centralized data instead of fetching
   useEffect(() => {
-    if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails
-      setPropertyType(details.propertyType ?? "")
-      
+    const details = globalFormData?.listingDetails;
+    if (details) {
+      setPropertyType(details.propertyType ?? "");
       // For garage properties, skip this page entirely
       if (details.propertyType === "garage") {
-        onNext()
-        return
+        onNext();
+        return;
       }
-      
       setFormData(prev => ({
         ...prev,
         views: details.views ?? false,
@@ -107,9 +132,9 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack,
         communityPool: details.communityPool ?? false,
         privatePool: details.privatePool ?? false,
         tennisCourt: details.tennisCourt ?? false,
-      }))
+      }));
     }
-  }, [globalFormData?.listingDetails, onNext])
+  }, [globalFormData?.listingDetails, onNext]);
 
   const handleNext = () => {
     // Navigate IMMEDIATELY (optimistic) - no waiting!
@@ -122,8 +147,9 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack,
   // Background save function - completely silent and non-blocking
   const saveInBackground = () => {
     // Fire and forget - no await, no blocking!
-    if (globalFormData?.listingDetails?.propertyId) {
-      const updateData: any = {
+    const details = globalFormData?.listingDetails;
+    if (details?.propertyId) {
+      const updateData: Partial<ListingDetails> = {
         views: formData.views,
         mountainViews: formData.mountainViews,
         seaViews: formData.seaViews,
@@ -145,26 +171,23 @@ export default function SeventhPage({ listingId, globalFormData, onNext, onBack,
         communityPool: formData.communityPool,
         privatePool: formData.privatePool,
         tennisCourt: formData.tennisCourt,
-      }
-
+      };
       // Only update formPosition if current position is lower than 8
-      if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 8) {
-        updateData.formPosition = 8
+      if ((details.formPosition ?? 0) < 8) {
+        updateData.formPosition = 8;
       }
-
-      console.log("Saving seventh page data:", updateData) // Debug log
-
-      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
-        console.log("Seventh page data saved successfully") // Debug log
+      console.log("Saving seventh page data:", updateData); // Debug log
+      updateProperty(Number(details.propertyId), updateData).then(() => {
+        console.log("Seventh page data saved successfully"); // Debug log
         // Refresh global data after successful save
-        refreshListingDetails?.()
-      }).catch((error: any) => {
-        console.error("Error saving form data:", error)
+        refreshListingDetails?.();
+      }).catch((error: unknown) => {
+        console.error("Error saving form data:", error);
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
-      })
+      });
     } else {
-      console.warn("No propertyId found in globalFormData.listingDetails for seventh page") // Debug log
+      console.warn("No propertyId found in globalFormData.listingDetails for seventh page"); // Debug log
     }
   }
 

@@ -14,9 +14,43 @@ import FormSkeleton from "./form-skeleton"
 import ContactPopup from "./contact-popup"
 import { Checkbox } from "~/components/ui/checkbox"
 
+// Type definitions
+interface Contact {
+  id: number
+  name: string
+}
+
+interface Agent {
+  id: number
+  name: string
+}
+
+interface ListingDetails {
+  price?: number | string
+  listingType?: string
+  propertyType?: string
+  propertySubtype?: string
+  agentId?: number | string
+  propertyId?: number | string
+  formPosition?: number
+}
+
+interface GlobalFormData {
+  listingDetails?: ListingDetails
+  contacts?: Contact[]
+  currentContacts?: string[]
+  agents?: Agent[]
+}
+
+interface NewContact {
+  contactId: number | string
+  firstName: string
+  lastName: string
+}
+
 interface FirstPageProps {
   listingId: string
-  globalFormData: any
+  globalFormData: GlobalFormData
   onNext: () => void
   onBack?: () => void
   refreshListingDetails?: () => void
@@ -46,7 +80,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
   const [showListingTypeTooltip, setShowListingTypeTooltip] = useState(false)
   const [contactSearch, setContactSearch] = useState("")
   const [showContactPopup, setShowContactPopup] = useState(false)
-  const [localContacts, setLocalContacts] = useState<{id: number, name: string}[]>([])
+  const [localContacts, setLocalContacts] = useState<Contact[]>([])
 
   // Fallback price formatting functions in case formFormatters is undefined
   const formatPriceInput = (value: string | number): string => {
@@ -87,7 +121,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
       let displayPrice = ""
       if (details.price) {
         // If price is a float (e.g., 3.00), convert to integer
-        const priceValue = typeof details.price === 'number' ? details.price : parseFloat(details.price)
+        const priceValue = typeof details.price === 'number' ? details.price : parseFloat(details.price.toString())
         displayPrice = Math.floor(priceValue).toString()
       }
       
@@ -111,16 +145,8 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
     }
   }, [globalFormData?.contacts])
 
-  const updateFormData = (field: keyof FirstPageFormData, value: any) => {
+  const updateFormData = (field: keyof FirstPageFormData, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleInputChange = (field: keyof FirstPageFormData) => (value: string) => {
-    updateFormData(field, value)
-  }
-
-  const handleEventInputChange = (field: keyof FirstPageFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateFormData(field, e.target.value)
   }
 
   // Handle price input with formatting
@@ -130,7 +156,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
   }
 
   // Filter contacts based on search (using local contacts for immediate updates)
-  const filteredContacts = localContacts.filter((contact: {id: number, name: string}) => 
+  const filteredContacts = localContacts.filter((contact: Contact) => 
     contact.name.toLowerCase().includes(contactSearch.toLowerCase())
   )
 
@@ -138,28 +164,6 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
   const handleListingTypeTab = (type: string) => {
     // Reset all secondary toggles
     updateFormData("listingType", type)
-  }
-
-  const handleSecondaryToggle = (type: 'RentWithOption' | 'RoomSharing' | 'Transfer') => {
-    if (type === 'RentWithOption') {
-      if (formData.listingType === 'RentWithOption') {
-        updateFormData('listingType', 'Rent')
-      } else {
-        updateFormData('listingType', 'RentWithOption')
-      }
-    } else if (type === 'RoomSharing') {
-      if (formData.listingType === 'RoomSharing') {
-        updateFormData('listingType', 'Rent')
-      } else {
-        updateFormData('listingType', 'RoomSharing')
-      }
-    } else if (type === 'Transfer') {
-      if (formData.listingType === 'Transfer') {
-        updateFormData('listingType', 'Sale')
-      } else {
-        updateFormData('listingType', 'Transfer')
-      }
-    }
   }
 
   const handleNext = () => {
@@ -183,45 +187,47 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
     onNext()
     
     // Save data in background (completely silent)
-    saveInBackground()
+    void saveInBackground()
   }
 
   // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    Promise.all([
-      // Update property form position to 2 and property type
-      globalFormData?.listingDetails?.propertyId ? (async () => {
-        const updateData: any = {
-          propertyType: formData.propertyType,
-          propertySubtype: formData.propertySubtype || null,
-        }
-        
-        // Only update formPosition if current position is lower than 2
-        if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 2) {
-          updateData.formPosition = 2
-        }
-        
-        updateProperty(Number(globalFormData.listingDetails.propertyId), updateData)
-      })() : Promise.resolve(),
+  const saveInBackground = async () => {
+    try {
+      // Fire and forget - no await, no blocking!
+      await Promise.all([
+        // Update property form position to 2 and property type
+                 globalFormData?.listingDetails?.propertyId ? (async () => {
+           const updateData: Record<string, unknown> = {
+             propertyType: formData.propertyType,
+             propertySubtype: formData.propertySubtype || null,
+           }
+           
+           // Only update formPosition if current position is lower than 2
+           if (globalFormData?.listingDetails && (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 2)) {
+             updateData.formPosition = 2
+           }
+           
+           await updateProperty(Number(globalFormData.listingDetails?.propertyId), updateData)
+         })() : Promise.resolve(),
 
-      // Update listing with price, listing type, and agent
-      updateListing(Number(listingId), {
-        price: formData.price,
-        listingType: formData.listingType as "Sale" | "Rent",
-        agentId: BigInt(formData.agentId)
-      }),
+        // Update listing with price, listing type, and agent
+        updateListing(Number(listingId), {
+          price: formData.price,
+          listingType: formData.listingType as "Sale" | "Rent",
+          agentId: BigInt(formData.agentId)
+        }),
 
-      // Update listing contacts
-      updateListingOwners(Number(listingId), formData.selectedContactIds.map(id => Number(id)))
-    ]).then(() => {
+        // Update listing contacts
+        updateListingOwners(Number(listingId), formData.selectedContactIds.map(id => Number(id)))
+      ])
+
       // Refresh global data after successful save
       refreshListingDetails?.()
-    }).catch(error => {
+    } catch (error) {
       console.error("Error saving form data:", error)
       // Silent error - user doesn't know it failed
       // Could implement retry logic here if needed
-    })
+    }
   }
 
   const toggleContact = (contactId: string) => {
@@ -233,14 +239,25 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
     }))
   }
 
-  const handleContactCreated = (newContact: any) => {
-    console.log("New contact created:", newContact)
+  const handleContactCreated = (contact: unknown) => {
+    console.log("New contact created:", contact)
+    
+    // Type guard to check if contact has the expected properties
+    const isValidContact = (obj: unknown): obj is NewContact => {
+      return (
+        typeof obj === 'object' &&
+        obj !== null &&
+        'contactId' in obj &&
+        'firstName' in obj &&
+        'lastName' in obj
+      )
+    }
     
     // Immediately add the new contact to local state for instant UI update
-    if (newContact?.contactId && newContact?.firstName && newContact?.lastName) {
-      const newContactForList = {
-        id: Number(newContact.contactId),
-        name: `${newContact.firstName} ${newContact.lastName}`
+    if (isValidContact(contact)) {
+      const newContactForList: Contact = {
+        id: Number(contact.contactId),
+        name: `${contact.firstName} ${contact.lastName}`
       }
       
       setLocalContacts(prev => [...prev, newContactForList])
@@ -248,7 +265,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
       // Auto-select the new contact
       setFormData(prev => ({
         ...prev,
-        selectedContactIds: [...prev.selectedContactIds, newContact.contactId.toString()]
+        selectedContactIds: [...prev.selectedContactIds, contact.contactId.toString()]
       }))
     }
     
@@ -545,7 +562,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
             <SelectValue placeholder="Seleccionar agente" />
           </SelectTrigger>
           <SelectContent>
-            {globalFormData?.agents?.map((agent: {id: number, name: string}) => (
+            {globalFormData?.agents?.map((agent: Agent) => (
               <SelectItem 
                 key={agent.id} 
                 value={agent.id.toString()}
@@ -587,7 +604,7 @@ export default function FirstPage({ listingId, globalFormData, onNext, onBack, r
               No se encontraron contactos
             </p>
           ) : (
-            filteredContacts.map((contact: {id: number, name: string}) => (
+            filteredContacts.map((contact: Contact) => (
               <div
                 key={contact.id}
                 className={cn(

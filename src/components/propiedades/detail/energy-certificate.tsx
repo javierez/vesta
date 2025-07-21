@@ -56,9 +56,9 @@ export function EnergyCertificate({
 }: EnergyCertificateProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState<number>(0)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [saveState, setSaveState] = useState<SaveState>("idle")
-  const [uploadedDocumentUrl, setUploadedDocumentUrl] = useState<string | null>(uploadedFile || uploadedDocument?.fileUrl || null)
+  const [uploadedDocumentUrl, setUploadedDocumentUrl] = useState<string | null>(uploadedFile ?? uploadedDocument?.fileUrl ?? null)
   const [currentDocument, setCurrentDocument] = useState(uploadedDocument)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -71,7 +71,6 @@ export function EnergyCertificate({
   const [emissionValue, setEmissionValue] = useState(emissionsValue?.toString() ?? '')
   const [pendingConsumptionScale, setPendingConsumptionScale] = useState<string | null>(null)
   const [pendingEmissionScale, setPendingEmissionScale] = useState<string | null>(null)
-  
   const hasUploadedCertificate = !!uploadedDocumentUrl
 
   const getEnergyRatingColor = (rating: string | null | undefined, isActive: boolean = false) => {
@@ -162,7 +161,7 @@ export function EnergyCertificate({
         setUploadProgress(0)
       }
     }
-  }, [userId, referenceNumber])
+  }, [userId, referenceNumber, propertyId])
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -228,7 +227,7 @@ export function EnergyCertificate({
         setUploadProgress(0)
       }
     }
-  }, [userId, referenceNumber])
+  }, [userId, referenceNumber, propertyId])
 
   const handleConsumptionScaleClick = (rating: string) => {
     if (rating !== consumptionScale) {
@@ -260,53 +259,45 @@ export function EnergyCertificate({
   }
 
   const handleSave = async () => {
-    if (!propertyId) return
-    
-    setSaveState("saving")
+    if (!propertyId) return;
+    setSaveState("saving");
     try {
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         energyCertificateStatus: certificateStatus
-      }
-      
+      };
       if (pendingConsumptionScale) {
-        updateData.energyConsumptionScale = pendingConsumptionScale
+        updateData.energyConsumptionScale = pendingConsumptionScale;
       }
       if (pendingEmissionScale) {
-        updateData.emissionsScale = pendingEmissionScale
+        updateData.emissionsScale = pendingEmissionScale;
       }
       if (consumptionValue) {
-        updateData.energyConsumptionValue = parseFloat(consumptionValue)
+        updateData.energyConsumptionValue = parseFloat(consumptionValue);
       }
       if (emissionValue) {
-        updateData.emissionsValue = parseFloat(emissionValue)
+        updateData.emissionsValue = parseFloat(emissionValue);
       }
-      
-      await updateProperty(Number(propertyId), updateData)
-      
-      // Update local state
+      await updateProperty(Number(propertyId), updateData);
       if (pendingConsumptionScale) {
-        setConsumptionScale(pendingConsumptionScale)
-        setPendingConsumptionScale(null)
+        setConsumptionScale(pendingConsumptionScale);
+        setPendingConsumptionScale(null);
       }
       if (pendingEmissionScale) {
-        setEmissionScale(pendingEmissionScale)
-        setPendingEmissionScale(null)
+        setEmissionScale(pendingEmissionScale);
+        setPendingEmissionScale(null);
       }
-      
-      setSaveState("saved")
-      
+      setSaveState("saved");
       setTimeout(() => {
-        setSaveState("idle")
-      }, 2000)
+        setSaveState("idle");
+      }, 2000);
     } catch (error) {
-      console.error('Error saving energy certificate data:', error)
-      setSaveState("error")
-      
+      console.error('Error saving energy certificate data:', error);
+      setSaveState("error");
       setTimeout(() => {
-        setSaveState("modified")
-      }, 3000)
+        setSaveState("modified");
+      }, 3000);
     }
-  }
+  };
 
   const getCardStyles = () => {
     switch (saveState) {

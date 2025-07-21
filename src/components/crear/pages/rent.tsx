@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "~/components/ui/button"
 import { Label } from "~/components/ui/label"
 import { Checkbox } from "~/components/ui/checkbox"
-import { ChevronLeft, ChevronRight, GraduationCap, PawPrint, Zap, Car, Package } from "lucide-react"
+import { ChevronLeft, GraduationCap, PawPrint, Zap, Car, Package } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import { createListing, updateListing } from "~/server/queries/listing"
@@ -12,10 +12,36 @@ import { cn } from "~/lib/utils"
 import { Input } from "~/components/ui/input"
 import FormSkeleton from "./form-skeleton"
 
+// Type definitions
+interface ListingDetails {
+  propertyType?: string
+  listingType?: string
+  listingId?: number | string
+  propertyId?: number | string
+  agentId?: number | string
+  formPosition?: number
+  hasKeys?: boolean
+  studentFriendly?: boolean
+  petsAllowed?: boolean
+  appliancesIncluded?: boolean
+  isFurnished?: boolean
+  furnitureQuality?: string
+  optionalGaragePrice?: number | string
+  optionalStorageRoomPrice?: number | string
+  price?: number | string
+  internet?: boolean
+  hasGarage?: boolean
+  hasStorageRoom?: boolean
+}
+
+interface GlobalFormData {
+  listingDetails?: ListingDetails | null
+}
+
 interface RentPageProps {
-  listingId: string
-  globalFormData: any
-  onNext: () => void
+  listingId?: string // Made optional since it's unused
+  globalFormData: GlobalFormData
+  onNext?: () => void // Made optional since it's unused
   onBack?: () => void
   refreshListingDetails?: () => void
 }
@@ -48,14 +74,13 @@ const initialFormData: RentPageFormData = {
   internet: false,
 }
 
-export default function RentPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: RentPageProps) {
+export default function RentPage({ globalFormData, onBack, refreshListingDetails }: RentPageProps) {
   const router = useRouter()
   const [formData, setFormData] = useState<RentPageFormData>(initialFormData)
-  const [saveError, setSaveError] = useState<string | null>(null)
   const [propertyType, setPropertyType] = useState<string>("")
   const [isSaleListing, setIsSaleListing] = useState<boolean>(true)
 
-  const updateFormData = (field: keyof RentPageFormData, value: any) => {
+  const updateFormData = (field: keyof RentPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -73,9 +98,9 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
         appliancesIncluded: details.appliancesIncluded ?? false,
         isFurnished: details.isFurnished ?? false,
         furnitureQuality: details.furnitureQuality ?? "",
-        optionalGaragePrice: Number(details.optionalGaragePrice) ?? 0,
-        optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) ?? 0,
-        rentalPrice: Number(details.price) ?? 0,
+        optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
+        optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
+        rentalPrice: Number(details.price) || 0,
         internet: details.internet ?? false,
       }))
     }
@@ -102,56 +127,70 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
     }
 
     // Navigate IMMEDIATELY (optimistic) - finish form instantly!
-    router.push(`/propiedades/${globalFormData.listingDetails.listingId}`)
+    if (globalFormData?.listingDetails?.listingId) {
+      router.push(`/propiedades/${globalFormData.listingDetails.listingId}`)
+    }
     
     // Save data in background (completely silent)
-    saveInBackground()
+    void saveInBackground()
   }
 
   // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    if (globalFormData?.listingDetails?.propertyId) {
-      // Update property form position
-      updateProperty(Number(globalFormData.listingDetails.propertyId), {
-        formPosition: (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 12) ? 12 : globalFormData.listingDetails.formPosition
-      }).then(() => {
+  const saveInBackground = async () => {
+    try {
+      // Fire and forget - no await, no blocking!
+      if (globalFormData?.listingDetails?.propertyId) {
+        const listingDetails = globalFormData.listingDetails
+        
+        // Update property form position
+        await updateProperty(Number(listingDetails.propertyId), {
+          formPosition: (!listingDetails.formPosition || listingDetails.formPosition < 12) ? 12 : listingDetails.formPosition
+        })
+        
         // Refresh global data after successful save
         refreshListingDetails?.()
-      }).catch((error: any) => {
-        console.error("Error updating property:", error)
-      })
 
-      // Update the sale listing status to 'Active'
-      if (globalFormData.listingDetails.listingId) {
-        updateListing(Number(globalFormData.listingDetails.listingId), {
-          status: "Active",
-          internet: formData.internet
-        }).catch((error: any) => {
-          console.error("Error updating sale listing status:", error)
-        })
-      }
+        // Update the sale listing status to 'Active'
+        if (listingDetails.listingId) {
+          await updateListing(Number(listingDetails.listingId), {
+            status: "Active",
+            internet: formData.internet
+          })
+        }
 
-      // Only create rental listing if it's a sale property and user wants to duplicate for rent
-      if (isSaleListing && formData.duplicateForRent) {
-        createListing({
-          propertyId: BigInt(globalFormData.listingDetails.propertyId),
-          listingType: "Rent",
-          price: formData.rentalPrice.toString(),
-          agentId: BigInt(globalFormData.listingDetails.agentId),
-          studentFriendly: formData.studentFriendly,
-          petsAllowed: formData.petsAllowed,
-          appliancesIncluded: formData.appliancesIncluded,
-          internet: formData.internet,
-          optionalGaragePrice: formData.optionalGaragePrice.toString(),
-          optionalStorageRoomPrice: formData.optionalStorageRoomPrice.toString(),
-          hasKeys: false,
-          optionalStorageRoom: false,
-          status: "Active"
-        } as any).catch((error: any) => {
-          console.error("Error creating rental listing:", error)
-        })
+        // Only create rental listing if it's a sale property and user wants to duplicate for rent
+        if (isSaleListing && formData.duplicateForRent && listingDetails.agentId && listingDetails.propertyId) {
+          const rentListingData = {
+            propertyId: BigInt(listingDetails.propertyId),
+            listingType: "Rent" as const,
+            price: formData.rentalPrice.toString(),
+            agentId: BigInt(listingDetails.agentId),
+            studentFriendly: formData.studentFriendly,
+            petsAllowed: formData.petsAllowed,
+            appliancesIncluded: formData.appliancesIncluded,
+            internet: formData.internet,
+            optionalGaragePrice: formData.optionalGaragePrice.toString(),
+            optionalStorageRoomPrice: formData.optionalStorageRoomPrice.toString(),
+            hasKeys: false,
+            optionalStorageRoom: false,
+            status: "Active" as const,
+            isActive: true,
+            isFeatured: false,
+            isBankOwned: false,
+            visibilityMode: 1,
+            isFurnished: formData.isFurnished,
+            furnitureQuality: formData.furnitureQuality,
+            viewCount: 0,
+            inquiryCount: 0
+          }
+          
+          await createListing(rentListingData)
+        }
       }
+    } catch (error) {
+      console.error("Error saving form data:", error)
+      // Silent error - user doesn't know it failed
+      // Could implement retry logic here if needed
     }
   }
 
@@ -347,20 +386,6 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
           </motion.div>
         )}
 
-        <AnimatePresence>
-          {saveError && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, scale: 0.95 }}
-              animate={{ opacity: 1, height: "auto", scale: 1 }}
-              exit={{ opacity: 0, height: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700"
-            >
-              {saveError}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <motion.div
           className="flex justify-between pt-4 border-t"
           initial={{ opacity: 0, y: 10 }}
@@ -485,19 +510,7 @@ export default function RentPage({ listingId, globalFormData, onNext, onBack, re
         )}
       </motion.div>
 
-      <AnimatePresence>
-        {saveError && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, scale: 0.95 }}
-            animate={{ opacity: 1, height: "auto", scale: 1 }}
-            exit={{ opacity: 0, height: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700"
-          >
-            {saveError}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {/* Removed saveError state and AnimatePresence notification */}
 
       <motion.div
         className="flex justify-between pt-4 border-t"

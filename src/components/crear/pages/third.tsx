@@ -7,12 +7,24 @@ import { updatePropertyLocation, updateProperty } from "~/server/queries/propert
 import { useSearchParams } from "next/navigation"
 import FormSkeleton from "./form-skeleton"
 
+interface ListingDetails {
+  propertyId?: number;
+  propertyType?: string;
+  street?: string;
+  addressDetails?: string;
+  postalCode?: string;
+  city?: string;
+  province?: string;
+  municipality?: string;
+  neighborhood?: string;
+}
+
 interface ThirdPageProps {
-  listingId: string
-  globalFormData: any
-  onNext: () => void
-  onBack?: () => void
-  refreshListingDetails?: () => void
+  listingId: string;
+  globalFormData: { listingDetails?: ListingDetails | null };
+  onNext: () => void;
+  onBack?: () => void;
+  refreshListingDetails?: () => void;
 }
 
 // Form data interface for third page
@@ -98,11 +110,11 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
 
   // Function to generate title (similar to property-characteristics-form.tsx)
   const generateTitle = () => {
-    const type = getPropertyTypeText(globalFormData?.listingDetails?.propertyType || 'piso')
-    const street = formData.street || globalFormData?.listingDetails?.street || ''
-    const neighborhood = formData.neighborhood || globalFormData?.listingDetails?.neighborhood ? 
-      `(${formData.neighborhood || globalFormData?.listingDetails?.neighborhood})` : ''
-    return `${type} en ${street} ${neighborhood}`.trim()
+    const type = getPropertyTypeText(globalFormData?.listingDetails?.propertyType ?? 'piso');
+    const street = (formData.street || globalFormData?.listingDetails?.street) ?? '';
+    const neighborhood = (formData.neighborhood || globalFormData?.listingDetails?.neighborhood)
+      ? `(${formData.neighborhood || globalFormData?.listingDetails?.neighborhood})` : '';
+    return `${type} en ${street} ${neighborhood}`.trim();
   }
 
   const autoCompleteAddress = async () => {
@@ -183,11 +195,10 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
   // Background save function - completely silent and non-blocking
   const saveInBackground = () => {
     // Fire and forget - no await, no blocking!
-    if (globalFormData?.listingDetails?.propertyId) {
-      console.log("Saving third page location data") // Debug log
-      
-      // First save the location data
-      updatePropertyLocation(Number(globalFormData.listingDetails.propertyId), {
+    const details = globalFormData?.listingDetails;
+    if (details?.propertyId) {
+      console.log("Saving third page location data"); // Debug log
+      updatePropertyLocation(Number(details.propertyId), {
         street: formData.street,
         addressDetails: formData.addressDetails,
         postalCode: formData.postalCode,
@@ -196,28 +207,26 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
         municipality: formData.municipality,
         neighborhood: formData.neighborhood,
       }).then(() => {
-        console.log("Third page location data saved successfully") // Debug log
-        
+        console.log("Third page location data saved successfully"); // Debug log
         // After location is saved, generate and save the title
-        const generatedTitle = generateTitle()
-        console.log("Generated title:", generatedTitle) // Debug log
-        
-        return updateProperty(Number(globalFormData.listingDetails.propertyId), {
+        const generatedTitle = generateTitle();
+        console.log("Generated title:", generatedTitle); // Debug log
+        return updateProperty(Number(details.propertyId), {
           title: generatedTitle
-        })
+        });
       }).then(() => {
-        console.log("Title saved successfully") // Debug log
+        console.log("Title saved successfully"); // Debug log
         // Refresh global data after successful save
-        refreshListingDetails?.()
-      }).catch((error: any) => {
-        console.error("Error saving form data:", error)
+        refreshListingDetails?.();
+      }).catch((error: unknown) => {
+        console.error("Error saving form data:", error);
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
-      })
+      });
     } else {
-      console.warn("No propertyId found in globalFormData.listingDetails for location save") // Debug log
+      console.warn("No propertyId found in globalFormData.listingDetails for location save"); // Debug log
     }
-  }
+  };
 
   // If method is manual, don't render anything (page will be skipped)
   if (method === 'manual') {

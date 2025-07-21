@@ -7,12 +7,21 @@ import { updateProperty } from "~/server/queries/properties"
 import FormSkeleton from "./form-skeleton"
 import { CompassRose } from "../rosa"
 
+interface ListingDetails {
+  propertyId?: number;
+  propertyType?: string;
+  exterior?: boolean;
+  bright?: boolean;
+  orientation?: string;
+  formPosition?: number;
+}
+
 interface FifthPageProps {
-  listingId: string
-  globalFormData: any
-  onNext: () => void
-  onBack?: () => void
-  refreshListingDetails?: () => void
+  listingId: string;
+  globalFormData: { listingDetails?: ListingDetails | null };
+  onNext: () => void;
+  onBack?: () => void;
+  refreshListingDetails?: () => void;
 }
 
 // Form data interface for fifth page
@@ -32,30 +41,28 @@ export default function FifthPage({ listingId, globalFormData, onNext, onBack, r
   const [formData, setFormData] = useState<FifthPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const updateFormData = (field: keyof FifthPageFormData, value: any) => {
+  const updateFormData = (field: keyof FifthPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   // Use centralized data instead of fetching
   useEffect(() => {
-    if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails
-      
+    const details = globalFormData?.listingDetails;
+    if (details) {
       // For solar and garage properties, skip this page entirely
       if (details.propertyType === "solar" || details.propertyType === "garage") {
-        onNext()
-        return
+        onNext();
+        return;
       }
-      
       // Pre-populate form with existing data for other property types
       setFormData(prev => ({
         ...prev,
         isExterior: details.exterior ?? false,
         isBright: details.bright ?? false,
         orientation: details.orientation ?? "",
-      }))
+      }));
     }
-  }, [globalFormData?.listingDetails, onNext])
+  }, [globalFormData?.listingDetails, onNext]);
 
   const handleNext = () => {
     // Navigate IMMEDIATELY (optimistic) - no waiting!
@@ -68,33 +75,34 @@ export default function FifthPage({ listingId, globalFormData, onNext, onBack, r
   // Background save function - completely silent and non-blocking
   const saveInBackground = () => {
     // Fire and forget - no await, no blocking!
-    if (globalFormData?.listingDetails?.propertyId) {
-      const updateData: any = {
+    const details = globalFormData?.listingDetails;
+    if (details?.propertyId) {
+      const updateData: Partial<ListingDetails> = {
         exterior: formData.isExterior,
         bright: formData.isBright,
         orientation: formData.orientation,
-      }
+      };
 
       // Only update formPosition if current position is lower than 6
-      if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 6) {
-        updateData.formPosition = 6
+      if ((details.formPosition ?? 0) < 6) {
+        updateData.formPosition = 6;
       }
 
-      console.log("Saving fifth page data:", updateData) // Debug log
+      console.log("Saving fifth page data:", updateData); // Debug log
 
-      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
-        console.log("Fifth page data saved successfully") // Debug log
+      updateProperty(Number(details.propertyId), updateData).then(() => {
+        console.log("Fifth page data saved successfully"); // Debug log
         // Refresh global data after successful save
-        refreshListingDetails?.()
-      }).catch((error: any) => {
-        console.error("Error saving form data:", error)
+        refreshListingDetails?.();
+      }).catch((error: unknown) => {
+        console.error("Error saving form data:", error);
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
-      })
+      });
     } else {
-      console.warn("No propertyId found in globalFormData.listingDetails for fifth page") // Debug log
+      console.warn("No propertyId found in globalFormData.listingDetails for fifth page"); // Debug log
     }
-  }
+  };
 
   if (globalFormData?.listingDetails === null) {
     return <FormSkeleton />

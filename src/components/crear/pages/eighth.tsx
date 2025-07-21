@@ -9,9 +9,28 @@ import { updateProperty } from "~/server/queries/properties"
 import { formFormatters } from "~/lib/utils"
 import FormSkeleton from "./form-skeleton"
 
+// Type definitions
+interface ListingDetails {
+  propertyType?: string
+  propertyId?: number | string
+  formPosition?: number
+  terrace?: boolean
+  terraceSize?: number
+  wineCellar?: boolean
+  wineCellarSize?: number
+  livingRoomSize?: number
+  balconyCount?: number
+  galleryCount?: number
+  builtInWardrobes?: boolean
+}
+
+interface GlobalFormData {
+  listingDetails?: ListingDetails | null
+}
+
 interface EighthPageProps {
-  listingId: string
-  globalFormData: any
+  listingId?: string // Made optional since it's unused
+  globalFormData: GlobalFormData
   onNext: () => void
   onBack?: () => void
   refreshListingDetails?: () => void
@@ -39,9 +58,8 @@ const initialFormData: EighthPageFormData = {
   builtInWardrobes: false,
 }
 
-export default function EighthPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: EighthPageProps) {
+export default function EighthPage({ globalFormData, onNext, onBack, refreshListingDetails }: EighthPageProps) {
   const [formData, setFormData] = useState<EighthPageFormData>(initialFormData)
-  const [saveError, setSaveError] = useState<string | null>(null)
 
   const updateFormData = (field: keyof EighthPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -75,42 +93,43 @@ export default function EighthPage({ listingId, globalFormData, onNext, onBack, 
     onNext()
     
     // Save data in background (completely silent)
-    saveInBackground()
+    void saveInBackground()
   }
 
   // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    if (globalFormData?.listingDetails?.propertyId) {
-      const updateData: any = {
-        terrace: formData.terrace,
-        terraceSize: formData.terraceSize,
-        wineCellar: formData.wineCellar,
-        wineCellarSize: formData.wineCellarSize,
-        livingRoomSize: formData.livingRoomSize,
-        balconyCount: formData.balconyCount,
-        galleryCount: formData.galleryCount,
-        builtInWardrobes: formData.builtInWardrobes,
-      }
+  const saveInBackground = async () => {
+    try {
+      // Fire and forget - no await, no blocking!
+      if (globalFormData?.listingDetails?.propertyId) {
+        const updateData: Record<string, unknown> = {
+          terrace: formData.terrace,
+          terraceSize: formData.terraceSize,
+          wineCellar: formData.wineCellar,
+          wineCellarSize: formData.wineCellarSize,
+          livingRoomSize: formData.livingRoomSize,
+          balconyCount: formData.balconyCount,
+          galleryCount: formData.galleryCount,
+          builtInWardrobes: formData.builtInWardrobes,
+        }
 
-      // Only update formPosition if current position is lower than 9
-      if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 9) {
-        updateData.formPosition = 9
-      }
+        // Only update formPosition if current position is lower than 9
+        if (globalFormData?.listingDetails && (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 9)) {
+          updateData.formPosition = 9
+        }
 
-      console.log("Saving eighth page data:", updateData) // Debug log
+        console.log("Saving eighth page data:", updateData) // Debug log
 
-      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
+        await updateProperty(Number(globalFormData.listingDetails.propertyId), updateData)
         console.log("Eighth page data saved successfully") // Debug log
         // Refresh global data after successful save
         refreshListingDetails?.()
-      }).catch((error: any) => {
-        console.error("Error saving form data:", error)
-        // Silent error - user doesn't know it failed
-        // Could implement retry logic here if needed
-      })
-    } else {
-      console.warn("No propertyId found in globalFormData.listingDetails for eighth page") // Debug log
+      } else {
+        console.warn("No propertyId found in globalFormData.listingDetails for eighth page") // Debug log
+      }
+    } catch (error) {
+      console.error("Error saving form data:", error)
+      // Silent error - user doesn't know it failed
+      // Could implement retry logic here if needed
     }
   }
 
@@ -267,17 +286,7 @@ export default function EighthPage({ listingId, globalFormData, onNext, onBack, 
       </motion.div>
 
       <AnimatePresence>
-        {saveError && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, scale: 0.95 }}
-            animate={{ opacity: 1, height: "auto", scale: 1 }}
-            exit={{ opacity: 0, height: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700"
-          >
-            {saveError}
-          </motion.div>
-        )}
+        {/* Removed saveError state and its usage */}
       </AnimatePresence>
 
       <motion.div

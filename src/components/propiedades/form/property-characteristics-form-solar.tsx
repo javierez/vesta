@@ -29,35 +29,61 @@ interface ModuleState {
 
 type ModuleName = "basicInfo" | "propertyDetails" | "location" | "features" | "description" | "contactInfo"
 
-interface PropertyCharacteristicsFormSolarProps {
-  listing: any // We'll type this properly later
+// 1. Add PropertyListing interface
+interface PropertyListing {
+  propertyId?: number | string
+  listingId?: number | string
+  propertyType?: string
+  propertySubtype?: string
+  listingType?: string
+  price?: number | string
+  cadastralReference?: string
+  isBankOwned?: boolean
+  agentId?: number | string
+  squareMeter?: number
+  buildableArea?: number
+  yearBuilt?: number
+  street?: string
+  addressDetails?: string
+  postalCode?: string
+  neighborhood?: string
+  city?: string
+  province?: string
+  municipality?: string
+  views?: boolean
+  mountainViews?: boolean
+  seaViews?: boolean
+  beachfront?: boolean
+  garden?: boolean
+  pool?: boolean
+  description?: string
+}
+
+// 2. Use PropertyListing for the prop
+type PropertyCharacteristicsFormSolarProps = {
+  listing: PropertyListing
 }
 
 export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteristicsFormSolarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  // Check if property type has been changed
-  const hasPropertyTypeChanged = listing.propertyType && searchParams.get('type') && 
-    listing.propertyType !== searchParams.get('type')
+  // 3. Fix hasPropertyTypeChanged to always be boolean
+  const hasPropertyTypeChanged = Boolean(listing.propertyType && searchParams.get('type') && listing.propertyType !== searchParams.get('type'))
   
-  // Module states with new save state
+  // 4. Fix moduleStates to use Boolean for hasChanges
   const [moduleStates, setModuleStates] = useState<Record<ModuleName, ModuleState>>(() => {
-    // Initialize with property type change detection
     const initialState = {
-      basicInfo: { saveState: "idle" as SaveState, hasChanges: hasPropertyTypeChanged },
+      basicInfo: { saveState: "idle" as SaveState, hasChanges: Boolean(hasPropertyTypeChanged) },
       propertyDetails: { saveState: "idle" as SaveState, hasChanges: false },
       location: { saveState: "idle" as SaveState, hasChanges: false },
       features: { saveState: "idle" as SaveState, hasChanges: false },
       description: { saveState: "idle" as SaveState, hasChanges: false },
       contactInfo: { saveState: "idle" as SaveState, hasChanges: false }
     }
-    
-    // Set basicInfo to modified if property type changed
     if (hasPropertyTypeChanged) {
       initialState.basicInfo.saveState = "modified"
     }
-    
     return initialState
   })
 
@@ -108,8 +134,8 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
       switch (moduleName) {
         case 'basicInfo':
           listingData = {
-            listingType,
-            isBankOwned,
+            listingType: listing.listingType,
+            isBankOwned: listing.isBankOwned,
             price: (document.getElementById('price') as HTMLInputElement)?.value
           }
           propertyData = {
@@ -130,9 +156,9 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             street: (document.getElementById('street') as HTMLInputElement)?.value,
             addressDetails: (document.getElementById('addressDetails') as HTMLInputElement)?.value,
             postalCode: (document.getElementById('postalCode') as HTMLInputElement)?.value,
-            city,
-            province,
-            municipality
+            city: listing.city,
+            province: listing.province,
+            municipality: listing.municipality
           }
           break
 
@@ -324,6 +350,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
     owner.name.toLowerCase().includes(ownerSearch.toLowerCase())
   )
 
+  // 5. Use void for unawaited async calls
   useEffect(() => {
     const fetchAgents = async () => {
       try {
@@ -336,7 +363,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
         console.error("Error fetching agents:", error)
       }
     }
-    fetchAgents()
+    void fetchAgents()
   }, [])
 
   useEffect(() => {
@@ -350,7 +377,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
 
         // Load current owners only if we have a valid listingId
         if (listing.listingId) {
-          const currentOwners = await getCurrentListingOwners(listing.listingId)
+          const currentOwners = await getCurrentListingOwners(Number(listing.listingId))
           setSelectedOwnerIds(currentOwners.map(owner => owner.id.toString()))
 
           // Set current agent if exists
@@ -362,7 +389,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
         console.error("Error fetching owners:", error)
       }
     }
-    fetchOwners()
+    void fetchOwners()
   }, [listing.listingId, listing.agentId])
 
   const handleListingTypeChange = (type: string) => {
@@ -502,7 +529,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
           <div className="space-y-1.5">
             <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
             <Select 
-              value={listing.propertySubtype || "Residential land"}
+              value={listing.propertySubtype ?? "Residential land"}
               onValueChange={(value) => {
                 // Update the listing object directly for now
                 listing.propertySubtype = value
@@ -525,7 +552,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
             <Input 
               id="price" 
               type="number" 
-              defaultValue={listing.price && !isNaN(Number(listing.price)) ? parseInt(listing.price.toString()) : ''} 
+              defaultValue={listing.price ? parseInt(listing.price.toString()) : ''} 
               className="h-8 text-gray-500" 
               min="0"
               step="1"

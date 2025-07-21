@@ -47,11 +47,7 @@ export default function PropertiesPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const page = Number(searchParams.get('page')) || 1
-        // Use nullish coalescing for fallback
-        // const page = Number(searchParams.get('page')) ?? 1
-        setCurrentPage(page)
-        
+        const page = Number(searchParams.get('page')) ?? 1
         // Get all filter parameters from URL
         const filters: Record<string, unknown> = {}
         for (const [key, value] of searchParams.entries()) {
@@ -106,7 +102,7 @@ export default function PropertiesPage() {
 
     fetchData()
     // Mark floating promise as intentionally unhandled
-    // void fetchData()
+    void fetchData()
   }, [searchParams])
 
   const handlePageChange = (newPage: number) => {

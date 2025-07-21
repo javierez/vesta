@@ -11,9 +11,29 @@ import { YearSlider } from "./elements/year_slider"
 import { FloatingLabelInput } from "~/components/ui/floating-label-input"
 import { cn } from "~/lib/utils"
 
+// Type definitions
+interface ListingDetails {
+  propertyType?: string
+  propertySubtype?: string
+  propertyId?: number | string
+  formPosition?: number
+  builtSurfaceArea?: number | string
+  squareMeter?: number | string
+  bedrooms?: number | string
+  bathrooms?: number | string
+  yearBuilt?: number | string
+  lastRenovationYear?: number | string
+  buildingFloors?: number | string
+  conservationStatus?: number
+}
+
+interface GlobalFormData {
+  listingDetails?: ListingDetails | null
+}
+
 interface SecondPageProps {
-  listingId: string
-  globalFormData: any
+  listingId?: string // Made optional since it's unused
+  globalFormData: GlobalFormData
   onNext: () => void
   onBack?: () => void
   refreshListingDetails?: () => void
@@ -44,9 +64,8 @@ const initialFormData: SecondPageFormData = {
   conservationStatus: 1,
 }
 
-export default function SecondPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: SecondPageProps) {
+export default function SecondPage({ globalFormData, onNext, onBack, refreshListingDetails }: SecondPageProps) {
   const [formData, setFormData] = useState<SecondPageFormData>(initialFormData)
-  const [saveError, setSaveError] = useState<string | null>(null)
   const [propertyType, setPropertyType] = useState<string>("")
   const [propertySubtype, setPropertySubtype] = useState<string>("")
 
@@ -61,7 +80,7 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
       let displayBuiltSurfaceArea = ""
       if (details.builtSurfaceArea) {
         // If builtSurfaceArea is a float (e.g., 89.00), convert to integer
-        const areaValue = typeof details.builtSurfaceArea === 'number' ? details.builtSurfaceArea : parseFloat(details.builtSurfaceArea)
+        const areaValue = typeof details.builtSurfaceArea === 'number' ? details.builtSurfaceArea : parseFloat(details.builtSurfaceArea.toString())
         displayBuiltSurfaceArea = Math.floor(areaValue).toString()
       }
       
@@ -69,7 +88,7 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
       let displaySquareMeter = ""
       if (details.squareMeter) {
         // If squareMeter is a float (e.g., 80.00), convert to integer
-        const areaValue = typeof details.squareMeter === 'number' ? details.squareMeter : parseFloat(details.squareMeter)
+        const areaValue = typeof details.squareMeter === 'number' ? details.squareMeter : parseFloat(details.squareMeter.toString())
         displaySquareMeter = Math.floor(areaValue).toString()
       }
       
@@ -82,30 +101,20 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
         builtSurfaceArea: displayBuiltSurfaceArea ?? "85",
         yearBuilt: details.yearBuilt?.toString() ?? "2000",
         lastRenovationYear: details.lastRenovationYear?.toString() ?? "",
-        isRenovated: details.lastRenovationYear && details.lastRenovationYear !== details.yearBuilt,
+        isRenovated: Boolean(details.lastRenovationYear && details.lastRenovationYear !== details.yearBuilt),
         buildingFloors: details.buildingFloors?.toString() ?? "",
         conservationStatus: details.conservationStatus ?? 1,
       }))
     }
   }, [globalFormData?.listingDetails])
 
-  const updateFormData = (field: keyof SecondPageFormData, value: string | number) => {
+  const updateFormData = (field: keyof SecondPageFormData, value: string | number | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleEventInputChange = (field: keyof SecondPageFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     updateFormData(field, e.target.value)
   }
-
-  // Custom handler for square meter with formatting
-  const handleSquareMeterChange = formFormatters.handleAreaInputChange((value) => 
-    updateFormData("squareMeter", value)
-  )
-
-  // Custom handler for built surface area with formatting
-  const handleBuiltSurfaceAreaChange = formFormatters.handleAreaInputChange((value) => 
-    updateFormData("builtSurfaceArea", value)
-  )
 
   // Custom handlers for FloatingLabelInput (string-based onChange)
   const handleSquareMeterStringChange = (value: string) => {
@@ -169,51 +178,52 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
     onNext()
     
     // Save data in background (completely silent)
-    saveInBackground()
+    void saveInBackground()
   }
 
   // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    if (globalFormData?.listingDetails?.propertyId) {
-      const updateData: any = {
-        squareMeter: Number(formData.squareMeter),
-        propertySubtype: propertySubtype || null,
-      }
+  const saveInBackground = async () => {
+    try {
+      // Fire and forget - no await, no blocking!
+      if (globalFormData?.listingDetails?.propertyId) {
+        const updateData: Record<string, unknown> = {
+          squareMeter: Number(formData.squareMeter),
+          propertySubtype: propertySubtype ?? null,
+        }
 
-      // Only update formPosition if current position is lower than 3
-      const currentFormPosition = globalFormData.listingDetails.formPosition || 1
-      if (currentFormPosition < 3) {
-        updateData.formPosition = 3
-      }
+        // Only update formPosition if current position is lower than 3
+        const currentFormPosition = globalFormData?.listingDetails?.formPosition ?? 1
+        if (currentFormPosition < 3) {
+          updateData.formPosition = 3
+        }
 
-      // Only include fields that are relevant for the property type
-      if (propertyType !== "solar") {
-        updateData.yearBuilt = Number(formData.yearBuilt)
-        updateData.bedrooms = Number(formData.bedrooms)
-        updateData.bathrooms = Number(formData.bathrooms)
-        updateData.builtSurfaceArea = formData.builtSurfaceArea ? Number(formData.builtSurfaceArea) : null
-        // Set renovation year to construction year if not renovated, otherwise use selected year
-        updateData.lastRenovationYear = formData.isRenovated ? Number(formData.lastRenovationYear) : Number(formData.yearBuilt)
-        updateData.buildingFloors = formData.buildingFloors ? Number(formData.buildingFloors) : undefined
-      }
-      
-      // Add conservation status for all property types
-      updateData.conservationStatus = formData.conservationStatus
+        // Only include fields that are relevant for the property type
+        if (propertyType !== "solar") {
+          updateData.yearBuilt = Number(formData.yearBuilt)
+          updateData.bedrooms = Number(formData.bedrooms)
+          updateData.bathrooms = Number(formData.bathrooms)
+          updateData.builtSurfaceArea = formData.builtSurfaceArea ? Number(formData.builtSurfaceArea) : null
+          // Set renovation year to construction year if not renovated, otherwise use selected year
+          updateData.lastRenovationYear = formData.isRenovated ? Number(formData.lastRenovationYear) : Number(formData.yearBuilt)
+          updateData.buildingFloors = formData.buildingFloors ? Number(formData.buildingFloors) : undefined
+        }
+        
+        // Add conservation status for all property types
+        updateData.conservationStatus = formData.conservationStatus
 
-      console.log("Saving second page data:", updateData) // Debug log
+        console.log("Saving second page data:", updateData) // Debug log
 
-      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
+        await updateProperty(Number(globalFormData.listingDetails.propertyId), updateData)
         console.log("Second page data saved successfully") // Debug log
         // Refresh global data after successful save
         refreshListingDetails?.()
-      }).catch(error => {
-        console.error("Error saving form data:", error)
-        // Silent error - user doesn't know it failed
-        // Could implement retry logic here if needed
-      })
-    } else {
-      console.warn("No propertyId found in globalFormData.listingDetails") // Debug log
+      } else {
+        console.warn("No propertyId found in globalFormData.listingDetails") // Debug log
+      }
+    } catch (error) {
+      console.error("Error saving form data:", error)
+      // Silent error - user doesn't know it failed
+      // Could implement retry logic here if needed
     }
   }
 
@@ -441,19 +451,7 @@ export default function SecondPage({ listingId, globalFormData, onNext, onBack, 
       )}
 
       {/* Save Error Notification */}
-      {saveError && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="p-3 bg-red-50 border border-red-200 rounded-lg"
-        >
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            <p className="text-sm text-red-700">{saveError}</p>
-          </div>
-        </motion.div>
-      )}
+      {/* Removed saveError state and notification as per new_code */}
 
       {/* Navigation Buttons */}
       <motion.div

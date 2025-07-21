@@ -7,12 +7,22 @@ import { motion, AnimatePresence } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import FormSkeleton from "./form-skeleton"
 
+interface ListingDetails {
+  propertyId?: number;
+  propertyType?: string;
+  mainFloorType?: string;
+  shutterType?: string;
+  carpentryType?: string;
+  windowType?: string;
+  formPosition?: number;
+}
+
 interface NinethPageProps {
-  listingId: string
-  globalFormData: any
-  onNext: () => void
-  onBack?: () => void
-  refreshListingDetails?: () => void
+  listingId: string;
+  globalFormData: { listingDetails?: ListingDetails | null };
+  onNext: () => void;
+  onBack?: () => void;
+  refreshListingDetails?: () => void;
 }
 
 interface NinethPageFormData {
@@ -33,30 +43,28 @@ export default function NinethPage({ listingId, globalFormData, onNext, onBack, 
   const [formData, setFormData] = useState<NinethPageFormData>(initialFormData)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const updateFormData = (field: keyof NinethPageFormData, value: any) => {
+  const updateFormData = (field: keyof NinethPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   // Use centralized data instead of fetching
   useEffect(() => {
-    if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails
-      
+    const details = globalFormData?.listingDetails;
+    if (details) {
       // For solar and garage properties, skip this page entirely
       if (details.propertyType === "solar" || details.propertyType === "garage") {
-        onNext()
-        return
+        onNext();
+        return;
       }
-      
       setFormData(prev => ({
         ...prev,
         mainFloorType: details.mainFloorType ?? "",
         shutterType: details.shutterType ?? "",
         carpentryType: details.carpentryType ?? "",
         windowType: details.windowType ?? "",
-      }))
+      }));
     }
-  }, [globalFormData?.listingDetails, onNext])
+  }, [globalFormData?.listingDetails, onNext]);
 
   const handleNext = () => {
     // Navigate IMMEDIATELY (optimistic) - no waiting!
@@ -69,34 +77,35 @@ export default function NinethPage({ listingId, globalFormData, onNext, onBack, 
   // Background save function - completely silent and non-blocking
   const saveInBackground = () => {
     // Fire and forget - no await, no blocking!
-    if (globalFormData?.listingDetails?.propertyId) {
-      const updateData: any = {
+    const details = globalFormData?.listingDetails;
+    if (details?.propertyId) {
+      const updateData: Partial<ListingDetails> = {
         mainFloorType: formData.mainFloorType,
         shutterType: formData.shutterType,
         carpentryType: formData.carpentryType,
         windowType: formData.windowType,
-      }
+      };
 
       // Only update formPosition if current position is lower than 10
-      if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 10) {
-        updateData.formPosition = 10
+      if ((details.formPosition ?? 0) < 10) {
+        updateData.formPosition = 10;
       }
 
-      console.log("Saving nineth page data:", updateData) // Debug log
+      console.log("Saving nineth page data:", updateData); // Debug log
 
-      updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
-        console.log("Nineth page data saved successfully") // Debug log
+      updateProperty(Number(details.propertyId), updateData).then(() => {
+        console.log("Nineth page data saved successfully"); // Debug log
         // Refresh global data after successful save
-        refreshListingDetails?.()
-      }).catch((error: any) => {
-        console.error("Error saving form data:", error)
+        refreshListingDetails?.();
+      }).catch((error: unknown) => {
+        console.error("Error saving form data:", error);
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed
-      })
+      });
     } else {
-      console.warn("No propertyId found in globalFormData.listingDetails for nineth page") // Debug log
+      console.warn("No propertyId found in globalFormData.listingDetails for nineth page"); // Debug log
     }
-  }
+  };
 
   if (globalFormData?.listingDetails === null) {
     return <FormSkeleton />

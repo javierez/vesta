@@ -4,15 +4,51 @@ import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { ChevronLeft, ChevronRight, Building, Car, Package, Thermometer, Wind, Sofa, Droplet } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import { updateListing } from "~/server/queries/listing"
 import { formFormatters } from "~/lib/utils"
 import FormSkeleton from "./form-skeleton"
 
+// Type definitions
+interface ListingDetails {
+  propertyType?: string
+  propertyId?: number | string
+  formPosition?: number
+  listingType?: string
+  hasElevator?: boolean
+  hasGarage?: boolean
+  garageType?: string
+  garageSpaces?: number | string
+  garageInBuilding?: boolean
+  garageNumber?: string
+  optionalGaragePrice?: number | string
+  hasStorageRoom?: boolean
+  storageRoomSize?: number | string
+  storageRoomNumber?: string
+  optionalStorageRoomPrice?: number | string
+  hasHeating?: boolean
+  heatingType?: string
+  hasHotWater?: boolean
+  hotWaterType?: string
+  airConditioningType?: string
+  isFurnished?: boolean
+  furnitureQuality?: string
+  oven?: boolean
+  microwave?: boolean
+  washingMachine?: boolean
+  fridge?: boolean
+  tv?: boolean
+  stoneware?: boolean
+}
+
+interface GlobalFormData {
+  listingDetails?: ListingDetails | null
+}
+
 interface FourthPageProps {
   listingId: string
-  globalFormData: any
+  globalFormData: GlobalFormData
   onNext: () => void
   onBack?: () => void
   refreshListingDetails?: () => void
@@ -104,7 +140,7 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
   const [formData, setFormData] = useState<FourthPageFormData>(initialFormData)
   const [propertyType, setPropertyType] = useState<string>("")
 
-  const updateFormData = (field: keyof FourthPageFormData, value: any) => {
+  const updateFormData = (field: keyof FourthPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -140,7 +176,7 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
           ...prev,
           hasGarage: true, // Always enabled for garage properties
           garageType: details.garageType ?? "",
-          garageSpaces: details.garageSpaces ?? 1,
+          garageSpaces: Number(details.garageSpaces) ?? 1,
           garageInBuilding: details.garageInBuilding ?? false,
           garageNumber: details.garageNumber ?? "",
           optionalGaragePrice: Number(details.optionalGaragePrice) ?? 0,
@@ -154,19 +190,19 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
         hasElevator: details.hasElevator ?? false,
         hasGarage: details.hasGarage ?? false,
         garageType: details.garageType ?? "",
-        garageSpaces: details.garageSpaces ?? 1,
+        garageSpaces: Number(details.garageSpaces) ?? 1,
         garageInBuilding: details.garageInBuilding ?? false,
         garageNumber: details.garageNumber ?? "",
         optionalGaragePrice: Number(details.optionalGaragePrice) ?? 0,
         hasStorageRoom: details.hasStorageRoom ?? false,
-        storageRoomSize: details.storageRoomSize ?? 0,
+        storageRoomSize: Number(details.storageRoomSize) ?? 0,
         storageRoomNumber: details.storageRoomNumber ?? "",
         optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) ?? 0,
         hasHeating: details.hasHeating ?? false,
         heatingType: details.heatingType ?? "",
         hasHotWater: details.hasHotWater ?? false,
         hotWaterType: details.hotWaterType ?? "",
-        hasAirConditioning: !!details.airConditioningType,
+        hasAirConditioning: Boolean(details.airConditioningType),
         airConditioningType: details.airConditioningType ?? "",
         isFurnished: details.isFurnished ?? false,
         furnitureQuality: details.furnitureQuality ?? "",
@@ -185,67 +221,72 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
     onNext()
     
     // Save data in background (completely silent)
-    saveInBackground()
+    void saveInBackground()
   }
 
   // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    Promise.all([
-      // Update property with equipment and services data
-      globalFormData?.listingDetails?.propertyId ? (async () => {
-        const updateData: any = {
-          hasElevator: formData.hasElevator,
-          // Garage data - only save if hasGarage is true
-          hasGarage: formData.hasGarage,
-          garageType: formData.hasGarage ? formData.garageType : "",
-          garageSpaces: formData.hasGarage ? formData.garageSpaces : 1,
-          garageInBuilding: formData.hasGarage ? formData.garageInBuilding : false,
-          garageNumber: formData.hasGarage ? formData.garageNumber : "",
-          // Storage room data - only save if hasStorageRoom is true
-          hasStorageRoom: formData.hasStorageRoom,
-          storageRoomSize: formData.hasStorageRoom ? formData.storageRoomSize : 0,
-          storageRoomNumber: formData.hasStorageRoom ? formData.storageRoomNumber : "",
-          // Heating data - only save if hasHeating is true
-          hasHeating: formData.hasHeating,
-          heatingType: formData.hasHeating ? formData.heatingType : "",
-          // Hot water data - only save if hasHotWater is true
-          hasHotWater: formData.hasHotWater,
-          hotWaterType: formData.hasHotWater ? formData.hotWaterType : "",
-          // Air conditioning data - only save if hasAirConditioning is true
-          airConditioningType: formData.hasAirConditioning ? formData.airConditioningType : "",
-        }
+  const saveInBackground = async () => {
+    try {
+      // Fire and forget - no await, no blocking!
+      await Promise.all([
+        // Update property with equipment and services data
+        globalFormData?.listingDetails?.propertyId ? (async () => {
+          // Safe access to listing details since we know it exists from the condition above
+          const listingDetails = globalFormData.listingDetails!
+          
+          const updateData: Record<string, unknown> = {
+            hasElevator: formData.hasElevator,
+            // Garage data - only save if hasGarage is true
+            hasGarage: formData.hasGarage,
+            garageType: formData.hasGarage ? formData.garageType : "",
+            garageSpaces: formData.hasGarage ? formData.garageSpaces : 1,
+            garageInBuilding: formData.hasGarage ? formData.garageInBuilding : false,
+            garageNumber: formData.hasGarage ? formData.garageNumber : "",
+            // Storage room data - only save if hasStorageRoom is true
+            hasStorageRoom: formData.hasStorageRoom,
+            storageRoomSize: formData.hasStorageRoom ? formData.storageRoomSize : 0,
+            storageRoomNumber: formData.hasStorageRoom ? formData.storageRoomNumber : "",
+            // Heating data - only save if hasHeating is true
+            hasHeating: formData.hasHeating,
+            heatingType: formData.hasHeating ? formData.heatingType : "",
+            // Hot water data - only save if hasHotWater is true
+            hasHotWater: formData.hasHotWater,
+            hotWaterType: formData.hasHotWater ? formData.hotWaterType : "",
+            // Air conditioning data - only save if hasAirConditioning is true
+            airConditioningType: formData.hasAirConditioning ? formData.airConditioningType : "",
+          }
 
-        // Only update formPosition if current position is lower than 5
-        if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 5) {
-          updateData.formPosition = 5
-        }
+          // Only update formPosition if current position is lower than 5
+          if (!listingDetails.formPosition || listingDetails.formPosition < 5) {
+            updateData.formPosition = 5
+          }
 
-        updateProperty(Number(globalFormData.listingDetails.propertyId), updateData)
-      })() : Promise.resolve(),
+          await updateProperty(Number(listingDetails.propertyId), updateData)
+        })() : Promise.resolve(),
 
-      // Update listing with optional prices and furniture data
-      updateListing(Number(listingId), {
-        optionalGaragePrice: formData.hasGarage ? Math.round(formData.optionalGaragePrice).toString() : "0",
-        optionalStorageRoomPrice: formData.hasStorageRoom ? Math.round(formData.optionalStorageRoomPrice).toString() : "0",
-        // Furniture data - only save if isFurnished is true
-        isFurnished: formData.isFurnished,
-        furnitureQuality: formData.isFurnished ? formData.furnitureQuality : "",
-        oven: formData.isFurnished ? formData.oven : false,
-        microwave: formData.isFurnished ? formData.microwave : false,
-        washingMachine: formData.isFurnished ? formData.washingMachine : false,
-        fridge: formData.isFurnished ? formData.fridge : false,
-        tv: formData.isFurnished ? formData.tv : false,
-        stoneware: formData.isFurnished ? formData.stoneware : false,
-      })
-    ]).then(() => {
+        // Update listing with optional prices and furniture data
+        updateListing(Number(listingId), {
+          optionalGaragePrice: formData.hasGarage ? Math.round(formData.optionalGaragePrice).toString() : "0",
+          optionalStorageRoomPrice: formData.hasStorageRoom ? Math.round(formData.optionalStorageRoomPrice).toString() : "0",
+          // Furniture data - only save if isFurnished is true
+          isFurnished: formData.isFurnished,
+          furnitureQuality: formData.isFurnished ? formData.furnitureQuality : "",
+          oven: formData.isFurnished ? formData.oven : false,
+          microwave: formData.isFurnished ? formData.microwave : false,
+          washingMachine: formData.isFurnished ? formData.washingMachine : false,
+          fridge: formData.isFurnished ? formData.fridge : false,
+          tv: formData.isFurnished ? formData.tv : false,
+          stoneware: formData.isFurnished ? formData.stoneware : false,
+        })
+      ])
+      
       // Refresh global data after successful save
       refreshListingDetails?.()
-    }).catch(error => {
+    } catch (error) {
       console.error("Error saving form data:", error)
       // Silent error - user doesn't know it failed
       // Could implement retry logic here if needed
-    })
+    }
   }
 
   // Show loading only if globalFormData is not ready

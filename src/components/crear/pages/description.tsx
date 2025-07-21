@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Textarea } from "~/components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog"
-import { ChevronLeft, ChevronRight, Wand2, Plus, MoreVertical } from "lucide-react"
+import { ChevronLeft, ChevronRight, Wand2, MoreVertical } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import { generatePropertyDescription } from "~/server/openai/property_descriptions"
@@ -14,12 +13,18 @@ import {
 } from "~/components/ui/dropdown-menu"
 import FormSkeleton from "./form-skeleton"
 
+interface ListingDetails {
+  propertyId?: number;
+  description?: string;
+  formPosition?: number;
+}
+
 interface DescriptionPageProps {
-  listingId: string
-  globalFormData: any
-  onNext: () => void
-  onBack?: () => void
-  refreshListingDetails?: () => void
+  listingId: string;
+  globalFormData: { listingDetails?: ListingDetails };
+  onNext: () => void;
+  onBack?: () => void;
+  refreshListingDetails?: () => void;
 }
 
 export default function DescriptionPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: DescriptionPageProps) {
@@ -34,24 +39,20 @@ export default function DescriptionPage({ listingId, globalFormData, onNext, onB
   useEffect(() => {
     if (globalFormData?.listingDetails) {
       const details = globalFormData.listingDetails
-      setDescription(details.description || "")
+      setDescription(details.description ?? "")
     }
   }, [globalFormData?.listingDetails])
 
   const handleGenerateDescription = async () => {
     try {
       setIsGenerating(true)
-      const generated = await generatePropertyDescription(globalFormData.listingDetails)
-      setDescription(generated)
+      if (globalFormData?.listingDetails) {
+        const generated = await generatePropertyDescription(globalFormData.listingDetails)
+        setDescription(generated)
+      }
     } finally {
       setIsGenerating(false)
     }
-  }
-
-  const handleAddSignature = () => {
-    setDescription(prev => prev + "\n\n" + signature)
-    setIsSignatureDialogOpen(false)
-    setSignature("")
   }
 
   const handleNext = () => {
@@ -66,22 +67,23 @@ export default function DescriptionPage({ listingId, globalFormData, onNext, onB
   const saveInBackground = () => {
     // Fire and forget - no await, no blocking!
     if (globalFormData?.listingDetails?.propertyId) {
-      const updateData: any = {
+      const updateData: Partial<ListingDetails> = {
         description: description,
       }
 
       // Only update formPosition if current position is lower than 11
-      if (!globalFormData.listingDetails.formPosition || globalFormData.listingDetails.formPosition < 11) {
+      if ((globalFormData.listingDetails.formPosition ?? 0) < 11) {
         updateData.formPosition = 11
       }
 
-      console.log("Saving description page data:", updateData) // Debug log
+      // Debug log
+      console.log("Saving description page data:", updateData)
 
       updateProperty(Number(globalFormData.listingDetails.propertyId), updateData).then(() => {
         console.log("Description page data saved successfully") // Debug log
         // Refresh global data after successful save
         refreshListingDetails?.()
-      }).catch((error: any) => {
+      }).catch((error: unknown) => {
         console.error("Error saving form data:", error)
         // Silent error - user doesn't know it failed
         // Could implement retry logic here if needed

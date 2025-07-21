@@ -2,8 +2,8 @@ import { Card } from "~/components/ui/card"
 import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
 import { Separator } from "~/components/ui/separator"
-import { Edit2, MapPin, Banknote, Home, Bed, Bath, Calendar, Target } from "lucide-react"
-import { cn, prospectUtils } from "~/lib/utils"
+import { Edit2, MapPin, Banknote, Home, Bed, Bath } from "lucide-react"
+import { prospectUtils } from "~/lib/utils"
 import { useEffect, useState } from "react"
 import { getLocationByNeighborhoodId } from "~/server/queries/locations"
 
@@ -19,7 +19,7 @@ interface ProspectData {
   minBathrooms: number | null
   minSquareMeters: number | null
   moveInBy: Date | null
-  extras: Record<string, any> | null
+  extras: Record<string, unknown> | null
   urgencyLevel: number | null
   fundingReady: boolean | null
   notesInternal: string | null
@@ -41,9 +41,18 @@ interface LocationData {
   neighborhood: string
 }
 
-export function ContactProspectCompact({ prospect, onEdit, onDelete }: ContactProspectCompactProps) {
+export function ContactProspectCompact({ prospect, onEdit, onDelete: _onDelete }: ContactProspectCompactProps) {
   const [locationData, setLocationData] = useState<LocationData[]>([])
   const [titleText, setTitleText] = useState('')
+
+  const generateTitle = (locations: LocationData[]) => {
+    const title = prospectUtils.generateProspectTitle(
+      prospect.listingType, 
+      prospect.propertyType, 
+      locations
+    )
+    setTitleText(title)
+  }
 
   useEffect(() => {
     const fetchLocationData = async () => {
@@ -67,28 +76,8 @@ export function ContactProspectCompact({ prospect, onEdit, onDelete }: ContactPr
       }
     }
 
-    fetchLocationData()
+    void fetchLocationData()
   }, [prospect.preferredAreas, prospect.listingType, prospect.propertyType])
-
-  const generateTitle = (locations: LocationData[]) => {
-    const title = prospectUtils.generateProspectTitle(
-      prospect.listingType, 
-      prospect.propertyType, 
-      locations
-    )
-    setTitleText(title)
-  }
-
-  const getUrgencyColor = (level: number | null) => {
-    switch (level) {
-      case 1: return 'bg-gray-50 text-gray-900 hover:bg-gray-50 hover:text-gray-900'
-      case 2: return 'bg-blue-50 text-blue-900 hover:bg-blue-50 hover:text-blue-900'
-      case 3: return 'bg-yellow-50 text-yellow-900 hover:bg-yellow-50 hover:text-yellow-900'
-      case 4: return 'bg-orange-50 text-orange-900 hover:bg-orange-50 hover:text-orange-900'
-      case 5: return 'bg-red-50 text-red-900 hover:bg-red-50 hover:text-red-900'
-      default: return 'bg-gray-50 text-gray-900 hover:bg-gray-50 hover:text-gray-900'
-    }
-  }
 
   const formatPrice = prospectUtils.formatCurrency
   const getPropertyTypeIcon = prospectUtils.getPropertyTypeIcon
