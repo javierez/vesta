@@ -365,7 +365,6 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
             {/* Progress Bar */}
             <ProgressBar 
               currentStep={currentStep}
-              totalSteps={steps.length}
               steps={steps}
               formPosition={globalFormData.listingDetails?.formPosition || 1}
               onStepClick={goToStep}
