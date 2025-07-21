@@ -11,7 +11,7 @@ import { sql } from "drizzle-orm"
 
 // Helper function to convert property to DB format
 function toDbProperty(property: Property) {
-  const dbProperty: any = {
+  const dbProperty: Partial<Property> = {
     referenceNumber: property.referenceNumber,
     title: property.title,
     description: property.description,
@@ -32,16 +32,16 @@ function toDbProperty(property: Property) {
   }
 
   // Only add optional fields if they are defined
-  if (property.addressDetails) dbProperty.addressDetails = property.addressDetails;
-  if (property.postalCode) dbProperty.postalCode = property.postalCode;
-  if (property.neighborhoodId) dbProperty.neighborhoodId = property.neighborhoodId;
-  if (property.latitude) dbProperty.latitude = property.latitude;
-  if (property.longitude) dbProperty.longitude = property.longitude;
-  if (property.energyCertification) dbProperty.energyCertification = property.energyCertification;
-  if (property.heatingType) dbProperty.heatingType = property.heatingType;
-  if (property.yearBuilt) dbProperty.yearBuilt = property.yearBuilt;
-  if (property.cadastralReference) dbProperty.cadastralReference = property.cadastralReference;
-  if (property.builtSurfaceArea) dbProperty.builtSurfaceArea = property.builtSurfaceArea;
+  if (property.addressDetails !== undefined) dbProperty.addressDetails = property.addressDetails;
+  if (property.postalCode !== undefined) dbProperty.postalCode = property.postalCode;
+  if (property.neighborhoodId !== undefined) dbProperty.neighborhoodId = property.neighborhoodId;
+  if (property.latitude !== undefined) dbProperty.latitude = property.latitude;
+  if (property.longitude !== undefined) dbProperty.longitude = property.longitude;
+  if (property.energyCertification !== undefined) dbProperty.energyCertification = property.energyCertification;
+  if (property.heatingType !== undefined) dbProperty.heatingType = property.heatingType;
+  if (property.yearBuilt !== undefined) dbProperty.yearBuilt = property.yearBuilt;
+  if (property.cadastralReference !== undefined) dbProperty.cadastralReference = property.cadastralReference;
+  if (property.builtSurfaceArea !== undefined) dbProperty.builtSurfaceArea = property.builtSurfaceArea;
 
   // Add amenity fields
   if (property.gym !== undefined) dbProperty.gym = property.gym;
@@ -127,38 +127,17 @@ async function seedContacts() {
   }
 }
 
-// Seed listing contacts data
-async function seedListingContacts() {
-  try {
-    for (const listingContact of mockListingContacts) {
-      await db.insert(listingContacts).values({
-        listingContactId: listingContact.listingContactId,
-        listingId: listingContact.listingId,
-        contactId: listingContact.contactId,
-        contactType: listingContact.contactType,
-        createdAt: listingContact.createdAt,
-        updatedAt: listingContact.updatedAt,
-        isActive: listingContact.isActive
-      });
-    }
-    console.log('Listing contacts seeded successfully');
-  } catch (error) {
-    console.error('Error seeding listing contacts:', error);
-    throw error;
-  }
-}
-
 // Clear all data from relevant tables
 async function clearDatabase() {
   try {
     // Delete in reverse order of dependencies to avoid foreign key constraints
-    await db.delete(listingContacts);
-    await db.delete(dbListings);
-    await db.delete(propertyImages);
-    await db.delete(dbProperties);
-    await db.delete(contacts);
-    await db.delete(locations);
-    await db.delete(users);
+    await db.delete(listingContacts).where(sql`1=1`);
+    await db.delete(dbListings).where(sql`1=1`);
+    await db.delete(propertyImages).where(sql`1=1`);
+    await db.delete(dbProperties).where(sql`1=1`);
+    await db.delete(contacts).where(sql`1=1`);
+    await db.delete(locations).where(sql`1=1`);
+    await db.delete(users).where(sql`1=1`);
     console.log('Database cleared successfully');
   } catch (error) {
     console.error('Error clearing database:', error);
@@ -185,7 +164,17 @@ export async function seedDatabase() {
 
     for (const property of properties) {
       const dbProperty = toDbProperty(property)
-      const createdProperty = await createProperty(dbProperty)
+      // Ensure required fields for createProperty
+      const dbPropertyForCreate = {
+        ...dbProperty,
+        propertyType: property.propertyType,
+        hasHeating: property.hasHeating,
+        hasElevator: property.hasElevator,
+        hasGarage: property.hasGarage,
+        hasStorageRoom: property.hasStorageRoom,
+        isActive: true,
+      } as Omit<Property, "propertyId" | "referenceNumber" | "formPosition" | "createdAt" | "updatedAt">;
+      const createdProperty = await createProperty(dbPropertyForCreate)
       
       // Create a listing for each property
       if (createdProperty) {
@@ -198,10 +187,10 @@ export async function seedDatabase() {
 
         const newListing = await createListing({
           propertyId: BigInt(createdProperty.propertyId),
-          agentId: mockListing?.agentId || BigInt(1),
-          listingType: mockListing?.listingType || 'Sale',
-          price: mockListing?.price || property.price || "0",
-          status: mockListing?.status || 'Active',
+          agentId: mockListing?.agentId ?? BigInt(1),
+          listingType: mockListing?.listingType ?? 'Sale',
+          price: mockListing?.price ?? property.price ?? "0",
+          status: mockListing?.status ?? 'Active',
           isActive: mockListing?.isActive ?? true,
           isFeatured: mockListing?.isFeatured ?? false,
           isBankOwned: mockListing?.isBankOwned ?? false,
@@ -321,8 +310,8 @@ export async function testDatabaseConnection() {
     const result = await db.execute(sql`SELECT 1 as test`)
     console.log('Connection successful! Result:', result)
     // Convert the result to a plain object to avoid serialization issues
-    const plainResult = JSON.parse(JSON.stringify(result))
-    return { success: true, result: plainResult }
+    const plainResult = JSON.parse(JSON.stringify(result)) as unknown;
+    return { success: true, result: plainResult };
   } catch (error) {
     console.error('Database connection error:', error)
     return { 

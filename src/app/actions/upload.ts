@@ -2,7 +2,7 @@
 
 import { uploadImageToS3, uploadDocumentToS3, renameS3Folder } from "~/lib/s3"
 import { createPropertyImage, getPropertyImageById, updatePropertyImage } from "~/server/queries/property_images"
-import { createDocument, getDocumentById, updateDocument, deleteDocument as softDeleteDocument, updateDocumentOrders } from "~/server/queries/document"
+import { createDocument, getDocumentById, updateDocumentOrders } from "~/server/queries/document"
 import type { PropertyImage, Document } from "~/lib/data"
 import { DeleteObjectCommand } from "@aws-sdk/client-s3"
 import { and, eq } from "drizzle-orm"
@@ -224,7 +224,7 @@ export async function updateDocumentOrdersAction(
 export async function renameDocumentFolder(
   tempReferenceNumber: string,
   newReferenceNumber: string,
-  documentIds: bigint[]
+  _documentIds: bigint[] // Renamed to _documentIds to indicate it's intentionally unused
 ): Promise<Array<{
   docId: bigint;
   newUrl: string;

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getDraftListings, deleteDraftListing } from '~/server/queries/listing'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { Card, CardContent } from '~/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -38,7 +38,7 @@ export default function BorradoresPage() {
       }
     }
 
-    fetchDraftListings()
+    void fetchDraftListings() // Mark promise as intentionally unhandled
   }, [])
 
   const handleRowClick = (listingId: bigint) => {
@@ -144,13 +144,13 @@ export default function BorradoresPage() {
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-gray-400" />
                         <span className="font-medium">
-                          {listing.street || 'Sin dirección'}
+                          {listing.street ?? 'Sin dirección'}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <span className="text-gray-600">
-                        {listing.city || 'Sin ciudad'}
+                        {listing.city ?? 'Sin ciudad'}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">

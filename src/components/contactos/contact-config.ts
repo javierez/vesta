@@ -1,4 +1,4 @@
-import { Search, Home, Landmark, Store, Building, User } from "lucide-react"
+import { Search, Home, Landmark, Store, User } from "lucide-react"
 
 export const contactTypeConfig = {
   demandante: {
@@ -48,7 +48,7 @@ export const formatListingType = (listingType: string) => {
     'RoomSharing': 'Compartir habitación',
     'Transfer': 'Transferencia'
   }
-  return typeMap[listingType.toLowerCase()] || typeMap[listingType] || listingType
+  return typeMap[listingType.toLowerCase()] ?? typeMap[listingType] ?? listingType
 }
 
 export const formatCurrency = (amount: number) => {

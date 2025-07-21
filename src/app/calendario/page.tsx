@@ -19,19 +19,6 @@ import {
 } from "~/components/ui/dropdown-menu"
 import { Input } from "~/components/ui/input"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "~/components/ui/tabs"
-import {
   Card,
   CardContent,
   CardDescription,
@@ -47,7 +34,6 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   Users,
   Video,
   Check,
@@ -67,6 +53,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover"
+import Image from "next/image" // Add Image import for optimized images
 
 // Mock data - replace with actual data from your database
 const appointments = [
@@ -78,7 +65,7 @@ const appointments = [
     date: (() => {
       const d = new Date()
       d.setDate(d.getDate() - d.getDay() + 1)
-      return d.toISOString().split("T")[0] || ""
+      return d.toISOString().split("T")[0] ?? ""
     })(), // Monday
     time: "10:00",
     endTime: "11:00",
@@ -98,7 +85,7 @@ const appointments = [
     date: (() => {
       const d = new Date()
       d.setDate(d.getDate() - d.getDay() + 3)
-      return d.toISOString().split("T")[0] || ""
+      return d.toISOString().split("T")[0] ?? ""
     })(), // Wednesday
     time: "15:00",
     endTime: "17:00",
@@ -118,7 +105,7 @@ const appointments = [
     date: (() => {
       const d = new Date()
       d.setDate(d.getDate() - d.getDay() + 5)
-      return d.toISOString().split("T")[0] || ""
+      return d.toISOString().split("T")[0] ?? ""
     })(), // Friday
     time: "12:00",
     endTime: "13:00",
@@ -138,7 +125,7 @@ const appointments = [
     date: (() => {
       const d = new Date()
       d.setDate(d.getDate() - d.getDay() + 6)
-      return d.toISOString().split("T")[0] || ""
+      return d.toISOString().split("T")[0] ?? ""
     })(), // Saturday
     time: "09:00",
     endTime: "10:00",
@@ -158,7 +145,7 @@ const appointments = [
     date: (() => {
       const d = new Date()
       d.setDate(d.getDate() - d.getDay() + 1)
-      return d.toISOString().split("T")[0] || ""
+      return d.toISOString().split("T")[0] ?? ""
     })(), // Monday
     time: "17:51",
     endTime: "19:30",
@@ -216,7 +203,6 @@ export default function AppointmentsPage() {
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [view, setView] = useState<"list" | "calendar" | "weekly">("weekly")
-  const [currentDate, setCurrentDate] = useState(new Date())
   const [weekStart, setWeekStart] = useState(() => {
     const now = new Date()
     const day = now.getDay()
@@ -234,14 +220,6 @@ export default function AppointmentsPage() {
       days.push(day)
     }
     return days
-  }
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    }).format(date)
   }
 
   const formatShortDate = (date: Date) => {
@@ -356,7 +334,7 @@ export default function AppointmentsPage() {
               <DropdownMenuItem asChild>
                 <Link href="https://calendar.google.com" target="_blank" className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <img src="/logos/google-calendar.png" alt="Google Calendar" className="w-4 h-4 mr-2" />
+                    <Image src="/logos/google-calendar.png" alt="Google Calendar" width={16} height={16} className="w-4 h-4 mr-2" />
                     <span>Google Calendar</span>
                   </div>
                   <div className="flex items-center text-green-600">
@@ -368,7 +346,7 @@ export default function AppointmentsPage() {
               <DropdownMenuSeparator />
               <DropdownMenuItem className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <img src="/logos/outlook.png" alt="Outlook" className="w-4 h-4 mr-2" />
+                  <Image src="/logos/outlook.png" alt="Outlook" width={16} height={16} className="w-4 h-4 mr-2" />
                   <span>Outlook Calendar</span>
                 </div>
                 <div className="flex items-center text-muted-foreground">

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { getContactByIdWithType } from "~/server/queries/contact"
 import { ContactDetailLayout } from "~/components/contactos/detail/contact-detail-layout"
+import type { Contact } from "~/lib/data"
 
 interface ContactPageProps {
   params: Promise<{
@@ -8,39 +9,37 @@ interface ContactPageProps {
   }>
 }
 
-// Extended Contact type to include contactType for the UI
+// Define the type for listings associated with a contact
+type ContactListing = {
+  listingId: bigint;
+  contactType: string;
+  street?: string;
+  city?: string;
+  propertyType?: string;
+  listingType?: string;
+  status?: string;
+  createdAt: Date;
+};
+
 interface ExtendedContact {
-  contactId: bigint
-  firstName: string
-  lastName: string
-  email?: string | null
-  phone?: string | null
-  contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado"
-  isActive: boolean | null
-  createdAt: Date
-  orgId?: bigint
-  additionalInfo?: any
-  // Role counts and flags for badge display
-  ownerCount?: number
-  buyerCount?: number
-  prospectCount?: number
-  isOwner?: boolean
-  isBuyer?: boolean
-  isInteresado?: boolean
-  // All prospect titles (array)
-  prospectTitles?: string[]
-  // All listings for this contact
-  allListings?: Array<{
-    listingId: bigint
-    contactType: string
-    street?: string
-    city?: string
-    propertyType?: string
-    listingType?: string
-    status?: string
-    createdAt: Date
-  }>
-  [key: string]: any
+  contactId: bigint;
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  phone?: string | null;
+  contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado";
+  isActive: boolean | null;
+  createdAt: Date;
+  orgId?: bigint;
+  additionalInfo?: Contact["additionalInfo"];
+  ownerCount?: number;
+  buyerCount?: number;
+  prospectCount?: number;
+  isOwner?: boolean;
+  isBuyer?: boolean;
+  isInteresado?: boolean;
+  prospectTitles?: string[];
+  allListings?: ContactListing[];
 }
 
 export default async function ContactPage({ params }: ContactPageProps) {
@@ -52,18 +51,18 @@ export default async function ContactPage({ params }: ContactPageProps) {
       notFound()
     }
 
-    // Contact already has the correct contactType from the query
+    // Use explicit types and nullish coalescing for safety
     const extendedContact: ExtendedContact = {
       ...contact,
       contactId: contact.contactId,
       createdAt: contact.createdAt,
-      orgId: contact.orgId,
-      prospectTitles: contact.prospectTitles || [],
-      // Add allListings if available
-      allListings: (contact as any).allListings || [],
-      // Set a default contactType since it's required by the interface
+      // Ensure orgId is undefined if null, to match the type
+      orgId: contact.orgId !== null ? contact.orgId : undefined,
+      additionalInfo: (contact as { additionalInfo?: Contact["additionalInfo"] }).additionalInfo,
+      prospectTitles: (contact as { prospectTitles?: string[] }).prospectTitles ?? [],
+      allListings: (contact as { allListings?: ContactListing[] }).allListings ?? [],
       contactType: "interesado" as const
-    } as ExtendedContact;
+    };
 
     return <ContactDetailLayout contact={extendedContact} />
   } catch (error) {

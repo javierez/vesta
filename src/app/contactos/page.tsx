@@ -9,7 +9,6 @@ import { useSearchParams } from "next/navigation"
 import { ContactFilter } from "~/components/contactos/table-components/contact-filter"
 import { ContactSpreadsheetTable } from "~/components/contactos/table/contact-table"
 import { listContactsWithTypes } from "~/server/queries/contact"
-import { contactUtils } from "~/lib/utils"
 import type { Contact } from "~/lib/data"
 
 // Extended Contact type to include contactType for the UI
@@ -35,6 +34,29 @@ interface ExtendedContact extends Omit<Contact, 'contactType'> {
     createdAt: Date
   }>
 }
+
+// Type for a contact returned by listContactsWithTypes
+type DbContact = Omit<Contact, 'contactType'> & {
+  email?: string | null;
+  orgId?: bigint | null;
+  ownerCount?: number;
+  buyerCount?: number;
+  prospectCount?: number;
+  isOwner?: boolean;
+  isBuyer?: boolean;
+  isInteresado?: boolean;
+  prospectTitles?: string[];
+  allListings?: Array<{
+    listingId: bigint;
+    contactType: string;
+    street?: string;
+    city?: string;
+    propertyType?: string;
+    listingType?: string;
+    status?: string;
+    createdAt: Date;
+  }>;
+};
 
 export default function ContactsPage() {
   const searchParams = useSearchParams()
@@ -63,35 +85,39 @@ export default function ContactsPage() {
         const filters = getFiltersFromUrl()
         
         // Fetch contacts from the database with filters
-        const dbContacts = await listContactsWithTypes(1, 100, {
+        const rawContacts = await listContactsWithTypes(1, 100, {
           searchQuery: filters.searchQuery,
           roles: filters.roles,
           lastContactFilter: filters.lastContactFilter
-        })
+        });
+        const dbContacts: DbContact[] = rawContacts.map((c: any) => ({
+          ...c,
+          email: c.email ?? undefined,
+          orgId: c.orgId ?? undefined,
+        }));
         
         // Use the data directly from the query
-        const extendedContacts: ExtendedContact[] = dbContacts.map((contact: any) => ({
+        const extendedContacts: ExtendedContact[] = dbContacts.map((contact) => ({
           contactId: contact.contactId,
           firstName: contact.firstName,
           lastName: contact.lastName,
-          email: contact.email,
+          // Ensure email is undefined if null
+          email: contact.email ?? undefined,
           phone: contact.phone,
           additionalInfo: contact.additionalInfo,
-          orgId: contact.orgId,
+          // Ensure orgId is undefined if null
+          orgId: contact.orgId ?? undefined,
           isActive: contact.isActive,
           createdAt: contact.createdAt,
           updatedAt: contact.updatedAt,
           ownerCount: contact.ownerCount,
           buyerCount: contact.buyerCount,
           prospectCount: contact.prospectCount,
-          // Server-calculated role flags
           isOwner: contact.isOwner,
           isBuyer: contact.isBuyer,
           isInteresado: contact.isInteresado,
-          // All prospect titles from the query
-          prospectTitles: contact.prospectTitles || [],
-          // All listings for this contact
-          allListings: contact.allListings || [],
+          prospectTitles: contact.prospectTitles ?? [], // Use nullish coalescing
+          allListings: contact.allListings ?? [], // Use nullish coalescing
         }))
         
         // Apply sorting

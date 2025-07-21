@@ -11,16 +11,14 @@ import { ChevronLeft, ChevronRight, User, Home, Loader, AlertTriangle } from "lu
 import { motion, AnimatePresence } from "framer-motion"
 import { createContactWithListings } from "~/server/queries/contact"
 import { listListingsCompact } from "~/server/queries/listing"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { Checkbox } from "~/components/ui/checkbox"
 import { Label } from "~/components/ui/label"
 import { Badge } from "~/components/ui/badge"
-import { Search, Map, Bath, Bed, Square, Filter, Check } from "lucide-react"
+import { Search, Map, Bath, Bed, Square, Filter } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog"
 import Image from "next/image"
-import type { ListingOverview } from "~/types/listing"
 import { cn } from "~/lib/utils"
 
 // Contact form data interface
@@ -130,7 +128,7 @@ export default function ContactForm() {
     fetchListings()
   }, [])
 
-  const updateFormData = (field: keyof ContactFormData, value: any) => {
+  const updateFormData = (field: keyof ContactFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -210,17 +208,14 @@ export default function ContactForm() {
       setIsCreating(true)
       
       // Prepare additional info based on form data
-      const additionalInfo: any = {}
-      
+      const additionalInfo: Record<string, unknown> = {}
       // Store selected listings and contact type for reference
       additionalInfo.selectedListings = formData.selectedListings.map(id => id.toString())
       additionalInfo.contactType = formData.contactType
-
       // Add ownership action if specified
       if (ownershipAction) {
         additionalInfo.ownershipAction = ownershipAction
       }
-
       // Add notes if provided
       if (formData.notes.trim()) {
         additionalInfo.notes = formData.notes.trim()
@@ -241,13 +236,13 @@ export default function ContactForm() {
         contactData,
         formData.selectedListings,
         formData.contactType,
-        ownershipAction || undefined
+        ownershipAction ?? undefined
       )
       
       console.log("Contact created with listings:", newContact)
 
       // Redirect to contact detail page
-      if (newContact && newContact.contactId) {
+      if (newContact?.contactId) {
         router.push(`/contactos/${newContact.contactId}`)
       } else {
         router.push("/contactos")
@@ -266,7 +261,7 @@ export default function ContactForm() {
     setOwnershipAction(action)
     setShowOwnershipDialog(false)
     // Proceed with contact creation
-    createContactProcess()
+    void createContactProcess()
   }
 
   const nextStep = async () => {
@@ -304,16 +299,16 @@ export default function ContactForm() {
   // Filter listings based on search and filters
   const filteredListings = listings.filter((listing: ListingData) => {
     const matchesSearch = !searchQuery || 
-      (listing.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       listing.referenceNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       listing.city?.toLowerCase().includes(searchQuery.toLowerCase()))
-    
+      (listing.title?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      (listing.referenceNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      (listing.city?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+
     const matchesListingType = filters.listingType.length === 0 || 
       filters.listingType.includes(listing.listingType)
-    
+
     const matchesPropertyType = filters.propertyType.length === 0 || 
-      filters.propertyType.includes(listing.propertyType || "")
-    
+      filters.propertyType.includes(listing.propertyType ?? "")
+
     return matchesSearch && matchesListingType && matchesPropertyType
   })
 

@@ -9,7 +9,7 @@ import OCRExample from "~/components/crear/ocr-example"
 export default function SandboxPage() {
   const [isPending, startTransition] = useTransition()
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (_formData: FormData) => {
     startTransition(async () => {
       try {
         await seedDatabase()
@@ -35,16 +35,6 @@ export default function SandboxPage() {
         toast.error('Failed to test database connection')
       }
     })
-  }
-
-  const handleSeed = async () => {
-    try {
-      await seedDatabase()
-      alert('Database seeded successfully!')
-    } catch (error) {
-      console.error('Error seeding database:', error)
-      alert('Error seeding database. Check console for details.')
-    }
   }
 
   return (
