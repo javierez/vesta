@@ -73,7 +73,7 @@ export function EnergyCertificate({
   const [pendingEmissionScale, setPendingEmissionScale] = useState<string | null>(null)
   const hasUploadedCertificate = !!uploadedDocumentUrl
 
-  const getEnergyRatingColor = (rating: string | null | undefined, isActive: boolean = false) => {
+  const getEnergyRatingColor = (rating: string | null | undefined, isActive = false) => {
     if (!rating) return "bg-gray-300"
     
     const baseColors = {
@@ -358,7 +358,7 @@ export function EnergyCertificate({
             ) : hasUploadedCertificate ? (
               <div className="relative group rounded-lg overflow-hidden h-[420px] min-h-[420px] w-full">
                 <iframe
-                  src={uploadedDocumentUrl!}
+                  src={uploadedDocumentUrl}
                   className="w-full h-full border-0"
                   title="Energy Certificate Preview"
                   onError={() => console.log('Iframe load error')}
@@ -366,7 +366,7 @@ export function EnergyCertificate({
                 <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                   <div className="absolute bottom-3 right-3 flex gap-2 pointer-events-auto">
                     <button
-                      onClick={() => window.open(uploadedDocumentUrl!, '_blank')}
+                      onClick={() => window.open(uploadedDocumentUrl, '_blank')}
                       className="bg-white/80 hover:bg-white text-gray-700 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
                       title="Abrir en nueva pestaña"
                     >
@@ -435,7 +435,7 @@ export function EnergyCertificate({
             <div className="bg-white rounded-lg p-4">
               <div className="space-y-1">
                 {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((rating) => {
-                  const displayRating = pendingConsumptionScale || consumptionScale
+                  const displayRating = pendingConsumptionScale ?? consumptionScale
                   const isCurrentRating = displayRating?.toUpperCase() === rating
                   const isActive = displayRating ? isCurrentRating : false
                   const backgroundColor = getEnergyRatingColor(rating, isActive)
@@ -481,7 +481,7 @@ export function EnergyCertificate({
             <div className="bg-white rounded-lg p-4">
               <div className="space-y-1">
                 {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((rating) => {
-                  const displayRating = pendingEmissionScale || emissionScale
+                  const displayRating = pendingEmissionScale ?? emissionScale
                   const isCurrentRating = displayRating?.toUpperCase() === rating
                   const isActive = displayRating ? isCurrentRating : false
                   const backgroundColor = getEnergyRatingColor(rating, isActive)

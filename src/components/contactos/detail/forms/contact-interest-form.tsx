@@ -329,7 +329,7 @@ export function ContactInterestForm({
                         <Slider
                           value={[localData.maxPrice]}
                           onValueChange={(value) => {
-                            const newMaxPrice = value[0] || 200000
+                            const newMaxPrice = value[0] ?? 200000
                             updateLocalData({ maxPrice: newMaxPrice })
                           }}
                           max={maxLimit}

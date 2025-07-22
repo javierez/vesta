@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef, useCallback, useMemo } from "react"
+import React, { useState, useRef, useCallback } from "react"
 import {
   Table,
   TableBody,
@@ -113,7 +113,7 @@ export function PropertyTable({ listings }: PropertyTableProps) {
     />
   )
 
-  const getPropertyTypeLabel = (type: string | null) => {
+  const _getPropertyTypeLabel = (type: string | null) => {
     switch (type) {
       case "piso":
         return "Piso"
@@ -173,8 +173,8 @@ export function PropertyTable({ listings }: PropertyTableProps) {
                   <div className="truncate">
                     <div className="relative w-[72px] h-[48px] rounded-md overflow-hidden">
                       <Image
-                        src={listing.imageUrl || defaultPlaceholder}
-                        alt={listing.title || "Property image"}
+                        src={listing.imageUrl ?? defaultPlaceholder}
+                        alt={listing.title ?? "Property image"}
                         fill
                         className="object-cover"
                         onError={(e) => {

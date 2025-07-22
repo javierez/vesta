@@ -86,7 +86,7 @@ export function ImageGallery({
       // Extract file extension from URL or default to jpg
       const urlExtension = imageUrl.split('.').pop()?.toLowerCase()
       const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
-      const extension = validExtensions.includes(urlExtension || '') ? urlExtension : 'jpg'
+      const extension = validExtensions.includes(urlExtension ?? '') ? urlExtension : 'jpg'
       
       // Ensure filename has proper extension
       const finalFileName = fileName.endsWith(`.${extension}`) ? fileName : `${fileName}.${extension}`

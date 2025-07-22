@@ -48,7 +48,7 @@ export function PropertyFilter({
       type: type ? type.split(',') : []
     })
     setAgentFilters(agent ? agent.split(',') : [])
-    setSearchQuery(q || '')
+    setSearchQuery(q ?? '')
   }, [searchParams])
 
   const updateUrlParams = (newPropertyFilters: typeof propertyFilters, newAgentFilters: string[], newSearchQuery: string) => {

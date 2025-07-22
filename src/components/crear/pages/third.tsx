@@ -48,9 +48,9 @@ const initialFormData: ThirdPageFormData = {
   neighborhood: "",
 }
 
-export default function ThirdPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: ThirdPageProps) {
+export default function ThirdPage({ globalFormData, onNext, onBack, refreshListingDetails }: ThirdPageProps) {
   const [formData, setFormData] = useState<ThirdPageFormData>(initialFormData)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const [_saveError, _setSaveError] = useState<string | null>(null)
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false)
   const searchParams = useSearchParams()
   const method = searchParams?.get('method')
@@ -135,7 +135,18 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
       const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`
       
       const response = await fetch(nominatimUrl)
-      const nominatimResults = await response.json()
+      const nominatimResults = await response.json() as Array<{
+        address?: {
+          road?: string
+          house_number?: string
+          postcode?: string
+          city?: string
+          town?: string
+          state?: string
+          suburb?: string
+          quarter?: string
+        }
+      }>
       
       if (nominatimResults.length === 0) {
         alert("No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.")
@@ -143,17 +154,22 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
       }
       
       const result = nominatimResults[0]
+      if (!result) {
+        alert("No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.")
+        return
+      }
+      
       console.log("Nominatim auto-completion successful:", result)
       
       // Replace form data with Nominatim results
       const newFormData = {
-        street: result.address?.road || formData.street,
-        addressDetails: result.address?.house_number || formData.addressDetails,
-        postalCode: result.address?.postcode || formData.postalCode,
-        city: result.address?.city || result.address?.town || formData.city,
-        province: result.address?.state || formData.province,
-        municipality: result.address?.city || result.address?.town || formData.municipality,
-        neighborhood: result.address?.suburb || result.address?.quarter || formData.neighborhood,
+        street: result.address?.road ?? formData.street,
+        addressDetails: result.address?.house_number ?? formData.addressDetails,
+        postalCode: result.address?.postcode ?? formData.postalCode,
+        city: result.address?.city ?? result.address?.town ?? formData.city,
+        province: result.address?.state ?? formData.province,
+        municipality: result.address?.city ?? result.address?.town ?? formData.municipality,
+        neighborhood: result.address?.suburb ?? result.address?.quarter ?? formData.neighborhood,
       }
       
       setFormData(newFormData)
@@ -162,7 +178,7 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
       
       // Hide success message after 3 seconds
       setTimeout(() => {
-        
+        // Success message would be hidden here if implemented
       }, 3000)
       
     } catch (error) {
@@ -310,7 +326,7 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
       </div>
 
       {/* Save Error Notification */}
-      {saveError && (
+              {_saveError && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -319,7 +335,7 @@ export default function ThirdPage({ listingId, globalFormData, onNext, onBack, r
         >
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            <p className="text-sm text-red-700">{saveError}</p>
+            <p className="text-sm text-red-700">{_saveError}</p>
           </div>
         </motion.div>
       )}

@@ -623,12 +623,8 @@ export type FooterProps = {
     phone: string
     email: string
   }>
-  quickLinksVisibility: {
-    [key: string]: boolean
-  }
-  propertyTypesVisibility: {
-    [key: string]: boolean
-  }
+  quickLinksVisibility: Record<string, boolean>
+  propertyTypesVisibility: Record<string, boolean>
   copyright: string
 }
 
@@ -1001,7 +997,7 @@ export type User = {
   profileImageUrl?: string;
   timezone: string;
   language: string;
-  preferences: Record<string, any>;
+  preferences: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
   lastLogin?: Date;
@@ -1013,7 +1009,7 @@ export type Role = {
   roleId: number;
   name: string;
   description?: string;
-  permissions: Record<string, any>;
+  permissions: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
   isActive: boolean;

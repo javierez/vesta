@@ -18,7 +18,7 @@ const directions = [
 ]
 
 export function CompassRose({ value, onChange }: CompassRoseProps) {
-  const selectedDirection = directions.find((d) => d.value === value) || directions[0] // Default to north
+  const selectedDirection = directions.find((d) => d.value === value) ?? directions[0] // Default to north
 
   return (
     <div className="flex flex-col items-center space-y-6">

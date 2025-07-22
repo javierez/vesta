@@ -20,7 +20,7 @@ export default function PropertiesPage() {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
   const [listings, setListings] = useState<ListingOverview[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   // Removed unused variable: totalCount
   const [agents, setAgents] = useState<Array<{ id: bigint, name: string }>>([])
@@ -47,7 +47,7 @@ export default function PropertiesPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const page = Number(searchParams.get('page')) ?? 1
+        const page = Number(searchParams.get('page') ?? 1)
         // Get all filter parameters from URL
         const filters: Record<string, unknown> = {}
         for (const [key, value] of searchParams.entries()) {
@@ -100,8 +100,6 @@ export default function PropertiesPage() {
       }
     }
 
-    fetchData()
-    // Mark floating promise as intentionally unhandled
     void fetchData()
   }, [searchParams])
 

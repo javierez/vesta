@@ -1,4 +1,5 @@
-import { Users, Eye, Bookmark, Home, FileText, Building, Handshake, Key, Search, Target, MessageSquare, CheckCircle } from "lucide-react"
+import { Users, Eye, Home, FileText, Building, Handshake, Target, MessageSquare, CheckCircle } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 export interface SubProcess {
   label: string
@@ -8,7 +9,7 @@ export interface SubProcess {
 export interface Process {
   label: string
   value: number
-  icon: any
+  icon: LucideIcon
   subprocesses: SubProcess[]
 }
 

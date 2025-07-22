@@ -244,14 +244,29 @@ export default function PropertyIdentificationForm() {
       const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`
       
       const response = await fetch(nominatimUrl)
-      const nominatimResults: any[] = await response.json()
+      const nominatimResults = await response.json() as Array<{
+        address?: {
+          postcode?: string
+          city?: string
+          town?: string
+          state?: string
+          suburb?: string
+        }
+        lat?: string
+        lon?: string
+      }>
       
       if (nominatimResults.length === 0) {
         alert("La dirección introducida no se ha encontrado. Por favor, verifica que la dirección y ciudad sean correctos.");
         return null
       }
       
-      const result: Record<string, any> = nominatimResults[0]
+      const result = nominatimResults[0]
+      if (!result) {
+        alert("La dirección introducida no se ha encontrado. Por favor, verifica que la dirección y ciudad sean correctos.");
+        return null
+      }
+      
       console.log("Nominatim validation successful:", result)
       
       // Auto-fill missing fields with Nominatim data
@@ -399,26 +414,41 @@ export default function PropertyIdentificationForm() {
       const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`
       
       const response = await fetch(nominatimUrl)
-      const nominatimResults: any[] = await response.json()
+      const nominatimResults = await response.json() as Array<{
+        address?: {
+          postcode?: string
+          city?: string
+          town?: string
+          state?: string
+          suburb?: string
+        }
+        lat?: string
+        lon?: string
+      }>
       
       if (nominatimResults.length === 0) {
         alert("No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.");
         return
       }
       
-      const result: Record<string, any> = nominatimResults[0]
+      const result = nominatimResults[0]
+      if (!result) {
+        alert("No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.");
+        return
+      }
+      
       console.log("Nominatim auto-completion successful:", result)
       
       // Update form data with Nominatim results
       setFormData(prev => ({
         ...prev,
-        postalCode: prev.postalCode ?? result?.address?.postcode ?? "",
-        city: prev.city ?? result?.address?.city ?? result?.address?.town ?? "",
-        province: prev.province ?? result?.address?.state ?? "",
-        municipality: prev.municipality ?? result?.address?.city ?? result?.address?.town ?? "",
-        neighborhood: prev.neighborhood ?? result?.address?.suburb ?? "",
-        latitude: result?.lat ?? "",
-        longitude: result?.lon ?? ""
+        postalCode: prev.postalCode ?? result.address?.postcode ?? "",
+        city: prev.city ?? result.address?.city ?? result.address?.town ?? "",
+        province: prev.province ?? result.address?.state ?? "",
+        municipality: prev.municipality ?? result.address?.city ?? result.address?.town ?? "",
+        neighborhood: prev.neighborhood ?? result.address?.suburb ?? "",
+        latitude: result.lat ?? "",
+        longitude: result.lon ?? ""
       }))
       
     } catch (error) {
@@ -437,43 +467,6 @@ export default function PropertyIdentificationForm() {
            formData.province.trim() && 
            formData.municipality.trim()
   }
-
-  // File upload handlers
-  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    
-    const files: File[] = Array.from(e.dataTransfer.files)
-    
-    for (const file of files) {
-      if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
-        await handleFileUpload(file)
-      }
-    }
-  }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }, [])
-
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files as FileList | null
-    if (files) {
-      for (const file of Array.from(files)) {
-        if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
-          await handleFileUpload(file)
-        }
-      }
-    }
-    // Reset the input value so the same file can be selected again
-    e.target.value = ''
-  }, [])
 
   const handleFileUpload = async (file: File) => {
     setIsUploading(true)
@@ -539,6 +532,43 @@ export default function PropertyIdentificationForm() {
       alert('Error al subir el archivo. Por favor, inténtalo de nuevo.')
     }
   }
+
+  // File upload handlers
+  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    
+    const files: File[] = Array.from(e.dataTransfer.files)
+    
+    for (const file of files) {
+      if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+        await handleFileUpload(file)
+      }
+    }
+  }, [handleFileUpload])
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragOver(false)
+  }, [])
+
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      for (const file of Array.from(files)) {
+        if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+          await handleFileUpload(file)
+        }
+      }
+    }
+    // Reset the input value so the same file can be selected again
+    e.target.value = ''
+  }, [handleFileUpload])
 
   const handleDeleteDocument = async (docId: bigint, documentKey: string) => {
     setDocumentToDelete({ docId, documentKey })
@@ -838,7 +868,7 @@ export default function PropertyIdentificationForm() {
 
           <div className="mb-6">
             {currentSteps[currentStep]?.id !== "initial" && (
-              <h2 className="text-md font-medium text-gray-900 mb-4">{currentSteps[currentStep]?.title || "Step"}</h2>
+              <h2 className="text-md font-medium text-gray-900 mb-4">{currentSteps[currentStep]?.title ?? "Step"}</h2>
             )}
             <AnimatePresence mode="wait">
               <motion.div
