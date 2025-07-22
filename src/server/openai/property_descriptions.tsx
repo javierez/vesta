@@ -7,7 +7,38 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-export async function generatePropertyDescription(listing: any) {
+// Define the listing interface for type safety
+interface PropertyListing {
+  propertyType?: string;
+  title?: string;
+  price?: number | string;
+  listingType?: string;
+  squareMeter?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  brandNew?: boolean;
+  newConstruction?: boolean;
+  needsRenovation?: boolean;
+  lastRenovationYear?: number;
+  terrace?: boolean;
+  terraceSize?: number;
+  balconyCount?: number;
+  galleryCount?: number;
+  wineCellar?: boolean;
+  wineCellarSize?: number;
+  exterior?: boolean;
+  bright?: boolean;
+  views?: boolean;
+  mountainViews?: boolean;
+  seaViews?: boolean;
+  beachfront?: boolean;
+  garden?: boolean;
+  pool?: boolean;
+  jacuzzi?: boolean;
+  hydromassage?: boolean;
+}
+
+export async function generatePropertyDescription(listing: PropertyListing) {
   try {
     if (!listing) {
       throw new Error('Listing data is required')
@@ -91,7 +122,7 @@ export async function generatePropertyDescription(listing: any) {
     })
 
     // Return the generated description
-    return completion.choices[0]?.message?.content || 'No se pudo generar la descripción'
+    return completion.choices[0]?.message?.content ?? 'No se pudo generar la descripción'
   } catch (error) {
     console.error('Error generating property description:', error)
     throw new Error('Failed to generate property description')

@@ -43,7 +43,7 @@ export async function retrieveGeocodingData(address: string): Promise<FormattedG
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data: NominatimResponse[] = await response.json();
+    const data = await response.json() as NominatimResponse[];
 
     if (!data || data.length === 0) {
       return null;
@@ -63,8 +63,8 @@ export async function retrieveGeocodingData(address: string): Promise<FormattedG
 
     let neighborhoodId: number | undefined;
     try {
-      const municipality = addressData.city || 'Unknown';
-      const province = addressData.province || addressData.state || 'Unknown';
+      const municipality = addressData.city ?? 'Unknown';
+      const province = addressData.province ?? addressData.state ?? 'Unknown';
       
       neighborhoodId = await findOrCreateLocation({
         city: municipality,
@@ -72,7 +72,7 @@ export async function retrieveGeocodingData(address: string): Promise<FormattedG
         municipality: municipality,
         neighborhood: neighborhood
       });
-    } catch (error) {
+    } catch {
       // Continue without neighborhood ID if there's an error
     }
 
@@ -83,12 +83,12 @@ export async function retrieveGeocodingData(address: string): Promise<FormattedG
       neighborhoodId,
       city: addressData.city,
       municipality: addressData.city,
-      province: addressData.province || addressData.state
+      province: addressData.province ?? addressData.state
     };
 
     return formattedData;
 
-  } catch (error) {
+  } catch {
     return null;
   }
 }

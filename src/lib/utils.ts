@@ -143,7 +143,7 @@ export const prospectUtils = {
     locations: LocationData[]
   ): string => {
     const operation = listingType === 'Sale' ? 'Compra' : 'Alquiler'
-    const propertyTypeText = propertyType || 'Propiedad'
+    const propertyTypeText = propertyType ?? 'Propiedad'
     
     let locationText = ''
     
@@ -171,7 +171,7 @@ export const prospectUtils = {
     preferredArea?: string
   ): string => {
     const operation = listingType === 'Sale' ? 'Compra' : 'Alquiler'
-    const propertyTypeText = propertyType || 'Inmueble'
+    const propertyTypeText = propertyType ?? 'Inmueble'
     const locationText = preferredArea ? ` en ${preferredArea}` : ''
     
     const finalTitle = `${operation} de ${propertyTypeText}${locationText}`

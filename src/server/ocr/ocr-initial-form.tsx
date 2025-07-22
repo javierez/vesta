@@ -18,12 +18,10 @@ export interface OCRResult {
   confidence: number
   blocks: Block[]
   error?: string
-  detectedFields?: {
-    [key: string]: {
-      text: string
-      confidence: number
-    }
-  }
+  detectedFields?: Record<string, {
+    text: string
+    confidence: number
+  }>
 }
 
 // Interface for property data that might be extracted
@@ -50,7 +48,7 @@ export async function extractTextFromDocument(
   console.log(`🔍 [OCR] Starting basic text extraction for document: ${documentKey}`)
   
   try {
-    const bucket = bucketName || process.env.AWS_S3_BUCKET!
+    const bucket = bucketName ?? process.env.AWS_S3_BUCKET!
     console.log(`📦 [OCR] Using bucket: ${bucket}`)
     
     const command = new DetectDocumentTextCommand({
@@ -65,7 +63,7 @@ export async function extractTextFromDocument(
     console.log(`🚀 [OCR] Sending DetectDocumentTextCommand to AWS Textract...`)
     const response = await textractClient.send(command)
     
-    console.log(`✅ [OCR] Textract response received. Total blocks: ${response.Blocks?.length || 0}`)
+    console.log(`✅ [OCR] Textract response received. Total blocks: ${response.Blocks?.length ?? 0}`)
     
     if (!response.Blocks) {
       console.warn(`⚠️ [OCR] No text blocks found in document: ${documentKey}`)
@@ -123,14 +121,14 @@ export async function extractTextFromDocument(
 export async function analyzeDocumentStructure(
   documentKey: string,
   bucketName?: string,
-  enableForms: boolean = true,
-  enableTables: boolean = true
+  enableForms = true,
+  enableTables = true
 ): Promise<OCRResult> {
   console.log(`🔍 [OCR] Starting advanced document analysis for: ${documentKey}`)
   console.log(`⚙️ [OCR] Features enabled - Forms: ${enableForms}, Tables: ${enableTables}`)
   
   try {
-    const bucket = bucketName || process.env.AWS_S3_BUCKET!
+    const bucket = bucketName ?? process.env.AWS_S3_BUCKET!
     
     const featureTypes = []
     if (enableForms) featureTypes.push('FORMS')
@@ -154,7 +152,7 @@ export async function analyzeDocumentStructure(
     console.log(`🚀 [OCR] Sending AnalyzeDocumentCommand to AWS Textract...`)
     const response = await textractClient.send(command)
     
-    console.log(`✅ [OCR] Textract analysis response received. Total blocks: ${response.Blocks?.length || 0}`)
+    console.log(`✅ [OCR] Textract analysis response received. Total blocks: ${response.Blocks?.length ?? 0}`)
     
     if (!response.Blocks) {
       console.warn(`⚠️ [OCR] No text blocks found in document: ${documentKey}`)
@@ -283,8 +281,8 @@ function getChildTexts(parentBlock: Block, allBlocks: Block[]): string[] {
 /**
  * Extract form key-value pairs from Textract blocks
  */
-function extractFormFields(blocks: Block[]): { [key: string]: { text: string; confidence: number } } {
-  const fields: { [key: string]: { text: string; confidence: number } } = {}
+function extractFormFields(blocks: Block[]): Record<string, { text: string; confidence: number }> {
+  const fields: Record<string, { text: string; confidence: number }> = {}
   
   const keyValueSets = blocks.filter((block: Block) => block.BlockType === 'KEY_VALUE_SET')
   
@@ -306,7 +304,7 @@ function extractFormFields(blocks: Block[]): { [key: string]: { text: string; co
         if (valueText) {
           fields[keyText] = {
             text: valueText,
-            confidence: Math.min(key.Confidence || 0, valueBlock.Confidence || 0)
+            confidence: Math.min(key.Confidence ?? 0, valueBlock.Confidence ?? 0)
           }
         }
       }
@@ -337,7 +335,7 @@ export async function parsePropertyInformation(ocrResult: OCRResult): Promise<Ex
   console.log(`📋 [OCR] Form fields available: ${Object.keys(ocrResult.detectedFields || {}).length}`)
   
   const text = ocrResult.extractedText.toLowerCase()
-  const fields = ocrResult.detectedFields || {}
+  const fields = ocrResult.detectedFields ?? {}
   const extracted: ExtractedPropertyData = {}
 
   // Common Spanish property form patterns
@@ -392,7 +390,7 @@ export async function parsePropertyInformation(ocrResult: OCRResult): Promise<Ex
       if (match && match[1]) {
         const value = match[1].trim()
         if (value) {
-          extracted[key as keyof ExtractedPropertyData] = value as any
+          extracted[key as keyof ExtractedPropertyData] = value as string
           console.log(`🔍 [OCR] Found ${key} from text: ${value}`)
         }
       }
@@ -456,13 +454,13 @@ export async function processDocumentInBackground(
       console.log(`📊 [OCR] Processing summary:`)
       console.log(`   - Extracted text length: ${result.ocrResult.extractedText.length} characters`)
       console.log(`   - Confidence score: ${result.ocrResult.confidence.toFixed(2)}%`)
-      console.log(`   - Form fields detected: ${Object.keys(result.ocrResult.detectedFields || {}).length}`)
+      console.log(`   - Form fields detected: ${Object.keys(result.ocrResult.detectedFields ?? {}).length}`)
       console.log(`   - Property data extracted: ${Object.keys(result.extractedData).length} fields`)
       
       console.log(`📋 [OCR] Complete extracted property data:`, JSON.stringify(result.extractedData, null, 2))
       console.log(`📄 [OCR] Full extracted text:`, result.ocrResult.extractedText)
       
-      if (result.ocrResult.detectedFields && Object.keys(result.ocrResult.detectedFields).length > 0) {
+      if (Object.keys(result.ocrResult.detectedFields ?? {}).length > 0) {
         console.log(`📋 [OCR] All detected form fields:`, JSON.stringify(result.ocrResult.detectedFields, null, 2))
       }
       

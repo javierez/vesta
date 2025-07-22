@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { documents } from "../db/schema";
-import { eq, and, or, like, desc, asc } from "drizzle-orm";
+import { eq, and, like, desc, asc } from "drizzle-orm";
 import type { Document } from "../../lib/data";
 
 // Create a new document
@@ -345,7 +345,7 @@ export async function getEnergyCertificate(propertyId: number) {
         )
       )
       .orderBy(desc(documents.uploadedAt));
-    return document || null;
+    return document ?? null;
   } catch (error) {
     console.error("Error fetching energy certificate document:", error);
     throw error;

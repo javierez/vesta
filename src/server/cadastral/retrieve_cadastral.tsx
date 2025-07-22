@@ -77,7 +77,7 @@ function formatStreetType(abbreviation: string): string {
     'VR': 'Vereda'
   };
   
-  return streetTypes[abbreviation] || abbreviation;
+  return streetTypes[abbreviation] ?? abbreviation;
 }
 
 // Format street name with proper capitalization
@@ -106,7 +106,7 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data: CadastralResponse = await response.json();
+    const data = await response.json() as CadastralResponse;
 
     const bi = data.consulta_dnprcResult.bico.bi;
     const dt = bi.dt;
@@ -130,7 +130,7 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
 
     const getPropertyType = (usage: string, constructionType?: string): string => {
       const usageLower = usage.toLowerCase();
-      const constructionLower = constructionType?.toLowerCase() || '';
+      const constructionLower = constructionType?.toLowerCase() ?? '';
       
       if (usageLower.includes('vivienda') || usageLower.includes('residencial') || constructionLower.includes('vivienda')) {
         return 'piso';
@@ -147,10 +147,10 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
     const constructionType = data.consulta_dnprcResult.bico.lcons[0]?.lcd;
     const propertyType = getPropertyType(debi.luso, constructionType);
 
-    const neighborhood = geoData?.neighborhood || dt.nm;
-    const municipality = geoData?.municipality || dt.nm;
-    const city = geoData?.city || dt.np;
-    const province = geoData?.province || dt.np;
+    const neighborhood = geoData?.neighborhood ?? dt.nm;
+    const municipality = geoData?.municipality ?? dt.nm;
+    const city = geoData?.city ?? dt.np;
+    const province = geoData?.province ?? dt.np;
 
     const formattedData: FormattedCadastralData = {
       street,
@@ -171,7 +171,7 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
 
     return formattedData;
 
-  } catch (error) {
+  } catch {
     return null;
   }
 }

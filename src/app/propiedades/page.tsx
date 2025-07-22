@@ -61,7 +61,7 @@ export default function PropertiesPage() {
               'for-rent': 'En Alquiler',
               'sold': 'Vendido'
             }
-            filters.listingType = value.split(',').map(v => statusMap[v] || v)
+            filters.listingType = value.split(',').map(v => statusMap[v] ?? v)
           } else if (key === 'type') {
             filters.propertyType = value.split(',')
           } else if (key === 'agent') {

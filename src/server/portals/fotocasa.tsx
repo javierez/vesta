@@ -133,7 +133,7 @@ const ORIENTATION_MAPPING: Record<string, number> = {
   'sur': 8         // South
 }
 
-export async function buildFotocasaPayload(listingId: number, visibilityMode: number = 1, hidePrice: boolean = false): Promise<FotocasaProperty> {
+export async function buildFotocasaPayload(listingId: number, visibilityMode = 1, hidePrice = false): Promise<FotocasaProperty> {
   try {
     // Get listing details and property images
     const listing = await getListingDetails(listingId)
@@ -228,14 +228,14 @@ export async function buildFotocasaPayload(listingId: number, visibilityMode: nu
 
     // Extract street number (first number after comma)
     const getStreetNumber = (street: string | null, addressDetails: string | null): string | undefined => {
-      const fullAddress = `${street || ''} ${addressDetails || ''}`.trim()
+      const fullAddress = `${street ?? ''} ${addressDetails ?? ''}`.trim()
       const numbers = fullAddress.match(/\d+/g)
       return numbers && numbers.length > 0 ? numbers[0] : undefined
     }
 
     // Build PropertyAddress
     const propertyAddress: PropertyAddress[] = [{
-      ZipCode: listing.postalCode || undefined,
+      ZipCode: listing.postalCode ?? undefined,
       FloorId: getFloorId(listing.addressDetails),
       x: listing.longitude ? parseFloat(listing.longitude.toString()) : 0,
       y: listing.latitude ? parseFloat(listing.latitude.toString()) : 0,
@@ -519,37 +519,47 @@ export async function buildFotocasaPayload(listingId: number, visibilityMode: nu
     }
 
     // --- ENERGY CERTIFICATE FIELDS (Fotocasa) ---
-    const listingAny = listing as any;
+    // Type assertion for energy certificate fields
+    const listingWithEnergy = listing as typeof listing & {
+      energyConsumptionScale?: string;
+      emissionsScale?: string;
+      energyConsumptionValue?: number;
+      emissionsValue?: number;
+      energyCertificateStatus?: string;
+      heatingType?: string | number;
+      hotWaterType?: string | number;
+    };
+    
     // Consumption efficiency scale (FeatureId: 323)
-    if (listingAny.energyConsumptionScale) {
+    if (listingWithEnergy.energyConsumptionScale) {
       const scaleMap = { 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7 };
-      const scaleKey = (String(listingAny.energyConsumptionScale).toUpperCase()) as keyof typeof scaleMap;
+      const scaleKey = (String(listingWithEnergy.energyConsumptionScale).toUpperCase()) as keyof typeof scaleMap;
       const scaleValue = scaleMap[scaleKey];
       if (scaleValue) {
         propertyFeatures.push({ FeatureId: 323, DecimalValue: scaleValue })
       }
     }
     // Emissions efficiency scale (FeatureId: 324)
-    if (listingAny.emissionsScale) {
+    if (listingWithEnergy.emissionsScale) {
       const scaleMap = { 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7 };
-      const scaleKey = listingAny.emissionsScale.toUpperCase() as keyof typeof scaleMap;
+      const scaleKey = listingWithEnergy.emissionsScale.toUpperCase() as keyof typeof scaleMap;
       const scaleValue = scaleMap[scaleKey];
       if (scaleValue) {
         propertyFeatures.push({ FeatureId: 324, DecimalValue: scaleValue })
       }
     }
     // Consumption efficiency value (FeatureId: 325)
-    if (listingAny.energyConsumptionValue != null) {
-      propertyFeatures.push({ FeatureId: 325, DecimalValue: Number(listingAny.energyConsumptionValue) })
+    if (listingWithEnergy.energyConsumptionValue != null) {
+      propertyFeatures.push({ FeatureId: 325, DecimalValue: Number(listingWithEnergy.energyConsumptionValue) })
     }
     // Emissions efficiency value (FeatureId: 326)
-    if (listingAny.emissionsValue != null) {
-      propertyFeatures.push({ FeatureId: 326, DecimalValue: Number(listingAny.emissionsValue) })
+    if (listingWithEnergy.emissionsValue != null) {
+      propertyFeatures.push({ FeatureId: 326, DecimalValue: Number(listingWithEnergy.emissionsValue) })
     }
     // Energy certificate status (FeatureId: 327)
-    if (listingAny.energyCertificateStatus) {
+    if (listingWithEnergy.energyCertificateStatus) {
       const statusMap = { 'available': 1, 'en_tramite': 2, 'exento': 3, 'uploaded': 1 };
-      const statusKey = listingAny.energyCertificateStatus.toLowerCase() as keyof typeof statusMap;
+      const statusKey = listingWithEnergy.energyCertificateStatus.toLowerCase() as keyof typeof statusMap;
       const statusValue = statusMap[statusKey];
       if (statusValue) {
         propertyFeatures.push({ FeatureId: 327, DecimalValue: statusValue })
@@ -558,15 +568,15 @@ export async function buildFotocasaPayload(listingId: number, visibilityMode: nu
 
     // --- HEATING & HOT WATER FIELDS (Fotocasa) ---
     // Heating (FeatureId: 320)
-    if (listingAny.heatingType && !isNaN(Number(listingAny.heatingType))) {
-      const heatingId = Number(listingAny.heatingType)
+    if (listingWithEnergy.heatingType && !isNaN(Number(listingWithEnergy.heatingType))) {
+      const heatingId = Number(listingWithEnergy.heatingType)
       if (heatingId >= 1 && heatingId <= 6) {
         propertyFeatures.push({ FeatureId: 320, DecimalValue: heatingId })
       }
     }
     // Hot water (FeatureId: 321)
-    if (listingAny.hotWaterType && !isNaN(Number(listingAny.hotWaterType))) {
-      const hotWaterId = Number(listingAny.hotWaterType)
+    if (listingWithEnergy.hotWaterType && !isNaN(Number(listingWithEnergy.hotWaterType))) {
+      const hotWaterId = Number(listingWithEnergy.hotWaterType)
       if (hotWaterId >= 1 && hotWaterId <= 6) {
         propertyFeatures.push({ FeatureId: 321, DecimalValue: hotWaterId })
       }
@@ -578,24 +588,24 @@ export async function buildFotocasaPayload(listingId: number, visibilityMode: nu
       .map((image) => ({
         TypeId: 1, // Image type
         Url: image.imageUrl,
-        SortingId: image.imageOrder || 1 // Use actual order set by user in gallery
+        SortingId: image.imageOrder ?? 1 // Use actual order set by user in gallery
       }))
 
     // Build PropertyContactInfo (hardcoded for now - should come from agent/owner data)
     const propertyContactInfo: PropertyContactInfo[] = [
       {
         TypeId: 1, // Email
-        Value: listing.agent?.email || "demo@adevinta.com"
+        Value: listing.agent?.email ?? "demo@adevinta.com"
       },
       {
         TypeId: 2, // Phone
-        Value: listing.agent?.phone || "942862711"
+        Value: listing.agent?.phone ?? "942862711"
       }
     ]
 
     // Build PropertyTransaction
     const propertyTransaction: PropertyTransaction[] = [{
-      TransactionTypeId: TRANSACTION_TYPE_MAPPING[listing.listingType] || 1,
+      TransactionTypeId: TRANSACTION_TYPE_MAPPING[listing.listingType] ?? 1,
       Price: parseFloat(listing.price.toString()),
       ShowPrice: !hidePrice // ShowPrice is true when hidePrice is false
     }]
@@ -603,9 +613,9 @@ export async function buildFotocasaPayload(listingId: number, visibilityMode: nu
     // Build the complete payload
     const fotocasaPayload: FotocasaProperty = {
       ExternalId: listing.listingId.toString(),
-      AgencyReference: listing.referenceNumber || listing.listingId.toString(),
-      TypeId: PROPERTY_TYPE_MAPPING[listing.propertyType || 'piso'] || 1,
-      SubTypeId: PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype || 'Piso'] || 9, // Default to Flat (9) if no subtype
+      AgencyReference: listing.referenceNumber ?? listing.listingId.toString(),
+      TypeId: PROPERTY_TYPE_MAPPING[listing.propertyType ?? 'piso'] ?? 1,
+      SubTypeId: PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype ?? 'Piso'] ?? 9, // Default to Flat (9) if no subtype
       ContactTypeId: 3, // Agency contact (hardcoded for now)
       PropertyAddress: propertyAddress,
       PropertyDocument: propertyDocuments.length > 0 ? propertyDocuments : undefined,
@@ -629,7 +639,7 @@ export async function buildFotocasaPayload(listingId: number, visibilityMode: nu
 }
 
 // Server action to be called when confirming Fotocasa portal
-export async function publishToFotocasa(listingId: number, visibilityMode: number = 1, hidePrice: boolean = false): Promise<{ success: boolean; payload?: FotocasaProperty; error?: string; response?: any }> {
+export async function publishToFotocasa(listingId: number, visibilityMode = 1, hidePrice = false): Promise<{ success: boolean; payload?: FotocasaProperty; error?: string; response?: unknown }> {
   try {    
     // Build the payload
     const payload = await buildFotocasaPayload(listingId, visibilityMode, hidePrice)
@@ -647,13 +657,13 @@ export async function publishToFotocasa(listingId: number, visibilityMode: numbe
       body: JSON.stringify(payload)
     })
     
-    const responseData = await response.json()
+    const responseData = await response.json() as unknown
     
     // Log the response for debugging
     console.log("Fotocasa API Response:", responseData)
     
     // Check if the request was successful
-    if (response.ok && responseData.StatusCode === 201) {
+    if (response.ok && (responseData as { StatusCode?: number }).StatusCode === 201) {
       return {
         success: true,
         payload,
@@ -662,7 +672,7 @@ export async function publishToFotocasa(listingId: number, visibilityMode: numbe
     } else {
       return {
         success: false,
-        error: responseData.Message || `HTTP ${response.status}: ${response.statusText}`,
+        error: (responseData as { Message?: string }).Message ?? `HTTP ${response.status}: ${response.statusText}`,
         response: responseData
       }
     }
@@ -677,7 +687,7 @@ export async function publishToFotocasa(listingId: number, visibilityMode: numbe
 }
 
 // Server action to update existing listing on Fotocasa
-export async function updateFotocasa(listingId: number, visibilityMode: number = 1, hidePrice: boolean = false): Promise<{ success: boolean; payload?: FotocasaProperty; error?: string; response?: any }> {
+export async function updateFotocasa(listingId: number, visibilityMode = 1, hidePrice = false): Promise<{ success: boolean; payload?: FotocasaProperty; error?: string; response?: unknown }> {
   try {    
     // Build the payload (same as create operation)
     const payload = await buildFotocasaPayload(listingId, visibilityMode, hidePrice)
@@ -697,13 +707,13 @@ export async function updateFotocasa(listingId: number, visibilityMode: number =
       body: JSON.stringify(payload)
     })
     
-    const responseData = await response.json()
+    const responseData = await response.json() as unknown
     
     // Log the response for debugging
     console.log("Fotocasa Update API Response:", responseData)
     
     // Check if the request was successful
-    if (response.ok && responseData.StatusCode === 200) {
+    if (response.ok && (responseData as { StatusCode?: number }).StatusCode === 200) {
       return {
         success: true,
         payload,
@@ -712,7 +722,7 @@ export async function updateFotocasa(listingId: number, visibilityMode: number =
     } else {
       return {
         success: false,
-        error: responseData.Message || `HTTP ${response.status}: ${response.statusText}`,
+        error: (responseData as { Message?: string }).Message ?? `HTTP ${response.status}: ${response.statusText}`,
         response: responseData
       }
     }
@@ -727,7 +737,7 @@ export async function updateFotocasa(listingId: number, visibilityMode: number =
 }
 
 // Server action to delete listing from Fotocasa
-export async function deleteFromFotocasa(listingId: number): Promise<{ success: boolean; error?: string; response?: any }> {
+export async function deleteFromFotocasa(listingId: number): Promise<{ success: boolean; error?: string; response?: unknown }> {
   try {
     // Convert listingId to base64 encoded string
     const externalId = listingId.toString()
@@ -755,7 +765,7 @@ export async function deleteFromFotocasa(listingId: number): Promise<{ success: 
       }
     } else {
       // Try to get response body for error details
-      let responseData
+      let responseData: unknown
       try {
         responseData = await response.json()
       } catch {
@@ -765,7 +775,7 @@ export async function deleteFromFotocasa(listingId: number): Promise<{ success: 
       console.error('Failed to delete from Fotocasa:', responseData)
       return {
         success: false,
-        error: responseData.Message || responseData.message || `HTTP ${response.status}: ${response.statusText}`,
+        error: (responseData as { Message?: string; message?: string }).Message ?? (responseData as { message?: string }).message ?? `HTTP ${response.status}: ${response.statusText}`,
         response: responseData
       }
     }

@@ -8,7 +8,7 @@
  * @param digits - Number of digits to pad to (default: 8)
  * @returns Formatted reference number like "#00000001"
  */
-export function formatPropertyReference(referenceNumber: number, digits: number = 8): string {
+export function formatPropertyReference(referenceNumber: number, digits = 8): string {
   return `#${referenceNumber.toString().padStart(digits, '0')}`
 }
 
