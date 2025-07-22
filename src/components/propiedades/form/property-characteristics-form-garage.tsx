@@ -279,7 +279,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
   }
 
   const [listingType, setListingType] = useState<string>(
-    listing.listingType || 'Sale' // Default to 'Sale' if none selected
+    listing.listingType ?? 'Sale' // Default to 'Sale' if none selected
   )
   const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false)
   const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([])
@@ -331,7 +331,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
         console.error("Error fetching agents:", error)
       }
     }
-    fetchAgents()
+    void fetchAgents()
   }, [])
 
   const handleListingTypeChange = (type: string) => {
@@ -502,7 +502,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
           <div className="space-y-1.5">
             <Label htmlFor="propertySubtype" className="text-sm">Subtipo de Propiedad</Label>
             <Select 
-              value={listing.propertySubtype || "Individual"}
+              value={listing.propertySubtype ?? "Individual"}
               onValueChange={(value) => {
                 // Update the listing object directly for now
                 listing.propertySubtype = value

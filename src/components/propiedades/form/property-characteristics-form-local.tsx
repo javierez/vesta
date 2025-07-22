@@ -145,7 +145,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
             heatingType,
             hotWaterType: isHotWater ? hotWaterType : null,
             airConditioningType: isAirConditioning ? airConditioningType : null,
-            conservationStatus: listing.conservationStatus || 1
+            conservationStatus: listing.conservationStatus ?? 1
           }
           break
 
@@ -320,7 +320,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
     }
   }
 
-  const [listingType, setListingType] = useState<string>(listing.listingType || 'Sale')
+  const [listingType, setListingType] = useState<string>(listing.listingType ?? 'Sale')
   const currentListingType = listingType ?? "";
   const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false)
   const [newConstruction, setNewConstruction] = useState(listing.newConstruction ?? false)

@@ -651,7 +651,11 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
   const handleGenerateDescription = async () => {
     try {
       setIsGenerating(true)
-      const generatedDescription = await generatePropertyDescription(listing)
+      const listingWithNumberTypes = {
+        ...listing,
+        lastRenovationYear: lastRenovationYear ? Number(lastRenovationYear) : undefined
+      }
+      const generatedDescription = await generatePropertyDescription(listingWithNumberTypes)
       setDescription(generatedDescription)
       // Update the textarea value
       const descriptionTextarea = document.getElementById('description') as HTMLTextAreaElement

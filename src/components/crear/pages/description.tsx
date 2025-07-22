@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Wand2, MoreVertical } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { updateProperty } from "~/server/queries/properties"
 import { generatePropertyDescription } from "~/server/openai/property_descriptions"
+import { getListingDetails } from "~/server/queries/listing"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,10 +47,16 @@ export default function DescriptionPage({ listingId, globalFormData, onNext, onB
   const handleGenerateDescription = async () => {
     try {
       setIsGenerating(true)
-      if (globalFormData?.listingDetails) {
-        const generated = await generatePropertyDescription(globalFormData.listingDetails)
-        setDescription(generated)
-      }
+      // Fetch complete listing data for description generation
+      const listingDetails = await getListingDetails(Number(listingId))
+      
+      // Convert null values to undefined to match PropertyListing interface
+      const propertyData = Object.fromEntries(
+        Object.entries(listingDetails).map(([key, value]) => [key, value ?? undefined])
+      )
+      
+      const generated = await generatePropertyDescription(propertyData)
+      setDescription(generated)
     } finally {
       setIsGenerating(false)
     }

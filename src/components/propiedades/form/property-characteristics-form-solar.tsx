@@ -296,7 +296,7 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
   }
 
   const [listingType, setListingType] = useState<string>(
-    listing.listingType || 'Sale' // Default to 'Sale' if none selected
+    listing.listingType ?? 'Sale' // Default to 'Sale' if none selected
   )
   const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false)
   const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([])
