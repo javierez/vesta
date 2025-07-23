@@ -7,7 +7,6 @@ const requiredEnvVars = {
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
   AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
 };
-
 // Check if any required environment variables are missing
 const missingEnvVars = Object.entries(requiredEnvVars)
   .filter(([_, value]) => !value)
