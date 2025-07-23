@@ -181,11 +181,11 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
   // Sync currentStep with formPosition when listingDetails updates
   useEffect(() => {
-    if (globalFormData.listingDetails?.formPosition) {
-      const stepIndex = Math.max(0, Math.min((globalFormData.listingDetails.formPosition ?? 1) - 1, steps.length - 1))
+    if ((globalFormData.listingDetails as {formPosition?: number})?.formPosition) {
+      const stepIndex = Math.max(0, Math.min(((globalFormData.listingDetails as {formPosition: number}).formPosition ?? 1) - 1, steps.length - 1))
       setCurrentStep(stepIndex)
     }
-  }, [globalFormData.listingDetails?.formPosition])
+  }, [(globalFormData.listingDetails as {formPosition?: number})?.formPosition])
 
   // Memoize skipped steps calculation
   const getSkippedSteps = useCallback((propertyType: string): number[] => {
@@ -201,9 +201,9 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
   // Memoize skipped steps for current property type
   const skippedSteps = useMemo(() => {
-    const propertyType = globalFormData.listingDetails?.propertyType ?? ""
+    const propertyType = (globalFormData.listingDetails as {propertyType?: string})?.propertyType ?? ""
     return getSkippedSteps(propertyType)
-  }, [globalFormData.listingDetails?.propertyType, getSkippedSteps])
+  }, [(globalFormData.listingDetails as {propertyType?: string})?.propertyType, getSkippedSteps])
 
   // Get the next non-skipped step
   const getNextNonSkippedStep = useCallback((currentStepIndex: number): number => {
@@ -244,7 +244,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   }, [currentStep, getPrevNonSkippedStep])
 
   const goToStep = useCallback((stepIndex: number) => {
-    const formPosition = globalFormData.listingDetails?.formPosition ?? 1
+    const formPosition = (globalFormData.listingDetails as {formPosition?: number})?.formPosition ?? 1
     const currentFormStep = formPosition - 1
     
     // Only allow navigation to the immediate next step
@@ -259,7 +259,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     }
     // Block forward navigation beyond next step
     // else: do nothing - navigation blocked
-  }, [currentStep, globalFormData.listingDetails?.formPosition])
+  }, [currentStep, (globalFormData.listingDetails as {formPosition?: number})?.formPosition])
 
   // Optimistic navigation function - navigate immediately, save in background
   const navigateToNextStep = useCallback(() => {
@@ -273,8 +273,8 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     setGlobalFormData(prev => ({
       ...prev,
       listingDetails: prev.listingDetails ? {
-        ...prev.listingDetails,
-        formPosition: Math.max(prev.listingDetails.formPosition ?? 1, newFormPosition)
+        ...(prev.listingDetails as Record<string, unknown>),
+        formPosition: Math.max((prev.listingDetails as {formPosition?: number}).formPosition ?? 1, newFormPosition)
       } : null
     }))
     
@@ -367,9 +367,9 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
             <ProgressBar 
               currentStep={currentStep}
               steps={steps}
-              formPosition={globalFormData.listingDetails?.formPosition ?? 1}
+              formPosition={(globalFormData.listingDetails as {formPosition?: number})?.formPosition ?? 1}
               onStepClick={goToStep}
-              propertyType={globalFormData.listingDetails?.propertyType ?? ""}
+              propertyType={(globalFormData.listingDetails as {propertyType?: string})?.propertyType ?? ""}
             />
           </div>
 

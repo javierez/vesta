@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { Card, CardContent } from "~/components/ui/card"
-import { ChevronDown, ChevronRight } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import { rentalProcess, salesProcess } from "~/lib/process-data"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -10,11 +10,11 @@ export default function OperacionesEnCursoCard({ className = "" }) {
   const [openStep, setOpenStep] = useState<string | null>(null)
   const funnel = active === 'venta' ? salesProcess : rentalProcess
 
-  // Calculate total operations
-  const totalOperations = funnel.reduce((acc, process) => {
-    const processTotal = process.subprocesses.reduce((subAcc, sub) => subAcc + sub.value, 0)
-    return acc + processTotal
-  }, 0)
+  // Calculate total operations (currently unused but may be needed for future features)
+  // const totalOperations = funnel.reduce((acc, process) => {
+  //   const processTotal = process.subprocesses.reduce((subAcc, sub) => subAcc + sub.value, 0)
+  //   return acc + processTotal
+  // }, 0)
 
   // Calculate total for active type (venta/alquiler)
   const activeTotal = active === 'venta' ? 10 : 7 // These numbers should come from your data source

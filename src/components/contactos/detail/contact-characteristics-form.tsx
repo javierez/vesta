@@ -11,12 +11,67 @@ import { Textarea } from "~/components/ui/textarea"
 import { updateContact, getListingsByContact, getListingsByContactAsBuyer } from "~/server/queries/contact"
 import { toast } from "sonner"
 import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern-save-indicator"
-import { contactTypeConfig } from "../contact-config"
 import { PropertyCard } from "~/components/property-card"
 import { ContactInterestForm, type InterestFormData } from "./forms/contact-interest-form"
 import { createProspect, updateProspect, getProspectsByContact, type CreateProspectInput, type UpdateProspectInput } from "~/server/queries/prospect"
 import { ContactProspectCompact } from "./forms/contact-prospect-compact"
+
+// Define ProspectData interface to match database schema
+interface ProspectData {
+  id: bigint
+  contactId: bigint
+  status: string
+  listingType: string | null
+  propertyType: string | null
+  maxPrice: string | null
+  preferredAreas: Array<{ neighborhoodId?: number; name?: string }> | null
+  minBedrooms: number | null
+  minBathrooms: number | null
+  minSquareMeters: number | null
+  moveInBy: Date | null
+  extras: Record<string, unknown> | null
+  urgencyLevel: number | null
+  fundingReady: boolean | null
+  notesInternal: string | null
+  createdAt: Date
+  updatedAt: Date
+}
 import { getLocationByNeighborhoodId } from "~/server/queries/locations"
+import type { PropertyListing } from "~/types/property-listing"
+
+// Create a type alias for the PropertyCard's expected Listing type
+type PropertyCardListing = {
+  listingId: bigint
+  propertyId: bigint
+  price: string
+  status: string
+  listingType: string
+  isActive: boolean | null
+  isFeatured: boolean | null
+  isBankOwned: boolean | null
+  viewCount: number | null
+  inquiryCount: number | null
+  agentName: string | null
+  referenceNumber: string | null
+  title: string | null
+  propertyType: string | null
+  bedrooms: number | null
+  bathrooms: string | null
+  squareMeter: number | null
+  street: string | null
+  addressDetails: string | null  
+  postalCode: string | null
+  latitude: string | null
+  longitude: string | null
+  city: string | null
+  province: string | null
+  municipality: string | null
+  neighborhood: string | null
+  imageUrl: string | null
+  s3key: string | null
+  imageUrl2: string | null
+  s3key2: string | null
+}
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
 
@@ -65,30 +120,26 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   })
 
   // Form states
-  const [firstName, setFirstName] = useState(contact.firstName || "")
-  const [lastName, setLastName] = useState(contact.lastName || "")
+  const [firstName, setFirstName] = useState(contact.firstName ?? "")
+  const [lastName, setLastName] = useState(contact.lastName ?? "")
   const [email, setEmail] = useState(contact.email ?? "")
   const [phone, setPhone] = useState(contact.phone ?? "")
-  const [additionalInfo, setAdditionalInfo] = useState(contact.additionalInfo ?? {})
+  const [additionalInfo] = useState(contact.additionalInfo ?? {})
   
   // Interest forms state - Start empty, only show when explicitly creating/editing
   const [interestForms, setInterestForms] = useState<InterestFormData[]>([])
   
   // Prospects state for tracking existing prospects  
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [prospects, setProspects] = useState<any[]>([])
-  const [editingProspectId, setEditingProspectId] = useState<string | null>(null)
+  const [prospects, setProspects] = useState<ProspectData[]>([])
+  const [, setEditingProspectId] = useState<string | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
   
   // Notes state
   const [notes, setNotes] = useState(additionalInfo.notes ?? "")
 
   // Property listings for propietario and demandante
-  const [contactListings, setContactListings] = useState<any[]>([])
+  const [contactListings, setContactListings] = useState<PropertyListing[]>([])
   const [isLoadingListings, setIsLoadingListings] = useState(false)
-
-  // Contact type configuration
-  const contactType = contact.contactType as keyof typeof contactTypeConfig
 
   // Load contact listings if propietario or demandante
   useEffect(() => {
@@ -106,7 +157,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
           
           // Only show active listings
           const activeListings = allListings.filter(listing => listing.status === 'Active')
-          setContactListings(activeListings)
+          setContactListings(activeListings as unknown as PropertyListing[])
         } catch (error) {
           console.error('Error loading contact listings:', error)
           toast.error('Error al cargar las propiedades del contacto')
@@ -123,7 +174,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
     const loadProspects = async () => {
       try {
         const existingProspects = await getProspectsByContact(contact.contactId)
-        setProspects(existingProspects)
+        setProspects(existingProspects as ProspectData[])
       } catch (error) {
         console.error('Error loading prospects:', error)
       }
@@ -146,7 +197,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
 
 
   // Function to handle editing a prospect
-  const handleEditProspect = async (prospect: typeof prospects[0]) => {
+  const handleEditProspect = async (prospect: ProspectData) => {
     // Convert preferredAreas back to selectedNeighborhoods format
     let selectedNeighborhoods: Array<{
       neighborhoodId: bigint
@@ -158,10 +209,10 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
 
     if (Array.isArray(prospect.preferredAreas) && prospect.preferredAreas.length > 0) {
       // Fetch full location data for each neighborhood ID
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const locationPromises = prospect.preferredAreas.map(async (area: any) => {
+      const locationPromises = prospect.preferredAreas.map(async (area: { neighborhoodId?: number; name?: string }) => {
         try {
-          const location = await getLocationByNeighborhoodId(Number(area.neighborhoodId))
+          if (typeof area.neighborhoodId !== 'number') return null
+          const location = await getLocationByNeighborhoodId(area.neighborhoodId)
           return location ? {
             neighborhoodId: location.neighborhoodId,
             neighborhood: location.neighborhood,
@@ -176,7 +227,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
       })
 
       const locations = await Promise.all(locationPromises)
-      selectedNeighborhoods = locations.filter(loc => loc !== null) as Array<{
+      selectedNeighborhoods = locations.filter((loc: unknown): loc is NonNullable<typeof loc> => loc !== null) as Array<{
         neighborhoodId: bigint
         neighborhood: string
         city: string
@@ -187,7 +238,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
 
     // Convert prospect to InterestFormData format
     const convertedForm: InterestFormData = {
-      id: `prospect-${prospect.id}`,
+      id: `prospect-${prospect.id.toString()}`,
       demandType: prospect.listingType ?? "",
       maxPrice: prospect.maxPrice ? Number(prospect.maxPrice) : 200000,
       preferredArea: selectedNeighborhoods.map(n => n.neighborhood).join(", "),
@@ -198,13 +249,13 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
       minSquareMeters: prospect.minSquareMeters ?? 80,
       urgencyLevel: prospect.urgencyLevel ?? 3,
       fundingReady: prospect.fundingReady ?? false,
-      moveInBy: (prospect.moveInBy ? prospect.moveInBy.toISOString().split('T')[0] : "") as string,
+      moveInBy: prospect.moveInBy ? prospect.moveInBy.toISOString().split('T')[0]! : "",
       extras: (prospect.extras as Record<string, boolean>) ?? {},
       notes: prospect.notesInternal ?? ""
     }
     
     setInterestForms([convertedForm])
-    setEditingProspectId(String(prospect.id))
+    setEditingProspectId(prospect.id.toString())
     setShowNewForm(false)
   }
 
@@ -217,7 +268,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
     const loadProspects = async () => {
       try {
         const existingProspects = await getProspectsByContact(contact.contactId)
-        setProspects(existingProspects)
+        setProspects(existingProspects as ProspectData[])
       } catch (error) {
         console.error('Error loading prospects:', error)
       }
@@ -262,7 +313,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
       ...prev,
       [moduleName]: { 
         saveState: "saving",
-        hasChanges: prev[moduleName]?.hasChanges || false,
+        hasChanges: prev[moduleName]?.hasChanges ?? false,
         lastSaved: prev[moduleName]?.lastSaved
       }
     }))
@@ -309,8 +360,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
               notesInternal: form.notes ?? ""
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const existingProspect = prospects.find((p: any) => `prospect-${p.id}` === form.id)
+            const existingProspect = prospects.find((p: ProspectData) => `prospect-${p.id}` === form.id)
             
             if (existingProspect) {
               // Update existing prospect
@@ -357,7 +407,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
           ...prev,
           [moduleName]: { 
             saveState: "idle",
-            hasChanges: prev[moduleName]?.hasChanges || false,
+            hasChanges: prev[moduleName]?.hasChanges ?? false,
             lastSaved: prev[moduleName]?.lastSaved
           }
         }))
@@ -370,7 +420,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
         ...prev,
         [moduleName]: { 
           saveState: "error",
-          hasChanges: prev[moduleName]?.hasChanges || false,
+          hasChanges: prev[moduleName]?.hasChanges ?? false,
           lastSaved: prev[moduleName]?.lastSaved
         }
       }))
@@ -384,7 +434,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
             ...prev,
             [moduleName]: {
               saveState: currentModule?.hasChanges ? "modified" : "idle",
-              hasChanges: currentModule?.hasChanges || false,
+              hasChanges: currentModule?.hasChanges ?? false,
               lastSaved: currentModule?.lastSaved
             }
           }
@@ -411,7 +461,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
         {/* Basic Information */}
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("basicInfo"))}>
           <ModernSaveIndicator 
-            state={moduleStates.basicInfo?.saveState || "idle"} 
+            state={moduleStates.basicInfo?.saveState ?? "idle"} 
             onSave={() => saveModule("basicInfo")} 
           />
           <div className="flex justify-between items-center mb-3">
@@ -448,7 +498,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
         {/* Contact Details */}
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("contactDetails"))}>
           <ModernSaveIndicator 
-            state={moduleStates.contactDetails?.saveState || "idle"} 
+            state={moduleStates.contactDetails?.saveState ?? "idle"} 
             onSave={() => saveModule("contactDetails")} 
           />
           <div className="flex justify-between items-center mb-3">
@@ -489,7 +539,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
         {/* Notes */}
         <Card className={cn("relative p-4 transition-all duration-500 ease-out", getCardStyles("notes"))}>
           <ModernSaveIndicator 
-            state={moduleStates.notes?.saveState || "idle"} 
+            state={moduleStates.notes?.saveState ?? "idle"} 
             onSave={() => saveModule("notes")} 
           />
           <div className="flex justify-between items-center mb-3">
@@ -534,8 +584,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
           {prospects.length > 0 && (
             <div className="space-y-3 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {prospects.map((prospect: any) => (
+                {prospects.map((prospect) => (
                   <ContactProspectCompact
                     key={prospect.id.toString()}
                     prospect={prospect}
@@ -606,7 +655,10 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
           ) : contactListings.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {contactListings.map((listing) => (
-                <PropertyCard key={listing.listingId.toString()} listing={listing} />
+                <PropertyCard 
+                  key={listing.listingId?.toString() ?? 'unknown'} 
+                  listing={listing as unknown as PropertyCardListing} 
+                />
               ))}
             </div>
           ) : (
@@ -645,8 +697,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
           {prospects.length > 0 && (
             <div className="space-y-3 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {prospects.map((prospect: any) => (
+                {prospects.map((prospect) => (
                   <ContactProspectCompact
                     key={prospect.id.toString()}
                     prospect={prospect}

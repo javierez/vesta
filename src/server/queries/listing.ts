@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from "../db"
-import { listings, properties, locations, propertyImages, users, contacts, listingContacts } from "../db/schema";
+import { listings, properties, locations, propertyImages, users, listingContacts } from "../db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 

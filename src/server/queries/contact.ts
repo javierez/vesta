@@ -17,7 +17,7 @@ async function getPreferredAreaFromProspect(prospect: ProspectWithPreferredAreas
   let areas: PreferredArea[] = [];
   if (typeof prospect.preferredAreas === 'string') {
     try {
-      areas = JSON.parse(prospect.preferredAreas);
+      areas = JSON.parse(prospect.preferredAreas) as PreferredArea[];
     } catch {
       return prospect.preferredAreas;
     }
@@ -35,7 +35,7 @@ async function getPreferredAreaFromProspect(prospect: ProspectWithPreferredAreas
       const [location] = await db
         .select({ city: locations.city })
         .from(locations)
-        .where(eq(locations.neighborhoodId, BigInt(areas[0]!.neighborhoodId!)))
+        .where(eq(locations.neighborhoodId, BigInt(String(areas[0]!.neighborhoodId))))
         .limit(1);
       return location?.city ?? areas[0]?.name;
     } catch (error) {
@@ -477,8 +477,8 @@ export async function listContactsWithTypes(
             const preferredArea = await getPreferredAreaFromProspect(prospect as ProspectWithPreferredAreas);
 
             const title = prospectUtils.generateSimpleProspectTitle(
-              prospect.listingType || undefined,
-              prospect.propertyType || undefined,
+              prospect.listingType ?? undefined,
+              prospect.propertyType ?? undefined,
               preferredArea
             );
 

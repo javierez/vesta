@@ -3,7 +3,6 @@
 import { db } from "../db"
 import { properties, propertyImages } from "../db/schema"
 import { eq, and, sql } from "drizzle-orm"
-import { cache } from 'react'
 import type { Property, PropertyImage } from "../../lib/data"
 import { retrieveCadastralData } from "../cadastral/retrieve_cadastral"
 import { createDefaultListing } from "./listing"
@@ -354,7 +353,7 @@ export async function createPropertyFromLocation(locationData: {
 }) {
   try {
     // First, retrieve geocoding data from the address
-    const fullAddress = `${locationData.street}, ${locationData.postalCode}, ${locationData.city || ''}, ${locationData.province || ''}`.trim();
+    const fullAddress = `${locationData.street}, ${locationData.postalCode}, ${locationData.city ?? ''}, ${locationData.province ?? ''}`.trim();
     console.log("fullAddress", fullAddress);
     const geocodingData = await retrieveGeocodingData(fullAddress);
     
@@ -374,7 +373,7 @@ export async function createPropertyFromLocation(locationData: {
       isActive: false,
       // Add location data
       street: locationData.street,
-      addressDetails: locationData.addressDetails || "",
+      addressDetails: locationData.addressDetails ?? "",
       postalCode: locationData.postalCode,
       // Add geocoding data if available
       ...(geocodingData && {
@@ -452,7 +451,7 @@ export async function updatePropertyLocation(
     }
 
     // Update property with address details and neighborhoodId if available
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       formPosition: 4,
       street: locationData.street,
       addressDetails: locationData.addressDetails,
@@ -464,7 +463,7 @@ export async function updatePropertyLocation(
       updateData.neighborhoodId = BigInt(neighborhoodId);
     }
 
-    await updateProperty(propertyId, updateData);
+    await updateProperty(propertyId, updateData as Omit<Partial<Property>, "propertyId" | "createdAt" | "updatedAt">);
 
     return { success: true, neighborhoodId };
   } catch (error) {

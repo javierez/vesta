@@ -31,7 +31,7 @@ export default function AccionesRapidasCard() {
     <Card className="relative group">
       <CardContent>
         <div className="grid grid-cols-2 gap-3 mt-8 mb-4">
-          {actions.map((action, index) => (
+          {actions.map((action) => (
             <motion.a
               key={action.label}
               href={action.href}

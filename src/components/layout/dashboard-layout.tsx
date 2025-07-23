@@ -9,10 +9,8 @@ import {
   Building2,
   Users,
   Calendar,
-  FileText,
   Settings,
   BarChart3,
-  MessageSquare,
   Menu,
   X
 } from "lucide-react"
