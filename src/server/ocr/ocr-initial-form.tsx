@@ -387,10 +387,10 @@ export async function parsePropertyInformation(ocrResult: OCRResult): Promise<Ex
   for (const [key, pattern] of Object.entries(patterns)) {
     if (!extracted[key as keyof ExtractedPropertyData]) {
       const match = text.match(pattern)
-      if (match && match[1]) {
+      if (match?.[1]) {
         const value = match[1].trim()
         if (value) {
-          extracted[key as keyof ExtractedPropertyData] = value as string
+          extracted[key as keyof ExtractedPropertyData] = value
           console.log(`🔍 [OCR] Found ${key} from text: ${value}`)
         }
       }

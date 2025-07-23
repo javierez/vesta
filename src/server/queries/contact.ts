@@ -32,10 +32,11 @@ async function getPreferredAreaFromProspect(prospect: ProspectWithPreferredAreas
   }
   if (areas.length > 1 && areas[0]?.neighborhoodId) {
     try {
+      const area = areas[0];
       const [location] = await db
         .select({ city: locations.city })
         .from(locations)
-        .where(eq(locations.neighborhoodId, BigInt(String(areas[0]!.neighborhoodId))))
+        .where(eq(locations.neighborhoodId, BigInt(area.neighborhoodId!)))
         .limit(1);
       return location?.city ?? areas[0]?.name;
     } catch (error) {
