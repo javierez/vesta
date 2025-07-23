@@ -3,8 +3,6 @@
 import { MapPin } from "lucide-react"
 import { Badge } from "~/components/ui/badge"
 import { formatPrice } from "~/lib/utils"
-import { Button } from "~/components/ui/button"
-import { cn } from "~/lib/utils"
 import { generatePropertyTitle } from "~/components/propiedades/form/common/property-title"
 
 interface PropertyHeaderProps {
@@ -27,11 +25,11 @@ export function PropertyHeader({
   city,
   province,
   postalCode,
-  referenceNumber,
+  referenceNumber: _referenceNumber,
   price,
   listingType,
   isBankOwned = false,
-  isFeatured = false,
+  isFeatured: _isFeatured = false,
   neighborhood = ''
 }: PropertyHeaderProps) {
   const title = generatePropertyTitle(propertyType, street, neighborhood)

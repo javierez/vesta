@@ -159,7 +159,7 @@ export function PropertyListingForm() {
         // Aquí iría la lógica para enviar los datos al servidor
         await new Promise((resolve) => setTimeout(resolve, 2000)) // Simulación de envío
         setIsSubmitted(true)
-      } catch (_error) {
+      } catch {
         setErrors({
           submit: "Ha ocurrido un error al enviar el formulario. Por favor, inténtelo de nuevo.",
         })

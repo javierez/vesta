@@ -8,9 +8,8 @@ import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import { useState, useEffect } from "react"
-import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle, BanknoteIcon, Link } from "lucide-react"
+import { Building2, BanknoteIcon, Link } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
 import { useRouter, useSearchParams } from "next/navigation"
 import { updateProperty } from "~/server/queries/properties"
@@ -299,25 +298,11 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
   const [municipality, setMunicipality] = useState(listing.municipality ?? "")
   const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[]>([])
   const [owners, setOwners] = useState<Array<{id: number, name: string}>>([])
-  const [ownerSearch, setOwnerSearch] = useState("")
+  const [_ownerSearch] = useState("")
   const [selectedAgentId, setSelectedAgentId] = useState<string>("")
   const [newConstruction, setNewConstruction] = useState(listing.newConstruction ?? false)
 
-  const getPropertyTypeText = (type: string) => {
-    switch (type) {
-      case 'garaje':
-        return 'Garaje'
-      default:
-        return type
-    }
-  }
 
-  const generateTitle = () => {
-    const type = getPropertyTypeText(listing.propertyType ?? 'garaje')
-    const street = listing.street ?? ''
-    const neighborhood = listing.neighborhood ? `(${listing.neighborhood})` : ''
-    return `${type} en ${street} ${neighborhood}`.trim()
-  }
 
   useEffect(() => {
     const fetchAgents = async () => {
@@ -341,7 +326,7 @@ export function PropertyCharacteristicsFormGarage({ listing }: PropertyCharacter
 
   // Filter owners based on search
   const filteredOwners = owners.filter(owner => 
-    owner.name.toLowerCase().includes(ownerSearch.toLowerCase())
+    owner.name.toLowerCase().includes(_ownerSearch.toLowerCase())
   )
 
   useEffect(() => {

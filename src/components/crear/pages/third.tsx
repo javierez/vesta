@@ -50,7 +50,7 @@ const initialFormData: ThirdPageFormData = {
 
 export default function ThirdPage({ globalFormData, onNext, onBack, refreshListingDetails }: ThirdPageProps) {
   const [formData, setFormData] = useState<ThirdPageFormData>(initialFormData)
-  const [_saveError, _setSaveError] = useState<string | null>(null)
+  const [_saveError] = useState<string | null>(null)
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false)
   const searchParams = useSearchParams()
   const method = searchParams?.get('method')

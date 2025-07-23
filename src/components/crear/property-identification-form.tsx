@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Card } from "~/components/ui/card"
@@ -468,7 +469,7 @@ export default function PropertyIdentificationForm() {
            formData.municipality.trim()
   }
 
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = useCallback(async (file: File) => {
     setIsUploading(true)
     setUploadProgress(0)
     
@@ -531,7 +532,7 @@ export default function PropertyIdentificationForm() {
       setUploadProgress(0)
       alert('Error al subir el archivo. Por favor, inténtalo de nuevo.')
     }
-  }
+  }, [tempReferenceNumber, uploadedDocuments.length])
 
   // File upload handlers
   const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
@@ -744,10 +745,11 @@ export default function PropertyIdentificationForm() {
                         </div>
                       ) : (
                         <div className="relative group h-[300px]">
-                          <img
+                          <Image
                             src={document.fileUrl}
                             alt={`Document ${index + 1}`}
-                            className="w-full h-full object-contain bg-gray-50"
+                            fill
+                            className="object-contain bg-gray-50"
                           />
                           <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                             <div className="absolute bottom-3 right-3 flex gap-2 pointer-events-auto">

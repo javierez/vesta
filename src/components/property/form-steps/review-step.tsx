@@ -1,6 +1,7 @@
 import { Checkbox } from "~/components/ui/checkbox"
 import { Label } from "~/components/ui/label"
 import Link from "next/link"
+import Image from "next/image"
 import type { PropertyFormData } from "~/types/property-form"
 
 interface ReviewStepProps {
@@ -133,11 +134,12 @@ export function ReviewStep({ data, updateTerms, errors }: ReviewStepProps) {
           {data.images.length > 0 ? (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
               {data.images.map((file, index) => (
-                <div key={index} className="aspect-square rounded-md bg-background overflow-hidden">
-                  <img
+                <div key={index} className="relative aspect-square rounded-md bg-background overflow-hidden">
+                  <Image
                     src={URL.createObjectURL(file) || "/placeholder.svg"}
                     alt={`Imagen ${index + 1}`}
-                    className="object-cover w-full h-full"
+                    fill
+                    className="object-cover"
                   />
                 </div>
               ))}

@@ -96,7 +96,7 @@ export function PropertySummary({
   owners = [],
   status,
   hasKeys,
-  isPublished,
+  isPublished: _isPublished,
   publishedPlatforms = [],
 }: PropertySummaryProps) {
   const [keysToggle, setKeysToggle] = useState(hasKeys)

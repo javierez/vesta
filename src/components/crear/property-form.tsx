@@ -181,11 +181,12 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
   // Sync currentStep with formPosition when listingDetails updates
   useEffect(() => {
-    if ((globalFormData.listingDetails as {formPosition?: number})?.formPosition) {
-      const stepIndex = Math.max(0, Math.min(((globalFormData.listingDetails as {formPosition: number}).formPosition ?? 1) - 1, steps.length - 1))
+    const listingDetails = globalFormData.listingDetails as {formPosition?: number} | null
+    if (listingDetails?.formPosition) {
+      const stepIndex = Math.max(0, Math.min((listingDetails.formPosition ?? 1) - 1, steps.length - 1))
       setCurrentStep(stepIndex)
     }
-  }, [(globalFormData.listingDetails as {formPosition?: number})?.formPosition])
+  }, [globalFormData.listingDetails])
 
   // Memoize skipped steps calculation
   const getSkippedSteps = useCallback((propertyType: string): number[] => {
@@ -201,9 +202,10 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
   // Memoize skipped steps for current property type
   const skippedSteps = useMemo(() => {
-    const propertyType = (globalFormData.listingDetails as {propertyType?: string})?.propertyType ?? ""
+    const listingDetails = globalFormData.listingDetails as {propertyType?: string} | null
+    const propertyType = listingDetails?.propertyType ?? ""
     return getSkippedSteps(propertyType)
-  }, [(globalFormData.listingDetails as {propertyType?: string})?.propertyType, getSkippedSteps])
+  }, [globalFormData.listingDetails, getSkippedSteps])
 
   // Get the next non-skipped step
   const getNextNonSkippedStep = useCallback((currentStepIndex: number): number => {
@@ -229,11 +231,12 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     return Math.max(prevStep, 0)
   }, [skippedSteps])
 
-  const _nextStep = useCallback(() => {
-    setDirection("forward")
-    const nextStepIndex = getNextNonSkippedStep(currentStep)
-    setCurrentStep(nextStepIndex)
-  }, [currentStep, getNextNonSkippedStep])
+  // Remove unused _nextStep variable
+  // const _nextStep = useCallback(() => {
+  //   setDirection("forward")
+  //   const nextStepIndex = getNextNonSkippedStep(currentStep)
+  //   setCurrentStep(nextStepIndex)
+  // }, [currentStep, getNextNonSkippedStep])
 
   const prevStep = useCallback(() => {
     if (currentStep > 0) {
@@ -244,7 +247,8 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   }, [currentStep, getPrevNonSkippedStep])
 
   const goToStep = useCallback((stepIndex: number) => {
-    const formPosition = (globalFormData.listingDetails as {formPosition?: number})?.formPosition ?? 1
+    const listingDetails = globalFormData.listingDetails as {formPosition?: number} | null
+    const formPosition = listingDetails?.formPosition ?? 1
     const currentFormStep = formPosition - 1
     
     // Only allow navigation to the immediate next step
@@ -259,7 +263,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     }
     // Block forward navigation beyond next step
     // else: do nothing - navigation blocked
-  }, [currentStep, (globalFormData.listingDetails as {formPosition?: number})?.formPosition])
+  }, [currentStep, globalFormData.listingDetails])
 
   // Optimistic navigation function - navigate immediately, save in background
   const navigateToNextStep = useCallback(() => {
@@ -270,13 +274,16 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     
     // Update formPosition in globalFormData immediately for instant UI updates
     const newFormPosition = nextStepIndex + 1
-    setGlobalFormData(prev => ({
-      ...prev,
-      listingDetails: prev.listingDetails ? {
-        ...(prev.listingDetails as Record<string, unknown>),
-        formPosition: Math.max((prev.listingDetails as {formPosition?: number}).formPosition ?? 1, newFormPosition)
-      } : null
-    }))
+    setGlobalFormData(prev => {
+      const listingDetails = prev.listingDetails as {formPosition?: number} & Record<string, unknown> | null
+      return {
+        ...prev,
+        listingDetails: listingDetails ? {
+          ...listingDetails,
+          formPosition: Math.max(listingDetails.formPosition ?? 1, newFormPosition)
+        } : null
+      }
+    })
     
     // Note: refreshListingDetails() is called by each page's background save
     // No need to call it here as it can cause navigation conflicts

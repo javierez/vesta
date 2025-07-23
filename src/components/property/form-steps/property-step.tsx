@@ -4,7 +4,6 @@ import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { Checkbox } from "~/components/ui/checkbox"
 import type { PropertyInfo, PropertyType } from "~/types/property-form"
 
 interface PropertyStepProps {
@@ -22,13 +21,6 @@ export function PropertyStep({ data, updateData, errors }: PropertyStepProps) {
     { value: "garaje", label: "Garaje" },
   ]
 
-  const handleFeatureToggle = (feature: string, checked: boolean) => {
-    if (checked) {
-      updateData({ caracteristicas: [...data.caracteristicas, feature] })
-    } else {
-      updateData({ caracteristicas: data.caracteristicas.filter((f) => f !== feature) })
-    }
-  }
 
   return (
     <div className="space-y-6">

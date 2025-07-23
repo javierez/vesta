@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
-import { Building2, ChevronDown, Circle, Loader2, MoreVertical } from "lucide-react"
+import { Building2, ChevronDown, Loader2, MoreVertical } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
 import { getAllPotentialOwners, getCurrentListingOwners, updateListingOwners } from "~/server/queries/contact"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
@@ -406,36 +406,12 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     }
   }
 
-  // Function to mark module as saved - simplified to only update state
-  const markModuleAsSaved = (moduleName: string) => {
-    setModuleStates(prev => ({
-      ...prev,
-      [moduleName]: {
-        saveState: "saved",
-        hasChanges: false,
-        lastSaved: new Date()
-      }
-    }))
-  }
 
-  // Function to render module status indicator
-  const renderModuleStatus = (moduleName: string) => {
-    const state = moduleStates[moduleName]
-    if (!state) return null
-    if (state.hasChanges) {
-      return <Circle className="h-2 w-2 fill-yellow-500 text-yellow-500" />
-    }
-    if (state.saveState === "saved") {
-      return <Circle className="h-2 w-2 fill-green-500 text-green-500" />
-    }
-    return null
-  }
 
   const [listingTypes, setListingTypes] = useState<string[]>(
     listing.listingType ? [listing.listingType] : ['Sale'] // Default to 'Sale' if none selected
   )
   const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false)
-  const [isFeatured, setIsFeatured] = useState(listing.isFeatured ?? false)
   const [agents, setAgents] = useState<Agent[]>([])
   const [isFurnished, setIsFurnished] = useState(listing.isFurnished ?? false)
   const [isHeating, setIsHeating] = useState(listing.hasHeating ?? false)
@@ -553,29 +529,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
     { id: 6, label: "Solar" }
   ]
 
-  const getPropertyTypeText = (type: string) => {
-    switch (type) {
-      case 'piso':
-        return 'Piso'
-      case 'casa':
-        return 'Casa'
-      case 'local':
-        return 'Local'
-      case 'solar':
-        return 'Solar'
-      case 'garaje':
-        return 'Garaje'
-      default:
-        return type
-    }
-  }
 
-  const generateTitle = () => {
-    const type = getPropertyTypeText(propertyType)
-    const street = listing.street ?? ''
-    const neighborhood = listing.neighborhood ? `(${listing.neighborhood})` : ''
-    return `${type} en ${street} ${neighborhood}`.trim()
-  }
 
   useEffect(() => {
     const fetchAgents = async () => {

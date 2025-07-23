@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Button } from "~/components/ui/button"
@@ -14,7 +15,7 @@ interface ImagesStepProps {
   errors: Record<string, string>
 }
 
-export function ImagesStep({ images, updateImages, errors }: ImagesStepProps) {
+export function ImagesStep({ images, updateImages, errors: _errors }: ImagesStepProps) {
   const [dragActive, setDragActive] = useState(false)
 
   const handleDrag = (e: React.DragEvent) => {
@@ -84,11 +85,12 @@ export function ImagesStep({ images, updateImages, errors }: ImagesStepProps) {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {images.map((file, index) => (
               <div key={index} className="relative group">
-                <div className="aspect-square rounded-md bg-muted flex items-center justify-center overflow-hidden">
-                  <img
+                <div className="relative aspect-square rounded-md bg-muted overflow-hidden">
+                  <Image
                     src={URL.createObjectURL(file) || "/placeholder.svg"}
                     alt={`Imagen ${index + 1}`}
-                    className="object-cover w-full h-full"
+                    fill
+                    className="object-cover"
                   />
                 </div>
                 <Button

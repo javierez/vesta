@@ -3,13 +3,13 @@
 import type React from "react"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { Checkbox } from "~/components/ui/checkbox"
 import { AlertCircle, Upload } from "lucide-react"
 import { Alert, AlertDescription } from "~/components/ui/alert"
 
@@ -99,7 +99,7 @@ export function ListPropertyForm({
       if (onSuccess) {
         onSuccess()
       }
-    } catch (err) {
+    } catch {
       setIsLoading(false)
       setError("Ha ocurrido un error al enviar tu propiedad. Por favor, inténtalo de nuevo.")
     }
@@ -313,11 +313,12 @@ export function ListPropertyForm({
                   <div className="grid grid-cols-3 gap-2">
                     {formData.images.map((file, index) => (
                       <div key={index} className="relative group">
-                        <div className="aspect-square rounded-md bg-muted flex items-center justify-center overflow-hidden">
-                          <img
+                        <div className="relative aspect-square rounded-md bg-muted overflow-hidden">
+                          <Image
                             src={URL.createObjectURL(file) || "/placeholder.svg"}
                             alt={`Imagen ${index + 1}`}
-                            className="object-cover w-full h-full"
+                            fill
+                            className="object-cover"
                           />
                         </div>
                         <Button

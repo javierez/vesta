@@ -113,22 +113,6 @@ export function PropertyTable({ listings }: PropertyTableProps) {
     />
   )
 
-  const _getPropertyTypeLabel = (type: string | null) => {
-    switch (type) {
-      case "piso":
-        return "Piso"
-      case "casa":
-        return "Casa"
-      case "local":
-        return "Local"
-      case "solar":
-        return "Solar"
-      case "garaje":
-        return "Garaje"
-      default:
-        return type
-    }
-  }
 
   return (
     <div className="rounded-md border">

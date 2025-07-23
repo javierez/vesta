@@ -4,7 +4,7 @@ import { Badge } from "~/components/ui/badge"
 import { Separator } from "~/components/ui/separator"
 import { Edit2, MapPin, Banknote, Home, Bed, Bath } from "lucide-react"
 import { prospectUtils } from "~/lib/utils"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { getLocationByNeighborhoodId } from "~/server/queries/locations"
 
 interface ProspectData {
@@ -45,14 +45,14 @@ export function ContactProspectCompact({ prospect, onEdit, onDelete: _onDelete }
   const [locationData, setLocationData] = useState<LocationData[]>([])
   const [titleText, setTitleText] = useState('')
 
-  const generateTitle = (locations: LocationData[]) => {
+  const generateTitle = useCallback((locations: LocationData[]) => {
     const title = prospectUtils.generateProspectTitle(
       prospect.listingType, 
       prospect.propertyType, 
       locations
     )
     setTitleText(title)
-  }
+  }, [prospect.listingType, prospect.propertyType])
 
   useEffect(() => {
     const fetchLocationData = async () => {

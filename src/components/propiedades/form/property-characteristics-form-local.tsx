@@ -8,7 +8,7 @@ import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import { useState, useEffect } from "react"
-import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle, BanknoteIcon, Link } from "lucide-react"
+import { Building2, ChevronDown, BanknoteIcon, Link } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Textarea } from "~/components/ui/textarea"
@@ -359,19 +359,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
   const [frenchKitchen, setFrenchKitchen] = useState(listing.frenchKitchen ?? false)
   const [furnishedKitchen, setFurnishedKitchen] = useState(listing.furnishedKitchen ?? false)
   const [pantry, setPantry] = useState(listing.pantry ?? false)
-  const [terrace, setTerrace] = useState(listing.terrace ?? false)
-  const [terraceSize, setTerraceSize] = useState(listing.terraceSize ?? 0)
   const [wineCellar, setWineCellar] = useState(listing.wineCellar ?? false)
-  const [wineCellarSize, setWineCellarSize] = useState(listing.wineCellarSize ?? 0)
-  const [livingRoomSize, setLivingRoomSize] = useState(listing.livingRoomSize ?? 0)
-  const [balconyCount, setBalconyCount] = useState(listing.balconyCount ?? 0)
-  const [galleryCount, setGalleryCount] = useState(listing.galleryCount ?? 0)
-  const [buildingFloors, setBuildingFloors] = useState(listing.buildingFloors ?? 0)
-  const [builtInWardrobes, setBuiltInWardrobes] = useState(listing.builtInWardrobes ?? "")
-  const [mainFloorType, setMainFloorType] = useState(listing.mainFloorType ?? "")
-  const [shutterType, setShutterType] = useState(listing.shutterType ?? "")
-  const [carpentryType, setCarpentryType] = useState(listing.carpentryType ?? "")
-  const [windowType, setWindowType] = useState(listing.windowType ?? "")
   const [views, setViews] = useState(listing.views ?? false)
   const [mountainViews, setMountainViews] = useState(listing.mountainViews ?? false)
   const [seaViews, setSeaViews] = useState(listing.seaViews ?? false)
@@ -388,8 +376,6 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
   const [municipality, setMunicipality] = useState(listing.municipality ?? "")
   const [showAdditionalCharacteristics, setShowAdditionalCharacteristics] = useState(false)
   const [showPremiumFeatures, setShowPremiumFeatures] = useState(false)
-  const [showAdditionalSpaces, setShowAdditionalSpaces] = useState(false)
-  const [showMaterials, setShowMaterials] = useState(false)
   const [squareMeter, setSquareMeter] = useState(listing.squareMeter ?? 0)
   const [builtSurfaceArea, setBuiltSurfaceArea] = useState(listing.builtSurfaceArea ?? 0)
   const [yearBuilt, setYearBuilt] = useState(listing.yearBuilt ?? "")
@@ -405,29 +391,7 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
     { id: 6, label: "Solar" }
   ]
 
-  const getPropertyTypeText = (type: string) => {
-    switch (type) {
-      case 'piso':
-        return 'Piso'
-      case 'casa':
-        return 'Casa'
-      case 'local':
-        return 'Local'
-      case 'solar':
-        return 'Solar'
-      case 'garaje':
-        return 'Garaje'
-      default:
-        return type
-    }
-  }
 
-  const generateTitle = () => {
-    const type = getPropertyTypeText(listing.propertyType ?? 'local')
-    const street = listing.street ?? ''
-    const neighborhood = listing.neighborhood ? `(${listing.neighborhood})` : ''
-    return `${type} en ${street} ${neighborhood}`.trim()
-  }
 
   // 5. Use void for unawaited async calls
   useEffect(() => {
@@ -445,19 +409,15 @@ export function PropertyCharacteristicsFormLocal({ listing }: PropertyCharacteri
     void fetchAgents()
   }, [])
 
-  const handleListingTypeChange = (type: string) => {
-    setListingType(type)
-    updateModuleState('basicInfo', true)
-  }
 
   const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[]>([])
   const [owners, setOwners] = useState<Array<{id: number, name: string}>>([])
-  const [ownerSearch, setOwnerSearch] = useState("")
+  const [_ownerSearch] = useState("")
   const [selectedAgentId, setSelectedAgentId] = useState<string>("")
 
   // Filter owners based on search
   const filteredOwners = owners.filter(owner => 
-    owner.name.toLowerCase().includes(ownerSearch.toLowerCase())
+    owner.name.toLowerCase().includes(_ownerSearch.toLowerCase())
   )
 
   // 4. Fix moduleStates to use Boolean for hasChanges

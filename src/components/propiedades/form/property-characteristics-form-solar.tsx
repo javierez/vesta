@@ -8,7 +8,7 @@ import { Checkbox } from "~/components/ui/checkbox"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 import { useState, useEffect, useCallback } from "react"
-import { Building2, Star, ChevronDown, ExternalLink, User, UserCircle, Save, Circle, Link } from "lucide-react"
+import { Building2, Link } from "lucide-react"
 import { getAllAgents } from "~/server/queries/listing"
 import { Textarea } from "~/components/ui/textarea"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -311,14 +311,14 @@ export function PropertyCharacteristicsFormSolar({ listing }: PropertyCharacteri
   const [municipality, setMunicipality] = useState(listing.municipality ?? "")
   const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[]>([])
   const [owners, setOwners] = useState<Array<{id: number, name: string}>>([])
-  const [ownerSearch, setOwnerSearch] = useState("")
+  const [_ownerSearch] = useState("")
   const [selectedAgentId, setSelectedAgentId] = useState<string>("")
 
   const currentListingType = listingType ?? "";
 
   // Filter owners based on search
   const filteredOwners = owners.filter(owner => 
-    owner.name.toLowerCase().includes(ownerSearch.toLowerCase())
+    owner.name.toLowerCase().includes(_ownerSearch.toLowerCase())
   )
 
   // 5. Use void for unawaited async calls
