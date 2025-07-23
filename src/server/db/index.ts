@@ -29,7 +29,7 @@ const conn =
     ssl: {},    
     maxIdle: 0,
   });
-if (env.NODE_ENV !== "production") globalForDb.conn = conn;
+globalForDb.conn = conn;
 
 
 conn.addListener('error', (err) => {
