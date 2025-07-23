@@ -79,9 +79,9 @@ const kitchenTypeOptions = [
   { value: "mixto", label: "Mixto" },
 ]
 
-export default function SixthPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: SixthPageProps) {
+export default function SixthPage({ listingId: _listingId, globalFormData, onNext, onBack, refreshListingDetails }: SixthPageProps) {
   const [formData, setFormData] = useState<SixthPageFormData>(initialFormData)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveError] = useState<string | null>(null)
   const [propertyType, setPropertyType] = useState<string>("")
 
   const updateFormData = (field: keyof SixthPageFormData, value: unknown) => {

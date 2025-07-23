@@ -162,7 +162,9 @@ export function isPropertyListing(obj: unknown): obj is PropertyListing {
 }
 
 // Utility function to convert database listing to PropertyListing
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function convertDbListingToPropertyListing(dbListing: any): PropertyListing {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
   return {
     propertyId: dbListing.propertyId ? Number(dbListing.propertyId) : undefined,
     listingId: dbListing.listingId ? Number(dbListing.listingId) : undefined,

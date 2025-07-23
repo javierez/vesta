@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { tasks } from "../db/schema";
-import { eq, and, or, like, desc, asc } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { Task } from "../../lib/data";
 
 // Create a new task

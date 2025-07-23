@@ -77,7 +77,7 @@ export function ContactProspectCompact({ prospect, onEdit, onDelete: _onDelete }
     }
 
     void fetchLocationData()
-  }, [prospect.preferredAreas, prospect.listingType, prospect.propertyType])
+  }, [prospect.preferredAreas, prospect.listingType, prospect.propertyType, generateTitle])
 
   const formatPrice = prospectUtils.formatCurrency
   const getPropertyTypeIcon = prospectUtils.getPropertyTypeIcon

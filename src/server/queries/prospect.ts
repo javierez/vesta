@@ -17,6 +17,7 @@ export type CreateProspectInput = {
   minSquareMeters?: number;
   maxSquareMeters?: number;
   moveInBy?: Date;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   extras?: Record<string, any>;
   urgencyLevel?: number;
   fundingReady?: boolean;

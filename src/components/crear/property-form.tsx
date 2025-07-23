@@ -83,6 +83,7 @@ const STATIC_FORM_OPTIONS = {
 
 // Global form data interface
 interface GlobalFormData {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   listingDetails: any
   agents: Array<{id: number, name: string}>
   contacts: Array<{id: number, name: string}>
@@ -94,7 +95,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [direction, setDirection] = useState<"forward" | "backward">("forward")
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   
   // Centralized data state - passed to all child components
@@ -157,7 +158,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         setIsLoading(false)
       }
     }
-    fetchAllData()
+    void fetchAllData()
   }, [listingId])
 
   // Refresh listing details and current contacts (for saves)
@@ -228,7 +229,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     return Math.max(prevStep, 0)
   }, [skippedSteps])
 
-  const nextStep = useCallback(() => {
+  const _nextStep = useCallback(() => {
     setDirection("forward")
     const nextStepIndex = getNextNonSkippedStep(currentStep)
     setCurrentStep(nextStepIndex)

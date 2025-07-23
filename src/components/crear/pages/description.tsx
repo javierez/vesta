@@ -31,10 +31,9 @@ interface DescriptionPageProps {
 export default function DescriptionPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: DescriptionPageProps) {
   const [description, setDescription] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
-  const [signature, setSignature] = useState("")
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
+  const [, setIsSignatureDialogOpen] = useState(false)
+  const [saveError] = useState<string | null>(null)
+  const [saving] = useState(false)
 
   // Use centralized data instead of fetching
   useEffect(() => {

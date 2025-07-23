@@ -345,7 +345,7 @@ export default function PropertyIdentificationForm() {
       try {
         const newProperty = await handleCreatePropertyFromCadastral(formData.cadastralReference.trim());
         
-        if (newProperty && newProperty.listingId) {
+        if (newProperty?.listingId) {
           router.push(`/propiedades/crear/${newProperty.listingId}?method=catastro`);
           return;
         }
@@ -379,7 +379,7 @@ export default function PropertyIdentificationForm() {
           return; // Don't proceed with redirect
         }
         
-        if (newProperty && newProperty.listingId) {
+        if (newProperty?.listingId) {
           router.push(`/propiedades/crear/${newProperty.listingId}?method=manual`);
           return;
         }

@@ -20,28 +20,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { cn } from "~/lib/utils"
 
-// Extended Contact type to include contactType for the UI
-interface ExtendedContact {
-  contactId: bigint
-  firstName: string
-  lastName: string
-  email?: string
-  phone?: string
-  isActive: boolean
-  additionalInfo?: {
-    demandType?: string
-    propertiesCount?: number
-    propertyTypes?: string[]
-    budget?: number
-    location?: string
-    notes?: string
-  }
-  lastContact?: Date
-  createdAt: Date
-  updatedAt: Date
-  // All prospect titles (array)
-  prospectTitles?: string[]
-}
 
 interface ContactFilterProps {
   onFilterChange: (filters: {
@@ -262,7 +240,7 @@ export function ContactFilter({
 
   const activeFiltersCount = (lastContactFilter !== 'all' ? 1 : 0)
 
-  const FilterOption = ({ value, label, isSelected, onClick }: { 
+  const FilterOption = ({ value: _value, label, isSelected, onClick }: { 
     value: string, 
     label: string, 
     isSelected: boolean, 
@@ -283,7 +261,7 @@ export function ContactFilter({
     </div>
   )
 
-  const SortOption = ({ value, label, isSelected, onClick }: { 
+  const SortOption = ({ value: _value, label, isSelected, onClick }: { 
     value: string, 
     label: string, 
     isSelected: boolean, 

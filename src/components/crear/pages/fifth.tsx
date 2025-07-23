@@ -37,9 +37,9 @@ const initialFormData: FifthPageFormData = {
   orientation: "",
 }
 
-export default function FifthPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: FifthPageProps) {
+export default function FifthPage({ listingId: _listingId, globalFormData, onNext, onBack, refreshListingDetails }: FifthPageProps) {
   const [formData, setFormData] = useState<FifthPageFormData>(initialFormData)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveError] = useState<string | null>(null)
 
   const updateFormData = (field: keyof FifthPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))

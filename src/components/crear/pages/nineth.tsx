@@ -39,9 +39,9 @@ const initialFormData: NinethPageFormData = {
   windowType: "",
 }
 
-export default function NinethPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: NinethPageProps) {
+export default function NinethPage({ listingId: _listingId, globalFormData, onNext, onBack, refreshListingDetails }: NinethPageProps) {
   const [formData, setFormData] = useState<NinethPageFormData>(initialFormData)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveError] = useState<string | null>(null)
 
   const updateFormData = (field: keyof NinethPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))

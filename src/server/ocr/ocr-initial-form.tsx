@@ -79,7 +79,7 @@ export async function extractTextFromDocument(
     // Extract text from LINE blocks for better readability
     const lines = response.Blocks
       .filter((block: Block) => block.BlockType === 'LINE')
-      .map((block: Block) => block.Text || '')
+      .map((block: Block) => block.Text ?? '')
       .filter((text: string) => text.trim() !== '')
 
     console.log(`📝 [OCR] Extracted ${lines.length} text lines from document`)
@@ -220,7 +220,7 @@ function extractTextFromBlocks(blocks: Block[]): string {
     // Fallback to line-based extraction
     return blocks
       .filter((block: Block) => block.BlockType === 'LINE')
-      .map((block: Block) => block.Text || '')
+      .map((block: Block) => block.Text ?? '')
       .filter((text: string) => text.trim() !== '')
       .join('\n')
   }
@@ -270,7 +270,7 @@ function getChildTexts(parentBlock: Block, allBlocks: Block[]): string[] {
 
   const childIds = parentBlock.Relationships
     .filter((rel) => rel.Type === 'CHILD')
-    .flatMap((rel) => rel.Ids || [])
+    .flatMap((rel) => rel.Ids ?? [])
 
   return childIds
     .map((id: string) => allBlocks.find((block: Block) => block.Id === id))
@@ -288,7 +288,7 @@ function extractFormFields(blocks: Block[]): Record<string, { text: string; conf
   
   // Group keys and values
   const keys = keyValueSets.filter((block: Block) => 
-    block.EntityTypes && block.EntityTypes.includes('KEY')
+    block.EntityTypes?.includes('KEY')
   )
   
   for (const key of keys) {
@@ -332,7 +332,7 @@ function getBlockText(block: Block, allBlocks: Block[]): string {
 export async function parsePropertyInformation(ocrResult: OCRResult): Promise<ExtractedPropertyData> {
   console.log(`🔍 [OCR] Starting property information parsing...`)
   console.log(`📄 [OCR] Input text length: ${ocrResult.extractedText.length} characters`)
-  console.log(`📋 [OCR] Form fields available: ${Object.keys(ocrResult.detectedFields || {}).length}`)
+  console.log(`📋 [OCR] Form fields available: ${Object.keys(ocrResult.detectedFields ?? {}).length}`)
   
   const text = ocrResult.extractedText.toLowerCase()
   const fields = ocrResult.detectedFields ?? {}

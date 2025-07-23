@@ -90,9 +90,9 @@ const initialFormData: SeventhPageFormData = {
   tennisCourt: false,
 }
 
-export default function SeventhPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: SeventhPageProps) {
+export default function SeventhPage({ listingId: _listingId, globalFormData, onNext, onBack, refreshListingDetails }: SeventhPageProps) {
   const [formData, setFormData] = useState<SeventhPageFormData>(initialFormData)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveError] = useState<string | null>(null)
   const [propertyType, setPropertyType] = useState<string>("")
 
   const updateFormData = (field: keyof SeventhPageFormData, value: unknown) => {

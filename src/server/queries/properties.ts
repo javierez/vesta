@@ -21,7 +21,7 @@ export async function generateReferenceNumber(): Promise<string> {
       .from(properties)
       .where(sql`YEAR(${properties.createdAt}) = ${currentYear}`);
     
-    const count = result?.count || 0;
+    const count = result?.count ?? 0;
     
     // Format: VESTA-YYYY-XXXXXX (e.g., VESTA-2024-000001)
     const referenceNumber = `VESTA${currentYear}${String(count + 1).padStart(6, '0')}`;
@@ -222,7 +222,7 @@ export async function addPropertyImage(data: Omit<PropertyImage, "propertyImageI
       .from(properties)
       .where(eq(properties.propertyId, data.propertyId));
     
-    if (!property || property.referenceNumber === null) {
+    if (!property?.referenceNumber) {
       throw new Error("Property not found or reference number is null");
     }
 
@@ -287,7 +287,7 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
     const propertyData = {
       cadastralReference,
       referenceNumber,
-      propertyType: cadastralData?.propertyType || "piso" as const,
+      propertyType: cadastralData?.propertyType ?? "piso" as const,
       propertySubtype: undefined, // Will be set by user in form
       formPosition: 1, // Starting form position
       hasHeating: false,
@@ -364,7 +364,7 @@ export async function createPropertyFromLocation(locationData: {
     // Create property with location data and sensible defaults (similar to cadastral version)
     const propertyData = {
       referenceNumber,
-      propertyType: locationData.propertyType || "piso" as const,
+      propertyType: locationData.propertyType ?? "piso" as const,
       propertySubtype: undefined, // Will be set by user in form
       formPosition: 1, // Starting form position
       hasHeating: false,
@@ -403,10 +403,10 @@ export async function createPropertyFromLocation(locationData: {
     return {
       ...newProperty,
       // Add location data from geocoding for form population
-      city: geocodingData?.city || locationData.city,
-      province: geocodingData?.province || locationData.province,
-      municipality: geocodingData?.municipality || locationData.municipality,
-      neighborhood: geocodingData?.neighborhood || locationData.neighborhood,
+      city: geocodingData?.city ?? locationData.city,
+      province: geocodingData?.province ?? locationData.province,
+      municipality: geocodingData?.municipality ?? locationData.municipality,
+      neighborhood: geocodingData?.neighborhood ?? locationData.neighborhood,
       // Add the listing ID for redirection
       listingId: Number(newListing.listingId),
     };

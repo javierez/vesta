@@ -9,7 +9,7 @@ import { prospectUtils } from "../../lib/utils"
 
 // Helper function to get preferred area from prospect data
 type PreferredArea = { neighborhoodId?: number | string; name?: string };
-type ProspectWithPreferredAreas = { preferredAreas?: string | PreferredArea[] | unknown };
+type ProspectWithPreferredAreas = { preferredAreas?: string | PreferredArea[] };
 async function getPreferredAreaFromProspect(prospect: ProspectWithPreferredAreas): Promise<string | undefined> {
   if (!prospect?.preferredAreas) {
     return undefined;
@@ -35,7 +35,7 @@ async function getPreferredAreaFromProspect(prospect: ProspectWithPreferredAreas
       const [location] = await db
         .select({ city: locations.city })
         .from(locations)
-        .where(eq(locations.neighborhoodId, BigInt(areas[0].neighborhoodId!)))
+        .where(eq(locations.neighborhoodId, BigInt(areas[0]!.neighborhoodId!)))
         .limit(1);
       return location?.city ?? areas[0]?.name;
     } catch (error) {
@@ -426,9 +426,7 @@ export async function listContactsWithTypes(
     // Group prospects by contactId for faster lookup
     const prospectsByContact = allProspects.reduce((acc, prospect) => {
       const contactId = prospect.contactId.toString();
-      if (!acc[contactId]) {
-        acc[contactId] = [];
-      }
+      acc[contactId] ??= [];
       acc[contactId].push(prospect);
       return acc;
     }, {} as Record<string, typeof allProspects>);
@@ -439,9 +437,7 @@ export async function listContactsWithTypes(
     // Group listings by contactId for faster lookup
     const listingsByContact = allContactListings.reduce((acc, listing) => {
       const contactId = listing.contactId.toString();
-      if (!acc[contactId]) {
-        acc[contactId] = [];
-      }
+      acc[contactId] ??= [];
       acc[contactId].push(listing);
       return acc;
     }, {} as Record<string, typeof allContactListings>);
@@ -451,8 +447,8 @@ export async function listContactsWithTypes(
     // For each contact, process their prospects and listings
     const contactsWithProspects = await Promise.all(uniqueContacts.map(async (contact) => {
       const contactId = contact.contactId.toString();
-      const contactProspects = prospectsByContact[contactId] || [];
-      const allContactListings = listingsByContact[contactId] || [];
+      const contactProspects = prospectsByContact[contactId] ?? [];
+      const allContactListings = listingsByContact[contactId] ?? [];
       
       // Filter listings based on the role filter
       let filteredListings = allContactListings;

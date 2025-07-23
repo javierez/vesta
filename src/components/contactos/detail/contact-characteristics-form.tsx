@@ -49,7 +49,7 @@ interface ContactCharacteristicsFormProps {
       fundingReady?: boolean
       moveInBy?: string
       notes?: string
-      extras?: { [key: string]: boolean }
+      extras?: Record<string, boolean>
       interestForms?: InterestFormData[]
     }
   }
@@ -67,15 +67,15 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   // Form states
   const [firstName, setFirstName] = useState(contact.firstName || "")
   const [lastName, setLastName] = useState(contact.lastName || "")
-  const [email, setEmail] = useState(contact.email || "")
-  const [phone, setPhone] = useState(contact.phone || "")
-  const [isActive, setIsActive] = useState(contact.isActive ?? true)
+  const [email, setEmail] = useState(contact.email ?? "")
+  const [phone, setPhone] = useState(contact.phone ?? "")
   const [additionalInfo, setAdditionalInfo] = useState(contact.additionalInfo ?? {})
   
   // Interest forms state - Start empty, only show when explicitly creating/editing
   const [interestForms, setInterestForms] = useState<InterestFormData[]>([])
   
-  // Prospects state for tracking existing prospects
+  // Prospects state for tracking existing prospects  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [prospects, setProspects] = useState<any[]>([])
   const [editingProspectId, setEditingProspectId] = useState<string | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
@@ -89,7 +89,6 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
 
   // Contact type configuration
   const contactType = contact.contactType as keyof typeof contactTypeConfig
-  const typeConfig = contactTypeConfig[contactType] ?? contactTypeConfig.demandante
 
   // Load contact listings if propietario or demandante
   useEffect(() => {
@@ -145,13 +144,9 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
     }))
   }
 
-  // Function to add new interest form
-  const addInterestForm = () => {
-    setShowNewForm(true)
-  }
 
   // Function to handle editing a prospect
-  const handleEditProspect = async (prospect: any) => {
+  const handleEditProspect = async (prospect: typeof prospects[0]) => {
     // Convert preferredAreas back to selectedNeighborhoods format
     let selectedNeighborhoods: Array<{
       neighborhoodId: bigint
@@ -163,9 +158,10 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
 
     if (Array.isArray(prospect.preferredAreas) && prospect.preferredAreas.length > 0) {
       // Fetch full location data for each neighborhood ID
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const locationPromises = prospect.preferredAreas.map(async (area: any) => {
         try {
-          const location = await getLocationByNeighborhoodId(area.neighborhoodId)
+          const location = await getLocationByNeighborhoodId(Number(area.neighborhoodId))
           return location ? {
             neighborhoodId: location.neighborhoodId,
             neighborhood: location.neighborhood,
@@ -193,7 +189,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
     const convertedForm: InterestFormData = {
       id: `prospect-${prospect.id}`,
       demandType: prospect.listingType ?? "",
-      maxPrice: prospect.maxPrice ? parseInt(prospect.maxPrice.toString()) : 200000,
+      maxPrice: prospect.maxPrice ? Number(prospect.maxPrice) : 200000,
       preferredArea: selectedNeighborhoods.map(n => n.neighborhood).join(", "),
       selectedNeighborhoods: selectedNeighborhoods,
       propertyTypes: prospect.propertyType ? [prospect.propertyType] : [],
@@ -203,12 +199,12 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
       urgencyLevel: prospect.urgencyLevel ?? 3,
       fundingReady: prospect.fundingReady ?? false,
       moveInBy: (prospect.moveInBy ? prospect.moveInBy.toISOString().split('T')[0] : "") as string,
-      extras: (prospect.extras as { [key: string]: boolean }) ?? {},
+      extras: (prospect.extras as Record<string, boolean>) ?? {},
       notes: prospect.notesInternal ?? ""
     }
     
     setInterestForms([convertedForm])
-    setEditingProspectId(prospect.id.toString())
+    setEditingProspectId(String(prospect.id))
     setShowNewForm(false)
   }
 
@@ -232,7 +228,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
   // Function to create new form
   const createNewForm = () => {
     const newForm: InterestFormData = {
-      id: `form-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `form-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       demandType: "",
       maxPrice: 150000,
       preferredArea: "",
@@ -277,7 +273,7 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
 
       switch (moduleName) {
         case 'basicInfo':
-          contactData = { firstName, lastName, isActive }
+          contactData = { firstName, lastName }
           break
         case 'contactDetails':
           contactData = { email, phone }
@@ -300,20 +296,21 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
               contactId: BigInt(contactId),
               status: "active",
               listingType: form.demandType || undefined,
-              propertyType: form.propertyTypes[0] || "",
+              propertyType: form.propertyTypes[0] ?? "",
               maxPrice: form.maxPrice.toString(),
               preferredAreas: preferredAreas,
-              minBedrooms: form.minBedrooms || 0,
-              minBathrooms: form.minBathrooms || 0,
-              minSquareMeters: form.minSquareMeters || 0,
+              minBedrooms: form.minBedrooms ?? 0,
+              minBathrooms: form.minBathrooms ?? 0,
+              minSquareMeters: form.minSquareMeters ?? 0,
               moveInBy: form.moveInBy ? new Date(form.moveInBy) : undefined,
-              extras: form.extras || {},
-              urgencyLevel: form.urgencyLevel || 3,
-              fundingReady: form.fundingReady || false,
-              notesInternal: form.notes || ""
+              extras: form.extras ?? {},
+              urgencyLevel: form.urgencyLevel ?? 3,
+              fundingReady: form.fundingReady ?? false,
+              notesInternal: form.notes ?? ""
             }
 
-            const existingProspect = prospects.find(p => `prospect-${p.id}` === form.id)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const existingProspect = prospects.find((p: any) => `prospect-${p.id}` === form.id)
             
             if (existingProspect) {
               // Update existing prospect
@@ -537,7 +534,8 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
           {prospects.length > 0 && (
             <div className="space-y-3 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {prospects.map((prospect) => (
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {prospects.map((prospect: any) => (
                   <ContactProspectCompact
                     key={prospect.id.toString()}
                     prospect={prospect}
@@ -647,7 +645,8 @@ export function ContactCharacteristicsForm({ contact }: ContactCharacteristicsFo
           {prospects.length > 0 && (
             <div className="space-y-3 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {prospects.map((prospect) => (
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {prospects.map((prospect: any) => (
                   <ContactProspectCompact
                     key={prospect.id.toString()}
                     prospect={prospect}
