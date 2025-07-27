@@ -57,28 +57,28 @@ const platformConfig = [
   {
     id: "idealista",
     name: "Idealista",
-    logo: "/logos/logo-idealista.png",
+    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-idealista.png",
     description: "El portal inmobiliario más visitado de España",
     isDefault: defaultPortalSettings.idealista
   },
   {
     id: "fotocasa",
     name: "Fotocasa",
-    logo: "/logos/logo-fotocasa-min.png",
+    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-fotocasa-min.png",
     description: "Encuentra tu casa ideal con millones de anuncios",
     isDefault: defaultPortalSettings.fotocasa
   },
   {
     id: "habitaclia",
     name: "Habitaclia",
-    logo: "/logos/logo-habitaclia.png",
+    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-habitaclia.png",
     description: "Portal especializado en alquiler y venta",
     isDefault: defaultPortalSettings.habitaclia
   },
   {
     id: "milanuncios",
     name: "Milanuncios",
-    logo: "/logos/logo-milanuncios.png",
+    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-milanuncios.png",
     description: "Portal de anuncios clasificados líder en España",
     isDefault: defaultPortalSettings.milanuncios
   }

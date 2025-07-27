@@ -1,119 +1,358 @@
-### = Project Awareness & Context
-- **Always read `README.md`** at conversation start to understand the project's architecture, features, and current development status.
-- **Check existing TODOs** in `README.md` before starting any new task. If the task relates to listed TODOs, prioritize accordingly.
-- **Review relevant component files** in the feature area you're working on to understand existing patterns and conventions.
-- **Use the TodoWrite tool** to track all non-trivial tasks and maintain visibility of progress throughout the conversation.
+# CLAUDE.md - Vesta Real Estate Management Platform
 
-### >� Code Structure & Modularity
-- **Never create a file longer than 400 lines**. If a file approaches this limit, refactor by splitting into smaller, focused modules.
-- **Follow Next.js App Router conventions**:
-  - Place pages in `src/app/[feature]/page.tsx`
-  - Create loading states in `loading.tsx` files
-  - Use route groups for organization when needed
-- **Component organization**:
-  - Shared components in `src/components/ui/` (using shadcn patterns)
-  - Feature-specific components in `src/components/[feature]/`
-  - Form components separate from display components
-  - Always export components with named exports
-- **Server-side code** in `src/server/`:
-  - Database queries in `src/server/queries/`
-  - External API integrations in `src/server/[service]/`
-  - Database schema in `src/server/db/schema.ts`
-- **Use path aliases**: Always use `~/` for imports from `src/` directory
+This file provides guidance to Claude Code (claude.ai/code) when working with the Vesta real estate management codebase.
 
-### >� Testing & Reliability
-- **Create unit tests for critical business logic** (when test framework is set up).
-- **Validate all forms using zod schemas** with proper error handling.
-- **Always handle loading and error states** in async components.
-- **Use proper TypeScript types** - avoid `any` unless absolutely necessary.
-- **Run linting and type checking** before completing any task:
-  ```bash
-  pnpm lint
-  pnpm typecheck
-  ```
+## Project Overview
 
-###  Task Completion
-- **Use TodoWrite tool** immediately when starting multi-step tasks.
-- **Mark todos as `in_progress`** before starting work on them.
-- **Mark todos as `completed`** immediately after finishing.
-- **Only have ONE todo `in_progress`** at a time.
-- **Add discovered tasks** to the todo list as you find them.
+Vesta is a comprehensive real estate management platform built with Next.js, featuring property listings, contact management, calendar scheduling, and multi-portal integration capabilities. The platform serves real estate professionals in managing their properties, clients, and operations efficiently.
 
-### =� Style & Conventions
-- **Use TypeScript** with strict mode enabled (as configured in tsconfig.json).
-- **Follow existing patterns**:
-  - React Server Components by default
-  - Client components only when needed (mark with `"use client"`)
-  - Async/await for data fetching in server components
-  - React Hook Form for complex forms
-- **Styling with Tailwind CSS**:
-  - Use Tailwind utility classes
-  - Follow the design system defined in `tailwind.config.ts`
-  - Use shadcn/ui components from `src/components/ui/`
-- **Database operations**:
-  - Use Drizzle ORM with SingleStore
-  - Type-safe queries using the schema
-  - Handle BigInt conversions properly
-- **File naming conventions**:
-  - Components: PascalCase (e.g., `PropertyCard.tsx`)
-  - Utilities: camelCase (e.g., `searchUtils.ts`)
-  - Types: PascalCase with `.ts` extension
-  - Server actions: camelCase with descriptive names
+## Core Principles
 
-### =� Documentation & Code Quality
-- **Add JSDoc comments** for complex functions:
-  ```typescript
-  /**
-   * Processes property images and ensures valid URLs
-   * @param images - Raw images from database
-   * @returns Processed images with fallback URLs
-   */
-  ```
-- **Use descriptive variable names** that clearly indicate purpose.
-- **Keep components focused** - single responsibility principle.
-- **Extract reusable logic** into custom hooks (in `src/components/hooks/`).
+### KISS (Keep It Simple, Stupid)
+- Choose straightforward solutions over complex ones
+- Avoid over-engineering features
+- Simple code is easier to understand, maintain, and debug
 
-### >� Next.js & React Patterns
-- **Use Next.js Image component** for all images with proper dimensions.
-- **Implement proper error boundaries** for error handling.
-- **Use dynamic imports** for large components to improve performance.
-- **Server Components first** - only use Client Components when necessary for:
-  - Interactive UI (onClick, onChange, etc.)
-  - Browser-only APIs
-  - State management with useState/useReducer
-- **Data fetching patterns**:
-  - Fetch data in Server Components
-  - Use parallel data fetching when possible
-  - Implement proper caching strategies
+### YAGNI (You Aren't Gonna Need It)
+- Only implement features when they are actually needed
+- Avoid building functionality on speculation
+- Focus on current requirements, not hypothetical future needs
 
-### = Security & Environment
-- **Use env validation** through `src/env.js` for all environment variables.
-- **Never expose sensitive data** in client components.
-- **Validate and sanitize** all user inputs.
-- **Use HTTPS** for all external API calls.
-- **Follow AWS S3 best practices** for file uploads.
+### DRY (Don't Repeat Yourself)
+- Extract common logic into reusable functions/components
+- Use existing utilities and patterns before creating new ones
+- Centralize configuration and constants
 
-### =� Performance Considerations
-- **Optimize images**: Use Next.js Image with proper formats (WebP).
-- **Implement pagination** for large data sets.
-- **Use React.memo** and useMemo for expensive computations.
-- **Code split** at the route level automatically with App Router.
-- **Minimize client-side JavaScript** by leveraging Server Components.
+## Architecture & Tech Stack
 
-### =' Development Workflow
-- **Use pnpm** as the package manager (not npm or yarn).
-- **Follow the scripts** defined in package.json:
-  - `pnpm dev` for development
-  - `pnpm build` before deployment
-  - `pnpm lint` and `pnpm typecheck` before commits
-- **Database changes**:
-  - Update schema in `src/server/db/schema.ts`
-  - Run `pnpm db:generate` and `pnpm db:push`
-- **Keep dependencies updated** but test thoroughly after updates.
+### Framework & Libraries
+- **Next.js 15.2.3** with App Router (React 19)
+- **TypeScript** with strict mode enabled
+- **Tailwind CSS** with shadcn/ui components
+- **Drizzle ORM** with MySQL/SingleStore
+- **React Hook Form** for complex forms
+- **Zod** for schema validation
 
-### <� Real Estate Domain Specifics
-- **Property management**: Follow existing patterns for property CRUD operations.
-- **Multi-portal integration**: Maintain compatibility with Fotocasa, Idealista, etc.
-- **Image handling**: Always include watermarking logic for property images.
-- **Contact management**: Maintain proper prospect � lead � client flow.
-- **Use proper Spanish terminology** in user-facing text when applicable.
+### Project Structure
+```
+src/
+├── app/                    # Next.js app router pages
+│   ├── propiedades/       # Property management
+│   ├── contactos/         # Contact management
+│   ├── calendario/        # Calendar & scheduling
+│   └── vender/           # Selling workflow
+├── components/            # Reusable components
+│   ├── ui/               # Base UI (shadcn)
+│   ├── propiedades/      # Property components
+│   ├── contactos/        # Contact components
+│   └── layout/           # Layout components
+├── server/               # Server-side logic
+│   ├── db/              # Database schema
+│   ├── queries/         # Database queries
+│   ├── portals/         # External integrations
+│   └── openai/          # AI services
+└── lib/                 # Utilities & helpers
+```
+
+## Development Standards
+
+### Code Organization
+- **File size limit**: Maximum 400 lines per file
+- **Component structure**: One component per file, named exports
+- **Module organization**: Group by feature, not by file type
+- **Import paths**: Always use `~/` alias for src/ imports
+
+### TypeScript Requirements
+```typescript
+// ✅ Good - Explicit types, proper validation
+interface PropertyFormData {
+  title: string;
+  price: number;
+  location: {
+    lat: number;
+    lng: number;
+  };
+}
+
+const schema = z.object({
+  title: z.string().min(1, "Title is required"),
+  price: z.number().positive("Price must be positive"),
+  location: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }),
+});
+
+// ❌ Bad - Using 'any', no validation
+const handleSubmit = (data: any) => {
+  // Process data without validation
+};
+```
+
+### Component Patterns
+
+#### Server Components (Default)
+```typescript
+// src/app/propiedades/page.tsx
+export default async function PropertiesPage() {
+  const properties = await getProperties(); // Server-side data fetching
+  
+  return (
+    <div className="container mx-auto">
+      <PropertyList properties={properties} />
+    </div>
+  );
+}
+```
+
+#### Client Components (Interactive)
+```typescript
+// src/components/propiedades/PropertyFilter.tsx
+"use client";
+
+import { useState } from "react";
+
+export function PropertyFilter({ onFilter }: Props) {
+  const [filters, setFilters] = useState({});
+  // Interactive filtering logic
+}
+```
+
+### Database Operations
+```typescript
+// Always use typed queries with Drizzle
+import { db } from "~/server/db";
+import { properties } from "~/server/db/schema";
+
+export async function getProperties() {
+  return await db
+    .select()
+    .from(properties)
+    .where(eq(properties.active, true))
+    .orderBy(desc(properties.createdAt));
+}
+```
+
+## Task Management
+
+### Using TodoWrite Tool
+- Create todos for any task requiring 3+ steps
+- Mark todos as `in_progress` BEFORE starting work
+- Mark todos as `completed` IMMEDIATELY after finishing
+- Only have ONE todo `in_progress` at a time
+- Add discovered tasks to the todo list as you find them
+
+### Task Completion Checklist
+Before marking any task as complete:
+- [ ] Code follows TypeScript best practices
+- [ ] All forms have Zod validation
+- [ ] Loading and error states are handled
+- [ ] Component is under 400 lines
+- [ ] Tests are updated (if applicable)
+- [ ] Run `pnpm lint` and `pnpm typecheck`
+
+## Real Estate Domain Specifics
+
+### Property Management
+- Always include proper image handling with watermarking
+- Validate energy certificates and cadastral references
+- Support multi-portal publishing (Fotocasa, Idealista, etc.)
+- Handle BigInt conversions for property IDs
+
+### Contact Workflow
+```
+Prospect → Lead → Client
+├── Initial interest captured
+├── Property preferences recorded
+├── Appointments scheduled
+└── Deal closed
+```
+
+### Spanish Terminology
+Use proper Spanish terms in user-facing text:
+- "Propiedades" not "Properties" 
+- "Contactos" not "Contacts"
+- "Operaciones" not "Operations"
+- "Inmuebles" for real estate assets
+
+## Common Patterns
+
+### Form Implementation
+```typescript
+// Always use React Hook Form + Zod
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const form = useForm<PropertyFormData>({
+  resolver: zodResolver(propertySchema),
+  defaultValues: {
+    title: "",
+    price: 0,
+  },
+});
+```
+
+### Error Handling
+```typescript
+// Standardized error responses
+try {
+  const result = await createProperty(data);
+  return { success: true, data: result };
+} catch (error) {
+  console.error("Property creation failed:", error);
+  return { 
+    success: false, 
+    error: error instanceof Error ? error.message : "Unknown error" 
+  };
+}
+```
+
+### Loading States
+```typescript
+// Always show loading feedback
+export default function Loading() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Spinner className="h-8 w-8" />
+    </div>
+  );
+}
+```
+
+## Security Guidelines
+
+### Environment Variables
+- Validate all env vars through `src/env.js`
+- Never expose secrets in client components
+- Use proper prefixes: `NEXT_PUBLIC_` for client-side vars
+
+### Input Validation
+- Always validate user inputs with Zod
+- Sanitize data before database operations
+- Use parameterized queries (Drizzle handles this)
+
+### Authentication & Authorization
+- Check user permissions before sensitive operations
+- Validate portal API credentials before use
+- Log security-relevant events
+
+## Performance Optimization
+
+### Image Handling
+```typescript
+import Image from "next/image";
+
+// Always use Next.js Image with proper dimensions
+<Image
+  src={property.mainImage}
+  alt={property.title}
+  width={800}
+  height={600}
+  className="object-cover"
+  priority={isAboveFold}
+/>
+```
+
+### Data Fetching
+- Use React Server Components for initial data
+- Implement pagination for large datasets
+- Use `unstable_cache` for expensive operations
+- Parallel fetch when possible
+
+## External Integrations
+
+### Portal APIs (Fotocasa, Idealista)
+- Always validate API responses with Zod schemas
+- Handle rate limiting gracefully
+- Store API credentials securely
+- Log all API interactions for debugging
+
+### AI Services (OpenAI)
+- Limit token usage with max_tokens parameter
+- Cache generated descriptions
+- Provide clear, specific prompts
+- Handle API errors gracefully
+
+## Development Workflow
+
+### Environment Setup
+- **Virtual environment is already configured** - All necessary dependencies are installed
+- **No need to run `pnpm install`** unless adding new packages
+- **Database is already set up** - Use `pnpm db:studio` to inspect
+
+### Commands
+```bash
+# Development
+pnpm dev          # Start dev server
+
+# Code Quality
+pnpm lint         # Run ESLint
+pnpm typecheck    # TypeScript checking
+pnpm format:write # Format with Prettier
+
+# Database
+pnpm db:generate  # Generate migrations
+pnpm db:push      # Apply migrations
+pnpm db:studio    # Open Drizzle Studio
+
+# Building
+pnpm build        # Production build
+```
+
+### Git Workflow
+1. Check existing TODOs in README.md
+2. Create feature branch: `git checkout -b feature/description`
+3. Make changes following these guidelines
+4. Run `pnpm lint && pnpm typecheck` before committing
+5. Write clear commit messages: `feat: add property image gallery`
+
+### Documentation Requirements
+- **Always update README.md** when:
+  - Adding new features or modules
+  - Changing the project structure
+  - Adding new dependencies
+  - Modifying setup instructions
+- **Include project structure** in README.md and keep it updated
+- **Document new environment variables** in both README.md and `.env.example`
+
+## Common Pitfalls to Avoid
+
+### Don't
+- ❌ Create files over 400 lines
+- ❌ Use `any` type without good reason
+- ❌ Skip form validation
+- ❌ Ignore loading/error states
+- ❌ Hardcode Spanish text (use constants)
+- ❌ Expose API keys in client code
+- ❌ Create new patterns when existing ones work
+
+### Do
+- ✅ Use existing UI components from shadcn
+- ✅ Follow established patterns in the codebase
+- ✅ Write self-documenting code with clear names
+- ✅ Handle edge cases (empty states, errors)
+- ✅ Test with Spanish characters (ñ, á, é, etc.)
+- ✅ Consider mobile responsiveness
+- ✅ Use TypeScript strictly
+
+## Quick Reference
+
+### Adding a New Feature
+1. Read README.md for context and TODOs
+2. Use TodoWrite to plan implementation steps
+3. Check existing patterns in similar features
+4. Implement following the architecture above
+5. Add proper TypeScript types and Zod schemas
+6. Handle loading and error states
+7. Run linting and type checking
+8. Update documentation if needed
+
+### Debugging Checklist
+- [ ] Check browser console for errors
+- [ ] Verify environment variables are set
+- [ ] Check network tab for API failures  
+- [ ] Look for TypeScript errors
+- [ ] Verify database connection
+- [ ] Check for Spanish character encoding issues
+
+Remember: This is a production real estate platform. Prioritize reliability, user experience, and data integrity in all implementations.

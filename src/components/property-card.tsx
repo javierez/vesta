@@ -217,7 +217,7 @@ export function PropertyCard({ listing }: PropertyCardProps) {
             size="icon"
             className="absolute right-1 bottom-1 h-8 w-8 text-muted-foreground/80 group hover:bg-transparent mr-2"
           >
-            <Image src="/logos/whatsapp.png" alt="WhatsApp" width={20} height={20} className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+            <Image src="https://vesta-configuration-files.s3.amazonaws.com/logos/whatsapp.png" alt="WhatsApp" width={20} height={20} className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
           </Button>
         </CardFooter>
       </Card>

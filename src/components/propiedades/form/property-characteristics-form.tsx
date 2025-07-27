@@ -887,7 +887,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
                   className="flex items-center justify-center h-8 w-8 rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
                   <Image
-                    src="/logos/logo-catastro.png"
+                    src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
                     alt="Catastro"
                     width={20}
                     height={20}
@@ -1067,7 +1067,7 @@ export function PropertyCharacteristicsForm({ listing }: PropertyCharacteristics
             className="flex items-center justify-center h-8 w-8 rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
           >
             <Image
-              src="/logos/googlemapsicon.png"
+              src="https://vesta-configuration-files.s3.amazonaws.com/logos/googlemapsicon.png"
               alt="Google Maps"
               width={16}
               height={16}

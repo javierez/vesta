@@ -14,6 +14,12 @@ const config = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'vesta-configuration-files.s3.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
     // Optimize images
     unoptimized: false,

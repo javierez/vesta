@@ -20,7 +20,7 @@ export default function InmueblesPublicadosCard() {
           <div className="flex items-center justify-between shadow-md rounded-md p-2 bg-white">
             <div className="flex items-center">
               <Image
-                src="/logos/logo-idealista.png"
+                src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-idealista.png"
                 alt="Idealista"
                 width={80}
                 height={20}
@@ -32,7 +32,7 @@ export default function InmueblesPublicadosCard() {
           <div className="flex items-center justify-between shadow-md rounded-md p-2 bg-white">
             <div className="flex items-center">
               <Image
-                src="/logos/logo-fotocasa-min.png"
+                src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-fotocasa-min.png"
                 alt="Fotocasa"
                 width={80}
                 height={20}
