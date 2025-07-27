@@ -1,5 +1,5 @@
-"use server"
-import { db } from "../db"
+"use server";
+import { db } from "../db";
 import { locations } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import type { Location } from "../../lib/data";
@@ -13,7 +13,9 @@ interface LocationData {
 }
 
 // Find existing location or create new one and return neighborhood ID
-export async function findOrCreateLocation(locationData: LocationData): Promise<number> {
+export async function findOrCreateLocation(
+  locationData: LocationData,
+): Promise<number> {
   try {
     const existingLocation = await db
       .select()
@@ -23,8 +25,8 @@ export async function findOrCreateLocation(locationData: LocationData): Promise<
           eq(locations.city, locationData.city),
           eq(locations.province, locationData.province),
           eq(locations.municipality, locationData.municipality),
-          eq(locations.neighborhood, locationData.neighborhood)
-        )
+          eq(locations.neighborhood, locationData.neighborhood),
+        ),
       )
       .limit(1);
 
@@ -32,15 +34,13 @@ export async function findOrCreateLocation(locationData: LocationData): Promise<
       return Number(existingLocation[0].neighborhoodId);
     }
 
-    await db
-      .insert(locations)
-      .values({
-        city: locationData.city,
-        province: locationData.province,
-        municipality: locationData.municipality,
-        neighborhood: locationData.neighborhood,
-        isActive: true,
-      });
+    await db.insert(locations).values({
+      city: locationData.city,
+      province: locationData.province,
+      municipality: locationData.municipality,
+      neighborhood: locationData.neighborhood,
+      isActive: true,
+    });
 
     const [newLocation] = await db
       .select()
@@ -50,8 +50,8 @@ export async function findOrCreateLocation(locationData: LocationData): Promise<
           eq(locations.city, locationData.city),
           eq(locations.province, locationData.province),
           eq(locations.municipality, locationData.municipality),
-          eq(locations.neighborhood, locationData.neighborhood)
-        )
+          eq(locations.neighborhood, locationData.neighborhood),
+        ),
       )
       .limit(1);
 
@@ -60,25 +60,26 @@ export async function findOrCreateLocation(locationData: LocationData): Promise<
     }
 
     return Number(newLocation.neighborhoodId);
-
   } catch (error) {
     throw error;
   }
 }
 
 // Create a new location
-export async function createLocation(data: Omit<Location, "createdAt" | "updatedAt">) {
+export async function createLocation(
+  data: Omit<Location, "createdAt" | "updatedAt">,
+) {
   try {
     await db.insert(locations).values({
       ...data,
       isActive: true,
     });
-    
+
     const [newLocation] = await db
       .select()
       .from(locations)
       .where(eq(locations.neighborhoodId, data.neighborhoodId));
-      
+
     if (!newLocation) throw new Error("Failed to create location");
     return newLocation;
   } catch (error) {
@@ -88,7 +89,9 @@ export async function createLocation(data: Omit<Location, "createdAt" | "updated
 }
 
 // Get location by neighborhood ID
-export async function getLocationByNeighborhoodId(neighborhoodId: number | bigint) {
+export async function getLocationByNeighborhoodId(
+  neighborhoodId: number | bigint,
+) {
   try {
     const [location] = await db
       .select()
@@ -116,7 +119,10 @@ export async function getLocationByNeighborhood(neighborhood: string) {
 }
 
 // Update location
-export async function updateLocation(neighborhoodId: bigint, data: Omit<Partial<Location>, "neighborhoodId">) {
+export async function updateLocation(
+  neighborhoodId: bigint,
+  data: Omit<Partial<Location>, "neighborhoodId">,
+) {
   try {
     await db
       .update(locations)
@@ -205,7 +211,9 @@ export async function getLocationsByMunicipality(municipality: string) {
 }
 
 // Check if location exists
-export async function locationExists(locationData: LocationData): Promise<boolean> {
+export async function locationExists(
+  locationData: LocationData,
+): Promise<boolean> {
   try {
     const existingLocation = await db
       .select()
@@ -215,8 +223,8 @@ export async function locationExists(locationData: LocationData): Promise<boolea
           eq(locations.city, locationData.city),
           eq(locations.province, locationData.province),
           eq(locations.municipality, locationData.municipality),
-          eq(locations.neighborhood, locationData.neighborhood)
-        )
+          eq(locations.neighborhood, locationData.neighborhood),
+        ),
       )
       .limit(1);
 
@@ -234,7 +242,7 @@ export async function getAllCities() {
       .from(locations)
       .where(eq(locations.isActive, true))
       .orderBy(locations.city);
-    return cities.map(c => c.city);
+    return cities.map((c) => c.city);
   } catch (error) {
     console.error("Error fetching cities:", error);
     throw error;
@@ -249,15 +257,10 @@ export async function getNeighborhoodsByCity(city: string) {
         neighborhoodId: locations.neighborhoodId,
         neighborhood: locations.neighborhood,
         municipality: locations.municipality,
-        province: locations.province
+        province: locations.province,
       })
       .from(locations)
-      .where(
-        and(
-          eq(locations.city, city),
-          eq(locations.isActive, true)
-        )
-      )
+      .where(and(eq(locations.city, city), eq(locations.isActive, true)))
       .orderBy(locations.neighborhood);
     return neighborhoods;
   } catch (error) {
@@ -275,7 +278,7 @@ export async function getAllLocationsForSelection() {
         neighborhood: locations.neighborhood,
         city: locations.city,
         municipality: locations.municipality,
-        province: locations.province
+        province: locations.province,
       })
       .from(locations)
       .where(eq(locations.isActive, true))
@@ -285,4 +288,4 @@ export async function getAllLocationsForSelection() {
     console.error("Error fetching all locations for selection:", error);
     throw error;
   }
-} 
+}

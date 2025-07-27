@@ -1,6 +1,5 @@
 import { drizzle } from "drizzle-orm/singlestore";
-import { createPool, type Pool } from "mysql2/promise"; 
-
+import { createPool, type Pool } from "mysql2/promise";
 
 import { env } from "~/env";
 import * as schema from "./schema";
@@ -14,27 +13,27 @@ const globalForDb = globalThis as unknown as {
 };
 
 // Use hostname as primary option, IP address as fallback to avoid DNS resolution issues
-const host = env.SINGLESTORE_HOST === 'svc-554a48e0-adba-44d4-80e9-f368c0f377c3-dml.aws-oregon-4.svc.singlestore.com' 
-  ? '35.167.66.186'
-  : env.SINGLESTORE_HOST;
+const host =
+  env.SINGLESTORE_HOST ===
+  "svc-554a48e0-adba-44d4-80e9-f368c0f377c3-dml.aws-oregon-4.svc.singlestore.com"
+    ? "35.167.66.186"
+    : env.SINGLESTORE_HOST;
 
 const conn =
-  globalForDb.conn ?? 
+  globalForDb.conn ??
   createPool({
     host: host,
     port: parseInt(env.SINGLESTORE_PORT),
     user: env.SINGLESTORE_USER,
     password: env.SINGLESTORE_PASS,
     database: env.SINGLESTORE_DB,
-    ssl: {},    
+    ssl: {},
     maxIdle: 0,
   });
 globalForDb.conn = conn;
 
-
-conn.addListener('error', (err) => {
-  console.error('Database connection error', err);
+conn.addListener("error", (err) => {
+  console.error("Database connection error", err);
 });
 
 export const db = drizzle(conn, { schema });
-

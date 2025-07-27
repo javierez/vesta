@@ -71,33 +71,30 @@ const config: Config = {
         mono: ["var(--font-geist-mono)"],
       },
       spacing: {
-        '18': '4.5rem',
-        '112': '28rem',
-        '128': '32rem',
+        "18": "4.5rem",
+        "112": "28rem",
+        "128": "32rem",
       },
       borderRadius: {
-        '4xl': '2rem',
+        "4xl": "2rem",
       },
       animation: {
-        'fade-in': 'fade-in 0.5s ease-out',
-        'slide-in': 'slide-in 0.5s ease-out',
+        "fade-in": "fade-in 0.5s ease-out",
+        "slide-in": "slide-in 0.5s ease-out",
       },
       keyframes: {
-        'fade-in': {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
         },
-        'slide-in': {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
+        "slide-in": {
+          "0%": { transform: "translateY(10px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
         },
       },
     },
   },
-  plugins: [
-    require("@tailwindcss/typography"),
-    require("@tailwindcss/forms"),
-  ],
+  plugins: [require("@tailwindcss/typography"), require("@tailwindcss/forms")],
 };
 
-export default config; 
+export default config;

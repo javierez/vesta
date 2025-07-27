@@ -1,63 +1,70 @@
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "~/components/ui/button"
-import { Label } from "~/components/ui/label"
-import { Checkbox } from "~/components/ui/checkbox"
-import { ChevronLeft, GraduationCap, PawPrint, Zap, Car, Package } from "lucide-react"
-import { motion } from "framer-motion"
-import { updateProperty } from "~/server/queries/properties"
-import { createListing, updateListing } from "~/server/queries/listing"
-import { formFormatters } from "~/lib/utils"
-import { cn } from "~/lib/utils"
-import { Input } from "~/components/ui/input"
-import FormSkeleton from "./form-skeleton"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
+import { Checkbox } from "~/components/ui/checkbox";
+import {
+  ChevronLeft,
+  GraduationCap,
+  PawPrint,
+  Zap,
+  Car,
+  Package,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { updateProperty } from "~/server/queries/properties";
+import { createListing, updateListing } from "~/server/queries/listing";
+import { formFormatters } from "~/lib/utils";
+import { cn } from "~/lib/utils";
+import { Input } from "~/components/ui/input";
+import FormSkeleton from "./form-skeleton";
 
 // Type definitions
 interface ListingDetails {
-  propertyType?: string
-  listingType?: string
-  listingId?: number | string
-  propertyId?: number | string
-  agentId?: number | string
-  formPosition?: number
-  hasKeys?: boolean
-  studentFriendly?: boolean
-  petsAllowed?: boolean
-  appliancesIncluded?: boolean
-  isFurnished?: boolean
-  furnitureQuality?: string
-  optionalGaragePrice?: number | string
-  optionalStorageRoomPrice?: number | string
-  price?: number | string
-  internet?: boolean
-  hasGarage?: boolean
-  hasStorageRoom?: boolean
+  propertyType?: string;
+  listingType?: string;
+  listingId?: number | string;
+  propertyId?: number | string;
+  agentId?: number | string;
+  formPosition?: number;
+  hasKeys?: boolean;
+  studentFriendly?: boolean;
+  petsAllowed?: boolean;
+  appliancesIncluded?: boolean;
+  isFurnished?: boolean;
+  furnitureQuality?: string;
+  optionalGaragePrice?: number | string;
+  optionalStorageRoomPrice?: number | string;
+  price?: number | string;
+  internet?: boolean;
+  hasGarage?: boolean;
+  hasStorageRoom?: boolean;
 }
 
 interface GlobalFormData {
-  listingDetails?: ListingDetails | null
+  listingDetails?: ListingDetails | null;
 }
 
 interface RentPageProps {
-  listingId?: string // Made optional since it's unused
-  globalFormData: GlobalFormData
-  onNext?: () => void // Made optional since it's unused
-  onBack?: () => void
-  refreshListingDetails?: () => void
+  listingId?: string; // Made optional since it's unused
+  globalFormData: GlobalFormData;
+  onNext?: () => void; // Made optional since it's unused
+  onBack?: () => void;
+  refreshListingDetails?: () => void;
 }
 
 interface RentPageFormData {
-  hasKeys: boolean
-  studentFriendly: boolean
-  petsAllowed: boolean
-  appliancesIncluded: boolean
-  isFurnished: boolean
-  furnitureQuality: string
-  optionalGaragePrice: number
-  optionalStorageRoomPrice: number
-  rentalPrice: number
-  duplicateForRent: boolean
-  internet: boolean
+  hasKeys: boolean;
+  studentFriendly: boolean;
+  petsAllowed: boolean;
+  appliancesIncluded: boolean;
+  isFurnished: boolean;
+  furnitureQuality: string;
+  optionalGaragePrice: number;
+  optionalStorageRoomPrice: number;
+  rentalPrice: number;
+  duplicateForRent: boolean;
+  internet: boolean;
 }
 
 const initialFormData: RentPageFormData = {
@@ -72,25 +79,29 @@ const initialFormData: RentPageFormData = {
   rentalPrice: 0,
   duplicateForRent: false,
   internet: false,
-}
+};
 
-export default function RentPage({ globalFormData, onBack, refreshListingDetails }: RentPageProps) {
-  const router = useRouter()
-  const [formData, setFormData] = useState<RentPageFormData>(initialFormData)
-  const [propertyType, setPropertyType] = useState<string>("")
-  const [isSaleListing, setIsSaleListing] = useState<boolean>(true)
+export default function RentPage({
+  globalFormData,
+  onBack,
+  refreshListingDetails,
+}: RentPageProps) {
+  const router = useRouter();
+  const [formData, setFormData] = useState<RentPageFormData>(initialFormData);
+  const [propertyType, setPropertyType] = useState<string>("");
+  const [isSaleListing, setIsSaleListing] = useState<boolean>(true);
 
   const updateFormData = (field: keyof RentPageFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   // Use centralized data instead of fetching
   useEffect(() => {
     if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails
-      setPropertyType(details.propertyType ?? "")
-      setIsSaleListing(details.listingType === 'Sale')
-      setFormData(prev => ({
+      const details = globalFormData.listingDetails;
+      setPropertyType(details.propertyType ?? "");
+      setIsSaleListing(details.listingType === "Sale");
+      setFormData((prev) => ({
         ...prev,
         hasKeys: details.hasKeys ?? false,
         studentFriendly: details.studentFriendly ?? false,
@@ -102,64 +113,77 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
         optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
         rentalPrice: Number(details.price) || 0,
         internet: details.internet ?? false,
-      }))
+      }));
     }
-  }, [globalFormData?.listingDetails])
+  }, [globalFormData?.listingDetails]);
 
   // Handle price input with formatting for garage and storage room
-  const handleGaragePriceChange = formFormatters.handleNumericPriceInputChange((value) => 
-    updateFormData("optionalGaragePrice", value)
-  )
+  const handleGaragePriceChange = formFormatters.handleNumericPriceInputChange(
+    (value) => updateFormData("optionalGaragePrice", value),
+  );
 
-  const handleStorageRoomPriceChange = formFormatters.handleNumericPriceInputChange((value) => 
-    updateFormData("optionalStorageRoomPrice", value)
-  )
+  const handleStorageRoomPriceChange =
+    formFormatters.handleNumericPriceInputChange((value) =>
+      updateFormData("optionalStorageRoomPrice", value),
+    );
 
-  const handleRentalPriceChange = formFormatters.handleNumericPriceInputChange((value) => 
-    updateFormData("rentalPrice", value)
-  )
+  const handleRentalPriceChange = formFormatters.handleNumericPriceInputChange(
+    (value) => updateFormData("rentalPrice", value),
+  );
 
   const handleNext = () => {
     // Validate rental price if creating rental listing
-    if (isSaleListing && formData.duplicateForRent && formData.rentalPrice <= 0) {
-      alert("Por favor, introduce el precio del alquiler.")
-      return
+    if (
+      isSaleListing &&
+      formData.duplicateForRent &&
+      formData.rentalPrice <= 0
+    ) {
+      alert("Por favor, introduce el precio del alquiler.");
+      return;
     }
 
     // Navigate IMMEDIATELY (optimistic) - finish form instantly!
     if (globalFormData?.listingDetails?.listingId) {
-      router.push(`/propiedades/${globalFormData.listingDetails.listingId}`)
+      router.push(`/propiedades/${globalFormData.listingDetails.listingId}`);
     }
-    
+
     // Save data in background (completely silent)
-    void saveInBackground()
-  }
+    void saveInBackground();
+  };
 
   // Background save function - completely silent and non-blocking
   const saveInBackground = async () => {
     try {
       // Fire and forget - no await, no blocking!
       if (globalFormData?.listingDetails?.propertyId) {
-        const listingDetails = globalFormData.listingDetails
-        
+        const listingDetails = globalFormData.listingDetails;
+
         // Update property form position
         await updateProperty(Number(listingDetails.propertyId), {
-          formPosition: (!listingDetails.formPosition || listingDetails.formPosition < 12) ? 12 : listingDetails.formPosition
-        })
-        
+          formPosition:
+            !listingDetails.formPosition || listingDetails.formPosition < 12
+              ? 12
+              : listingDetails.formPosition,
+        });
+
         // Refresh global data after successful save
-        refreshListingDetails?.()
+        refreshListingDetails?.();
 
         // Update the sale listing status to 'Active'
         if (listingDetails.listingId) {
           await updateListing(Number(listingDetails.listingId), {
             status: "Active",
-            internet: formData.internet
-          })
+            internet: formData.internet,
+          });
         }
 
         // Only create rental listing if it's a sale property and user wants to duplicate for rent
-        if (isSaleListing && formData.duplicateForRent && listingDetails.agentId && listingDetails.propertyId) {
+        if (
+          isSaleListing &&
+          formData.duplicateForRent &&
+          listingDetails.agentId &&
+          listingDetails.propertyId
+        ) {
           const rentListingData = {
             propertyId: BigInt(listingDetails.propertyId),
             listingType: "Rent" as const,
@@ -170,7 +194,8 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
             appliancesIncluded: formData.appliancesIncluded,
             internet: formData.internet,
             optionalGaragePrice: formData.optionalGaragePrice.toString(),
-            optionalStorageRoomPrice: formData.optionalStorageRoomPrice.toString(),
+            optionalStorageRoomPrice:
+              formData.optionalStorageRoomPrice.toString(),
             hasKeys: false,
             optionalStorageRoom: false,
             status: "Active" as const,
@@ -181,21 +206,21 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
             isFurnished: formData.isFurnished,
             furnitureQuality: formData.furnitureQuality,
             viewCount: 0,
-            inquiryCount: 0
-          }
-          
-          await createListing(rentListingData)
+            inquiryCount: 0,
+          };
+
+          await createListing(rentListingData);
         }
       }
     } catch (error) {
-      console.error("Error saving form data:", error)
+      console.error("Error saving form data:", error);
       // Silent error - user doesn't know it failed
       // Could implement retry logic here if needed
     }
-  }
+  };
 
   if (globalFormData?.listingDetails === null) {
-    return <FormSkeleton />
+    return <FormSkeleton />;
   }
 
   // If it's a sale listing, show the Apple-like UI
@@ -213,7 +238,9 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1, duration: 0.3 }}
         >
-          <h2 className="text-lg font-semibold text-gray-900">¿También para alquiler?</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            ¿También para alquiler?
+          </h2>
         </motion.div>
 
         <motion.div
@@ -222,11 +249,11 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.3 }}
         >
-          <div className="relative bg-gray-100 rounded-lg p-1 h-12 w-full max-w-sm">
+          <div className="relative h-12 w-full max-w-sm rounded-lg bg-gray-100 p-1">
             <motion.div
-              className="absolute top-1 left-1 w-[calc(50%-2px)] h-10 bg-gradient-to-r from-blue-400 to-yellow-300 rounded-md shadow-sm"
+              className="absolute left-1 top-1 h-10 w-[calc(50%-2px)] rounded-md bg-gradient-to-r from-blue-400 to-yellow-300 shadow-sm"
               animate={{
-                x: formData.duplicateForRent ? "calc(100% - 5px)" : 0
+                x: formData.duplicateForRent ? "calc(100% - 5px)" : 0,
               }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             />
@@ -235,10 +262,8 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
                 type="button"
                 onClick={() => updateFormData("duplicateForRent", false)}
                 className={cn(
-                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
-                  !formData.duplicateForRent
-                    ? "text-white"
-                    : "text-gray-400"
+                  "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                  !formData.duplicateForRent ? "text-white" : "text-gray-400",
                 )}
               >
                 Solo Venta
@@ -247,10 +272,8 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
                 type="button"
                 onClick={() => updateFormData("duplicateForRent", true)}
                 className={cn(
-                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-sm",
-                  formData.duplicateForRent
-                    ? "text-white"
-                    : "text-gray-400"
+                  "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                  formData.duplicateForRent ? "text-white" : "text-gray-400",
                 )}
               >
                 También Alquiler
@@ -268,116 +291,152 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
             transition={{ delay: 0.3, duration: 0.3 }}
           >
             {/* Rental Price - Mandatory */}
-            <div className="p-4 rounded-lg border-2 bg-blue-50 shadow-md">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium text-gray-700">Precio del Alquiler</h4>
-              </div> 
+            <div className="rounded-lg border-2 bg-blue-50 p-4 shadow-md">
+              <div className="mb-2 flex items-center justify-between">
+                <h4 className="text-sm font-medium text-gray-700">
+                  Precio del Alquiler
+                </h4>
+              </div>
               <Input
                 type="text"
                 value={formFormatters.formatPriceInput(formData.rentalPrice)}
                 onChange={handleRentalPriceChange}
                 placeholder="0 €"
-                className="h-10 text-sm shadow-md border-0 bg-white"
+                className="h-10 border-0 bg-white text-sm shadow-md"
               />
             </div>
 
             {/* Garage Price - Hide for solar and garage properties */}
-            {propertyType !== "solar" && propertyType !== "garage" && globalFormData?.listingDetails?.hasGarage && (
-              <div className="p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-medium text-gray-600">Garaje (€/mes)</h4>
-                  <Car className="h-4 w-4 text-gray-400" />
+            {propertyType !== "solar" &&
+              propertyType !== "garage" &&
+              globalFormData?.listingDetails?.hasGarage && (
+                <div className="rounded-lg p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h4 className="text-xs font-medium text-gray-600">
+                      Garaje (€/mes)
+                    </h4>
+                    <Car className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <Input
+                    type="text"
+                    value={formFormatters.formatPriceInput(
+                      formData.optionalGaragePrice,
+                    )}
+                    onChange={handleGaragePriceChange}
+                    placeholder="0 €"
+                    className="h-8 border-0 text-xs shadow-md"
+                  />
                 </div>
-                <Input
-                  type="text"
-                  value={formFormatters.formatPriceInput(formData.optionalGaragePrice)}
-                  onChange={handleGaragePriceChange}
-                  placeholder="0 €"
-                  className="h-8 text-xs shadow-md border-0"
-                />
-              </div>
-            )}
+              )}
 
             {/* Storage Room Price - Hide for solar and garage properties */}
-            {propertyType !== "solar" && propertyType !== "garage" && globalFormData?.listingDetails?.hasStorageRoom && (
-              <div className="p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-medium text-gray-600">Trastero (€/mes)</h4>
-                  <Package className="h-4 w-4 text-gray-400" />
+            {propertyType !== "solar" &&
+              propertyType !== "garage" &&
+              globalFormData?.listingDetails?.hasStorageRoom && (
+                <div className="rounded-lg p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h4 className="text-xs font-medium text-gray-600">
+                      Trastero (€/mes)
+                    </h4>
+                    <Package className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <Input
+                    type="text"
+                    value={formFormatters.formatPriceInput(
+                      formData.optionalStorageRoomPrice,
+                    )}
+                    onChange={handleStorageRoomPriceChange}
+                    placeholder="0 €"
+                    className="h-8 border-0 text-xs shadow-md"
+                  />
                 </div>
-                <Input
-                  type="text"
-                  value={formFormatters.formatPriceInput(formData.optionalStorageRoomPrice)}
-                  onChange={handleStorageRoomPriceChange}
-                  placeholder="0 €"
-                  className="h-8 text-xs shadow-md border-0"
-                />
-              </div>
-            )}
+              )}
 
             {/* Rental Characteristics - Hide for solar and garage properties */}
             {propertyType !== "solar" && propertyType !== "garage" && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {/* Student Friendly - Hide for local properties */}
                   {propertyType !== "local" && (
-                    <div className="space-y-4 p-4 rounded-lg shadow-md">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-xs font-medium text-gray-600">Estudiantes</h4>
+                    <div className="space-y-4 rounded-lg p-4 shadow-md">
+                      <div className="mb-2 flex items-center justify-between">
+                        <h4 className="text-xs font-medium text-gray-600">
+                          Estudiantes
+                        </h4>
                         <GraduationCap className="h-4 w-4 text-gray-400" />
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="studentFriendly" 
-                          checked={formData.studentFriendly} 
-                          onCheckedChange={checked => updateFormData("studentFriendly", !!checked)} 
+                        <Checkbox
+                          id="studentFriendly"
+                          checked={formData.studentFriendly}
+                          onCheckedChange={(checked) =>
+                            updateFormData("studentFriendly", !!checked)
+                          }
                         />
-                        <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
+                        <Label htmlFor="studentFriendly" className="text-sm">
+                          Admite estudiantes
+                        </Label>
                       </div>
                     </div>
                   )}
 
                   {/* Pets Allowed - Hide for local properties */}
                   {propertyType !== "local" && (
-                    <div className="space-y-4 p-4 rounded-lg shadow-md">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-xs font-medium text-gray-600">Mascotas</h4>
+                    <div className="space-y-4 rounded-lg p-4 shadow-md">
+                      <div className="mb-2 flex items-center justify-between">
+                        <h4 className="text-xs font-medium text-gray-600">
+                          Mascotas
+                        </h4>
                         <PawPrint className="h-4 w-4 text-gray-400" />
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="petsAllowed" 
-                          checked={formData.petsAllowed} 
-                          onCheckedChange={checked => updateFormData("petsAllowed", !!checked)} 
+                        <Checkbox
+                          id="petsAllowed"
+                          checked={formData.petsAllowed}
+                          onCheckedChange={(checked) =>
+                            updateFormData("petsAllowed", !!checked)
+                          }
                         />
-                        <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
+                        <Label htmlFor="petsAllowed" className="text-sm">
+                          Admite mascotas
+                        </Label>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Appliances Included - Show for all property types except solar and garage */}
-                <div className="space-y-4 p-4 rounded-lg shadow-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-xs font-medium text-gray-600">Electrodomésticos</h4>
+                <div className="space-y-4 rounded-lg p-4 shadow-md">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h4 className="text-xs font-medium text-gray-600">
+                      Electrodomésticos
+                    </h4>
                     <Zap className="h-4 w-4 text-gray-400" />
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="appliancesIncluded" 
-                        checked={formData.appliancesIncluded} 
-                        onCheckedChange={checked => updateFormData("appliancesIncluded", !!checked)} 
+                      <Checkbox
+                        id="appliancesIncluded"
+                        checked={formData.appliancesIncluded}
+                        onCheckedChange={(checked) =>
+                          updateFormData("appliancesIncluded", !!checked)
+                        }
                       />
-                      <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
+                      <Label htmlFor="appliancesIncluded" className="text-sm">
+                        Incluye electrodomésticos
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="internet" 
-                        checked={formData.internet} 
-                        onCheckedChange={checked => updateFormData("internet", !!checked)} 
+                      <Checkbox
+                        id="internet"
+                        checked={formData.internet}
+                        onCheckedChange={(checked) =>
+                          updateFormData("internet", !!checked)
+                        }
                       />
-                      <Label htmlFor="internet" className="text-sm">Incluye internet</Label>
+                      <Label htmlFor="internet" className="text-sm">
+                        Incluye internet
+                      </Label>
                     </div>
                   </div>
                 </div>
@@ -387,7 +446,7 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
         )}
 
         <motion.div
-          className="flex justify-between pt-4 border-t"
+          className="flex justify-between border-t pt-4"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.3 }}
@@ -405,8 +464,8 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
           </motion.div>
 
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button 
-              onClick={handleNext} 
+            <Button
+              onClick={handleNext}
               className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
             >
               <span>Finalizar</span>
@@ -414,7 +473,7 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
           </motion.div>
         </motion.div>
       </motion.div>
-    )
+    );
   }
 
   // If it's a rent listing, show the rental characteristics
@@ -431,11 +490,13 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
       >
-        <h2 className="text-lg font-semibold text-gray-900">Propiedades del Alquiler</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Propiedades del Alquiler
+        </h2>
       </motion.div>
 
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="grid grid-cols-1 gap-6 md:grid-cols-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.3 }}
@@ -443,66 +504,88 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
         {/* Rental Characteristics - Hide for solar and garage properties */}
         {propertyType !== "solar" && propertyType !== "garage" && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Student Friendly - Hide for local properties */}
               {propertyType !== "local" && (
-                <div className="space-y-4 p-4 rounded-lg shadow-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-xs font-medium text-gray-600">Estudiantes</h4>
+                <div className="space-y-4 rounded-lg p-4 shadow-md">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h4 className="text-xs font-medium text-gray-600">
+                      Estudiantes
+                    </h4>
                     <GraduationCap className="h-4 w-4 text-gray-400" />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="studentFriendly" 
-                      checked={formData.studentFriendly} 
-                      onCheckedChange={checked => updateFormData("studentFriendly", !!checked)} 
+                    <Checkbox
+                      id="studentFriendly"
+                      checked={formData.studentFriendly}
+                      onCheckedChange={(checked) =>
+                        updateFormData("studentFriendly", !!checked)
+                      }
                     />
-                    <Label htmlFor="studentFriendly" className="text-sm">Admite estudiantes</Label>
+                    <Label htmlFor="studentFriendly" className="text-sm">
+                      Admite estudiantes
+                    </Label>
                   </div>
                 </div>
               )}
 
               {/* Pets Allowed - Hide for local properties */}
               {propertyType !== "local" && (
-                <div className="space-y-4 p-4 rounded-lg shadow-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-xs font-medium text-gray-600">Mascotas</h4>
+                <div className="space-y-4 rounded-lg p-4 shadow-md">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h4 className="text-xs font-medium text-gray-600">
+                      Mascotas
+                    </h4>
                     <PawPrint className="h-4 w-4 text-gray-400" />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="petsAllowed" 
-                      checked={formData.petsAllowed} 
-                      onCheckedChange={checked => updateFormData("petsAllowed", !!checked)} 
+                    <Checkbox
+                      id="petsAllowed"
+                      checked={formData.petsAllowed}
+                      onCheckedChange={(checked) =>
+                        updateFormData("petsAllowed", !!checked)
+                      }
                     />
-                    <Label htmlFor="petsAllowed" className="text-sm">Admite mascotas</Label>
+                    <Label htmlFor="petsAllowed" className="text-sm">
+                      Admite mascotas
+                    </Label>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Appliances Included - Show for all property types except solar and garage */}
-            <div className="space-y-4 p-4 rounded-lg shadow-md">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-medium text-gray-600">Electrodomésticos</h4>
+            <div className="space-y-4 rounded-lg p-4 shadow-md">
+              <div className="mb-2 flex items-center justify-between">
+                <h4 className="text-xs font-medium text-gray-600">
+                  Electrodomésticos
+                </h4>
                 <Zap className="h-4 w-4 text-gray-400" />
               </div>
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="appliancesIncluded" 
-                    checked={formData.appliancesIncluded} 
-                    onCheckedChange={checked => updateFormData("appliancesIncluded", !!checked)} 
+                  <Checkbox
+                    id="appliancesIncluded"
+                    checked={formData.appliancesIncluded}
+                    onCheckedChange={(checked) =>
+                      updateFormData("appliancesIncluded", !!checked)
+                    }
                   />
-                  <Label htmlFor="appliancesIncluded" className="text-sm">Incluye electrodomésticos</Label>
+                  <Label htmlFor="appliancesIncluded" className="text-sm">
+                    Incluye electrodomésticos
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="internet" 
-                    checked={formData.internet} 
-                    onCheckedChange={checked => updateFormData("internet", !!checked)} 
+                  <Checkbox
+                    id="internet"
+                    checked={formData.internet}
+                    onCheckedChange={(checked) =>
+                      updateFormData("internet", !!checked)
+                    }
                   />
-                  <Label htmlFor="internet" className="text-sm">Incluye internet</Label>
+                  <Label htmlFor="internet" className="text-sm">
+                    Incluye internet
+                  </Label>
                 </div>
               </div>
             </div>
@@ -510,10 +593,10 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
         )}
       </motion.div>
 
-              {/* Removed saveError state and AnimatePresence notification */}
+      {/* Removed saveError state and AnimatePresence notification */}
 
       <motion.div
-        className="flex justify-between pt-4 border-t"
+        className="flex justify-between border-t pt-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.3 }}
@@ -531,8 +614,8 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button 
-            onClick={handleNext} 
+          <Button
+            onClick={handleNext}
             className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
           >
             <span>Finalizar</span>
@@ -540,5 +623,5 @@ export default function RentPage({ globalFormData, onBack, refreshListingDetails
         </motion.div>
       </motion.div>
     </motion.div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { db } from "../db"
+import { db } from "../db";
 import { dealParticipants } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import type { DealParticipant } from "../../lib/data";
@@ -14,8 +14,8 @@ export async function addDealParticipant(data: DealParticipant) {
         and(
           eq(dealParticipants.dealId, data.dealId),
           eq(dealParticipants.contactId, data.contactId),
-          eq(dealParticipants.role, data.role)
-        )
+          eq(dealParticipants.role, data.role),
+        ),
       );
     return participant;
   } catch (error) {
@@ -53,7 +53,7 @@ export async function getContactDeals(contactId: number) {
 }
 
 // Get participants by role
-export async function getParticipantsByRole(role: DealParticipant['role']) {
+export async function getParticipantsByRole(role: DealParticipant["role"]) {
   try {
     const participants = await db
       .select()
@@ -70,7 +70,7 @@ export async function getParticipantsByRole(role: DealParticipant['role']) {
 export async function updateParticipantRole(
   dealId: number,
   contactId: number,
-  newRole: DealParticipant['role']
+  newRole: DealParticipant["role"],
 ) {
   try {
     await db
@@ -79,8 +79,8 @@ export async function updateParticipantRole(
       .where(
         and(
           eq(dealParticipants.dealId, BigInt(dealId)),
-          eq(dealParticipants.contactId, BigInt(contactId))
-        )
+          eq(dealParticipants.contactId, BigInt(contactId)),
+        ),
       );
     const [updatedParticipant] = await db
       .select()
@@ -88,8 +88,8 @@ export async function updateParticipantRole(
       .where(
         and(
           eq(dealParticipants.dealId, BigInt(dealId)),
-          eq(dealParticipants.contactId, BigInt(contactId))
-        )
+          eq(dealParticipants.contactId, BigInt(contactId)),
+        ),
       );
     return updatedParticipant;
   } catch (error) {
@@ -106,8 +106,8 @@ export async function removeDealParticipant(dealId: number, contactId: number) {
       .where(
         and(
           eq(dealParticipants.dealId, BigInt(dealId)),
-          eq(dealParticipants.contactId, BigInt(contactId))
-        )
+          eq(dealParticipants.contactId, BigInt(contactId)),
+        ),
       );
     return { success: true };
   } catch (error) {
@@ -130,4 +130,4 @@ export async function listDealParticipants(page = 1, limit = 10) {
     console.error("Error listing deal participants:", error);
     throw error;
   }
-} 
+}

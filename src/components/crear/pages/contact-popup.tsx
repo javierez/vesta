@@ -1,24 +1,30 @@
-import { useState } from "react"
-import { Button } from "~/components/ui/button"
-import { FloatingLabelInput } from "~/components/ui/floating-label-input"
-import { Textarea } from "~/components/ui/textarea"
-import { Label } from "~/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/components/ui/dialog"
-import { Loader, User } from "lucide-react"
-import { createContact } from "~/server/queries/contact"
+import { useState } from "react";
+import { Button } from "~/components/ui/button";
+import { FloatingLabelInput } from "~/components/ui/floating-label-input";
+import { Textarea } from "~/components/ui/textarea";
+import { Label } from "~/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "~/components/ui/dialog";
+import { Loader, User } from "lucide-react";
+import { createContact } from "~/server/queries/contact";
 
 interface ContactPopupProps {
-  isOpen: boolean
-  onClose: () => void
-  onContactCreated: (contact: unknown) => void // Use 'unknown' instead of 'any' for type safety
+  isOpen: boolean;
+  onClose: () => void;
+  onContactCreated: (contact: unknown) => void; // Use 'unknown' instead of 'any' for type safety
 }
 
 interface ContactFormData {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  notes: string
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  notes: string;
 }
 
 const initialFormData: ContactFormData = {
@@ -27,51 +33,61 @@ const initialFormData: ContactFormData = {
   email: "",
   phone: "",
   notes: "",
-}
+};
 
-export default function ContactPopup({ isOpen, onClose, onContactCreated }: ContactPopupProps) {
-  const [formData, setFormData] = useState<ContactFormData>(initialFormData)
-  const [isCreating, setIsCreating] = useState(false)
+export default function ContactPopup({
+  isOpen,
+  onClose,
+  onContactCreated,
+}: ContactPopupProps) {
+  const [formData, setFormData] = useState<ContactFormData>(initialFormData);
+  const [isCreating, setIsCreating] = useState(false);
 
   const updateFormData = (field: keyof ContactFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
-  const handleInputChange = (field: keyof ContactFormData) => (value: string) => {
-    updateFormData(field, value)
-  }
+  const handleInputChange =
+    (field: keyof ContactFormData) => (value: string) => {
+      updateFormData(field, value);
+    };
 
-  const handleEventInputChange = (field: keyof ContactFormData) => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateFormData(field, e.target.value)
-  }
+  const handleEventInputChange =
+    (field: keyof ContactFormData) =>
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      updateFormData(field, e.target.value);
+    };
 
   const validateForm = () => {
     if (!formData.firstName.trim()) {
-      alert("Por favor, introduce el nombre.")
-      return false
+      alert("Por favor, introduce el nombre.");
+      return false;
     }
     if (!formData.lastName.trim()) {
-      alert("Por favor, introduce el apellido.")
-      return false
+      alert("Por favor, introduce el apellido.");
+      return false;
     }
     if (!formData.email.trim() && !formData.phone.trim()) {
-      alert("Por favor, introduce al menos un email o teléfono.")
-      return false
+      alert("Por favor, introduce al menos un email o teléfono.");
+      return false;
     }
     // Basic email validation if provided
-    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      alert("Por favor, introduce un email válido.")
-      return false
+    if (
+      formData.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+    ) {
+      alert("Por favor, introduce un email válido.");
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 
   const handleCreateContact = async () => {
-    if (!validateForm()) return
+    if (!validateForm()) return;
 
     try {
-      setIsCreating(true)
-      
+      setIsCreating(true);
+
       // Prepare contact data
       const contactData = {
         firstName: formData.firstName.trim(),
@@ -81,36 +97,35 @@ export default function ContactPopup({ isOpen, onClose, onContactCreated }: Cont
         additionalInfo: undefined,
         orgId: BigInt(1), // Default org ID
         isActive: true,
-      }
+      };
 
       // Create contact using the simple createContact function
-      const newContact = await createContact(contactData)
-      
-      console.log("Contact created:", newContact)
+      const newContact = await createContact(contactData);
+
+      console.log("Contact created:", newContact);
 
       // Reset form
-      setFormData(initialFormData)
-      
+      setFormData(initialFormData);
+
       // Notify parent component
-      onContactCreated(newContact)
-      
+      onContactCreated(newContact);
+
       // Close popup
-      onClose()
-      
+      onClose();
     } catch (error) {
-      console.error("Error creating contact:", error)
-      alert("Error al crear el contacto. Por favor, inténtalo de nuevo.")
+      console.error("Error creating contact:", error);
+      alert("Error al crear el contacto. Por favor, inténtalo de nuevo.");
     } finally {
-      setIsCreating(false)
+      setIsCreating(false);
     }
-  }
+  };
 
   const handleClose = () => {
     if (!isCreating) {
-      setFormData(initialFormData)
-      onClose()
+      setFormData(initialFormData);
+      onClose();
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -121,7 +136,7 @@ export default function ContactPopup({ isOpen, onClose, onContactCreated }: Cont
             <DialogTitle>Crear Nuevo Contacto</DialogTitle>
           </div>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <FloatingLabelInput
@@ -139,7 +154,7 @@ export default function ContactPopup({ isOpen, onClose, onContactCreated }: Cont
               required
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <FloatingLabelInput
               id="email"
@@ -173,23 +188,19 @@ export default function ContactPopup({ isOpen, onClose, onContactCreated }: Cont
             * Campos obligatorios. Debe introducir al menos email o teléfono.
           </div>
         </div>
-        
+
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isCreating}
-          >
+          <Button variant="outline" onClick={handleClose} disabled={isCreating}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleCreateContact} 
+          <Button
+            onClick={handleCreateContact}
             disabled={isCreating}
             className="bg-gray-900 hover:bg-gray-800"
           >
             {isCreating ? (
               <>
-                <Loader className="h-4 w-4 animate-spin mr-2" />
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
                 Creando...
               </>
             ) : (
@@ -199,5 +210,5 @@ export default function ContactPopup({ isOpen, onClose, onContactCreated }: Cont
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

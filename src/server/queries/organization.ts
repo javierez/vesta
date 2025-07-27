@@ -1,16 +1,19 @@
-'use server'
+"use server";
 
-import { db } from "../db"
-import { organizations } from "../db/schema"
-import { eq } from "drizzle-orm"
-import type { Organization } from "../../lib/data"
+import { db } from "../db";
+import { organizations } from "../db/schema";
+import { eq } from "drizzle-orm";
+import type { Organization } from "../../lib/data";
 
 // Create a new organization
 export async function createOrganization(data: Omit<Organization, "orgId">) {
   try {
     const [result] = await db.insert(organizations).values(data).$returningId();
     if (!result) throw new Error("Failed to create organization");
-    const [newOrg] = await db.select().from(organizations).where(eq(organizations.orgId, BigInt(result.orgId)));
+    const [newOrg] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.orgId, BigInt(result.orgId)));
     return newOrg;
   } catch (error) {
     console.error("Error creating organization:", error);
@@ -47,7 +50,10 @@ export async function getOrganizationByName(orgName: string) {
 }
 
 // Update organization
-export async function updateOrganization(orgId: number, data: Omit<Partial<Organization>, "orgId">) {
+export async function updateOrganization(
+  orgId: number,
+  data: Omit<Partial<Organization>, "orgId">,
+) {
   try {
     await db
       .update(organizations)
@@ -91,4 +97,4 @@ export async function listOrganizations(page = 1, limit = 10) {
     console.error("Error listing organizations:", error);
     throw error;
   }
-} 
+}

@@ -12,10 +12,8 @@ export type CreateProspectHistoryInput = {
 
 // Create a new history entry
 export async function createProspectHistory(input: CreateProspectHistoryInput) {
-  await db
-    .insert(prospectHistory)
-    .values(input);
-  
+  await db.insert(prospectHistory).values(input);
+
   // Get the created history entry
   const [created] = await db
     .select()
@@ -23,7 +21,7 @@ export async function createProspectHistory(input: CreateProspectHistoryInput) {
     .where(eq(prospectHistory.prospectId, input.prospectId))
     .orderBy(desc(prospectHistory.createdAt))
     .limit(1);
-  
+
   return created;
 }
 
@@ -46,29 +44,35 @@ export async function getProspectHistoryByUser(changedBy: bigint) {
 }
 
 // Get history entries between two dates
-export async function getProspectHistoryByDateRange(startDate: Date, endDate: Date) {
+export async function getProspectHistoryByDateRange(
+  startDate: Date,
+  endDate: Date,
+) {
   return await db
     .select()
     .from(prospectHistory)
     .where(
       and(
         gte(prospectHistory.createdAt, startDate),
-        lte(prospectHistory.createdAt, endDate)
-      )
+        lte(prospectHistory.createdAt, endDate),
+      ),
     )
     .orderBy(desc(prospectHistory.createdAt));
 }
 
 // Get history entries for a specific status change
-export async function getProspectHistoryByStatusChange(previousStatus: string, newStatus: string) {
+export async function getProspectHistoryByStatusChange(
+  previousStatus: string,
+  newStatus: string,
+) {
   return await db
     .select()
     .from(prospectHistory)
     .where(
       and(
         eq(prospectHistory.previousStatus, previousStatus),
-        eq(prospectHistory.newStatus, newStatus)
-      )
+        eq(prospectHistory.newStatus, newStatus),
+      ),
     )
     .orderBy(desc(prospectHistory.createdAt));
-} 
+}

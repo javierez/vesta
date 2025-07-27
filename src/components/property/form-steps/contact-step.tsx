@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { Input } from "~/components/ui/input"
-import { Label } from "~/components/ui/label"
-import type { ContactInfo } from "~/types/property-form"
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import type { ContactInfo } from "~/types/property-form";
 
 interface ContactStepProps {
-  data: ContactInfo
-  updateData: (data: Partial<ContactInfo>) => void
-  errors: Record<string, string>
+  data: ContactInfo;
+  updateData: (data: Partial<ContactInfo>) => void;
+  errors: Record<string, string>;
 }
 
 export function ContactStep({ data, updateData, errors }: ContactStepProps) {
@@ -16,11 +16,12 @@ export function ContactStep({ data, updateData, errors }: ContactStepProps) {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold">Datos de Contacto</h2>
         <p className="text-muted-foreground">
-          Introduce tus datos de contacto para que los interesados puedan comunicarse contigo.
+          Introduce tus datos de contacto para que los interesados puedan
+          comunicarse contigo.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="nombre">
             Nombre <span className="text-red-500">*</span>
@@ -32,7 +33,9 @@ export function ContactStep({ data, updateData, errors }: ContactStepProps) {
             placeholder="Tu nombre"
             className={errors.nombre ? "border-red-500" : ""}
           />
-          {errors.nombre && <p className="text-red-500 text-sm">{errors.nombre}</p>}
+          {errors.nombre && (
+            <p className="text-sm text-red-500">{errors.nombre}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -57,7 +60,9 @@ export function ContactStep({ data, updateData, errors }: ContactStepProps) {
             placeholder="tu@email.com"
             className={errors.email ? "border-red-500" : ""}
           />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+          {errors.email && (
+            <p className="text-sm text-red-500">{errors.email}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -71,9 +76,11 @@ export function ContactStep({ data, updateData, errors }: ContactStepProps) {
             placeholder="Tu número de teléfono"
             className={errors.telefono ? "border-red-500" : ""}
           />
-          {errors.telefono && <p className="text-red-500 text-sm">{errors.telefono}</p>}
+          {errors.telefono && (
+            <p className="text-sm text-red-500">{errors.telefono}</p>
+          )}
         </div>
       </div>
     </div>
-  )
+  );
 }

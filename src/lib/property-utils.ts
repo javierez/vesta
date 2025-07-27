@@ -8,8 +8,11 @@
  * @param digits - Number of digits to pad to (default: 8)
  * @returns Formatted reference number like "#00000001"
  */
-export function formatPropertyReference(referenceNumber: number, digits = 8): string {
-  return `#${referenceNumber.toString().padStart(digits, '0')}`
+export function formatPropertyReference(
+  referenceNumber: number,
+  digits = 8,
+): string {
+  return `#${referenceNumber.toString().padStart(digits, "0")}`;
 }
 
 /**
@@ -19,8 +22,8 @@ export function formatPropertyReference(referenceNumber: number, digits = 8): st
  */
 export function parsePropertyReference(formattedReference: string): number {
   // Remove the # and convert to number
-  const numericPart = formattedReference.replace('#', '')
-  return parseInt(numericPart, 10)
+  const numericPart = formattedReference.replace("#", "");
+  return parseInt(numericPart, 10);
 }
 
 /**
@@ -29,7 +32,7 @@ export function parsePropertyReference(formattedReference: string): number {
  * @returns Formatted reference number for display
  */
 export function getDisplayReference(referenceNumber: number): string {
-  return formatPropertyReference(referenceNumber)
+  return formatPropertyReference(referenceNumber);
 }
 
 /**
@@ -38,6 +41,6 @@ export function getDisplayReference(referenceNumber: number): string {
  * @returns True if valid, false otherwise
  */
 export function isValidReferenceFormat(reference: string): boolean {
-  const regex = /^#[0-9]{8}$/
-  return regex.test(reference)
-} 
+  const regex = /^#[0-9]{8}$/;
+  return regex.test(reference);
+}

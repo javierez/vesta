@@ -1,172 +1,176 @@
 // Shared PropertyListing interface for consistent typing across the application
 export interface PropertyListing {
   // Core IDs
-  propertyId?: number | string
-  listingId?: number | string
-  
+  propertyId?: number | string;
+  listingId?: number | string;
+
   // Basic property info
-  propertyType?: string
-  propertySubtype?: string
-  listingType?: string
-  price?: number | string
-  cadastralReference?: string
-  
+  propertyType?: string;
+  propertySubtype?: string;
+  listingType?: string;
+  price?: number | string;
+  cadastralReference?: string;
+
   // Status flags
-  isBankOwned?: boolean
-  isFeatured?: boolean
-  newConstruction?: boolean
-  
+  isBankOwned?: boolean;
+  isFeatured?: boolean;
+  newConstruction?: boolean;
+
   // Dimensions
-  bedrooms?: number
-  bathrooms?: number
-  squareMeter?: number
-  builtSurfaceArea?: number
-  
+  bedrooms?: number;
+  bathrooms?: number;
+  squareMeter?: number;
+  builtSurfaceArea?: number;
+
   // Construction details
-  yearBuilt?: number
-  lastRenovationYear?: string
-  buildingFloors?: number
-  conservationStatus?: number
-  
+  yearBuilt?: number;
+  lastRenovationYear?: string;
+  buildingFloors?: number;
+  conservationStatus?: number;
+
   // Location
-  street?: string
-  addressDetails?: string
-  postalCode?: string
-  neighborhood?: string
-  city?: string
-  province?: string
-  municipality?: string
-  
+  street?: string;
+  addressDetails?: string;
+  postalCode?: string;
+  neighborhood?: string;
+  city?: string;
+  province?: string;
+  municipality?: string;
+
   // Features
-  hasElevator?: boolean
-  hasGarage?: boolean
-  garageType?: string
-  garageSpaces?: number
-  garageInBuilding?: boolean
-  garageNumber?: string
-  optionalGaragePrice?: number
-  
+  hasElevator?: boolean;
+  hasGarage?: boolean;
+  garageType?: string;
+  garageSpaces?: number;
+  garageInBuilding?: boolean;
+  garageNumber?: string;
+  optionalGaragePrice?: number;
+
   // Storage
-  hasStorageRoom?: boolean
-  storageRoomSize?: number
-  storageRoomNumber?: string
-  optionalStorageRoomPrice?: number
-  
+  hasStorageRoom?: boolean;
+  storageRoomSize?: number;
+  storageRoomNumber?: string;
+  optionalStorageRoomPrice?: number;
+
   // Utilities
-  hasHeating?: boolean
-  heatingType?: string
-  hotWaterType?: string
-  airConditioningType?: string
-  
+  hasHeating?: boolean;
+  heatingType?: string;
+  hotWaterType?: string;
+  airConditioningType?: string;
+
   // Furnishing
-  isFurnished?: boolean
-  furnitureQuality?: string
-  studentFriendly?: boolean
-  petsAllowed?: boolean
-  appliancesIncluded?: boolean
-  
+  isFurnished?: boolean;
+  furnitureQuality?: string;
+  studentFriendly?: boolean;
+  petsAllowed?: boolean;
+  appliancesIncluded?: boolean;
+
   // Characteristics
-  exterior?: boolean
-  orientation?: string
-  bright?: boolean
-  disabledAccessible?: boolean
-  vpo?: boolean
-  
+  exterior?: boolean;
+  orientation?: string;
+  bright?: boolean;
+  disabledAccessible?: boolean;
+  vpo?: boolean;
+
   // Security & amenities
-  videoIntercom?: boolean
-  conciergeService?: boolean
-  securityGuard?: boolean
-  satelliteDish?: boolean
-  doubleGlazing?: boolean
-  alarm?: boolean
-  securityDoor?: boolean
-  
+  videoIntercom?: boolean;
+  conciergeService?: boolean;
+  securityGuard?: boolean;
+  satelliteDish?: boolean;
+  doubleGlazing?: boolean;
+  alarm?: boolean;
+  securityDoor?: boolean;
+
   // Kitchen
-  kitchenType?: string
-  openKitchen?: boolean
-  frenchKitchen?: boolean
-  furnishedKitchen?: boolean
-  pantry?: boolean
-  
+  kitchenType?: string;
+  openKitchen?: boolean;
+  frenchKitchen?: boolean;
+  furnishedKitchen?: boolean;
+  pantry?: boolean;
+
   // Outdoor spaces
-  terrace?: boolean
-  terraceSize?: number
-  wineCellar?: boolean
-  wineCellarSize?: number
-  livingRoomSize?: number
-  balconyCount?: number
-  galleryCount?: number
-  
+  terrace?: boolean;
+  terraceSize?: number;
+  wineCellar?: boolean;
+  wineCellarSize?: number;
+  livingRoomSize?: number;
+  balconyCount?: number;
+  galleryCount?: number;
+
   // Materials & finishes
-  builtInWardrobes?: string
-  mainFloorType?: string
-  shutterType?: string
-  carpentryType?: string
-  windowType?: string
-  
+  builtInWardrobes?: string;
+  mainFloorType?: string;
+  shutterType?: string;
+  carpentryType?: string;
+  windowType?: string;
+
   // Views
-  views?: boolean
-  mountainViews?: boolean
-  seaViews?: boolean
-  beachfront?: boolean
-  
+  views?: boolean;
+  mountainViews?: boolean;
+  seaViews?: boolean;
+  beachfront?: boolean;
+
   // Luxury features
-  jacuzzi?: boolean
-  hydromassage?: boolean
-  garden?: boolean
-  pool?: boolean
-  homeAutomation?: boolean
-  musicSystem?: boolean
-  
+  jacuzzi?: boolean;
+  hydromassage?: boolean;
+  garden?: boolean;
+  pool?: boolean;
+  homeAutomation?: boolean;
+  musicSystem?: boolean;
+
   // Additional spaces
-  laundryRoom?: boolean
-  coveredClothesline?: boolean
-  fireplace?: boolean
-  gym?: boolean
-  sportsArea?: boolean
-  childrenArea?: boolean
-  suiteBathroom?: boolean
-  
+  laundryRoom?: boolean;
+  coveredClothesline?: boolean;
+  fireplace?: boolean;
+  gym?: boolean;
+  sportsArea?: boolean;
+  childrenArea?: boolean;
+  suiteBathroom?: boolean;
+
   // Community features
-  nearbyPublicTransport?: boolean
-  communityPool?: boolean
-  privatePool?: boolean
-  tennisCourt?: boolean
-  
+  nearbyPublicTransport?: boolean;
+  communityPool?: boolean;
+  privatePool?: boolean;
+  tennisCourt?: boolean;
+
   // Appliances
-  internet?: boolean
-  oven?: boolean
-  microwave?: boolean
-  washingMachine?: boolean
-  fridge?: boolean
-  tv?: boolean
-  stoneware?: boolean
-  
+  internet?: boolean;
+  oven?: boolean;
+  microwave?: boolean;
+  washingMachine?: boolean;
+  fridge?: boolean;
+  tv?: boolean;
+  stoneware?: boolean;
+
   // Content
-  description?: string
-  
+  description?: string;
+
   // Relationships
   agent?: {
-    id: number
-    name: string
-  }
+    id: number;
+    name: string;
+  };
 }
 
 // Type guard to check if an object is a PropertyListing
 export function isPropertyListing(obj: unknown): obj is PropertyListing {
   return (
-    typeof obj === 'object' &&
+    typeof obj === "object" &&
     obj !== null &&
-    ('propertyId' in obj || 'listingId' in obj)
-  )
+    ("propertyId" in obj || "listingId" in obj)
+  );
 }
 
 // Utility function to convert database listing to PropertyListing
-export function convertDbListingToPropertyListing(dbListing: Record<string, unknown>): PropertyListing {
+export function convertDbListingToPropertyListing(
+  dbListing: Record<string, unknown>,
+): PropertyListing {
   // Helper function to safely cast types
-  const getNumber = (value: unknown): number | undefined => value ? Number(value) : undefined;
-  const getBoolean = (value: unknown): boolean | undefined => value === null || value === undefined ? undefined : Boolean(value);
-  
+  const getNumber = (value: unknown): number | undefined =>
+    value ? Number(value) : undefined;
+  const getBoolean = (value: unknown): boolean | undefined =>
+    value === null || value === undefined ? undefined : Boolean(value);
+
   return {
     propertyId: dbListing.propertyId ? Number(dbListing.propertyId) : undefined,
     listingId: dbListing.listingId ? Number(dbListing.listingId) : undefined,
@@ -203,7 +207,8 @@ export function convertDbListingToPropertyListing(dbListing: Record<string, unkn
     hasStorageRoom: (dbListing.hasStorageRoom as boolean) ?? undefined,
     storageRoomSize: (dbListing.storageRoomSize as number) ?? undefined,
     storageRoomNumber: (dbListing.storageRoomNumber as string) ?? undefined,
-    optionalStorageRoomPrice: (dbListing.optionalStorageRoomPrice as number) ?? undefined,
+    optionalStorageRoomPrice:
+      (dbListing.optionalStorageRoomPrice as number) ?? undefined,
     hasHeating: (dbListing.hasHeating as boolean) ?? undefined,
     heatingType: (dbListing.heatingType as string) ?? undefined,
     hotWaterType: (dbListing.hotWaterType as string) ?? undefined,
@@ -271,9 +276,14 @@ export function convertDbListingToPropertyListing(dbListing: Record<string, unkn
     tv: getBoolean(dbListing.tv),
     stoneware: getBoolean(dbListing.stoneware),
     description: (dbListing.description as string) ?? undefined,
-    agent: dbListing.agent && typeof dbListing.agent === 'object' && dbListing.agent !== null ? {
-      id: Number((dbListing.agent as Record<string, unknown>).id),
-      name: `${String((dbListing.agent as Record<string, unknown>).firstName)} ${String((dbListing.agent as Record<string, unknown>).lastName)}`
-    } : undefined
-  }
-} 
+    agent:
+      dbListing.agent &&
+      typeof dbListing.agent === "object" &&
+      dbListing.agent !== null
+        ? {
+            id: Number((dbListing.agent as Record<string, unknown>).id),
+            name: `${String((dbListing.agent as Record<string, unknown>).firstName)} ${String((dbListing.agent as Record<string, unknown>).lastName)}`,
+          }
+        : undefined,
+  };
+}

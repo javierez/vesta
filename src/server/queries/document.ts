@@ -4,15 +4,20 @@ import { eq, and, like, desc, asc } from "drizzle-orm";
 import type { Document } from "../../lib/data";
 
 // Create a new document
-export async function createDocument(data: Omit<Document, "docId" | "createdAt" | "updatedAt" | "uploadedAt">) {
+export async function createDocument(
+  data: Omit<Document, "docId" | "createdAt" | "updatedAt" | "uploadedAt">,
+) {
   try {
-    const [result] = await db.insert(documents).values({
-      ...data,
-      s3key: data.s3key, // make sure this exists in your data
-      documentKey: data.documentKey, // make sure this exists in your data
-      uploadedAt: new Date(),
-      isActive: true,
-    }).$returningId();
+    const [result] = await db
+      .insert(documents)
+      .values({
+        ...data,
+        s3key: data.s3key, // make sure this exists in your data
+        documentKey: data.documentKey, // make sure this exists in your data
+        uploadedAt: new Date(),
+        isActive: true,
+      })
+      .$returningId();
     if (!result) throw new Error("Failed to create document");
     return result;
   } catch (error) {
@@ -36,7 +41,10 @@ export async function getDocumentById(docId: number) {
 }
 
 // Get documents by reference number
-export async function getDocumentsByReference(referenceNumber: string, isActive = true) {
+export async function getDocumentsByReference(
+  referenceNumber: string,
+  isActive = true,
+) {
   try {
     const conditions = [like(documents.documentKey, `${referenceNumber}%`)];
     if (isActive !== undefined) {
@@ -150,7 +158,10 @@ export async function getDealDocuments(dealId: number, isActive = true) {
 }
 
 // Get documents by appointment ID
-export async function getAppointmentDocuments(appointmentId: number, isActive = true) {
+export async function getAppointmentDocuments(
+  appointmentId: number,
+  isActive = true,
+) {
   try {
     const conditions = [eq(documents.appointmentId, BigInt(appointmentId))];
     if (isActive !== undefined) {
@@ -169,7 +180,10 @@ export async function getAppointmentDocuments(appointmentId: number, isActive = 
 }
 
 // Get documents by prospect ID
-export async function getProspectDocuments(prospectId: number, isActive = true) {
+export async function getProspectDocuments(
+  prospectId: number,
+  isActive = true,
+) {
   try {
     const conditions = [eq(documents.prospectId, BigInt(prospectId))];
     if (isActive !== undefined) {
@@ -199,7 +213,7 @@ export async function updateDocument(docId: bigint, data: Partial<Document>) {
       .update(documents)
       .set(updateData)
       .where(eq(documents.docId, docId));
-    
+
     return await getDocumentById(Number(docId));
   } catch (error) {
     console.error("Error updating document:", error);
@@ -226,9 +240,7 @@ export async function deleteDocument(docId: bigint) {
 export async function hardDeleteDocument(docId: bigint) {
   try {
     const document = await getDocumentById(Number(docId));
-    await db
-      .delete(documents)
-      .where(eq(documents.docId, docId));
+    await db.delete(documents).where(eq(documents.docId, docId));
     return document;
   } catch (error) {
     console.error("Error hard deleting document:", error);
@@ -238,13 +250,13 @@ export async function hardDeleteDocument(docId: bigint) {
 
 // Update document orders
 export async function updateDocumentOrders(
-  updates: Array<{ docId: bigint; documentOrder: number }>
+  updates: Array<{ docId: bigint; documentOrder: number }>,
 ): Promise<void> {
   try {
     await Promise.all(
       updates.map(({ docId, documentOrder }) =>
-        updateDocument(docId, { documentOrder })
-      )
+        updateDocument(docId, { documentOrder }),
+      ),
     );
   } catch (error) {
     console.error("Error updating document orders:", error);
@@ -267,11 +279,11 @@ export async function listDocuments(
     fileType?: string;
     documentTag?: string;
     isActive?: boolean;
-  }
+  },
 ) {
   try {
     const offset = (page - 1) * limit;
-    
+
     // Build the where conditions array
     const whereConditions = [];
     if (filters) {
@@ -279,10 +291,14 @@ export async function listDocuments(
         whereConditions.push(eq(documents.userId, BigInt(filters.userId)));
       }
       if (filters.contactId) {
-        whereConditions.push(eq(documents.contactId, BigInt(filters.contactId)));
+        whereConditions.push(
+          eq(documents.contactId, BigInt(filters.contactId)),
+        );
       }
       if (filters.listingId) {
-        whereConditions.push(eq(documents.listingId, BigInt(filters.listingId)));
+        whereConditions.push(
+          eq(documents.listingId, BigInt(filters.listingId)),
+        );
       }
       if (filters.leadId) {
         whereConditions.push(eq(documents.leadId, BigInt(filters.leadId)));
@@ -291,10 +307,14 @@ export async function listDocuments(
         whereConditions.push(eq(documents.dealId, BigInt(filters.dealId)));
       }
       if (filters.appointmentId) {
-        whereConditions.push(eq(documents.appointmentId, BigInt(filters.appointmentId)));
+        whereConditions.push(
+          eq(documents.appointmentId, BigInt(filters.appointmentId)),
+        );
       }
       if (filters.prospectId) {
-        whereConditions.push(eq(documents.prospectId, BigInt(filters.prospectId)));
+        whereConditions.push(
+          eq(documents.prospectId, BigInt(filters.prospectId)),
+        );
       }
       if (filters.fileType) {
         whereConditions.push(eq(documents.fileType, filters.fileType));
@@ -314,22 +334,21 @@ export async function listDocuments(
     const query = db.select().from(documents);
 
     // Apply all where conditions at once
-    const filteredQuery = whereConditions.length > 0 
-      ? query.where(and(...whereConditions))
-      : query;
+    const filteredQuery =
+      whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
 
     // Apply pagination and ordering
     const allDocuments = await filteredQuery
       .orderBy(desc(documents.uploadedAt))
       .limit(limit)
       .offset(offset);
-    
+
     return allDocuments;
   } catch (error) {
     console.error("Error listing documents:", error);
     throw error;
   }
-} 
+}
 
 // Get energy certificate document by listing ID
 export async function getEnergyCertificate(propertyId: number) {
@@ -340,9 +359,9 @@ export async function getEnergyCertificate(propertyId: number) {
       .where(
         and(
           eq(documents.propertyId, BigInt(propertyId)),
-          eq(documents.documentTag, 'energy_certificate'),
-          eq(documents.isActive, true)
-        )
+          eq(documents.documentTag, "energy_certificate"),
+          eq(documents.isActive, true),
+        ),
       )
       .orderBy(desc(documents.uploadedAt));
     return document ?? null;
@@ -350,4 +369,4 @@ export async function getEnergyCertificate(propertyId: number) {
     console.error("Error fetching energy certificate document:", error);
     throw error;
   }
-} 
+}

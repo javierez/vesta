@@ -14,7 +14,7 @@ const missingEnvVars = Object.entries(requiredEnvVars)
 
 if (missingEnvVars.length > 0) {
   throw new Error(
-    `Missing required AWS environment variables: ${missingEnvVars.join(", ")}`
+    `Missing required AWS environment variables: ${missingEnvVars.join(", ")}`,
   );
 }
 
@@ -25,4 +25,4 @@ export const s3Client = new S3Client({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
-}); 
+});

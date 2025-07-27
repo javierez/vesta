@@ -1,14 +1,19 @@
-import { db } from "../db"
+import { db } from "../db";
 import { deals } from "../db/schema";
 import { eq } from "drizzle-orm";
 import type { Deal } from "../../lib/data";
 
 // Create a new deal
-export async function createDeal(data: Omit<Deal, "dealId" | "createdAt" | "updatedAt">) {
+export async function createDeal(
+  data: Omit<Deal, "dealId" | "createdAt" | "updatedAt">,
+) {
   try {
     const [result] = await db.insert(deals).values(data).$returningId();
     if (!result) throw new Error("Failed to create deal");
-    const [newDeal] = await db.select().from(deals).where(eq(deals.dealId, BigInt(result.dealId)));
+    const [newDeal] = await db
+      .select()
+      .from(deals)
+      .where(eq(deals.dealId, BigInt(result.dealId)));
     return newDeal;
   } catch (error) {
     console.error("Error creating deal:", error);
@@ -45,7 +50,7 @@ export async function getDealsByListingId(listingId: number) {
 }
 
 // Get deals by status
-export async function getDealsByStatus(status: Deal['status']) {
+export async function getDealsByStatus(status: Deal["status"]) {
   try {
     const statusDeals = await db
       .select()
@@ -59,7 +64,10 @@ export async function getDealsByStatus(status: Deal['status']) {
 }
 
 // Update deal
-export async function updateDeal(dealId: number, data: Omit<Partial<Deal>, "dealId">) {
+export async function updateDeal(
+  dealId: number,
+  data: Omit<Partial<Deal>, "dealId">,
+) {
   try {
     await db
       .update(deals)
@@ -79,9 +87,7 @@ export async function updateDeal(dealId: number, data: Omit<Partial<Deal>, "deal
 // Delete deal
 export async function deleteDeal(dealId: number) {
   try {
-    await db
-      .delete(deals)
-      .where(eq(deals.dealId, BigInt(dealId)));
+    await db.delete(deals).where(eq(deals.dealId, BigInt(dealId)));
     return { success: true };
   } catch (error) {
     console.error("Error deleting deal:", error);
@@ -93,14 +99,10 @@ export async function deleteDeal(dealId: number) {
 export async function listDeals(page = 1, limit = 10) {
   try {
     const offset = (page - 1) * limit;
-    const allDeals = await db
-      .select()
-      .from(deals)
-      .limit(limit)
-      .offset(offset);
+    const allDeals = await db.select().from(deals).limit(limit).offset(offset);
     return allDeals;
   } catch (error) {
     console.error("Error listing deals:", error);
     throw error;
   }
-} 
+}

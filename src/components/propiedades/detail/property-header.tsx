@@ -1,22 +1,22 @@
-'use client'
+"use client";
 
-import { MapPin } from "lucide-react"
-import { Badge } from "~/components/ui/badge"
-import { formatPrice } from "~/lib/utils"
-import { generatePropertyTitle } from "~/components/propiedades/form/common/property-title"
+import { MapPin } from "lucide-react";
+import { Badge } from "~/components/ui/badge";
+import { formatPrice } from "~/lib/utils";
+import { generatePropertyTitle } from "~/components/propiedades/form/common/property-title";
 
 interface PropertyHeaderProps {
-  propertyType: string
-  street: string
-  city: string
-  province: string
-  postalCode: string
-  referenceNumber: string
-  price: string
-  listingType: 'Sale' | 'Rent' | 'Sold'
-  isBankOwned?: boolean
-  isFeatured?: boolean
-  neighborhood?: string
+  propertyType: string;
+  street: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  referenceNumber: string;
+  price: string;
+  listingType: "Sale" | "Rent" | "Sold";
+  isBankOwned?: boolean;
+  isFeatured?: boolean;
+  neighborhood?: string;
 }
 
 export function PropertyHeader({
@@ -30,13 +30,13 @@ export function PropertyHeader({
   listingType,
   isBankOwned = false,
   isFeatured: _isFeatured = false,
-  neighborhood = ''
+  neighborhood = "",
 }: PropertyHeaderProps) {
-  const title = generatePropertyTitle(propertyType, street, neighborhood)
+  const title = generatePropertyTitle(propertyType, street, neighborhood);
 
   return (
-    <div className="py-3 mb-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="mb-6 py-3">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold">{title}</h1>
@@ -46,8 +46,8 @@ export function PropertyHeader({
               </Badge>
             )}
           </div>
-          <div className="flex items-center text-muted-foreground mt-2">
-            <MapPin className="h-4 w-4 mr-1" />
+          <div className="mt-2 flex items-center text-muted-foreground">
+            <MapPin className="mr-1 h-4 w-4" />
             <p>
               {street}, {city}, {province} {postalCode}
             </p>
@@ -67,5 +67,5 @@ export function PropertyHeader({
         </div>
       </div>
     </div>
-  )
+  );
 }

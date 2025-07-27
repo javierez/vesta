@@ -1,15 +1,20 @@
-import { db } from "../db"
+import { db } from "../db";
 import { appointments } from "../db/schema";
 import { eq, and, or, between } from "drizzle-orm";
 import type { Appointment } from "../../lib/data";
 
 // Create a new appointment
-export async function createAppointment(data: Omit<Appointment, "appointmentId" | "createdAt" | "updatedAt">) {
+export async function createAppointment(
+  data: Omit<Appointment, "appointmentId" | "createdAt" | "updatedAt">,
+) {
   try {
-    const [result] = await db.insert(appointments).values({
-      ...data,
-      isActive: true,
-    }).$returningId();
+    const [result] = await db
+      .insert(appointments)
+      .values({
+        ...data,
+        isActive: true,
+      })
+      .$returningId();
     if (!result) throw new Error("Failed to create appointment");
     const [newAppointment] = await db
       .select()
@@ -31,8 +36,8 @@ export async function getAppointmentById(appointmentId: number) {
       .where(
         and(
           eq(appointments.appointmentId, BigInt(appointmentId)),
-          eq(appointments.isActive, true)
-        )
+          eq(appointments.isActive, true),
+        ),
       );
     return appointment;
   } catch (error) {
@@ -50,8 +55,8 @@ export async function getUserAppointments(userId: number) {
       .where(
         and(
           eq(appointments.userId, BigInt(userId)),
-          eq(appointments.isActive, true)
-        )
+          eq(appointments.isActive, true),
+        ),
       );
     return userAppointments;
   } catch (error) {
@@ -69,8 +74,8 @@ export async function getContactAppointments(contactId: number) {
       .where(
         and(
           eq(appointments.contactId, BigInt(contactId)),
-          eq(appointments.isActive, true)
-        )
+          eq(appointments.isActive, true),
+        ),
       );
     return contactAppointments;
   } catch (error) {
@@ -88,8 +93,8 @@ export async function getListingAppointments(listingId: number) {
       .where(
         and(
           eq(appointments.listingId, BigInt(listingId)),
-          eq(appointments.isActive, true)
-        )
+          eq(appointments.isActive, true),
+        ),
       );
     return listingAppointments;
   } catch (error) {
@@ -99,7 +104,10 @@ export async function getListingAppointments(listingId: number) {
 }
 
 // Get appointments by date range
-export async function getAppointmentsByDateRange(startDate: Date, endDate: Date) {
+export async function getAppointmentsByDateRange(
+  startDate: Date,
+  endDate: Date,
+) {
   try {
     const dateRangeAppointments = await db
       .select()
@@ -108,10 +116,10 @@ export async function getAppointmentsByDateRange(startDate: Date, endDate: Date)
         and(
           or(
             between(appointments.datetimeStart, startDate, endDate),
-            between(appointments.datetimeEnd, startDate, endDate)
+            between(appointments.datetimeEnd, startDate, endDate),
           ),
-          eq(appointments.isActive, true)
-        )
+          eq(appointments.isActive, true),
+        ),
       );
     return dateRangeAppointments;
   } catch (error) {
@@ -121,16 +129,13 @@ export async function getAppointmentsByDateRange(startDate: Date, endDate: Date)
 }
 
 // Get appointments by status
-export async function getAppointmentsByStatus(status: Appointment['status']) {
+export async function getAppointmentsByStatus(status: Appointment["status"]) {
   try {
     const statusAppointments = await db
       .select()
       .from(appointments)
       .where(
-        and(
-          eq(appointments.status, status),
-          eq(appointments.isActive, true)
-        )
+        and(eq(appointments.status, status), eq(appointments.isActive, true)),
       );
     return statusAppointments;
   } catch (error) {
@@ -142,7 +147,7 @@ export async function getAppointmentsByStatus(status: Appointment['status']) {
 // Update appointment
 export async function updateAppointment(
   appointmentId: number,
-  data: Omit<Partial<Appointment>, "appointmentId" | "createdAt" | "updatedAt">
+  data: Omit<Partial<Appointment>, "appointmentId" | "createdAt" | "updatedAt">,
 ) {
   try {
     await db
@@ -151,8 +156,8 @@ export async function updateAppointment(
       .where(
         and(
           eq(appointments.appointmentId, BigInt(appointmentId)),
-          eq(appointments.isActive, true)
-        )
+          eq(appointments.isActive, true),
+        ),
       );
     const [updatedAppointment] = await db
       .select()
@@ -193,14 +198,14 @@ export async function deleteAppointment(appointmentId: number) {
 }
 
 // List all appointments (with pagination)
-export async function listAppointments(page = 1, limit = 10, includeInactive = false) {
+export async function listAppointments(
+  page = 1,
+  limit = 10,
+  includeInactive = false,
+) {
   try {
     const offset = (page - 1) * limit;
-    const query = db
-      .select()
-      .from(appointments)
-      .limit(limit)
-      .offset(offset);
+    const query = db.select().from(appointments).limit(limit).offset(offset);
 
     if (!includeInactive) {
       query.where(eq(appointments.isActive, true));
@@ -212,4 +217,4 @@ export async function listAppointments(page = 1, limit = 10, includeInactive = f
     console.error("Error listing appointments:", error);
     throw error;
   }
-} 
+}

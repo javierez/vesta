@@ -1,4 +1,4 @@
-import { Search, Home, Landmark, Store, User } from "lucide-react"
+import { Search, Home, Landmark, Store, User } from "lucide-react";
 
 export const contactTypeConfig = {
   demandante: {
@@ -36,20 +36,22 @@ export const contactTypeConfig = {
     lightColors: "bg-orange-50",
     lineColor: "bg-orange-200",
   },
-} as const
+} as const;
 
 export const formatListingType = (listingType: string) => {
   const typeMap: Record<string, string> = {
-    'sale': 'Venta',
-    'sold': 'Vendido',
-    'rent': 'Alquiler',
-    'rented': 'Alquilado',
-    'RentWithOption': 'Alquiler con opción a compra',
-    'RoomSharing': 'Compartir habitación',
-    'Transfer': 'Transferencia'
-  }
-  return typeMap[listingType.toLowerCase()] ?? typeMap[listingType] ?? listingType
-}
+    sale: "Venta",
+    sold: "Vendido",
+    rent: "Alquiler",
+    rented: "Alquilado",
+    RentWithOption: "Alquiler con opción a compra",
+    RoomSharing: "Compartir habitación",
+    Transfer: "Transferencia",
+  };
+  return (
+    typeMap[listingType.toLowerCase()] ?? typeMap[listingType] ?? listingType
+  );
+};
 
 export const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-ES", {
@@ -57,5 +59,5 @@ export const formatCurrency = (amount: number) => {
     currency: "EUR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount)
-} 
+  }).format(amount);
+};

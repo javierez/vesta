@@ -1,4 +1,10 @@
-import { S3Client, PutObjectCommand, CopyObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  CopyObjectCommand,
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
 import { nanoid } from "nanoid";
 
 // Validate required environment variables
@@ -16,7 +22,7 @@ const missingEnvVars = Object.entries(requiredEnvVars)
 
 if (missingEnvVars.length > 0) {
   throw new Error(
-    `Missing required AWS environment variables: ${missingEnvVars.join(", ")}`
+    `Missing required AWS environment variables: ${missingEnvVars.join(", ")}`,
   );
 }
 
@@ -32,7 +38,7 @@ const s3Client = new S3Client({
 export async function uploadImageToS3(
   file: File,
   referenceNumber: string,
-  imageOrder: number
+  imageOrder: number,
 ): Promise<{ imageUrl: string; s3key: string; imageKey: string }> {
   try {
     if (!file) {
@@ -44,7 +50,7 @@ export async function uploadImageToS3(
     }
 
     // Generate a unique filename
-    const fileExtension = file.name.split('.').pop();
+    const fileExtension = file.name.split(".").pop();
     if (!fileExtension) {
       throw new Error("Could not determine file extension");
     }
@@ -65,7 +71,7 @@ export async function uploadImageToS3(
         Key: imageKey,
         Body: buffer,
         ContentType: file.type,
-      })
+      }),
     );
 
     // Return the image URL and keys
@@ -85,7 +91,7 @@ export async function uploadDocumentToS3(
   file: File,
   referenceNumber: string,
   documentOrder: number,
-  documentTag?: string
+  documentTag?: string,
 ): Promise<{
   fileUrl: string;
   s3key: string;
@@ -104,16 +110,16 @@ export async function uploadDocumentToS3(
     }
 
     // Get file extension
-    const fileExtension = file.name.split('.').pop();
+    const fileExtension = file.name.split(".").pop();
     if (!fileExtension) {
       throw new Error("Could not determine file extension");
     }
 
     // Create the S3 key with descriptive naming based on document tag
     let documentKey: string;
-    if (documentTag === 'energy_certificate') {
+    if (documentTag === "energy_certificate") {
       documentKey = `${referenceNumber}/documents/certificado_energetico_${nanoid(6)}.${fileExtension}`;
-    } else if (documentTag === 'ficha_propiedad') {
+    } else if (documentTag === "ficha_propiedad") {
       documentKey = `${referenceNumber}/documents/ficha_propiedad_${nanoid(6)}.${fileExtension}`;
     } else {
       documentKey = `${referenceNumber}/documents/document_${documentOrder}_${nanoid(6)}.${fileExtension}`;
@@ -131,7 +137,7 @@ export async function uploadDocumentToS3(
         Key: documentKey,
         Body: buffer,
         ContentType: file.type,
-      })
+      }),
     );
 
     // Build the public S3 URL
@@ -154,13 +160,15 @@ export async function uploadDocumentToS3(
 
 export async function renameS3Folder(
   tempReferenceNumber: string,
-  newReferenceNumber: string
-): Promise<Array<{
-  oldKey: string;
-  newKey: string;
-  newUrl: string;
-  newS3key: string;
-}>> {
+  newReferenceNumber: string,
+): Promise<
+  Array<{
+    oldKey: string;
+    newKey: string;
+    newUrl: string;
+    newS3key: string;
+  }>
+> {
   try {
     if (!tempReferenceNumber || !newReferenceNumber) {
       throw new Error("Both temporary and new reference numbers are required");
@@ -183,7 +191,9 @@ export async function renameS3Folder(
     const listedObjects = await s3Client.send(listCommand);
 
     if (!listedObjects.Contents || listedObjects.Contents.length === 0) {
-      console.log(`No objects found in temporary folder: ${tempReferenceNumber}`);
+      console.log(
+        `No objects found in temporary folder: ${tempReferenceNumber}`,
+      );
       return results;
     }
 
@@ -194,7 +204,7 @@ export async function renameS3Folder(
       // Create the new key by replacing the temp reference with the new one
       const newKey = object.Key.replace(
         `${tempReferenceNumber}/`,
-        `${newReferenceNumber}/`
+        `${newReferenceNumber}/`,
       );
 
       // Copy the object to the new location
@@ -228,10 +238,12 @@ export async function renameS3Folder(
       console.log(`Moved ${object.Key} to ${newKey}`);
     }
 
-    console.log(`Successfully renamed folder from ${tempReferenceNumber} to ${newReferenceNumber}`);
+    console.log(
+      `Successfully renamed folder from ${tempReferenceNumber} to ${newReferenceNumber}`,
+    );
     return results;
   } catch (error) {
     console.error("Error renaming S3 folder:", error);
     throw error;
   }
-} 
+}

@@ -9,21 +9,21 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
     NODE_ENV: z
-		.enum(["development", "test", "production"])
-		.default("development"),
-		SINGLESTORE_USER: z.string(),
-		SINGLESTORE_PASS: z.string(),
-		SINGLESTORE_DB: z.string(),
-		SINGLESTORE_HOST: z.string(),
-		SINGLESTORE_PORT: z.string(),
-		// AWS Configuration
-		AWS_ACCESS_KEY_ID: z.string(),
-		AWS_SECRET_ACCESS_KEY: z.string(),
-		AWS_REGION: z.string(),
-		AWS_S3_BUCKET: z.string(),
-		// Fotocasa Configuration
-		FOTOCASA_API_KEY: z.string(),
-	},
+      .enum(["development", "test", "production"])
+      .default("development"),
+    SINGLESTORE_USER: z.string(),
+    SINGLESTORE_PASS: z.string(),
+    SINGLESTORE_DB: z.string(),
+    SINGLESTORE_HOST: z.string(),
+    SINGLESTORE_PORT: z.string(),
+    // AWS Configuration
+    AWS_ACCESS_KEY_ID: z.string(),
+    AWS_SECRET_ACCESS_KEY: z.string(),
+    AWS_REGION: z.string(),
+    AWS_S3_BUCKET: z.string(),
+    // Fotocasa Configuration
+    FOTOCASA_API_KEY: z.string(),
+  },
 
   /**
    * Specify your client-side environment variables schema here. This way you can ensure the app

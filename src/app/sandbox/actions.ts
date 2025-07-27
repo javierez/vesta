@@ -1,13 +1,30 @@
-'use server'
+"use server";
 
-import { db } from "~/server/db"
-import { properties, type Property, propertyImages as mockPropertyImages, LEON_NEIGHBORHOODS, listings as mockListings, mockUsers, contacts as mockContacts, listingContacts as mockListingContacts } from "~/lib/data"
-import { properties as dbProperties, listings as dbListings, propertyImages, locations, users, contacts, listingContacts } from "~/server/db/schema"
-import { createProperty } from "~/server/queries/properties"
-import { createListing } from "~/server/queries/listing"
-import { createPropertyImage } from "~/server/queries/property_images"
-import { createLocation } from "~/server/queries/locations"
-import { sql } from "drizzle-orm"
+import { db } from "~/server/db";
+import {
+  properties,
+  type Property,
+  propertyImages as mockPropertyImages,
+  LEON_NEIGHBORHOODS,
+  listings as mockListings,
+  mockUsers,
+  contacts as mockContacts,
+  listingContacts as mockListingContacts,
+} from "~/lib/data";
+import {
+  properties as dbProperties,
+  listings as dbListings,
+  propertyImages,
+  locations,
+  users,
+  contacts,
+  listingContacts,
+} from "~/server/db/schema";
+import { createProperty } from "~/server/queries/properties";
+import { createListing } from "~/server/queries/listing";
+import { createPropertyImage } from "~/server/queries/property_images";
+import { createLocation } from "~/server/queries/locations";
+import { sql } from "drizzle-orm";
 
 // Helper function to convert property to DB format
 function toDbProperty(property: Property) {
@@ -29,29 +46,45 @@ function toDbProperty(property: Property) {
     hasElevator: property.hasElevator,
     hasGarage: property.hasGarage,
     hasStorageRoom: property.hasStorageRoom,
-  }
+  };
 
   // Only add optional fields if they are defined
-  if (property.addressDetails !== undefined) dbProperty.addressDetails = property.addressDetails;
-  if (property.postalCode !== undefined) dbProperty.postalCode = property.postalCode;
-  if (property.neighborhoodId !== undefined) dbProperty.neighborhoodId = property.neighborhoodId;
+  if (property.addressDetails !== undefined)
+    dbProperty.addressDetails = property.addressDetails;
+  if (property.postalCode !== undefined)
+    dbProperty.postalCode = property.postalCode;
+  if (property.neighborhoodId !== undefined)
+    dbProperty.neighborhoodId = property.neighborhoodId;
   if (property.latitude !== undefined) dbProperty.latitude = property.latitude;
-  if (property.longitude !== undefined) dbProperty.longitude = property.longitude;
-  if (property.energyCertification !== undefined) dbProperty.energyCertification = property.energyCertification;
-  if (property.heatingType !== undefined) dbProperty.heatingType = property.heatingType;
-  if (property.yearBuilt !== undefined) dbProperty.yearBuilt = property.yearBuilt;
-  if (property.cadastralReference !== undefined) dbProperty.cadastralReference = property.cadastralReference;
-  if (property.builtSurfaceArea !== undefined) dbProperty.builtSurfaceArea = property.builtSurfaceArea;
+  if (property.longitude !== undefined)
+    dbProperty.longitude = property.longitude;
+  if (property.energyCertification !== undefined)
+    dbProperty.energyCertification = property.energyCertification;
+  if (property.heatingType !== undefined)
+    dbProperty.heatingType = property.heatingType;
+  if (property.yearBuilt !== undefined)
+    dbProperty.yearBuilt = property.yearBuilt;
+  if (property.cadastralReference !== undefined)
+    dbProperty.cadastralReference = property.cadastralReference;
+  if (property.builtSurfaceArea !== undefined)
+    dbProperty.builtSurfaceArea = property.builtSurfaceArea;
 
   // Add amenity fields
   if (property.gym !== undefined) dbProperty.gym = property.gym;
-  if (property.sportsArea !== undefined) dbProperty.sportsArea = property.sportsArea;
-  if (property.childrenArea !== undefined) dbProperty.childrenArea = property.childrenArea;
-  if (property.suiteBathroom !== undefined) dbProperty.suiteBathroom = property.suiteBathroom;
-  if (property.nearbyPublicTransport !== undefined) dbProperty.nearbyPublicTransport = property.nearbyPublicTransport;
-  if (property.communityPool !== undefined) dbProperty.communityPool = property.communityPool;
-  if (property.privatePool !== undefined) dbProperty.privatePool = property.privatePool;
-  if (property.tennisCourt !== undefined) dbProperty.tennisCourt = property.tennisCourt;
+  if (property.sportsArea !== undefined)
+    dbProperty.sportsArea = property.sportsArea;
+  if (property.childrenArea !== undefined)
+    dbProperty.childrenArea = property.childrenArea;
+  if (property.suiteBathroom !== undefined)
+    dbProperty.suiteBathroom = property.suiteBathroom;
+  if (property.nearbyPublicTransport !== undefined)
+    dbProperty.nearbyPublicTransport = property.nearbyPublicTransport;
+  if (property.communityPool !== undefined)
+    dbProperty.communityPool = property.communityPool;
+  if (property.privatePool !== undefined)
+    dbProperty.privatePool = property.privatePool;
+  if (property.tennisCourt !== undefined)
+    dbProperty.tennisCourt = property.tennisCourt;
 
   return dbProperty;
 }
@@ -66,12 +99,12 @@ async function seedLocations() {
         province: location.province,
         municipality: location.municipality,
         neighborhood: location.neighborhood,
-        isActive: true
+        isActive: true,
       });
     }
-    console.log('Locations seeded successfully');
+    console.log("Locations seeded successfully");
   } catch (error) {
-    console.error('Error seeding locations:', error);
+    console.error("Error seeding locations:", error);
     throw error;
   }
 }
@@ -94,12 +127,12 @@ async function seedUsers() {
         updatedAt: user.updatedAt,
         lastLogin: user.lastLogin,
         isVerified: user.isVerified,
-        isActive: user.isActive
+        isActive: user.isActive,
       });
     }
-    console.log('Users seeded successfully');
+    console.log("Users seeded successfully");
   } catch (error) {
-    console.error('Error seeding users:', error);
+    console.error("Error seeding users:", error);
     throw error;
   }
 }
@@ -117,12 +150,12 @@ async function seedContacts() {
         additionalInfo: contact.additionalInfo,
         isActive: contact.isActive,
         createdAt: contact.createdAt,
-        updatedAt: contact.updatedAt
+        updatedAt: contact.updatedAt,
       });
     }
-    console.log('Contacts seeded successfully');
+    console.log("Contacts seeded successfully");
   } catch (error) {
-    console.error('Error seeding contacts:', error);
+    console.error("Error seeding contacts:", error);
     throw error;
   }
 }
@@ -138,9 +171,9 @@ async function clearDatabase() {
     await db.delete(contacts).where(sql`1=1`);
     await db.delete(locations).where(sql`1=1`);
     await db.delete(users).where(sql`1=1`);
-    console.log('Database cleared successfully');
+    console.log("Database cleared successfully");
   } catch (error) {
-    console.error('Error clearing database:', error);
+    console.error("Error clearing database:", error);
     throw error;
   }
 }
@@ -163,7 +196,7 @@ export async function seedDatabase() {
     const createdListings = new Map<bigint, bigint>(); // Map to store propertyId -> listingId
 
     for (const property of properties) {
-      const dbProperty = toDbProperty(property)
+      const dbProperty = toDbProperty(property);
       // Ensure required fields for createProperty
       const dbPropertyForCreate = {
         ...dbProperty,
@@ -173,24 +206,35 @@ export async function seedDatabase() {
         hasGarage: property.hasGarage,
         hasStorageRoom: property.hasStorageRoom,
         isActive: true,
-      } as Omit<Property, "propertyId" | "referenceNumber" | "formPosition" | "createdAt" | "updatedAt">;
-      const createdProperty = await createProperty(dbPropertyForCreate)
-      
+      } as Omit<
+        Property,
+        | "propertyId"
+        | "referenceNumber"
+        | "formPosition"
+        | "createdAt"
+        | "updatedAt"
+      >;
+      const createdProperty = await createProperty(dbPropertyForCreate);
+
       // Create a listing for each property
       if (createdProperty) {
         // Find the corresponding listing in the mock data
-        const mockListing = mockListings.find((l: { propertyId: bigint }) => l.propertyId === property.propertyId);
-        
+        const mockListing = mockListings.find(
+          (l: { propertyId: bigint }) => l.propertyId === property.propertyId,
+        );
+
         if (!mockListing) {
-          console.warn(`No mock listing found for property ${property.propertyId}, using defaults`);
+          console.warn(
+            `No mock listing found for property ${property.propertyId}, using defaults`,
+          );
         }
 
         const newListing = await createListing({
           propertyId: BigInt(createdProperty.propertyId),
           agentId: mockListing?.agentId ?? BigInt(1),
-          listingType: mockListing?.listingType ?? 'Sale',
+          listingType: mockListing?.listingType ?? "Sale",
           price: mockListing?.price ?? property.price ?? "0",
-          status: mockListing?.status ?? 'Active',
+          status: mockListing?.status ?? "Active",
           isActive: mockListing?.isActive ?? true,
           isFeatured: mockListing?.isFeatured ?? false,
           isBankOwned: mockListing?.isBankOwned ?? false,
@@ -219,7 +263,7 @@ export async function seedDatabase() {
           habitaclia: mockListing?.habitaclia ?? false,
           pisoscom: mockListing?.pisoscom ?? false,
           yaencontre: mockListing?.yaencontre ?? false,
-          milanuncios: mockListing?.milanuncios ?? false
+          milanuncios: mockListing?.milanuncios ?? false,
         });
 
         // Store the mapping of property ID to listing ID
@@ -230,10 +274,12 @@ export async function seedDatabase() {
         // Create property images for this property
         try {
           const propertyImages = mockPropertyImages.filter(
-            img => img.referenceNumber === property.referenceNumber
-          )
+            (img) => img.referenceNumber === property.referenceNumber,
+          );
 
-          console.log(`Found ${propertyImages.length} images for property ${property.referenceNumber}`)
+          console.log(
+            `Found ${propertyImages.length} images for property ${property.referenceNumber}`,
+          );
 
           for (const image of propertyImages) {
             try {
@@ -245,19 +291,27 @@ export async function seedDatabase() {
                 imageKey: image.imageKey,
                 imageTag: image.imageTag,
                 s3key: image.s3key,
-                imageOrder: image.imageOrder
-              })
-              console.log(`Successfully created image ${image.imageKey} for property ${property.referenceNumber}`)
+                imageOrder: image.imageOrder,
+              });
+              console.log(
+                `Successfully created image ${image.imageKey} for property ${property.referenceNumber}`,
+              );
             } catch (imageError) {
-              console.error(`Error creating image ${image.imageKey} for property ${property.referenceNumber}:`, imageError)
+              console.error(
+                `Error creating image ${image.imageKey} for property ${property.referenceNumber}:`,
+                imageError,
+              );
               // Continue with next image even if one fails
-              continue
+              continue;
             }
           }
         } catch (propertyImagesError) {
-          console.error(`Error processing images for property ${property.referenceNumber}:`, propertyImagesError)
+          console.error(
+            `Error processing images for property ${property.referenceNumber}:`,
+            propertyImagesError,
+          );
           // Continue with next property even if images fail
-          continue
+          continue;
         }
       }
     }
@@ -265,16 +319,22 @@ export async function seedDatabase() {
     // Finally seed listing contacts with correct listing IDs
     for (const listingContact of mockListingContacts) {
       // Find the corresponding property ID from the mock data
-      const mockListing = mockListings.find(l => l.listingId === listingContact.listingId);
+      const mockListing = mockListings.find(
+        (l) => l.listingId === listingContact.listingId,
+      );
       if (!mockListing) {
-        console.warn(`No mock listing found for listing contact ${listingContact.listingId}, skipping`);
+        console.warn(
+          `No mock listing found for listing contact ${listingContact.listingId}, skipping`,
+        );
         continue;
       }
 
       // Get the actual listing ID from our mapping
       const actualListingId = createdListings.get(mockListing.propertyId);
       if (!actualListingId) {
-        console.warn(`No actual listing ID found for property ${mockListing.propertyId}, skipping`);
+        console.warn(
+          `No actual listing ID found for property ${mockListing.propertyId}, skipping`,
+        );
         continue;
       }
 
@@ -285,45 +345,45 @@ export async function seedDatabase() {
         contactType: listingContact.contactType,
         createdAt: listingContact.createdAt,
         updatedAt: listingContact.updatedAt,
-        isActive: listingContact.isActive
+        isActive: listingContact.isActive,
       });
     }
 
-    console.log('Database seeding completed successfully')
+    console.log("Database seeding completed successfully");
   } catch (error) {
-    console.error('Error seeding database:', error)
-    throw error
+    console.error("Error seeding database:", error);
+    throw error;
   }
 }
 
 export async function testDatabaseConnection() {
   try {
     // Log connection details (excluding password)
-    console.log('Attempting connection with:', {
+    console.log("Attempting connection with:", {
       host: process.env.SINGLESTORE_HOST,
       port: process.env.SINGLESTORE_PORT,
       user: process.env.SINGLESTORE_USER,
       database: process.env.SINGLESTORE_DB,
       password: process.env.SINGLESTORE_PASS,
-    })
+    });
 
-    const result = await db.execute(sql`SELECT 1 as test`)
-    console.log('Connection successful! Result:', result)
+    const result = await db.execute(sql`SELECT 1 as test`);
+    console.log("Connection successful! Result:", result);
     // Convert the result to a plain object to avoid serialization issues
     const plainResult = JSON.parse(JSON.stringify(result)) as unknown;
     return { success: true, result: plainResult };
   } catch (error) {
-    console.error('Database connection error:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error',
+    console.error("Database connection error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
       details: {
         host: process.env.SINGLESTORE_HOST,
         port: process.env.SINGLESTORE_PORT,
         user: process.env.SINGLESTORE_USER,
         database: process.env.SINGLESTORE_DB,
         password: process.env.SINGLESTORE_PASS,
-      }
-    }
+      },
+    };
   }
-} 
+}

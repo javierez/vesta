@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Button } from "~/components/ui/button"
+import Link from "next/link";
+import { Button } from "~/components/ui/button";
 
 interface AboutButtonProps {
-  text: string
-  href: string
+  text: string;
+  href: string;
 }
 
 export function AboutButton({ text, href }: AboutButtonProps) {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
+    <div className="mt-12 flex flex-col justify-center gap-4 sm:flex-row">
       <Button size="lg" asChild>
         <Link href={href}>{text}</Link>
       </Button>
     </div>
-  )
-} 
+  );
+}

@@ -1,55 +1,55 @@
-import { useState, useEffect } from "react"
-import { Button } from "~/components/ui/button"
-import { Input } from "~/components/ui/input"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { motion } from "framer-motion"
-import { updateProperty } from "~/server/queries/properties"
-import { formFormatters } from "~/lib/utils"
-import FormSkeleton from "./form-skeleton"
-import { RoomSelector } from "./elements/room_selector"
-import { YearSlider } from "./elements/year_slider"
-import { FloatingLabelInput } from "~/components/ui/floating-label-input"
-import { cn } from "~/lib/utils"
+import { useState, useEffect } from "react";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { updateProperty } from "~/server/queries/properties";
+import { formFormatters } from "~/lib/utils";
+import FormSkeleton from "./form-skeleton";
+import { RoomSelector } from "./elements/room_selector";
+import { YearSlider } from "./elements/year_slider";
+import { FloatingLabelInput } from "~/components/ui/floating-label-input";
+import { cn } from "~/lib/utils";
 
 // Type definitions
 interface ListingDetails {
-  propertyType?: string
-  propertySubtype?: string
-  propertyId?: number | string
-  formPosition?: number
-  builtSurfaceArea?: number | string
-  squareMeter?: number | string
-  bedrooms?: number | string
-  bathrooms?: number | string
-  yearBuilt?: number | string
-  lastRenovationYear?: number | string
-  buildingFloors?: number | string
-  conservationStatus?: number
+  propertyType?: string;
+  propertySubtype?: string;
+  propertyId?: number | string;
+  formPosition?: number;
+  builtSurfaceArea?: number | string;
+  squareMeter?: number | string;
+  bedrooms?: number | string;
+  bathrooms?: number | string;
+  yearBuilt?: number | string;
+  lastRenovationYear?: number | string;
+  buildingFloors?: number | string;
+  conservationStatus?: number;
 }
 
 interface GlobalFormData {
-  listingDetails?: ListingDetails | null
+  listingDetails?: ListingDetails | null;
 }
 
 interface SecondPageProps {
-  listingId?: string // Made optional since it's unused
-  globalFormData: GlobalFormData
-  onNext: () => void
-  onBack?: () => void
-  refreshListingDetails?: () => void
+  listingId?: string; // Made optional since it's unused
+  globalFormData: GlobalFormData;
+  onNext: () => void;
+  onBack?: () => void;
+  refreshListingDetails?: () => void;
 }
 
 // Form data interface for second page
 interface SecondPageFormData {
-  bedrooms: string
-  bathrooms: string
-  squareMeter: string
-  builtSurfaceArea: string
-  yearBuilt: string
-  lastRenovationYear: string
-  isRenovated: boolean
-  buildingFloors: string
-  conservationStatus: number
+  bedrooms: string;
+  bathrooms: string;
+  squareMeter: string;
+  builtSurfaceArea: string;
+  yearBuilt: string;
+  lastRenovationYear: string;
+  isRenovated: boolean;
+  buildingFloors: string;
+  conservationStatus: number;
 }
 
 const initialFormData: SecondPageFormData = {
@@ -62,38 +62,49 @@ const initialFormData: SecondPageFormData = {
   isRenovated: false,
   buildingFloors: "",
   conservationStatus: 1,
-}
+};
 
-export default function SecondPage({ globalFormData, onNext, onBack, refreshListingDetails }: SecondPageProps) {
-  const [formData, setFormData] = useState<SecondPageFormData>(initialFormData)
-  const [propertyType, setPropertyType] = useState<string>("")
-  const [propertySubtype, setPropertySubtype] = useState<string>("")
+export default function SecondPage({
+  globalFormData,
+  onNext,
+  onBack,
+  refreshListingDetails,
+}: SecondPageProps) {
+  const [formData, setFormData] = useState<SecondPageFormData>(initialFormData);
+  const [propertyType, setPropertyType] = useState<string>("");
+  const [propertySubtype, setPropertySubtype] = useState<string>("");
 
   // Use centralized data instead of fetching
   useEffect(() => {
     if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails
-      setPropertyType(details.propertyType ?? "")
-      setPropertySubtype(details.propertySubtype ?? "")
-      
+      const details = globalFormData.listingDetails;
+      setPropertyType(details.propertyType ?? "");
+      setPropertySubtype(details.propertySubtype ?? "");
+
       // Convert builtSurfaceArea from float to integer for display (similar to price in first.tsx)
-      let displayBuiltSurfaceArea = ""
+      let displayBuiltSurfaceArea = "";
       if (details.builtSurfaceArea) {
         // If builtSurfaceArea is a float (e.g., 89.00), convert to integer
-        const areaValue = typeof details.builtSurfaceArea === 'number' ? details.builtSurfaceArea : parseFloat(details.builtSurfaceArea.toString())
-        displayBuiltSurfaceArea = Math.floor(areaValue).toString()
+        const areaValue =
+          typeof details.builtSurfaceArea === "number"
+            ? details.builtSurfaceArea
+            : parseFloat(details.builtSurfaceArea.toString());
+        displayBuiltSurfaceArea = Math.floor(areaValue).toString();
       }
-      
+
       // Convert squareMeter from float to integer for display (similar to price in first.tsx)
-      let displaySquareMeter = ""
+      let displaySquareMeter = "";
       if (details.squareMeter) {
         // If squareMeter is a float (e.g., 80.00), convert to integer
-        const areaValue = typeof details.squareMeter === 'number' ? details.squareMeter : parseFloat(details.squareMeter.toString())
-        displaySquareMeter = Math.floor(areaValue).toString()
+        const areaValue =
+          typeof details.squareMeter === "number"
+            ? details.squareMeter
+            : parseFloat(details.squareMeter.toString());
+        displaySquareMeter = Math.floor(areaValue).toString();
       }
-      
+
       // Pre-populate form with existing data
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         bedrooms: details.bedrooms?.toString() ?? "2",
         bathrooms: details.bathrooms?.toString() ?? "1",
@@ -101,85 +112,94 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
         builtSurfaceArea: displayBuiltSurfaceArea ?? "85",
         yearBuilt: details.yearBuilt?.toString() ?? "2000",
         lastRenovationYear: details.lastRenovationYear?.toString() ?? "",
-        isRenovated: Boolean(details.lastRenovationYear && details.lastRenovationYear !== details.yearBuilt),
+        isRenovated: Boolean(
+          details.lastRenovationYear &&
+            details.lastRenovationYear !== details.yearBuilt,
+        ),
         buildingFloors: details.buildingFloors?.toString() ?? "",
         conservationStatus: details.conservationStatus ?? 1,
-      }))
+      }));
     }
-  }, [globalFormData?.listingDetails])
+  }, [globalFormData?.listingDetails]);
 
-  const updateFormData = (field: keyof SecondPageFormData, value: string | number | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+  const updateFormData = (
+    field: keyof SecondPageFormData,
+    value: string | number | boolean,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
-  const handleEventInputChange = (field: keyof SecondPageFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateFormData(field, e.target.value)
-  }
+  const handleEventInputChange =
+    (field: keyof SecondPageFormData) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      updateFormData(field, e.target.value);
+    };
 
   // Custom handlers for FloatingLabelInput (string-based onChange)
   const handleSquareMeterStringChange = (value: string) => {
-    const numericValue = formFormatters.getNumericArea(value)
-    updateFormData("squareMeter", numericValue)
-  }
+    const numericValue = formFormatters.getNumericArea(value);
+    updateFormData("squareMeter", numericValue);
+  };
 
   const handleBuiltSurfaceAreaStringChange = (value: string) => {
-    const numericValue = formFormatters.getNumericArea(value)
-    updateFormData("builtSurfaceArea", numericValue)
-  }
+    const numericValue = formFormatters.getNumericArea(value);
+    updateFormData("builtSurfaceArea", numericValue);
+  };
 
   const handleNext = () => {
     // Validate required fields based on property type
     if (propertyType === "solar") {
       // For solar, only surface is required
       if (!formData.squareMeter.trim()) {
-        alert("Por favor, introduce la superficie.")
-        return
+        alert("Por favor, introduce la superficie.");
+        return;
       }
     } else if (propertyType === "garage") {
       // For garage, surface and year built are required
       if (!formData.squareMeter.trim()) {
-        alert("Por favor, introduce las medidas.")
-        return
+        alert("Por favor, introduce las medidas.");
+        return;
       }
       if (!formData.yearBuilt.trim()) {
-        alert("Por favor, introduce el año de construcción.")
-        return
+        alert("Por favor, introduce el año de construcción.");
+        return;
       }
     } else {
       // For other property types (piso, casa, local), validate all required fields
       if (!formData.bedrooms.trim()) {
-        const fieldName = propertyType === "local" ? "espacios" : "habitaciones"
-        alert(`Por favor, introduce el número de ${fieldName}.`)
-        return
+        const fieldName =
+          propertyType === "local" ? "espacios" : "habitaciones";
+        alert(`Por favor, introduce el número de ${fieldName}.`);
+        return;
       }
 
       if (!formData.bathrooms.trim()) {
-        alert("Por favor, introduce el número de baños.")
-        return
+        alert("Por favor, introduce el número de baños.");
+        return;
       }
 
       if (!formData.squareMeter.trim()) {
-        alert("Por favor, introduce la superficie.")
-        return
+        alert("Por favor, introduce la superficie.");
+        return;
       }
 
       if (!formData.builtSurfaceArea.trim()) {
-        alert("Por favor, introduce la superficie construida.")
-        return
+        alert("Por favor, introduce la superficie construida.");
+        return;
       }
 
       if (!formData.yearBuilt.trim()) {
-        alert("Por favor, introduce el año de construcción.")
-        return
+        alert("Por favor, introduce el año de construcción.");
+        return;
       }
     }
 
     // Navigate IMMEDIATELY (optimistic) - no waiting!
-    onNext()
-    
+    onNext();
+
     // Save data in background (completely silent)
-    void saveInBackground()
-  }
+    void saveInBackground();
+  };
 
   // Background save function - completely silent and non-blocking
   const saveInBackground = async () => {
@@ -189,47 +209,57 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
         const updateData: Record<string, unknown> = {
           squareMeter: Number(formData.squareMeter),
           propertySubtype: propertySubtype ?? null,
-        }
+        };
 
         // Only update formPosition if current position is lower than 3
-        const currentFormPosition = globalFormData?.listingDetails?.formPosition ?? 1
+        const currentFormPosition =
+          globalFormData?.listingDetails?.formPosition ?? 1;
         if (currentFormPosition < 3) {
-          updateData.formPosition = 3
+          updateData.formPosition = 3;
         }
 
         // Only include fields that are relevant for the property type
         if (propertyType !== "solar") {
-          updateData.yearBuilt = Number(formData.yearBuilt)
-          updateData.bedrooms = Number(formData.bedrooms)
-          updateData.bathrooms = Number(formData.bathrooms)
-          updateData.builtSurfaceArea = formData.builtSurfaceArea ? Number(formData.builtSurfaceArea) : null
+          updateData.yearBuilt = Number(formData.yearBuilt);
+          updateData.bedrooms = Number(formData.bedrooms);
+          updateData.bathrooms = Number(formData.bathrooms);
+          updateData.builtSurfaceArea = formData.builtSurfaceArea
+            ? Number(formData.builtSurfaceArea)
+            : null;
           // Set renovation year to construction year if not renovated, otherwise use selected year
-          updateData.lastRenovationYear = formData.isRenovated ? Number(formData.lastRenovationYear) : Number(formData.yearBuilt)
-          updateData.buildingFloors = formData.buildingFloors ? Number(formData.buildingFloors) : undefined
+          updateData.lastRenovationYear = formData.isRenovated
+            ? Number(formData.lastRenovationYear)
+            : Number(formData.yearBuilt);
+          updateData.buildingFloors = formData.buildingFloors
+            ? Number(formData.buildingFloors)
+            : undefined;
         }
-        
+
         // Add conservation status for all property types
-        updateData.conservationStatus = formData.conservationStatus
+        updateData.conservationStatus = formData.conservationStatus;
 
-        console.log("Saving second page data:", updateData) // Debug log
+        console.log("Saving second page data:", updateData); // Debug log
 
-        await updateProperty(Number(globalFormData.listingDetails.propertyId), updateData)
-        console.log("Second page data saved successfully") // Debug log
+        await updateProperty(
+          Number(globalFormData.listingDetails.propertyId),
+          updateData,
+        );
+        console.log("Second page data saved successfully"); // Debug log
         // Refresh global data after successful save
-        refreshListingDetails?.()
+        refreshListingDetails?.();
       } else {
-        console.warn("No propertyId found in globalFormData.listingDetails") // Debug log
+        console.warn("No propertyId found in globalFormData.listingDetails"); // Debug log
       }
     } catch (error) {
-      console.error("Error saving form data:", error)
+      console.error("Error saving form data:", error);
       // Silent error - user doesn't know it failed
       // Could implement retry logic here if needed
     }
-  }
+  };
 
   // Show loading only if globalFormData is not ready
   if (!globalFormData?.listingDetails) {
-    return <FormSkeleton />
+    return <FormSkeleton />;
   }
 
   return (
@@ -241,7 +271,7 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
             <RoomSelector
               type="bedrooms"
               value={Number(formData.bedrooms) || 0}
-              onChange={val => updateFormData("bedrooms", val.toString())}
+              onChange={(val) => updateFormData("bedrooms", val.toString())}
               label={propertyType === "local" ? "Espacios" : "Habitaciones"}
             />
           </div>
@@ -250,7 +280,7 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
             <RoomSelector
               type="bathrooms"
               value={Number(formData.bathrooms) || 0}
-              onChange={val => updateFormData("bathrooms", val.toString())}
+              onChange={(val) => updateFormData("bathrooms", val.toString())}
               label="Baños"
             />
           </div>
@@ -263,7 +293,11 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
           id="squareMeter"
           value={formFormatters.formatAreaInput(formData.squareMeter)}
           onChange={handleSquareMeterStringChange}
-          placeholder={propertyType === "garage" ? "Medidas en metros cuadrados" : "Superficie útil"}
+          placeholder={
+            propertyType === "garage"
+              ? "Medidas en metros cuadrados"
+              : "Superficie útil"
+          }
           type="text"
           className="h-10 placeholder:text-gray-400"
         />
@@ -289,7 +323,7 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
           <YearSlider
             label="Año de Construcción"
             value={Number(formData.yearBuilt) || 2000}
-            onChange={val => updateFormData("yearBuilt", val.toString())}
+            onChange={(val) => updateFormData("yearBuilt", val.toString())}
             min={1900}
             max={new Date().getFullYear()}
             placeholder="Año de construcción"
@@ -301,26 +335,24 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
       {propertyType !== "solar" && propertyType !== "garage" && (
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-gray-900">¿Reformado?</h3>
-          <div className="relative bg-gray-100 rounded-lg p-1 h-8">
+          <div className="relative h-8 rounded-lg bg-gray-100 p-1">
             <motion.div
-              className="absolute top-1 left-1 w-[calc(50%-2px)] h-6 bg-white rounded-md shadow-sm"
+              className="absolute left-1 top-1 h-6 w-[calc(50%-2px)] rounded-md bg-white shadow-sm"
               animate={{
-                x: formData.isRenovated ? "calc(100% - 5px)" : 0
+                x: formData.isRenovated ? "calc(100% - 5px)" : 0,
               }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             />
             <div className="relative flex h-full">
               <button
                 onClick={() => {
-                  updateFormData("isRenovated", "false")
+                  updateFormData("isRenovated", "false");
                   // Set renovation year to construction year when "No" is selected
-                  updateFormData("lastRenovationYear", formData.yearBuilt)
+                  updateFormData("lastRenovationYear", formData.yearBuilt);
                 }}
                 className={cn(
-                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
-                  !formData.isRenovated
-                    ? "text-gray-900"
-                    : "text-gray-600"
+                  "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                  !formData.isRenovated ? "text-gray-900" : "text-gray-600",
                 )}
               >
                 No
@@ -328,10 +360,8 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
               <button
                 onClick={() => updateFormData("isRenovated", "true")}
                 className={cn(
-                  "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
-                  formData.isRenovated
-                    ? "text-gray-900"
-                    : "text-gray-600"
+                  "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                  formData.isRenovated ? "text-gray-900" : "text-gray-600",
                 )}
               >
                 Sí
@@ -349,7 +379,9 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
               <YearSlider
                 label="Año de Última Reforma"
                 value={Number(formData.lastRenovationYear) || 2000}
-                onChange={val => updateFormData("lastRenovationYear", val.toString())}
+                onChange={(val) =>
+                  updateFormData("lastRenovationYear", val.toString())
+                }
                 min={1900}
                 max={new Date().getFullYear()}
                 placeholder="Año de última reforma"
@@ -357,83 +389,93 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
             </div>
           )}
 
-      {/* Conservation Status - Show for all property types */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium text-gray-900">Estado de Conservación</h3>
-        <div className="relative bg-gray-100 rounded-lg p-1 h-10">
-          <motion.div
-            className="absolute top-1 left-1 w-[calc(20%-2px)] h-8 bg-white rounded-md shadow-sm"
-            animate={{
-              x: formData.conservationStatus === 3 ? 0 : 
-                 formData.conservationStatus === 6 ? "100%" :
-                 formData.conservationStatus === 1 ? "200%" :
-                 formData.conservationStatus === 2 ? "300%" :
-                 "400%"
-            }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          />
-          <div className="relative flex h-full">
-            <button
-              onClick={() => updateFormData("conservationStatus", 3)}
-              className={cn(
-                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
-                formData.conservationStatus === 3
-                  ? "text-gray-900"
-                  : "text-gray-600"
-              )}
-            >
-              Nuevo
-            </button>
-            <button
-              onClick={() => updateFormData("conservationStatus", 6)}
-              className={cn(
-                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
-                formData.conservationStatus === 6
-                  ? "text-gray-900"
-                  : "text-gray-600"
-              )}
-            >
-              Reformado
-            </button>
-            <button
-              onClick={() => updateFormData("conservationStatus", 1)}
-              className={cn(
-                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
-                formData.conservationStatus === 1
-                  ? "text-gray-900"
-                  : "text-gray-600"
-              )}
-            >
-              Bueno
-            </button>
-            <button
-              onClick={() => updateFormData("conservationStatus", 2)}
-              className={cn(
-                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
-                formData.conservationStatus === 2
-                  ? "text-gray-900"
-                  : "text-gray-600"
-              )}
-            >
-              Regular
-            </button>
-            <button
-              onClick={() => updateFormData("conservationStatus", 4)}
-              className={cn(
-                "flex-1 rounded-md transition-colors duration-200 font-medium relative z-10 text-xs",
-                formData.conservationStatus === 4
-                  ? "text-gray-900"
-                  : "text-gray-600"
-              )}
-            >
-              Reformar
-            </button>
+          {/* Conservation Status - Show for all property types */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-900">
+              Estado de Conservación
+            </h3>
+            <div className="relative h-10 rounded-lg bg-gray-100 p-1">
+              <motion.div
+                className="absolute left-1 top-1 h-8 w-[calc(20%-2px)] rounded-md bg-white shadow-sm"
+                animate={{
+                  x:
+                    formData.conservationStatus === 3
+                      ? 0
+                      : formData.conservationStatus === 6
+                        ? "100%"
+                        : formData.conservationStatus === 1
+                          ? "200%"
+                          : formData.conservationStatus === 2
+                            ? "300%"
+                            : "400%",
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+              <div className="relative flex h-full">
+                <button
+                  onClick={() => updateFormData("conservationStatus", 3)}
+                  className={cn(
+                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                    formData.conservationStatus === 3
+                      ? "text-gray-900"
+                      : "text-gray-600",
+                  )}
+                >
+                  Nuevo
+                </button>
+                <button
+                  onClick={() => updateFormData("conservationStatus", 6)}
+                  className={cn(
+                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                    formData.conservationStatus === 6
+                      ? "text-gray-900"
+                      : "text-gray-600",
+                  )}
+                >
+                  Reformado
+                </button>
+                <button
+                  onClick={() => updateFormData("conservationStatus", 1)}
+                  className={cn(
+                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                    formData.conservationStatus === 1
+                      ? "text-gray-900"
+                      : "text-gray-600",
+                  )}
+                >
+                  Bueno
+                </button>
+                <button
+                  onClick={() => updateFormData("conservationStatus", 2)}
+                  className={cn(
+                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                    formData.conservationStatus === 2
+                      ? "text-gray-900"
+                      : "text-gray-600",
+                  )}
+                >
+                  Regular
+                </button>
+                <button
+                  onClick={() => updateFormData("conservationStatus", 4)}
+                  className={cn(
+                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                    formData.conservationStatus === 4
+                      ? "text-gray-900"
+                      : "text-gray-600",
+                  )}
+                >
+                  Reformar
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
           <div className="space-y-2">
-            <label htmlFor="buildingFloors" className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor="buildingFloors"
+              className="text-xs font-medium text-gray-600"
+            >
               Plantas del Edificio
             </label>
             <Input
@@ -444,7 +486,7 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
               type="number"
               min="0"
               step="1"
-              className="h-10 placeholder:text-gray-400 shadow-md border-0"
+              className="h-10 border-0 shadow-md placeholder:text-gray-400"
             />
           </div>
         </>
@@ -455,7 +497,7 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
 
       {/* Navigation Buttons */}
       <motion.div
-        className="flex justify-between pt-4 border-t"
+        className="flex justify-between border-t pt-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.3 }}
@@ -473,8 +515,8 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button 
-            onClick={handleNext} 
+          <Button
+            onClick={handleNext}
             className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
           >
             <span>Siguiente</span>
@@ -483,5 +525,5 @@ export default function SecondPage({ globalFormData, onNext, onBack, refreshList
         </motion.div>
       </motion.div>
     </div>
-  )
+  );
 }

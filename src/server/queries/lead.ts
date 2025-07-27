@@ -1,14 +1,19 @@
-import { db } from "../db"
+import { db } from "../db";
 import { leads } from "../db/schema";
 import { eq } from "drizzle-orm";
 import type { Lead } from "../../lib/data";
 
 // Create a new lead
-export async function createLead(data: Omit<Lead, "leadId" | "createdAt" | "updatedAt">) {
+export async function createLead(
+  data: Omit<Lead, "leadId" | "createdAt" | "updatedAt">,
+) {
   try {
     const [result] = await db.insert(leads).values(data).$returningId();
     if (!result) throw new Error("Failed to create lead");
-    const [newLead] = await db.select().from(leads).where(eq(leads.leadId, BigInt(result.leadId)));
+    const [newLead] = await db
+      .select()
+      .from(leads)
+      .where(eq(leads.leadId, BigInt(result.leadId)));
     return newLead;
   } catch (error) {
     console.error("Error creating lead:", error);
@@ -59,7 +64,10 @@ export async function getLeadsByListingId(listingId: number) {
 }
 
 // Update lead
-export async function updateLead(leadId: number, data: Omit<Partial<Lead>, "leadId">) {
+export async function updateLead(
+  leadId: number,
+  data: Omit<Partial<Lead>, "leadId">,
+) {
   try {
     await db
       .update(leads)
@@ -79,9 +87,7 @@ export async function updateLead(leadId: number, data: Omit<Partial<Lead>, "lead
 // Delete lead
 export async function deleteLead(leadId: number) {
   try {
-    await db
-      .delete(leads)
-      .where(eq(leads.leadId, BigInt(leadId)));
+    await db.delete(leads).where(eq(leads.leadId, BigInt(leadId)));
     return { success: true };
   } catch (error) {
     console.error("Error deleting lead:", error);
@@ -93,11 +99,7 @@ export async function deleteLead(leadId: number) {
 export async function listLeads(page = 1, limit = 10) {
   try {
     const offset = (page - 1) * limit;
-    const allLeads = await db
-      .select()
-      .from(leads)
-      .limit(limit)
-      .offset(offset);
+    const allLeads = await db.select().from(leads).limit(limit).offset(offset);
     return allLeads;
   } catch (error) {
     console.error("Error listing leads:", error);

@@ -1,12 +1,24 @@
-import { useState, useEffect } from "react"
-import { Button } from "~/components/ui/button"
-import { Label } from "~/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { Checkbox } from "~/components/ui/checkbox"
-import { ChevronLeft, ChevronRight, Shield, Building2, CookingPot } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { updateProperty } from "~/server/queries/properties"
-import FormSkeleton from "./form-skeleton"
+import { useState, useEffect } from "react";
+import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Checkbox } from "~/components/ui/checkbox";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Shield,
+  Building2,
+  CookingPot,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { updateProperty } from "~/server/queries/properties";
+import FormSkeleton from "./form-skeleton";
 
 interface ListingDetails {
   propertyId?: number;
@@ -37,20 +49,20 @@ interface SixthPageProps {
 }
 
 interface SixthPageFormData {
-  securityDoor: boolean
-  alarm: boolean
-  videoIntercom: boolean
-  securityGuard: boolean
-  conciergeService: boolean
-  vpo: boolean
-  disabledAccessible: boolean
-  satelliteDish: boolean
-  doubleGlazing: boolean
-  kitchenType: string
-  openKitchen: boolean
-  frenchKitchen: boolean
-  furnishedKitchen: boolean
-  pantry: boolean
+  securityDoor: boolean;
+  alarm: boolean;
+  videoIntercom: boolean;
+  securityGuard: boolean;
+  conciergeService: boolean;
+  vpo: boolean;
+  disabledAccessible: boolean;
+  satelliteDish: boolean;
+  doubleGlazing: boolean;
+  kitchenType: string;
+  openKitchen: boolean;
+  frenchKitchen: boolean;
+  furnishedKitchen: boolean;
+  pantry: boolean;
 }
 
 const initialFormData: SixthPageFormData = {
@@ -68,7 +80,7 @@ const initialFormData: SixthPageFormData = {
   frenchKitchen: false,
   furnishedKitchen: false,
   pantry: false,
-}
+};
 
 const kitchenTypeOptions = [
   { value: "gas", label: "Gas" },
@@ -77,16 +89,22 @@ const kitchenTypeOptions = [
   { value: "carbon", label: "Carbón" },
   { value: "electrico", label: "Eléctrico" },
   { value: "mixto", label: "Mixto" },
-]
+];
 
-export default function SixthPage({ listingId: _listingId, globalFormData, onNext, onBack, refreshListingDetails }: SixthPageProps) {
-  const [formData, setFormData] = useState<SixthPageFormData>(initialFormData)
-  const [saveError] = useState<string | null>(null)
-  const [propertyType, setPropertyType] = useState<string>("")
+export default function SixthPage({
+  listingId: _listingId,
+  globalFormData,
+  onNext,
+  onBack,
+  refreshListingDetails,
+}: SixthPageProps) {
+  const [formData, setFormData] = useState<SixthPageFormData>(initialFormData);
+  const [saveError] = useState<string | null>(null);
+  const [propertyType, setPropertyType] = useState<string>("");
 
   const updateFormData = (field: keyof SixthPageFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   // Use centralized data instead of fetching
   useEffect(() => {
@@ -98,7 +116,7 @@ export default function SixthPage({ listingId: _listingId, globalFormData, onNex
         onNext();
         return;
       }
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         securityDoor: details.securityDoor ?? false,
         alarm: details.alarm ?? false,
@@ -120,11 +138,11 @@ export default function SixthPage({ listingId: _listingId, globalFormData, onNex
 
   const handleNext = () => {
     // Navigate IMMEDIATELY (optimistic) - no waiting!
-    onNext()
-    
+    onNext();
+
     // Save data in background (completely silent)
-    saveInBackground()
-  }
+    saveInBackground();
+  };
 
   // Background save function - completely silent and non-blocking
   const saveInBackground = () => {
@@ -152,23 +170,27 @@ export default function SixthPage({ listingId: _listingId, globalFormData, onNex
         updateData.formPosition = 7;
       }
       console.log("Saving sixth page data:", updateData); // Debug log
-      updateProperty(Number(details.propertyId), updateData).then(() => {
-        console.log("Sixth page data saved successfully"); // Debug log
-        // Refresh global data after successful save
-        refreshListingDetails?.();
-      }).catch((error: unknown) => {
-        console.error("Error saving form data:", error);
-        // Silent error - user doesn't know it failed
-        // Could implement retry logic here if needed
-      });
+      updateProperty(Number(details.propertyId), updateData)
+        .then(() => {
+          console.log("Sixth page data saved successfully"); // Debug log
+          // Refresh global data after successful save
+          refreshListingDetails?.();
+        })
+        .catch((error: unknown) => {
+          console.error("Error saving form data:", error);
+          // Silent error - user doesn't know it failed
+          // Could implement retry logic here if needed
+        });
     } else {
-      console.warn("No propertyId found in globalFormData.listingDetails for sixth page"); // Debug log
+      console.warn(
+        "No propertyId found in globalFormData.listingDetails for sixth page",
+      ); // Debug log
     }
   };
 
   // Show loading only if globalFormData is not ready
   if (!globalFormData?.listingDetails) {
-    return <FormSkeleton />
+    return <FormSkeleton />;
   }
 
   return (
@@ -184,69 +206,143 @@ export default function SixthPage({ listingId: _listingId, globalFormData, onNex
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
       >
-        <h2 className="text-lg font-semibold text-gray-900">Características adicionales</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Características adicionales
+        </h2>
       </motion.div>
 
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="grid grid-cols-1 gap-6 md:grid-cols-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.3 }}
       >
         {/* Security Features */}
-        <div className="space-y-4 p-4 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-2">
+        <div className="space-y-4 rounded-lg p-4 shadow-md">
+          <div className="mb-2 flex items-center justify-between">
             <h4 className="text-xs font-medium text-gray-600">Seguridad</h4>
             <Shield className="h-4 w-4 text-gray-400" />
           </div>
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <Checkbox id="securityDoor" checked={formData.securityDoor} onCheckedChange={checked => updateFormData("securityDoor", !!checked)} />
-              <Label htmlFor="securityDoor" className="text-sm">Puerta blindada</Label>
+              <Checkbox
+                id="securityDoor"
+                checked={formData.securityDoor}
+                onCheckedChange={(checked) =>
+                  updateFormData("securityDoor", !!checked)
+                }
+              />
+              <Label htmlFor="securityDoor" className="text-sm">
+                Puerta blindada
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="alarm" checked={formData.alarm} onCheckedChange={checked => updateFormData("alarm", !!checked)} />
-              <Label htmlFor="alarm" className="text-sm">Alarma</Label>
+              <Checkbox
+                id="alarm"
+                checked={formData.alarm}
+                onCheckedChange={(checked) =>
+                  updateFormData("alarm", !!checked)
+                }
+              />
+              <Label htmlFor="alarm" className="text-sm">
+                Alarma
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="videoIntercom" checked={formData.videoIntercom} onCheckedChange={checked => updateFormData("videoIntercom", !!checked)} />
-              <Label htmlFor="videoIntercom" className="text-sm">Videoportero</Label>
+              <Checkbox
+                id="videoIntercom"
+                checked={formData.videoIntercom}
+                onCheckedChange={(checked) =>
+                  updateFormData("videoIntercom", !!checked)
+                }
+              />
+              <Label htmlFor="videoIntercom" className="text-sm">
+                Videoportero
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="securityGuard" checked={formData.securityGuard} onCheckedChange={checked => updateFormData("securityGuard", !!checked)} />
-              <Label htmlFor="securityGuard" className="text-sm">Vigilante</Label>
+              <Checkbox
+                id="securityGuard"
+                checked={formData.securityGuard}
+                onCheckedChange={(checked) =>
+                  updateFormData("securityGuard", !!checked)
+                }
+              />
+              <Label htmlFor="securityGuard" className="text-sm">
+                Vigilante
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="conciergeService" checked={formData.conciergeService} onCheckedChange={checked => updateFormData("conciergeService", !!checked)} />
-              <Label htmlFor="conciergeService" className="text-sm">Conserjería</Label>
+              <Checkbox
+                id="conciergeService"
+                checked={formData.conciergeService}
+                onCheckedChange={(checked) =>
+                  updateFormData("conciergeService", !!checked)
+                }
+              />
+              <Label htmlFor="conciergeService" className="text-sm">
+                Conserjería
+              </Label>
             </div>
           </div>
         </div>
 
         {/* Building Features */}
-        <div className="space-y-4 p-4 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-medium text-gray-600">Características del edificio</h4>
+        <div className="space-y-4 rounded-lg p-4 shadow-md">
+          <div className="mb-2 flex items-center justify-between">
+            <h4 className="text-xs font-medium text-gray-600">
+              Características del edificio
+            </h4>
             <Building2 className="h-4 w-4 text-gray-400" />
           </div>
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <Checkbox id="vpo" checked={formData.vpo} onCheckedChange={checked => updateFormData("vpo", !!checked)} />
-              <Label htmlFor="vpo" className="text-sm">VPO</Label>
+              <Checkbox
+                id="vpo"
+                checked={formData.vpo}
+                onCheckedChange={(checked) => updateFormData("vpo", !!checked)}
+              />
+              <Label htmlFor="vpo" className="text-sm">
+                VPO
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="disabledAccessible" checked={formData.disabledAccessible} onCheckedChange={checked => updateFormData("disabledAccessible", !!checked)} />
-              <Label htmlFor="disabledAccessible" className="text-sm">Accesible</Label>
+              <Checkbox
+                id="disabledAccessible"
+                checked={formData.disabledAccessible}
+                onCheckedChange={(checked) =>
+                  updateFormData("disabledAccessible", !!checked)
+                }
+              />
+              <Label htmlFor="disabledAccessible" className="text-sm">
+                Accesible
+              </Label>
             </div>
             {propertyType !== "garage" && (
               <>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="satelliteDish" checked={formData.satelliteDish} onCheckedChange={checked => updateFormData("satelliteDish", !!checked)} />
-                  <Label htmlFor="satelliteDish" className="text-sm">Antena</Label>
+                  <Checkbox
+                    id="satelliteDish"
+                    checked={formData.satelliteDish}
+                    onCheckedChange={(checked) =>
+                      updateFormData("satelliteDish", !!checked)
+                    }
+                  />
+                  <Label htmlFor="satelliteDish" className="text-sm">
+                    Antena
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="doubleGlazing" checked={formData.doubleGlazing} onCheckedChange={checked => updateFormData("doubleGlazing", !!checked)} />
-                  <Label htmlFor="doubleGlazing" className="text-sm">Doble acristalamiento</Label>
+                  <Checkbox
+                    id="doubleGlazing"
+                    checked={formData.doubleGlazing}
+                    onCheckedChange={(checked) =>
+                      updateFormData("doubleGlazing", !!checked)
+                    }
+                  />
+                  <Label htmlFor="doubleGlazing" className="text-sm">
+                    Doble acristalamiento
+                  </Label>
                 </div>
               </>
             )}
@@ -255,40 +351,81 @@ export default function SixthPage({ listingId: _listingId, globalFormData, onNex
 
         {/* Kitchen Features - Hide for garage properties */}
         {propertyType !== "garage" && (
-          <div className="space-y-4 p-4 rounded-lg shadow-md">
-            <div className="flex items-center justify-between mb-2">
+          <div className="space-y-4 rounded-lg p-4 shadow-md">
+            <div className="mb-2 flex items-center justify-between">
               <h4 className="text-xs font-medium text-gray-600">Cocina</h4>
               <CookingPot className="h-4 w-4 text-gray-400" />
             </div>
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="kitchenType" className="text-sm">Tipo de cocina</Label>
-                <Select value={formData.kitchenType} onValueChange={value => updateFormData("kitchenType", value)}>
+                <Label htmlFor="kitchenType" className="text-sm">
+                  Tipo de cocina
+                </Label>
+                <Select
+                  value={formData.kitchenType}
+                  onValueChange={(value) =>
+                    updateFormData("kitchenType", value)
+                  }
+                >
                   <SelectTrigger className="h-8 text-gray-500">
                     <SelectValue placeholder="Seleccionar tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    {kitchenTypeOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    {kitchenTypeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="openKitchen" checked={formData.openKitchen} onCheckedChange={checked => updateFormData("openKitchen", !!checked)} />
-                <Label htmlFor="openKitchen" className="text-sm">Cocina abierta</Label>
+                <Checkbox
+                  id="openKitchen"
+                  checked={formData.openKitchen}
+                  onCheckedChange={(checked) =>
+                    updateFormData("openKitchen", !!checked)
+                  }
+                />
+                <Label htmlFor="openKitchen" className="text-sm">
+                  Cocina abierta
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="frenchKitchen" checked={formData.frenchKitchen} onCheckedChange={checked => updateFormData("frenchKitchen", !!checked)} />
-                <Label htmlFor="frenchKitchen" className="text-sm">Cocina francesa</Label>
+                <Checkbox
+                  id="frenchKitchen"
+                  checked={formData.frenchKitchen}
+                  onCheckedChange={(checked) =>
+                    updateFormData("frenchKitchen", !!checked)
+                  }
+                />
+                <Label htmlFor="frenchKitchen" className="text-sm">
+                  Cocina francesa
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="furnishedKitchen" checked={formData.furnishedKitchen} onCheckedChange={checked => updateFormData("furnishedKitchen", !!checked)} />
-                <Label htmlFor="furnishedKitchen" className="text-sm">Cocina amueblada</Label>
+                <Checkbox
+                  id="furnishedKitchen"
+                  checked={formData.furnishedKitchen}
+                  onCheckedChange={(checked) =>
+                    updateFormData("furnishedKitchen", !!checked)
+                  }
+                />
+                <Label htmlFor="furnishedKitchen" className="text-sm">
+                  Cocina amueblada
+                </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="pantry" checked={formData.pantry} onCheckedChange={checked => updateFormData("pantry", !!checked)} />
-                <Label htmlFor="pantry" className="text-sm">Despensa</Label>
+                <Checkbox
+                  id="pantry"
+                  checked={formData.pantry}
+                  onCheckedChange={(checked) =>
+                    updateFormData("pantry", !!checked)
+                  }
+                />
+                <Label htmlFor="pantry" className="text-sm">
+                  Despensa
+                </Label>
               </div>
             </div>
           </div>
@@ -304,7 +441,7 @@ export default function SixthPage({ listingId: _listingId, globalFormData, onNex
             animate={{ opacity: 1, height: "auto", scale: 1 }}
             exit={{ opacity: 0, height: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700"
+            className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700"
           >
             {saveError}
           </motion.div>
@@ -312,7 +449,7 @@ export default function SixthPage({ listingId: _listingId, globalFormData, onNex
       </AnimatePresence>
 
       <motion.div
-        className="flex justify-between pt-4 border-t"
+        className="flex justify-between border-t pt-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.3 }}
@@ -330,8 +467,8 @@ export default function SixthPage({ listingId: _listingId, globalFormData, onNex
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button 
-            onClick={handleNext} 
+          <Button
+            onClick={handleNext}
             className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
           >
             <span>Siguiente</span>
@@ -340,5 +477,5 @@ export default function SixthPage({ listingId: _listingId, globalFormData, onNex
         </motion.div>
       </motion.div>
     </motion.div>
-  )
+  );
 }

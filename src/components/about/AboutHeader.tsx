@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
 interface AboutHeaderProps {
-  title: string
-  subtitle: string
+  title: string;
+  subtitle: string;
 }
 
 export function AboutHeader({ title, subtitle }: AboutHeaderProps) {
   return (
-    <div className="flex flex-col items-center text-center mb-12">
-      <h2 className="text-4xl font-bold mb-4 tracking-tight">{title}</h2>
-      <p className="text-muted-foreground max-w-2xl">{subtitle}</p>
+    <div className="mb-12 flex flex-col items-center text-center">
+      <h2 className="mb-4 text-4xl font-bold tracking-tight">{title}</h2>
+      <p className="max-w-2xl text-muted-foreground">{subtitle}</p>
     </div>
-  )
-} 
+  );
+}

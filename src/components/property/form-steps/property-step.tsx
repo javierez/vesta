@@ -1,15 +1,21 @@
-"use client"
+"use client";
 
-import { Input } from "~/components/ui/input"
-import { Label } from "~/components/ui/label"
-import { Textarea } from "~/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import type { PropertyInfo, PropertyType } from "~/types/property-form"
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import type { PropertyInfo, PropertyType } from "~/types/property-form";
 
 interface PropertyStepProps {
-  data: PropertyInfo
-  updateData: (data: Partial<PropertyInfo>) => void
-  errors: Record<string, string>
+  data: PropertyInfo;
+  updateData: (data: Partial<PropertyInfo>) => void;
+  errors: Record<string, string>;
 }
 
 export function PropertyStep({ data, updateData, errors }: PropertyStepProps) {
@@ -19,21 +25,27 @@ export function PropertyStep({ data, updateData, errors }: PropertyStepProps) {
     { value: "local", label: "Local" },
     { value: "solar", label: "Solar" },
     { value: "garaje", label: "Garaje" },
-  ]
-
+  ];
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <h2 className="text-2xl font-bold">Datos de la Propiedad</h2>
-        <p className="text-muted-foreground">Introduce las características de tu inmueble.</p>
+        <p className="text-muted-foreground">
+          Introduce las características de tu inmueble.
+        </p>
       </div>
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="tipo">Tipo de Propiedad</Label>
-            <Select value={data.tipo} onValueChange={(value: PropertyType) => updateData({ tipo: value })}>
+            <Select
+              value={data.tipo}
+              onValueChange={(value: PropertyType) =>
+                updateData({ tipo: value })
+              }
+            >
               <SelectTrigger id="tipo">
                 <SelectValue placeholder="Selecciona un tipo" />
               </SelectTrigger>
@@ -59,7 +71,9 @@ export function PropertyStep({ data, updateData, errors }: PropertyStepProps) {
               placeholder="Superficie en m²"
               className={errors.superficie ? "border-red-500" : ""}
             />
-            {errors.superficie && <p className="text-red-500 text-sm">{errors.superficie}</p>}
+            {errors.superficie && (
+              <p className="text-sm text-red-500">{errors.superficie}</p>
+            )}
           </div>
         </div>
 
@@ -99,9 +113,11 @@ export function PropertyStep({ data, updateData, errors }: PropertyStepProps) {
             rows={5}
             className={errors.descripcion ? "border-red-500" : ""}
           />
-          {errors.descripcion && <p className="text-red-500 text-sm">{errors.descripcion}</p>}
+          {errors.descripcion && (
+            <p className="text-sm text-red-500">{errors.descripcion}</p>
+          )}
         </div>
       </div>
     </div>
-  )
+  );
 }

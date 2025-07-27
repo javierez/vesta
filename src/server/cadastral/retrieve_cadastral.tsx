@@ -1,6 +1,6 @@
-'use server'
+"use server";
 
-import { retrieveGeocodingData } from "../googlemaps/retrieve_geo"
+import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
 
 // Types for the cadastral API response
 interface CadastralResponse {
@@ -62,21 +62,21 @@ interface FormattedCadastralData {
 // Format street type abbreviations to full names
 function formatStreetType(abbreviation: string): string {
   const streetTypes: Record<string, string> = {
-    'CL': 'Calle',
-    'AV': 'Avenida',
-    'PL': 'Plaza',
-    'PS': 'Paseo',
-    'CR': 'Carrera',
-    'TR': 'Travesía',
-    'CT': 'Cuesta',
-    'GL': 'Glorieta',
-    'RD': 'Ronda',
-    'CM': 'Camino',
-    'PG': 'Paseo',
-    'PZ': 'Plaza',
-    'VR': 'Vereda'
+    CL: "Calle",
+    AV: "Avenida",
+    PL: "Plaza",
+    PS: "Paseo",
+    CR: "Carrera",
+    TR: "Travesía",
+    CT: "Cuesta",
+    GL: "Glorieta",
+    RD: "Ronda",
+    CM: "Camino",
+    PG: "Paseo",
+    PZ: "Plaza",
+    VR: "Vereda",
   };
-  
+
   return streetTypes[abbreviation] ?? abbreviation;
 }
 
@@ -84,29 +84,31 @@ function formatStreetType(abbreviation: string): string {
 function formatStreetName(name: string): string {
   return name
     .toLowerCase()
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 // Retrieve cadastral data from the API
-export async function retrieveCadastralData(cadastralReference: string): Promise<FormattedCadastralData | null> {
+export async function retrieveCadastralData(
+  cadastralReference: string,
+): Promise<FormattedCadastralData | null> {
   try {
     const apiUrl = `https://ovc.catastro.meh.es/OVCServWeb/OVCWcfCallejero/COVCCallejero.svc/json/Consulta_DNPRC?RefCat=${cadastralReference}`;
-    
+
     const response = await fetch(apiUrl, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; RealEstateApp/1.0)'
-      }
+        Accept: "application/json",
+        "User-Agent": "Mozilla/5.0 (compatible; RealEstateApp/1.0)",
+      },
     });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json() as CadastralResponse;
+    const data = (await response.json()) as CadastralResponse;
 
     const bi = data.consulta_dnprcResult.bico.bi;
     const dt = bi.dt;
@@ -116,32 +118,48 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
 
     const formattedStreetType = formatStreetType(dir.tv);
     const formattedStreetName = formatStreetName(dir.nv);
-    
+
     const street = `${formattedStreetType} ${formattedStreetName}, ${dir.pnp}`;
-    
+
     const fullAddress = `${street}, ${dt.nm}, ${dt.np}, España`;
     const geoData = await retrieveGeocodingData(fullAddress);
-    
+
     const addressDetails = `${loint.es}ª ${loint.pt}º ${loint.pu}`;
 
     const squareMeter = parseFloat(debi.sfc) || 0;
     const builtSurfaceArea = parseFloat(debi.sfc) || 0;
     const yearBuilt = parseInt(debi.ant) || 0;
 
-    const getPropertyType = (usage: string, constructionType?: string): string => {
+    const getPropertyType = (
+      usage: string,
+      constructionType?: string,
+    ): string => {
       const usageLower = usage.toLowerCase();
-      const constructionLower = constructionType?.toLowerCase() ?? '';
-      
-      if (usageLower.includes('vivienda') || usageLower.includes('residencial') || constructionLower.includes('vivienda')) {
-        return 'piso';
-      } else if (usageLower.includes('comercial') || usageLower.includes('local')) {
-        return 'local';
-      } else if (usageLower.includes('garaje') || usageLower.includes('parking')) {
-        return 'garaje';
-      } else if (usageLower.includes('solar') || usageLower.includes('terreno')) {
-        return 'solar';
+      const constructionLower = constructionType?.toLowerCase() ?? "";
+
+      if (
+        usageLower.includes("vivienda") ||
+        usageLower.includes("residencial") ||
+        constructionLower.includes("vivienda")
+      ) {
+        return "piso";
+      } else if (
+        usageLower.includes("comercial") ||
+        usageLower.includes("local")
+      ) {
+        return "local";
+      } else if (
+        usageLower.includes("garaje") ||
+        usageLower.includes("parking")
+      ) {
+        return "garaje";
+      } else if (
+        usageLower.includes("solar") ||
+        usageLower.includes("terreno")
+      ) {
+        return "solar";
       }
-      return 'piso';
+      return "piso";
     };
 
     const constructionType = data.consulta_dnprcResult.bico.lcons[0]?.lcd;
@@ -166,11 +184,10 @@ export async function retrieveCadastralData(cadastralReference: string): Promise
       longitude: geoData?.longitude,
       neighborhoodId: geoData?.neighborhoodId,
       city,
-      province
+      province,
     };
 
     return formattedData;
-
   } catch {
     return null;
   }

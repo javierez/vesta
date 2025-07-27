@@ -1,28 +1,77 @@
-import { motion, AnimatePresence } from "framer-motion"
-import { Navigation } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion";
+import { Navigation } from "lucide-react";
 
 interface CompassRoseProps {
-  value: string
-  onChange: (value: string) => void
+  value: string;
+  onChange: (value: string) => void;
 }
 
 const directions = [
-  { value: "norte", label: "N", angle: 0, fullName: "Norte", color: "bg-blue-600" },
-  { value: "noreste", label: "NE", angle: 45, fullName: "Noreste", color: "bg-green-600" },
-  { value: "este", label: "E", angle: 90, fullName: "Este", color: "bg-yellow-600" },
-  { value: "sureste", label: "SE", angle: 135, fullName: "Sureste", color: "bg-orange-600" },
-  { value: "sur", label: "S", angle: 180, fullName: "Sur", color: "bg-red-600" },
-  { value: "suroeste", label: "SW", angle: 225, fullName: "Suroeste", color: "bg-purple-600" },
-  { value: "oeste", label: "W", angle: 270, fullName: "Oeste", color: "bg-indigo-600" },
-  { value: "noroeste", label: "NW", angle: 315, fullName: "Noroeste", color: "bg-teal-600" },
-]
+  {
+    value: "norte",
+    label: "N",
+    angle: 0,
+    fullName: "Norte",
+    color: "bg-blue-600",
+  },
+  {
+    value: "noreste",
+    label: "NE",
+    angle: 45,
+    fullName: "Noreste",
+    color: "bg-green-600",
+  },
+  {
+    value: "este",
+    label: "E",
+    angle: 90,
+    fullName: "Este",
+    color: "bg-yellow-600",
+  },
+  {
+    value: "sureste",
+    label: "SE",
+    angle: 135,
+    fullName: "Sureste",
+    color: "bg-orange-600",
+  },
+  {
+    value: "sur",
+    label: "S",
+    angle: 180,
+    fullName: "Sur",
+    color: "bg-red-600",
+  },
+  {
+    value: "suroeste",
+    label: "SW",
+    angle: 225,
+    fullName: "Suroeste",
+    color: "bg-purple-600",
+  },
+  {
+    value: "oeste",
+    label: "W",
+    angle: 270,
+    fullName: "Oeste",
+    color: "bg-indigo-600",
+  },
+  {
+    value: "noroeste",
+    label: "NW",
+    angle: 315,
+    fullName: "Noroeste",
+    color: "bg-teal-600",
+  },
+];
 
 export function CompassRose({ value, onChange }: CompassRoseProps) {
-  const selectedDirection = directions.find((d) => d.value === value) ?? directions[0] // Default to north
+  const selectedDirection =
+    directions.find((d) => d.value === value) ?? directions[0]; // Default to north
 
   return (
     <div className="flex flex-col items-center space-y-6">
-      <div className="relative w-64 h-64">
+      <div className="relative h-64 w-64">
         {/* Outer compass ring */}
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
@@ -75,10 +124,12 @@ export function CompassRose({ value, onChange }: CompassRoseProps) {
 
         {/* Direction buttons */}
         {directions.map((direction, index) => {
-          const isSelected = value === direction.value || (!value && direction.value === "norte")
-          const radius = 100
-          const x = Math.cos((direction.angle - 90) * (Math.PI / 180)) * radius
-          const y = Math.sin((direction.angle - 90) * (Math.PI / 180)) * radius
+          const isSelected =
+            value === direction.value ||
+            (!value && direction.value === "norte");
+          const radius = 100;
+          const x = Math.cos((direction.angle - 90) * (Math.PI / 180)) * radius;
+          const y = Math.sin((direction.angle - 90) * (Math.PI / 180)) * radius;
 
           return (
             <motion.button
@@ -102,16 +153,13 @@ export function CompassRose({ value, onChange }: CompassRoseProps) {
                 transition: { duration: 0.1 },
               }}
               onClick={() => {
-                onChange(direction.value)
+                onChange(direction.value);
               }}
-              className={`
-                absolute w-12 h-12 rounded-full border-2 transition-all duration-300 flex items-center justify-center text-xs font-bold shadow-md
-                ${
-                  isSelected
-                    ? "bg-gray-900 text-white border-gray-900 shadow-xl z-20"
-                    : "bg-white text-gray-600 border-gray-300 hover:border-gray-400 hover:bg-gray-50 z-10"
-                }
-              `}
+              className={`absolute flex h-12 w-12 items-center justify-center rounded-full border-2 text-xs font-bold shadow-md transition-all duration-300 ${
+                isSelected
+                  ? "z-20 border-gray-900 bg-gray-900 text-white shadow-xl"
+                  : "z-10 border-gray-300 bg-white text-gray-600 hover:border-gray-400 hover:bg-gray-50"
+              } `}
               style={{
                 left: `calc(50% + ${x}px - 24px)`,
                 top: `calc(50% + ${y}px - 24px)`,
@@ -120,7 +168,7 @@ export function CompassRose({ value, onChange }: CompassRoseProps) {
               {/* Selection ripple effect - only when selected */}
               {isSelected && (
                 <motion.div
-                  className="absolute inset-0 bg-gray-800 rounded-full"
+                  className="absolute inset-0 rounded-full bg-gray-800"
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{
                     scale: [0, 1.2, 1],
@@ -151,7 +199,7 @@ export function CompassRose({ value, onChange }: CompassRoseProps) {
                 {direction.label}
               </motion.span>
             </motion.button>
-          )
+          );
         })}
 
         {/* Degree markers */}
@@ -183,18 +231,26 @@ export function CompassRose({ value, onChange }: CompassRoseProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.8 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="text-center space-y-2"
+            className="space-y-2 text-center"
           >
             <div className="flex items-center justify-center space-x-2">
-              <p className="text-lg font-semibold text-gray-900 tracking-widest uppercase">{selectedDirection.fullName}</p>
+              <p className="text-lg font-semibold uppercase tracking-widest text-gray-900">
+                {selectedDirection.fullName}
+              </p>
             </div>
           </motion.div>
         ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
-            <p className="text-sm text-gray-500">Selecciona la orientación de la propiedad</p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center"
+          >
+            <p className="text-sm text-gray-500">
+              Selecciona la orientación de la propiedad
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }

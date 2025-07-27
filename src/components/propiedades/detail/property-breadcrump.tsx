@@ -1,22 +1,29 @@
-'use client'
+"use client";
 
-import Link from "next/link"
-import { generatePropertyTitle } from "~/components/propiedades/form/common/property-title"
+import Link from "next/link";
+import { generatePropertyTitle } from "~/components/propiedades/form/common/property-title";
 
 interface PropertyBreadcrumbProps {
-  propertyType: string
-  street: string
-  referenceNumber?: string
+  propertyType: string;
+  street: string;
+  referenceNumber?: string;
 }
 
-export function PropertyBreadcrumb({ propertyType, street, referenceNumber }: PropertyBreadcrumbProps) {
-  const title = generatePropertyTitle(propertyType, street)
+export function PropertyBreadcrumb({
+  propertyType,
+  street,
+  referenceNumber,
+}: PropertyBreadcrumbProps) {
+  const title = generatePropertyTitle(propertyType, street);
 
   return (
     <nav className="py-4" aria-label="Breadcrumb">
       <ol className="flex items-center text-sm">
         <li>
-          <Link href="/propiedades" className="text-muted-foreground hover:text-primary">
+          <Link
+            href="/propiedades"
+            className="text-muted-foreground hover:text-primary"
+          >
             Propiedades
           </Link>
         </li>
@@ -24,12 +31,10 @@ export function PropertyBreadcrumb({ propertyType, street, referenceNumber }: Pr
         <li className="font-medium" aria-current="page">
           {title}
           {referenceNumber && (
-            <span className="tracking-wide ml-1">
-              ({referenceNumber})
-            </span>
+            <span className="ml-1 tracking-wide">({referenceNumber})</span>
           )}
         </li>
       </ol>
     </nav>
-  )
+  );
 }

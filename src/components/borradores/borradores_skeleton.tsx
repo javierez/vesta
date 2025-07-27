@@ -1,13 +1,20 @@
-import { Card, CardContent } from '~/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
-import { Skeleton } from '~/components/ui/skeleton'
+import { Card, CardContent } from "~/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import { Skeleton } from "~/components/ui/skeleton";
 
 export default function BorradoresSkeleton() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header Skeleton */}
       <div className="mb-8">
-        <Skeleton className="h-8 w-48 mb-2" />
+        <Skeleton className="mb-2 h-8 w-48" />
       </div>
 
       {/* Table Skeleton */}
@@ -55,5 +62,5 @@ export default function BorradoresSkeleton() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

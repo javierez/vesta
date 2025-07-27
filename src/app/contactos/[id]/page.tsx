@@ -1,12 +1,12 @@
-import { notFound } from "next/navigation"
-import { getContactByIdWithType } from "~/server/queries/contact"
-import { ContactDetailLayout } from "~/components/contactos/detail/contact-detail-layout"
-import type { Contact } from "~/lib/data"
+import { notFound } from "next/navigation";
+import { getContactByIdWithType } from "~/server/queries/contact";
+import { ContactDetailLayout } from "~/components/contactos/detail/contact-detail-layout";
+import type { Contact } from "~/lib/data";
 
 interface ContactPageProps {
   params: Promise<{
-    id: string
-  }>
+    id: string;
+  }>;
 }
 
 // Define the type for listings associated with a contact
@@ -28,7 +28,12 @@ interface ExtendedContact {
   lastName: string;
   email?: string | null;
   phone?: string | null;
-  contactType: "demandante" | "propietario" | "banco" | "agencia" | "interesado";
+  contactType:
+    | "demandante"
+    | "propietario"
+    | "banco"
+    | "agencia"
+    | "interesado";
   isActive: boolean | null;
   createdAt: Date;
   orgId?: bigint;
@@ -45,11 +50,11 @@ interface ExtendedContact {
 
 export default async function ContactPage({ params }: ContactPageProps) {
   try {
-    const unwrappedParams = await params
-    const contact = await getContactByIdWithType(parseInt(unwrappedParams.id))
+    const unwrappedParams = await params;
+    const contact = await getContactByIdWithType(parseInt(unwrappedParams.id));
 
     if (!contact) {
-      notFound()
+      notFound();
     }
 
     // Use explicit types and nullish coalescing for safety
@@ -59,15 +64,19 @@ export default async function ContactPage({ params }: ContactPageProps) {
       createdAt: contact.createdAt,
       // Ensure orgId is undefined if null, to match the type
       orgId: contact.orgId ?? undefined,
-      additionalInfo: (contact as { additionalInfo?: Contact["additionalInfo"] }).additionalInfo,
-      prospectTitles: (contact as { prospectTitles?: string[] }).prospectTitles ?? [],
-      allListings: (contact as { allListings?: ContactListing[] }).allListings ?? [],
-      contactType: "interesado" as const
+      additionalInfo: (
+        contact as { additionalInfo?: Contact["additionalInfo"] }
+      ).additionalInfo,
+      prospectTitles:
+        (contact as { prospectTitles?: string[] }).prospectTitles ?? [],
+      allListings:
+        (contact as { allListings?: ContactListing[] }).allListings ?? [],
+      contactType: (contact as unknown as { contactType: string }).contactType as "demandante" | "propietario" | "banco" | "agencia" | "interesado",
     };
 
-    return <ContactDetailLayout contact={extendedContact} />
+    return <ContactDetailLayout contact={extendedContact} />;
   } catch (error) {
-    console.error("Error in ContactPage:", error)
-    notFound()
+    console.error("Error in ContactPage:", error);
+    notFound();
   }
 }

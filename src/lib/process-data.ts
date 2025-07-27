@@ -1,16 +1,26 @@
-import { Users, Eye, Home, FileText, Building, Handshake, Target, MessageSquare, CheckCircle } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import {
+  Users,
+  Eye,
+  Home,
+  FileText,
+  Building,
+  Handshake,
+  Target,
+  MessageSquare,
+  CheckCircle,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export interface SubProcess {
-  label: string
-  value: number
+  label: string;
+  value: number;
 }
 
 export interface Process {
-  label: string
-  value: number
-  icon: LucideIcon
-  subprocesses: SubProcess[]
+  label: string;
+  value: number;
+  icon: LucideIcon;
+  subprocesses: SubProcess[];
 }
 
 // Sales Process Definition
@@ -85,7 +95,7 @@ export const salesProcess = [
       { label: "Seguimiento de incidencias", value: 0 },
     ],
   },
-]
+];
 
 // Rental Process Definition
 export const rentalProcess = [
@@ -160,13 +170,13 @@ export const rentalProcess = [
       { label: "Gestión renovación", value: 0 },
     ],
   },
-]
+];
 
 // Process type definitions for type safety
-export type ProcessType = 'venta' | 'alquiler'
+export type ProcessType = "venta" | "alquiler";
 
 // Process mapping for easy access
 export const processMap = {
   venta: salesProcess,
   alquiler: rentalProcess,
-} as const 
+} as const;

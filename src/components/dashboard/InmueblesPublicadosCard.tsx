@@ -1,10 +1,10 @@
-import Image from "next/image"
-import Link from "next/link"
-import { Card, CardContent } from "~/components/ui/card"
+import Image from "next/image";
+import Link from "next/link";
+import { Card, CardContent } from "~/components/ui/card";
 
 export default function InmueblesPublicadosCard() {
   return (
-    <Card className="relative group">
+    <Card className="group relative">
       <Link
         href="/propiedades"
         className="absolute inset-0 z-10"
@@ -12,12 +12,14 @@ export default function InmueblesPublicadosCard() {
         tabIndex={0}
       />
       <CardContent>
-        <div className="flex flex-col items-center my-4 mt-8 mb-6">
+        <div className="my-4 mb-6 mt-8 flex flex-col items-center">
           <span className="text-5xl font-extrabold text-primary">245</span>
-          <span className="text-xs text-muted-foreground tracking-widest mt-1 uppercase">Inmuebles Publicados</span>
+          <span className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
+            Inmuebles Publicados
+          </span>
         </div>
         <div className="mt-2 space-y-2">
-          <div className="flex items-center justify-between shadow-md rounded-md p-2 bg-white">
+          <div className="flex items-center justify-between rounded-md bg-white p-2 shadow-md">
             <div className="flex items-center">
               <Image
                 src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-idealista.png"
@@ -29,7 +31,7 @@ export default function InmueblesPublicadosCard() {
             </div>
             <span className="text-sm font-bold">180</span>
           </div>
-          <div className="flex items-center justify-between shadow-md rounded-md p-2 bg-white">
+          <div className="flex items-center justify-between rounded-md bg-white p-2 shadow-md">
             <div className="flex items-center">
               <Image
                 src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-fotocasa-min.png"
@@ -44,5 +46,5 @@ export default function InmueblesPublicadosCard() {
         </div>
       </CardContent>
     </Card>
-  )
-} 
+  );
+}

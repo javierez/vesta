@@ -1,8 +1,8 @@
-import { cn } from "~/lib/utils"
+import { cn } from "~/lib/utils";
 
 interface ProgressBarProps {
-  currentStep: number
-  totalSteps: number
+  currentStep: number;
+  totalSteps: number;
 }
 
 export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
@@ -13,22 +13,22 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
     { name: "Económicos", description: "Precios y gastos" },
     { name: "Imágenes", description: "Fotos del inmueble" },
     { name: "Revisión", description: "Confirmar datos" },
-  ]
+  ];
 
-  const percentage = ((currentStep + 1) / totalSteps) * 100
+  const percentage = ((currentStep + 1) / totalSteps) * 100;
 
   return (
     <div className="space-y-6">
       <div className="relative">
-        <div className="overflow-hidden h-2 text-xs flex rounded-full bg-muted">
+        <div className="flex h-2 overflow-hidden rounded-full bg-muted text-xs">
           <div
             style={{ width: `${percentage}%` }}
-            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary transition-all duration-500 ease-in-out"
+            className="flex flex-col justify-center whitespace-nowrap bg-primary text-center text-white shadow-none transition-all duration-500 ease-in-out"
           ></div>
         </div>
       </div>
 
-      <div className="hidden md:flex justify-between">
+      <div className="hidden justify-between md:flex">
         {steps.map((step, index) => (
           <div
             key={index}
@@ -39,7 +39,7 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
           >
             <div
               className={cn(
-                "w-10 h-10 flex items-center justify-center rounded-full mb-2 transition-all duration-300",
+                "mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300",
                 index < currentStep
                   ? "bg-primary text-primary-foreground shadow-md"
                   : index === currentStep
@@ -50,7 +50,7 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
               {index + 1}
             </div>
             <div className="text-sm font-medium">{step.name}</div>
-            <div className="text-xs hidden lg:block">{step.description}</div>
+            <div className="hidden text-xs lg:block">{step.description}</div>
           </div>
         ))}
       </div>
@@ -59,15 +59,19 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
         <div className="flex items-center">
           <div
             className={cn(
-              "w-10 h-10 flex items-center justify-center rounded-full mr-3 transition-all duration-300",
+              "mr-3 flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300",
               "bg-primary text-primary-foreground shadow-sm",
             )}
           >
             {currentStep + 1}
           </div>
           <div>
-            <div className="text-sm font-medium">{steps[currentStep]!.name}</div>
-            <div className="text-xs text-muted-foreground">{steps[currentStep]!.description}</div>
+            <div className="text-sm font-medium">
+              {steps[currentStep]!.name}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {steps[currentStep]!.description}
+            </div>
           </div>
           <div className="ml-auto text-sm text-muted-foreground">
             Paso {currentStep + 1} de {totalSteps}
@@ -75,5 +79,5 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

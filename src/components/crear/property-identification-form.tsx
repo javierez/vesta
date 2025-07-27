@@ -1,17 +1,33 @@
-"use client"
+"use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import { Button } from "~/components/ui/button"
-import { Input } from "~/components/ui/input"
-import { Card } from "~/components/ui/card"
-import { FloatingLabelInput } from "~/components/ui/floating-label-input"
-import { ChevronLeft, ChevronRight, Info, Loader, Upload, FileText, X, ExternalLink } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { createPropertyFromCadastral, createPropertyFromLocation } from "~/server/queries/properties"
-import { uploadDocument, deleteDocument, renameDocumentFolder } from "~/app/actions/upload"
-import { processDocumentInBackground } from "~/server/ocr/ocr-initial-form"
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Card } from "~/components/ui/card";
+import { FloatingLabelInput } from "~/components/ui/floating-label-input";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Info,
+  Loader,
+  Upload,
+  FileText,
+  X,
+  ExternalLink,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  createPropertyFromCadastral,
+  createPropertyFromLocation,
+} from "~/server/queries/properties";
+import {
+  uploadDocument,
+  deleteDocument,
+  renameDocumentFolder,
+} from "~/app/actions/upload";
+import { processDocumentInBackgroundEnhanced } from "~/server/ocr/ocr-initial-form";
 import {
   Dialog,
   DialogContent,
@@ -19,29 +35,29 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog"
+} from "~/components/ui/dialog";
 
 // Base form data interface
 interface BaseFormData {
   // Initial questions
-  cadastralReference: string
+  cadastralReference: string;
 
   // Location
-  street: string
-  addressDetails: string
-  postalCode: string
-  city: string
-  province: string
-  municipality: string
-  neighborhood: string
-  latitude: string
-  longitude: string
+  street: string;
+  addressDetails: string;
+  postalCode: string;
+  city: string;
+  province: string;
+  municipality: string;
+  neighborhood: string;
+  latitude: string;
+  longitude: string;
 
   // Property Specifications
-  squareMeter: string
-  builtSurfaceArea: string
-  yearBuilt: string
-  propertyType: string
+  squareMeter: string;
+  builtSurfaceArea: string;
+  yearBuilt: string;
+  propertyType: string;
 }
 
 const initialFormData: BaseFormData = {
@@ -59,20 +75,20 @@ const initialFormData: BaseFormData = {
   builtSurfaceArea: "",
   yearBuilt: "",
   propertyType: "piso",
-}
+};
 
 // Step definitions
 interface Step {
-  id: string
-  title: string
-  propertyTypes?: string[]
+  id: string;
+  title: string;
+  propertyTypes?: string[];
 }
 
 // Simplified steps - only initial and location
 const simplifiedSteps: Step[] = [
   { id: "initial", title: "Información Inicial" },
   { id: "location", title: "Dirección" },
-]
+];
 
 // Step configuration mapping - all property types now use the same simplified steps
 const stepConfigurations = {
@@ -81,119 +97,132 @@ const stepConfigurations = {
   garaje: simplifiedSteps,
   local: simplifiedSteps,
   solar: simplifiedSteps,
-}
+};
 
-type PropertyType = keyof typeof stepConfigurations
+type PropertyType = keyof typeof stepConfigurations;
 
 export default function PropertyIdentificationForm() {
-  const [currentStep, setCurrentStep] = useState(0)
-  const [formData, setFormData] = useState<BaseFormData>(initialFormData)
-  const [direction, setDirection] = useState<"forward" | "backward">("forward")
-  const [showCadastralTooltip, setShowCadastralTooltip] = useState(false)
-  const [showUploadTooltip, setShowUploadTooltip] = useState(false)
-  const [isCreatingProperty, setIsCreatingProperty] = useState(false)
-  const router = useRouter()
-  
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState<BaseFormData>(initialFormData);
+  const [direction, setDirection] = useState<"forward" | "backward">("forward");
+  const [showCadastralTooltip, setShowCadastralTooltip] = useState(false);
+  const [showUploadTooltip, setShowUploadTooltip] = useState(false);
+  const [isCreatingProperty, setIsCreatingProperty] = useState(false);
+  const router = useRouter();
+
   // File upload state
-  const [uploadedDocuments, setUploadedDocuments] = useState<Array<{
-    docId: bigint
-    documentKey: string
-    fileUrl: string
-    filename: string
-    fileType: string
-  }>>([])
+  const [uploadedDocuments, setUploadedDocuments] = useState<
+    Array<{
+      docId: bigint;
+      documentKey: string;
+      fileUrl: string;
+      filename: string;
+      fileType: string;
+    }>
+  >([]);
   // Add state to track the temporary reference number
-  const [tempReferenceNumber, setTempReferenceNumber] = useState<string>("")
-  const [isDragOver, setIsDragOver] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState<number>(0)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [tempReferenceNumber, setTempReferenceNumber] = useState<string>("");
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{
-    docId: bigint
-    documentKey: string
-  } | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+    docId: bigint;
+    documentKey: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Close tooltip when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element
-      if (!target.closest('.tooltip-container')) {
-        setShowCadastralTooltip(false)
-        setShowUploadTooltip(false)
+      const target = event.target as Element;
+      if (!target.closest(".tooltip-container")) {
+        setShowCadastralTooltip(false);
+        setShowUploadTooltip(false);
       }
-    }
+    };
 
     if (showCadastralTooltip || showUploadTooltip) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showCadastralTooltip, showUploadTooltip])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showCadastralTooltip, showUploadTooltip]);
 
   // Get current steps based on property type
   const currentSteps = useMemo(() => {
-    const propertyType = formData.propertyType as PropertyType
-    return stepConfigurations[propertyType] || simplifiedSteps
-  }, [formData.propertyType])
+    const propertyType = formData.propertyType as PropertyType;
+    return stepConfigurations[propertyType] || simplifiedSteps;
+  }, [formData.propertyType]);
 
   const updateFormData = (field: keyof BaseFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleInputChange = (field: keyof BaseFormData) => (value: string) => {
-    updateFormData(field, value)
-  }
+    updateFormData(field, value);
+  };
 
-  const handleEventInputChange = (field: keyof BaseFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateFormData(field, e.target.value)
-  }
+  const handleEventInputChange =
+    (field: keyof BaseFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      updateFormData(field, e.target.value);
+    };
 
   // Client-side function that calls the server action for cadastral reference
-  const handleCreatePropertyFromCadastral = async (cadastralReference: string) => {
+  const handleCreatePropertyFromCadastral = async (
+    cadastralReference: string,
+  ) => {
     try {
-      setIsCreatingProperty(true)
+      setIsCreatingProperty(true);
       // Call the server action
       const newProperty = await createPropertyFromCadastral(cadastralReference);
       console.log("Property created from cadastral:", newProperty);
-      
+
       // Rename S3 folder if we have uploaded documents
-      if (uploadedDocuments.length > 0 && tempReferenceNumber && newProperty.referenceNumber) {
+      if (
+        uploadedDocuments.length > 0 &&
+        tempReferenceNumber &&
+        newProperty.referenceNumber
+      ) {
         try {
-          const documentIds = uploadedDocuments.map(doc => doc.docId);
+          const documentIds = uploadedDocuments.map((doc) => doc.docId);
           const renamedDocuments = await renameDocumentFolder(
             tempReferenceNumber,
             newProperty.referenceNumber,
-            documentIds
+            documentIds,
           );
-          
+
           // Update the uploadedDocuments state with new URLs
-          setUploadedDocuments(prev => 
-            prev.map(doc => {
-              const renamed = renamedDocuments.find(r => r.docId === doc.docId);
+          setUploadedDocuments((prev) =>
+            prev.map((doc) => {
+              const renamed = renamedDocuments.find(
+                (r) => r.docId === doc.docId,
+              );
               if (renamed) {
                 return {
                   ...doc,
                   documentKey: renamed.newDocumentKey,
-                  fileUrl: renamed.newUrl
+                  fileUrl: renamed.newUrl,
                 };
               }
               return doc;
-            })
+            }),
           );
-          
-          console.log(`Successfully renamed ${renamedDocuments.length} documents`);
+
+          console.log(
+            `Successfully renamed ${renamedDocuments.length} documents`,
+          );
         } catch (renameError) {
           console.error("Error renaming S3 folder:", renameError);
           // Continue with property creation even if renaming fails
         }
       }
-      
+
       // Automatically populate form fields with cadastral data
       if (newProperty) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           // Location fields
           street: newProperty.street ?? "",
@@ -212,14 +241,14 @@ export default function PropertyIdentificationForm() {
           propertyType: newProperty.propertyType ?? "piso",
         }));
       }
-      
+
       return newProperty; // Return the property data for redirection
     } catch (error) {
       console.error("Error creating property:", error);
       alert("Error al crear la propiedad. Por favor, inténtalo de nuevo.");
       throw error; // Re-throw the error so the calling function can handle it
     } finally {
-      setIsCreatingProperty(false)
+      setIsCreatingProperty(false);
     }
   };
 
@@ -234,56 +263,67 @@ export default function PropertyIdentificationForm() {
     neighborhood?: string;
   }) => {
     try {
-      setIsCreatingProperty(true)
-      
+      setIsCreatingProperty(true);
+
       // First, validate address using Nominatim with just street and city
-      const addressString = [
-        locationData.street,
-        locationData.city
-      ].filter(Boolean).join(', ')
-      
-      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`
-      
-      const response = await fetch(nominatimUrl)
-      const nominatimResults = await response.json() as Array<{
+      const addressString = [locationData.street, locationData.city]
+        .filter(Boolean)
+        .join(", ");
+
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`;
+
+      const response = await fetch(nominatimUrl);
+      const nominatimResults = (await response.json()) as Array<{
         address?: {
-          postcode?: string
-          city?: string
-          town?: string
-          state?: string
-          suburb?: string
-        }
-        lat?: string
-        lon?: string
-      }>
-      
+          postcode?: string;
+          city?: string;
+          town?: string;
+          state?: string;
+          suburb?: string;
+        };
+        lat?: string;
+        lon?: string;
+      }>;
+
       if (nominatimResults.length === 0) {
-        alert("La dirección introducida no se ha encontrado. Por favor, verifica que la dirección y ciudad sean correctos.");
-        return null
+        alert(
+          "La dirección introducida no se ha encontrado. Por favor, verifica que la dirección y ciudad sean correctos.",
+        );
+        return null;
       }
-      
-      const result = nominatimResults[0]
+
+      const result = nominatimResults[0];
       if (!result) {
-        alert("La dirección introducida no se ha encontrado. Por favor, verifica que la dirección y ciudad sean correctos.");
-        return null
+        alert(
+          "La dirección introducida no se ha encontrado. Por favor, verifica que la dirección y ciudad sean correctos.",
+        );
+        return null;
       }
-      
-      console.log("Nominatim validation successful:", result)
-      
+
+      console.log("Nominatim validation successful:", result);
+
       // Auto-fill missing fields with Nominatim data
       const enrichedLocationData = {
         ...locationData,
         postalCode: locationData.postalCode ?? result.address?.postcode ?? "",
-        city: locationData.city ?? result.address?.city ?? result.address?.town ?? "",
+        city:
+          locationData.city ??
+          result.address?.city ??
+          result.address?.town ??
+          "",
         province: locationData.province ?? result.address?.state ?? "",
-        municipality: locationData.municipality ?? result.address?.city ?? result.address?.town ?? "",
+        municipality:
+          locationData.municipality ??
+          result.address?.city ??
+          result.address?.town ??
+          "",
         neighborhood: locationData.neighborhood ?? result.address?.suburb ?? "",
         latitude: result.lat ?? "",
-        longitude: result.lon ?? ""
-      }
-      
+        longitude: result.lon ?? "",
+      };
+
       // Update form data with enriched information
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         postalCode: enrichedLocationData.postalCode,
         city: enrichedLocationData.city,
@@ -291,52 +331,61 @@ export default function PropertyIdentificationForm() {
         municipality: enrichedLocationData.municipality,
         neighborhood: enrichedLocationData.neighborhood,
         latitude: enrichedLocationData.latitude,
-        longitude: enrichedLocationData.longitude
-      }))
-      
+        longitude: enrichedLocationData.longitude,
+      }));
+
       // Call the server action with enriched data
-      const newProperty = await createPropertyFromLocation(enrichedLocationData);
+      const newProperty =
+        await createPropertyFromLocation(enrichedLocationData);
       console.log("Property created from location:", newProperty);
-      
+
       // Rename S3 folder if we have uploaded documents
-      if (uploadedDocuments.length > 0 && tempReferenceNumber && newProperty.referenceNumber) {
+      if (
+        uploadedDocuments.length > 0 &&
+        tempReferenceNumber &&
+        newProperty.referenceNumber
+      ) {
         try {
-          const documentIds = uploadedDocuments.map(doc => doc.docId);
+          const documentIds = uploadedDocuments.map((doc) => doc.docId);
           const renamedDocuments = await renameDocumentFolder(
             tempReferenceNumber,
             newProperty.referenceNumber,
-            documentIds
+            documentIds,
           );
-          
+
           // Update the uploadedDocuments state with new URLs
-          setUploadedDocuments(prev => 
-            prev.map(doc => {
-              const renamed = renamedDocuments.find(r => r.docId === doc.docId);
+          setUploadedDocuments((prev) =>
+            prev.map((doc) => {
+              const renamed = renamedDocuments.find(
+                (r) => r.docId === doc.docId,
+              );
               if (renamed) {
                 return {
                   ...doc,
                   documentKey: renamed.newDocumentKey,
-                  fileUrl: renamed.newUrl
+                  fileUrl: renamed.newUrl,
                 };
               }
               return doc;
-            })
+            }),
           );
-          
-          console.log(`Successfully renamed ${renamedDocuments.length} documents`);
+
+          console.log(
+            `Successfully renamed ${renamedDocuments.length} documents`,
+          );
         } catch (renameError) {
           console.error("Error renaming S3 folder:", renameError);
           // Continue with property creation even if renaming fails
         }
       }
-      
+
       return newProperty; // Return the property data for redirection
     } catch (error) {
       console.error("Error creating property:", error);
       alert("Error al crear la propiedad. Por favor, inténtalo de nuevo.");
       throw error; // Re-throw the error so the calling function can handle it
     } finally {
-      setIsCreatingProperty(false)
+      setIsCreatingProperty(false);
     }
   };
 
@@ -344,10 +393,14 @@ export default function PropertyIdentificationForm() {
     // If we're on the initial step and cadastral reference is filled, create property and redirect
     if (currentStep === 0 && formData.cadastralReference.trim()) {
       try {
-        const newProperty = await handleCreatePropertyFromCadastral(formData.cadastralReference.trim());
-        
+        const newProperty = await handleCreatePropertyFromCadastral(
+          formData.cadastralReference.trim(),
+        );
+
         if (newProperty?.listingId) {
-          router.push(`/propiedades/crear/${newProperty.listingId}?method=catastro`);
+          router.push(
+            `/propiedades/crear/${newProperty.listingId}?method=catastro`,
+          );
           return;
         }
       } catch (error) {
@@ -356,14 +409,14 @@ export default function PropertyIdentificationForm() {
         return;
       }
     }
-    
+
     // If we're on the location step, validate and create property
     if (currentStep === 1) {
       if (!formData.street.trim()) {
         alert("Por favor, introduce la dirección de la propiedad.");
         return;
       }
-      
+
       try {
         const newProperty = await handleCreatePropertyFromLocation({
           street: formData.street.trim(),
@@ -374,14 +427,16 @@ export default function PropertyIdentificationForm() {
           municipality: formData.municipality.trim(),
           neighborhood: formData.neighborhood.trim(),
         });
-        
+
         // If Nominatim validation failed, newProperty will be null
         if (!newProperty) {
           return; // Don't proceed with redirect
         }
-        
+
         if (newProperty?.listingId) {
-          router.push(`/propiedades/crear/${newProperty.listingId}?method=manual`);
+          router.push(
+            `/propiedades/crear/${newProperty.listingId}?method=manual`,
+          );
           return;
         }
       } catch (error) {
@@ -389,216 +444,246 @@ export default function PropertyIdentificationForm() {
         return;
       }
     }
-    
+
     // If we're on step 0 without cadastral reference, go to next step
     if (currentStep === 0) {
-      setDirection("forward")
-      setCurrentStep(1)
+      setDirection("forward");
+      setCurrentStep(1);
     }
-  }
+  };
 
   const autoCompleteAddress = async () => {
     if (!formData.street.trim()) {
       alert("Por favor, introduce al menos la dirección de la propiedad.");
       return;
     }
-    
+
     try {
-      setIsCreatingProperty(true)
-      
+      setIsCreatingProperty(true);
+
       // Use Nominatim to auto-complete missing fields
-      const addressString = [
-        formData.street.trim(),
-        formData.city.trim()
-      ].filter(Boolean).join(', ')
-      
-      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`
-      
-      const response = await fetch(nominatimUrl)
-      const nominatimResults = await response.json() as Array<{
+      const addressString = [formData.street.trim(), formData.city.trim()]
+        .filter(Boolean)
+        .join(", ");
+
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`;
+
+      const response = await fetch(nominatimUrl);
+      const nominatimResults = (await response.json()) as Array<{
         address?: {
-          postcode?: string
-          city?: string
-          town?: string
-          state?: string
-          suburb?: string
-        }
-        lat?: string
-        lon?: string
-      }>
-      
+          postcode?: string;
+          city?: string;
+          town?: string;
+          state?: string;
+          suburb?: string;
+        };
+        lat?: string;
+        lon?: string;
+      }>;
+
       if (nominatimResults.length === 0) {
-        alert("No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.");
-        return
+        alert(
+          "No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.",
+        );
+        return;
       }
-      
-      const result = nominatimResults[0]
+
+      const result = nominatimResults[0];
       if (!result) {
-        alert("No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.");
-        return
+        alert(
+          "No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.",
+        );
+        return;
       }
-      
-      console.log("Nominatim auto-completion successful:", result)
-      
+
+      console.log("Nominatim auto-completion successful:", result);
+
       // Update form data with Nominatim results
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         postalCode: prev.postalCode ?? result.address?.postcode ?? "",
         city: prev.city ?? result.address?.city ?? result.address?.town ?? "",
         province: prev.province ?? result.address?.state ?? "",
-        municipality: prev.municipality ?? result.address?.city ?? result.address?.town ?? "",
+        municipality:
+          prev.municipality ??
+          result.address?.city ??
+          result.address?.town ??
+          "",
         neighborhood: prev.neighborhood ?? result.address?.suburb ?? "",
         latitude: result.lat ?? "",
-        longitude: result.lon ?? ""
-      }))
-      
+        longitude: result.lon ?? "",
+      }));
     } catch (error) {
       console.error("Error auto-completing address:", error);
-      alert("Error al autocompletar la dirección. Por favor, inténtalo de nuevo.");
+      alert(
+        "Error al autocompletar la dirección. Por favor, inténtalo de nuevo.",
+      );
     } finally {
-      setIsCreatingProperty(false)
+      setIsCreatingProperty(false);
     }
-  }
+  };
 
   // Check if all location fields are filled
   const areAllLocationFieldsFilled = () => {
-    return formData.street.trim() && 
-           formData.postalCode.trim() && 
-           formData.city.trim() && 
-           formData.province.trim() && 
-           formData.municipality.trim()
-  }
+    return (
+      formData.street.trim() &&
+      formData.postalCode.trim() &&
+      formData.city.trim() &&
+      formData.province.trim() &&
+      formData.municipality.trim()
+    );
+  };
 
-  const handleFileUpload = useCallback(async (file: File) => {
-    setIsUploading(true)
-    setUploadProgress(0)
-    
-    const progressInterval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval)
-          return prev
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      setIsUploading(true);
+      setUploadProgress(0);
+
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      try {
+        // Generate a temporary reference number if we don't have one yet
+        let currentTempRef = tempReferenceNumber;
+        if (!currentTempRef) {
+          currentTempRef = `temp_${Date.now()}`;
+          setTempReferenceNumber(currentTempRef);
         }
-        return prev + 10
-      })
-    }, 200)
-    
-    try {
-      // Generate a temporary reference number if we don't have one yet
-      let currentTempRef = tempReferenceNumber;
-      if (!currentTempRef) {
-        currentTempRef = `temp_${Date.now()}`;
-        setTempReferenceNumber(currentTempRef);
+
+        const userId = BigInt(1); // You may want to get this from context or props
+
+        const uploadedDocument = await uploadDocument(
+          file,
+          userId,
+          currentTempRef,
+          uploadedDocuments.length + 1,
+          "ficha_propiedad",
+        );
+
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+
+        setUploadedDocuments((prev) => [
+          ...prev,
+          {
+            docId: uploadedDocument.docId,
+            documentKey: uploadedDocument.documentKey,
+            fileUrl: uploadedDocument.fileUrl,
+            filename: uploadedDocument.filename,
+            fileType: uploadedDocument.fileType,
+          },
+        ]);
+
+        // Process document with enhanced OCR in background (fire and forget)
+        // This will extract property data and save it to the database automatically
+        void processDocumentInBackgroundEnhanced(uploadedDocument.documentKey).catch(
+          (error) => {
+            console.error("Enhanced background OCR processing failed:", error);
+            // Don't show this error to the user since it's background processing
+          },
+        );
+
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+        }, 500);
+      } catch (error) {
+        clearInterval(progressInterval);
+        console.error("Error uploading document:", error);
+        setIsUploading(false);
+        setUploadProgress(0);
+        alert("Error al subir el archivo. Por favor, inténtalo de nuevo.");
       }
-      
-      const userId = BigInt(1) // You may want to get this from context or props
-      
-      const uploadedDocument = await uploadDocument(
-        file,
-        userId,
-        currentTempRef,
-        uploadedDocuments.length + 1,
-        'ficha_propiedad'
-      )
-      
-      clearInterval(progressInterval)
-      setUploadProgress(100)
-      
-      setUploadedDocuments(prev => [...prev, {
-        docId: uploadedDocument.docId,
-        documentKey: uploadedDocument.documentKey,
-        fileUrl: uploadedDocument.fileUrl,
-        filename: uploadedDocument.filename,
-        fileType: uploadedDocument.fileType
-      }])
-      
-      // Process document with OCR in background (fire and forget)
-      // This won't block the UI and will process the document for text extraction
-      void processDocumentInBackground(uploadedDocument.documentKey)
-        .catch(error => {
-          console.error('Background OCR processing failed:', error)
-          // Don't show this error to the user since it's background processing
-        })
-      
-      setTimeout(() => {
-        setIsUploading(false)
-        setUploadProgress(0)
-      }, 500)
-      
-    } catch (error) {
-      clearInterval(progressInterval)
-      console.error('Error uploading document:', error)
-      setIsUploading(false)
-      setUploadProgress(0)
-      alert('Error al subir el archivo. Por favor, inténtalo de nuevo.')
-    }
-  }, [tempReferenceNumber, uploadedDocuments.length])
+    },
+    [tempReferenceNumber, uploadedDocuments.length],
+  );
 
   // File upload handlers
-  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    
-    const files: File[] = Array.from(e.dataTransfer.files)
-    
-    for (const file of files) {
-      if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
-        await handleFileUpload(file)
-      }
-    }
-  }, [handleFileUpload])
+  const handleDrop = useCallback(
+    async (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDragOver(false);
 
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }, [])
+      const files: File[] = Array.from(e.dataTransfer.files);
 
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }, [])
-
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files) {
-      for (const file of Array.from(files)) {
-        if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
-          await handleFileUpload(file)
+      for (const file of files) {
+        if (file.type === "application/pdf" || file.type.startsWith("image/")) {
+          await handleFileUpload(file);
         }
       }
-    }
-    // Reset the input value so the same file can be selected again
-    e.target.value = ''
-  }, [handleFileUpload])
+    },
+    [handleFileUpload],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files) {
+        for (const file of Array.from(files)) {
+          if (
+            file.type === "application/pdf" ||
+            file.type.startsWith("image/")
+          ) {
+            await handleFileUpload(file);
+          }
+        }
+      }
+      // Reset the input value so the same file can be selected again
+      e.target.value = "";
+    },
+    [handleFileUpload],
+  );
 
   const handleDeleteDocument = async (docId: bigint, documentKey: string) => {
-    setDocumentToDelete({ docId, documentKey })
-    setShowDeleteDialog(true)
-  }
+    setDocumentToDelete({ docId, documentKey });
+    setShowDeleteDialog(true);
+  };
 
   const confirmDeleteDocument = async () => {
-    if (!documentToDelete) return
-    
-    setIsDeleting(true)
+    if (!documentToDelete) return;
+
+    setIsDeleting(true);
     try {
-      await deleteDocument(documentToDelete.documentKey, documentToDelete.docId)
-      setUploadedDocuments(prev => prev.filter(doc => doc.docId !== documentToDelete.docId))
-      setShowDeleteDialog(false)
-      setDocumentToDelete(null)
+      await deleteDocument(
+        documentToDelete.documentKey,
+        documentToDelete.docId,
+      );
+      setUploadedDocuments((prev) =>
+        prev.filter((doc) => doc.docId !== documentToDelete.docId),
+      );
+      setShowDeleteDialog(false);
+      setDocumentToDelete(null);
     } catch (error) {
-      console.error('Error deleting document:', error)
-      alert('Error al eliminar el archivo. Por favor, inténtalo de nuevo.')
+      console.error("Error deleting document:", error);
+      alert("Error al eliminar el archivo. Por favor, inténtalo de nuevo.");
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   const prevStep = () => {
     if (currentStep > 0) {
-      setDirection("backward")
-      setCurrentStep((prev) => prev - 1)
+      setDirection("backward");
+      setCurrentStep((prev) => prev - 1);
     }
-  }
+  };
 
   // Get property type display name
   const getPropertyTypeDisplay = (type: string) => {
@@ -608,16 +693,16 @@ export default function PropertyIdentificationForm() {
       garaje: "Garaje",
       local: "Local",
       solar: "Solar",
-    }
-    return types[type] ?? type
-  }
+    };
+    return types[type] ?? type;
+  };
 
   const renderStepContent = () => {
-    const step = currentSteps[currentStep]
-    const propertyType = formData.propertyType as PropertyType
+    const step = currentSteps[currentStep];
+    const propertyType = formData.propertyType as PropertyType;
 
     if (!step) {
-      return <div>Step not found</div>
+      return <div>Step not found</div>;
     }
 
     switch (step.id) {
@@ -626,19 +711,30 @@ export default function PropertyIdentificationForm() {
           <div className="space-y-8">
             {/* Referencia Catastral Section */}
             <div className="space-y-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <h3 className="text-md font-medium text-gray-900">Referencia Catastral</h3>
-                <div className="relative tooltip-container">
+              <div className="mb-4 flex items-center space-x-3">
+                <h3 className="text-md font-medium text-gray-900">
+                  Referencia Catastral
+                </h3>
+                <div className="tooltip-container relative">
                   <button
-                    className="w-5 h-5 text-gray-600 rounded-full flex items-center justify-center text-xs font-medium hover:bg-gray-200 transition-colors"
-                    onClick={() => setShowCadastralTooltip(!showCadastralTooltip)}
+                    className="flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200"
+                    onClick={() =>
+                      setShowCadastralTooltip(!showCadastralTooltip)
+                    }
                   >
-                    <Info className="w-3 h-3" />
+                    <Info className="h-3 w-3" />
                   </button>
                   {showCadastralTooltip && (
-                    <div className="absolute top-8 left-0 z-10 w-64 p-3 bg-gray-600 text-white text-sm rounded-lg shadow-lg">
-                      <p>Rellenar las fichas lleva <span className="font-bold text-orange-300">30 minutos</span> de media. Ahorra 4 minutos introduciendo la referencia catastral</p>
-                      <div className="absolute -top-1 left-3 w-2 h-2 bg-gray-600 transform rotate-45"></div>
+                    <div className="absolute left-0 top-8 z-10 w-64 rounded-lg bg-gray-600 p-3 text-sm text-white shadow-lg">
+                      <p>
+                        Rellenar las fichas lleva{" "}
+                        <span className="font-bold text-orange-300">
+                          30 minutos
+                        </span>{" "}
+                        de media. Ahorra 4 minutos introduciendo la referencia
+                        catastral
+                      </p>
+                      <div className="absolute -top-1 left-3 h-2 w-2 rotate-45 transform bg-gray-600"></div>
                     </div>
                   )}
                 </div>
@@ -654,19 +750,28 @@ export default function PropertyIdentificationForm() {
 
             {/* Ficha de Propiedad Section */}
             <div className="space-y-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <h3 className="text-md font-medium text-gray-900">Ficha de Propiedad</h3>
-                <div className="relative tooltip-container">
+              <div className="mb-4 flex items-center space-x-3">
+                <h3 className="text-md font-medium text-gray-900">
+                  Ficha de Propiedad
+                </h3>
+                <div className="tooltip-container relative">
                   <button
-                    className="w-5 h-5 text-gray-600 rounded-full flex items-center justify-center text-xs font-medium hover:bg-gray-200 transition-colors"
+                    className="flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200"
                     onClick={() => setShowUploadTooltip(!showUploadTooltip)}
                   >
-                    <Info className="w-3 h-3" />
+                    <Info className="h-3 w-3" />
                   </button>
                   {showUploadTooltip && (
-                    <div className="absolute top-8 left-0 z-10 w-72 p-3 bg-gray-600 text-white text-sm rounded-lg shadow-lg">
-                      <p>Ahorra hasta <span className="font-bold text-orange-300">15 minutos</span> si tienes una foto de la ficha o el documento completado en PDF</p>
-                      <div className="absolute -top-1 left-3 w-2 h-2 bg-gray-600 transform rotate-45"></div>
+                    <div className="absolute left-0 top-8 z-10 w-72 rounded-lg bg-gray-600 p-3 text-sm text-white shadow-lg">
+                      <p>
+                        Ahorra hasta{" "}
+                        <span className="font-bold text-orange-300">
+                          15 minutos
+                        </span>{" "}
+                        si tienes una foto de la ficha o el documento completado
+                        en PDF
+                      </p>
+                      <div className="absolute -top-1 left-3 h-2 w-2 rotate-45 transform bg-gray-600"></div>
                     </div>
                   )}
                 </div>
@@ -675,117 +780,150 @@ export default function PropertyIdentificationForm() {
               {/* Upload Area or Document Preview */}
               {uploadedDocuments.length === 0 && !isUploading ? (
                 <div
-                  className={`transition-colors border-2 border-dashed rounded-lg min-h-[200px] flex items-center justify-center ${
-                    isDragOver 
-                      ? 'border-blue-400 bg-blue-50' 
-                      : 'border-gray-200 hover:border-gray-300 bg-gray-50 hover:bg-gray-100'
-                  } cursor-pointer group`}
+                  className={`flex min-h-[200px] items-center justify-center rounded-lg border-2 border-dashed transition-colors ${
+                    isDragOver
+                      ? "border-blue-400 bg-blue-50"
+                      : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"
+                  } group cursor-pointer`}
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
-                  onClick={() => document.getElementById("fichaPropiedadInput")?.click()}
+                  onClick={() =>
+                    document.getElementById("fichaPropiedadInput")?.click()
+                  }
                 >
                   <div className="space-y-3 text-center">
-                    <div className="mx-auto w-10 h-10 bg-white rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm">
-                      <Upload className="w-5 h-5 text-gray-500" />
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm transition-transform group-hover:scale-105">
+                      <Upload className="h-5 w-5 text-gray-500" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Subir documentos o tomar foto</p>
-                      <p className="text-xs text-gray-500">PDF, JPG, PNG o usar cámara</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        Subir documentos o tomar foto
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        PDF, JPG, PNG o usar cámara
+                      </p>
                     </div>
                   </div>
                 </div>
               ) : isUploading ? (
-                <div className="border border-gray-200 rounded-lg p-6 min-h-[200px] flex items-center justify-center">
+                <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-gray-200 p-6">
                   <div className="w-full max-w-md space-y-4">
                     <div className="w-full space-y-2">
-                      <div className="h-0.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div 
+                      <div className="h-0.5 w-full overflow-hidden rounded-full bg-gray-100">
+                        <div
                           className="h-full bg-gray-400 transition-all duration-300 ease-out"
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 text-center">Subiendo archivo...</p>
+                    <p className="text-center text-sm text-gray-600">
+                      Subiendo archivo...
+                    </p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {uploadedDocuments.map((document, index) => (
-                    <div key={document.docId.toString()} className="border border-gray-200 rounded-lg overflow-hidden">
-                      {document.fileType === 'application/pdf' ? (
-                        <div className="relative group h-[300px]">
+                    <div
+                      key={document.docId.toString()}
+                      className="overflow-hidden rounded-lg border border-gray-200"
+                    >
+                      {document.fileType === "application/pdf" ? (
+                        <div className="group relative h-[300px]">
                           <iframe
                             src={document.fileUrl}
-                            className="w-full h-full border-0"
+                            className="h-full w-full border-0"
                             title={`Document Preview ${index + 1}`}
                           />
-                          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                            <div className="absolute bottom-3 right-3 flex gap-2 pointer-events-auto">
+                          <div className="pointer-events-none absolute inset-0 bg-black/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                            <div className="pointer-events-auto absolute bottom-3 right-3 flex gap-2">
                               <button
-                                onClick={() => window.open(document.fileUrl, '_blank')}
-                                className="bg-white/80 hover:bg-white text-gray-700 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
+                                onClick={() =>
+                                  window.open(document.fileUrl, "_blank")
+                                }
+                                className="rounded-full bg-white/80 p-2.5 text-gray-700 shadow-lg backdrop-blur-sm transition-all hover:scale-110 hover:bg-white"
                                 title="Abrir en nueva pestaña"
                               >
                                 <ExternalLink className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => handleDeleteDocument(document.docId, document.documentKey)}
-                                className="bg-white/80 hover:bg-red-50 text-red-600 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
+                                onClick={() =>
+                                  handleDeleteDocument(
+                                    document.docId,
+                                    document.documentKey,
+                                  )
+                                }
+                                className="rounded-full bg-white/80 p-2.5 text-red-600 shadow-lg backdrop-blur-sm transition-all hover:scale-110 hover:bg-red-50"
                                 title="Eliminar documento"
                               >
                                 <X className="h-4 w-4" />
                               </button>
                             </div>
-                            <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg pointer-events-auto">
+                            <div className="pointer-events-auto absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-white/80 px-3 py-2 shadow-lg backdrop-blur-sm">
                               <FileText className="h-4 w-4 text-blue-600" />
-                              <span className="text-sm font-medium text-blue-700">{document.filename}</span>
+                              <span className="text-sm font-medium text-blue-700">
+                                {document.filename}
+                              </span>
                             </div>
                           </div>
                         </div>
                       ) : (
-                        <div className="relative group h-[300px]">
+                        <div className="group relative h-[300px]">
                           <Image
                             src={document.fileUrl}
                             alt={`Document ${index + 1}`}
                             fill
-                            className="object-contain bg-gray-50"
+                            className="bg-gray-50 object-contain"
                           />
-                          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                            <div className="absolute bottom-3 right-3 flex gap-2 pointer-events-auto">
+                          <div className="pointer-events-none absolute inset-0 bg-black/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                            <div className="pointer-events-auto absolute bottom-3 right-3 flex gap-2">
                               <button
-                                onClick={() => window.open(document.fileUrl, '_blank')}
-                                className="bg-white/80 hover:bg-white text-gray-700 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
+                                onClick={() =>
+                                  window.open(document.fileUrl, "_blank")
+                                }
+                                className="rounded-full bg-white/80 p-2.5 text-gray-700 shadow-lg backdrop-blur-sm transition-all hover:scale-110 hover:bg-white"
                                 title="Abrir en nueva pestaña"
                               >
                                 <ExternalLink className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => handleDeleteDocument(document.docId, document.documentKey)}
-                                className="bg-white/80 hover:bg-red-50 text-red-600 rounded-full p-2.5 shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
+                                onClick={() =>
+                                  handleDeleteDocument(
+                                    document.docId,
+                                    document.documentKey,
+                                  )
+                                }
+                                className="rounded-full bg-white/80 p-2.5 text-red-600 shadow-lg backdrop-blur-sm transition-all hover:scale-110 hover:bg-red-50"
                                 title="Eliminar documento"
                               >
                                 <X className="h-4 w-4" />
                               </button>
                             </div>
-                            <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg pointer-events-auto">
+                            <div className="pointer-events-auto absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-white/80 px-3 py-2 shadow-lg backdrop-blur-sm">
                               <FileText className="h-4 w-4 text-green-600" />
-                              <span className="text-sm font-medium text-green-700">{document.filename}</span>
+                              <span className="text-sm font-medium text-green-700">
+                                {document.filename}
+                              </span>
                             </div>
                           </div>
                         </div>
                       )}
                     </div>
                   ))}
-                  
+
                   {/* Add more files button */}
                   <button
-                    onClick={() => document.getElementById("fichaPropiedadInput")?.click()}
-                    className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors group"
+                    onClick={() =>
+                      document.getElementById("fichaPropiedadInput")?.click()
+                    }
+                    className="group w-full rounded-lg border-2 border-dashed border-gray-300 p-4 text-center transition-colors hover:border-gray-400 hover:bg-gray-50"
                   >
                     <div className="flex items-center justify-center space-x-2 text-gray-600 group-hover:text-gray-700">
                       <Upload className="h-4 w-4" />
-                      <span className="text-sm font-medium">Añadir más archivos</span>
+                      <span className="text-sm font-medium">
+                        Añadir más archivos
+                      </span>
                     </div>
                   </button>
                 </div>
@@ -802,7 +940,7 @@ export default function PropertyIdentificationForm() {
               />
             </div>
           </div>
-        )
+        );
 
       case "location":
         return (
@@ -844,33 +982,41 @@ export default function PropertyIdentificationForm() {
               placeholder="Municipio"
             />
           </div>
-        )
+        );
 
       default:
         return (
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Contenido específico para {getPropertyTypeDisplay(propertyType)} - {step.id}
+              Contenido específico para {getPropertyTypeDisplay(propertyType)} -{" "}
+              {step.id}
             </p>
-            <div className="p-4 bg-gray-50 rounded-lg border">
-              <p className="text-sm">Este paso contendría campos específicos para el tipo de propiedad seleccionado.</p>
+            <div className="rounded-lg border bg-gray-50 p-4">
+              <p className="text-sm">
+                Este paso contendría campos específicos para el tipo de
+                propiedad seleccionado.
+              </p>
             </div>
           </div>
-        )
+        );
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-2xl mx-auto">
+      <div className="mx-auto max-w-2xl">
         <Card className="p-6">
           <div className="mb-4">
-            <h1 className="text-xl font-semibold text-gray-900 mb-6 text-center">ALTA NUEVO INMUEBLE</h1>
+            <h1 className="mb-6 text-center text-xl font-semibold text-gray-900">
+              ALTA NUEVO INMUEBLE
+            </h1>
           </div>
 
           <div className="mb-6">
             {currentSteps[currentStep]?.id !== "initial" && (
-              <h2 className="text-md font-medium text-gray-900 mb-4">{currentSteps[currentStep]?.title ?? "Step"}</h2>
+              <h2 className="text-md mb-4 font-medium text-gray-900">
+                {currentSteps[currentStep]?.title ?? "Step"}
+              </h2>
             )}
             <AnimatePresence mode="wait">
               <motion.div
@@ -885,22 +1031,22 @@ export default function PropertyIdentificationForm() {
             </AnimatePresence>
           </div>
 
-          <div className="flex justify-between pt-4 border-t">
+          <div className="flex justify-between border-t pt-4">
             <Button
               variant="outline"
               onClick={prevStep}
               disabled={currentStep === 0 || isCreatingProperty}
-              className="flex items-center space-x-2 h-8"
+              className="flex h-8 items-center space-x-2"
             >
               <ChevronLeft className="h-4 w-4" />
               <span>Anterior</span>
             </Button>
 
             {currentStep === 1 && !areAllLocationFieldsFilled() ? (
-              <Button 
-                onClick={autoCompleteAddress} 
+              <Button
+                onClick={autoCompleteAddress}
                 disabled={isCreatingProperty || !formData.street.trim()}
-                className="flex items-center space-x-2 h-8"
+                className="flex h-8 items-center space-x-2"
               >
                 {isCreatingProperty ? (
                   <>
@@ -915,10 +1061,10 @@ export default function PropertyIdentificationForm() {
                 )}
               </Button>
             ) : (
-              <Button 
-                onClick={nextStep} 
+              <Button
+                onClick={nextStep}
                 disabled={isCreatingProperty}
-                className="flex items-center space-x-2 h-8"
+                className="flex h-8 items-center space-x-2"
               >
                 {isCreatingProperty ? (
                   <>
@@ -942,7 +1088,8 @@ export default function PropertyIdentificationForm() {
             <DialogHeader>
               <DialogTitle>¿Eliminar documento?</DialogTitle>
               <DialogDescription>
-                Esta acción no se puede deshacer. El documento se eliminará permanentemente.
+                Esta acción no se puede deshacer. El documento se eliminará
+                permanentemente.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -964,6 +1111,5 @@ export default function PropertyIdentificationForm() {
         </Dialog>
       </div>
     </div>
-  )
+  );
 }
-

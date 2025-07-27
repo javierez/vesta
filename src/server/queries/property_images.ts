@@ -4,9 +4,14 @@ import { eq, and, asc } from "drizzle-orm";
 import type { PropertyImage } from "../../lib/data";
 
 // Create a new property image
-export async function createPropertyImage(data: Omit<PropertyImage, "propertyImageId" | "createdAt" | "updatedAt">) {
+export async function createPropertyImage(
+  data: Omit<PropertyImage, "propertyImageId" | "createdAt" | "updatedAt">,
+) {
   try {
-    const [propertyImage] = await db.insert(propertyImages).values(data).$returningId();
+    const [propertyImage] = await db
+      .insert(propertyImages)
+      .values(data)
+      .$returningId();
     return propertyImage;
   } catch (error) {
     console.error("Error creating property image:", error);
@@ -29,7 +34,10 @@ export async function getPropertyImageById(propertyImageId: bigint) {
 }
 
 // Get property images by reference number
-export async function getPropertyImagesByReference(referenceNumber: string, isActive = true) {
+export async function getPropertyImagesByReference(
+  referenceNumber: string,
+  isActive = true,
+) {
   try {
     const conditions = [eq(propertyImages.referenceNumber, referenceNumber)];
     if (isActive !== undefined) {
@@ -67,7 +75,10 @@ export async function getPropertyImages(propertyId: bigint, isActive = true) {
 }
 
 // Update a property image
-export async function updatePropertyImage(propertyImageId: bigint, data: Partial<PropertyImage>) {
+export async function updatePropertyImage(
+  propertyImageId: bigint,
+  data: Partial<PropertyImage>,
+) {
   try {
     const updateData = {
       ...data,
@@ -78,7 +89,7 @@ export async function updatePropertyImage(propertyImageId: bigint, data: Partial
       .update(propertyImages)
       .set(updateData)
       .where(eq(propertyImages.propertyImageId, propertyImageId));
-    
+
     return await getPropertyImageById(propertyImageId);
   } catch (error) {
     console.error("Error updating property image:", error);

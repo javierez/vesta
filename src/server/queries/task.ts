@@ -4,12 +4,17 @@ import { eq, and } from "drizzle-orm";
 import type { Task } from "../../lib/data";
 
 // Create a new task
-export async function createTask(data: Omit<Task, "taskId" | "createdAt" | "updatedAt">) {
+export async function createTask(
+  data: Omit<Task, "taskId" | "createdAt" | "updatedAt">,
+) {
   try {
-    const [result] = await db.insert(tasks).values({
-      ...data,
-      isActive: true,
-    }).$returningId();
+    const [result] = await db
+      .insert(tasks)
+      .values({
+        ...data,
+        isActive: true,
+      })
+      .$returningId();
     if (!result) throw new Error("Failed to create task");
     const [newTask] = await db
       .select()
@@ -28,12 +33,7 @@ export async function getTaskById(taskId: number) {
     const [task] = await db
       .select()
       .from(tasks)
-      .where(
-        and(
-          eq(tasks.taskId, BigInt(taskId)),
-          eq(tasks.isActive, true)
-        )
-      );
+      .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
     return task;
   } catch (error) {
     console.error("Error fetching task:", error);
@@ -47,12 +47,7 @@ export async function getUserTasks(userId: number) {
     const userTasks = await db
       .select()
       .from(tasks)
-      .where(
-        and(
-          eq(tasks.userId, BigInt(userId)),
-          eq(tasks.isActive, true)
-        )
-      );
+      .where(and(eq(tasks.userId, BigInt(userId)), eq(tasks.isActive, true)));
     return userTasks;
   } catch (error) {
     console.error("Error fetching user tasks:", error);
@@ -67,10 +62,7 @@ export async function getListingTasks(listingId: number) {
       .select()
       .from(tasks)
       .where(
-        and(
-          eq(tasks.listingId, BigInt(listingId)),
-          eq(tasks.isActive, true)
-        )
+        and(eq(tasks.listingId, BigInt(listingId)), eq(tasks.isActive, true)),
       );
     return listingTasks;
   } catch (error) {
@@ -85,12 +77,7 @@ export async function getLeadTasks(leadId: number) {
     const leadTasks = await db
       .select()
       .from(tasks)
-      .where(
-        and(
-          eq(tasks.leadId, BigInt(leadId)),
-          eq(tasks.isActive, true)
-        )
-      );
+      .where(and(eq(tasks.leadId, BigInt(leadId)), eq(tasks.isActive, true)));
     return leadTasks;
   } catch (error) {
     console.error("Error fetching lead tasks:", error);
@@ -104,12 +91,7 @@ export async function getDealTasks(dealId: number) {
     const dealTasks = await db
       .select()
       .from(tasks)
-      .where(
-        and(
-          eq(tasks.dealId, BigInt(dealId)),
-          eq(tasks.isActive, true)
-        )
-      );
+      .where(and(eq(tasks.dealId, BigInt(dealId)), eq(tasks.isActive, true)));
     return dealTasks;
   } catch (error) {
     console.error("Error fetching deal tasks:", error);
@@ -126,8 +108,8 @@ export async function getAppointmentTasks(appointmentId: number) {
       .where(
         and(
           eq(tasks.appointmentId, BigInt(appointmentId)),
-          eq(tasks.isActive, true)
-        )
+          eq(tasks.isActive, true),
+        ),
       );
     return appointmentTasks;
   } catch (error) {
@@ -139,18 +121,13 @@ export async function getAppointmentTasks(appointmentId: number) {
 // Update task
 export async function updateTask(
   taskId: number,
-  data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">
+  data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
 ) {
   try {
     await db
       .update(tasks)
       .set(data)
-      .where(
-        and(
-          eq(tasks.taskId, BigInt(taskId)),
-          eq(tasks.isActive, true)
-        )
-      );
+      .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
     const [updatedTask] = await db
       .select()
       .from(tasks)
@@ -168,12 +145,7 @@ export async function completeTask(taskId: number) {
     await db
       .update(tasks)
       .set({ completed: true })
-      .where(
-        and(
-          eq(tasks.taskId, BigInt(taskId)),
-          eq(tasks.isActive, true)
-        )
-      );
+      .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
     const [updatedTask] = await db
       .select()
       .from(tasks)
@@ -202,9 +174,7 @@ export async function softDeleteTask(taskId: number) {
 // Hard delete task (remove from database)
 export async function deleteTask(taskId: number) {
   try {
-    await db
-      .delete(tasks)
-      .where(eq(tasks.taskId, BigInt(taskId)));
+    await db.delete(tasks).where(eq(tasks.taskId, BigInt(taskId)));
     return { success: true };
   } catch (error) {
     console.error("Error deleting task:", error);
@@ -220,11 +190,11 @@ export async function listTasks(
     userId?: number;
     completed?: boolean;
     isActive?: boolean;
-  }
+  },
 ) {
   try {
     const offset = (page - 1) * limit;
-    
+
     // Build the where conditions array
     const whereConditions = [];
     if (filters) {
@@ -246,18 +216,15 @@ export async function listTasks(
     const query = db.select().from(tasks);
 
     // Apply all where conditions at once
-    const filteredQuery = whereConditions.length > 0 
-      ? query.where(and(...whereConditions))
-      : query;
+    const filteredQuery =
+      whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
 
     // Apply pagination
-    const allTasks = await filteredQuery
-      .limit(limit)
-      .offset(offset);
-    
+    const allTasks = await filteredQuery.limit(limit).offset(offset);
+
     return allTasks;
   } catch (error) {
     console.error("Error listing tasks:", error);
     throw error;
   }
-} 
+}

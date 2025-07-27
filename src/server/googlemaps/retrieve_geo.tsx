@@ -1,6 +1,6 @@
-'use server'
+"use server";
 
-import { findOrCreateLocation } from '../queries/locations';
+import { findOrCreateLocation } from "../queries/locations";
 
 // Types for OpenStreetMap Nominatim API response
 interface NominatimResponse {
@@ -26,24 +26,26 @@ interface FormattedGeoData {
 }
 
 // Retrieve geocoding data from OpenStreetMap Nominatim API
-export async function retrieveGeocodingData(address: string): Promise<FormattedGeoData | null> {
+export async function retrieveGeocodingData(
+  address: string,
+): Promise<FormattedGeoData | null> {
   try {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&addressdetails=1`;
     console.log(url);
-    
+
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; RealEstateApp/1.0)'
-      }
+        Accept: "application/json",
+        "User-Agent": "Mozilla/5.0 (compatible; RealEstateApp/1.0)",
+      },
     });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json() as NominatimResponse[];
+    const data = (await response.json()) as NominatimResponse[];
 
     if (!data || data.length === 0) {
       return null;
@@ -63,14 +65,14 @@ export async function retrieveGeocodingData(address: string): Promise<FormattedG
 
     let neighborhoodId: number | undefined;
     try {
-      const municipality = addressData.city ?? 'Unknown';
-      const province = addressData.province ?? addressData.state ?? 'Unknown';
-      
+      const municipality = addressData.city ?? "Unknown";
+      const province = addressData.province ?? addressData.state ?? "Unknown";
+
       neighborhoodId = await findOrCreateLocation({
         city: municipality,
         province: province,
         municipality: municipality,
-        neighborhood: neighborhood
+        neighborhood: neighborhood,
       });
     } catch {
       // Continue without neighborhood ID if there's an error
@@ -83,11 +85,10 @@ export async function retrieveGeocodingData(address: string): Promise<FormattedG
       neighborhoodId,
       city: addressData.city,
       municipality: addressData.city,
-      province: addressData.province ?? addressData.state
+      province: addressData.province ?? addressData.state,
     };
 
     return formattedData;
-
   } catch {
     return null;
   }

@@ -1,40 +1,40 @@
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { cn } from "~/lib/utils"
-import { Input } from "./input"
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "~/lib/utils";
+import { Input } from "./input";
 
 interface FloatingLabelInputProps {
-  id: string
-  value: string
-  onChange: (value: string) => void
-  placeholder: string
-  className?: string
-  disabled?: boolean
-  type?: string
-  required?: boolean
-  name?: string
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  className?: string;
+  disabled?: boolean;
+  type?: string;
+  required?: boolean;
+  name?: string;
 }
 
-export function FloatingLabelInput({ 
-  id, 
-  value, 
-  onChange, 
-  placeholder, 
+export function FloatingLabelInput({
+  id,
+  value,
+  onChange,
+  placeholder,
   className,
   disabled = false,
   type = "text",
   required = false,
-  name
+  name,
 }: FloatingLabelInputProps) {
-  const [isFocused, setIsFocused] = useState(false)
-  const hasValue = value.length > 0
-  const shouldShowLabel = isFocused || hasValue
+  const [isFocused, setIsFocused] = useState(false);
+  const hasValue = value.length > 0;
+  const shouldShowLabel = isFocused || hasValue;
 
   return (
-    <motion.div 
+    <motion.div
       className="relative"
-      animate={{ 
-        marginTop: shouldShowLabel ? "32px" : "10px"
+      animate={{
+        marginTop: shouldShowLabel ? "32px" : "10px",
       }}
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
@@ -46,10 +46,10 @@ export function FloatingLabelInput({
             animate={{ opacity: 1, y: -12 }}
             exit={{ opacity: 0, y: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute -left-1 -top-2 text-xs font-medium text-gray-600 bg-white px-1 z-10"
+            className="absolute -left-1 -top-2 z-10 bg-transparent px-1 text-xs font-medium text-gray-600"
           >
             {placeholder}
-            {required && <span className="text-red-500 ml-1">*</span>}
+            {required && <span className="ml-1 text-red-500">*</span>}
           </motion.label>
         )}
       </AnimatePresence>
@@ -65,10 +65,10 @@ export function FloatingLabelInput({
         disabled={disabled}
         required={required}
         className={cn(
-          "h-8 transition-all duration-200 shadow-md border-0",
-          className
+          "h-8 border-0 shadow-md transition-all duration-200",
+          className,
         )}
       />
     </motion.div>
-  )
-} 
+  );
+}

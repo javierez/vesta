@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { Input } from "~/components/ui/input"
-import { Label } from "~/components/ui/label"
-import type { EconomicInfo } from "~/types/property-form"
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import type { EconomicInfo } from "~/types/property-form";
 
 interface EconomicStepProps {
-  data: EconomicInfo
-  updateData: (data: Partial<EconomicInfo>) => void
-  errors: Record<string, string>
+  data: EconomicInfo;
+  updateData: (data: Partial<EconomicInfo>) => void;
+  errors: Record<string, string>;
 }
 
 export function EconomicStep({ data, updateData, errors }: EconomicStepProps) {
@@ -16,11 +16,12 @@ export function EconomicStep({ data, updateData, errors }: EconomicStepProps) {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold">Datos Económicos</h2>
         <p className="text-muted-foreground">
-          Introduce los datos económicos de tu inmueble. Puedes indicar precio de venta, alquiler o ambos.
+          Introduce los datos económicos de tu inmueble. Puedes indicar precio
+          de venta, alquiler o ambos.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="precioVenta">Precio de Venta (€)</Label>
           <div className="relative">
@@ -32,7 +33,9 @@ export function EconomicStep({ data, updateData, errors }: EconomicStepProps) {
               placeholder="Precio de venta"
               className={errors.precioVenta ? "border-red-500" : ""}
             />
-            {errors.precioVenta && <p className="text-red-500 text-sm">{errors.precioVenta}</p>}
+            {errors.precioVenta && (
+              <p className="text-sm text-red-500">{errors.precioVenta}</p>
+            )}
           </div>
         </div>
 
@@ -50,7 +53,9 @@ export function EconomicStep({ data, updateData, errors }: EconomicStepProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="gastosComunitarios">Gastos Comunitarios (€/mes)</Label>
+          <Label htmlFor="gastosComunitarios">
+            Gastos Comunitarios (€/mes)
+          </Label>
           <Input
             id="gastosComunitarios"
             type="number"
@@ -72,5 +77,5 @@ export function EconomicStep({ data, updateData, errors }: EconomicStepProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

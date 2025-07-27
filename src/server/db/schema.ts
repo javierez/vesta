@@ -1,14 +1,14 @@
-import { 
-  bigint, 
-  varchar, 
-  timestamp, 
+import {
+  bigint,
+  varchar,
+  timestamp,
   boolean,
   singlestoreTable,
   json,
   text,
   decimal,
   smallint,
-  int
+  int,
 } from "drizzle-orm/singlestore-core";
 
 // Users table
@@ -19,8 +19,8 @@ export const users = singlestoreTable("users", {
   lastName: varchar("last_name", { length: 100 }).notNull(),
   phone: varchar("phone", { length: 20 }),
   profileImageUrl: varchar("profile_image_url", { length: 255 }),
-  timezone: varchar("timezone", { length: 50 }).default('UTC'),
-  language: varchar("language", { length: 10 }).default('en'),
+  timezone: varchar("timezone", { length: 50 }).default("UTC"),
+  language: varchar("language", { length: 10 }).default("en"),
   preferences: json("preferences").default({}),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
@@ -42,7 +42,9 @@ export const roles = singlestoreTable("roles", {
 
 // UserRoles junction table (Many-to-Many relationship between users and roles)
 export const userRoles = singlestoreTable("user_roles", {
-  userRoleId: bigint("user_role_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  userRoleId: bigint("user_role_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   userId: bigint("user_id", { mode: "bigint" }).notNull(),
   roleId: bigint("role_id", { mode: "bigint" }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -52,7 +54,9 @@ export const userRoles = singlestoreTable("user_roles", {
 
 // Locations table
 export const locations = singlestoreTable("locations", {
-  neighborhoodId: bigint("neighborhood_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  neighborhoodId: bigint("neighborhood_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   city: varchar("city", { length: 100 }).notNull(),
   province: varchar("province", { length: 100 }).notNull(),
   municipality: varchar("municipality", { length: 100 }).notNull(),
@@ -65,7 +69,9 @@ export const locations = singlestoreTable("locations", {
 // Properties table
 export const properties = singlestoreTable("properties", {
   // Primary Key
-  propertyId: bigint("property_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  propertyId: bigint("property_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
 
   // Basic Information
   referenceNumber: varchar("reference_number", { length: 32 }),
@@ -96,7 +102,10 @@ export const properties = singlestoreTable("properties", {
   energyCertification: text("energy_certification"),
   energyCertificateStatus: varchar("energy_certificate_status", { length: 20 }), // 'uploaded', 'en_tramite', 'exento'
   energyConsumptionScale: varchar("energy_consumption_scale", { length: 2 }), // A-G
-  energyConsumptionValue: decimal("energy_consumption_value", { precision: 6, scale: 2 }), // kWh/m² año
+  energyConsumptionValue: decimal("energy_consumption_value", {
+    precision: 6,
+    scale: 2,
+  }), // kWh/m² año
   emissionsScale: varchar("emissions_scale", { length: 2 }), // A-G
   emissionsValue: decimal("emissions_value", { precision: 6, scale: 2 }), // kg CO2/m² año
   hasHeating: boolean("has_heating").default(false),
@@ -197,7 +206,9 @@ export const properties = singlestoreTable("properties", {
 });
 
 export const propertyImages = singlestoreTable("property_images", {
-  propertyImageId: bigint("property_image_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  propertyImageId: bigint("property_image_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(),
   referenceNumber: varchar("reference_number", { length: 32 }).notNull(),
   imageUrl: varchar("image_url", { length: 255 }).notNull(),
@@ -217,19 +228,27 @@ export const listings = singlestoreTable("listings", {
     .autoincrement(),
 
   // Basic Information
-  propertyId: bigint("property_id", { mode: "bigint" }).notNull(),        // FK → properties.property_id
-  agentId: bigint("agent_id", { mode: "bigint" }).notNull(),               // FK → users.user_id (agent)
-  listingType: varchar("listing_type", { length: 20 }).notNull(),          // e.g. "Sale" or "Rent"
+  propertyId: bigint("property_id", { mode: "bigint" }).notNull(), // FK → properties.property_id
+  agentId: bigint("agent_id", { mode: "bigint" }).notNull(), // FK → users.user_id (agent)
+  listingType: varchar("listing_type", { length: 20 }).notNull(), // e.g. "Sale" or "Rent"
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
-  status: varchar("status", { length: 20 }).notNull(),                     // e.g. "En Venta", "En Alquiler", "Vendido"
+  status: varchar("status", { length: 20 }).notNull(), // e.g. "En Venta", "En Alquiler", "Vendido"
 
   // Listing Features
   isFurnished: boolean("is_furnished"),
   furnitureQuality: varchar("furniture_quality", { length: 50 }),
   optionalGarage: boolean("optional_garage"),
-  optionalGaragePrice: decimal("optional_garage_price", { precision: 12, scale: 2 }),
-  optionalStorageRoom: boolean("optional_storage_room").notNull().default(false),
-  optionalStorageRoomPrice: decimal("optional_storage_room_price", { precision: 12, scale: 2 }),
+  optionalGaragePrice: decimal("optional_garage_price", {
+    precision: 12,
+    scale: 2,
+  }),
+  optionalStorageRoom: boolean("optional_storage_room")
+    .notNull()
+    .default(false),
+  optionalStorageRoomPrice: decimal("optional_storage_room_price", {
+    precision: 12,
+    scale: 2,
+  }),
   hasKeys: boolean("has_keys").notNull().default(false),
   studentFriendly: boolean("student_friendly"),
   petsAllowed: boolean("pets_allowed"),
@@ -285,7 +304,9 @@ export const contacts = singlestoreTable("contacts", {
 
 // Listing Contact junction table (Many-to-Many relationship between listings and contacts)
 export const listingContacts = singlestoreTable("listing_contacts", {
-  listingContactId: bigint("listing_contact_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  listingContactId: bigint("listing_contact_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   contactType: varchar("contact_type", { length: 20 }).notNull(), // e.g. "buyer", "owner", "viewer"
@@ -296,9 +317,7 @@ export const listingContacts = singlestoreTable("listing_contacts", {
 
 // Organizations (companies, law firms, banks)
 export const organizations = singlestoreTable("organizations", {
-  orgId: bigint("org_id", { mode: "bigint" })
-    .primaryKey()
-    .autoincrement(),
+  orgId: bigint("org_id", { mode: "bigint" }).primaryKey().autoincrement(),
   orgName: varchar("org_name", { length: 255 }).notNull(),
   address: varchar("address", { length: 255 }),
   city: varchar("city", { length: 100 }),
@@ -309,53 +328,46 @@ export const organizations = singlestoreTable("organizations", {
 
 // Leads (inbound interest for a listing)
 export const leads = singlestoreTable("leads", {
-  leadId: bigint("lead_id", { mode: "bigint" })
-    .primaryKey()
-    .autoincrement(),
+  leadId: bigint("lead_id", { mode: "bigint" }).primaryKey().autoincrement(),
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
-  listingId: bigint("listing_id", { mode: "bigint" }),            // FK → listings.listing_id (nullable)
-  source: varchar("source", { length: 50 }).notNull(),             // e.g. "Website", "Walk-In"
-  status: varchar("status", { length: 20 }).notNull(),             // e.g. "New", "Working", "Converted", "Disqualified"
+  listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
+  source: varchar("source", { length: 50 }).notNull(), // e.g. "Website", "Walk-In"
+  status: varchar("status", { length: 20 }).notNull(), // e.g. "New", "Working", "Converted", "Disqualified"
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Deals (potential or closed transaction)
 export const deals = singlestoreTable("deals", {
-  dealId: bigint("deal_id", { mode: "bigint" })
-    .primaryKey()
-    .autoincrement(),
+  dealId: bigint("deal_id", { mode: "bigint" }).primaryKey().autoincrement(),
   listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
-  status: varchar("stage", { length: 20 }).notNull(),              // e.g. "Offer", "UnderContract", "Closed", "Lost"
+  status: varchar("stage", { length: 20 }).notNull(), // e.g. "Offer", "UnderContract", "Closed", "Lost"
   closeDate: timestamp("close_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Deal Participants (people involved in a deal)
-export const dealParticipants = singlestoreTable(
-  "deal_participants",
-  {
-    dealId: bigint("deal_id", { mode: "bigint" }).notNull(),         // FK → deals.deal_id
-    contactId: bigint("contact_id", { mode: "bigint" }).notNull(),   // FK → contacts.contact_id
-    role: varchar("role", { length: 50 }).notNull(),                // e.g. "Buyer", "Seller", "Lawyer"
-  }
-);
+export const dealParticipants = singlestoreTable("deal_participants", {
+  dealId: bigint("deal_id", { mode: "bigint" }).notNull(), // FK → deals.deal_id
+  contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
+  role: varchar("role", { length: 50 }).notNull(), // e.g. "Buyer", "Seller", "Lawyer"
+});
 
 // Appointments table
 export const appointments = singlestoreTable("appointments", {
   appointmentId: bigint("appointment_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
-  userId: bigint("user_id", { mode: "bigint" }).notNull(),         // FK → users.user_id
-  contactId: bigint("contact_id", { mode: "bigint" }).notNull(),     // FK → contacts.contact_id
-  listingId: bigint("listing_id", { mode: "bigint" }),             // FK → listings.listing_id (nullable)
-  leadId: bigint("lead_id", { mode: "bigint" }),                     // FK → leads.lead_id (nullable)
-  dealId: bigint("deal_id", { mode: "bigint" }),                     // FK → deals.deal_id (nullable)
-  prospectId: bigint("prospect_id", { mode: "bigint" }),             // FK → prospects.prospect_id (nullable)
+  userId: bigint("user_id", { mode: "bigint" }).notNull(), // FK → users.user_id
+  contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
+  listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
+  leadId: bigint("lead_id", { mode: "bigint" }), // FK → leads.lead_id (nullable)
+  dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)
+  prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.prospect_id (nullable)
   datetimeStart: timestamp("datetime_start").notNull(),
   datetimeEnd: timestamp("datetime_end").notNull(),
-  status: varchar("status", { length: 20 }).notNull().default('Scheduled'),
+  status: varchar("status", { length: 20 }).notNull().default("Scheduled"),
   notes: text("notes"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -364,18 +376,16 @@ export const appointments = singlestoreTable("appointments", {
 
 // Tasks
 export const tasks = singlestoreTable("tasks", {
-  taskId: bigint("task_id", { mode: "bigint" })
-    .primaryKey()
-    .autoincrement(),
-  userId: bigint("user_id", { mode: "bigint" }).notNull(),         // FK → users.user_id
+  taskId: bigint("task_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  userId: bigint("user_id", { mode: "bigint" }).notNull(), // FK → users.user_id
   description: text("description").notNull(),
   dueDate: timestamp("due_date"),
   completed: boolean("completed").default(false),
-  listingId: bigint("listing_id", { mode: "bigint" }),             // FK → listings.listing_id (nullable)
-  leadId: bigint("lead_id", { mode: "bigint" }),                   // FK → leads.lead_id (nullable)
-  dealId: bigint("deal_id", { mode: "bigint" }),                   // FK → deals.deal_id (nullable)
-  appointmentId: bigint("appointment_id", { mode: "bigint" }),     // FK → appointments.appointment_id (nullable)
-  prospectId: bigint("prospect_id", { mode: "bigint" }),           // FK → prospects.prospect_id (nullable)
+  listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
+  leadId: bigint("lead_id", { mode: "bigint" }), // FK → leads.lead_id (nullable)
+  dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)
+  appointmentId: bigint("appointment_id", { mode: "bigint" }), // FK → appointments.appointment_id (nullable)
+  prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.prospect_id (nullable)
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
@@ -383,29 +393,27 @@ export const tasks = singlestoreTable("tasks", {
 
 // Documents table
 export const documents = singlestoreTable("documents", {
-  docId: bigint("doc_id", { mode: "bigint" })
-    .primaryKey()
-    .autoincrement(),
+  docId: bigint("doc_id", { mode: "bigint" }).primaryKey().autoincrement(),
   filename: varchar("filename", { length: 255 }).notNull(),
-  fileType: varchar("file_type", { length: 50 }).notNull(),           // e.g. "PDF", "DOC", "Image"
-  fileUrl: varchar("file_url", { length: 2048 }).notNull(),           // Public S3 URL
-  userId: bigint("user_id", { mode: "bigint" }).notNull(),            // FK → users.user_id (who uploaded)
-  
+  fileType: varchar("file_type", { length: 50 }).notNull(), // e.g. "PDF", "DOC", "Image"
+  fileUrl: varchar("file_url", { length: 2048 }).notNull(), // Public S3 URL
+  userId: bigint("user_id", { mode: "bigint" }).notNull(), // FK → users.user_id (who uploaded)
+
   // Entity relationships (only one should be set per document)
-  propertyId: bigint("property_id", { mode: "bigint" }),              // FK → properties.property_id (nullable)
-  contactId: bigint("contact_id", { mode: "bigint" }),                // FK → contacts.contact_id (nullable)
-  listingId: bigint("listing_id", { mode: "bigint" }),                // FK → listings.listing_id (nullable)
-  leadId: bigint("lead_id", { mode: "bigint" }),                      // FK → leads.lead_id (nullable)
-  dealId: bigint("deal_id", { mode: "bigint" }),                      // FK → deals.deal_id (nullable)
-  appointmentId: bigint("appointment_id", { mode: "bigint" }),        // FK → appointments.appointment_id (nullable)
-  prospectId: bigint("prospect_id", { mode: "bigint" }),              // FK → prospects.prospect_id (nullable)
-  
+  propertyId: bigint("property_id", { mode: "bigint" }), // FK → properties.property_id (nullable)
+  contactId: bigint("contact_id", { mode: "bigint" }), // FK → contacts.contact_id (nullable)
+  listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
+  leadId: bigint("lead_id", { mode: "bigint" }), // FK → leads.lead_id (nullable)
+  dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)
+  appointmentId: bigint("appointment_id", { mode: "bigint" }), // FK → appointments.appointment_id (nullable)
+  prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.prospect_id (nullable)
+
   // AWS S3 fields (similar to property_images)
-  documentKey: varchar("document_key", { length: 2048 }).notNull(),   // S3 object key for operations
-  s3key: varchar("s3key", { length: 2048 }).notNull(),                // S3 storage key
-  documentTag: varchar("document_tag", { length: 255 }),              // Category/type tag (e.g., "contract", "ID", "deed")
-  documentOrder: int("document_order").default(0).notNull(),          // Display order within entity
-  
+  documentKey: varchar("document_key", { length: 2048 }).notNull(), // S3 object key for operations
+  s3key: varchar("s3key", { length: 2048 }).notNull(), // S3 storage key
+  documentTag: varchar("document_tag", { length: 255 }), // Category/type tag (e.g., "contract", "ID", "deed")
+  documentOrder: int("document_order").default(0).notNull(), // Display order within entity
+
   // System fields
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true),
@@ -438,7 +446,9 @@ export const prospects = singlestoreTable("prospects", {
 
 // Prospect History table to track status changes
 export const prospectHistory = singlestoreTable("prospect_history", {
-  historyId: bigint("history_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  historyId: bigint("history_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   prospectId: bigint("prospect_id", { mode: "bigint" }).notNull(),
   previousStatus: varchar("previous_status", { length: 50 }),
   newStatus: varchar("new_status", { length: 50 }).notNull(),
@@ -446,4 +456,3 @@ export const prospectHistory = singlestoreTable("prospect_history", {
   changeReason: text("change_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-

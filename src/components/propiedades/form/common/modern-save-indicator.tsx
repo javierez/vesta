@@ -1,34 +1,38 @@
-import React, { useState, useEffect } from "react"
-import { Check, AlertCircle, Save } from "lucide-react"
-import { cn } from "~/lib/utils"
+import React, { useState, useEffect } from "react";
+import { Check, AlertCircle, Save } from "lucide-react";
+import { cn } from "~/lib/utils";
 
-type SaveState = "idle" | "modified" | "saving" | "saved" | "error"
+type SaveState = "idle" | "modified" | "saving" | "saved" | "error";
 
 interface ModernSaveIndicatorProps {
-  state: SaveState
-  onSave: () => Promise<void>
-  className?: string
+  state: SaveState;
+  onSave: () => Promise<void>;
+  className?: string;
 }
 
-export function ModernSaveIndicator({ state, onSave, className }: ModernSaveIndicatorProps) {
-  const [isVisible, setIsVisible] = useState(false)
+export function ModernSaveIndicator({
+  state,
+  onSave,
+  className,
+}: ModernSaveIndicatorProps) {
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setIsVisible(state !== "idle")
-  }, [state])
+    setIsVisible(state !== "idle");
+  }, [state]);
 
   const handleClick = async () => {
     if (state === "modified") {
-      await onSave()
+      await onSave();
     }
-  }
+  };
 
-  if (!isVisible) return null
+  if (!isVisible) return null;
 
   return (
     <div
       className={cn(
-        "absolute -top-2 -right-2 z-10 transition-all duration-500 ease-out",
+        "absolute -right-2 -top-2 z-10 transition-all duration-500 ease-out",
         "transform-gpu",
         isVisible ? "scale-100 opacity-100" : "scale-0 opacity-0",
         className,
@@ -39,8 +43,8 @@ export function ModernSaveIndicator({ state, onSave, className }: ModernSaveIndi
         <button
           onClick={handleClick}
           className={cn(
-            "relative group",
-            "w-8 h-8 rounded-full",
+            "group relative",
+            "h-8 w-8 rounded-full",
             "bg-gradient-to-br from-yellow-400 to-amber-500",
             "shadow-lg shadow-yellow-500/25",
             "hover:shadow-xl hover:shadow-yellow-500/40",
@@ -50,15 +54,15 @@ export function ModernSaveIndicator({ state, onSave, className }: ModernSaveIndi
             "backdrop-blur-sm",
           )}
         >
-          <div className="relative flex items-center justify-center h-full">
-            <Save className="w-4 h-4 text-white transition-transform duration-200 group-hover:scale-110" />
+          <div className="relative flex h-full items-center justify-center">
+            <Save className="h-4 w-4 text-white transition-transform duration-200 group-hover:scale-110" />
           </div>
         </button>
       )}
 
       {/* Saving State - Animated Ring */}
       {state === "saving" && (
-        <div className="relative w-8 h-8">
+        <div className="relative h-8 w-8">
           <div
             className={cn(
               "absolute inset-0 rounded-full",
@@ -68,7 +72,7 @@ export function ModernSaveIndicator({ state, onSave, className }: ModernSaveIndi
               "backdrop-blur-sm",
             )}
           >
-            <div className="absolute inset-1 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            <div className="absolute inset-1 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           </div>
         </div>
       )}
@@ -77,7 +81,7 @@ export function ModernSaveIndicator({ state, onSave, className }: ModernSaveIndi
       {state === "saved" && (
         <div
           className={cn(
-            "w-8 h-8 rounded-full",
+            "h-8 w-8 rounded-full",
             "bg-gradient-to-br from-emerald-500 to-green-600",
             "shadow-lg shadow-emerald-500/25",
             "border border-white/20",
@@ -86,8 +90,8 @@ export function ModernSaveIndicator({ state, onSave, className }: ModernSaveIndi
             "animate-in zoom-in-50 duration-500",
           )}
         >
-          <Check className="w-4 h-4 text-white animate-in zoom-in-50 duration-300 delay-100" />
-          <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-20" />
+          <Check className="animate-in zoom-in-50 h-4 w-4 text-white delay-100 duration-300" />
+          <div className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-20" />
         </div>
       )}
 
@@ -95,7 +99,7 @@ export function ModernSaveIndicator({ state, onSave, className }: ModernSaveIndi
       {state === "error" && (
         <div
           className={cn(
-            "w-8 h-8 rounded-full",
+            "h-8 w-8 rounded-full",
             "bg-gradient-to-br from-red-500 to-red-600",
             "shadow-lg shadow-red-500/25",
             "border border-white/20",
@@ -104,9 +108,9 @@ export function ModernSaveIndicator({ state, onSave, className }: ModernSaveIndi
             "animate-bounce",
           )}
         >
-          <AlertCircle className="w-4 h-4 text-white" />
+          <AlertCircle className="h-4 w-4 text-white" />
         </div>
       )}
     </div>
-  )
-} 
+  );
+}

@@ -1,24 +1,36 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Image from "next/image"
-import { Button } from "~/components/ui/button"
-import { Input } from "~/components/ui/input"
-import { Label } from "~/components/ui/label"
-import { Textarea } from "~/components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { AlertCircle, Upload } from "lucide-react"
-import { Alert, AlertDescription } from "~/components/ui/alert"
+import { useState } from "react";
+import Image from "next/image";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { AlertCircle, Upload } from "lucide-react";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 
 interface ListPropertyFormProps {
-  onSuccess?: () => void
-  className?: string
-  buttonVariant?: "default" | "outline" | "ghost"
-  buttonSize?: "default" | "sm" | "lg" | "icon"
-  buttonText?: string
+  onSuccess?: () => void;
+  className?: string;
+  buttonVariant?: "default" | "outline" | "ghost";
+  buttonSize?: "default" | "sm" | "lg" | "icon";
+  buttonText?: string;
 }
 
 export function ListPropertyForm({
@@ -28,10 +40,10 @@ export function ListPropertyForm({
   buttonSize = "default",
   buttonText = "Listar Propiedad",
 }: ListPropertyFormProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [currentStep, setCurrentStep] = useState(1)
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -45,65 +57,69 @@ export function ListPropertyForm({
     state: "",
     zipCode: "",
     images: [] as File[],
-  })
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files)
+      const filesArray = Array.from(e.target.files);
       setFormData((prev) => ({
         ...prev,
         images: [...prev.images, ...filesArray],
-      }))
+      }));
     }
-  }
+  };
 
   const removeImage = (index: number) => {
     setFormData((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
-    }))
-  }
+    }));
+  };
 
   const nextStep = () => {
-    setCurrentStep((prev) => prev + 1)
-  }
+    setCurrentStep((prev) => prev + 1);
+  };
 
   const prevStep = () => {
-    setCurrentStep((prev) => prev - 1)
-  }
+    setCurrentStep((prev) => prev - 1);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
     try {
       // Simulación de envío
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Aquí iría la lógica real de envío
       // const response = await submitProperty(formData)
 
-      setIsLoading(false)
-      setIsOpen(false)
+      setIsLoading(false);
+      setIsOpen(false);
 
       if (onSuccess) {
-        onSuccess()
+        onSuccess();
       }
     } catch {
-      setIsLoading(false)
-      setError("Ha ocurrido un error al enviar tu propiedad. Por favor, inténtalo de nuevo.")
+      setIsLoading(false);
+      setError(
+        "Ha ocurrido un error al enviar tu propiedad. Por favor, inténtalo de nuevo.",
+      );
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -157,7 +173,9 @@ export function ListPropertyForm({
                   <Label htmlFor="propertyType">Tipo de Propiedad*</Label>
                   <Select
                     value={formData.propertyType}
-                    onValueChange={(value) => handleSelectChange("propertyType", value)}
+                    onValueChange={(value) =>
+                      handleSelectChange("propertyType", value)
+                    }
                   >
                     <SelectTrigger id="propertyType">
                       <SelectValue placeholder="Seleccionar tipo" />
@@ -283,9 +301,9 @@ export function ListPropertyForm({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="images">Imágenes de la Propiedad</Label>
-                <div className="border-2 border-dashed rounded-md p-6 text-center">
-                  <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground mb-2">
+                <div className="rounded-md border-2 border-dashed p-6 text-center">
+                  <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                  <p className="mb-2 text-sm text-muted-foreground">
                     Arrastra y suelta imágenes aquí o haz clic para seleccionar
                   </p>
                   <Input
@@ -309,13 +327,17 @@ export function ListPropertyForm({
 
               {formData.images.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Imágenes Seleccionadas ({formData.images.length})</Label>
+                  <Label>
+                    Imágenes Seleccionadas ({formData.images.length})
+                  </Label>
                   <div className="grid grid-cols-3 gap-2">
                     {formData.images.map((file, index) => (
-                      <div key={index} className="relative group">
-                        <div className="relative aspect-square rounded-md bg-muted overflow-hidden">
+                      <div key={index} className="group relative">
+                        <div className="relative aspect-square overflow-hidden rounded-md bg-muted">
                           <Image
-                            src={URL.createObjectURL(file) || "/placeholder.svg"}
+                            src={
+                              URL.createObjectURL(file) || "/placeholder.svg"
+                            }
                             alt={`Imagen ${index + 1}`}
                             fill
                             className="object-cover"
@@ -325,7 +347,7 @@ export function ListPropertyForm({
                           type="button"
                           variant="destructive"
                           size="icon"
-                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute right-1 top-1 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                           onClick={() => removeImage(index)}
                         >
                           &times;
@@ -360,5 +382,5 @@ export function ListPropertyForm({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

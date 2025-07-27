@@ -1,186 +1,194 @@
-export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje" | "any"
+export type PropertyType =
+  | "piso"
+  | "casa"
+  | "local"
+  | "solar"
+  | "garaje"
+  | "any";
 
 export interface SearchParams {
-  location?: string
-  propertyType?: PropertyType
-  bedrooms?: string
-  bathrooms?: string
-  minPrice?: number
-  maxPrice?: number
-  minArea?: number
-  maxArea?: number
-  status?: "for-sale" | "for-rent" | "any"
-  province?: string
-  municipality?: string
+  location?: string;
+  propertyType?: PropertyType;
+  bedrooms?: string;
+  bathrooms?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minArea?: number;
+  maxArea?: number;
+  status?: "for-sale" | "for-rent" | "any";
+  province?: string;
+  municipality?: string;
 }
 
 // Convert search params to URL slug
 export function buildSearchSlug(params: SearchParams): string {
-  const segments: string[] = []
+  const segments: string[] = [];
 
   // Add property type and status
-  let typeSegment = ""
+  let typeSegment = "";
   if (params.status === "for-rent") {
-    typeSegment = "alquiler"
+    typeSegment = "alquiler";
   } else {
-    typeSegment = "venta"
+    typeSegment = "venta";
   }
 
   if (params.propertyType && params.propertyType !== "any") {
-    if (params.propertyType === "casa") typeSegment += "-casas"
-    else if (params.propertyType === "piso") typeSegment += "-pisos"
-    else if (params.propertyType === "local") typeSegment += "-locales"
-    else if (params.propertyType === "solar") typeSegment += "-solares"
-    else if (params.propertyType === "garaje") typeSegment += "-garajes"
+    if (params.propertyType === "casa") typeSegment += "-casas";
+    else if (params.propertyType === "piso") typeSegment += "-pisos";
+    else if (params.propertyType === "local") typeSegment += "-locales";
+    else if (params.propertyType === "solar") typeSegment += "-solares";
+    else if (params.propertyType === "garaje") typeSegment += "-garajes";
   } else {
-    typeSegment += "-propiedades"
+    typeSegment += "-propiedades";
   }
 
-  segments.push(typeSegment)
+  segments.push(typeSegment);
 
   // Add location
   if (params.location) {
-    segments.push(params.location.toLowerCase().replace(/\s+/g, "-"))
+    segments.push(params.location.toLowerCase().replace(/\s+/g, "-"));
   } else {
-    segments.push("todas-ubicaciones")
+    segments.push("todas-ubicaciones");
   }
 
   // Add province and municipality
   if (params.province && params.province !== "all") {
-    segments.push(`provincia-${params.province}`)
+    segments.push(`provincia-${params.province}`);
   }
   if (params.municipality && params.municipality !== "all") {
-    segments.push(`municipio-${params.municipality}`)
+    segments.push(`municipio-${params.municipality}`);
   }
 
   // Add filters
-  const filters: string[] = []
+  const filters: string[] = [];
 
   if (params.minPrice) {
-    filters.push(`precio-desde_${params.minPrice}`)
+    filters.push(`precio-desde_${params.minPrice}`);
   }
 
   if (params.maxPrice) {
-    filters.push(`precio-hasta_${params.maxPrice}`)
+    filters.push(`precio-hasta_${params.maxPrice}`);
   }
 
   if (params.minArea) {
-    filters.push(`metros-cuadrados-mas-de_${params.minArea}`)
+    filters.push(`metros-cuadrados-mas-de_${params.minArea}`);
   }
 
   if (params.maxArea) {
-    filters.push(`metros-cuadrados-menos-de_${params.maxArea}`)
+    filters.push(`metros-cuadrados-menos-de_${params.maxArea}`);
   }
 
   if (params.bedrooms && params.bedrooms !== "any") {
-    const bedroomsNum = Number.parseInt(params.bedrooms)
+    const bedroomsNum = Number.parseInt(params.bedrooms);
     if (bedroomsNum === 1) {
-      filters.push("un-dormitorio")
+      filters.push("un-dormitorio");
     } else if (bedroomsNum === 2) {
-      filters.push("dos-dormitorios")
+      filters.push("dos-dormitorios");
     } else if (bedroomsNum === 3) {
-      filters.push("tres-dormitorios")
+      filters.push("tres-dormitorios");
     } else if (bedroomsNum >= 4) {
-      filters.push("cuatro-o-mas-dormitorios")
+      filters.push("cuatro-o-mas-dormitorios");
     }
   }
 
   if (params.bathrooms && params.bathrooms !== "any") {
-    const bathroomsNum = Number.parseInt(params.bathrooms)
+    const bathroomsNum = Number.parseInt(params.bathrooms);
     if (bathroomsNum === 1) {
-      filters.push("un-bano")
+      filters.push("un-bano");
     } else if (bathroomsNum === 2) {
-      filters.push("dos-banos")
+      filters.push("dos-banos");
     } else if (bathroomsNum >= 3) {
-      filters.push("tres-o-mas-banos")
+      filters.push("tres-o-mas-banos");
     }
   }
 
   // Add filters to URL if any exist
   if (filters.length > 0) {
-    segments.push(`con-${filters.join(",")}`)
+    segments.push(`con-${filters.join(",")}`);
   }
 
-  return segments.join("/")
+  return segments.join("/");
 }
 
 // Parse URL slug to search params
 export function parseSearchSlug(slug: string): SearchParams {
-  const params: SearchParams = {}
+  const params: SearchParams = {};
 
   // Split the slug into segments
-  const segments = slug.split("/").filter(Boolean)
+  const segments = slug.split("/").filter(Boolean);
 
   // Parse property type and status
   if (segments.length > 0) {
-    const typeSegment = segments[0] ?? ""
+    const typeSegment = segments[0] ?? "";
 
     if (typeSegment.startsWith("alquiler")) {
-      params.status = "for-rent"
+      params.status = "for-rent";
     } else {
-      params.status = "for-sale"
+      params.status = "for-sale";
     }
 
     if (typeSegment.includes("-casas")) {
-      params.propertyType = "casa"
+      params.propertyType = "casa";
     } else if (typeSegment.includes("-pisos")) {
-      params.propertyType = "piso"
+      params.propertyType = "piso";
     } else if (typeSegment.includes("-locales")) {
-      params.propertyType = "local"
+      params.propertyType = "local";
     } else if (typeSegment.includes("-solares")) {
-      params.propertyType = "solar"
+      params.propertyType = "solar";
     } else if (typeSegment.includes("-garajes")) {
-      params.propertyType = "garaje"
+      params.propertyType = "garaje";
     }
   }
 
   // Parse location
   if (segments.length > 1 && segments[1] !== "todas-ubicaciones") {
-    params.location = (segments[1] ?? "").replace(/-/g, " ")
+    params.location = (segments[1] ?? "").replace(/-/g, " ");
   }
 
   // Parse province and municipality
   for (let i = 2; i < segments.length; i++) {
-    const segment = segments[i]
+    const segment = segments[i];
     if (segment?.startsWith("provincia-")) {
-      params.province = segment.substring(10)
+      params.province = segment.substring(10);
     } else if (segment?.startsWith("municipio-")) {
-      params.municipality = segment.substring(10)
+      params.municipality = segment.substring(10);
     }
   }
 
   // Parse filters
-  const filtersSegment = segments.find(segment => segment?.startsWith("con-"))
+  const filtersSegment = segments.find((segment) =>
+    segment?.startsWith("con-"),
+  );
   if (filtersSegment) {
-    const filtersString = filtersSegment.substring(4) // Remove 'con-'
-    const filters = filtersString.split(",")
+    const filtersString = filtersSegment.substring(4); // Remove 'con-'
+    const filters = filtersString.split(",");
 
     filters.forEach((filter) => {
       if (filter.startsWith("precio-desde_")) {
-        params.minPrice = Number.parseInt(filter.split("_")[1] ?? "0")
+        params.minPrice = Number.parseInt(filter.split("_")[1] ?? "0");
       } else if (filter.startsWith("precio-hasta_")) {
-        params.maxPrice = Number.parseInt(filter.split("_")[1] ?? "0")
+        params.maxPrice = Number.parseInt(filter.split("_")[1] ?? "0");
       } else if (filter.startsWith("metros-cuadrados-mas-de_")) {
-        params.minArea = Number.parseInt(filter.split("_")[1] ?? "0")
+        params.minArea = Number.parseInt(filter.split("_")[1] ?? "0");
       } else if (filter.startsWith("metros-cuadrados-menos-de_")) {
-        params.maxArea = Number.parseInt(filter.split("_")[1] ?? "0")
+        params.maxArea = Number.parseInt(filter.split("_")[1] ?? "0");
       } else if (filter === "un-dormitorio") {
-        params.bedrooms = "1"
+        params.bedrooms = "1";
       } else if (filter === "dos-dormitorios") {
-        params.bedrooms = "2"
+        params.bedrooms = "2";
       } else if (filter === "tres-dormitorios") {
-        params.bedrooms = "3"
+        params.bedrooms = "3";
       } else if (filter === "cuatro-o-mas-dormitorios") {
-        params.bedrooms = "4"
+        params.bedrooms = "4";
       } else if (filter === "un-bano") {
-        params.bathrooms = "1"
+        params.bathrooms = "1";
       } else if (filter === "dos-banos") {
-        params.bathrooms = "2"
+        params.bathrooms = "2";
       } else if (filter === "tres-o-mas-banos") {
-        params.bathrooms = "3"
+        params.bathrooms = "3";
       }
-    })
+    });
   }
 
-  return params
+  return params;
 }

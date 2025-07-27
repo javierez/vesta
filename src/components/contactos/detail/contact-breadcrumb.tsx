@@ -1,18 +1,24 @@
-'use client'
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 
 interface ContactBreadcrumbProps {
-  firstName: string
-  lastName: string
+  firstName: string;
+  lastName: string;
 }
 
-export function ContactBreadcrumb({ firstName, lastName }: ContactBreadcrumbProps) {
+export function ContactBreadcrumb({
+  firstName,
+  lastName,
+}: ContactBreadcrumbProps) {
   return (
     <nav className="py-4" aria-label="Breadcrumb">
       <ol className="flex items-center text-sm">
         <li>
-          <Link href="/contactos" className="text-muted-foreground hover:text-primary">
+          <Link
+            href="/contactos"
+            className="text-muted-foreground hover:text-primary"
+          >
             Contactos
           </Link>
         </li>
@@ -22,5 +28,5 @@ export function ContactBreadcrumb({ firstName, lastName }: ContactBreadcrumbProp
         </li>
       </ol>
     </nav>
-  )
-} 
+  );
+}

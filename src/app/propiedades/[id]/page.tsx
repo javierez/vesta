@@ -1,39 +1,38 @@
-import { notFound } from "next/navigation"
-import { ImageGallery } from "~/components/propiedades/detail/image-gallery"
-import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump"
-import { PropertyHeader } from "~/components/propiedades/detail/property-header"
-import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form"
-import { PortalSelection } from "~/components/propiedades/detail/portal-selection"
-import { EnergyCertificate } from "~/components/propiedades/detail/energy-certificate"
-import { getPropertyImages } from "~/server/queries/property_images"
-import { getListingDetails } from "~/server/queries/listing"
-import { getEnergyCertificate } from "~/server/queries/document"
-import type { PropertyImage } from "~/lib/data"
-import { convertDbListingToPropertyListing } from "~/types/property-listing"
+import { notFound } from "next/navigation";
+import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
+import { PropertyHeader } from "~/components/propiedades/detail/property-header";
+import { PropertyTabs } from "~/components/propiedades/detail/property-tabs";
+import { getPropertyImages } from "~/server/queries/property_images";
+import { getListingDetails } from "~/server/queries/listing";
+import { getEnergyCertificate } from "~/server/queries/document";
+import type { PropertyImage } from "~/lib/data";
+import { convertDbListingToPropertyListing } from "~/types/property-listing";
 
 interface PropertyPageProps {
   params: Promise<{
-    id: string
-  }>
+    id: string;
+  }>;
 }
 
 export default async function PropertyPage({ params }: PropertyPageProps) {
-  const unwrappedParams = await params
-  const listing = await getListingDetails(parseInt(unwrappedParams.id))
+  const unwrappedParams = await params;
+  const listing = await getListingDetails(parseInt(unwrappedParams.id));
 
   if (!listing) {
-    notFound()
+    notFound();
   }
 
   // Get energy certificate document
-  const energyCertificate = await getEnergyCertificate(Number(listing.propertyId))
+  const energyCertificate = await getEnergyCertificate(
+    Number(listing.propertyId),
+  );
 
   // Get all property images with proper fallback
-  const propertyImages = await getPropertyImages(BigInt(listing.propertyId))
-  const defaultPlaceholder = "/properties/suburban-dream.png"
-  
+  const propertyImages = await getPropertyImages(BigInt(listing.propertyId));
+  const defaultPlaceholder = "/properties/suburban-dream.png";
+
   // Process images to ensure they have valid URLs and match PropertyImage type
-  const processedImages: PropertyImage[] = propertyImages.map(img => ({
+  const processedImages: PropertyImage[] = propertyImages.map((img) => ({
     propertyImageId: img.propertyImageId,
     propertyId: img.propertyId,
     referenceNumber: img.referenceNumber,
@@ -44,118 +43,43 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     imageKey: img.imageKey,
     imageTag: img.imageTag ?? undefined,
     s3key: img.s3key,
-    imageOrder: img.imageOrder
-  }))
-
+    imageOrder: img.imageOrder,
+  }));
 
   return (
     <>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <PropertyBreadcrumb 
-          propertyType={listing.propertyType ?? ''}
-          street={listing.street ?? ''}
-          referenceNumber={listing.referenceNumber ?? ''}
+        <PropertyBreadcrumb
+          propertyType={listing.propertyType ?? ""}
+          street={listing.street ?? ""}
+          referenceNumber={listing.referenceNumber ?? ""}
         />
-        
+
+        {/* Property Title - Always Visible */}
         <PropertyHeader
-          propertyType={listing.propertyType ?? ''}
-          street={listing.street ?? ''}
-          city={listing.city ?? ''}
-          province={listing.province ?? ''}
-          postalCode={listing.postalCode ?? ''}
-          referenceNumber={listing.referenceNumber ?? ''}
+          propertyType={listing.propertyType ?? ""}
+          street={listing.street ?? ""}
+          city={listing.city ?? ""}
+          province={listing.province ?? ""}
+          postalCode={listing.postalCode ?? ""}
+          referenceNumber={listing.referenceNumber ?? ""}
           price={listing.price}
-          listingType={listing.listingType as 'Sale' | 'Rent' | 'Sold'}
+          listingType={listing.listingType as "Sale" | "Rent" | "Sold"}
           isBankOwned={listing.isBankOwned ?? false}
           isFeatured={listing.isFeatured ?? false}
-          neighborhood={listing.neighborhood ?? ''}
+          neighborhood={listing.neighborhood ?? ""}
         />
 
-        {/* Property Summary */}
-        {/* <div className="pb-8">
-          <PropertySummary
-            agent={listing.agent ? {
-              id: listing.agent.id,
-              name: listing.agent.name,
-              email: listing.agent.email,
-              phone: listing.agent.phone
-            } : undefined}
-            owners={listing.owners?.map(owner => ({
-              id: owner.id,
-              name: owner.name,
-              email: owner.email,
-              phone: owner.phone
-            }))}
-            status={listing.status as 'prospeccion' | 'lead' | 'deal'}
-            hasKeys={listing.hasKeys ?? false}
-            isPublished={listing.isPublished ?? false}
-            publishedPlatforms={listing.publishedPlatforms}
-            lastUpdated={listing.updatedAt}
-          />
-        </div> */}
-
-        {/* Galería de imágenes */}
-        <div className="pb-8 max-w-3xl mx-auto mb-8">
-          <ImageGallery 
-            images={processedImages} 
-            title={listing.title ?? ""} 
-            propertyId={BigInt(listing.propertyId)}
-            referenceNumber={listing.referenceNumber ?? ""}
-          />
-        </div>
-
-        {/* Portal Selection */}
-        <div className="pb-8 max-w-4xl mx-auto mb-8">
-          <PortalSelection 
-            listingId={listing.listingId.toString()}
-            fotocasa={listing.fotocasa ?? undefined}
-            idealista={listing.idealista ?? undefined}
-            habitaclia={listing.habitaclia ?? undefined}
-            milanuncios={listing.milanuncios ?? undefined}
-          />
-        </div>
-
-        {/* Contenido principal */}
+        {/* Property Tabs - Under Title */}
         <div className="pb-16">
-          <div className="grid grid-cols-1 gap-4">
-            {/* Columna principal */}
-            <div className="space-y-4">
-              {/* Características detalladas */}
-              <PropertyCharacteristicsForm listing={convertDbListingToPropertyListing(listing)} />
-            </div>
-          </div>
-        </div>
-
-        {/* Energy Certificate Section */}
-        <div className="pb-8 max-w-4xl mx-auto mb-8">
-          <EnergyCertificate 
-            energyRating={listing.energyCertification ?? null}
-            uploadedDocument={energyCertificate ? {
-              docId: energyCertificate.docId,
-              documentKey: energyCertificate.documentKey,
-              fileUrl: energyCertificate.fileUrl
-            } : null}
-            propertyId={listing.propertyId}
-            userId={listing.agentId ?? BigInt(1)} // TODO: Get from auth context
-            listingId={listing.listingId}
-            referenceNumber={listing.referenceNumber ?? ""}
-            energyCertificateStatus={listing.energyCertificateStatus ?? null}
-            energyConsumptionScale={listing.energyConsumptionScale ?? null}
-            energyConsumptionValue={
-              listing.energyConsumptionValue !== null && listing.energyConsumptionValue !== undefined
-                ? parseFloat(listing.energyConsumptionValue)
-                : null
-            }
-            emissionsScale={listing.emissionsScale ?? null}
-            emissionsValue={
-              listing.emissionsValue !== null && listing.emissionsValue !== undefined
-                ? parseFloat(listing.emissionsValue)
-                : null
-            }
+          <PropertyTabs
+            listing={listing}
+            convertedListing={convertDbListingToPropertyListing(listing)}
+            images={processedImages}
+            energyCertificate={energyCertificate}
           />
         </div>
       </div>
     </>
-  )
+  );
 }
-

@@ -1,19 +1,31 @@
-'use server'
+"use server";
 
-import { db } from "../db"
-import { listings, properties, locations, propertyImages, users, listingContacts } from "../db/schema";
+import { db } from "../db";
+import {
+  listings,
+  properties,
+  locations,
+  propertyImages,
+  users,
+  listingContacts,
+} from "../db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 
 // Create a new listing
-export async function createListing(data: Omit<Listing, "listingId" | "createdAt" | "updatedAt">) {
+export async function createListing(
+  data: Omit<Listing, "listingId" | "createdAt" | "updatedAt">,
+) {
   try {
-    const [result] = await db.insert(listings).values({
-      ...data,
-      isActive: true,
-      viewCount: 0,
-      inquiryCount: 0,
-    }).$returningId();
+    const [result] = await db
+      .insert(listings)
+      .values({
+        ...data,
+        isActive: true,
+        viewCount: 0,
+        inquiryCount: 0,
+      })
+      .$returningId();
     if (!result) throw new Error("Failed to create listing");
     const [newListing] = await db
       .select()
@@ -35,8 +47,8 @@ export async function getListingById(listingId: number) {
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
-          eq(listings.isActive, true)
-        )
+          eq(listings.isActive, true),
+        ),
       );
     return listing;
   } catch (error) {
@@ -54,8 +66,8 @@ export async function getListingsByPropertyId(propertyId: number) {
       .where(
         and(
           eq(listings.propertyId, BigInt(propertyId)),
-          eq(listings.isActive, true)
-        )
+          eq(listings.isActive, true),
+        ),
       );
     return propertyListings;
   } catch (error) {
@@ -71,10 +83,7 @@ export async function getListingsByAgentId(agentId: number) {
       .select()
       .from(listings)
       .where(
-        and(
-          eq(listings.agentId, BigInt(agentId)),
-          eq(listings.isActive, true)
-        )
+        and(eq(listings.agentId, BigInt(agentId)), eq(listings.isActive, true)),
       );
     return agentListings;
   } catch (error) {
@@ -86,7 +95,7 @@ export async function getListingsByAgentId(agentId: number) {
 // Update listing
 export async function updateListing(
   listingId: number,
-  data: Omit<Partial<Listing>, "listingId" | "createdAt" | "updatedAt">
+  data: Omit<Partial<Listing>, "listingId" | "createdAt" | "updatedAt">,
 ) {
   try {
     await db
@@ -95,8 +104,8 @@ export async function updateListing(
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
-          eq(listings.isActive, true)
-        )
+          eq(listings.isActive, true),
+        ),
       );
     const [updatedListing] = await db
       .select()
@@ -126,9 +135,7 @@ export async function softDeleteListing(listingId: number) {
 // Hard delete listing (remove from database)
 export async function deleteListing(listingId: number) {
   try {
-    await db
-      .delete(listings)
-      .where(eq(listings.listingId, BigInt(listingId)));
+    await db.delete(listings).where(eq(listings.listingId, BigInt(listingId)));
     return { success: true };
   } catch (error) {
     console.error("Error deleting listing:", error);
@@ -138,11 +145,11 @@ export async function deleteListing(listingId: number) {
 
 // List all listings (with pagination and optional filters)
 export async function listListings(
-  page = 1, 
-  limit = 10, 
+  page = 1,
+  limit = 10,
   filters?: {
-    status?: 'Active' | 'Pending' | 'Sold';
-    listingType?: 'Sale' | 'Rent';
+    status?: "Active" | "Pending" | "Sold";
+    listingType?: "Sale" | "Rent";
     agentId?: number[];
     propertyId?: number;
     isActive?: boolean;
@@ -167,11 +174,11 @@ export async function listListings(
     brandNew?: boolean;
     needsRenovation?: boolean;
     searchQuery?: string;
-  }
+  },
 ) {
   try {
     const offset = (page - 1) * limit;
-    
+
     // Build the where conditions array
     const whereConditions = [];
     if (filters) {
@@ -179,13 +186,19 @@ export async function listListings(
         whereConditions.push(sql`${listings.status} IN (${filters.status})`);
       }
       if (filters.listingType) {
-        whereConditions.push(sql`${listings.listingType} IN (${filters.listingType})`);
+        whereConditions.push(
+          sql`${listings.listingType} IN (${filters.listingType})`,
+        );
       }
       if (filters.agentId && filters.agentId.length > 0) {
-        whereConditions.push(sql`${listings.agentId} IN (${filters.agentId.map(id => BigInt(id))})`);
+        whereConditions.push(
+          sql`${listings.agentId} IN (${filters.agentId.map((id) => BigInt(id))})`,
+        );
       }
       if (filters.propertyId) {
-        whereConditions.push(eq(listings.propertyId, BigInt(filters.propertyId)));
+        whereConditions.push(
+          eq(listings.propertyId, BigInt(filters.propertyId)),
+        );
       }
       if (filters.isActive !== undefined) {
         whereConditions.push(eq(listings.isActive, filters.isActive));
@@ -197,31 +210,47 @@ export async function listListings(
         whereConditions.push(eq(listings.isBankOwned, filters.isBankOwned));
       }
       if (filters.minPrice) {
-        whereConditions.push(sql`CAST(${listings.price} AS DECIMAL) >= ${filters.minPrice}`);
+        whereConditions.push(
+          sql`CAST(${listings.price} AS DECIMAL) >= ${filters.minPrice}`,
+        );
       }
       if (filters.maxPrice) {
-        whereConditions.push(sql`CAST(${listings.price} AS DECIMAL) <= ${filters.maxPrice}`);
+        whereConditions.push(
+          sql`CAST(${listings.price} AS DECIMAL) <= ${filters.maxPrice}`,
+        );
       }
       if (filters.propertyType && filters.propertyType.length > 0) {
-        whereConditions.push(sql`${properties.propertyType} IN (${filters.propertyType})`);
+        whereConditions.push(
+          sql`${properties.propertyType} IN (${filters.propertyType})`,
+        );
       }
       if (filters.propertySubtype && filters.propertySubtype.length > 0) {
-        whereConditions.push(sql`${properties.propertySubtype} IN (${filters.propertySubtype})`);
+        whereConditions.push(
+          sql`${properties.propertySubtype} IN (${filters.propertySubtype})`,
+        );
       }
       if (filters.bedrooms) {
         whereConditions.push(eq(properties.bedrooms, filters.bedrooms));
       }
       if (filters.minBathrooms) {
-        whereConditions.push(sql`CAST(${properties.bathrooms} AS DECIMAL) >= ${filters.minBathrooms}`);
+        whereConditions.push(
+          sql`CAST(${properties.bathrooms} AS DECIMAL) >= ${filters.minBathrooms}`,
+        );
       }
       if (filters.maxBathrooms) {
-        whereConditions.push(sql`CAST(${properties.bathrooms} AS DECIMAL) <= ${filters.maxBathrooms}`);
+        whereConditions.push(
+          sql`CAST(${properties.bathrooms} AS DECIMAL) <= ${filters.maxBathrooms}`,
+        );
       }
       if (filters.minSquareMeter) {
-        whereConditions.push(sql`${properties.squareMeter} >= ${filters.minSquareMeter}`);
+        whereConditions.push(
+          sql`${properties.squareMeter} >= ${filters.minSquareMeter}`,
+        );
       }
       if (filters.maxSquareMeter) {
-        whereConditions.push(sql`${properties.squareMeter} <= ${filters.maxSquareMeter}`);
+        whereConditions.push(
+          sql`${properties.squareMeter} <= ${filters.maxSquareMeter}`,
+        );
       }
       if (filters.city) {
         whereConditions.push(eq(locations.city, filters.city));
@@ -242,13 +271,17 @@ export async function listListings(
         whereConditions.push(eq(properties.hasElevator, filters.hasElevator));
       }
       if (filters.hasStorageRoom !== undefined) {
-        whereConditions.push(eq(properties.hasStorageRoom, filters.hasStorageRoom));
+        whereConditions.push(
+          eq(properties.hasStorageRoom, filters.hasStorageRoom),
+        );
       }
       if (filters.brandNew !== undefined) {
         whereConditions.push(eq(properties.brandNew, filters.brandNew));
       }
       if (filters.needsRenovation !== undefined) {
-        whereConditions.push(eq(properties.needsRenovation, filters.needsRenovation));
+        whereConditions.push(
+          eq(properties.needsRenovation, filters.needsRenovation),
+        );
       }
       if (filters.searchQuery) {
         whereConditions.push(
@@ -258,7 +291,7 @@ export async function listListings(
             ${properties.street} LIKE ${`%${filters.searchQuery}%`} OR
             ${locations.city} LIKE ${`%${filters.searchQuery}%`} OR
             ${locations.province} LIKE ${`%${filters.searchQuery}%`}
-          )`
+          )`,
         );
       }
     } else {
@@ -267,7 +300,7 @@ export async function listListings(
     }
 
     // Always filter for Active status listings
-    whereConditions.push(eq(listings.status, 'Active'));
+    whereConditions.push(eq(listings.status, "Active"));
 
     // Create the base query with property, location, agent, and owner details
     const query = db
@@ -286,7 +319,7 @@ export async function listListings(
         visibilityMode: listings.visibilityMode,
         viewCount: listings.viewCount,
         inquiryCount: listings.inquiryCount,
-        
+
         // Appliance fields
         isFurnished: listings.isFurnished,
         furnitureQuality: listings.furnitureQuality,
@@ -311,7 +344,7 @@ export async function listListings(
         pisoscom: listings.pisoscom,
         yaencontre: listings.yaencontre,
         milanuncios: listings.milanuncios,
-        
+
         // Property fields
         referenceNumber: properties.referenceNumber,
         title: properties.title,
@@ -330,7 +363,7 @@ export async function listListings(
         postalCode: properties.postalCode,
         latitude: properties.latitude,
         longitude: properties.longitude,
-        
+
         // Property amenity fields
         gym: properties.gym,
         sportsArea: properties.sportsArea,
@@ -340,7 +373,7 @@ export async function listListings(
         communityPool: properties.communityPool,
         privatePool: properties.privatePool,
         tennisCourt: properties.tennisCourt,
-        
+
         // Location fields
         city: locations.city,
         province: locations.province,
@@ -402,11 +435,14 @@ export async function listListings(
           AND lc.is_active = true
           AND c.is_active = true
           LIMIT 1
-        )`
+        )`,
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
       .leftJoin(users, eq(listings.agentId, users.userId));
 
     // Get total count for pagination
@@ -414,7 +450,10 @@ export async function listListings(
       .select({ count: sql<number>`count(*)` })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
       .leftJoin(users, eq(listings.agentId, users.userId))
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
 
@@ -422,19 +461,18 @@ export async function listListings(
 
     // If no results found, return empty result set
     if (count === 0) {
-      console.log('No listings found with current filters');
+      console.log("No listings found with current filters");
       return {
         listings: [],
         totalCount: 0,
         totalPages: 0,
-        currentPage: page
+        currentPage: page,
       };
     }
 
     // Apply all where conditions at once
-    const filteredQuery = whereConditions.length > 0 
-      ? query.where(and(...whereConditions))
-      : query;
+    const filteredQuery =
+      whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
 
     // Apply pagination and sorting
     const allListings = await filteredQuery
@@ -443,16 +481,20 @@ export async function listListings(
       .offset(offset);
 
     // Log the results
-    console.log(`Found ${allListings.length} active listings with owner information:`);
+    console.log(
+      `Found ${allListings.length} active listings with owner information:`,
+    );
     allListings.forEach((listing, index) => {
-      console.log(`${index + 1}. Listing ID: ${listing.listingId}, Property: ${listing.title}, Agent: ${listing.agentName}, Owner: ${listing.owner || 'No owner found'}`);
+      console.log(
+        `${index + 1}. Listing ID: ${listing.listingId}, Property: ${listing.title}, Agent: ${listing.agentName}, Owner: ${listing.owner || "No owner found"}`,
+      );
     });
 
     return {
       listings: allListings,
       totalCount: Number(count),
       totalPages: Math.ceil(Number(count) / limit),
-      currentPage: page
+      currentPage: page,
     };
   } catch (error) {
     console.error("Error listing listings:", error);
@@ -461,33 +503,35 @@ export async function listListings(
       listings: [],
       totalCount: 0,
       totalPages: 0,
-      currentPage: page
+      currentPage: page,
     };
   }
 }
 
 // Compact version of listListings for contact form - returns only essential fields
-export async function listListingsCompact(
-  filters?: {
-    status?: 'Active' | 'Pending' | 'Sold';
-    listingType?: 'Sale' | 'Rent';
-    propertyType?: string[];
-    searchQuery?: string;
-  }
-) {
+export async function listListingsCompact(filters?: {
+  status?: "Active" | "Pending" | "Sold";
+  listingType?: "Sale" | "Rent";
+  propertyType?: string[];
+  searchQuery?: string;
+}) {
   try {
     // Build the where conditions array
     const whereConditions = [];
-    
+
     if (filters) {
       if (filters.status) {
         whereConditions.push(sql`${listings.status} IN (${filters.status})`);
       }
       if (filters.listingType) {
-        whereConditions.push(sql`${listings.listingType} IN (${filters.listingType})`);
+        whereConditions.push(
+          sql`${listings.listingType} IN (${filters.listingType})`,
+        );
       }
       if (filters.propertyType && filters.propertyType.length > 0) {
-        whereConditions.push(sql`${properties.propertyType} IN (${filters.propertyType})`);
+        whereConditions.push(
+          sql`${properties.propertyType} IN (${filters.propertyType})`,
+        );
       }
       if (filters.searchQuery) {
         whereConditions.push(
@@ -497,14 +541,14 @@ export async function listListingsCompact(
             ${properties.street} LIKE ${`%${filters.searchQuery}%`} OR
             ${locations.city} LIKE ${`%${filters.searchQuery}%`} OR
             ${locations.province} LIKE ${`%${filters.searchQuery}%`}
-          )`
+          )`,
         );
       }
     }
-    
+
     // Always show active listings only
     whereConditions.push(eq(listings.isActive, true));
-    whereConditions.push(eq(listings.status, 'Active'));
+    whereConditions.push(eq(listings.status, "Active"));
 
     // Create the compact query with only essential fields
     const query = db
@@ -521,40 +565,45 @@ export async function listListingsCompact(
         city: locations.city,
         agentName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
         isOwned: sql<boolean>`CASE WHEN ${listingContacts.contactId} IS NOT NULL THEN true ELSE false END`,
-        imageUrl: propertyImages.imageUrl
+        imageUrl: propertyImages.imageUrl,
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
       .leftJoin(users, eq(listings.agentId, users.userId))
       .leftJoin(
-        listingContacts, 
+        listingContacts,
         and(
           eq(listingContacts.listingId, listings.listingId),
-          eq(listingContacts.contactType, 'owner'),
-          eq(listingContacts.isActive, true)
-        )
+          eq(listingContacts.contactType, "owner"),
+          eq(listingContacts.isActive, true),
+        ),
       )
       .leftJoin(
         propertyImages,
         and(
           eq(propertyImages.propertyId, properties.propertyId),
           eq(propertyImages.isActive, true),
-          eq(propertyImages.imageOrder, 1)
-        )
+          eq(propertyImages.imageOrder, 1),
+        ),
       );
 
     // Apply where conditions
-    const filteredQuery = whereConditions.length > 0 
-      ? query.where(and(...whereConditions))
-      : query;
+    const filteredQuery =
+      whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
 
     // Get all listings ordered by featured first, then by creation date
-    const compactListings = await filteredQuery
-      .orderBy(sql`${listings.isFeatured} DESC, ${listings.createdAt} DESC`);
+    const compactListings = await filteredQuery.orderBy(
+      sql`${listings.isFeatured} DESC, ${listings.createdAt} DESC`,
+    );
 
-    console.log(`Found ${compactListings.length} compact listings for contact form`);
-    
+    console.log(
+      `Found ${compactListings.length} compact listings for contact form`,
+    );
+
     return compactListings;
   } catch (error) {
     console.error("Error listing compact listings:", error);
@@ -568,7 +617,7 @@ export async function getAllAgents() {
     const agents = await db
       .select({
         id: users.userId,
-        name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`
+        name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
       })
       .from(users)
       .where(eq(users.isActive, true))
@@ -624,7 +673,7 @@ export async function getListingDetails(listingId: number) {
         inquiryCount: listings.inquiryCount,
         createdAt: listings.createdAt,
         updatedAt: listings.updatedAt,
-        
+
         // Property fields
         referenceNumber: properties.referenceNumber,
         title: properties.title,
@@ -721,7 +770,7 @@ export async function getListingDetails(listingId: number) {
         privatePool: properties.privatePool,
         tennisCourt: properties.tennisCourt,
         conservationStatus: properties.conservationStatus,
-        
+
         // Location fields
         city: locations.city,
         province: locations.province,
@@ -748,17 +797,20 @@ export async function getListingDetails(listingId: number) {
           AND lc.is_active = true
           AND c.is_active = true
           LIMIT 1
-        )`
+        )`,
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
       .leftJoin(users, eq(listings.agentId, users.userId))
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
-          eq(listings.isActive, true)
-        )
+          eq(listings.isActive, true),
+        ),
       );
 
     if (!listingDetails) {
@@ -784,14 +836,17 @@ export async function createDefaultListing(propertyId: number) {
       // All other fields will be null/undefined by default
     };
 
-    const [result] = await db.insert(listings).values(listingData).$returningId();
+    const [result] = await db
+      .insert(listings)
+      .values(listingData)
+      .$returningId();
     if (!result) throw new Error("Failed to create default listing");
-    
+
     const [newListing] = await db
       .select()
       .from(listings)
       .where(eq(listings.listingId, BigInt(result.listingId)));
-    
+
     return newListing;
   } catch (error) {
     console.error("Error creating default listing:", error);
@@ -810,13 +865,11 @@ export async function getDraftListings() {
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
-      .where(
-        and(
-          eq(listings.status, 'Draft'),
-          eq(listings.isActive, true)
-        )
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
       )
+      .where(and(eq(listings.status, "Draft"), eq(listings.isActive, true)))
       .orderBy(listings.createdAt);
 
     return draftListings;
@@ -836,9 +889,9 @@ export async function deleteDraftListing(listingId: number) {
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
-          eq(listings.status, 'Draft'),
-          eq(listings.isActive, true)
-        )
+          eq(listings.status, "Draft"),
+          eq(listings.isActive, true),
+        ),
       );
 
     if (!draft) {
@@ -846,15 +899,11 @@ export async function deleteDraftListing(listingId: number) {
     }
 
     // Delete the draft listing
-    await db
-      .delete(listings)
-      .where(eq(listings.listingId, BigInt(listingId)));
+    await db.delete(listings).where(eq(listings.listingId, BigInt(listingId)));
 
-    return { success: true, message: 'Borrador eliminado correctamente' };
+    return { success: true, message: "Borrador eliminado correctamente" };
   } catch (error) {
     console.error("Error deleting draft listing:", error);
     throw error;
   }
 }
-
-

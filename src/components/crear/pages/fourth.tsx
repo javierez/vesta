@@ -1,86 +1,102 @@
-import { useState, useEffect } from "react"
-import { Button } from "~/components/ui/button"
-import { Input } from "~/components/ui/input"
-import { Label } from "~/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
-import { ChevronLeft, ChevronRight, Building, Car, Package, Thermometer, Wind, Sofa, Droplet } from "lucide-react"
-import { motion } from "framer-motion"
-import { updateProperty } from "~/server/queries/properties"
-import { updateListing } from "~/server/queries/listing"
-import { formFormatters } from "~/lib/utils"
-import FormSkeleton from "./form-skeleton"
+import { useState, useEffect } from "react";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Building,
+  Car,
+  Package,
+  Thermometer,
+  Wind,
+  Sofa,
+  Droplet,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { updateProperty } from "~/server/queries/properties";
+import { updateListing } from "~/server/queries/listing";
+import { formFormatters } from "~/lib/utils";
+import FormSkeleton from "./form-skeleton";
 
 // Type definitions
 interface ListingDetails {
-  propertyType?: string
-  propertyId?: number | string
-  formPosition?: number
-  listingType?: string
-  hasElevator?: boolean
-  hasGarage?: boolean
-  garageType?: string
-  garageSpaces?: number | string
-  garageInBuilding?: boolean
-  garageNumber?: string
-  optionalGaragePrice?: number | string
-  hasStorageRoom?: boolean
-  storageRoomSize?: number | string
-  storageRoomNumber?: string
-  optionalStorageRoomPrice?: number | string
-  hasHeating?: boolean
-  heatingType?: string
-  hasHotWater?: boolean
-  hotWaterType?: string
-  airConditioningType?: string
-  isFurnished?: boolean
-  furnitureQuality?: string
-  oven?: boolean
-  microwave?: boolean
-  washingMachine?: boolean
-  fridge?: boolean
-  tv?: boolean
-  stoneware?: boolean
+  propertyType?: string;
+  propertyId?: number | string;
+  formPosition?: number;
+  listingType?: string;
+  hasElevator?: boolean;
+  hasGarage?: boolean;
+  garageType?: string;
+  garageSpaces?: number | string;
+  garageInBuilding?: boolean;
+  garageNumber?: string;
+  optionalGaragePrice?: number | string;
+  hasStorageRoom?: boolean;
+  storageRoomSize?: number | string;
+  storageRoomNumber?: string;
+  optionalStorageRoomPrice?: number | string;
+  hasHeating?: boolean;
+  heatingType?: string;
+  hasHotWater?: boolean;
+  hotWaterType?: string;
+  airConditioningType?: string;
+  isFurnished?: boolean;
+  furnitureQuality?: string;
+  oven?: boolean;
+  microwave?: boolean;
+  washingMachine?: boolean;
+  fridge?: boolean;
+  tv?: boolean;
+  stoneware?: boolean;
 }
 
 interface GlobalFormData {
-  listingDetails?: ListingDetails | null
+  listingDetails?: ListingDetails | null;
 }
 
 interface FourthPageProps {
-  listingId: string
-  globalFormData: GlobalFormData
-  onNext: () => void
-  onBack?: () => void
-  refreshListingDetails?: () => void
+  listingId: string;
+  globalFormData: GlobalFormData;
+  onNext: () => void;
+  onBack?: () => void;
+  refreshListingDetails?: () => void;
 }
 
 // Form data interface for fourth page
 interface FourthPageFormData {
-  hasElevator: boolean
-  hasGarage: boolean
-  garageType: string
-  garageSpaces: number
-  garageInBuilding: boolean
-  garageNumber: string
-  optionalGaragePrice: number
-  hasStorageRoom: boolean
-  storageRoomSize: number
-  storageRoomNumber: string
-  optionalStorageRoomPrice: number
-  hasHeating: boolean
-  heatingType: string
-  hasHotWater: boolean
-  hotWaterType: string
-  hasAirConditioning: boolean
-  airConditioningType: string
-  isFurnished: boolean
-  furnitureQuality: string
-  oven: boolean
-  microwave: boolean
-  washingMachine: boolean
-  fridge: boolean
-  tv: boolean
-  stoneware: boolean
+  hasElevator: boolean;
+  hasGarage: boolean;
+  garageType: string;
+  garageSpaces: number;
+  garageInBuilding: boolean;
+  garageNumber: string;
+  optionalGaragePrice: number;
+  hasStorageRoom: boolean;
+  storageRoomSize: number;
+  storageRoomNumber: string;
+  optionalStorageRoomPrice: number;
+  hasHeating: boolean;
+  heatingType: string;
+  hasHotWater: boolean;
+  hotWaterType: string;
+  hasAirConditioning: boolean;
+  airConditioningType: string;
+  isFurnished: boolean;
+  furnitureQuality: string;
+  oven: boolean;
+  microwave: boolean;
+  washingMachine: boolean;
+  fridge: boolean;
+  tv: boolean;
+  stoneware: boolean;
 }
 
 const initialFormData: FourthPageFormData = {
@@ -109,7 +125,7 @@ const initialFormData: FourthPageFormData = {
   fridge: false,
   tv: false,
   stoneware: false,
-}
+};
 
 const heatingOptions = [
   { id: 1, label: "Gas natural" },
@@ -117,8 +133,8 @@ const heatingOptions = [
   { id: 3, label: "Gasóleo" },
   { id: 4, label: "Butano" },
   { id: 5, label: "Propano" },
-  { id: 6, label: "Solar" }
-]
+  { id: 6, label: "Solar" },
+];
 
 const airConditioningOptions = [
   { value: "central", label: "Central" },
@@ -127,52 +143,60 @@ const airConditioningOptions = [
   { value: "conductos", label: "Conductos" },
   { value: "cassette", label: "Cassette" },
   { value: "ventana", label: "Ventana" },
-]
+];
 
 const furnitureQualityOptions = [
   { value: "basic", label: "Básico", color: "bg-gray-500" },
   { value: "standard", label: "Estándar", color: "bg-gray-600" },
   { value: "high", label: "Alta", color: "bg-gray-700" },
   { value: "luxury", label: "Lujo", color: "bg-gray-900" },
-]
+];
 
-export default function FourthPage({ listingId, globalFormData, onNext, onBack, refreshListingDetails }: FourthPageProps) {
-  const [formData, setFormData] = useState<FourthPageFormData>(initialFormData)
-  const [propertyType, setPropertyType] = useState<string>("")
+export default function FourthPage({
+  listingId,
+  globalFormData,
+  onNext,
+  onBack,
+  refreshListingDetails,
+}: FourthPageProps) {
+  const [formData, setFormData] = useState<FourthPageFormData>(initialFormData);
+  const [propertyType, setPropertyType] = useState<string>("");
 
   const updateFormData = (field: keyof FourthPageFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   // Handle price input with formatting for garage and storage room
-  const handleGaragePriceChange = formFormatters.handleNumericPriceInputChange((value) => 
-    updateFormData("optionalGaragePrice", value)
-  )
+  const handleGaragePriceChange = formFormatters.handleNumericPriceInputChange(
+    (value) => updateFormData("optionalGaragePrice", value),
+  );
 
-  const handleStorageRoomPriceChange = formFormatters.handleNumericPriceInputChange((value) => 
-    updateFormData("optionalStorageRoomPrice", value)
-  )
+  const handleStorageRoomPriceChange =
+    formFormatters.handleNumericPriceInputChange((value) =>
+      updateFormData("optionalStorageRoomPrice", value),
+    );
 
   // Handle storage room size with formatting
-  const handleStorageRoomSizeChange = formFormatters.handleNumericAreaInputChange((value) => 
-    updateFormData("storageRoomSize", value)
-  )
+  const handleStorageRoomSizeChange =
+    formFormatters.handleNumericAreaInputChange((value) =>
+      updateFormData("storageRoomSize", value),
+    );
 
   // Use centralized data instead of fetching
   useEffect(() => {
     if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails
-      setPropertyType(details.propertyType ?? "")
-      
+      const details = globalFormData.listingDetails;
+      setPropertyType(details.propertyType ?? "");
+
       // For solar properties, skip this page entirely
       if (details.propertyType === "solar") {
-        onNext()
-        return
+        onNext();
+        return;
       }
-      
+
       // For garage properties, set garage as always enabled
       if (details.propertyType === "garage") {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           hasGarage: true, // Always enabled for garage properties
           garageType: details.garageType ?? "",
@@ -180,12 +204,12 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
           garageInBuilding: details.garageInBuilding ?? false,
           garageNumber: details.garageNumber ?? "",
           optionalGaragePrice: Number(details.optionalGaragePrice) ?? 0,
-        }))
-        return
+        }));
+        return;
       }
-      
+
       // Pre-populate form with existing data for other property types
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         hasElevator: details.hasElevator ?? false,
         hasGarage: details.hasGarage ?? false,
@@ -212,17 +236,17 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
         fridge: details.fridge ?? false,
         tv: details.tv ?? false,
         stoneware: details.stoneware ?? false,
-      }))
+      }));
     }
-  }, [globalFormData?.listingDetails, onNext])
+  }, [globalFormData?.listingDetails, onNext]);
 
   const handleNext = () => {
     // Navigate IMMEDIATELY (optimistic) - no waiting!
-    onNext()
-    
+    onNext();
+
     // Save data in background (completely silent)
-    void saveInBackground()
-  }
+    void saveInBackground();
+  };
 
   // Background save function - completely silent and non-blocking
   const saveInBackground = async () => {
@@ -230,68 +254,92 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
       // Fire and forget - no await, no blocking!
       await Promise.all([
         // Update property with equipment and services data
-        globalFormData?.listingDetails?.propertyId ? (async () => {
-          // Safe access to listing details since we know it exists from the condition above
-          const listingDetails = globalFormData.listingDetails!
-          
-          const updateData: Record<string, unknown> = {
-            hasElevator: formData.hasElevator,
-            // Garage data - only save if hasGarage is true
-            hasGarage: formData.hasGarage,
-            garageType: formData.hasGarage ? formData.garageType : "",
-            garageSpaces: formData.hasGarage ? formData.garageSpaces : 1,
-            garageInBuilding: formData.hasGarage ? formData.garageInBuilding : false,
-            garageNumber: formData.hasGarage ? formData.garageNumber : "",
-            // Storage room data - only save if hasStorageRoom is true
-            hasStorageRoom: formData.hasStorageRoom,
-            storageRoomSize: formData.hasStorageRoom ? formData.storageRoomSize : 0,
-            storageRoomNumber: formData.hasStorageRoom ? formData.storageRoomNumber : "",
-            // Heating data - only save if hasHeating is true
-            hasHeating: formData.hasHeating,
-            heatingType: formData.hasHeating ? formData.heatingType : "",
-            // Hot water data - only save if hasHotWater is true
-            hasHotWater: formData.hasHotWater,
-            hotWaterType: formData.hasHotWater ? formData.hotWaterType : "",
-            // Air conditioning data - only save if hasAirConditioning is true
-            airConditioningType: formData.hasAirConditioning ? formData.airConditioningType : "",
-          }
+        globalFormData?.listingDetails?.propertyId
+          ? (async () => {
+              // Safe access to listing details since we know it exists from the condition above
+              const listingDetails = globalFormData.listingDetails!;
 
-          // Only update formPosition if current position is lower than 5
-          if (!listingDetails.formPosition || listingDetails.formPosition < 5) {
-            updateData.formPosition = 5
-          }
+              const updateData: Record<string, unknown> = {
+                hasElevator: formData.hasElevator,
+                // Garage data - only save if hasGarage is true
+                hasGarage: formData.hasGarage,
+                garageType: formData.hasGarage ? formData.garageType : "",
+                garageSpaces: formData.hasGarage ? formData.garageSpaces : 1,
+                garageInBuilding: formData.hasGarage
+                  ? formData.garageInBuilding
+                  : false,
+                garageNumber: formData.hasGarage ? formData.garageNumber : "",
+                // Storage room data - only save if hasStorageRoom is true
+                hasStorageRoom: formData.hasStorageRoom,
+                storageRoomSize: formData.hasStorageRoom
+                  ? formData.storageRoomSize
+                  : 0,
+                storageRoomNumber: formData.hasStorageRoom
+                  ? formData.storageRoomNumber
+                  : "",
+                // Heating data - only save if hasHeating is true
+                hasHeating: formData.hasHeating,
+                heatingType: formData.hasHeating ? formData.heatingType : "",
+                // Hot water data - only save if hasHotWater is true
+                hasHotWater: formData.hasHotWater,
+                hotWaterType: formData.hasHotWater ? formData.hotWaterType : "",
+                // Air conditioning data - only save if hasAirConditioning is true
+                airConditioningType: formData.hasAirConditioning
+                  ? formData.airConditioningType
+                  : "",
+              };
 
-          await updateProperty(Number(listingDetails.propertyId), updateData)
-        })() : Promise.resolve(),
+              // Only update formPosition if current position is lower than 5
+              if (
+                !listingDetails.formPosition ||
+                listingDetails.formPosition < 5
+              ) {
+                updateData.formPosition = 5;
+              }
+
+              await updateProperty(
+                Number(listingDetails.propertyId),
+                updateData,
+              );
+            })()
+          : Promise.resolve(),
 
         // Update listing with optional prices and furniture data
         updateListing(Number(listingId), {
-          optionalGaragePrice: formData.hasGarage ? Math.round(formData.optionalGaragePrice).toString() : "0",
-          optionalStorageRoomPrice: formData.hasStorageRoom ? Math.round(formData.optionalStorageRoomPrice).toString() : "0",
+          optionalGaragePrice: formData.hasGarage
+            ? Math.round(formData.optionalGaragePrice).toString()
+            : "0",
+          optionalStorageRoomPrice: formData.hasStorageRoom
+            ? Math.round(formData.optionalStorageRoomPrice).toString()
+            : "0",
           // Furniture data - only save if isFurnished is true
           isFurnished: formData.isFurnished,
-          furnitureQuality: formData.isFurnished ? formData.furnitureQuality : "",
+          furnitureQuality: formData.isFurnished
+            ? formData.furnitureQuality
+            : "",
           oven: formData.isFurnished ? formData.oven : false,
           microwave: formData.isFurnished ? formData.microwave : false,
-          washingMachine: formData.isFurnished ? formData.washingMachine : false,
+          washingMachine: formData.isFurnished
+            ? formData.washingMachine
+            : false,
           fridge: formData.isFurnished ? formData.fridge : false,
           tv: formData.isFurnished ? formData.tv : false,
           stoneware: formData.isFurnished ? formData.stoneware : false,
-        })
-      ])
-      
+        }),
+      ]);
+
       // Refresh global data after successful save
-      refreshListingDetails?.()
+      refreshListingDetails?.();
     } catch (error) {
-      console.error("Error saving form data:", error)
+      console.error("Error saving form data:", error);
       // Silent error - user doesn't know it failed
       // Could implement retry logic here if needed
     }
-  }
+  };
 
   // Show loading only if globalFormData is not ready
   if (!globalFormData?.listingDetails) {
-    return <FormSkeleton />
+    return <FormSkeleton />;
   }
 
   return (
@@ -307,7 +355,9 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
       >
-        <h2 className="text-lg font-semibold text-gray-900">Servicios y equipamiento</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Servicios y equipamiento
+        </h2>
       </motion.div>
 
       <motion.div
@@ -322,30 +372,37 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => updateFormData("hasElevator", !formData.hasElevator)}
-            className={`
-              w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
-              ${
-                formData.hasElevator
-                  ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                  : "bg-white text-gray-700 shadow-md"
-              }
-            `}
+            className={`relative w-full overflow-hidden rounded-lg p-3 transition-all duration-200 ${
+              formData.hasElevator
+                ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                : "bg-white text-gray-700 shadow-md"
+            } `}
           >
             <motion.div
               className="absolute inset-0 bg-gray-800"
               initial={{ scale: 0, opacity: 0 }}
-              animate={formData.hasElevator ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+              animate={
+                formData.hasElevator
+                  ? { scale: 1, opacity: 1 }
+                  : { scale: 0, opacity: 0 }
+              }
               transition={{ duration: 0.3, ease: "easeOut" }}
               style={{ borderRadius: "inherit" }}
             />
-            <div className="flex items-center space-x-3 relative z-10">
+            <div className="relative z-10 flex items-center space-x-3">
               <Building className="h-4 w-4" />
               <span className="text-sm font-medium">Ascensor</span>
             </div>
             {formData.hasElevator && (
-              <span className="absolute top-3.5 right-2 w-4 h-4 flex items-center justify-center rounded-full bg-white/90 border border-gray-300 z-20">
+              <span className="absolute right-2 top-3.5 z-20 flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 bg-white/90">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M3 6.5L5.2 8.5L9 4.5" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path
+                    d="M3 6.5L5.2 8.5L9 4.5"
+                    stroke="#222"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </span>
             )}
@@ -360,7 +417,7 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
         >
           {propertyType === "garage" ? (
             // For garage properties, show static header
-            <div className="w-full p-3 rounded-lg bg-gray-900 text-white border border-gray-900 shadow-sm">
+            <div className="w-full rounded-lg border border-gray-900 bg-gray-900 p-3 text-white shadow-sm">
               <div className="flex items-center space-x-3">
                 <Car className="h-4 w-4" />
                 <span className="text-sm font-medium">Garaje</span>
@@ -372,46 +429,53 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                const newValue = !formData.hasGarage
-                updateFormData("hasGarage", newValue)
+                const newValue = !formData.hasGarage;
+                updateFormData("hasGarage", newValue);
                 if (!newValue) {
-                  updateFormData("garageType", "")
-                  updateFormData("garageSpaces", 1)
-                  updateFormData("garageInBuilding", false)
-                  updateFormData("garageNumber", "")
-                  updateFormData("optionalGaragePrice", 0)
+                  updateFormData("garageType", "");
+                  updateFormData("garageSpaces", 1);
+                  updateFormData("garageInBuilding", false);
+                  updateFormData("garageNumber", "");
+                  updateFormData("optionalGaragePrice", 0);
                 }
               }}
-              className={`
-                w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
-                ${
-                  formData.hasGarage
-                    ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                    : "bg-white text-gray-700 shadow-md"
-                }
-              `}
+              className={`relative w-full overflow-hidden rounded-lg p-3 transition-all duration-200 ${
+                formData.hasGarage
+                  ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
+              } `}
             >
               <motion.div
                 className="absolute inset-0 bg-gray-800"
                 initial={{ scale: 0, opacity: 0 }}
-                animate={formData.hasGarage ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                animate={
+                  formData.hasGarage
+                    ? { scale: 1, opacity: 1 }
+                    : { scale: 0, opacity: 0 }
+                }
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 style={{ borderRadius: "inherit" }}
               />
-              <div className="flex items-center space-x-3 relative z-10">
+              <div className="relative z-10 flex items-center space-x-3">
                 <Car className="h-4 w-4" />
                 <span className="text-sm font-medium">Garaje</span>
               </div>
               {formData.hasGarage && (
-                <span className="absolute top-3.5 right-2 w-4 h-4 flex items-center justify-center rounded-full bg-white/90 border border-gray-300 z-20">
+                <span className="absolute right-2 top-3.5 z-20 flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 bg-white/90">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M3 6.5L5.2 8.5L9 4.5" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path
+                      d="M3 6.5L5.2 8.5L9 4.5"
+                      stroke="#222"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </span>
               )}
             </motion.button>
           )}
-          
+
           {(formData.hasGarage || propertyType === "garage") && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
@@ -421,10 +485,14 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
             >
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Tipo</Label>
-                  <Select 
-                    value={formData.garageType} 
-                    onValueChange={(value) => updateFormData("garageType", value)}
+                  <Label className="text-xs font-medium text-gray-600">
+                    Tipo
+                  </Label>
+                  <Select
+                    value={formData.garageType}
+                    onValueChange={(value) =>
+                      updateFormData("garageType", value)
+                    }
                   >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Seleccionar" />
@@ -435,15 +503,22 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Plazas</Label>
+                  <Label className="text-xs font-medium text-gray-600">
+                    Plazas
+                  </Label>
                   <Input
                     type="number"
-                    value={formData.garageSpaces === 0 ? '' : formData.garageSpaces}
+                    value={
+                      formData.garageSpaces === 0 ? "" : formData.garageSpaces
+                    }
                     onChange={(e) => {
                       const val = e.target.value;
-                      updateFormData("garageSpaces", val === '' ? '' : parseInt(val));
+                      updateFormData(
+                        "garageSpaces",
+                        val === "" ? "" : parseInt(val),
+                      );
                     }}
                     min="1"
                     max="10"
@@ -451,52 +526,74 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                   />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Ubicación</Label>
+                  <Label className="text-xs font-medium text-gray-600">
+                    Ubicación
+                  </Label>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => updateFormData("garageInBuilding", !formData.garageInBuilding)}
-                    className={`
-                      w-full p-2 text-xs rounded border transition-all duration-200 relative overflow-hidden
-                      ${
-                        formData.garageInBuilding
-                          ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                          : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-                      }
-                    `}
+                    onClick={() =>
+                      updateFormData(
+                        "garageInBuilding",
+                        !formData.garageInBuilding,
+                      )
+                    }
+                    className={`relative w-full overflow-hidden rounded border p-2 text-xs transition-all duration-200 ${
+                      formData.garageInBuilding
+                        ? "border-gray-900 bg-gray-900 text-white shadow-sm"
+                        : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+                    } `}
                   >
                     <motion.div
                       className="absolute inset-0 bg-gray-800"
                       initial={{ scale: 0, opacity: 0 }}
-                      animate={formData.garageInBuilding ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                      animate={
+                        formData.garageInBuilding
+                          ? { scale: 1, opacity: 1 }
+                          : { scale: 0, opacity: 0 }
+                      }
                       transition={{ duration: 0.3, ease: "easeOut" }}
                       style={{ borderRadius: "inherit" }}
                     />
                     <span className="relative z-10">En edificio</span>
                   </motion.button>
                 </div>
-                
+
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Nº plaza</Label>
+                  <Label className="text-xs font-medium text-gray-600">
+                    Nº plaza
+                  </Label>
                   <Input
                     value={formData.garageNumber}
-                    onChange={(e) => updateFormData("garageNumber", e.target.value)}
+                    onChange={(e) =>
+                      updateFormData("garageNumber", e.target.value)
+                    }
                     placeholder="A-123"
                     className="h-8 text-xs"
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-600">{globalFormData?.listingDetails?.listingType === 'Rent' ? 'Precio €/mes' : 'Precio'}</Label>
+                <Label className="text-xs font-medium text-gray-600">
+                  {globalFormData?.listingDetails?.listingType === "Rent"
+                    ? "Precio €/mes"
+                    : "Precio"}
+                </Label>
                 <Input
                   type="text"
-                  value={formFormatters.formatPriceInput(formData.optionalGaragePrice)}
+                  value={formFormatters.formatPriceInput(
+                    formData.optionalGaragePrice,
+                  )}
                   onChange={handleGaragePriceChange}
-                  placeholder={globalFormData?.listingDetails?.listingType === 'Rent' ? '0 €/mes' : '0 €'}
+                  placeholder={
+                    globalFormData?.listingDetails?.listingType === "Rent"
+                      ? "0 €/mes"
+                      : "0 €"
+                  }
                   className="h-8 text-xs"
                 />
               </div>
@@ -515,43 +612,50 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                const newValue = !formData.hasStorageRoom
-                updateFormData("hasStorageRoom", newValue)
+                const newValue = !formData.hasStorageRoom;
+                updateFormData("hasStorageRoom", newValue);
                 if (!newValue) {
-                  updateFormData("storageRoomSize", 0)
-                  updateFormData("storageRoomNumber", "")
-                  updateFormData("optionalStorageRoomPrice", 0)
+                  updateFormData("storageRoomSize", 0);
+                  updateFormData("storageRoomNumber", "");
+                  updateFormData("optionalStorageRoomPrice", 0);
                 }
               }}
-              className={`
-                w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
-                ${
-                  formData.hasStorageRoom
-                    ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                    : "bg-white text-gray-700 shadow-md"
-                }
-              `}
+              className={`relative w-full overflow-hidden rounded-lg p-3 transition-all duration-200 ${
+                formData.hasStorageRoom
+                  ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
+              } `}
             >
               <motion.div
                 className="absolute inset-0 bg-gray-800"
                 initial={{ scale: 0, opacity: 0 }}
-                animate={formData.hasStorageRoom ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                animate={
+                  formData.hasStorageRoom
+                    ? { scale: 1, opacity: 1 }
+                    : { scale: 0, opacity: 0 }
+                }
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 style={{ borderRadius: "inherit" }}
               />
-              <div className="flex items-center space-x-3 relative z-10">
+              <div className="relative z-10 flex items-center space-x-3">
                 <Package className="h-4 w-4" />
                 <span className="text-sm font-medium">Trastero</span>
               </div>
               {formData.hasStorageRoom && (
-                <span className="absolute top-3.5 right-2 w-4 h-4 flex items-center justify-center rounded-full bg-white/90 border border-gray-300 z-20">
+                <span className="absolute right-2 top-3.5 z-20 flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 bg-white/90">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M3 6.5L5.2 8.5L9 4.5" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path
+                      d="M3 6.5L5.2 8.5L9 4.5"
+                      stroke="#222"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </span>
               )}
             </motion.button>
-            
+
             {formData.hasStorageRoom && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -561,34 +665,52 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
               >
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-medium text-gray-600">Tamaño (m²)</Label>
+                    <Label className="text-xs font-medium text-gray-600">
+                      Tamaño (m²)
+                    </Label>
                     <Input
                       type="text"
-                      value={formFormatters.formatAreaInput(formData.storageRoomSize)}
+                      value={formFormatters.formatAreaInput(
+                        formData.storageRoomSize,
+                      )}
                       onChange={handleStorageRoomSizeChange}
                       placeholder="Metros cuadrados"
                       className="h-8 text-xs"
                     />
                   </div>
-                  
+
                   <div className="space-y-1">
-                    <Label className="text-xs font-medium text-gray-600">Nº trastero</Label>
+                    <Label className="text-xs font-medium text-gray-600">
+                      Nº trastero
+                    </Label>
                     <Input
                       value={formData.storageRoomNumber}
-                      onChange={(e) => updateFormData("storageRoomNumber", e.target.value)}
+                      onChange={(e) =>
+                        updateFormData("storageRoomNumber", e.target.value)
+                      }
                       placeholder="T-45"
                       className="h-8 text-xs"
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">{globalFormData?.listingDetails?.listingType === 'Rent' ? 'Precio €/mes' : 'Precio'}</Label>
+                  <Label className="text-xs font-medium text-gray-600">
+                    {globalFormData?.listingDetails?.listingType === "Rent"
+                      ? "Precio €/mes"
+                      : "Precio"}
+                  </Label>
                   <Input
                     type="text"
-                    value={formFormatters.formatPriceInput(formData.optionalStorageRoomPrice)}
+                    value={formFormatters.formatPriceInput(
+                      formData.optionalStorageRoomPrice,
+                    )}
                     onChange={handleStorageRoomPriceChange}
-                    placeholder={globalFormData?.listingDetails?.listingType === 'Rent' ? '0 €/mes' : '0 €'}
+                    placeholder={
+                      globalFormData?.listingDetails?.listingType === "Rent"
+                        ? "0 €/mes"
+                        : "0 €"
+                    }
                     className="h-8 text-xs"
                   />
                 </div>
@@ -608,39 +730,46 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                const newValue = !formData.hasHeating
-                updateFormData("hasHeating", newValue)
-                if (!newValue) updateFormData("heatingType", "")
+                const newValue = !formData.hasHeating;
+                updateFormData("hasHeating", newValue);
+                if (!newValue) updateFormData("heatingType", "");
               }}
-              className={`
-                w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
-                ${
-                  formData.hasHeating
-                    ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                    : "bg-white text-gray-700 shadow-md"
-                }
-              `}
+              className={`relative w-full overflow-hidden rounded-lg p-3 transition-all duration-200 ${
+                formData.hasHeating
+                  ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
+              } `}
             >
               <motion.div
                 className="absolute inset-0 bg-gray-800"
                 initial={{ scale: 0, opacity: 0 }}
-                animate={formData.hasHeating ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                animate={
+                  formData.hasHeating
+                    ? { scale: 1, opacity: 1 }
+                    : { scale: 0, opacity: 0 }
+                }
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 style={{ borderRadius: "inherit" }}
               />
-              <div className="flex items-center space-x-3 relative z-10">
+              <div className="relative z-10 flex items-center space-x-3">
                 <Thermometer className="h-4 w-4" />
                 <span className="text-sm font-medium">Calefacción</span>
               </div>
               {formData.hasHeating && (
-                <span className="absolute top-3.5 right-2 w-4 h-4 flex items-center justify-center rounded-full bg-white/90 border border-gray-300 z-20">
+                <span className="absolute right-2 top-3.5 z-20 flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 bg-white/90">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M3 6.5L5.2 8.5L9 4.5" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path
+                      d="M3 6.5L5.2 8.5L9 4.5"
+                      stroke="#222"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </span>
               )}
             </motion.button>
-            
+
             {formData.hasHeating && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -649,17 +778,26 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                 className="ml-6 space-y-3 border-l-2 pl-4"
               >
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Tipo de calefacción</Label>
+                  <Label className="text-xs font-medium text-gray-600">
+                    Tipo de calefacción
+                  </Label>
                   <Select
                     value={formData.heatingType}
-                    onValueChange={(value) => updateFormData("heatingType", value)}
+                    onValueChange={(value) =>
+                      updateFormData("heatingType", value)
+                    }
                   >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Seleccionar tipo de calefacción" />
                     </SelectTrigger>
                     <SelectContent>
-                      {heatingOptions.map(option => (
-                        <SelectItem key={option.id} value={option.id.toString()}>{option.label}</SelectItem>
+                      {heatingOptions.map((option) => (
+                        <SelectItem
+                          key={option.id}
+                          value={option.id.toString()}
+                        >
+                          {option.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -680,39 +818,46 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                const newValue = !formData.hasHotWater
-                updateFormData("hasHotWater", newValue)
-                if (!newValue) updateFormData("hotWaterType", "")
+                const newValue = !formData.hasHotWater;
+                updateFormData("hasHotWater", newValue);
+                if (!newValue) updateFormData("hotWaterType", "");
               }}
-              className={`
-                w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
-                ${
-                  formData.hasHotWater
-                    ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                    : "bg-white text-gray-700 shadow-md"
-                }
-              `}
+              className={`relative w-full overflow-hidden rounded-lg p-3 transition-all duration-200 ${
+                formData.hasHotWater
+                  ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
+              } `}
             >
               <motion.div
                 className="absolute inset-0 bg-gray-800"
                 initial={{ scale: 0, opacity: 0 }}
-                animate={formData.hasHotWater ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                animate={
+                  formData.hasHotWater
+                    ? { scale: 1, opacity: 1 }
+                    : { scale: 0, opacity: 0 }
+                }
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 style={{ borderRadius: "inherit" }}
               />
-                             <div className="flex items-center space-x-3 relative z-10">
-                 <Droplet className="h-4 w-4" />
-                 <span className="text-sm font-medium">Agua Caliente</span>
-               </div>
+              <div className="relative z-10 flex items-center space-x-3">
+                <Droplet className="h-4 w-4" />
+                <span className="text-sm font-medium">Agua Caliente</span>
+              </div>
               {formData.hasHotWater && (
-                <span className="absolute top-3.5 right-2 w-4 h-4 flex items-center justify-center rounded-full bg-white/90 border border-gray-300 z-20">
+                <span className="absolute right-2 top-3.5 z-20 flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 bg-white/90">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M3 6.5L5.2 8.5L9 4.5" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path
+                      d="M3 6.5L5.2 8.5L9 4.5"
+                      stroke="#222"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </span>
               )}
             </motion.button>
-            
+
             {formData.hasHotWater && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -721,19 +866,28 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                 className="ml-6 space-y-3 border-l-2 pl-4"
               >
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Tipo de agua caliente</Label>
+                  <Label className="text-xs font-medium text-gray-600">
+                    Tipo de agua caliente
+                  </Label>
                   <Select
                     value={formData.hotWaterType}
-                    onValueChange={(value) => updateFormData("hotWaterType", value)}
+                    onValueChange={(value) =>
+                      updateFormData("hotWaterType", value)
+                    }
                   >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Seleccionar tipo de agua caliente" />
                     </SelectTrigger>
-                                         <SelectContent>
-                       {heatingOptions.map(option => (
-                         <SelectItem key={option.id} value={option.id.toString()}>{option.label}</SelectItem>
-                       ))}
-                     </SelectContent>
+                    <SelectContent>
+                      {heatingOptions.map((option) => (
+                        <SelectItem
+                          key={option.id}
+                          value={option.id.toString()}
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
               </motion.div>
@@ -752,41 +906,48 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                const newValue = !formData.hasAirConditioning
-                updateFormData("hasAirConditioning", newValue)
+                const newValue = !formData.hasAirConditioning;
+                updateFormData("hasAirConditioning", newValue);
                 if (!newValue) {
-                  updateFormData("airConditioningType", "")
+                  updateFormData("airConditioningType", "");
                 }
               }}
-              className={`
-                w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
-                ${
-                  formData.hasAirConditioning
-                    ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                    : "bg-white text-gray-700 shadow-md"
-                }
-              `}
+              className={`relative w-full overflow-hidden rounded-lg p-3 transition-all duration-200 ${
+                formData.hasAirConditioning
+                  ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
+              } `}
             >
               <motion.div
                 className="absolute inset-0 bg-gray-800"
                 initial={{ scale: 0, opacity: 0 }}
-                animate={formData.hasAirConditioning ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                animate={
+                  formData.hasAirConditioning
+                    ? { scale: 1, opacity: 1 }
+                    : { scale: 0, opacity: 0 }
+                }
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 style={{ borderRadius: "inherit" }}
               />
-              <div className="flex items-center space-x-3 relative z-10">
+              <div className="relative z-10 flex items-center space-x-3">
                 <Wind className="h-4 w-4" />
                 <span className="text-sm font-medium">Aire acondicionado</span>
               </div>
               {formData.hasAirConditioning && (
-                <span className="absolute top-3.5 right-2 w-4 h-4 flex items-center justify-center rounded-full bg-white/90 border border-gray-300 z-20">
+                <span className="absolute right-2 top-3.5 z-20 flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 bg-white/90">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M3 6.5L5.2 8.5L9 4.5" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path
+                      d="M3 6.5L5.2 8.5L9 4.5"
+                      stroke="#222"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </span>
               )}
             </motion.button>
-            
+
             {formData.hasAirConditioning && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -795,17 +956,23 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                 className="ml-6 space-y-3 border-l-2 pl-4"
               >
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Tipo</Label>
-                  <Select 
-                    value={formData.airConditioningType} 
-                    onValueChange={(value) => updateFormData("airConditioningType", value)}
+                  <Label className="text-xs font-medium text-gray-600">
+                    Tipo
+                  </Label>
+                  <Select
+                    value={formData.airConditioningType}
+                    onValueChange={(value) =>
+                      updateFormData("airConditioningType", value)
+                    }
                   >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Seleccionar tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      {airConditioningOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      {airConditioningOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -826,47 +993,54 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                const newValue = !formData.isFurnished
-                updateFormData("isFurnished", newValue)
+                const newValue = !formData.isFurnished;
+                updateFormData("isFurnished", newValue);
                 if (!newValue) {
-                  updateFormData("furnitureQuality", "")
-                  updateFormData("oven", false)
-                  updateFormData("microwave", false)
-                  updateFormData("washingMachine", false)
-                  updateFormData("fridge", false)
-                  updateFormData("tv", false)
-                  updateFormData("stoneware", false)
+                  updateFormData("furnitureQuality", "");
+                  updateFormData("oven", false);
+                  updateFormData("microwave", false);
+                  updateFormData("washingMachine", false);
+                  updateFormData("fridge", false);
+                  updateFormData("tv", false);
+                  updateFormData("stoneware", false);
                 }
               }}
-              className={`
-                w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
-                ${
-                  formData.isFurnished
-                    ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                    : "bg-white text-gray-700 shadow-md"
-                }
-              `}
+              className={`relative w-full overflow-hidden rounded-lg p-3 transition-all duration-200 ${
+                formData.isFurnished
+                  ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                  : "bg-white text-gray-700 shadow-md"
+              } `}
             >
               <motion.div
                 className="absolute inset-0 bg-gray-800"
                 initial={{ scale: 0, opacity: 0 }}
-                animate={formData.isFurnished ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                animate={
+                  formData.isFurnished
+                    ? { scale: 1, opacity: 1 }
+                    : { scale: 0, opacity: 0 }
+                }
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 style={{ borderRadius: "inherit" }}
               />
-              <div className="flex items-center space-x-3 relative z-10">
+              <div className="relative z-10 flex items-center space-x-3">
                 <Sofa className="h-4 w-4" />
                 <span className="text-sm font-medium">Amueblado</span>
               </div>
               {formData.isFurnished && (
-                <span className="absolute top-3.5 right-2 w-4 h-4 flex items-center justify-center rounded-full bg-white/90 border border-gray-300 z-20">
+                <span className="absolute right-2 top-3.5 z-20 flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 bg-white/90">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M3 6.5L5.2 8.5L9 4.5" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path
+                      d="M3 6.5L5.2 8.5L9 4.5"
+                      stroke="#222"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </span>
               )}
             </motion.button>
-            
+
             {formData.isFurnished && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -875,27 +1049,32 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                 className="ml-6 space-y-3 border-l-2 pl-4"
               >
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Calidad</Label>
+                  <Label className="text-xs font-medium text-gray-600">
+                    Calidad
+                  </Label>
                   <div className="grid grid-cols-2 gap-2">
-                    {furnitureQualityOptions.map(option => (
+                    {furnitureQualityOptions.map((option) => (
                       <motion.button
                         key={option.value}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => updateFormData("furnitureQuality", option.value)}
-                        className={`
-                          w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
-                          ${
-                            formData.furnitureQuality === option.value
-                              ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                              : "bg-white text-gray-700 shadow-md"
-                          }
-                        `}
+                        onClick={() =>
+                          updateFormData("furnitureQuality", option.value)
+                        }
+                        className={`relative w-full overflow-hidden rounded-md p-2 text-xs transition-all duration-200 ${
+                          formData.furnitureQuality === option.value
+                            ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                            : "bg-white text-gray-700 shadow-md"
+                        } `}
                       >
                         <motion.div
                           className="absolute inset-0 bg-gray-800"
                           initial={{ scale: 0, opacity: 0 }}
-                          animate={formData.furnitureQuality === option.value ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                          animate={
+                            formData.furnitureQuality === option.value
+                              ? { scale: 1, opacity: 1 }
+                              : { scale: 0, opacity: 0 }
+                          }
                           transition={{ duration: 0.3, ease: "easeOut" }}
                           style={{ borderRadius: "inherit" }}
                         />
@@ -907,25 +1086,28 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
 
                 {/* New Furniture Items */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-600">Electrodomésticos</Label>
+                  <Label className="text-xs font-medium text-gray-600">
+                    Electrodomésticos
+                  </Label>
                   <div className="grid grid-cols-2 gap-2">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => updateFormData("oven", !formData.oven)}
-                      className={`
-                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
-                        ${
-                          formData.oven
-                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                            : "bg-white text-gray-700 shadow-md"
-                        }
-                      `}
+                      className={`relative w-full overflow-hidden rounded-md p-2 text-xs transition-all duration-200 ${
+                        formData.oven
+                          ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                          : "bg-white text-gray-700 shadow-md"
+                      } `}
                     >
                       <motion.div
                         className="absolute inset-0 bg-gray-800"
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={formData.oven ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        animate={
+                          formData.oven
+                            ? { scale: 1, opacity: 1 }
+                            : { scale: 0, opacity: 0 }
+                        }
                         transition={{ duration: 0.3, ease: "easeOut" }}
                         style={{ borderRadius: "inherit" }}
                       />
@@ -935,20 +1117,23 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => updateFormData("microwave", !formData.microwave)}
-                      className={`
-                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
-                        ${
-                          formData.microwave
-                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                            : "bg-white text-gray-700 shadow-md"
-                        }
-                      `}
+                      onClick={() =>
+                        updateFormData("microwave", !formData.microwave)
+                      }
+                      className={`relative w-full overflow-hidden rounded-md p-2 text-xs transition-all duration-200 ${
+                        formData.microwave
+                          ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                          : "bg-white text-gray-700 shadow-md"
+                      } `}
                     >
                       <motion.div
                         className="absolute inset-0 bg-gray-800"
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={formData.microwave ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        animate={
+                          formData.microwave
+                            ? { scale: 1, opacity: 1 }
+                            : { scale: 0, opacity: 0 }
+                        }
                         transition={{ duration: 0.3, ease: "easeOut" }}
                         style={{ borderRadius: "inherit" }}
                       />
@@ -958,20 +1143,26 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => updateFormData("washingMachine", !formData.washingMachine)}
-                      className={`
-                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
-                        ${
-                          formData.washingMachine
-                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                            : "bg-white text-gray-700 shadow-md"
-                        }
-                      `}
+                      onClick={() =>
+                        updateFormData(
+                          "washingMachine",
+                          !formData.washingMachine,
+                        )
+                      }
+                      className={`relative w-full overflow-hidden rounded-md p-2 text-xs transition-all duration-200 ${
+                        formData.washingMachine
+                          ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                          : "bg-white text-gray-700 shadow-md"
+                      } `}
                     >
                       <motion.div
                         className="absolute inset-0 bg-gray-800"
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={formData.washingMachine ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        animate={
+                          formData.washingMachine
+                            ? { scale: 1, opacity: 1 }
+                            : { scale: 0, opacity: 0 }
+                        }
                         transition={{ duration: 0.3, ease: "easeOut" }}
                         style={{ borderRadius: "inherit" }}
                       />
@@ -982,19 +1173,20 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => updateFormData("fridge", !formData.fridge)}
-                      className={`
-                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
-                        ${
-                          formData.fridge
-                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                            : "bg-white text-gray-700 shadow-md"
-                        }
-                      `}
+                      className={`relative w-full overflow-hidden rounded-md p-2 text-xs transition-all duration-200 ${
+                        formData.fridge
+                          ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                          : "bg-white text-gray-700 shadow-md"
+                      } `}
                     >
                       <motion.div
                         className="absolute inset-0 bg-gray-800"
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={formData.fridge ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        animate={
+                          formData.fridge
+                            ? { scale: 1, opacity: 1 }
+                            : { scale: 0, opacity: 0 }
+                        }
                         transition={{ duration: 0.3, ease: "easeOut" }}
                         style={{ borderRadius: "inherit" }}
                       />
@@ -1005,19 +1197,20 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => updateFormData("tv", !formData.tv)}
-                      className={`
-                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
-                        ${
-                          formData.tv
-                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                            : "bg-white text-gray-700 shadow-md"
-                        }
-                      `}
+                      className={`relative w-full overflow-hidden rounded-md p-2 text-xs transition-all duration-200 ${
+                        formData.tv
+                          ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                          : "bg-white text-gray-700 shadow-md"
+                      } `}
                     >
                       <motion.div
                         className="absolute inset-0 bg-gray-800"
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={formData.tv ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        animate={
+                          formData.tv
+                            ? { scale: 1, opacity: 1 }
+                            : { scale: 0, opacity: 0 }
+                        }
                         transition={{ duration: 0.3, ease: "easeOut" }}
                         style={{ borderRadius: "inherit" }}
                       />
@@ -1027,20 +1220,23 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => updateFormData("stoneware", !formData.stoneware)}
-                      className={`
-                        w-full p-2 text-xs rounded-md transition-all duration-200 relative overflow-hidden
-                        ${
-                          formData.stoneware
-                            ? "bg-gray-900 text-white border border-gray-900 shadow-sm"
-                            : "bg-white text-gray-700 shadow-md"
-                        }
-                      `}
+                      onClick={() =>
+                        updateFormData("stoneware", !formData.stoneware)
+                      }
+                      className={`relative w-full overflow-hidden rounded-md p-2 text-xs transition-all duration-200 ${
+                        formData.stoneware
+                          ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
+                          : "bg-white text-gray-700 shadow-md"
+                      } `}
                     >
                       <motion.div
                         className="absolute inset-0 bg-gray-800"
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={formData.stoneware ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                        animate={
+                          formData.stoneware
+                            ? { scale: 1, opacity: 1 }
+                            : { scale: 0, opacity: 0 }
+                        }
                         transition={{ duration: 0.3, ease: "easeOut" }}
                         style={{ borderRadius: "inherit" }}
                       />
@@ -1055,7 +1251,7 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
       </motion.div>
 
       <motion.div
-        className="flex justify-between pt-4 border-t"
+        className="flex justify-between border-t pt-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.3 }}
@@ -1073,8 +1269,8 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button 
-            onClick={handleNext} 
+          <Button
+            onClick={handleNext}
             className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
           >
             <span>Siguiente</span>
@@ -1083,5 +1279,5 @@ export default function FourthPage({ listingId, globalFormData, onNext, onBack, 
         </motion.div>
       </motion.div>
     </motion.div>
-  )
+  );
 }

@@ -1,24 +1,36 @@
-'use server'
+"use server";
 
-import { uploadImageToS3, uploadDocumentToS3, renameS3Folder } from "~/lib/s3"
-import { createPropertyImage, getPropertyImageById, updatePropertyImage } from "~/server/queries/property_images"
-import { createDocument, getDocumentById, updateDocumentOrders } from "~/server/queries/document"
-import type { PropertyImage, Document } from "~/lib/data"
-import { DeleteObjectCommand } from "@aws-sdk/client-s3"
-import { and, eq } from "drizzle-orm"
-import { db } from "~/server/db"
-import { propertyImages, documents } from "~/server/db/schema"
-import { s3Client } from "~/server/s3"
+import { uploadImageToS3, uploadDocumentToS3, renameS3Folder } from "~/lib/s3";
+import {
+  createPropertyImage,
+  getPropertyImageById,
+  updatePropertyImage,
+} from "~/server/queries/property_images";
+import {
+  createDocument,
+  getDocumentById,
+  updateDocumentOrders,
+} from "~/server/queries/document";
+import type { PropertyImage, Document } from "~/lib/data";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { and, eq } from "drizzle-orm";
+import { db } from "~/server/db";
+import { propertyImages, documents } from "~/server/db/schema";
+import { s3Client } from "~/server/s3";
 
 export async function uploadPropertyImage(
   file: File,
   propertyId: bigint,
   referenceNumber: string,
-  imageOrder: number
+  imageOrder: number,
 ): Promise<PropertyImage> {
   try {
     // 1. Upload to S3
-    const { imageUrl, s3key, imageKey } = await uploadImageToS3(file, referenceNumber, imageOrder)
+    const { imageUrl, s3key, imageKey } = await uploadImageToS3(
+      file,
+      referenceNumber,
+      imageOrder,
+    );
 
     // 2. Create record in database
     const result = await createPropertyImage({
@@ -29,16 +41,16 @@ export async function uploadPropertyImage(
       imageKey,
       s3key,
       imageOrder,
-    })
+    });
 
     if (!result) {
-      throw new Error("Failed to create property image record")
+      throw new Error("Failed to create property image record");
     }
 
     // 3. Fetch the complete image record
-    const propertyImage = await getPropertyImageById(result.propertyImageId)
+    const propertyImage = await getPropertyImageById(result.propertyImageId);
     if (!propertyImage) {
-      throw new Error("Failed to fetch created property image")
+      throw new Error("Failed to fetch created property image");
     }
 
     // Convert to PropertyImage type, ensuring all required fields are present
@@ -54,34 +66,39 @@ export async function uploadPropertyImage(
       s3key: propertyImage.s3key,
       imageOrder: propertyImage.imageOrder,
       imageTag: propertyImage.imageTag ?? undefined,
-    }
+    };
 
-    return typedPropertyImage
+    return typedPropertyImage;
   } catch (error) {
-    console.error("Error uploading property image:", error)
-    throw error
+    console.error("Error uploading property image:", error);
+    throw error;
   }
 }
 
-export async function deletePropertyImage(imageKey: string, propertyId: bigint) {
-  'use server'
-  
+export async function deletePropertyImage(
+  imageKey: string,
+  propertyId: bigint,
+) {
+  "use server";
+
   try {
     // Delete from S3
     await s3Client.send(
       new DeleteObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET!,
         Key: imageKey,
-      })
+      }),
     );
 
     // Delete from database
-    await db.delete(propertyImages).where(
-      and(
-        eq(propertyImages.propertyId, propertyId),
-        eq(propertyImages.imageKey, imageKey)
-      )
-    );
+    await db
+      .delete(propertyImages)
+      .where(
+        and(
+          eq(propertyImages.propertyId, propertyId),
+          eq(propertyImages.imageKey, imageKey),
+        ),
+      );
 
     return { success: true };
   } catch (error) {
@@ -91,20 +108,20 @@ export async function deletePropertyImage(imageKey: string, propertyId: bigint) 
 }
 
 export async function updateImageOrders(
-  updates: Array<{ propertyImageId: bigint; imageOrder: number }>
+  updates: Array<{ propertyImageId: bigint; imageOrder: number }>,
 ): Promise<void> {
   try {
     // Update each image's order in the database
     await Promise.all(
       updates.map(({ propertyImageId, imageOrder }) =>
-        updatePropertyImage(propertyImageId, { imageOrder })
-      )
-    )
+        updatePropertyImage(propertyImageId, { imageOrder }),
+      ),
+    );
   } catch (error) {
-    console.error("Error updating image orders:", error)
-    throw error
+    console.error("Error updating image orders:", error);
+    throw error;
   }
-} 
+}
 
 export async function uploadDocument(
   file: File,
@@ -117,16 +134,17 @@ export async function uploadDocument(
   leadId?: bigint,
   dealId?: bigint,
   appointmentId?: bigint,
-  propertyId?: bigint
+  propertyId?: bigint,
 ): Promise<Document> {
   try {
     // 1. Upload to S3
-    const { fileUrl, s3key, documentKey, filename, fileType } = await uploadDocumentToS3(
-      file,
-      referenceNumber,
-      documentOrder,
-      documentTag
-    )
+    const { fileUrl, s3key, documentKey, filename, fileType } =
+      await uploadDocumentToS3(
+        file,
+        referenceNumber,
+        documentOrder,
+        documentTag,
+      );
 
     // 2. Create record in database
     const result = await createDocument({
@@ -145,16 +163,16 @@ export async function uploadDocument(
       documentTag,
       documentOrder,
       isActive: true,
-    })
+    });
 
     if (!result) {
-      throw new Error("Failed to create document record")
+      throw new Error("Failed to create document record");
     }
 
     // 3. Fetch the complete document record
-    const document = await getDocumentById(Number(result.docId))
+    const document = await getDocumentById(Number(result.docId));
     if (!document) {
-      throw new Error("Failed to fetch created document")
+      throw new Error("Failed to fetch created document");
     }
 
     // Convert to Document type, ensuring all required fields are present
@@ -178,25 +196,25 @@ export async function uploadDocument(
       isActive: document.isActive ?? true,
       createdAt: document.createdAt,
       updatedAt: document.updatedAt,
-    }
+    };
 
-    return typedDocument
+    return typedDocument;
   } catch (error) {
-    console.error("Error uploading document:", error)
-    throw error
+    console.error("Error uploading document:", error);
+    throw error;
   }
-} 
+}
 
 export async function deleteDocument(documentKey: string, docId: bigint) {
-  'use server'
-  
+  "use server";
+
   try {
     // Delete from S3
     await s3Client.send(
       new DeleteObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET!,
         Key: documentKey,
-      })
+      }),
     );
 
     // Delete from database
@@ -210,30 +228,35 @@ export async function deleteDocument(documentKey: string, docId: bigint) {
 }
 
 export async function updateDocumentOrdersAction(
-  updates: Array<{ docId: bigint; documentOrder: number }>
+  updates: Array<{ docId: bigint; documentOrder: number }>,
 ): Promise<void> {
   try {
     // Update each document's order in the database
-    await updateDocumentOrders(updates)
+    await updateDocumentOrders(updates);
   } catch (error) {
-    console.error("Error updating document orders:", error)
-    throw error
+    console.error("Error updating document orders:", error);
+    throw error;
   }
-} 
+}
 
 export async function renameDocumentFolder(
   tempReferenceNumber: string,
   newReferenceNumber: string,
-  _documentIds: bigint[] // Renamed to _documentIds to indicate it's intentionally unused
-): Promise<Array<{
-  docId: bigint;
-  newUrl: string;
-  newDocumentKey: string;
-  newS3key: string;
-}>> {
+  _documentIds: bigint[], // Renamed to _documentIds to indicate it's intentionally unused
+): Promise<
+  Array<{
+    docId: bigint;
+    newUrl: string;
+    newDocumentKey: string;
+    newS3key: string;
+  }>
+> {
   try {
     // 1. Rename the folder in S3
-    const renamedFiles = await renameS3Folder(tempReferenceNumber, newReferenceNumber);
+    const renamedFiles = await renameS3Folder(
+      tempReferenceNumber,
+      newReferenceNumber,
+    );
 
     if (renamedFiles.length === 0) {
       console.log("No files to rename");
@@ -256,8 +279,8 @@ export async function renameDocumentFolder(
         .where(
           and(
             eq(documents.documentKey, renamedFile.oldKey),
-            eq(documents.isActive, true)
-          )
+            eq(documents.isActive, true),
+          ),
         );
 
       if (document) {
@@ -279,14 +302,18 @@ export async function renameDocumentFolder(
           newS3key: renamedFile.newS3key,
         });
 
-        console.log(`Updated document ${document.docId} with new URL: ${renamedFile.newUrl}`);
+        console.log(
+          `Updated document ${document.docId} with new URL: ${renamedFile.newUrl}`,
+        );
       }
     }
 
-    console.log(`Successfully renamed folder and updated ${results.length} documents`);
+    console.log(
+      `Successfully renamed folder and updated ${results.length} documents`,
+    );
     return results;
   } catch (error) {
     console.error("Error renaming document folder:", error);
     throw error;
   }
-} 
+}

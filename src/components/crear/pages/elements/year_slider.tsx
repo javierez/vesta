@@ -1,16 +1,16 @@
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { Input } from "~/components/ui/input"
-import { Slider } from "~/components/ui/slider"
+import { useState, useEffect } from "react";
+import { Input } from "~/components/ui/input";
+import { Slider } from "~/components/ui/slider";
 
 interface YearSliderProps {
-  label: string
-  value: number
-  onChange: (value: number) => void
-  min?: number
-  max?: number
-  placeholder?: string
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  placeholder?: string;
 }
 
 export function YearSlider({
@@ -21,45 +21,45 @@ export function YearSlider({
   max = new Date().getFullYear(),
   placeholder = "Año",
 }: YearSliderProps) {
-  const [inputValue, setInputValue] = useState(value.toString())
-  const [sliderValue, setSliderValue] = useState([value || min])
+  const [inputValue, setInputValue] = useState(value.toString());
+  const [sliderValue, setSliderValue] = useState([value || min]);
 
   useEffect(() => {
-    setInputValue(value.toString())
-    setSliderValue([value || min])
-  }, [value, min])
+    setInputValue(value.toString());
+    setSliderValue([value || min]);
+  }, [value, min]);
 
   const handleSliderChange = (newValue: number[]) => {
-    const year = newValue[0] ?? min
-    setSliderValue([year])
-    setInputValue(year.toString())
-    onChange(year)
-  }
+    const year = newValue[0] ?? min;
+    setSliderValue([year]);
+    setInputValue(year.toString());
+    onChange(year);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
-    setInputValue(newValue)
+    const newValue = e.target.value;
+    setInputValue(newValue);
 
-    const year = Number.parseInt(newValue)
+    const year = Number.parseInt(newValue);
     if (!isNaN(year) && year >= min && year <= max) {
-      setSliderValue([year])
-      onChange(year)
+      setSliderValue([year]);
+      onChange(year);
     }
-  }
+  };
 
   const handleInputBlur = () => {
-    const year = Number.parseInt(inputValue)
+    const year = Number.parseInt(inputValue);
     if (isNaN(year) || year < min || year > max) {
-      setInputValue(value.toString())
-      setSliderValue([value || min])
+      setInputValue(value.toString());
+      setSliderValue([value || min]);
     }
-  }
+  };
 
   return (
     <div className="space-y-3">
       <label className="text-xs font-medium text-gray-600">{label}</label>
 
-      <div className="space-y-3 p-3 rounded-md shadow-md">
+      <div className="space-y-3 rounded-md p-3 shadow-md">
         <Slider
           value={sliderValue}
           onValueChange={handleSliderChange}
@@ -79,11 +79,11 @@ export function YearSlider({
             type="number"
             min={min}
             max={max}
-            className="h-8 w-20 text-center text-sm border-0 shadow-md"
+            className="h-8 w-20 border-0 text-center text-sm shadow-md"
           />
           <span className="text-xs text-gray-400">{max}</span>
         </div>
       </div>
     </div>
-  )
+  );
 }

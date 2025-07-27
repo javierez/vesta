@@ -1,14 +1,19 @@
-import { db } from "../db"
+import { db } from "../db";
 import { users } from "../db/schema";
 import { eq } from "drizzle-orm";
 import type { User } from "../../lib/data";
 
 // Create a new user
-export async function createUser(data: Omit<User, "userId" | "createdAt" | "updatedAt">) {
+export async function createUser(
+  data: Omit<User, "userId" | "createdAt" | "updatedAt">,
+) {
   try {
     const [result] = await db.insert(users).values(data).$returningId();
     if (!result) throw new Error("Failed to create user");
-    const [newUser] = await db.select().from(users).where(eq(users.userId, BigInt(result.userId)));
+    const [newUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.userId, BigInt(result.userId)));
     return newUser;
   } catch (error) {
     console.error("Error creating user:", error);
@@ -33,10 +38,7 @@ export async function getUserById(userId: number) {
 // Get user by email
 export async function getUserByEmail(email: string) {
   try {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email));
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   } catch (error) {
     console.error("Error fetching user by email:", error);
@@ -45,7 +47,10 @@ export async function getUserByEmail(email: string) {
 }
 
 // Update user
-export async function updateUser(userId: number, data: Omit<Partial<User>, "userId">) {
+export async function updateUser(
+  userId: number,
+  data: Omit<Partial<User>, "userId">,
+) {
   try {
     await db
       .update(users)
@@ -65,9 +70,7 @@ export async function updateUser(userId: number, data: Omit<Partial<User>, "user
 // Delete user
 export async function deleteUser(userId: number) {
   try {
-    await db
-      .delete(users)
-      .where(eq(users.userId, BigInt(userId)));
+    await db.delete(users).where(eq(users.userId, BigInt(userId)));
     return { success: true };
   } catch (error) {
     console.error("Error deleting user:", error);
@@ -79,14 +82,10 @@ export async function deleteUser(userId: number) {
 export async function listUsers(page = 1, limit = 10) {
   try {
     const offset = (page - 1) * limit;
-    const allUsers = await db
-      .select()
-      .from(users)
-      .limit(limit)
-      .offset(offset);
+    const allUsers = await db.select().from(users).limit(limit).offset(offset);
     return allUsers;
   } catch (error) {
     console.error("Error listing users:", error);
     throw error;
   }
-} 
+}

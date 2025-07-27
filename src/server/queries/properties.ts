@@ -1,30 +1,30 @@
-'use server'
+"use server";
 
-import { db } from "../db"
-import { properties, propertyImages } from "../db/schema"
-import { eq, and, sql } from "drizzle-orm"
-import type { Property, PropertyImage } from "../../lib/data"
-import { retrieveCadastralData } from "../cadastral/retrieve_cadastral"
-import { createDefaultListing } from "./listing"
-import { retrieveGeocodingData } from "../googlemaps/retrieve_geo"
+import { db } from "../db";
+import { properties, propertyImages } from "../db/schema";
+import { eq, and, sql } from "drizzle-orm";
+import type { Property, PropertyImage } from "../../lib/data";
+import { retrieveCadastralData } from "../cadastral/retrieve_cadastral";
+import { createDefaultListing } from "./listing";
+import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
 
 // Generate a unique reference number
 export async function generateReferenceNumber(): Promise<string> {
   try {
     // Get the current year
     const currentYear = new Date().getFullYear();
-    
+
     // Get the count of properties for this year
     const [result] = await db
       .select({ count: sql<number>`count(*)` })
       .from(properties)
       .where(sql`YEAR(${properties.createdAt}) = ${currentYear}`);
-    
+
     const count = result?.count ?? 0;
-    
+
     // Format: VESTA-YYYY-XXXXXX (e.g., VESTA-2024-000001)
-    const referenceNumber = `VESTA${currentYear}${String(count + 1).padStart(6, '0')}`;
-    
+    const referenceNumber = `VESTA${currentYear}${String(count + 1).padStart(6, "0")}`;
+
     return referenceNumber;
   } catch (error) {
     console.error("Error generating reference number:", error);
@@ -35,15 +35,27 @@ export async function generateReferenceNumber(): Promise<string> {
 }
 
 // Create a new property
-export async function createProperty(data: Omit<Property, "propertyId" | "createdAt" | "updatedAt" | "formPosition" | "referenceNumber">) {
+export async function createProperty(
+  data: Omit<
+    Property,
+    | "propertyId"
+    | "createdAt"
+    | "updatedAt"
+    | "formPosition"
+    | "referenceNumber"
+  >,
+) {
   try {
     // Generate a unique reference number
     const referenceNumber = await generateReferenceNumber();
-    
-    const [result] = await db.insert(properties).values({
-      ...data,
-      referenceNumber,
-    }).$returningId();
+
+    const [result] = await db
+      .insert(properties)
+      .values({
+        ...data,
+        referenceNumber,
+      })
+      .$returningId();
     if (!result) throw new Error("Failed to create property");
     const [newProperty] = await db
       .select()
@@ -87,7 +99,10 @@ export async function getPropertiesByFormPosition(formPosition: number) {
 // Update property
 export async function updateProperty(
   propertyId: number,
-  data: Omit<Partial<Property>, "propertyId" | "createdAt" | "updatedAt" | "referenceNumber">
+  data: Omit<
+    Partial<Property>,
+    "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
+  >,
 ) {
   try {
     await db
@@ -106,7 +121,10 @@ export async function updateProperty(
 }
 
 // Update form position for a property
-export async function updatePropertyFormPosition(propertyId: number, formPosition: number) {
+export async function updatePropertyFormPosition(
+  propertyId: number,
+  formPosition: number,
+) {
   try {
     await db
       .update(properties)
@@ -148,8 +166,8 @@ export async function deleteProperty(propertyId: number) {
 
 // List all properties (with pagination and optional filters)
 export async function listProperties(
-  page = 1, 
-  limit = 10, 
+  page = 1,
+  limit = 10,
   filters?: {
     propertyType?: string;
     propertySubtype?: string;
@@ -158,11 +176,11 @@ export async function listProperties(
     minSquareMeter?: number;
     maxSquareMeter?: number;
     isActive?: boolean;
-  }
+  },
 ) {
   try {
     const offset = (page - 1) * limit;
-    
+
     // Build the where conditions array
     const whereConditions = [];
     if (filters) {
@@ -170,19 +188,27 @@ export async function listProperties(
         whereConditions.push(eq(properties.propertyType, filters.propertyType));
       }
       if (filters.propertySubtype) {
-        whereConditions.push(eq(properties.propertySubtype, filters.propertySubtype));
+        whereConditions.push(
+          eq(properties.propertySubtype, filters.propertySubtype),
+        );
       }
       if (filters.neighborhoodId) {
-        whereConditions.push(eq(properties.neighborhoodId, BigInt(filters.neighborhoodId)));
+        whereConditions.push(
+          eq(properties.neighborhoodId, BigInt(filters.neighborhoodId)),
+        );
       }
       if (filters.bedrooms) {
         whereConditions.push(eq(properties.bedrooms, filters.bedrooms));
       }
       if (filters.minSquareMeter) {
-        whereConditions.push(sql`${properties.squareMeter} >= ${filters.minSquareMeter}`);
+        whereConditions.push(
+          sql`${properties.squareMeter} >= ${filters.minSquareMeter}`,
+        );
       }
       if (filters.maxSquareMeter) {
-        whereConditions.push(sql`${properties.squareMeter} <= ${filters.maxSquareMeter}`);
+        whereConditions.push(
+          sql`${properties.squareMeter} <= ${filters.maxSquareMeter}`,
+        );
       }
       if (filters.isActive !== undefined) {
         whereConditions.push(eq(properties.isActive, filters.isActive));
@@ -196,15 +222,12 @@ export async function listProperties(
     const query = db.select().from(properties);
 
     // Apply all where conditions at once
-    const filteredQuery = whereConditions.length > 0 
-      ? query.where(and(...whereConditions))
-      : query;
+    const filteredQuery =
+      whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
 
     // Apply pagination
-    const allProperties = await filteredQuery
-      .limit(limit)
-      .offset(offset);
-    
+    const allProperties = await filteredQuery.limit(limit).offset(offset);
+
     return allProperties;
   } catch (error) {
     console.error("Error listing properties:", error);
@@ -213,27 +236,37 @@ export async function listProperties(
 }
 
 // Property Images CRUD operations
-export async function addPropertyImage(data: Omit<PropertyImage, "propertyImageId" | "createdAt" | "updatedAt" | "referenceNumber">) {
+export async function addPropertyImage(
+  data: Omit<
+    PropertyImage,
+    "propertyImageId" | "createdAt" | "updatedAt" | "referenceNumber"
+  >,
+) {
   try {
     // Get the property to get its reference number
     const [property] = await db
       .select({ referenceNumber: properties.referenceNumber })
       .from(properties)
       .where(eq(properties.propertyId, data.propertyId));
-    
+
     if (!property?.referenceNumber) {
       throw new Error("Property not found or reference number is null");
     }
 
-    const [result] = await db.insert(propertyImages).values({
-      ...data,
-      referenceNumber: property.referenceNumber,
-    }).$returningId();
+    const [result] = await db
+      .insert(propertyImages)
+      .values({
+        ...data,
+        referenceNumber: property.referenceNumber,
+      })
+      .$returningId();
     if (!result) throw new Error("Failed to add property image");
     const [newImage] = await db
       .select()
       .from(propertyImages)
-      .where(eq(propertyImages.propertyImageId, BigInt(result.propertyImageId)));
+      .where(
+        eq(propertyImages.propertyImageId, BigInt(result.propertyImageId)),
+      );
     return newImage;
   } catch (error) {
     console.error("Error adding property image:", error);
@@ -249,8 +282,8 @@ export async function getPropertyImages(propertyId: number) {
       .where(
         and(
           eq(propertyImages.propertyId, BigInt(propertyId)),
-          eq(propertyImages.isActive, true)
-        )
+          eq(propertyImages.isActive, true),
+        ),
       );
     return images;
   } catch (error) {
@@ -276,17 +309,17 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
   try {
     // First, retrieve cadastral data from the API
     const cadastralData = await retrieveCadastralData(cadastralReference);
-    
+
     // Generate a unique reference number
     const referenceNumber = await generateReferenceNumber();
 
     //console.log('cadastralData', cadastralData)
-    
+
     // Create property with cadastral data and sensible defaults
     const propertyData = {
       cadastralReference,
       referenceNumber,
-      propertyType: cadastralData?.propertyType ?? "piso" as const,
+      propertyType: cadastralData?.propertyType ?? ("piso" as const),
       propertySubtype: undefined, // Will be set by user in form
       formPosition: 1, // Starting form position
       hasHeating: false,
@@ -304,26 +337,33 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
         postalCode: cadastralData.postalCode,
         ...(cadastralData.latitude && { latitude: cadastralData.latitude }),
         ...(cadastralData.longitude && { longitude: cadastralData.longitude }),
-        ...(cadastralData.neighborhoodId && { neighborhoodId: BigInt(cadastralData.neighborhoodId) }),
-      })
+        ...(cadastralData.neighborhoodId && {
+          neighborhoodId: BigInt(cadastralData.neighborhoodId),
+        }),
+      }),
     };
 
-    const [result] = await db.insert(properties).values(propertyData).$returningId();
-    
+    const [result] = await db
+      .insert(properties)
+      .values(propertyData)
+      .$returningId();
+
     if (!result) throw new Error("Failed to create property");
-    
+
     const [newProperty] = await db
       .select()
       .from(properties)
       .where(eq(properties.propertyId, BigInt(result.propertyId)));
-    
+
     if (!newProperty) throw new Error("Failed to retrieve created property");
-    
+
     // Create a default listing for the new property and get the listing ID
-    const newListing = await createDefaultListing(Number(newProperty.propertyId));
-    
+    const newListing = await createDefaultListing(
+      Number(newProperty.propertyId),
+    );
+
     if (!newListing) throw new Error("Failed to create default listing");
-    
+
     return {
       ...newProperty,
       // Add location data from cadastral for form population
@@ -353,17 +393,18 @@ export async function createPropertyFromLocation(locationData: {
 }) {
   try {
     // First, retrieve geocoding data from the address
-    const fullAddress = `${locationData.street}, ${locationData.postalCode}, ${locationData.city ?? ''}, ${locationData.province ?? ''}`.trim();
+    const fullAddress =
+      `${locationData.street}, ${locationData.postalCode}, ${locationData.city ?? ""}, ${locationData.province ?? ""}`.trim();
     console.log("fullAddress", fullAddress);
     const geocodingData = await retrieveGeocodingData(fullAddress);
-    
+
     // Generate a unique reference number
     const referenceNumber = await generateReferenceNumber();
-    
+
     // Create property with location data and sensible defaults (similar to cadastral version)
     const propertyData = {
       referenceNumber,
-      propertyType: locationData.propertyType ?? "piso" as const,
+      propertyType: locationData.propertyType ?? ("piso" as const),
       propertySubtype: undefined, // Will be set by user in form
       formPosition: 1, // Starting form position
       hasHeating: false,
@@ -379,26 +420,33 @@ export async function createPropertyFromLocation(locationData: {
       ...(geocodingData && {
         latitude: geocodingData.latitude,
         longitude: geocodingData.longitude,
-        ...(geocodingData.neighborhoodId && { neighborhoodId: BigInt(geocodingData.neighborhoodId) }),
-      })
+        ...(geocodingData.neighborhoodId && {
+          neighborhoodId: BigInt(geocodingData.neighborhoodId),
+        }),
+      }),
     };
 
-    const [result] = await db.insert(properties).values(propertyData).$returningId();
-    
+    const [result] = await db
+      .insert(properties)
+      .values(propertyData)
+      .$returningId();
+
     if (!result) throw new Error("Failed to create property");
-    
+
     const [newProperty] = await db
       .select()
       .from(properties)
       .where(eq(properties.propertyId, BigInt(result.propertyId)));
-    
+
     if (!newProperty) throw new Error("Failed to retrieve created property");
-    
+
     // Create a default listing for the new property and get the listing ID
-    const newListing = await createDefaultListing(Number(newProperty.propertyId));
-    
+    const newListing = await createDefaultListing(
+      Number(newProperty.propertyId),
+    );
+
     if (!newListing) throw new Error("Failed to create default listing");
-    
+
     return {
       ...newProperty,
       // Add location data from geocoding for form population
@@ -426,16 +474,21 @@ export async function updatePropertyLocation(
     province: string;
     municipality: string;
     neighborhood: string;
-  }
+  },
 ) {
   try {
     // Import findOrCreateLocation here to avoid client-side bundling
     const { findOrCreateLocation } = await import("./locations");
-    
+
     let neighborhoodId: number | undefined;
 
     // Create/update location record if we have complete location data
-    if (locationData.city && locationData.province && locationData.municipality && locationData.neighborhood) {
+    if (
+      locationData.city &&
+      locationData.province &&
+      locationData.municipality &&
+      locationData.neighborhood
+    ) {
       try {
         neighborhoodId = await findOrCreateLocation({
           city: locationData.city,
@@ -443,7 +496,10 @@ export async function updatePropertyLocation(
           municipality: locationData.municipality,
           neighborhood: locationData.neighborhood,
         });
-        console.log("Location created/updated with neighborhoodId:", neighborhoodId);
+        console.log(
+          "Location created/updated with neighborhoodId:",
+          neighborhoodId,
+        );
       } catch (error) {
         console.error("Error creating/updating location:", error);
         // Continue without neighborhoodId if there's an error
@@ -463,11 +519,17 @@ export async function updatePropertyLocation(
       updateData.neighborhoodId = BigInt(neighborhoodId);
     }
 
-    await updateProperty(propertyId, updateData as Omit<Partial<Property>, "propertyId" | "createdAt" | "updatedAt">);
+    await updateProperty(
+      propertyId,
+      updateData as Omit<
+        Partial<Property>,
+        "propertyId" | "createdAt" | "updatedAt"
+      >,
+    );
 
     return { success: true, neighborhoodId };
   } catch (error) {
     console.error("Error updating property location:", error);
     throw error;
   }
-} 
+}

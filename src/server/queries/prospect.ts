@@ -1,4 +1,4 @@
-"use server"
+"use server";
 import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
 import { prospects } from "~/server/db/schema";
@@ -31,10 +31,8 @@ export type UpdateProspectInput = Partial<CreateProspectInput> & {
 
 // Create a new prospect
 export async function createProspect(input: CreateProspectInput) {
-  await db
-    .insert(prospects)
-    .values(input);
-  
+  await db.insert(prospects).values(input);
+
   // Get the created prospect
   const [created] = await db
     .select()
@@ -42,7 +40,7 @@ export async function createProspect(input: CreateProspectInput) {
     .where(eq(prospects.contactId, input.contactId))
     .orderBy(prospects.createdAt)
     .limit(1);
-  
+
   return created;
 }
 
@@ -68,7 +66,11 @@ export async function updateProspect(id: bigint, input: UpdateProspectInput) {
   }
 
   // If status is changing, create a history entry
-  if (input.status && input.status !== currentProspect.status && input.changedBy) {
+  if (
+    input.status &&
+    input.status !== currentProspect.status &&
+    input.changedBy
+  ) {
     await createProspectHistory({
       prospectId: id,
       previousStatus: currentProspect.status,
@@ -85,7 +87,7 @@ export async function updateProspect(id: bigint, input: UpdateProspectInput) {
       updatedAt: new Date(),
     })
     .where(eq(prospects.id, id));
-  
+
   // Get the updated prospect
   return await getProspect(id);
 }
@@ -93,18 +95,13 @@ export async function updateProspect(id: bigint, input: UpdateProspectInput) {
 // Delete a prospect
 export async function deleteProspect(id: bigint) {
   const prospect = await getProspect(id);
-  await db
-    .delete(prospects)
-    .where(eq(prospects.id, id));
+  await db.delete(prospects).where(eq(prospects.id, id));
   return prospect;
 }
 
 // Get prospects by status
 export async function getProspectsByStatus(status: string) {
-  return await db
-    .select()
-    .from(prospects)
-    .where(eq(prospects.status, status));
+  return await db.select().from(prospects).where(eq(prospects.status, status));
 }
 
 // Get prospects by property type
@@ -121,4 +118,4 @@ export async function getProspectsByContact(contactId: bigint) {
     .select()
     .from(prospects)
     .where(eq(prospects.contactId, contactId));
-} 
+}

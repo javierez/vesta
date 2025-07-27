@@ -155,13 +155,13 @@ pnpm build
 
 # TODOs: 
 
-- Separators (tabs on top) in Property and Contact detail pages
+- Separators (tabs on top) in Property and Contact detail pages -- only change remaining 
 
 - Rent: fianza (x)
 
 - Properties: Reading the formulario nueva creación (xxx)
-    - Nota de encargo: P000460
-    - Documentos: P000427
+    - Generación de Nota de encargo: P000460
+    - Documentos: P000427 
 
 - Auth
 - Pasarela de pagos

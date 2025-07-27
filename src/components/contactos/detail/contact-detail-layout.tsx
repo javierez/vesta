@@ -1,22 +1,22 @@
-'use client'
+"use client";
 
-import { ContactBreadcrumb } from "./contact-breadcrumb"
-import { ContactFormHeader } from "./contact-form-header"
-import { ContactCharacteristicsForm } from "./contact-characteristics-form"
+import { ContactBreadcrumb } from "./contact-breadcrumb";
+import { ContactFormHeader } from "./contact-form-header";
+import { ContactTabs } from "./contact-tabs";
 
 interface ContactDetailLayoutProps {
   contact: {
-    contactId: bigint
-    firstName: string
-    lastName: string
-    email?: string | null
-    phone?: string | null
-    contactType: string
-    isActive: boolean | null
-    createdAt: Date
+    contactId: bigint;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    phone?: string | null;
+    contactType: string;
+    isActive: boolean | null;
+    createdAt: Date;
     // Add other properties that ContactCharacteristicsForm might need
-    [key: string]: unknown
-  }
+    [key: string]: unknown;
+  };
 }
 
 export function ContactDetailLayout({ contact }: ContactDetailLayoutProps) {
@@ -27,22 +27,34 @@ export function ContactDetailLayout({ contact }: ContactDetailLayoutProps) {
     lastName: contact.lastName,
     email: contact.email ?? undefined,
     phone: contact.phone ?? undefined,
-    contactType: contact.contactType as "demandante" | "propietario" | "banco" | "agencia" | "interesado",
+    contactType: contact.contactType as
+      | "demandante"
+      | "propietario"
+      | "banco"
+      | "agencia"
+      | "interesado",
     isActive: contact.isActive ?? true,
-    additionalInfo: typeof contact.additionalInfo === 'object' && contact.additionalInfo !== null ? contact.additionalInfo : {}
-  }
+    additionalInfo:
+      typeof contact.additionalInfo === "object" &&
+      contact.additionalInfo !== null
+        ? contact.additionalInfo
+        : {},
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <ContactBreadcrumb firstName={contact.firstName} lastName={contact.lastName} />
+      <ContactBreadcrumb
+        firstName={contact.firstName}
+        lastName={contact.lastName}
+      />
 
       {/* Contact Header */}
       <ContactFormHeader contact={contact} />
 
-      {/* Contact Form */}
+      {/* Contact Tabs */}
       <div className="pb-16">
-        <ContactCharacteristicsForm contact={transformedContact} />
+        <ContactTabs contact={transformedContact} />
       </div>
     </div>
-  )
-} 
+  );
+}

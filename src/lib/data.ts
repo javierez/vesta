@@ -1,4 +1,4 @@
-export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje"
+export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje";
 
 export type PropertyImage = {
   propertyImageId: bigint;
@@ -12,7 +12,7 @@ export type PropertyImage = {
   imageTag?: string;
   s3key: string;
   imageOrder: number;
-}
+};
 
 export type Location = {
   neighborhoodId: bigint;
@@ -127,7 +127,7 @@ export type Property = {
   communityPool?: boolean;
   privatePool?: boolean;
   tennisCourt?: boolean;
-}
+};
 
 export type Prospect = {
   preListingId: bigint;
@@ -180,7 +180,7 @@ export const properties: Property[] = [
     nearbyPublicTransport: true,
     communityPool: true,
     privatePool: false,
-    tennisCourt: true
+    tennisCourt: true,
   },
   {
     propertyId: BigInt(2),
@@ -219,7 +219,7 @@ export const properties: Property[] = [
     nearbyPublicTransport: true,
     communityPool: false,
     privatePool: false,
-    tennisCourt: false
+    tennisCourt: false,
   },
   {
     propertyId: BigInt(3),
@@ -258,7 +258,7 @@ export const properties: Property[] = [
     nearbyPublicTransport: true,
     communityPool: false,
     privatePool: false,
-    tennisCourt: false
+    tennisCourt: false,
   },
   {
     propertyId: BigInt(4),
@@ -297,7 +297,7 @@ export const properties: Property[] = [
     nearbyPublicTransport: false,
     communityPool: false,
     privatePool: true,
-    tennisCourt: false
+    tennisCourt: false,
   },
   {
     propertyId: BigInt(5),
@@ -336,8 +336,8 @@ export const properties: Property[] = [
     nearbyPublicTransport: true,
     communityPool: false,
     privatePool: false,
-    tennisCourt: false
-  }
+    tennisCourt: false,
+  },
 ];
 
 export const propertyImages: PropertyImage[] = [
@@ -345,80 +345,92 @@ export const propertyImages: PropertyImage[] = [
     propertyImageId: BigInt(1),
     propertyId: BigInt(1),
     referenceNumber: "VESTA2024000001",
-    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000001/images/image_1_b89dc078.jpg",
+    imageUrl:
+      "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000001/images/image_1_b89dc078.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "VESTA2024000001/images/image_1_b89dc078.jpg",
     imageTag: "exterior",
-    s3key: "s3://inmobiliariaacropolis/VESTA2024000001/images/image_1_b89dc078.jpg",
-    imageOrder: 1
+    s3key:
+      "s3://inmobiliariaacropolis/VESTA2024000001/images/image_1_b89dc078.jpg",
+    imageOrder: 1,
   },
   {
     propertyImageId: BigInt(2),
     propertyId: BigInt(1),
     referenceNumber: "VESTA2024000001",
-    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000001/images/image_2_9e28838e.png",
+    imageUrl:
+      "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000001/images/image_2_9e28838e.png",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "VESTA2024000001/images/image_2_9e28838e.png",
     imageTag: "interior",
-    s3key: "s3://inmobiliariaacropolis/VESTA2024000001/images/image_2_9e28838e.png",
-    imageOrder: 2
+    s3key:
+      "s3://inmobiliariaacropolis/VESTA2024000001/images/image_2_9e28838e.png",
+    imageOrder: 2,
   },
   {
     propertyImageId: BigInt(3),
     propertyId: BigInt(1),
     referenceNumber: "VESTA2024000001",
-    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000001/images/image_3_4e0e1792.jpg",
+    imageUrl:
+      "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000001/images/image_3_4e0e1792.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "VESTA2024000001/images/image_3_4e0e1792.jpg",
     imageTag: "dormitorio",
-    s3key: "s3://inmobiliariaacropolis/VESTA2024000001/images/image_3_4e0e1792.jpg",
-    imageOrder: 3
+    s3key:
+      "s3://inmobiliariaacropolis/VESTA2024000001/images/image_3_4e0e1792.jpg",
+    imageOrder: 3,
   },
   {
     propertyImageId: BigInt(4),
     propertyId: BigInt(2),
     referenceNumber: "VESTA2024000002",
-    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000002/images/image_1_030aebc8.jpg",
+    imageUrl:
+      "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000002/images/image_1_030aebc8.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "VESTA2024000002/images/image_1_030aebc8.jpg",
     imageTag: "exterior",
-    s3key: "s3://inmobiliariaacropolis/VESTA2024000002/images/image_1_030aebc8.jpg",
-    imageOrder: 1
+    s3key:
+      "s3://inmobiliariaacropolis/VESTA2024000002/images/image_1_030aebc8.jpg",
+    imageOrder: 1,
   },
   {
     propertyImageId: BigInt(5),
     propertyId: BigInt(2),
     referenceNumber: "VESTA2024000002",
-    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000002/images/image_1_944360d4.jpg",
+    imageUrl:
+      "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000002/images/image_1_944360d4.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "VESTA2024000002/images/image_1_944360d4.jpg",
     imageTag: "salon",
-    s3key: "s3://inmobiliariaacropolis/VESTA2024000002/images/image_1_944360d4.jpg",
-    imageOrder: 2
+    s3key:
+      "s3://inmobiliariaacropolis/VESTA2024000002/images/image_1_944360d4.jpg",
+    imageOrder: 2,
   },
   {
     propertyImageId: BigInt(6),
     propertyId: BigInt(2),
     referenceNumber: "VESTA2024000002",
-    imageUrl: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000002/images/image_10_030aebc8.jpg",
+    imageUrl:
+      "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2024000002/images/image_10_030aebc8.jpg",
     isActive: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     imageKey: "VESTA2024000002/images/image_10_030aebc8.jpg",
     imageTag: "cocina",
-    s3key: "s3://inmobiliariaacropolis/VESTA2024000002/images/image_10_030aebc8.jpg",
-    imageOrder: 3
-  }
+    s3key:
+      "s3://inmobiliariaacropolis/VESTA2024000002/images/image_10_030aebc8.jpg",
+    imageOrder: 3,
+  },
 ];
 
 export const testimonials = [
@@ -434,7 +446,7 @@ export const testimonials = [
     sortOrder: 1,
     isActive: true,
     createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
+    updatedAt: new Date("2024-01-01"),
   },
   {
     id: "2",
@@ -448,7 +460,7 @@ export const testimonials = [
     sortOrder: 2,
     isActive: true,
     createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
+    updatedAt: new Date("2024-01-01"),
   },
   {
     id: "3",
@@ -462,7 +474,7 @@ export const testimonials = [
     sortOrder: 3,
     isActive: true,
     createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
+    updatedAt: new Date("2024-01-01"),
   },
   {
     id: "4",
@@ -476,7 +488,7 @@ export const testimonials = [
     sortOrder: 4,
     isActive: true,
     createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
+    updatedAt: new Date("2024-01-01"),
   },
   {
     id: "5",
@@ -490,7 +502,7 @@ export const testimonials = [
     sortOrder: 5,
     isActive: true,
     createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
+    updatedAt: new Date("2024-01-01"),
   },
   {
     id: "6",
@@ -504,209 +516,209 @@ export const testimonials = [
     sortOrder: 6,
     isActive: true,
     createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
-  }
-]
+    updatedAt: new Date("2024-01-01"),
+  },
+];
 
 export type SeoProps = {
-  title: string
-  description: string
-  keywords: string[]
-  ogImage?: string
-  name: string
-  image: string
-  url: string
-  telephone: string
-  email: string
+  title: string;
+  description: string;
+  keywords: string[];
+  ogImage?: string;
+  name: string;
+  image: string;
+  url: string;
+  telephone: string;
+  email: string;
   address: {
-    streetAddress: string
-    addressLocality: string
-    addressRegion: string
-    postalCode: string
-    addressCountry: string
-  }
+    streetAddress: string;
+    addressLocality: string;
+    addressRegion: string;
+    postalCode: string;
+    addressCountry: string;
+  };
   geo: {
-    latitude: number
-    longitude: number
-  }
+    latitude: number;
+    longitude: number;
+  };
   openingHoursSpecification: Array<{
-    dayOfWeek: string[]
-    opens: string
-    closes: string
-  }>
-  priceRange: string
+    dayOfWeek: string[];
+    opens: string;
+    closes: string;
+  }>;
+  priceRange: string;
   areaServed: {
-    name: string
-    sameAs: string
-  }
+    name: string;
+    sameAs: string;
+  };
   hasOfferCatalog: {
-    name: string
+    name: string;
     itemListElement: Array<{
-      name: string
-      description: string
-    }>
-  }
-  sameAs: string[]
+      name: string;
+      description: string;
+    }>;
+  };
+  sameAs: string[];
   aggregateRating: {
-    ratingValue: string
-    reviewCount: string
-    bestRating: string
-    worstRating: string
-  }
-}
+    ratingValue: string;
+    reviewCount: string;
+    bestRating: string;
+    worstRating: string;
+  };
+};
 
 export type HeroProps = {
-  title: string
-  subtitle: string
-  backgroundImage: string
-  findPropertyButton: string
-  contactButton: string
-}
+  title: string;
+  subtitle: string;
+  backgroundImage: string;
+  findPropertyButton: string;
+  contactButton: string;
+};
 
 export type FeaturedProps = {
-  title: string
-  subtitle: string
-  maxItems: number
-}
+  title: string;
+  subtitle: string;
+  maxItems: number;
+};
 
 export type AboutProps = {
-  title: string
-  subtitle: string
-  content: string
-  content2: string
-  image: string
+  title: string;
+  subtitle: string;
+  content: string;
+  content2: string;
+  image: string;
   services: Array<{
-    title: string
-    icon: string
-  }>
-  maxServicesDisplayed: number
-  servicesSectionTitle: string
-  aboutSectionTitle: string
-  buttonName: string
-  showKPI: boolean
-  kpi1Name?: string
-  kpi1Data?: string
-  kpi2Name?: string
-  kpi2Data?: string
-  kpi3Name?: string
-  kpi3Data?: string
-  kpi4Name?: string
-  kpi4Data?: string
-}
+    title: string;
+    icon: string;
+  }>;
+  maxServicesDisplayed: number;
+  servicesSectionTitle: string;
+  aboutSectionTitle: string;
+  buttonName: string;
+  showKPI: boolean;
+  kpi1Name?: string;
+  kpi1Data?: string;
+  kpi2Name?: string;
+  kpi2Data?: string;
+  kpi3Name?: string;
+  kpi3Data?: string;
+  kpi4Name?: string;
+  kpi4Data?: string;
+};
 
 export type PropertiesProps = {
-  title: string
-  subtitle: string
-  itemsPerPage: number
-  defaultSort: string
-  buttonText: string
-}
+  title: string;
+  subtitle: string;
+  itemsPerPage: number;
+  defaultSort: string;
+  buttonText: string;
+};
 
 export type TestimonialProps = {
-  title: string
-  subtitle: string
-  itemsPerPage: number
-}
+  title: string;
+  subtitle: string;
+  itemsPerPage: number;
+};
 
 export type FooterProps = {
-  companyName: string
-  description: string
+  companyName: string;
+  description: string;
   socialLinks: {
-    facebook?: string
-    linkedin?: string
-    twitter?: string
-    instagram?: string
-  }
+    facebook?: string;
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+  };
   officeLocations: Array<{
-    name: string
-    address: string[]
-    phone: string
-    email: string
-  }>
-  quickLinksVisibility: Record<string, boolean>
-  propertyTypesVisibility: Record<string, boolean>
-  copyright: string
-}
+    name: string;
+    address: string[];
+    phone: string;
+    email: string;
+  }>;
+  quickLinksVisibility: Record<string, boolean>;
+  propertyTypesVisibility: Record<string, boolean>;
+  copyright: string;
+};
 
 export type HeadProps = {
-  title: string
-  description: string
-}
+  title: string;
+  description: string;
+};
 
 export type ContactProps = {
-  title: string
-  subtitle: string
-  messageForm: boolean
-  address: boolean
-  phone: boolean
-  mail: boolean
-  schedule: boolean
-  map: boolean
+  title: string;
+  subtitle: string;
+  messageForm: boolean;
+  address: boolean;
+  phone: boolean;
+  mail: boolean;
+  schedule: boolean;
+  map: boolean;
   // Contact information fields
   offices: Array<{
-    id: string
-    name: string
+    id: string;
+    name: string;
     address: {
-      street: string
-      city: string
-      state: string
-      country: string
-    }
+      street: string;
+      city: string;
+      state: string;
+      country: string;
+    };
     phoneNumbers: {
-      main: string
-      sales: string
-    }
+      main: string;
+      sales: string;
+    };
     emailAddresses: {
-      info: string
-      sales: string
-    }
+      info: string;
+      sales: string;
+    };
     scheduleInfo: {
-      weekdays: string
-      saturday: string
-      sunday: string
-    }
-    mapUrl: string
-    isDefault?: boolean
-  }>
-}
+      weekdays: string;
+      saturday: string;
+      sunday: string;
+    };
+    mapUrl: string;
+    isDefault?: boolean;
+  }>;
+};
 
 export type WebsiteConfig = {
-  id: string
-  accountId: string
+  id: string;
+  accountId: string;
   socialLinks: {
-    facebook?: string
-    linkedin?: string
-    twitter?: string
-    instagram?: string
-  }
-  seoProps: SeoProps | null
-  logo: string | null
-  favicon: string | null
-  heroProps: HeroProps | null
-  featuredProps: FeaturedProps | null
-  aboutProps: AboutProps | null
-  propertiesProps: PropertiesProps | null
-  testimonialProps: TestimonialProps | null
-  contactProps: ContactProps | null
-  footerProps: FooterProps | null
-  headProps: HeadProps | null
-  createdAt: Date
-  updatedAt: Date
-}
+    facebook?: string;
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+  };
+  seoProps: SeoProps | null;
+  logo: string | null;
+  favicon: string | null;
+  heroProps: HeroProps | null;
+  featuredProps: FeaturedProps | null;
+  aboutProps: AboutProps | null;
+  propertiesProps: PropertiesProps | null;
+  testimonialProps: TestimonialProps | null;
+  contactProps: ContactProps | null;
+  footerProps: FooterProps | null;
+  headProps: HeadProps | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export type Account = {
-  accountId: string
-  name: string
-  shortName: string
-  status: 'active' | 'inactive' | 'suspended'
-  subscriptionType: string
-  subscriptionStartDate: Date
-  subscriptionEndDate: Date | null
-  maxOffices: number
-  maxUsers: number
-  createdAt: Date
-  updatedAt: Date
-}
+  accountId: string;
+  name: string;
+  shortName: string;
+  status: "active" | "inactive" | "suspended";
+  subscriptionType: string;
+  subscriptionStartDate: Date;
+  subscriptionEndDate: Date | null;
+  maxOffices: number;
+  maxUsers: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export const websiteConfigs: WebsiteConfig[] = [
   {
@@ -716,11 +728,12 @@ export const websiteConfigs: WebsiteConfig[] = [
       facebook: "https://facebook.com/acropolisrealestate",
       linkedin: "https://linkedin.com/company/acropolisrealestate",
       twitter: "https://twitter.com/acropolisRE",
-      instagram: "https://instagram.com/acropolisrealestate"
+      instagram: "https://instagram.com/acropolisrealestate",
     },
     seoProps: {
       title: "Acropolis Bienes Raíces - Propiedades en España",
-      description: "Tu socio de confianza en el mercado inmobiliario de España. Especializados en propiedades residenciales y comerciales.",
+      description:
+        "Tu socio de confianza en el mercado inmobiliario de España. Especializados en propiedades residenciales y comerciales.",
       name: "Acropolis Bienes Raíces",
       image: "https://acropolis-realestate.com/images/logo.jpg",
       url: "https://acropolis-realestate.com",
@@ -731,56 +744,57 @@ export const websiteConfigs: WebsiteConfig[] = [
         addressLocality: "León",
         addressRegion: "CL",
         postalCode: "24001",
-        addressCountry: "ES"
+        addressCountry: "ES",
       },
       geo: {
         latitude: 42.5987,
-        longitude: -5.5671
+        longitude: -5.5671,
       },
       openingHoursSpecification: [
         {
           dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
           opens: "09:00",
-          closes: "18:00"
+          closes: "18:00",
         },
         {
           dayOfWeek: ["Saturday"],
           opens: "10:00",
-          closes: "14:00"
-        }
+          closes: "14:00",
+        },
       ],
       priceRange: "€€",
       areaServed: {
         name: "León",
-        sameAs: "https://es.wikipedia.org/wiki/Le%C3%B3n_(Espa%C3%B1a)"
+        sameAs: "https://es.wikipedia.org/wiki/Le%C3%B3n_(Espa%C3%B1a)",
       },
       hasOfferCatalog: {
         name: "Propiedades",
         itemListElement: [
           {
             name: "Pisos",
-            description: "Pisos premium en las zonas más exclusivas de León"
+            description: "Pisos premium en las zonas más exclusivas de León",
           },
           {
             name: "Casas",
-            description: "Chalets y casas exclusivas en ubicaciones privilegiadas"
-          }
-        ]
+            description:
+              "Chalets y casas exclusivas en ubicaciones privilegiadas",
+          },
+        ],
       },
       sameAs: [
         "https://www.facebook.com/acropolisrealestate",
         "https://www.twitter.com/acropolisrealty",
         "https://www.instagram.com/acropolisrealestate",
-        "https://www.linkedin.com/company/acropolis-real-estate"
+        "https://www.linkedin.com/company/acropolis-real-estate",
       ],
       aggregateRating: {
         ratingValue: "4.9",
         reviewCount: "150",
         bestRating: "5",
-        worstRating: "1"
+        worstRating: "1",
       },
       keywords: ["inmobiliaria", "casas", "pisos", "locales", "lujo", "España"],
-      ogImage: "/images/og-image.png"
+      ogImage: "/images/og-image.png",
     },
     logo: null,
     favicon: null,
@@ -789,44 +803,47 @@ export const websiteConfigs: WebsiteConfig[] = [
       subtitle: "Permítenos guiarte en tu viaje inmobiliario",
       backgroundImage: "/properties/sleek-city-tower.png",
       findPropertyButton: "Explorar Propiedades",
-      contactButton: "Contáctanos"
+      contactButton: "Contáctanos",
     },
     featuredProps: {
       title: "Propiedades Destacadas",
-      subtitle: "Descubre nuestra selección de propiedades premium en las ubicaciones más deseables",
-      maxItems: 6
+      subtitle:
+        "Descubre nuestra selección de propiedades premium en las ubicaciones más deseables",
+      maxItems: 6,
     },
     aboutProps: {
       title: "Sobre Inmobiliaria Acropolis",
       subtitle: "Tu socio de confianza en el viaje inmobiliario desde 20XX",
-      content: "En Inmobiliaria Acropolis, creemos que encontrar la propiedad perfecta debe ser una experiencia emocionante y gratificante. Con más de 25 años de experiencia en la industria, nuestro dedicado equipo de profesionales está comprometido a proporcionar un servicio y orientación excepcionales a lo largo de tu viaje inmobiliario. Ya sea que estés comprando tu primera casa, vendiendo una propiedad o buscando oportunidades de inversión, tenemos el conocimiento, los recursos y la pasión para ayudarte a lograr tus objetivos inmobiliarios.",
-      content2: "Nuestro enfoque personalizado y atención al detalle nos distingue en el mercado. Nos enorgullece ofrecer un servicio integral que abarca desde la búsqueda inicial hasta el cierre de la operación, asegurando que cada cliente reciba la atención y el asesoramiento que merece. Nuestro profundo conocimiento del mercado local y nuestras conexiones en la industria nos permiten ofrecer oportunidades exclusivas y negociaciones ventajosas para nuestros clientes.",
+      content:
+        "En Inmobiliaria Acropolis, creemos que encontrar la propiedad perfecta debe ser una experiencia emocionante y gratificante. Con más de 25 años de experiencia en la industria, nuestro dedicado equipo de profesionales está comprometido a proporcionar un servicio y orientación excepcionales a lo largo de tu viaje inmobiliario. Ya sea que estés comprando tu primera casa, vendiendo una propiedad o buscando oportunidades de inversión, tenemos el conocimiento, los recursos y la pasión para ayudarte a lograr tus objetivos inmobiliarios.",
+      content2:
+        "Nuestro enfoque personalizado y atención al detalle nos distingue en el mercado. Nos enorgullece ofrecer un servicio integral que abarca desde la búsqueda inicial hasta el cierre de la operación, asegurando que cada cliente reciba la atención y el asesoramiento que merece. Nuestro profundo conocimiento del mercado local y nuestras conexiones en la industria nos permiten ofrecer oportunidades exclusivas y negociaciones ventajosas para nuestros clientes.",
       image: "/properties/thoughtful-man.png",
       services: [
         {
           title: "Conocimiento local experto",
-          icon: "map"
+          icon: "map",
         },
         {
           title: "Servicio personalizado",
-          icon: "user"
+          icon: "user",
         },
         {
           title: "Comunicación transparente",
-          icon: "message-square"
+          icon: "message-square",
         },
         {
           title: "Experiencia en negociación",
-          icon: "handshake"
+          icon: "handshake",
         },
         {
           title: "Marketing integral",
-          icon: "megaphone"
+          icon: "megaphone",
         },
         {
           title: "Soporte continuo",
-          icon: "help-circle"
-        }
+          icon: "help-circle",
+        },
       ],
       maxServicesDisplayed: 6,
       servicesSectionTitle: "Nuestros Servicios",
@@ -840,19 +857,21 @@ export const websiteConfigs: WebsiteConfig[] = [
       kpi3Name: "Agentes Profesionales",
       kpi3Data: "50+",
       kpi4Name: "Clientes Satisfechos",
-      kpi4Data: "98%"
+      kpi4Data: "98%",
     },
     propertiesProps: {
       title: "Explora Nuestras Propiedades",
-      subtitle: "Explora nuestro diverso portafolio de propiedades para encontrar tu opción perfecta",
+      subtitle:
+        "Explora nuestro diverso portafolio de propiedades para encontrar tu opción perfecta",
       itemsPerPage: 6,
       defaultSort: "price-desc",
-      buttonText: "Ver Todas las Propiedades"
+      buttonText: "Ver Todas las Propiedades",
     },
     testimonialProps: {
       title: "Lo Que Dicen Nuestros Clientes",
-      subtitle: "No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos.",
-      itemsPerPage: 3
+      subtitle:
+        "No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos.",
+      itemsPerPage: 3,
     },
     contactProps: {
       title: "Contacta con Nosotros",
@@ -871,23 +890,24 @@ export const websiteConfigs: WebsiteConfig[] = [
             street: "123 Avenida Inmobiliaria",
             city: "León",
             state: "CL",
-            country: "España"
+            country: "España",
           },
           phoneNumbers: {
             main: "+34 987 123 456",
-            sales: "+34 987 123 457"
+            sales: "+34 987 123 457",
           },
           emailAddresses: {
             info: "leon@acropolis-realestate.com",
-            sales: "ventas.leon@acropolis-realestate.com"
+            sales: "ventas.leon@acropolis-realestate.com",
           },
           scheduleInfo: {
             weekdays: "Lunes a Viernes: 9:00 - 18:00",
             saturday: "Sábado: 10:00 - 14:00",
-            sunday: "Domingo: Cerrado"
+            sunday: "Domingo: Cerrado",
           },
-          mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2923.8278533985427!2d-5.569259684526154!3d42.59872697917133!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd374a0c2c000001%3A0x400f8d1ce997580!2sLe%C3%B3n!5e0!3m2!1ses!2ses!4v1647881234567!5m2!1ses!2ses",
-          isDefault: true
+          mapUrl:
+            "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2923.8278533985427!2d-5.569259684526154!3d42.59872697917133!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd374a0c2c000001%3A0x400f8d1ce997580!2sLe%C3%B3n!5e0!3m2!1ses!2ses!4v1647881234567!5m2!1ses!2ses",
+          isDefault: true,
         },
         {
           id: "madrid",
@@ -896,53 +916,55 @@ export const websiteConfigs: WebsiteConfig[] = [
             street: "456 Calle Gran Vía",
             city: "Madrid",
             state: "MD",
-            country: "España"
+            country: "España",
           },
           phoneNumbers: {
             main: "+34 910 234 567",
-            sales: "+34 910 234 568"
+            sales: "+34 910 234 568",
           },
           emailAddresses: {
             info: "madrid@acropolis-realestate.com",
-            sales: "ventas.madrid@acropolis-realestate.com"
+            sales: "ventas.madrid@acropolis-realestate.com",
           },
           scheduleInfo: {
             weekdays: "Lunes a Viernes: 9:30 - 19:00",
             saturday: "Sábado: 10:00 - 15:00",
-            sunday: "Domingo: Cerrado"
+            sunday: "Domingo: Cerrado",
           },
-          mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3037.4301046875!2d-3.7022426845974537!3d40.41995597936578!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd42287e472b3b8f%3A0x6a4f71889c8b3b8f!2sGran%20V%C3%ADa%2C%20Madrid!5e0!3m2!1ses!2ses!4v1647881234567!5m2!1ses!2ses"
-        }
-      ]
+          mapUrl:
+            "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3037.4301046875!2d-3.7022426845974537!3d40.41995597936578!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd42287e472b3b8f%3A0x6a4f71889c8b3b8f!2sGran%20V%C3%ADa%2C%20Madrid!5e0!3m2!1ses!2ses!4v1647881234567!5m2!1ses!2ses",
+        },
+      ],
     },
     footerProps: {
       companyName: "Acropolis Bienes Raíces",
-      description: "Tu socio de confianza para encontrar la propiedad perfecta. Con años de experiencia y dedicación a la excelencia, te ayudamos a tomar decisiones inmobiliarias informadas.",
+      description:
+        "Tu socio de confianza para encontrar la propiedad perfecta. Con años de experiencia y dedicación a la excelencia, te ayudamos a tomar decisiones inmobiliarias informadas.",
       socialLinks: {
         facebook: "https://facebook.com/acropolisrealestate",
         linkedin: "https://linkedin.com/company/acropolisrealestate",
         twitter: "https://twitter.com/acropolisRE",
-        instagram: "https://instagram.com/acropolisrealestate"
+        instagram: "https://instagram.com/acropolisrealestate",
       },
       officeLocations: [
         {
           name: "León",
           address: ["123 Avenida Inmobiliaria", "León, CL 24001", "España"],
           phone: "+34 987 123 456",
-          email: "leon@acropolis-realestate.com"
+          email: "leon@acropolis-realestate.com",
         },
         {
           name: "Madrid",
           address: ["456 Calle Gran Vía", "Madrid, MD 28013", "España"],
           phone: "+34 910 234 567",
-          email: "madrid@acropolis-realestate.com"
+          email: "madrid@acropolis-realestate.com",
         },
         {
           name: "Barcelona",
           address: ["789 Passeig de Gràcia", "Barcelona, CT 08007", "España"],
           phone: "+34 934 567 890",
-          email: "barcelona@acropolis-realestate.com"
-        }
+          email: "barcelona@acropolis-realestate.com",
+        },
       ],
       quickLinksVisibility: {
         inicio: true,
@@ -952,25 +974,26 @@ export const websiteConfigs: WebsiteConfig[] = [
         contacto: true,
         comprar: false,
         alquilar: false,
-        vender: false
+        vender: false,
       },
       propertyTypesVisibility: {
         pisos: true,
         casas: true,
         locales: true,
         solares: true,
-        garajes: true
+        garajes: true,
       },
-      copyright: `© ${new Date().getFullYear()} Acropolis Bienes Raíces. Todos los derechos reservados.`
+      copyright: `© ${new Date().getFullYear()} Acropolis Bienes Raíces. Todos los derechos reservados.`,
     },
     headProps: {
       title: "idealista — Casas y pisos, alquiler y venta. Anuncios gratis",
-      description: "¿Buscas casa? Con idealista es más fácil. Más de 1.200.000 anuncios de pisos y casas en venta o alquiler. Publicar anuncios es gratis para particulares."
+      description:
+        "¿Buscas casa? Con idealista es más fácil. Más de 1.200.000 anuncios de pisos y casas en venta o alquiler. Publicar anuncios es gratis para particulares.",
     },
     createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
-  }
-]
+    updatedAt: new Date("2024-01-01"),
+  },
+];
 
 export const accounts: Account[] = [
   {
@@ -984,9 +1007,9 @@ export const accounts: Account[] = [
     maxOffices: 5,
     maxUsers: 20,
     createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
-  }
-]
+    updatedAt: new Date("2024-01-01"),
+  },
+];
 
 export type User = {
   userId: number;
@@ -1028,9 +1051,9 @@ export type Listing = {
   listingId: bigint;
   propertyId: bigint;
   agentId: bigint;
-  listingType: 'Sale' | 'Rent' | 'Sold';
+  listingType: "Sale" | "Rent" | "Sold";
   price: string;
-  status: 'Active' | 'Pending' | 'Resolved';
+  status: "Active" | "Pending" | "Resolved";
   isFeatured: boolean;
   isBankOwned: boolean;
   visibilityMode: number; // 1=Exact, 2=Street, 3=Zone
@@ -1071,9 +1094,9 @@ export type Contact = {
   email?: string;
   phone?: string;
   additionalInfo?: {
-    demandType?: string;  // For demandante: what they're looking for
-    propertiesCount?: number;  // For sellers: number of properties
-    propertyTypes?: string[];  // For sellers: types of properties they sell
+    demandType?: string; // For demandante: what they're looking for
+    propertiesCount?: number; // For sellers: number of properties
+    propertyTypes?: string[]; // For sellers: types of properties they sell
   };
   isActive: boolean;
   createdAt: Date;
@@ -1095,7 +1118,7 @@ export type Lead = {
   contactId: bigint;
   listingId?: bigint;
   source: string;
-  status: 'New' | 'Working' | 'Converted' | 'Disqualified';
+  status: "New" | "Working" | "Converted" | "Disqualified";
   createdAt: Date;
   updatedAt: Date;
 };
@@ -1103,7 +1126,7 @@ export type Lead = {
 export type Deal = {
   dealId: bigint;
   listingId: bigint;
-  status: 'Offer' | 'UnderContract' | 'Closed' | 'Lost';
+  status: "Offer" | "UnderContract" | "Closed" | "Lost";
   closeDate?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -1112,7 +1135,7 @@ export type Deal = {
 export type DealParticipant = {
   dealId: bigint;
   contactId: bigint;
-  role: 'Buyer' | 'Seller' | 'Lawyer' | 'Agent' | 'Other';
+  role: "Buyer" | "Seller" | "Lawyer" | "Agent" | "Other";
 };
 
 export type Appointment = {
@@ -1124,7 +1147,7 @@ export type Appointment = {
   dealId?: bigint;
   datetimeStart: Date;
   datetimeEnd: Date;
-  status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Rescheduled' | 'NoShow';
+  status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow";
   notes?: string;
   isActive: boolean;
   createdAt: Date;
@@ -1184,13 +1207,13 @@ export const mockUsers = [
       notifications: true,
       theme: "light",
       emailNotifications: true,
-      smsNotifications: false
+      smsNotifications: false,
     },
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     lastLogin: new Date("2024-03-15"),
     isVerified: true,
-    isActive: true
+    isActive: true,
   },
   {
     userId: BigInt(2),
@@ -1205,13 +1228,13 @@ export const mockUsers = [
       notifications: true,
       theme: "dark",
       emailNotifications: true,
-      smsNotifications: true
+      smsNotifications: true,
     },
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     lastLogin: new Date("2024-03-14"),
     isVerified: true,
-    isActive: true
+    isActive: true,
   },
   {
     userId: BigInt(3),
@@ -1226,14 +1249,14 @@ export const mockUsers = [
       notifications: true,
       theme: "light",
       emailNotifications: true,
-      smsNotifications: true
+      smsNotifications: true,
     },
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     lastLogin: new Date("2024-03-13"),
     isVerified: true,
-    isActive: true
-  }
+    isActive: true,
+  },
 ];
 
 // Mock data for roles
@@ -1245,11 +1268,11 @@ export const roles: Role[] = [
     permissions: {
       canManageUsers: true,
       canManageProperties: true,
-      canManageDeals: true
+      canManageDeals: true,
     },
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
-    isActive: true
+    isActive: true,
   },
   {
     roleId: 2,
@@ -1257,12 +1280,12 @@ export const roles: Role[] = [
     description: "Real estate agent with property management access",
     permissions: {
       canManageProperties: true,
-      canManageDeals: true
+      canManageDeals: true,
     },
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
-    isActive: true
-  }
+    isActive: true,
+  },
 ];
 
 // Mock data for user roles
@@ -1273,7 +1296,7 @@ export const userRoles: UserRole[] = [
     roleId: 1,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
-    isActive: true
+    isActive: true,
   },
   {
     userRoleId: 2,
@@ -1281,8 +1304,8 @@ export const userRoles: UserRole[] = [
     roleId: 2,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
-    isActive: true
-  }
+    isActive: true,
+  },
 ];
 
 // Mock data for organizations
@@ -1294,7 +1317,7 @@ export const organizations: Organization[] = [
     city: "Madrid",
     state: "MD",
     postalCode: "28008",
-    country: "España"
+    country: "España",
   },
   {
     orgId: BigInt(2),
@@ -1303,8 +1326,8 @@ export const organizations: Organization[] = [
     city: "León",
     state: "CL",
     postalCode: "24001",
-    country: "España"
-  }
+    country: "España",
+  },
 ];
 
 // Mock data for contacts
@@ -1317,7 +1340,7 @@ export const contacts: Contact[] = [
     phone: "+34 987 123 456",
     isActive: true,
     createdAt: new Date("2024-03-15"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
   },
   {
     contactId: BigInt(2),
@@ -1327,7 +1350,7 @@ export const contacts: Contact[] = [
     phone: "+34 987 234 567",
     isActive: true,
     createdAt: new Date("2024-03-15"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
   },
   {
     contactId: BigInt(3),
@@ -1337,7 +1360,7 @@ export const contacts: Contact[] = [
     phone: "+34 987 345 678",
     isActive: true,
     createdAt: new Date("2024-03-15"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
   },
   {
     contactId: BigInt(4),
@@ -1347,7 +1370,7 @@ export const contacts: Contact[] = [
     phone: "+34 987 456 789",
     isActive: true,
     createdAt: new Date("2024-03-15"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
   },
   {
     contactId: BigInt(5),
@@ -1357,8 +1380,8 @@ export const contacts: Contact[] = [
     phone: "+34 987 567 890",
     isActive: true,
     createdAt: new Date("2024-03-15"),
-    updatedAt: new Date("2024-03-15")
-  }
+    updatedAt: new Date("2024-03-15"),
+  },
 ];
 
 // Mock data for listing contacts
@@ -1367,47 +1390,47 @@ export const listingContacts: ListingContact[] = [
     listingContactId: BigInt(1),
     listingId: BigInt(1),
     contactId: BigInt(1),
-    contactType: 'owner',
+    contactType: "owner",
     createdAt: new Date("2024-03-15"),
     updatedAt: new Date("2024-03-15"),
-    isActive: true
+    isActive: true,
   },
   {
     listingContactId: BigInt(2),
     listingId: BigInt(2),
     contactId: BigInt(2),
-    contactType: 'owner',
+    contactType: "owner",
     createdAt: new Date("2024-03-15"),
     updatedAt: new Date("2024-03-15"),
-    isActive: true
+    isActive: true,
   },
   {
     listingContactId: BigInt(3),
     listingId: BigInt(3),
     contactId: BigInt(3),
-    contactType: 'owner',
+    contactType: "owner",
     createdAt: new Date("2024-03-15"),
     updatedAt: new Date("2024-03-15"),
-    isActive: true
+    isActive: true,
   },
   {
     listingContactId: BigInt(4),
     listingId: BigInt(4),
     contactId: BigInt(4),
-    contactType: 'owner',
+    contactType: "owner",
     createdAt: new Date("2024-03-15"),
     updatedAt: new Date("2024-03-15"),
-    isActive: true
+    isActive: true,
   },
   {
     listingContactId: BigInt(5),
     listingId: BigInt(5),
     contactId: BigInt(5),
-    contactType: 'owner',
+    contactType: "owner",
     createdAt: new Date("2024-03-15"),
     updatedAt: new Date("2024-03-15"),
-    isActive: true
-  }
+    isActive: true,
+  },
 ];
 
 // Mock data for listings
@@ -1416,7 +1439,7 @@ export const listings: Listing[] = [
     listingId: BigInt(1),
     propertyId: BigInt(1),
     agentId: BigInt(1),
-    listingType: 'Sale',
+    listingType: "Sale",
     price: "1250000.00",
     status: "Active",
     isFeatured: true,
@@ -1448,13 +1471,13 @@ export const listings: Listing[] = [
     habitaclia: false,
     pisoscom: false,
     yaencontre: false,
-    milanuncios: false
+    milanuncios: false,
   },
   {
     listingId: BigInt(2),
     propertyId: BigInt(2),
     agentId: BigInt(2),
-    listingType: 'Rent',
+    listingType: "Rent",
     price: "350000.00",
     status: "Active",
     isFeatured: true,
@@ -1486,13 +1509,13 @@ export const listings: Listing[] = [
     habitaclia: false,
     pisoscom: false,
     yaencontre: false,
-    milanuncios: false
+    milanuncios: false,
   },
   {
     listingId: BigInt(3),
     propertyId: BigInt(3),
     agentId: BigInt(1),
-    listingType: 'Sold',
+    listingType: "Sold",
     price: "450000.00",
     status: "Active",
     isFeatured: false,
@@ -1521,13 +1544,13 @@ export const listings: Listing[] = [
     habitaclia: false,
     pisoscom: false,
     yaencontre: false,
-    milanuncios: false
+    milanuncios: false,
   },
   {
     listingId: BigInt(4),
     propertyId: BigInt(4),
     agentId: BigInt(2),
-    listingType: 'Sold',
+    listingType: "Sold",
     price: "250000.00",
     status: "Active",
     isFeatured: false,
@@ -1556,13 +1579,13 @@ export const listings: Listing[] = [
     habitaclia: false,
     pisoscom: false,
     yaencontre: false,
-    milanuncios: false
+    milanuncios: false,
   },
   {
     listingId: BigInt(5),
     propertyId: BigInt(5),
     agentId: BigInt(1),
-    listingType: 'Sold',
+    listingType: "Sold",
     price: "350.00",
     status: "Active",
     isFeatured: false,
@@ -1591,8 +1614,8 @@ export const listings: Listing[] = [
     habitaclia: false,
     pisoscom: false,
     yaencontre: false,
-    milanuncios: false
-  }
+    milanuncios: false,
+  },
 ];
 
 // Mock data for leads
@@ -1604,7 +1627,7 @@ export const leads: Lead[] = [
     source: "Website",
     status: "Working",
     createdAt: new Date("2024-03-01"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
   },
   {
     leadId: BigInt(2),
@@ -1613,8 +1636,8 @@ export const leads: Lead[] = [
     source: "Referral",
     status: "New",
     createdAt: new Date("2024-03-10"),
-    updatedAt: new Date("2024-03-10")
-  }
+    updatedAt: new Date("2024-03-10"),
+  },
 ];
 
 // Mock data for deals
@@ -1625,15 +1648,15 @@ export const deals: Deal[] = [
     status: "UnderContract",
     closeDate: new Date("2024-04-15"),
     createdAt: new Date("2024-03-01"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
   },
   {
     dealId: BigInt(2),
     listingId: BigInt(2),
     status: "Offer",
     createdAt: new Date("2024-03-10"),
-    updatedAt: new Date("2024-03-10")
-  }
+    updatedAt: new Date("2024-03-10"),
+  },
 ];
 
 // Mock data for deal participants
@@ -1641,13 +1664,13 @@ export const dealParticipants: DealParticipant[] = [
   {
     dealId: BigInt(1),
     contactId: BigInt(1),
-    role: "Buyer"
+    role: "Buyer",
   },
   {
     dealId: BigInt(1),
     contactId: BigInt(2),
-    role: "Lawyer"
-  }
+    role: "Lawyer",
+  },
 ];
 
 // Mock data for appointments
@@ -1665,7 +1688,7 @@ export const appointments: Appointment[] = [
     notes: "Property viewing for potential buyer",
     isActive: true,
     createdAt: new Date("2024-03-15"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
   },
   {
     appointmentId: BigInt(2),
@@ -1679,8 +1702,8 @@ export const appointments: Appointment[] = [
     notes: "Initial consultation for rental property",
     isActive: true,
     createdAt: new Date("2024-03-16"),
-    updatedAt: new Date("2024-03-16")
-  }
+    updatedAt: new Date("2024-03-16"),
+  },
 ];
 
 // Mock data for tasks
@@ -1697,7 +1720,7 @@ export const tasks: Task[] = [
     appointmentId: BigInt(1),
     isActive: true,
     createdAt: new Date("2024-03-15"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
   },
   {
     taskId: BigInt(2),
@@ -1709,8 +1732,8 @@ export const tasks: Task[] = [
     leadId: BigInt(2),
     isActive: true,
     createdAt: new Date("2024-03-16"),
-    updatedAt: new Date("2024-03-16")
-  }
+    updatedAt: new Date("2024-03-16"),
+  },
 ];
 
 // Mock data for documents
@@ -1731,7 +1754,7 @@ export const documents: Document[] = [
     documentOrder: 1,
     isActive: true,
     createdAt: new Date("2024-03-15"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
   },
   {
     docId: BigInt(2),
@@ -1749,8 +1772,8 @@ export const documents: Document[] = [
     documentOrder: 2,
     isActive: true,
     createdAt: new Date("2024-03-16"),
-    updatedAt: new Date("2024-03-16")
-  }
+    updatedAt: new Date("2024-03-16"),
+  },
 ];
 
 // Mock data for prospects
@@ -1763,7 +1786,7 @@ export const prospects: Prospect[] = [
     status: "CAPTACION",
     statusUpdatedAt: new Date("2024-03-15"),
     createdAt: new Date("2024-03-15"),
-    updatedAt: new Date("2024-03-15")
+    updatedAt: new Date("2024-03-15"),
   },
   {
     preListingId: BigInt(2),
@@ -1773,8 +1796,8 @@ export const prospects: Prospect[] = [
     status: "VALORACION_SCHED",
     statusUpdatedAt: new Date("2024-03-16"),
     createdAt: new Date("2024-03-16"),
-    updatedAt: new Date("2024-03-16")
-  }
+    updatedAt: new Date("2024-03-16"),
+  },
 ];
 
 export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
@@ -1784,7 +1807,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "Centro Ciudad",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(2),
@@ -1792,7 +1815,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "La Chantría- La Lastra",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(3),
@@ -1800,7 +1823,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "La Vega-Oteruelo",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(4),
@@ -1808,7 +1831,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "Las Eras de Renueva",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(5),
@@ -1816,7 +1839,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "San Mamés- La Palomera",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(6),
@@ -1824,7 +1847,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "Crucero- Pinilla",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(7),
@@ -1832,7 +1855,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "El Ejido- Sta. Ana",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(8),
@@ -1840,7 +1863,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "San Esteban",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(9),
@@ -1848,7 +1871,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "Casco Antiguo",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(10),
@@ -1856,7 +1879,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "Las Ventas",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(11),
@@ -1864,7 +1887,7 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "Puente Castro",
-    isActive: true
+    isActive: true,
   },
   {
     neighborhoodId: BigInt(12),
@@ -1872,15 +1895,15 @@ export const LEON_NEIGHBORHOODS: Omit<Location, "createdAt" | "updatedAt">[] = [
     province: "León",
     municipality: "León",
     neighborhood: "La Asunción - La Inmaculada",
-    isActive: true
-  }
+    isActive: true,
+  },
 ];
 
 export type ListingContact = {
   listingContactId: bigint;
   listingId: bigint;
   contactId: bigint;
-  contactType: 'owner' | 'buyer';
+  contactType: "owner" | "buyer";
   createdAt: Date;
   updatedAt: Date;
   isActive: boolean;
