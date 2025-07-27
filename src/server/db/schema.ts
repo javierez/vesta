@@ -11,9 +11,36 @@ import {
   int,
 } from "drizzle-orm/singlestore-core";
 
+// Accounts table (CRM organization/tenant - top level entity)
+export const accounts = singlestoreTable("accounts", {
+  accountId: bigint("account_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  logo: varchar("logo", { length: 2048 }), // S3 URL for organization logo
+  address: varchar("address", { length: 500 }),
+  phone: varchar("phone", { length: 20 }),
+  email: varchar("email", { length: 255 }),
+  website: varchar("website", { length: 255 }),
+  // Settings JSON fields for flexible configuration
+  portalSettings: json("portal_settings").default({}), // Fotocasa, Idealista, etc.
+  paymentSettings: json("payment_settings").default({}), // Stripe, PayPal, etc.
+  preferences: json("preferences").default({}), // General account preferences
+  // Subscription/billing info
+  plan: varchar("plan", { length: 50 }).default("basic"), // basic, pro, enterprise
+  subscriptionStatus: varchar("subscription_status", { length: 20 }).default(
+    "active",
+  ),
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  isActive: boolean("is_active").default(true),
+});
+
 // Users table
 export const users = singlestoreTable("users", {
   userId: bigint("user_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   email: varchar("email", { length: 255 }).notNull(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),

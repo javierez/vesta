@@ -2,13 +2,18 @@
 export default function ExampleTabs({ course_id }: { course_id: string }) {
   return (
     <>
-      <div className="flex mb-6 relative">
-        <div className="flex-1 px-8 py-4 bg-white text-custom-dark-blue font-semibold rounded-t-xl shadow-md z-10 border-b-4 border-custom-dark-blue transform -skew-x-2 flex items-center justify-center">
+      <div className="relative mb-6 flex">
+        <div className="text-custom-dark-blue border-custom-dark-blue z-10 flex flex-1 -skew-x-2 transform items-center justify-center rounded-t-xl border-b-4 bg-white px-8 py-4 font-semibold shadow-md">
           <span className="text-md tracking-widest">GENERAR SESIONES</span>
         </div>
-        <div className="flex-1 px-8 py-4 bg-gray-200 rounded-t-xl shadow transition duration-300 transform -skew-x-2 hover:bg-gray-100 -ml-2 border-b-2 border-gray-300">
-          <a href={`/instructorapp/${course_id}/generated-exercises`} className="block w-full h-full flex items-center justify-center text-gray-400 hover:text-gray-600 font-semibold transition-colors duration-300">
-            <span className="text-md tracking-widest">HISTÓRICO DE SESIONES</span>
+        <div className="-ml-2 flex-1 -skew-x-2 transform rounded-t-xl border-b-2 border-gray-300 bg-gray-200 px-8 py-4 shadow transition duration-300 hover:bg-gray-100">
+          <a
+            href={`/instructorapp/${course_id}/generated-exercises`}
+            className="block flex h-full w-full items-center justify-center font-semibold text-gray-400 transition-colors duration-300 hover:text-gray-600"
+          >
+            <span className="text-md tracking-widest">
+              HISTÓRICO DE SESIONES
+            </span>
           </a>
         </div>
       </div>

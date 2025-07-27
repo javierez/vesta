@@ -214,6 +214,20 @@ export default function PropertyIdentificationForm() {
           console.log(
             `Successfully renamed ${renamedDocuments.length} documents`,
           );
+
+          // Now trigger OCR processing for each renamed document
+          // This runs after property creation when documents can be properly linked
+          for (const renamedDoc of renamedDocuments) {
+            void processDocumentInBackgroundEnhanced(
+              renamedDoc.newDocumentKey,
+            ).catch((error) => {
+              console.error(
+                `Enhanced background OCR processing failed for ${renamedDoc.newDocumentKey}:`,
+                error,
+              );
+              // Don't show this error to the user since it's background processing
+            });
+          }
         } catch (renameError) {
           console.error("Error renaming S3 folder:", renameError);
           // Continue with property creation even if renaming fails
@@ -245,6 +259,90 @@ export default function PropertyIdentificationForm() {
       return newProperty; // Return the property data for redirection
     } catch (error) {
       console.error("Error creating property:", error);
+      alert("Error al crear la propiedad. Por favor, inténtalo de nuevo.");
+      throw error; // Re-throw the error so the calling function can handle it
+    } finally {
+      setIsCreatingProperty(false);
+    }
+  };
+
+  // Client-side function that calls the server action for uploaded documents (no validation)
+  const handleCreatePropertyFromDocuments = async () => {
+    try {
+      setIsCreatingProperty(true);
+
+      // Create property with minimal placeholder data - no validation needed
+      // OCR will extract real address later
+      const placeholderLocationData = {
+        street: "Dirección a completar", // Will be updated by OCR
+        addressDetails: "",
+        postalCode: "",
+        city: "",
+        province: "",
+        municipality: "",
+        neighborhood: "",
+        latitude: "",
+        longitude: "",
+      };
+
+      // Call the server action directly without Nominatim validation
+      const newProperty = await createPropertyFromLocation(placeholderLocationData);
+      console.log("Property created from documents:", newProperty);
+
+      // Rename S3 folder if we have uploaded documents
+      if (
+        uploadedDocuments.length > 0 &&
+        tempReferenceNumber &&
+        newProperty.referenceNumber
+      ) {
+        try {
+          const documentIds = uploadedDocuments.map((doc) => doc.docId);
+          const renamedDocuments = await renameDocumentFolder(
+            tempReferenceNumber,
+            newProperty.referenceNumber,
+            documentIds,
+          );
+
+          // Update the uploadedDocuments state with new URLs
+          setUploadedDocuments((prev) =>
+            prev.map((doc) => {
+              const renamed = renamedDocuments.find(
+                (r) => r.docId === doc.docId,
+              );
+              if (renamed) {
+                return {
+                  ...doc,
+                  documentKey: renamed.newDocumentKey,
+                  fileUrl: renamed.newUrl,
+                };
+              }
+              return doc;
+            }),
+          );
+
+          console.log(
+            `Successfully renamed ${renamedDocuments.length} documents`,
+          );
+
+          // Now trigger OCR processing for each renamed document
+          for (const renamedDoc of renamedDocuments) {
+            void processDocumentInBackgroundEnhanced(
+              renamedDoc.newDocumentKey,
+            ).catch((error) => {
+              console.error(
+                `Enhanced background OCR processing failed for ${renamedDoc.newDocumentKey}:`,
+                error,
+              );
+            });
+          }
+        } catch (error) {
+          console.error("Error during document renaming/OCR:", error);
+        }
+      }
+
+      return newProperty; // Return the property data for redirection
+    } catch (error) {
+      console.error("Error creating property from documents:", error);
       alert("Error al crear la propiedad. Por favor, inténtalo de nuevo.");
       throw error; // Re-throw the error so the calling function can handle it
     } finally {
@@ -311,7 +409,7 @@ export default function PropertyIdentificationForm() {
           result.address?.city ??
           result.address?.town ??
           "",
-        province: locationData.province ?? result.address?.state ?? "",
+        province: locationData.province ?? (result.address?.state ? translateComunidad(result.address.state) : ""),
         municipality:
           locationData.municipality ??
           result.address?.city ??
@@ -339,46 +437,6 @@ export default function PropertyIdentificationForm() {
         await createPropertyFromLocation(enrichedLocationData);
       console.log("Property created from location:", newProperty);
 
-      // Rename S3 folder if we have uploaded documents
-      if (
-        uploadedDocuments.length > 0 &&
-        tempReferenceNumber &&
-        newProperty.referenceNumber
-      ) {
-        try {
-          const documentIds = uploadedDocuments.map((doc) => doc.docId);
-          const renamedDocuments = await renameDocumentFolder(
-            tempReferenceNumber,
-            newProperty.referenceNumber,
-            documentIds,
-          );
-
-          // Update the uploadedDocuments state with new URLs
-          setUploadedDocuments((prev) =>
-            prev.map((doc) => {
-              const renamed = renamedDocuments.find(
-                (r) => r.docId === doc.docId,
-              );
-              if (renamed) {
-                return {
-                  ...doc,
-                  documentKey: renamed.newDocumentKey,
-                  fileUrl: renamed.newUrl,
-                };
-              }
-              return doc;
-            }),
-          );
-
-          console.log(
-            `Successfully renamed ${renamedDocuments.length} documents`,
-          );
-        } catch (renameError) {
-          console.error("Error renaming S3 folder:", renameError);
-          // Continue with property creation even if renaming fails
-        }
-      }
-
       return newProperty; // Return the property data for redirection
     } catch (error) {
       console.error("Error creating property:", error);
@@ -405,6 +463,25 @@ export default function PropertyIdentificationForm() {
         }
       } catch (error) {
         console.error("Error creating property from cadastral:", error);
+        alert("Error al crear la propiedad. Por favor, inténtalo de nuevo.");
+        return;
+      }
+    }
+
+    // If we're on the initial step and documents are uploaded, create property and redirect
+    if (currentStep === 0 && uploadedDocuments.length > 0) {
+      try {
+        // Create property from uploaded documents (no validation needed)
+        const newProperty = await handleCreatePropertyFromDocuments();
+
+        if (newProperty?.listingId) {
+          router.push(
+            `/propiedades/crear/${newProperty.listingId}?method=upload`,
+          );
+          return;
+        }
+      } catch (error) {
+        console.error("Error creating property from upload:", error);
         alert("Error al crear la propiedad. Por favor, inténtalo de nuevo.");
         return;
       }
@@ -445,7 +522,7 @@ export default function PropertyIdentificationForm() {
       }
     }
 
-    // If we're on step 0 without cadastral reference, go to next step
+    // If we're on step 0 without cadastral reference and no documents, go to next step
     if (currentStep === 0) {
       setDirection("forward");
       setCurrentStep(1);
@@ -501,15 +578,15 @@ export default function PropertyIdentificationForm() {
       // Update form data with Nominatim results
       setFormData((prev) => ({
         ...prev,
-        postalCode: prev.postalCode ?? result.address?.postcode ?? "",
-        city: prev.city ?? result.address?.city ?? result.address?.town ?? "",
-        province: prev.province ?? result.address?.state ?? "",
+        postalCode: result.address?.postcode ?? prev.postalCode ?? "",
+        city: result.address?.city ?? result.address?.town ?? prev.city ?? "",
+        province: result.address?.state ? translateComunidad(result.address.state) : prev.province ?? "",
         municipality:
-          prev.municipality ??
           result.address?.city ??
           result.address?.town ??
+          prev.municipality ??
           "",
-        neighborhood: prev.neighborhood ?? result.address?.suburb ?? "",
+        neighborhood: result.address?.suburb ?? prev.neighborhood ?? "",
         latitude: result.lat ?? "",
         longitude: result.lon ?? "",
       }));
@@ -581,14 +658,8 @@ export default function PropertyIdentificationForm() {
           },
         ]);
 
-        // Process document with enhanced OCR in background (fire and forget)
-        // This will extract property data and save it to the database automatically
-        void processDocumentInBackgroundEnhanced(uploadedDocument.documentKey).catch(
-          (error) => {
-            console.error("Enhanced background OCR processing failed:", error);
-            // Don't show this error to the user since it's background processing
-          },
-        );
+        // Note: OCR processing will be triggered after property creation
+        // This ensures the property exists before OCR tries to find it by reference number
 
         setTimeout(() => {
           setIsUploading(false);
@@ -686,6 +757,33 @@ export default function PropertyIdentificationForm() {
   };
 
   // Get property type display name
+  // Helper function to translate autonomous communities from English to Spanish
+  const translateComunidad = (englishName: string) => {
+    const translations: Record<string, string> = {
+      "Andalusia": "Andalucía",
+      "Aragon": "Aragón",
+      "Asturias": "Asturias",
+      "Balearic Islands": "Islas Baleares",
+      "Basque Country": "País Vasco",
+      "Canary Islands": "Islas Canarias",
+      "Cantabria": "Cantabria",
+      "Castile and León": "Castilla y León",
+      "Castile-La Mancha": "Castilla-La Mancha",
+      "Catalonia": "Cataluña",
+      "Ceuta": "Ceuta",
+      "Community of Madrid": "Comunidad de Madrid",
+      "Extremadura": "Extremadura",
+      "Galicia": "Galicia",
+      "La Rioja": "La Rioja",
+      "Melilla": "Melilla",
+      "Murcia": "Murcia",
+      "Navarre": "Navarra",
+      "Valencia": "Comunidad Valenciana",
+      "Valencian Community": "Comunidad Valenciana",
+    };
+    return translations[englishName] ?? englishName;
+  };
+
   const getPropertyTypeDisplay = (type: string) => {
     const types: Record<string, string> = {
       piso: "Piso",

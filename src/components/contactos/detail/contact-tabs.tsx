@@ -145,8 +145,12 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   const tabs = [
     { value: "informacion", label: "INFORMACIÓN" },
     { value: "notas", label: "NOTAS" },
-    ...(showSolicitudes ? [{ value: "solicitudes", label: "SOLICITUDES" }] : []),
-    ...(showPropiedades ? [{ value: "propiedades", label: "PROPIEDADES" }] : []),
+    ...(showSolicitudes
+      ? [{ value: "solicitudes", label: "SOLICITUDES" }]
+      : []),
+    ...(showPropiedades
+      ? [{ value: "propiedades", label: "PROPIEDADES" }]
+      : []),
   ];
 
   // Module states
@@ -533,22 +537,22 @@ export function ContactTabs({ contact }: ContactTabsProps) {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <div className="flex mb-6 relative">
+      <div className="relative mb-6 flex">
         {tabs.map((tab, index) => (
           <div
             key={tab.value}
-            className={`flex-1 px-8 py-4 font-semibold rounded-t-xl shadow-md transform -skew-x-2 transition duration-300 ${
+            className={`flex-1 -skew-x-2 transform rounded-t-xl px-8 py-4 font-semibold shadow-md transition duration-300 ${
               index > 0 ? "-ml-2" : ""
             } ${
               activeTab === tab.value
-                ? "bg-white text-gray-800 z-10 border-b-4 border-blue-600"
-                : "bg-gray-200 border-b-2 border-gray-300 hover:bg-gray-100"
+                ? "z-10 border-b-4 border-blue-600 bg-white text-gray-800"
+                : "border-b-2 border-gray-300 bg-gray-200 hover:bg-gray-100"
             }`}
             style={{ zIndex: activeTab === tab.value ? 10 : index }}
           >
             <button
               onClick={() => setActiveTab(tab.value)}
-              className="block w-full h-full flex items-center justify-center text-inherit font-semibold transition-colors duration-300"
+              className="block flex h-full w-full items-center justify-center font-semibold text-inherit transition-colors duration-300"
             >
               <span className="text-sm tracking-widest">{tab.label}</span>
             </button>

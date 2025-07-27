@@ -71,7 +71,13 @@ export default async function ContactPage({ params }: ContactPageProps) {
         (contact as { prospectTitles?: string[] }).prospectTitles ?? [],
       allListings:
         (contact as { allListings?: ContactListing[] }).allListings ?? [],
-      contactType: (contact as unknown as { contactType: string }).contactType as "demandante" | "propietario" | "banco" | "agencia" | "interesado",
+      contactType: (contact as unknown as { contactType: string })
+        .contactType as
+        | "demandante"
+        | "propietario"
+        | "banco"
+        | "agencia"
+        | "interesado",
     };
 
     return <ContactDetailLayout contact={extendedContact} />;

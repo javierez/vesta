@@ -1013,6 +1013,7 @@ export const accounts: Account[] = [
 
 export type User = {
   userId: number;
+  accountId: bigint;
   email: string;
   firstName: string;
   lastName: string;

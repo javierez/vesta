@@ -347,7 +347,7 @@ export function EnergyCertificate({
   return (
     <Card
       className={cn(
-        "relative p-6 transition-all duration-500 ease-out bg-transparent border-0 shadow-none",
+        "relative border-0 bg-transparent p-6 shadow-none transition-all duration-500 ease-out",
         getCardStyles(),
         className,
       )}

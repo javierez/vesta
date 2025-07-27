@@ -115,6 +115,7 @@ async function seedUsers() {
     for (const user of mockUsers) {
       await db.insert(users).values({
         userId: user.userId,
+        accountId: BigInt(1), // Default account for seeded users
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,

@@ -1,12 +1,12 @@
 "use server";
 
 import type { Block } from "@aws-sdk/client-textract";
-import type { 
-  ExtractedFieldResult, 
+import type {
+  ExtractedFieldResult,
   CompleteExtractedData,
   EnhancedExtractedPropertyData,
   EnhancedExtractedListingData,
-  FieldMapping 
+  FieldMapping,
 } from "~/types/textract-enhanced";
 import { ALL_FIELD_MAPPINGS } from "./field-mapping-config";
 
@@ -24,11 +24,13 @@ interface OCRInput {
 
 // Fuzzy string matching function for field names
 function calculateSimilarity(str1: string, str2: string): number {
-  const normalize = (s: string) => s.toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove accents
-    .replace(/[^\w\s]/g, '') // Remove punctuation
-    .trim();
+  const normalize = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Remove accents
+      .replace(/[^\w\s]/g, "") // Remove punctuation
+      .trim();
 
   const a = normalize(str1);
   const b = normalize(str2);
@@ -37,8 +39,10 @@ function calculateSimilarity(str1: string, str2: string): number {
   if (a.includes(b) || b.includes(a)) return 0.8;
 
   // Levenshtein distance for fuzzy matching
-  const matrix: number[][] = Array.from({ length: b.length + 1 }, () => Array.from({ length: a.length + 1 }, () => 0));
-  
+  const matrix: number[][] = Array.from({ length: b.length + 1 }, () =>
+    Array.from({ length: a.length + 1 }, () => 0),
+  );
+
   for (let i = 0; i <= a.length; i++) matrix[0]![i] = i;
   for (let j = 0; j <= b.length; j++) matrix[j]![0] = j;
 
@@ -46,9 +50,9 @@ function calculateSimilarity(str1: string, str2: string): number {
     for (let i = 1; i <= a.length; i++) {
       const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
       matrix[j]![i] = Math.min(
-        (matrix[j]![i - 1] ?? 0) + 1,      // deletion
-        (matrix[j - 1]![i] ?? 0) + 1,      // insertion
-        (matrix[j - 1]![i - 1] ?? 0) + indicator // substitution
+        (matrix[j]![i - 1] ?? 0) + 1, // deletion
+        (matrix[j - 1]![i] ?? 0) + 1, // insertion
+        (matrix[j - 1]![i - 1] ?? 0) + indicator, // substitution
       );
     }
   }
@@ -58,13 +62,23 @@ function calculateSimilarity(str1: string, str2: string): number {
 }
 
 // Find best matching field for a given text
-function findBestFieldMatch(fieldText: string, threshold = 0.6): { mapping: FieldMapping; alias: string; similarity: number } | null {
-  let bestMatch: { mapping: FieldMapping; alias: string; similarity: number } | null = null;
+function findBestFieldMatch(
+  fieldText: string,
+  threshold = 0.6,
+): { mapping: FieldMapping; alias: string; similarity: number } | null {
+  let bestMatch: {
+    mapping: FieldMapping;
+    alias: string;
+    similarity: number;
+  } | null = null;
 
   for (const mapping of ALL_FIELD_MAPPINGS) {
     for (const alias of mapping.aliases) {
       const similarity = calculateSimilarity(fieldText, alias);
-      if (similarity >= threshold && (!bestMatch || similarity > bestMatch.similarity)) {
+      if (
+        similarity >= threshold &&
+        (!bestMatch || similarity > bestMatch.similarity)
+      ) {
         bestMatch = { mapping, alias, similarity };
       }
     }
@@ -75,21 +89,25 @@ function findBestFieldMatch(fieldText: string, threshold = 0.6): { mapping: Fiel
 
 // Extract data from detected form fields
 function extractFromFormFields(
-  detectedFields: Record<string, { text: string; confidence: number }>
+  detectedFields: Record<string, { text: string; confidence: number }>,
 ): ExtractedFieldResult[] {
   const results: ExtractedFieldResult[] = [];
 
-  console.log(`🔍 [EXTRACTION] Processing ${Object.keys(detectedFields).length} form fields...`);
+  console.log(
+    `🔍 [EXTRACTION] Processing ${Object.keys(detectedFields).length} form fields...`,
+  );
 
   for (const [fieldKey, fieldData] of Object.entries(detectedFields)) {
     const bestMatch = findBestFieldMatch(fieldKey);
-    
+
     if (bestMatch) {
       const { mapping, alias, similarity } = bestMatch;
-      
+
       // Apply validation if available
       if (mapping.validation && !mapping.validation(fieldData.text)) {
-        console.log(`⚠️ [EXTRACTION] Validation failed for field "${fieldKey}": ${fieldData.text}`);
+        console.log(
+          `⚠️ [EXTRACTION] Validation failed for field "${fieldKey}": ${fieldData.text}`,
+        );
         continue;
       }
 
@@ -99,7 +117,9 @@ function extractFromFormFields(
         try {
           convertedValue = mapping.converter(fieldData.text);
         } catch (err) {
-          console.log(`⚠️ [EXTRACTION] Conversion failed for field "${fieldKey}": ${String(err)}`);
+          console.log(
+            `⚠️ [EXTRACTION] Conversion failed for field "${fieldKey}": ${String(err)}`,
+          );
           continue;
         }
       }
@@ -110,12 +130,14 @@ function extractFromFormFields(
         value: convertedValue,
         originalText: fieldData.text,
         confidence: fieldData.confidence * similarity, // Adjust confidence by match quality
-        extractionSource: 'form',
+        extractionSource: "form",
         fieldType: mapping.dataType,
-        matched_alias: alias
+        matched_alias: alias,
       });
 
-      console.log(`✅ [EXTRACTION] Form field match: "${fieldKey}" → ${mapping.dbColumn} (${similarity.toFixed(2)} similarity, ${fieldData.confidence.toFixed(1)}% confidence)`);
+      console.log(
+        `✅ [EXTRACTION] Form field match: "${fieldKey}" → ${mapping.dbColumn} (${similarity.toFixed(2)} similarity, ${fieldData.confidence.toFixed(1)}% confidence)`,
+      );
     }
   }
 
@@ -123,92 +145,90 @@ function extractFromFormFields(
 }
 
 // Extract data from raw text using pattern matching
-function extractFromTextPatterns(extractedText: string): ExtractedFieldResult[] {
+function extractFromTextPatterns(
+  extractedText: string,
+): ExtractedFieldResult[] {
   const results: ExtractedFieldResult[] = [];
   const text = extractedText.toLowerCase();
 
-  console.log(`🔍 [EXTRACTION] Processing text patterns from ${extractedText.length} characters...`);
+  console.log(
+    `🔍 [EXTRACTION] Processing text patterns from ${extractedText.length} characters...`,
+  );
 
   // Enhanced pattern matching with better Spanish support
   const enhancedPatterns: Record<string, RegExp[]> = {
     // Basic Information
     address: [
       /(?:dirección|direccion|calle|c\/|avenida|avda|av|paseo|plaza|pl)\s*:?\s*([^\n]{10,100})/i,
-      /(?:ubicación|ubicacion)\s*:?\s*([^\n]{10,100})/i
+      /(?:ubicación|ubicacion)\s*:?\s*([^\n]{10,100})/i,
     ],
     price: [
       /(?:precio|valor|importe|coste|costo)\s*:?\s*(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*€?/i,
       /€\s*(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)/i,
-      /(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*euros?/i
+      /(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*euros?/i,
     ],
     squareMeter: [
       /(?:superficie|metros|m2|m²)\s*:?\s*(\d+(?:[.,]\d+)?)/i,
       /(\d+)\s*m2/i,
       /(\d+)\s*m²/i,
-      /(\d+)\s*metros?\s*cuadrados?/i
+      /(\d+)\s*metros?\s*cuadrados?/i,
     ],
     bedrooms: [
       /(?:dormitorios?|habitaciones?|cuartos?|dorm|hab)\s*:?\s*(\d+)/i,
-      /(\d+)\s*(?:dormitorios?|habitaciones?|cuartos?)/i
+      /(\d+)\s*(?:dormitorios?|habitaciones?|cuartos?)/i,
     ],
     bathrooms: [
       /(?:baños?|aseos?|servicios?|wc)\s*:?\s*(\d+(?:[.,]\d+)?)/i,
-      /(\d+(?:[.,]\d+)?)\s*(?:baños?|aseos?)/i
+      /(\d+(?:[.,]\d+)?)\s*(?:baños?|aseos?)/i,
     ],
     yearBuilt: [
       /(?:año|ano|construc|edificac)\s*:?\s*(\d{4})/i,
       /construido\s*en\s*(\d{4})/i,
-      /del\s*año\s*(\d{4})/i
+      /del\s*año\s*(\d{4})/i,
     ],
     cadastralReference: [
-      /(?:referencia\s*catastral|ref\s*catastral|catastro)\s*:?\s*([a-z0-9]{14,20})/i
+      /(?:referencia\s*catastral|ref\s*catastral|catastro)\s*:?\s*([a-z0-9]{14,20})/i,
     ],
     propertyType: [
-      /(?:tipo|class|vivienda)\s*:?\s*(piso|casa|chalet|apartamento|local|garaje|estudio|loft|duplex|ático|atico)/i
+      /(?:tipo|class|vivienda)\s*:?\s*(piso|casa|chalet|apartamento|local|garaje|estudio|loft|duplex|ático|atico)/i,
     ],
-    
+
     // Energy and features
     energyScale: [
       /(?:escala|letra|calificación|calificacion)\s*energética?\s*:?\s*([A-G])/i,
-      /energía\s*([A-G])/i
+      /energía\s*([A-G])/i,
     ],
     orientation: [
-      /orientación?\s*:?\s*(norte|sur|este|oeste|noreste|noroeste|sureste|suroeste|n|s|e|o|ne|no|se|so)/i
+      /orientación?\s*:?\s*(norte|sur|este|oeste|noreste|noroeste|sureste|suroeste|n|s|e|o|ne|no|se|so)/i,
     ],
-    
+
     // Boolean features with Spanish patterns
     hasElevator: [
       /(?:con\s+)?(?:ascensor|elevador)/i,
-      /ascensor\s*:?\s*(sí|si|yes|✓)/i
+      /ascensor\s*:?\s*(sí|si|yes|✓)/i,
     ],
     hasGarage: [
       /(?:con\s+)?(?:garaje|aparcamiento|parking|plaza)/i,
-      /garaje\s*:?\s*(sí|si|yes|✓)/i
+      /garaje\s*:?\s*(sí|si|yes|✓)/i,
     ],
-    hasStorageRoom: [
-      /(?:con\s+)?trastero/i,
-      /trastero\s*:?\s*(sí|si|yes|✓)/i
-    ],
+    hasStorageRoom: [/(?:con\s+)?trastero/i, /trastero\s*:?\s*(sí|si|yes|✓)/i],
     terrace: [
       /(?:con\s+)?(?:terraza|balcón|balcon)/i,
-      /terraza\s*:?\s*(sí|si|yes|✓)/i
+      /terraza\s*:?\s*(sí|si|yes|✓)/i,
     ],
-    pool: [
-      /(?:con\s+)?(?:piscina|alberca)/i,
-      /piscina\s*:?\s*(sí|si|yes|✓)/i
-    ],
+    pool: [/(?:con\s+)?(?:piscina|alberca)/i, /piscina\s*:?\s*(sí|si|yes|✓)/i],
     garden: [
       /(?:con\s+)?(?:jardín|jardin|zona\s*verde)/i,
-      /jardín\s*:?\s*(sí|si|yes|✓)/i
+      /jardín\s*:?\s*(sí|si|yes|✓)/i,
     ],
     airConditioning: [
       /(?:con\s+)?(?:aire\s*acondicionado|climatización|climatizacion|aa)/i,
-      /aire\s*:?\s*(sí|si|yes|✓)/i
+      /aire\s*:?\s*(sí|si|yes|✓)/i,
     ],
     furnished: [
       /(?:amueblado|amueblada|con\s*muebles|mobiliario)/i,
-      /muebles\s*:?\s*(sí|si|yes|✓)/i
-    ]
+      /muebles\s*:?\s*(sí|si|yes|✓)/i,
+    ],
   };
 
   // Process each pattern category
@@ -217,13 +237,14 @@ function extractFromTextPatterns(extractedText: string): ExtractedFieldResult[] 
       const matches = text.match(pattern);
       if (matches?.[1]) {
         const value = matches[1].trim();
-        
+
         // Find corresponding field mapping
-        const fieldMapping = ALL_FIELD_MAPPINGS.find(mapping => 
-          mapping.aliases.some(alias => 
-            alias.toLowerCase().includes(category.toLowerCase()) ||
-            category.toLowerCase().includes(alias.toLowerCase())
-          )
+        const fieldMapping = ALL_FIELD_MAPPINGS.find((mapping) =>
+          mapping.aliases.some(
+            (alias) =>
+              alias.toLowerCase().includes(category.toLowerCase()) ||
+              category.toLowerCase().includes(alias.toLowerCase()),
+          ),
         );
 
         if (fieldMapping) {
@@ -243,7 +264,12 @@ function extractFromTextPatterns(extractedText: string): ExtractedFieldResult[] 
           }
 
           // Estimate confidence based on pattern quality and context
-          const confidence = Math.min(95, 60 + (value.length > 2 ? 20 : 0) + (matches[0].includes(':') ? 15 : 0));
+          const confidence = Math.min(
+            95,
+            60 +
+              (value.length > 2 ? 20 : 0) +
+              (matches[0].includes(":") ? 15 : 0),
+          );
 
           results.push({
             dbColumn: fieldMapping.dbColumn,
@@ -251,12 +277,14 @@ function extractFromTextPatterns(extractedText: string): ExtractedFieldResult[] 
             value: convertedValue,
             originalText: value,
             confidence,
-            extractionSource: 'regex',
+            extractionSource: "regex",
             fieldType: fieldMapping.dataType,
-            matched_alias: category
+            matched_alias: category,
           });
 
-          console.log(`✅ [EXTRACTION] Text pattern match: "${category}" → ${fieldMapping.dbColumn} (${confidence}% confidence)`);
+          console.log(
+            `✅ [EXTRACTION] Text pattern match: "${category}" → ${fieldMapping.dbColumn} (${confidence}% confidence)`,
+          );
         }
       }
     }
@@ -270,10 +298,12 @@ function extractFromTables(blocks: Block[]): ExtractedFieldResult[] {
   const results: ExtractedFieldResult[] = [];
 
   // Filter table blocks
-  const tableBlocks = blocks.filter(block => block.BlockType === 'TABLE');
-  const cellBlocks = blocks.filter(block => block.BlockType === 'CELL');
+  const tableBlocks = blocks.filter((block) => block.BlockType === "TABLE");
+  const cellBlocks = blocks.filter((block) => block.BlockType === "CELL");
 
-  console.log(`🔍 [EXTRACTION] Processing ${tableBlocks.length} tables with ${cellBlocks.length} cells...`);
+  console.log(
+    `🔍 [EXTRACTION] Processing ${tableBlocks.length} tables with ${cellBlocks.length} cells...`,
+  );
 
   if (tableBlocks.length === 0) {
     return results;
@@ -284,12 +314,12 @@ function extractFromTables(blocks: Block[]): ExtractedFieldResult[] {
     if (!table.Relationships) continue;
 
     // Get cells for this table
-    const tableCellIds = table.Relationships
-      .filter(rel => rel.Type === 'CHILD')
-      .flatMap(rel => rel.Ids ?? []);
+    const tableCellIds = table.Relationships.filter(
+      (rel) => rel.Type === "CHILD",
+    ).flatMap((rel) => rel.Ids ?? []);
 
-    const tableCells = cellBlocks.filter(cell => 
-      tableCellIds.includes(cell.Id ?? '')
+    const tableCells = cellBlocks.filter((cell) =>
+      tableCellIds.includes(cell.Id ?? ""),
     );
 
     // Process cells as key-value pairs (assuming 2-column tables)
@@ -318,10 +348,9 @@ function extractFromTables(blocks: Block[]): ExtractedFieldResult[] {
           }
         }
 
-        const confidence = Math.min(
-          keyCell.Confidence ?? 0,
-          valueCell.Confidence ?? 0
-        ) * bestMatch.similarity;
+        const confidence =
+          Math.min(keyCell.Confidence ?? 0, valueCell.Confidence ?? 0) *
+          bestMatch.similarity;
 
         results.push({
           dbColumn: mapping.dbColumn,
@@ -329,12 +358,14 @@ function extractFromTables(blocks: Block[]): ExtractedFieldResult[] {
           value: convertedValue,
           originalText: valueCell.Text,
           confidence,
-          extractionSource: 'table',
+          extractionSource: "table",
           fieldType: mapping.dataType,
-          matched_alias: alias
+          matched_alias: alias,
         });
 
-        console.log(`✅ [EXTRACTION] Table match: "${keyCell.Text}" → ${mapping.dbColumn} (${confidence.toFixed(1)}% confidence)`);
+        console.log(
+          `✅ [EXTRACTION] Table match: "${keyCell.Text}" → ${mapping.dbColumn} (${confidence.toFixed(1)}% confidence)`,
+        );
       }
     }
   }
@@ -343,7 +374,9 @@ function extractFromTables(blocks: Block[]): ExtractedFieldResult[] {
 }
 
 // Consolidate and deduplicate extracted fields
-function consolidateResults(results: ExtractedFieldResult[]): ExtractedFieldResult[] {
+function consolidateResults(
+  results: ExtractedFieldResult[],
+): ExtractedFieldResult[] {
   const consolidatedMap = new Map<string, ExtractedFieldResult>();
 
   // Sort by confidence (highest first) to prioritize best results
@@ -351,7 +384,7 @@ function consolidateResults(results: ExtractedFieldResult[]): ExtractedFieldResu
 
   for (const result of sortedResults) {
     const key = `${result.dbTable}.${result.dbColumn}`;
-    
+
     // Keep only the highest confidence result for each field
     if (!consolidatedMap.has(key)) {
       consolidatedMap.set(key, result);
@@ -359,7 +392,9 @@ function consolidateResults(results: ExtractedFieldResult[]): ExtractedFieldResu
   }
 
   const consolidated = Array.from(consolidatedMap.values());
-  console.log(`🔄 [EXTRACTION] Consolidated ${results.length} raw results into ${consolidated.length} unique fields`);
+  console.log(
+    `🔄 [EXTRACTION] Consolidated ${results.length} raw results into ${consolidated.length} unique fields`,
+  );
 
   return consolidated;
 }
@@ -372,33 +407,48 @@ export async function extractEnhancedPropertyData(ocrInput: OCRInput): Promise<{
   completeData: CompleteExtractedData;
 }> {
   console.log(`🚀 [EXTRACTION] Starting enhanced property data extraction...`);
-  console.log(`📄 [EXTRACTION] Input: ${ocrInput.extractedText.length} chars, ${Object.keys(ocrInput.detectedFields ?? {}).length} form fields, ${ocrInput.blocks.length} blocks`);
+  console.log(
+    `📄 [EXTRACTION] Input: ${ocrInput.extractedText.length} chars, ${Object.keys(ocrInput.detectedFields ?? {}).length} form fields, ${ocrInput.blocks.length} blocks`,
+  );
 
   const allResults: ExtractedFieldResult[] = [];
 
   // Extract from form fields
-  if (ocrInput.detectedFields && Object.keys(ocrInput.detectedFields).length > 0) {
+  if (
+    ocrInput.detectedFields &&
+    Object.keys(ocrInput.detectedFields).length > 0
+  ) {
     const formResults = extractFromFormFields(ocrInput.detectedFields);
     allResults.push(...formResults);
-    console.log(`📋 [EXTRACTION] Form fields extracted: ${formResults.length} fields`);
+    console.log(
+      `📋 [EXTRACTION] Form fields extracted: ${formResults.length} fields`,
+    );
   }
 
   // Extract from text patterns
   const textResults = extractFromTextPatterns(ocrInput.extractedText);
   allResults.push(...textResults);
-  console.log(`📝 [EXTRACTION] Text patterns extracted: ${textResults.length} fields`);
+  console.log(
+    `📝 [EXTRACTION] Text patterns extracted: ${textResults.length} fields`,
+  );
 
   // Extract from tables
   const tableResults = extractFromTables(ocrInput.blocks);
   allResults.push(...tableResults);
-  console.log(`📊 [EXTRACTION] Table data extracted: ${tableResults.length} fields`);
+  console.log(
+    `📊 [EXTRACTION] Table data extracted: ${tableResults.length} fields`,
+  );
 
   // Consolidate results
   const consolidatedResults = consolidateResults(allResults);
 
   // Separate property and listing data
-  const propertyFields = consolidatedResults.filter(r => r.dbTable === 'properties');
-  const listingFields = consolidatedResults.filter(r => r.dbTable === 'listings');
+  const propertyFields = consolidatedResults.filter(
+    (r) => r.dbTable === "properties",
+  );
+  const listingFields = consolidatedResults.filter(
+    (r) => r.dbTable === "listings",
+  );
 
   // Build structured data objects
   const propertyData: EnhancedExtractedPropertyData = {};
@@ -414,35 +464,41 @@ export async function extractEnhancedPropertyData(ocrInput: OCRInput): Promise<{
 
   const completeData: CompleteExtractedData = {
     property: propertyData,
-    listing: listingData
+    listing: listingData,
   };
 
   console.log(`✅ [EXTRACTION] Extraction completed:`);
   console.log(`   - Total fields extracted: ${consolidatedResults.length}`);
   console.log(`   - Property fields: ${propertyFields.length}`);
   console.log(`   - Listing fields: ${listingFields.length}`);
-  console.log(`   - Average confidence: ${(consolidatedResults.reduce((sum, r) => sum + r.confidence, 0) / consolidatedResults.length).toFixed(1)}%`);
+  console.log(
+    `   - Average confidence: ${(consolidatedResults.reduce((sum, r) => sum + r.confidence, 0) / consolidatedResults.length).toFixed(1)}%`,
+  );
 
   return {
     extractedFields: consolidatedResults,
     propertyData,
     listingData,
-    completeData
+    completeData,
   };
 }
 
 // Helper function to filter fields by confidence threshold
 export async function filterByConfidence(
-  fields: ExtractedFieldResult[], 
-  threshold = 50
+  fields: ExtractedFieldResult[],
+  threshold = 50,
 ): Promise<ExtractedFieldResult[]> {
-  const filtered = fields.filter(field => field.confidence >= threshold);
-  console.log(`🎯 [EXTRACTION] Filtered by ${threshold}% confidence: ${filtered.length}/${fields.length} fields above threshold`);
+  const filtered = fields.filter((field) => field.confidence >= threshold);
+  console.log(
+    `🎯 [EXTRACTION] Filtered by ${threshold}% confidence: ${filtered.length}/${fields.length} fields above threshold`,
+  );
   return filtered;
 }
 
 // Helper function to get extraction statistics
-export async function getExtractionStats(fields: ExtractedFieldResult[]): Promise<{
+export async function getExtractionStats(
+  fields: ExtractedFieldResult[],
+): Promise<{
   total: number;
   byTable: { properties: number; listings: number };
   bySource: { form: number; table: number; regex: number; text: number };
@@ -453,27 +509,29 @@ export async function getExtractionStats(fields: ExtractedFieldResult[]): Promis
   const stats = {
     total: fields.length,
     byTable: {
-      properties: fields.filter(f => f.dbTable === 'properties').length,
-      listings: fields.filter(f => f.dbTable === 'listings').length
+      properties: fields.filter((f) => f.dbTable === "properties").length,
+      listings: fields.filter((f) => f.dbTable === "listings").length,
     },
     bySource: {
-      form: fields.filter(f => f.extractionSource === 'form').length,
-      table: fields.filter(f => f.extractionSource === 'table').length,
-      regex: fields.filter(f => f.extractionSource === 'regex').length,
-      text: fields.filter(f => f.extractionSource === 'text').length
+      form: fields.filter((f) => f.extractionSource === "form").length,
+      table: fields.filter((f) => f.extractionSource === "table").length,
+      regex: fields.filter((f) => f.extractionSource === "regex").length,
+      text: fields.filter((f) => f.extractionSource === "text").length,
     },
     byType: {
-      string: fields.filter(f => f.fieldType === 'string').length,
-      number: fields.filter(f => f.fieldType === 'number').length,
-      boolean: fields.filter(f => f.fieldType === 'boolean').length,
-      decimal: fields.filter(f => f.fieldType === 'decimal').length
+      string: fields.filter((f) => f.fieldType === "string").length,
+      number: fields.filter((f) => f.fieldType === "number").length,
+      boolean: fields.filter((f) => f.fieldType === "boolean").length,
+      decimal: fields.filter((f) => f.fieldType === "decimal").length,
     },
-    averageConfidence: fields.length > 0 ? 
-      fields.reduce((sum, f) => sum + f.confidence, 0) / fields.length : 0,
+    averageConfidence:
+      fields.length > 0
+        ? fields.reduce((sum, f) => sum + f.confidence, 0) / fields.length
+        : 0,
     confidenceRange: {
-      min: fields.length > 0 ? Math.min(...fields.map(f => f.confidence)) : 0,
-      max: fields.length > 0 ? Math.max(...fields.map(f => f.confidence)) : 0
-    }
+      min: fields.length > 0 ? Math.min(...fields.map((f) => f.confidence)) : 0,
+      max: fields.length > 0 ? Math.max(...fields.map((f) => f.confidence)) : 0,
+    },
   };
 
   return stats;

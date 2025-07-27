@@ -1,11 +1,13 @@
 "use server";
 
-import type { 
-  ExtractedFieldResult, 
-  DatabaseSaveResult
+import type {
+  ExtractedFieldResult,
+  DatabaseSaveResult,
 } from "~/types/textract-enhanced";
 import { updateProperty } from "./properties";
 import { updateListing } from "./listing";
+import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
+import { retrieveCadastralData } from "../cadastral/retrieve_cadastral";
 import type { Property, Listing } from "~/lib/data";
 
 /**
@@ -18,11 +20,15 @@ export async function saveExtractedDataToDatabase(
   propertyId: number,
   listingId: number,
   extractedFields: ExtractedFieldResult[],
-  confidenceThreshold = 50
+  confidenceThreshold = 50,
 ): Promise<DatabaseSaveResult> {
-  console.log(`💾 [DATABASE] Starting save operation for property ${propertyId}, listing ${listingId}`);
+  console.log(
+    `💾 [DATABASE] Starting save operation for property ${propertyId}, listing ${listingId}`,
+  );
   console.log(`🎯 [DATABASE] Confidence threshold: ${confidenceThreshold}%`);
-  console.log(`📊 [DATABASE] Total fields to process: ${extractedFields.length}`);
+  console.log(
+    `📊 [DATABASE] Total fields to process: ${extractedFields.length}`,
+  );
 
   const startTime = Date.now();
   const result: DatabaseSaveResult = {
@@ -33,29 +39,41 @@ export async function saveExtractedDataToDatabase(
     listingErrors: [],
     fieldsProcessed: extractedFields.length,
     fieldsSaved: 0,
-    confidenceThreshold
+    confidenceThreshold,
   };
 
   try {
     // Filter fields by confidence threshold
     const highConfidenceFields = extractedFields.filter(
-      field => field.confidence >= confidenceThreshold
+      (field) => field.confidence >= confidenceThreshold,
     );
 
-    console.log(`🔍 [DATABASE] Fields above ${confidenceThreshold}% confidence: ${highConfidenceFields.length}/${extractedFields.length}`);
+    console.log(
+      `🔍 [DATABASE] Fields above ${confidenceThreshold}% confidence: ${highConfidenceFields.length}/${extractedFields.length}`,
+    );
 
     if (highConfidenceFields.length === 0) {
-      console.log(`⚠️ [DATABASE] No fields meet confidence threshold. Skipping database save.`);
+      console.log(
+        `⚠️ [DATABASE] No fields meet confidence threshold. Skipping database save.`,
+      );
       result.success = true; // Not an error, just no data to save
       return result;
     }
 
     // Separate property and listing fields
-    const propertyFields = highConfidenceFields.filter(field => field.dbTable === 'properties');
-    const listingFields = highConfidenceFields.filter(field => field.dbTable === 'listings');
+    const propertyFields = highConfidenceFields.filter(
+      (field) => field.dbTable === "properties",
+    );
+    const listingFields = highConfidenceFields.filter(
+      (field) => field.dbTable === "listings",
+    );
 
-    console.log(`📋 [DATABASE] Property fields to save: ${propertyFields.length}`);
-    console.log(`📋 [DATABASE] Listing fields to save: ${listingFields.length}`);
+    console.log(
+      `📋 [DATABASE] Property fields to save: ${propertyFields.length}`,
+    );
+    console.log(
+      `📋 [DATABASE] Listing fields to save: ${listingFields.length}`,
+    );
 
     // Build property update data
     const propertyUpdateData: Record<string, unknown> = {};
@@ -65,8 +83,10 @@ export async function saveExtractedDataToDatabase(
           // Type-safe assignment with proper conversion
           const key = field.dbColumn;
           propertyUpdateData[key] = field.value;
-          
-          console.log(`✅ [DATABASE] Property field prepared: ${field.dbColumn} = ${String(field.value)} (${field.confidence.toFixed(1)}% confidence)`);
+
+          console.log(
+            `✅ [DATABASE] Property field prepared: ${field.dbColumn} = ${String(field.value)} (${field.confidence.toFixed(1)}% confidence)`,
+          );
         } catch (error) {
           const errorMsg = `Failed to prepare property field ${field.dbColumn}: ${String(error)}`;
           console.error(`❌ [DATABASE] ${errorMsg}`);
@@ -83,8 +103,10 @@ export async function saveExtractedDataToDatabase(
           // Type-safe assignment with proper conversion
           const key = field.dbColumn;
           listingUpdateData[key] = field.value;
-          
-          console.log(`✅ [DATABASE] Listing field prepared: ${field.dbColumn} = ${String(field.value)} (${field.confidence.toFixed(1)}% confidence)`);
+
+          console.log(
+            `✅ [DATABASE] Listing field prepared: ${field.dbColumn} = ${String(field.value)} (${field.confidence.toFixed(1)}% confidence)`,
+          );
         } catch (error) {
           const errorMsg = `Failed to prepare listing field ${field.dbColumn}: ${String(error)}`;
           console.error(`❌ [DATABASE] ${errorMsg}`);
@@ -96,20 +118,235 @@ export async function saveExtractedDataToDatabase(
     // Update property if we have property data
     if (Object.keys(propertyUpdateData).length > 0) {
       try {
-        console.log(`🔄 [DATABASE] Updating property ${propertyId} with ${Object.keys(propertyUpdateData).length} fields...`);
-        
-        await updateProperty(propertyId, propertyUpdateData as Omit<Partial<Property>, "propertyId" | "createdAt" | "updatedAt" | "referenceNumber">);
-        
+        console.log(
+          `🔄 [DATABASE] Updating property ${propertyId} with ${Object.keys(propertyUpdateData).length} fields...`,
+        );
+
+        await updateProperty(
+          propertyId,
+          propertyUpdateData as Omit<
+            Partial<Property>,
+            "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
+          >,
+        );
+
         result.propertyUpdated = true;
         result.fieldsSaved += Object.keys(propertyUpdateData).length;
-        console.log(`✅ [DATABASE] Property ${propertyId} updated successfully`);
-        
+        console.log(
+          `✅ [DATABASE] Property ${propertyId} updated successfully`,
+        );
+
         // Log detailed field updates
         Object.entries(propertyUpdateData).forEach(([key, value]) => {
-          const field = propertyFields.find(f => f.dbColumn === key);
-          console.log(`   └─ ${key}: ${String(value)} (source: ${field?.extractionSource}, confidence: ${field?.confidence.toFixed(1)}%)`);
+          const field = propertyFields.find((f) => f.dbColumn === key);
+          console.log(
+            `   └─ ${key}: ${String(value)} (source: ${field?.extractionSource}, confidence: ${field?.confidence.toFixed(1)}%)`,
+          );
         });
+
+        // Check if cadastral reference was extracted and use cadastral service
+        const hasCadastralRef = propertyUpdateData.cadastralReference && 
+          String(propertyUpdateData.cadastralReference).trim() !== "";
         
+        if (hasCadastralRef) {
+          console.log(
+            `🏛️ [DATABASE] Cadastral reference detected, retrieving cadastral data...`,
+          );
+          try {
+            const cadastralRef = String(propertyUpdateData.cadastralReference).trim();
+            console.log(`🔍 [DATABASE] Retrieving cadastral data for: ${cadastralRef}`);
+            
+            const cadastralData = await retrieveCadastralData(cadastralRef);
+            
+            if (cadastralData) {
+              const cadastralUpdateData: Record<string, unknown> = {
+                street: cadastralData.street,
+                addressDetails: cadastralData.addressDetails,
+                squareMeter: cadastralData.squareMeter,
+                builtSurfaceArea: cadastralData.builtSurfaceArea,
+                yearBuilt: cadastralData.yearBuilt,
+                propertyType: cadastralData.propertyType,
+                municipality: cadastralData.municipality,
+                neighborhood: cadastralData.neighborhood,
+                postalCode: cadastralData.postalCode,
+                city: cadastralData.city,
+                province: cadastralData.province,
+              };
+              
+              if (cadastralData.latitude) {
+                cadastralUpdateData.latitude = parseFloat(cadastralData.latitude);
+              }
+              if (cadastralData.longitude) {
+                cadastralUpdateData.longitude = parseFloat(cadastralData.longitude);
+              }
+              if (cadastralData.neighborhoodId) {
+                cadastralUpdateData.neighborhoodId = cadastralData.neighborhoodId;
+              }
+              
+              await updateProperty(
+                propertyId,
+                cadastralUpdateData as Omit<
+                  Partial<Property>,
+                  "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
+                >,
+              );
+              
+              console.log(
+                `✅ [DATABASE] Cadastral data retrieved and property updated with comprehensive data`,
+              );
+              console.log(`   └─ Address: ${cadastralData.street}`);
+              console.log(`   └─ Property Type: ${cadastralData.propertyType}`);
+              console.log(`   └─ Surface: ${cadastralData.squareMeter}m²`);
+              console.log(`   └─ Year Built: ${cadastralData.yearBuilt}`);
+              if (cadastralData.latitude && cadastralData.longitude) {
+                console.log(`   └─ Coordinates: ${cadastralData.latitude}, ${cadastralData.longitude}`);
+              }
+              if (cadastralData.neighborhood) {
+                console.log(`   └─ Neighborhood: ${cadastralData.neighborhood}`);
+              }
+            } else {
+              console.warn(
+                `⚠️ [DATABASE] Cadastral data retrieval failed for: ${cadastralRef}`,
+              );
+            }
+          } catch (cadastralError) {
+            console.error(
+              `❌ [DATABASE] Cadastral retrieval error: ${String(cadastralError)}`,
+            );
+            // Don't fail the entire operation if cadastral retrieval fails
+          }
+        } else {
+          // Check if we have address info that was just standardized and saved
+          const hasAddressInfo = propertyUpdateData.street && 
+            String(propertyUpdateData.street) !== "Dirección a completar";
+          
+          if (hasAddressInfo) {
+            console.log(
+              `🌍 [DATABASE] Standardized address detected, running geocoding after database save...`,
+            );
+            
+            // Geocoding needs to run AFTER the standardized address is saved to database
+            // We'll trigger it in a separate async operation to avoid blocking
+            setImmediate(async () => {
+              try {
+                console.log(`🔍 [DATABASE] Starting post-save geocoding for property ${propertyId}...`);
+                
+                // Import here to avoid circular dependencies
+                const { db } = await import("../db");
+                const { properties } = await import("../db/schema");
+                const { eq } = await import("drizzle-orm");
+                
+                // Get the updated property with standardized address
+                const [updatedProperty] = await db
+                  .select({
+                    street: properties.street,
+                    postalCode: properties.postalCode,
+                    neighborhoodId: properties.neighborhoodId,
+                  })
+                  .from(properties)
+                  .where(eq(properties.propertyId, BigInt(propertyId)))
+                  .limit(1);
+                
+                if (!updatedProperty?.street || updatedProperty.street === "Dirección a completar") {
+                  console.log(`⚠️ [DATABASE] No valid standardized address found for geocoding`);
+                  return;
+                }
+                
+                // Build full address from standardized database fields
+                // Use only the standardized street address for better geocoding accuracy
+                const fullAddress = updatedProperty.street;
+                
+                console.log(`🔍 [DATABASE] Validating extracted address with Nominatim: ${fullAddress}`);
+                
+                // First validate the extracted address with Nominatim
+                try {
+                  const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&countrycodes=es&addressdetails=1`;
+                  const response = await fetch(nominatimUrl);
+                  const nominatimResults = await response.json() as Array<{
+                    address?: {
+                      postcode?: string;
+                      city?: string;
+                      town?: string;
+                      state?: string;
+                      suburb?: string;
+                    };
+                    lat?: string;
+                    lon?: string;
+                  }>;
+
+                  if (nominatimResults.length === 0) {
+                    console.warn(`⚠️ [DATABASE] Nominatim validation failed for extracted address: ${fullAddress}`);
+                    console.log(`📍 [DATABASE] Address not found in Nominatim, skipping geocoding`);
+                    return;
+                  }
+
+                  const nominatimResult = nominatimResults[0];
+                  if (!nominatimResult?.lat || !nominatimResult?.lon) {
+                    console.warn(`⚠️ [DATABASE] Nominatim validation incomplete for: ${fullAddress}`);
+                    console.log(`📍 [DATABASE] No coordinates returned, skipping geocoding`);
+                    return;
+                  }
+
+                  console.log(`✅ [DATABASE] Nominatim validation successful, proceeding with geocoding`);
+                  
+                  // Now proceed with our geocoding service since Nominatim validation passed
+                  const geoData = await retrieveGeocodingData(fullAddress);
+                
+                if (geoData) {
+                  const geoUpdateData: Record<string, unknown> = {
+                    latitude: parseFloat(geoData.latitude),
+                    longitude: parseFloat(geoData.longitude),
+                  };
+                  
+                  if (geoData.neighborhood) {
+                    geoUpdateData.neighborhood = geoData.neighborhood;
+                  }
+                  if (geoData.neighborhoodId) {
+                    geoUpdateData.neighborhoodId = geoData.neighborhoodId;
+                  }
+                  if (geoData.municipality) {
+                    geoUpdateData.municipality = geoData.municipality;
+                  }
+                  if (geoData.province) {
+                    geoUpdateData.province = geoData.province;
+                  }
+                  
+                  await updateProperty(
+                    propertyId,
+                    geoUpdateData as Omit<
+                      Partial<Property>,
+                      "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
+                    >,
+                  );
+                  
+                  console.log(
+                    `✅ [DATABASE] Post-save geocoding completed for property ${propertyId}`,
+                  );
+                  console.log(
+                    `   └─ Coordinates: ${geoData.latitude}, ${geoData.longitude}`,
+                  );
+                  if (geoData.neighborhood) {
+                    console.log(`   └─ Neighborhood: ${geoData.neighborhood}`);
+                  }
+                } else {
+                  console.warn(
+                    `⚠️ [DATABASE] Post-save geocoding failed for address: ${fullAddress}`,
+                  );
+                }
+                } catch (nominatimError) {
+                  console.error(
+                    `❌ [DATABASE] Nominatim validation error for address ${fullAddress}: ${String(nominatimError)}`,
+                  );
+                  console.log(`📍 [DATABASE] Skipping geocoding due to validation failure`);
+                }
+              } catch (geoError) {
+                console.error(
+                  `❌ [DATABASE] Post-save geocoding error for property ${propertyId}: ${String(geoError)}`,
+                );
+              }
+            });
+          }
+        }
       } catch (error) {
         const errorMsg = `Failed to update property ${propertyId}: ${String(error)}`;
         console.error(`❌ [DATABASE] ${errorMsg}`);
@@ -122,20 +359,29 @@ export async function saveExtractedDataToDatabase(
     // Update listing if we have listing data
     if (Object.keys(listingUpdateData).length > 0) {
       try {
-        console.log(`🔄 [DATABASE] Updating listing ${listingId} with ${Object.keys(listingUpdateData).length} fields...`);
-        
-        await updateListing(listingId, listingUpdateData as Omit<Partial<Listing>, "listingId" | "createdAt" | "updatedAt">);
-        
+        console.log(
+          `🔄 [DATABASE] Updating listing ${listingId} with ${Object.keys(listingUpdateData).length} fields...`,
+        );
+
+        await updateListing(
+          listingId,
+          listingUpdateData as Omit<
+            Partial<Listing>,
+            "listingId" | "createdAt" | "updatedAt"
+          >,
+        );
+
         result.listingUpdated = true;
         result.fieldsSaved += Object.keys(listingUpdateData).length;
         console.log(`✅ [DATABASE] Listing ${listingId} updated successfully`);
-        
+
         // Log detailed field updates
         Object.entries(listingUpdateData).forEach(([key, value]) => {
-          const field = listingFields.find(f => f.dbColumn === key);
-          console.log(`   └─ ${key}: ${String(value)} (source: ${field?.extractionSource}, confidence: ${field?.confidence.toFixed(1)}%)`);
+          const field = listingFields.find((f) => f.dbColumn === key);
+          console.log(
+            `   └─ ${key}: ${String(value)} (source: ${field?.extractionSource}, confidence: ${field?.confidence.toFixed(1)}%)`,
+          );
         });
-        
       } catch (error) {
         const errorMsg = `Failed to update listing ${listingId}: ${String(error)}`;
         console.error(`❌ [DATABASE] ${errorMsg}`);
@@ -146,17 +392,21 @@ export async function saveExtractedDataToDatabase(
     }
 
     // Determine overall success
-    const hasErrors = result.propertyErrors.length > 0 || result.listingErrors.length > 0;
+    const hasErrors =
+      result.propertyErrors.length > 0 || result.listingErrors.length > 0;
     const hasUpdates = result.propertyUpdated || result.listingUpdated;
-    
-    result.success = !hasErrors && (hasUpdates || highConfidenceFields.length === 0);
+
+    result.success =
+      !hasErrors && (hasUpdates || highConfidenceFields.length === 0);
 
     const duration = Date.now() - startTime;
     console.log(`🎯 [DATABASE] Save operation completed in ${duration}ms:`);
     console.log(`   - Success: ${result.success}`);
     console.log(`   - Property updated: ${result.propertyUpdated}`);
     console.log(`   - Listing updated: ${result.listingUpdated}`);
-    console.log(`   - Fields saved: ${result.fieldsSaved}/${result.fieldsProcessed}`);
+    console.log(
+      `   - Fields saved: ${result.fieldsSaved}/${result.fieldsProcessed}`,
+    );
     console.log(`   - Property errors: ${result.propertyErrors.length}`);
     console.log(`   - Listing errors: ${result.listingErrors.length}`);
 
@@ -168,15 +418,17 @@ export async function saveExtractedDataToDatabase(
     }
 
     return result;
-
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`❌ [DATABASE] Critical error during save operation (${duration}ms):`, error);
-    
+    console.error(
+      `❌ [DATABASE] Critical error during save operation (${duration}ms):`,
+      error,
+    );
+
     result.success = false;
     result.propertyErrors.push(`Critical error: ${String(error)}`);
     result.listingErrors.push(`Critical error: ${String(error)}`);
-    
+
     return result;
   }
 }
@@ -186,14 +438,18 @@ export async function getPropertyAndListingIds(documentKey: string): Promise<{
   propertyId?: number;
   listingId?: number;
 } | null> {
-  console.log(`🔍 [DATABASE] Extracting property/listing IDs from document key: ${documentKey}`);
-  
+  console.log(
+    `🔍 [DATABASE] Extracting property/listing IDs from document key: ${documentKey}`,
+  );
+
   try {
     // Extract reference number from document key
-    // Expected format: documents/VESTA20240000001/ficha_propiedad/...
-    const match = /documents\/(VESTA\d+)/.exec(documentKey);
+    // Expected format: VESTA20240000001/documents/ficha_propiedad/...
+    const match = /(VESTA\d+)\/documents/.exec(documentKey);
     if (!match) {
-      console.warn(`⚠️ [DATABASE] Could not extract reference number from document key: ${documentKey}`);
+      console.warn(
+        `⚠️ [DATABASE] Could not extract reference number from document key: ${documentKey}`,
+      );
       return null;
     }
 
@@ -213,7 +469,9 @@ export async function getPropertyAndListingIds(documentKey: string): Promise<{
       .limit(1);
 
     if (!property) {
-      console.warn(`⚠️ [DATABASE] No property found with reference number: ${referenceNumber}`);
+      console.warn(
+        `⚠️ [DATABASE] No property found with reference number: ${referenceNumber}`,
+      );
       return null;
     }
 
@@ -231,29 +489,35 @@ export async function getPropertyAndListingIds(documentKey: string): Promise<{
     if (listingId) {
       console.log(`✅ [DATABASE] Found listing ID: ${listingId}`);
     } else {
-      console.warn(`⚠️ [DATABASE] No listing found for property ID: ${propertyId}`);
+      console.warn(
+        `⚠️ [DATABASE] No listing found for property ID: ${propertyId}`,
+      );
     }
 
     return {
       propertyId,
-      listingId
+      listingId,
     };
-
   } catch (error) {
-    console.error(`❌ [DATABASE] Error extracting property/listing IDs:`, error);
+    console.error(
+      `❌ [DATABASE] Error extracting property/listing IDs:`,
+      error,
+    );
     return null;
   }
 }
 
 // Validate extracted data before saving
 export async function validateExtractedData(
-  extractedFields: ExtractedFieldResult[]
+  extractedFields: ExtractedFieldResult[],
 ): Promise<{
   valid: ExtractedFieldResult[];
   invalid: Array<{ field: ExtractedFieldResult; reason: string }>;
 }> {
-  console.log(`🔍 [DATABASE] Validating ${extractedFields.length} extracted fields...`);
-  
+  console.log(
+    `🔍 [DATABASE] Validating ${extractedFields.length} extracted fields...`,
+  );
+
   const valid: ExtractedFieldResult[] = [];
   const invalid: Array<{ field: ExtractedFieldResult; reason: string }> = [];
 
@@ -261,81 +525,107 @@ export async function validateExtractedData(
     try {
       // Basic validation checks
       if (!field.dbColumn || !field.dbTable) {
-        invalid.push({ field, reason: 'Missing database column or table' });
+        invalid.push({ field, reason: "Missing database column or table" });
         continue;
       }
 
       if (field.confidence < 0 || field.confidence > 100) {
-        invalid.push({ field, reason: 'Invalid confidence score' });
+        invalid.push({ field, reason: "Invalid confidence score" });
         continue;
       }
 
       if (field.value === null || field.value === undefined) {
-        invalid.push({ field, reason: 'Null or undefined value' });
+        invalid.push({ field, reason: "Null or undefined value" });
         continue;
       }
 
       // Type validation
       switch (field.fieldType) {
-        case 'number':
-          if (typeof field.value !== 'number' || isNaN(field.value)) {
-            invalid.push({ field, reason: 'Invalid number value' });
+        case "number":
+          if (typeof field.value !== "number" || isNaN(field.value)) {
+            invalid.push({ field, reason: "Invalid number value" });
             continue;
           }
           break;
-        case 'boolean':
-          if (typeof field.value !== 'boolean') {
-            invalid.push({ field, reason: 'Invalid boolean value' });
+        case "boolean":
+          if (typeof field.value !== "boolean") {
+            invalid.push({ field, reason: "Invalid boolean value" });
             continue;
           }
           break;
-        case 'string':
-          if (typeof field.value !== 'string' || field.value.trim() === '') {
-            invalid.push({ field, reason: 'Invalid or empty string value' });
+        case "string":
+          if (typeof field.value !== "string" || field.value.trim() === "") {
+            invalid.push({ field, reason: "Invalid or empty string value" });
             continue;
           }
           break;
-        case 'decimal':
-          if (typeof field.value !== 'number' || isNaN(field.value)) {
-            invalid.push({ field, reason: 'Invalid decimal value' });
+        case "decimal":
+          if (typeof field.value !== "number" || isNaN(field.value)) {
+            invalid.push({ field, reason: "Invalid decimal value" });
             continue;
           }
           break;
       }
 
       // Value range validation for specific fields
-      if (field.dbColumn === 'bedrooms' && typeof field.value === 'number' && (field.value < 0 || field.value > 10)) {
-        invalid.push({ field, reason: 'Bedroom count out of valid range (0-10)' });
+      if (
+        field.dbColumn === "bedrooms" &&
+        typeof field.value === "number" &&
+        (field.value < 0 || field.value > 10)
+      ) {
+        invalid.push({
+          field,
+          reason: "Bedroom count out of valid range (0-10)",
+        });
         continue;
       }
 
-      if (field.dbColumn === 'bathrooms' && typeof field.value === 'number' && (field.value < 0 || field.value > 10)) {
-        invalid.push({ field, reason: 'Bathroom count out of valid range (0-10)' });
+      if (
+        field.dbColumn === "bathrooms" &&
+        typeof field.value === "number" &&
+        (field.value < 0 || field.value > 10)
+      ) {
+        invalid.push({
+          field,
+          reason: "Bathroom count out of valid range (0-10)",
+        });
         continue;
       }
 
-      if (field.dbColumn === 'yearBuilt' && typeof field.value === 'number' && (field.value < 1800 || field.value > new Date().getFullYear() + 5)) {
-        invalid.push({ field, reason: 'Year built out of valid range' });
+      if (
+        field.dbColumn === "yearBuilt" &&
+        typeof field.value === "number" &&
+        (field.value < 1800 || field.value > new Date().getFullYear() + 5)
+      ) {
+        invalid.push({ field, reason: "Year built out of valid range" });
         continue;
       }
 
-      if (field.dbColumn === 'price' && typeof field.value === 'number' && field.value <= 0) {
-        invalid.push({ field, reason: 'Price must be positive' });
+      if (
+        field.dbColumn === "price" &&
+        typeof field.value === "number" &&
+        field.value <= 0
+      ) {
+        invalid.push({ field, reason: "Price must be positive" });
         continue;
       }
 
       // If we get here, the field is valid
       valid.push(field);
-
     } catch (error) {
       invalid.push({ field, reason: `Validation error: ${String(error)}` });
     }
   }
 
-  console.log(`✅ [DATABASE] Validation completed: ${valid.length} valid, ${invalid.length} invalid fields`);
-  
+  console.log(
+    `✅ [DATABASE] Validation completed: ${valid.length} valid, ${invalid.length} invalid fields`,
+  );
+
   if (invalid.length > 0) {
-    console.warn(`⚠️ [DATABASE] Invalid fields:`, invalid.map(i => `${i.field.dbColumn}: ${i.reason}`));
+    console.warn(
+      `⚠️ [DATABASE] Invalid fields:`,
+      invalid.map((i) => `${i.field.dbColumn}: ${i.reason}`),
+    );
   }
 
   return { valid, invalid };
@@ -347,10 +637,10 @@ export async function createAuditLog(
   propertyId?: number,
   listingId?: number,
   fieldsUpdated?: ExtractedFieldResult[],
-  saveResult?: DatabaseSaveResult
+  saveResult?: DatabaseSaveResult,
 ): Promise<void> {
   console.log(`📝 [DATABASE] Creating audit log entry...`);
-  
+
   try {
     const auditEntry = {
       timestamp: new Date().toISOString(),
@@ -364,22 +654,24 @@ export async function createAuditLog(
       listingUpdated: saveResult?.listingUpdated ?? false,
       errors: [
         ...(saveResult?.propertyErrors ?? []),
-        ...(saveResult?.listingErrors ?? [])
+        ...(saveResult?.listingErrors ?? []),
       ],
-      fieldDetails: fieldsUpdated?.map(field => ({
+      fieldDetails: fieldsUpdated?.map((field) => ({
         column: field.dbColumn,
         table: field.dbTable,
         value: field.value,
         confidence: field.confidence,
-        source: field.extractionSource
-      }))
+        source: field.extractionSource,
+      })),
     };
 
-    console.log(`📄 [DATABASE] Audit log entry:`, JSON.stringify(auditEntry, null, 2));
-    
+    console.log(
+      `📄 [DATABASE] Audit log entry:`,
+      JSON.stringify(auditEntry, null, 2),
+    );
+
     // In a production environment, you would save this to an audit table
     // For now, we'll just log it for debugging purposes
-    
   } catch (error) {
     console.error(`❌ [DATABASE] Failed to create audit log:`, error);
   }

@@ -162,12 +162,12 @@ export interface CompleteExtractedData {
 // Interface for individual field results with confidence and metadata
 export interface ExtractedFieldResult {
   dbColumn: string;
-  dbTable: 'properties' | 'listings';
+  dbTable: "properties" | "listings";
   value: string | number | boolean;
   originalText: string;
   confidence: number;
-  extractionSource: 'form' | 'table' | 'query' | 'regex' | 'text';
-  fieldType: 'string' | 'number' | 'boolean' | 'decimal';
+  extractionSource: "form" | "table" | "query" | "regex" | "text";
+  fieldType: "string" | "number" | "boolean" | "decimal";
   matched_alias?: string; // Which Spanish term was matched
 }
 
@@ -207,9 +207,9 @@ export type FieldConverter = (value: string) => string | number | boolean;
 // Interface for field mapping configuration
 export interface FieldMapping {
   dbColumn: string;
-  dbTable: 'properties' | 'listings';
+  dbTable: "properties" | "listings";
   aliases: string[];
-  dataType: 'string' | 'number' | 'boolean' | 'decimal';
+  dataType: "string" | "number" | "boolean" | "decimal";
   validation?: FieldValidator;
   converter?: FieldConverter;
   examples?: string[]; // Example values to help with matching

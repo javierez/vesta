@@ -654,7 +654,7 @@ export async function processDocumentInBackgroundEnhanced(
   bucketName?: string,
 ): Promise<void> {
   const processingStartTime = new Date();
-  
+
   const log: EnhancedProcessingLog = {
     documentKey,
     processingStartTime,
@@ -672,21 +672,30 @@ export async function processDocumentInBackgroundEnhanced(
       ocrDuration: 0,
       extractionDuration: 0,
       databaseDuration: 0,
-      totalDuration: 0
-    }
+      totalDuration: 0,
+    },
   };
 
   try {
-    console.log(`🚀 [OCR-ENHANCED] Starting enhanced background processing for: ${documentKey}`);
+    console.log(
+      `🚀 [OCR-ENHANCED] Starting enhanced background processing for: ${documentKey}`,
+    );
     console.log(`📁 [OCR-ENHANCED] File type: ${log.fileType}`);
-    console.log(`⏰ [OCR-ENHANCED] Started at: ${processingStartTime.toISOString()}`);
+    console.log(
+      `⏰ [OCR-ENHANCED] Started at: ${processingStartTime.toISOString()}`,
+    );
 
     // Step 1: OCR Processing
     const ocrStartTime = Date.now();
     console.log(`🔍 [OCR-ENHANCED] Step 1: OCR text extraction...`);
-    
-    const ocrResult = await analyzeDocumentStructure(documentKey, bucketName, true, true);
-    
+
+    const ocrResult = await analyzeDocumentStructure(
+      documentKey,
+      bucketName,
+      true,
+      true,
+    );
+
     const ocrDuration = Date.now() - ocrStartTime;
     log.performanceMetrics.ocrDuration = ocrDuration;
     log.ocrConfidence = ocrResult.confidence;
@@ -696,37 +705,50 @@ export async function processDocumentInBackgroundEnhanced(
       throw new Error(`OCR processing failed: ${ocrResult.error}`);
     }
 
-    console.log(`✅ [OCR-ENHANCED] OCR completed in ${ocrDuration}ms (${ocrResult.confidence.toFixed(1)}% confidence)`);
+    console.log(
+      `✅ [OCR-ENHANCED] OCR completed in ${ocrDuration}ms (${ocrResult.confidence.toFixed(1)}% confidence)`,
+    );
 
     // Step 2: Enhanced Field Extraction
     const extractionStartTime = Date.now();
     console.log(`🔬 [OCR-ENHANCED] Step 2: Enhanced field extraction...`);
-    
+
     const { extractEnhancedPropertyData } = await import("./field-extractor");
     const extractionResult = await extractEnhancedPropertyData({
       extractedText: ocrResult.extractedText,
       detectedFields: ocrResult.detectedFields,
       blocks: ocrResult.blocks,
-      confidence: ocrResult.confidence
+      confidence: ocrResult.confidence,
     });
 
     const extractionDuration = Date.now() - extractionStartTime;
     log.performanceMetrics.extractionDuration = extractionDuration;
     log.fieldsExtracted = extractionResult.extractedFields.length;
 
-    console.log(`✅ [OCR-ENHANCED] Field extraction completed in ${extractionDuration}ms (${extractionResult.extractedFields.length} fields)`);
+    console.log(
+      `✅ [OCR-ENHANCED] Field extraction completed in ${extractionDuration}ms (${extractionResult.extractedFields.length} fields)`,
+    );
 
     // Step 3: Confidence Filtering
     const { filterByConfidence } = await import("./field-extractor");
     const confidenceThreshold = 50;
-    const highConfidenceFields = await filterByConfidence(extractionResult.extractedFields, confidenceThreshold);
+    const highConfidenceFields = await filterByConfidence(
+      extractionResult.extractedFields,
+      confidenceThreshold,
+    );
     log.fieldsAboveThreshold = highConfidenceFields.length;
 
-    console.log(`🎯 [OCR-ENHANCED] Confidence filtering: ${highConfidenceFields.length}/${extractionResult.extractedFields.length} fields above ${confidenceThreshold}%`);
+    console.log(
+      `🎯 [OCR-ENHANCED] Confidence filtering: ${highConfidenceFields.length}/${extractionResult.extractedFields.length} fields above ${confidenceThreshold}%`,
+    );
 
     if (highConfidenceFields.length === 0) {
-      log.warnings.push("No fields met confidence threshold - skipping database save");
-      console.warn(`⚠️ [OCR-ENHANCED] No fields met ${confidenceThreshold}% confidence threshold`);
+      log.warnings.push(
+        "No fields met confidence threshold - skipping database save",
+      );
+      console.warn(
+        `⚠️ [OCR-ENHANCED] No fields met ${confidenceThreshold}% confidence threshold`,
+      );
     }
 
     // Step 4: Database Integration
@@ -736,18 +758,31 @@ export async function processDocumentInBackgroundEnhanced(
       console.log(`💾 [OCR-ENHANCED] Step 3: Database integration...`);
 
       // Get property and listing IDs
-      const { getPropertyAndListingIds, saveExtractedDataToDatabase, validateExtractedData, createAuditLog } = await import("../queries/textract-database-saver");
-      
+      const {
+        getPropertyAndListingIds,
+        saveExtractedDataToDatabase,
+        validateExtractedData,
+        createAuditLog,
+      } = await import("../queries/textract-database-saver");
+
       const ids = await getPropertyAndListingIds(documentKey);
       if (ids?.propertyId) {
-        console.log(`🏠 [OCR-ENHANCED] Found property ID: ${ids.propertyId}${ids.listingId ? `, listing ID: ${ids.listingId}` : ''}`);
+        console.log(
+          `🏠 [OCR-ENHANCED] Found property ID: ${ids.propertyId}${ids.listingId ? `, listing ID: ${ids.listingId}` : ""}`,
+        );
 
         // Validate extracted data
-        const validationResult = await validateExtractedData(highConfidenceFields);
+        const validationResult =
+          await validateExtractedData(highConfidenceFields);
         if (validationResult.invalid.length > 0) {
-          log.warnings.push(`${validationResult.invalid.length} fields failed validation`);
-          console.warn(`⚠️ [OCR-ENHANCED] ${validationResult.invalid.length} fields failed validation:`, 
-            validationResult.invalid.map(i => `${i.field.dbColumn}: ${i.reason}`)
+          log.warnings.push(
+            `${validationResult.invalid.length} fields failed validation`,
+          );
+          console.warn(
+            `⚠️ [OCR-ENHANCED] ${validationResult.invalid.length} fields failed validation:`,
+            validationResult.invalid.map(
+              (i) => `${i.field.dbColumn}: ${i.reason}`,
+            ),
           );
         }
 
@@ -757,47 +792,80 @@ export async function processDocumentInBackgroundEnhanced(
             ids.propertyId,
             ids.listingId,
             validationResult.valid,
-            confidenceThreshold
+            confidenceThreshold,
           );
 
           log.fieldsSaved = saveResult.fieldsSaved;
-          log.propertyFieldsSaved = validationResult.valid.filter(f => f.dbTable === 'properties').length;
-          log.listingFieldsSaved = validationResult.valid.filter(f => f.dbTable === 'listings').length;
+          log.propertyFieldsSaved = validationResult.valid.filter(
+            (f) => f.dbTable === "properties",
+          ).length;
+          log.listingFieldsSaved = validationResult.valid.filter(
+            (f) => f.dbTable === "listings",
+          ).length;
 
           if (!saveResult.success) {
-            log.errors.push(...saveResult.propertyErrors, ...saveResult.listingErrors);
+            log.errors.push(
+              ...saveResult.propertyErrors,
+              ...saveResult.listingErrors,
+            );
           }
 
-          console.log(`💾 [OCR-ENHANCED] Database save result: ${saveResult.success ? 'SUCCESS' : 'FAILED'} - ${saveResult.fieldsSaved} fields saved`);
+          console.log(
+            `💾 [OCR-ENHANCED] Database save result: ${saveResult.success ? "SUCCESS" : "FAILED"} - ${saveResult.fieldsSaved} fields saved`,
+          );
 
           // Create audit log
-          await createAuditLog(documentKey, ids.propertyId, ids.listingId, validationResult.valid, saveResult);
-
+          await createAuditLog(
+            documentKey,
+            ids.propertyId,
+            ids.listingId,
+            validationResult.valid,
+            saveResult,
+          );
         } else {
-          const reason = !ids.listingId ? 'No listing ID found' : 'No valid fields to save';
+          const reason = !ids.listingId
+            ? "No listing ID found"
+            : "No valid fields to save";
           log.warnings.push(`Database save skipped: ${reason}`);
           console.warn(`⚠️ [OCR-ENHANCED] Database save skipped: ${reason}`);
         }
       } else {
-        log.warnings.push("Could not extract property/listing IDs from document key");
-        console.warn(`⚠️ [OCR-ENHANCED] Could not extract property/listing IDs from document key: ${documentKey}`);
+        log.warnings.push(
+          "Could not extract property/listing IDs from document key",
+        );
+        console.warn(
+          `⚠️ [OCR-ENHANCED] Could not extract property/listing IDs from document key: ${documentKey}`,
+        );
       }
 
       databaseDuration = Date.now() - databaseStartTime;
       log.performanceMetrics.databaseDuration = databaseDuration;
-      console.log(`✅ [OCR-ENHANCED] Database operations completed in ${databaseDuration}ms`);
+      console.log(
+        `✅ [OCR-ENHANCED] Database operations completed in ${databaseDuration}ms`,
+      );
     }
 
     // Final logging and metrics
     log.processingEndTime = new Date();
-    log.performanceMetrics.totalDuration = log.processingEndTime.getTime() - processingStartTime.getTime();
+    log.performanceMetrics.totalDuration =
+      log.processingEndTime.getTime() - processingStartTime.getTime();
 
-    console.log(`🎯 [OCR-ENHANCED] Enhanced processing completed successfully:`);
+    console.log(
+      `🎯 [OCR-ENHANCED] Enhanced processing completed successfully:`,
+    );
     console.log(`   📊 Performance Metrics:`);
-    console.log(`      - Total duration: ${log.performanceMetrics.totalDuration}ms`);
-    console.log(`      - OCR duration: ${log.performanceMetrics.ocrDuration}ms`);
-    console.log(`      - Extraction duration: ${log.performanceMetrics.extractionDuration}ms`);
-    console.log(`      - Database duration: ${log.performanceMetrics.databaseDuration}ms`);
+    console.log(
+      `      - Total duration: ${log.performanceMetrics.totalDuration}ms`,
+    );
+    console.log(
+      `      - OCR duration: ${log.performanceMetrics.ocrDuration}ms`,
+    );
+    console.log(
+      `      - Extraction duration: ${log.performanceMetrics.extractionDuration}ms`,
+    );
+    console.log(
+      `      - Database duration: ${log.performanceMetrics.databaseDuration}ms`,
+    );
     console.log(`   📈 Extraction Results:`);
     console.log(`      - OCR confidence: ${log.ocrConfidence.toFixed(1)}%`);
     console.log(`      - Fields extracted: ${log.fieldsExtracted}`);
@@ -805,21 +873,31 @@ export async function processDocumentInBackgroundEnhanced(
     console.log(`      - Fields saved to database: ${log.fieldsSaved}`);
     console.log(`      - Property fields saved: ${log.propertyFieldsSaved}`);
     console.log(`      - Listing fields saved: ${log.listingFieldsSaved}`);
-    
+
     if (log.warnings.length > 0) {
-      console.warn(`⚠️ [OCR-ENHANCED] Warnings (${log.warnings.length}):`, log.warnings);
+      console.warn(
+        `⚠️ [OCR-ENHANCED] Warnings (${log.warnings.length}):`,
+        log.warnings,
+      );
     }
 
-    console.log(`📋 [OCR-ENHANCED] Complete processing log:`, JSON.stringify(log, null, 2));
-
+    console.log(
+      `📋 [OCR-ENHANCED] Complete processing log:`,
+      JSON.stringify(log, null, 2),
+    );
   } catch (error) {
     log.processingEndTime = new Date();
-    log.performanceMetrics.totalDuration = log.processingEndTime.getTime() - processingStartTime.getTime();
-    log.errors.push(error instanceof Error ? error.message : 'Unknown error');
+    log.performanceMetrics.totalDuration =
+      log.processingEndTime.getTime() - processingStartTime.getTime();
+    log.errors.push(error instanceof Error ? error.message : "Unknown error");
 
-    console.error(`❌ [OCR-ENHANCED] Enhanced processing failed for: ${documentKey}`);
+    console.error(
+      `❌ [OCR-ENHANCED] Enhanced processing failed for: ${documentKey}`,
+    );
     console.error(`❌ [OCR-ENHANCED] Error:`, error);
-    console.error(`❌ [OCR-ENHANCED] Processing duration: ${log.performanceMetrics.totalDuration}ms`);
+    console.error(
+      `❌ [OCR-ENHANCED] Processing duration: ${log.performanceMetrics.totalDuration}ms`,
+    );
     console.error(`❌ [OCR-ENHANCED] Error log:`, JSON.stringify(log, null, 2));
 
     if (error instanceof Error && error.stack) {
@@ -830,16 +908,16 @@ export async function processDocumentInBackgroundEnhanced(
 
 // Helper function to determine file type from document key
 function getFileTypeFromKey(documentKey: string): string {
-  const extension = documentKey.split('.').pop()?.toLowerCase();
+  const extension = documentKey.split(".").pop()?.toLowerCase();
   switch (extension) {
-    case 'pdf':
-      return 'PDF';
-    case 'jpg':
-    case 'jpeg':
-      return 'JPG';
-    case 'png':
-      return 'PNG';
+    case "pdf":
+      return "PDF";
+    case "jpg":
+    case "jpeg":
+      return "JPG";
+    case "png":
+      return "PNG";
     default:
-      return 'Unknown';
+      return "Unknown";
   }
 }

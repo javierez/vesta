@@ -73,9 +73,7 @@ export function PropertyTabs({
 
       <TabsContent value="caracteristicas" className="mt-6">
         <div className="mx-auto max-w-4xl">
-          <PropertyCharacteristicsForm
-            listing={convertedListing}
-          />
+          <PropertyCharacteristicsForm listing={convertedListing} />
         </div>
       </TabsContent>
 

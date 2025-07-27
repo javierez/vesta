@@ -66,28 +66,90 @@ graph TD
 ## File Upload Process
 
 ### Step 1: User Interaction
-**Location**: `src/components/crear/property-identification-form.tsx:212-218`
+**Location**: `src/components/crear/property-identification-form.tsx:537-605`
 
 ```typescript
 // When user uploads a document, this function is called
-const handleUpload = async (file: File) => {
-  // Upload to S3 and get document key
-  const documentKey = await uploadToS3(file);
+const handleFileUpload = async (file: File) => {
+  // Upload to S3 with temporary reference
+  const uploadedDocument = await uploadDocument(
+    file,
+    userId,
+    tempReferenceNumber, // temp_123456789
+    uploadedDocuments.length + 1,
+    "ficha_propiedad"
+  );
   
-  // Trigger enhanced background processing
-  await processDocumentInBackgroundEnhanced(documentKey);
+  // Note: OCR processing will be triggered after property creation
+  // This ensures the property exists before OCR tries to find it
 };
 ```
 
-### Step 2: S3 Storage
+### Step 2: S3 Storage with Temporary Reference
 - Document is uploaded to AWS S3 bucket
+- Uses temporary reference number (`temp_123456789`)
 - Generates unique document key (path in S3)
-- Returns document key for processing reference
+- **OCR is NOT triggered yet** - waits for property creation
 
-### Step 3: Background Processing Trigger
+### Step 3: Property Creation Flow
+**Location**: `src/components/crear/property-identification-form.tsx:503-542`
+
+```typescript
+const nextStep = async () => {
+  // If cadastral reference provided → create immediately with validation
+  if (currentStep === 0 && formData.cadastralReference.trim()) {
+    const newProperty = await handleCreatePropertyFromCadastral(cadastralReference);
+    // Redirects to property form
+  }
+  
+  // If documents uploaded → create with minimal data (NO validation)
+  if (currentStep === 0 && uploadedDocuments.length > 0) {
+    const newProperty = await handleCreatePropertyFromDocuments();
+    // Creates property with placeholder data
+    // OCR will extract real address later
+    // Redirects to property form
+  }
+  
+  // Otherwise → go to direcciones step for manual entry
+};
+```
+
+**Key Changes:**
+- **Document uploads**: Now use `handleCreatePropertyFromDocuments()` which bypasses Nominatim validation
+- **Manual entry**: Still uses `handleCreatePropertyFromLocation()` with immediate validation
+- **Cadastral reference**: Uses dedicated function with cadastral service integration
+
+### Step 4: Document Renaming and OCR Trigger
+**Location**: `src/components/crear/property-identification-form.tsx:298-337`
+
+```typescript
+// Inside handleCreatePropertyFromDocuments() function
+// After property creation, documents are renamed and OCR starts
+const renamedDocuments = await renameDocumentFolder(
+  tempReferenceNumber,     // temp_123456789
+  newProperty.referenceNumber, // VESTA20240000001
+  documentIds
+);
+
+// NOW trigger OCR processing for each renamed document
+for (const renamedDoc of renamedDocuments) {
+  void processDocumentInBackgroundEnhanced(
+    renamedDoc.newDocumentKey // Uses real reference number
+  ).catch((error) => {
+    console.error(
+      `Enhanced background OCR processing failed for ${renamedDoc.newDocumentKey}:`,
+      error,
+    );
+  });
+}
+```
+
+**Important**: This process is now contained within the `handleCreatePropertyFromDocuments()` function, which is specifically designed for document uploads and bypasses address validation.
+
+### Step 3: Background Processing Trigger (Timing Critical)
 **Location**: `src/server/ocr/ocr-initial-form.tsx:652-829`
 
-The `processDocumentInBackgroundEnhanced()` function is called with the document key:
+The `processDocumentInBackgroundEnhanced()` function is called **AFTER property creation**, not during upload:
 
 ```typescript
 export async function processDocumentInBackgroundEnhanced(
@@ -96,11 +158,22 @@ export async function processDocumentInBackgroundEnhanced(
 ): Promise<void>
 ```
 
+**Important Timing Flow:**
+1. User uploads documents → Stored with temporary reference (`temp_123456789`)
+2. User clicks "Next" → Property created with placeholder address (NO validation)
+3. Property gets real reference (`VESTA20240000001`) 
+4. Documents renamed → From temp reference to real reference
+5. **OCR processing starts** → Extracts real address from documents
+6. **Address standardization** → Cleans and formats extracted address
+7. **Nominatim validation** → Validates extracted address AFTER OCR
+8. **Geocoding service** → Only runs if Nominatim validation passes
+
 **Key Features:**
 - **Non-blocking**: Runs in background without affecting UI
 - **Comprehensive logging**: Tracks performance metrics
 - **Error handling**: Graceful failure handling
 - **Audit trail**: Creates detailed logs for debugging
+- **Smart timing**: Only runs after property exists in database
 
 ---
 
@@ -269,8 +342,8 @@ function consolidateResults(results: ExtractedFieldResult[]): ExtractedFieldResu
 
 ## Database Integration
 
-### Step 1: Property/Listing ID Resolution
-**Location**: `src/server/queries/textract-database-saver.ts:186-247`
+### Step 1: Property/Listing ID Resolution (Timing Critical)
+**Location**: `src/server/queries/textract-database-saver.ts:375-420`
 
 ```typescript
 export async function getPropertyAndListingIds(documentKey: string): Promise<{
@@ -285,11 +358,21 @@ export async function getPropertyAndListingIds(documentKey: string): Promise<{
 3. **Find associated listing** for the property
 4. **Return IDs** for database operations
 
-**Example Document Key Pattern:**
+**Critical Document Key Patterns:**
 ```
+// ❌ WRONG - Temporary reference (OCR will fail)
+temp_1753658412909/documents/ficha_propiedad_abc123.jpg
+
+// ✅ CORRECT - Real reference (OCR will succeed)
 documents/VESTA20240000001/ficha_propiedad/document.pdf
          ↑ Reference Number Extracted Here
 ```
+
+**Why Timing Matters:**
+- OCR requires real `VESTA` reference number to find property
+- Documents start with `temp_` reference during upload
+- Documents are renamed to real reference after property creation
+- **OCR must run AFTER renaming** to find the property successfully
 
 ### Step 2: Data Validation
 **Location**: `src/server/queries/textract-database-saver.ts:250-343`
@@ -320,7 +403,7 @@ const highConfidenceFields = extractedFields.filter(
 
 **Only fields with ≥50% confidence are saved to database**
 
-### Step 4: Database Save Operation
+### Step 4: Database Save Operation with Enhanced Services
 **Location**: `src/server/queries/textract-database-saver.ts:18-183`
 
 ```typescript
@@ -332,12 +415,46 @@ export async function saveExtractedDataToDatabase(
 ): Promise<DatabaseSaveResult>
 ```
 
-**Process:**
+**Enhanced Process:**
 1. **Separate data** into property vs listing fields
 2. **Build update objects** with proper type conversion
 3. **Execute database updates** using existing query functions
-4. **Handle errors gracefully** with detailed logging
-5. **Return results** with success/failure details
+4. **Smart enrichment**: Check for cadastral reference or address data
+5. **Cadastral integration**: If cadastral reference found, retrieve comprehensive data
+6. **Geocoding fallback**: If address found, enrich with location data
+7. **Handle errors gracefully** with detailed logging
+8. **Return results** with success/failure details
+
+**New Smart Data Enrichment with Validation:**
+```typescript
+// Priority 1: Cadastral Reference Detection
+if (hasCadastralRef) {
+  const cadastralData = await retrieveCadastralData(cadastralRef);
+  // Updates property with comprehensive Spanish cadastral data
+}
+// Priority 2: Address-based Geocoding with Nominatim Validation
+else if (hasAddressInfo) {
+  // Step 1: Validate extracted address with Nominatim
+  const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&countrycodes=es&addressdetails=1`;
+  const nominatimResults = await fetch(nominatimUrl).then(r => r.json());
+  
+  if (nominatimResults.length === 0) {
+    console.warn(`Address not found in Nominatim: ${fullAddress}`);
+    return; // Skip geocoding if address is invalid
+  }
+  
+  // Step 2: Only proceed with geocoding if Nominatim validation passes
+  console.log(`✅ Nominatim validation successful, proceeding with geocoding`);
+  const geoData = await retrieveGeocodingData(fullAddress);
+  // Updates property with location enrichment
+}
+```
+
+**Key Benefits of New Validation:**
+- **No false errors**: Placeholder addresses are never validated
+- **Real address validation**: Only extracted addresses are checked
+- **Graceful fallback**: Invalid addresses skip geocoding without errors
+- **Better user experience**: No "address not found" errors during upload
 
 ### Step 5: Audit Logging
 **Location**: `src/server/queries/textract-database-saver.ts:346-387`
@@ -394,7 +511,19 @@ export async function processDocumentInBackgroundEnhanced(
 ```
 
 **Purpose**: Orchestrates the entire process from OCR to database save
-**Called from**: Property identification form when document is uploaded
+**Called from**: Property identification form **AFTER property creation and document renaming**
+**Critical Timing**: Only called when documentKey contains real reference number
+
+**Updated Call Pattern:**
+```typescript
+// ❌ OLD - Called immediately on upload
+void processDocumentInBackgroundEnhanced(uploadedDocument.documentKey);
+
+// ✅ NEW - Called after property creation and document renaming
+for (const renamedDoc of renamedDocuments) {
+  void processDocumentInBackgroundEnhanced(renamedDoc.newDocumentKey);
+}
+```
 
 #### 2. Field Extraction Entry Point
 **Location**: `src/server/ocr/field-extractor.ts:368`
@@ -482,11 +611,30 @@ Let's trace a complete example:
 ]
 ```
 
-#### 4. Database Save
+#### 4. Database Save with Smart Enrichment
 ```typescript
 // All fields have >50% confidence, so they're saved:
 // Properties table updated: squareMeter=120, bedrooms=3
 // Listings table updated: price=350000
+
+// If cadastral reference was also extracted:
+if (extractedCadastralRef) {
+  const cadastralData = await retrieveCadastralData(extractedCadastralRef);
+  // Properties table further enriched with:
+  // - Complete address from cadastral service
+  // - Exact coordinates and neighborhood
+  // - Official building year and property type
+  // - All Spanish cadastral registry data
+}
+
+// Otherwise, if address was extracted:
+else if (extractedAddress) {
+  const geoData = await retrieveGeocodingData(extractedAddress);
+  // Properties table enriched with:
+  // - Latitude/longitude coordinates
+  // - Neighborhood and municipality data
+  // - Province information
+}
 ```
 
 ---
@@ -738,11 +886,25 @@ SELECT * FROM listings WHERE property_id = (
 - All confidence scores < 50%
 - Validation failures
 - Database connection issues
+- **Property not found** (timing issue)
 
 **Solutions**:
 - Lower confidence threshold for testing
 - Check validation rules
 - Verify database connectivity
+- **Check document key format** - ensure property exists before OCR
+
+#### Issue: "Could not extract reference number from document key"
+**Symptoms**: Log shows `⚠️ [DATABASE] Could not extract reference number from document key: temp_123456789/documents/...`
+**Causes**:
+- OCR running on temporary reference before property creation
+- Document key still has `temp_` prefix
+- Property creation and document renaming not completed
+
+**Solutions**:
+- Ensure OCR runs AFTER property creation
+- Verify document renaming process completed
+- Check that documents use real reference number (VESTA format)
 
 #### Issue: Wrong Field Values
 **Symptoms**: Incorrect data in database
@@ -756,9 +918,97 @@ SELECT * FROM listings WHERE property_id = (
 - Add more specific regex patterns
 - Enhance fuzzy matching algorithm
 
+#### Issue: "La dirección introducida no se ha encontrado" Error on Document Upload
+**Symptoms**: Error message appears immediately when clicking "Next" after uploading documents
+**Causes**:
+- ❌ **OLD ISSUE**: System was validating placeholder address "Dirección a completar"
+- System trying to validate address before OCR extraction
+
+**Solutions**:
+- ✅ **FIXED**: Now uses `handleCreatePropertyFromDocuments()` which bypasses validation
+- Documents upload without validation, OCR extracts real address later
+- Validation only happens AFTER OCR extraction
+
+#### Issue: Address Validation Failures After OCR
+**Symptoms**: Log shows "Nominatim validation failed for extracted address"
+**Causes**:
+- OCR extracted incomplete or incorrect address
+- Address format not recognized by Nominatim
+- Typos or OCR reading errors in address
+
+**Solutions**:
+- Check OCR confidence levels for address fields
+- Verify document has clear, readable address text
+- Review address standardization process
+- Monitor logs for specific validation failures
+
+#### Issue: Missing Cadastral/Geocoding Data
+**Symptoms**: Basic fields extracted but no location enrichment
+**Causes**:
+- Cadastral reference not detected
+- Address information incomplete
+- External API failures
+- Nominatim validation failed
+
+**Solutions**:
+- Verify cadastral reference format in document
+- Check address completeness for geocoding
+- Monitor external API response logs
+- Review Nominatim validation logs for address issues
+
 ---
 
 ## Advanced Features
+
+### Enhanced Data Enrichment Services
+
+**Location**: `src/server/queries/textract-database-saver.ts:149-270`
+
+The system now automatically enriches extracted data using two intelligent services:
+
+#### 1. Spanish Cadastral Service Integration
+**Triggered when**: OCR extracts a cadastral reference
+**Service**: `retrieveCadastralData()` from `src/server/cadastral/retrieve_cadastral.tsx`
+
+```typescript
+if (hasCadastralRef) {
+  const cadastralData = await retrieveCadastralData(cadastralRef);
+  // Comprehensive property data from Spanish government:
+  // - Official address with formatted street names
+  // - Exact surface area and building year  
+  // - Property type classification
+  // - Geocoded coordinates
+  // - Municipality and neighborhood data
+}
+```
+
+**Benefits**:
+- **Official data**: Direct from Spanish cadastral registry
+- **Complete address**: Properly formatted street names and numbers
+- **Accurate metrics**: Official surface area and construction year
+- **Location data**: Precise coordinates and administrative divisions
+- **Property classification**: Official property type from registry
+
+#### 2. Geocoding Service Integration  
+**Triggered when**: OCR extracts address but no cadastral reference
+**Service**: `retrieveGeocodingData()` from `src/server/googlemaps/retrieve_geo.tsx`
+
+```typescript
+else if (hasAddressInfo) {
+  const geoData = await retrieveGeocodingData(fullAddress);
+  // Location enrichment:
+  // - Latitude/longitude coordinates
+  // - Neighborhood identification
+  // - Municipality and province data
+  // - Location database integration
+}
+```
+
+**Benefits**:
+- **Coordinates**: Precise latitude/longitude for mapping
+- **Location hierarchy**: City, municipality, province structure
+- **Neighborhood linking**: Integration with locations database
+- **Address validation**: Confirms address exists and is properly formatted
 
 ### Fuzzy String Matching Algorithm
 
@@ -891,7 +1141,23 @@ The Enhanced AWS Textract implementation provides a robust, intelligent system f
 - **Multi-source extraction** for maximum data coverage
 - **Intelligent field matching** with fuzzy string algorithms
 - **Quality control** through confidence-based filtering
+- **Smart data enrichment** with cadastral and geocoding services
+- **Proper timing control** ensures property exists before OCR processing
+- **Intelligent validation flow** with separated upload/manual entry paths
+- **Post-OCR address validation** using Nominatim before geocoding
+- **Graceful error handling** prevents false validation errors
 - **Detailed logging** for debugging and monitoring
 - **Type-safe implementation** with full TypeScript support
 
-The system is production-ready and can significantly reduce manual data entry while maintaining high data quality standards.
+### Production Benefits
+
+- **Zero manual data entry** for most property documents
+- **Official data integration** via Spanish cadastral service
+- **Automatic location enrichment** with coordinates and neighborhoods
+- **High data quality** through confidence filtering and validation
+- **Seamless user experience** with background processing
+- **No false validation errors** during document upload process
+- **Smart address validation** only after OCR extraction
+- **Complete audit trail** for regulatory compliance
+
+The system is production-ready and can significantly reduce manual data entry while maintaining high data quality standards and providing comprehensive property data enrichment. The new validation flow eliminates user frustration from false address errors during document uploads.
