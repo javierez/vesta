@@ -37,7 +37,7 @@ export const accounts = singlestoreTable("accounts", {
   isActive: boolean("is_active").default(true),
 });
 
-// Users table
+// Users table (Enhanced for BetterAuth compatibility)
 export const users = singlestoreTable("users", {
   userId: bigint("user_id", { mode: "bigint" }).primaryKey().autoincrement(),
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
@@ -54,6 +54,10 @@ export const users = singlestoreTable("users", {
   lastLogin: timestamp("last_login"),
   isVerified: boolean("is_verified").default(false),
   isActive: boolean("is_active").default(true),
+  // BetterAuth required fields
+  password: varchar("password", { length: 255 }),
+  emailVerified: boolean("email_verified").default(false),
+  emailVerifiedAt: timestamp("email_verified_at"),
 });
 
 // Roles table
@@ -79,6 +83,43 @@ export const userRoles = singlestoreTable("user_roles", {
   isActive: boolean("is_active").default(true),
 });
 
+// BetterAuth tables for authentication
+export const sessions = singlestoreTable("sessions", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  expiresAt: timestamp("expires_at").notNull(),
+  token: varchar("token", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  userId: bigint("user_id", { mode: "bigint" }).notNull(),
+});
+
+export const oauthAccounts = singlestoreTable("oauth_accounts", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  userId: bigint("user_id", { mode: "bigint" }).notNull(),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  idToken: text("id_token"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export const verificationTokens = singlestoreTable("verification_tokens", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
 // Locations table
 export const locations = singlestoreTable("locations", {
   neighborhoodId: bigint("neighborhood_id", { mode: "bigint" })
@@ -99,6 +140,9 @@ export const properties = singlestoreTable("properties", {
   propertyId: bigint("property_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
+
+  // Account for multi-tenant security
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
 
   // Basic Information
   referenceNumber: varchar("reference_number", { length: 32 }),
@@ -254,6 +298,9 @@ export const listings = singlestoreTable("listings", {
     .primaryKey()
     .autoincrement(),
 
+  // Account for multi-tenant security  
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+
   // Basic Information
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(), // FK → properties.property_id
   agentId: bigint("agent_id", { mode: "bigint" }).notNull(), // FK → users.user_id (agent)
@@ -318,6 +365,8 @@ export const contacts = singlestoreTable("contacts", {
   contactId: bigint("contact_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
+  // Account for multi-tenant security  
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),
   email: varchar("email", { length: 255 }),

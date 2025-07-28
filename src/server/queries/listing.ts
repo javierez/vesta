@@ -480,15 +480,6 @@ export async function listListings(
       .limit(limit)
       .offset(offset);
 
-    // Log the results
-    console.log(
-      `Found ${allListings.length} active listings with owner information:`,
-    );
-    allListings.forEach((listing, index) => {
-      console.log(
-        `${index + 1}. Listing ID: ${listing.listingId}, Property: ${listing.title}, Agent: ${listing.agentName}, Owner: ${listing.owner || "No owner found"}`,
-      );
-    });
 
     return {
       listings: allListings,

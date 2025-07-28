@@ -7,18 +7,26 @@ import type { Property, PropertyImage } from "../../lib/data";
 import { retrieveCadastralData } from "../cadastral/retrieve_cadastral";
 import { createDefaultListing } from "./listing";
 import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
+import { getSecureDb, getCurrentAccountId } from "~/lib/dal";
 
 // Generate a unique reference number
 export async function generateReferenceNumber(): Promise<string> {
   try {
+    const { db: secureDb, accountId } = await getSecureDb();
+    
     // Get the current year
     const currentYear = new Date().getFullYear();
 
-    // Get the count of properties for this year
-    const [result] = await db
+    // Get the count of properties for this year within this account
+    const [result] = await secureDb
       .select({ count: sql<number>`count(*)` })
       .from(properties)
-      .where(sql`YEAR(${properties.createdAt}) = ${currentYear}`);
+      .where(
+        and(
+          eq(properties.accountId, accountId),
+          sql`YEAR(${properties.createdAt}) = ${currentYear}`
+        )
+      );
 
     const count = result?.count ?? 0;
 
@@ -39,6 +47,7 @@ export async function createProperty(
   data: Omit<
     Property,
     | "propertyId"
+    | "accountId"
     | "createdAt"
     | "updatedAt"
     | "formPosition"
@@ -46,21 +55,30 @@ export async function createProperty(
   >,
 ) {
   try {
+    const { db: secureDb, accountId } = await getSecureDb();
+    
     // Generate a unique reference number
     const referenceNumber = await generateReferenceNumber();
 
-    const [result] = await db
+    const [result] = await secureDb
       .insert(properties)
       .values({
         ...data,
+        accountId,
         referenceNumber,
       })
       .$returningId();
     if (!result) throw new Error("Failed to create property");
-    const [newProperty] = await db
+    
+    const [newProperty] = await secureDb
       .select()
       .from(properties)
-      .where(eq(properties.propertyId, BigInt(result.propertyId)));
+      .where(
+        and(
+          eq(properties.propertyId, BigInt(result.propertyId)),
+          eq(properties.accountId, accountId)
+        )
+      );
     return newProperty;
   } catch (error) {
     console.error("Error creating property:", error);
@@ -71,10 +89,17 @@ export async function createProperty(
 // Get property by ID
 export async function getPropertyById(propertyId: number) {
   try {
-    const [property] = await db
+    const { db: secureDb, withAccountFilter } = await getSecureDb();
+    
+    const [property] = await secureDb
       .select()
       .from(properties)
-      .where(eq(properties.propertyId, BigInt(propertyId)));
+      .where(
+        withAccountFilter(
+          properties,
+          eq(properties.propertyId, BigInt(propertyId))
+        )
+      );
     return property;
   } catch (error) {
     console.error("Error fetching property:", error);
@@ -315,10 +340,14 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
 
     //console.log('cadastralData', cadastralData)
 
+    // Get secure database access
+    const { db: secureDb, accountId } = await getSecureDb();
+    
     // Create property with cadastral data and sensible defaults
     const propertyData = {
       cadastralReference,
       referenceNumber,
+      accountId,
       propertyType: cadastralData?.propertyType ?? ("piso" as const),
       propertySubtype: undefined, // Will be set by user in form
       formPosition: 1, // Starting form position
@@ -343,17 +372,22 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
       }),
     };
 
-    const [result] = await db
+    const [result] = await secureDb
       .insert(properties)
       .values(propertyData)
       .$returningId();
 
     if (!result) throw new Error("Failed to create property");
 
-    const [newProperty] = await db
+    const [newProperty] = await secureDb
       .select()
       .from(properties)
-      .where(eq(properties.propertyId, BigInt(result.propertyId)));
+      .where(
+        and(
+          eq(properties.propertyId, BigInt(result.propertyId)),
+          eq(properties.accountId, accountId)
+        )
+      );
 
     if (!newProperty) throw new Error("Failed to retrieve created property");
 
@@ -400,10 +434,14 @@ export async function createPropertyFromLocation(locationData: {
 
     // Generate a unique reference number
     const referenceNumber = await generateReferenceNumber();
+    
+    // Get secure database access
+    const { db: secureDb, accountId } = await getSecureDb();
 
     // Create property with location data and sensible defaults (similar to cadastral version)
     const propertyData = {
       referenceNumber,
+      accountId,
       propertyType: locationData.propertyType ?? ("piso" as const),
       propertySubtype: undefined, // Will be set by user in form
       formPosition: 1, // Starting form position
@@ -426,17 +464,22 @@ export async function createPropertyFromLocation(locationData: {
       }),
     };
 
-    const [result] = await db
+    const [result] = await secureDb
       .insert(properties)
       .values(propertyData)
       .$returningId();
 
     if (!result) throw new Error("Failed to create property");
 
-    const [newProperty] = await db
+    const [newProperty] = await secureDb
       .select()
       .from(properties)
-      .where(eq(properties.propertyId, BigInt(result.propertyId)));
+      .where(
+        and(
+          eq(properties.propertyId, BigInt(result.propertyId)),
+          eq(properties.accountId, accountId)
+        )
+      );
 
     if (!newProperty) throw new Error("Failed to retrieve created property");
 
