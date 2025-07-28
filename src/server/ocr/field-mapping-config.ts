@@ -124,7 +124,7 @@ const standardizeSpanishAddress = (address: string): string => {
   let restOfAddress = cleanAddress;
   
   if (streetTypeMatch?.[1]) {
-    const matchedType = streetTypeMatch[1].toLowerCase().replace('/', '');
+    const matchedType = streetTypeMatch[1].toLowerCase();
     streetType = streetTypeMap[matchedType] ?? streetTypeMatch[1];
     restOfAddress = cleanAddress.slice(streetTypeMatch[0].length);
   }
@@ -151,7 +151,6 @@ const standardizeSpanishAddress = (address: string): string => {
       `${streetType} ${capitalizedStreetName}, ${portalNumber}` :
       `Calle ${capitalizedStreetName}, ${portalNumber}`;
     
-    console.log(`🏠 [ADDRESS] Standardized: "${address}" → "${standardizedAddress}"`);
     return standardizedAddress;
   }
   
@@ -328,6 +327,31 @@ export const PROPERTY_FIELD_MAPPINGS: FieldMapping[] = [
     dbTable: "properties",
     aliases: ["código postal", "codigo postal", "cp", "postal"],
     dataType: "string",
+    category: "location",
+  },
+  // Temporary location fields - extracted but handled specially in database saver
+  {
+    dbColumn: "extractedCity",
+    dbTable: "properties", // Temporary - will be processed via findOrCreateLocation
+    aliases: ["ciudad", "localidad", "localización", "ubicación"],
+    dataType: "string",
+    converter: toUpperCase,
+    category: "location",
+  },
+  {
+    dbColumn: "extractedProvince", 
+    dbTable: "properties", // Temporary - will be processed via findOrCreateLocation
+    aliases: ["provincia", "prov"],
+    dataType: "string",
+    converter: toUpperCase,
+    category: "location",
+  },
+  {
+    dbColumn: "extractedMunicipality",
+    dbTable: "properties", // Temporary - will be processed via findOrCreateLocation
+    aliases: ["municipio", "ayuntamiento"],
+    dataType: "string",
+    converter: toUpperCase,
     category: "location",
   },
 

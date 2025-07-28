@@ -30,7 +30,7 @@ export async function retrieveGeocodingData(
   address: string,
 ): Promise<FormattedGeoData | null> {
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&addressdetails=1`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&addressdetails=1&limit=1`;
     console.log(url);
 
     const response = await fetch(url, {
@@ -59,23 +59,21 @@ export async function retrieveGeocodingData(
     const addressData = result.address;
     const neighborhood = addressData.suburb;
 
-    if (!neighborhood) {
-      return null;
-    }
-
     let neighborhoodId: number | undefined;
-    try {
-      const municipality = addressData.city ?? "Unknown";
-      const province = addressData.province ?? addressData.state ?? "Unknown";
+    if (neighborhood) {
+      try {
+        const municipality = addressData.city ?? "Unknown";
+        const province = addressData.province ?? addressData.state ?? "Unknown";
 
-      neighborhoodId = await findOrCreateLocation({
-        city: municipality,
-        province: province,
-        municipality: municipality,
-        neighborhood: neighborhood,
-      });
-    } catch {
-      // Continue without neighborhood ID if there's an error
+        neighborhoodId = await findOrCreateLocation({
+          city: municipality,
+          province: province,
+          municipality: municipality,
+          neighborhood: neighborhood,
+        });
+      } catch {
+        // Continue without neighborhood ID if there's an error
+      }
     }
 
     const formattedData: FormattedGeoData = {
