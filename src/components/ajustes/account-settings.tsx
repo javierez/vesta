@@ -2,7 +2,9 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
+// @ts-ignore - zodResolver import issue with type definitions
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -160,10 +162,12 @@ export function AccountSettings({
         <CardContent className="space-y-4">
           {currentLogo && (
             <div className="flex items-center gap-4">
-              <img
+              <Image
                 src={currentLogo}
                 alt="Logo actual"
                 className="h-16 w-16 rounded-lg border object-cover"
+                width={64}
+                height={64}
               />
               <div className="text-sm text-muted-foreground">Logo actual</div>
             </div>

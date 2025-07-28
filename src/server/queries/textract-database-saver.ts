@@ -145,15 +145,16 @@ export async function saveExtractedDataToDatabase(
         });
 
         // Check if cadastral reference was extracted and use cadastral service
-        const hasCadastralRef = propertyUpdateData.cadastralReference && 
-          String(propertyUpdateData.cadastralReference).trim() !== "";
+        const cadastralRefValue = propertyUpdateData.cadastralReference as string | undefined;
+        const hasCadastralRef = cadastralRefValue && 
+          cadastralRefValue.trim() !== "";
         
         if (hasCadastralRef) {
           console.log(
             `🏛️ [DATABASE] Cadastral reference detected, retrieving cadastral data...`,
           );
           try {
-            const cadastralRef = String(propertyUpdateData.cadastralReference).trim();
+            const cadastralRef = (propertyUpdateData.cadastralReference as string).trim();
             console.log(`🔍 [DATABASE] Retrieving cadastral data for: ${cadastralRef}`);
             
             const cadastralData = await retrieveCadastralData(cadastralRef);
@@ -217,8 +218,9 @@ export async function saveExtractedDataToDatabase(
           }
         } else {
           // Check if we have address info that was just standardized and saved
-          const hasAddressInfo = propertyUpdateData.street && 
-            String(propertyUpdateData.street) !== "Dirección a completar";
+          const streetValue = propertyUpdateData.street as string | undefined;
+          const hasAddressInfo = streetValue && 
+            streetValue !== "Dirección a completar";
           
           if (hasAddressInfo) {
             console.log(
@@ -227,7 +229,7 @@ export async function saveExtractedDataToDatabase(
             
             // Geocoding needs to run AFTER the standardized address is saved to database
             // We'll trigger it in a separate async operation to avoid blocking
-            setImmediate(async () => {
+            setImmediate(() => void (async () => {
               try {
                 console.log(`🔍 [DATABASE] Starting post-save geocoding for property ${propertyId}...`);
                 
@@ -344,7 +346,7 @@ export async function saveExtractedDataToDatabase(
                   `❌ [DATABASE] Post-save geocoding error for property ${propertyId}: ${String(geoError)}`,
                 );
               }
-            });
+            })());
           }
         }
       } catch (error) {

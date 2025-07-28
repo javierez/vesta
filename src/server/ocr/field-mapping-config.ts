@@ -81,7 +81,7 @@ const standardizeSpanishAddress = (address: string): string => {
     return address || '';
   }
 
-  let cleanAddress = address.trim();
+  const cleanAddress = address.trim();
 
   // Standardize street type abbreviations to full names
   const streetTypeMap: Record<string, string> = {
@@ -118,14 +118,14 @@ const standardizeSpanishAddress = (address: string): string => {
 
   // Extract the street type at the beginning
   const streetTypePattern = /^(c\/|cl|calle|av\/|av|avda|avenida|pl\/|pl|plaza|ps\/|ps|paseo|cr\/|cr|carrera|tr\/|tr|travesia|travesía|ct\/|ct|cuesta|cm\/|cm|camino|rd\/|rd|ronda)\s+/i;
-  const streetTypeMatch = cleanAddress.match(streetTypePattern);
+  const streetTypeMatch = streetTypePattern.exec(cleanAddress);
   
   let streetType = '';
   let restOfAddress = cleanAddress;
   
-  if (streetTypeMatch && streetTypeMatch[1]) {
+  if (streetTypeMatch?.[1]) {
     const matchedType = streetTypeMatch[1].toLowerCase().replace('/', '');
-    streetType = streetTypeMap[matchedType] || streetTypeMatch[1];
+    streetType = streetTypeMap[matchedType] ?? streetTypeMatch[1];
     restOfAddress = cleanAddress.slice(streetTypeMatch[0].length);
   }
   
@@ -133,9 +133,9 @@ const standardizeSpanishAddress = (address: string): string => {
   // Look for the first number which should be the portal number
   // Stop at any additional numbers that might be floor/door (like "4:6" for floor:door)
   const addressPattern = /^([^0-9]+?)\s*(\d+)(?:[\s:]+\d+.*)?$/;
-  const addressMatch = restOfAddress.match(addressPattern);
+  const addressMatch = addressPattern.exec(restOfAddress);
   
-  if (addressMatch && addressMatch[1] && addressMatch[2]) {
+  if (addressMatch?.[1] && addressMatch?.[2]) {
     const streetName = addressMatch[1].trim();
     const portalNumber = addressMatch[2];
     
