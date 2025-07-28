@@ -151,7 +151,7 @@ export async function getCurrentUserRoles(): Promise<string[]> {
       .where(
         and(
           eq(userRoles.userId, BigInt(currentUser.id)),
-          eq(users.accountId, accountId),
+          eq(users.accountId, BigInt(accountId)),
           eq(userRoles.isActive, true),
           eq(roles.isActive, true),
         )

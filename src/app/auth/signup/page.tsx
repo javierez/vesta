@@ -78,28 +78,35 @@ export default function SignUpPage() {
     }
 
     try {
-      // Note: In a real implementation, you would need to create the account first
-      // then create the user. For now, we'll assume accountId is handled by the backend
-      const result = await signUp.email({
-        email: formData.email,
-        password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        // Note: accountId and companyName would be handled by backend logic
-        callbackURL: "/dashboard",
+      // Call our custom signup endpoint that creates both account and user
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName, 
+          email: formData.email,
+          password: formData.password,
+          companyName: formData.companyName,
+        }),
       });
 
-      if (result.error) {
-        setError(result.error.message || "Error al crear la cuenta");
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        setError(result.error || "Error al crear la cuenta");
         return;
       }
 
       setSuccess(true);
       
-      // Auto-sign in after successful registration
+      // Redirect to dashboard after successful registration
       setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
+      
     } catch (err) {
       setError("Error inesperado al crear la cuenta");
       console.error("Sign up error:", err);

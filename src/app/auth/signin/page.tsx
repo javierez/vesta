@@ -63,6 +63,9 @@ export default function SignInPage() {
     }
   };
 
+  // Check if OAuth providers are configured
+  const hasGoogleAuth = process.env.NEXT_PUBLIC_GOOGLE_CONFIGURED === 'true';
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -155,22 +158,24 @@ export default function SignInPage() {
               </Button>
             </form>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">O continúa con</span>
-              </div>
-            </div>
+            {hasGoogleAuth && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="bg-white px-2 text-gray-500">O continúa con</span>
+                  </div>
+                </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleSignIn}
-              disabled={isLoading}
-            >
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleGoogleSignIn}
+                  disabled={isLoading}
+                >
               <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
@@ -191,6 +196,8 @@ export default function SignInPage() {
               </svg>
               Continuar con Google
             </Button>
+              </>
+            )}
 
             <div className="text-center">
               <Link 

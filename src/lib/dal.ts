@@ -7,9 +7,15 @@ import type { Session } from 'better-auth/types';
 /**
  * Data Access Layer (DAL) - Provides account-level security for all database operations
  * 
+ * Authentication Architecture:
+ * 1. Users authenticate (they have passwords, not accounts)
+ * 2. Users belong to accounts (organizations/companies)  
+ * 3. Accounts have configurations and settings
+ * 4. All data is filtered by the user's accountId
+ * 
  * This wrapper ensures that:
- * 1. All queries are automatically filtered by accountId
- * 2. Users can only access data belonging to their account
+ * 1. All queries are automatically filtered by the authenticated user's accountId
+ * 2. Users can only access data belonging to their account/organization
  * 3. Multi-tenant security is enforced at the application level
  */
 
@@ -19,7 +25,10 @@ export interface SecureSession {
     email: string;
     firstName: string;
     lastName: string;
-    accountId: number;
+    accountId: number; // The account/organization this user belongs to
+    phone?: string;
+    timezone?: string;
+    language?: string;
   };
   session: {
     id: string;
@@ -28,8 +37,10 @@ export interface SecureSession {
 }
 
 /**
- * Get current user session with account validation
- * This function verifies the user session and returns account-filtered user data
+ * Get current authenticated user session with account context
+ * 
+ * Flow: User authenticates -> Session contains user info -> User belongs to account
+ * This function verifies the user session and extracts their account context
  */
 export async function getSecureSession(): Promise<SecureSession | null> {
   try {
@@ -41,9 +52,12 @@ export async function getSecureSession(): Promise<SecureSession | null> {
       return null;
     }
 
-    // Ensure accountId exists and is valid
+    // Critical: User must belong to an account (organization)
     if (!session.user.accountId) {
-      console.error('User session missing accountId:', session.user.id);
+      console.error('Authenticated user missing accountId:', {
+        userId: session.user.id,
+        email: session.user.email,
+      });
       return null;
     }
 
@@ -51,9 +65,12 @@ export async function getSecureSession(): Promise<SecureSession | null> {
       user: {
         id: session.user.id,
         email: session.user.email,
-        firstName: session.user.firstName || session.user.name || '',
+        firstName: session.user.name || '', // BetterAuth uses 'name' field
         lastName: session.user.lastName || '',
-        accountId: session.user.accountId,
+        accountId: session.user.accountId, // The user's organization/company
+        phone: session.user.phone || undefined,
+        timezone: session.user.timezone || undefined,
+        language: session.user.language || undefined,
       },
       session: {
         id: session.session.id,
@@ -67,43 +84,47 @@ export async function getSecureSession(): Promise<SecureSession | null> {
 }
 
 /**
- * Get current user's account ID from session
+ * Get the account ID of the currently authenticated user
+ * 
+ * Flow: Authenticated User -> User's Account ID -> Used for data filtering
  * Throws error if no valid session exists
  */
-export async function getCurrentAccountId(): Promise<number> {
+export async function getCurrentUserAccountId(): Promise<number> {
   const session = await getSecureSession();
   
   if (!session) {
-    throw new Error('No authenticated session found');
+    throw new Error('No authenticated user session found');
   }
 
   return session.user.accountId;
 }
 
 /**
- * Get current user information
+ * Get current authenticated user information
  * Throws error if no valid session exists
  */
 export async function getCurrentUser() {
   const session = await getSecureSession();
   
   if (!session) {
-    throw new Error('No authenticated session found');
+    throw new Error('No authenticated user session found');
   }
 
   return session.user;
 }
 
 /**
- * Secure database instance that automatically filters by account
+ * Secure database instance that automatically filters by the authenticated user's account
+ * 
+ * Architecture: User authenticates -> Get user's accountId -> Filter all queries by that accountId
  * This should be used instead of the raw `db` instance for all user-facing queries
  */
 export async function getSecureDb() {
-  const accountId = await getCurrentAccountId();
+  const accountId = await getCurrentUserAccountId();
   
   return {
     db,
-    accountId,
+    accountId, // The authenticated user's account/organization ID
     // Helper to add account filtering to any where condition
     withAccountFilter: (table: any, additionalWhere?: any) => {
       const accountFilter = eq(table.accountId, accountId);
@@ -113,12 +134,12 @@ export async function getSecureDb() {
 }
 
 /**
- * Verify that a resource belongs to the current user's account
+ * Verify that a resource belongs to the current user's account/organization
  * Used for authorization checks before mutations
  */
 export async function verifyAccountAccess(resourceAccountId: number): Promise<boolean> {
   try {
-    const currentAccountId = await getCurrentAccountId();
+    const currentAccountId = await getCurrentUserAccountId();
     return currentAccountId === resourceAccountId;
   } catch (error) {
     return false;

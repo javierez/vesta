@@ -12,6 +12,7 @@ import { eq, and, or, like, sql, inArray } from "drizzle-orm";
 import type { Contact } from "../../lib/data";
 import { listingContacts } from "../db/schema";
 import { prospectUtils } from "../../lib/utils";
+import { getCurrentUserAccountId } from "../../lib/dal";
 
 // Helper function to get preferred area from prospect data
 type PreferredArea = { neighborhoodId?: number | string; name?: string };
@@ -60,10 +61,16 @@ export async function createContact(
   data: Omit<Contact, "contactId" | "createdAt" | "updatedAt">,
 ) {
   try {
+    const accountId = await getCurrentUserAccountId();
     const [result] = await db
       .insert(contacts)
       .values({
-        ...data,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        additionalInfo: data.additionalInfo || {},
+        accountId: BigInt(accountId),
         isActive: true,
       })
       .$returningId();
@@ -71,7 +78,12 @@ export async function createContact(
     const [newContact] = await db
       .select()
       .from(contacts)
-      .where(eq(contacts.contactId, BigInt(result.contactId)));
+      .where(
+        and(
+          eq(contacts.contactId, BigInt(result.contactId)),
+          eq(contacts.accountId, BigInt(accountId))
+        )
+      );
     return newContact;
   } catch (error) {
     console.error("Error creating contact:", error);
@@ -87,11 +99,17 @@ export async function createContactWithListings(
   ownershipAction?: "change" | "add",
 ) {
   try {
+    const accountId = await getCurrentUserAccountId();
     // First, create the contact
     const [result] = await db
       .insert(contacts)
       .values({
-        ...contactData,
+        firstName: contactData.firstName,
+        lastName: contactData.lastName,
+        email: contactData.email,
+        phone: contactData.phone,
+        additionalInfo: contactData.additionalInfo || {},
+        accountId: BigInt(accountId),
         isActive: true,
       })
       .$returningId();
@@ -142,7 +160,12 @@ export async function createContactWithListings(
     const [newContact] = await db
       .select()
       .from(contacts)
-      .where(eq(contacts.contactId, newContactId));
+      .where(
+        and(
+          eq(contacts.contactId, newContactId),
+          eq(contacts.accountId, BigInt(accountId))
+        )
+      );
 
     return newContact;
   } catch (error) {

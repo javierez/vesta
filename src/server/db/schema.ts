@@ -95,18 +95,18 @@ export const sessions = singlestoreTable("sessions", {
   userId: bigint("user_id", { mode: "bigint" }).notNull(),
 });
 
-export const oauthAccounts = singlestoreTable("oauth_accounts", {
+// OAuth provider accounts linked to users (renamed from oauth_accounts for clarity)
+export const authAccounts = singlestoreTable("auth_accounts", {
   id: varchar("id", { length: 36 }).primaryKey(),
-  accountId: text("account_id").notNull(),
-  providerId: text("provider_id").notNull(),
-  userId: bigint("user_id", { mode: "bigint" }).notNull(),
+  providerId: text("provider_id").notNull(), // e.g., "google", "apple", "linkedin"
+  providerAccountId: text("provider_account_id").notNull(), // The ID from the OAuth provider
+  userId: bigint("user_id", { mode: "bigint" }).notNull(), // FK → users.user_id
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   idToken: text("id_token"),
   accessTokenExpiresAt: timestamp("access_token_expires_at"),
   refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
   scope: text("scope"),
-  password: text("password"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

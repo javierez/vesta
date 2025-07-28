@@ -6,9 +6,12 @@ import { db } from "~/server/db";
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "mysql", // SingleStore is MySQL compatible
-    // Optional: Map existing schema if table names differ
+    // Map our custom table names to BetterAuth expectations
     schema: {
-      user: "users", // Map to existing users table
+      user: "users",           // Our users table
+      session: "sessions",     // Our sessions table  
+      account: "auth_accounts", // Our auth_accounts table (OAuth providers)
+      verification: "verification_tokens", // Our verification_tokens table
     },
   }),
   
@@ -20,39 +23,62 @@ export const auth = betterAuth({
     autoSignIn: true,
   },
   
-  // Social Providers Configuration
+  // Social Providers Configuration (only enable if credentials are provided)
   socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      // Advanced Google configuration
-      accessType: "offline", // Ensures refresh token
-      prompt: "select_account", // Always prompt account selection
-    },
-    apple: {
-      clientId: process.env.APPLE_CLIENT_ID!,
-      clientSecret: process.env.APPLE_CLIENT_SECRET!,
-    },
-    linkedin: {
-      clientId: process.env.LINKEDIN_CLIENT_ID!,
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
-    },
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && {
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        // Advanced Google configuration
+        accessType: "offline", // Ensures refresh token
+        prompt: "select_account", // Always prompt account selection
+      },
+    }),
+    ...(process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET && {
+      apple: {
+        clientId: process.env.APPLE_CLIENT_ID,
+        clientSecret: process.env.APPLE_CLIENT_SECRET,
+      },
+    }),
+    ...(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET && {
+      linkedin: {
+        clientId: process.env.LINKEDIN_CLIENT_ID,
+        clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+      },
+    }),
   },
   
-  // User schema mapping to existing structure
+  // User schema mapping - Users authenticate and belong to accounts
   user: {
     fields: {
-      name: "firstName", // Map to existing schema
-      email: "email",
+      name: "firstName", // Map BetterAuth's 'name' to our 'firstName'
+      email: "email",    // Direct mapping
     },
     additionalFields: {
+      // Key field: Users belong to an account (organization)
       accountId: {
-        type: "number",
+        type: "number", 
         required: true,
+        input: false, // Don't allow direct input - set programmatically
       },
       lastName: {
         type: "string",
         required: true,
+      },
+      // Keep existing user fields
+      phone: {
+        type: "string",
+        required: false,
+      },
+      timezone: {
+        type: "string", 
+        required: false,
+        defaultValue: "UTC",
+      },
+      language: {
+        type: "string",
+        required: false, 
+        defaultValue: "en",
       },
     },
   },

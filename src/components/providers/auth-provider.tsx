@@ -10,7 +10,10 @@ export interface User {
   firstName?: string;
   lastName?: string;
   name?: string;
-  accountId?: number;
+  accountId: number; // Required: User must belong to an account/organization
+  phone?: string;
+  timezone?: string;
+  language?: string;
   image?: string;
   emailVerified?: boolean;
 }
@@ -68,15 +71,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [betterAuthSession, isPending, isPublicPath, router]);
 
-  const session: Session | null = betterAuthSession ? {
+  const session: Session | null = betterAuthSession && betterAuthSession.user.accountId ? {
     user: {
       id: betterAuthSession.user.id,
       email: betterAuthSession.user.email,
-      firstName: betterAuthSession.user.firstName,
-      lastName: betterAuthSession.user.lastName,
+      firstName: betterAuthSession.user.name, // BetterAuth uses 'name' field
+      lastName: betterAuthSession.user.lastName || '',
       name: betterAuthSession.user.name,
-      accountId: betterAuthSession.user.accountId,
-      image: betterAuthSession.user.image,
+      accountId: betterAuthSession.user.accountId, // Required for valid session
+      phone: betterAuthSession.user.phone || undefined,
+      timezone: betterAuthSession.user.timezone || undefined,
+      language: betterAuthSession.user.language || undefined,
+      image: betterAuthSession.user.image || undefined,
       emailVerified: betterAuthSession.user.emailVerified,
     },
     session: {

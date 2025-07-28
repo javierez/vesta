@@ -11,16 +11,49 @@ import {
 } from "../db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
+import { getCurrentUserAccountId } from "../../lib/dal";
 
 // Create a new listing
 export async function createListing(
   data: Omit<Listing, "listingId" | "createdAt" | "updatedAt">,
 ) {
   try {
+    const accountId = await getCurrentUserAccountId();
     const [result] = await db
       .insert(listings)
       .values({
-        ...data,
+        accountId: BigInt(accountId),
+        propertyId: data.propertyId,
+        agentId: data.agentId,
+        listingType: data.listingType,
+        price: data.price,
+        status: data.status,
+        isFeatured: data.isFeatured,
+        isBankOwned: data.isBankOwned,
+        visibilityMode: data.visibilityMode,
+        isFurnished: data.isFurnished,
+        furnitureQuality: data.furnitureQuality,
+        optionalGarage: data.optionalGarage,
+        optionalGaragePrice: data.optionalGaragePrice,
+        optionalStorageRoom: data.optionalStorageRoom,
+        optionalStorageRoomPrice: data.optionalStorageRoomPrice,
+        hasKeys: data.hasKeys,
+        studentFriendly: data.studentFriendly,
+        petsAllowed: data.petsAllowed,
+        appliancesIncluded: data.appliancesIncluded,
+        internet: data.internet,
+        oven: data.oven,
+        microwave: data.microwave,
+        washingMachine: data.washingMachine,
+        fridge: data.fridge,
+        tv: data.tv,
+        stoneware: data.stoneware,
+        fotocasa: data.fotocasa,
+        idealista: data.idealista,
+        habitaclia: data.habitaclia,
+        pisoscom: data.pisoscom,
+        yaencontre: data.yaencontre,
+        milanuncios: data.milanuncios,
         isActive: true,
         viewCount: 0,
         inquiryCount: 0,
@@ -30,7 +63,12 @@ export async function createListing(
     const [newListing] = await db
       .select()
       .from(listings)
-      .where(eq(listings.listingId, BigInt(result.listingId)));
+      .where(
+        and(
+          eq(listings.listingId, BigInt(result.listingId)),
+          eq(listings.accountId, BigInt(accountId))
+        )
+      );
     return newListing;
   } catch (error) {
     console.error("Error creating listing:", error);
@@ -818,7 +856,9 @@ export async function getListingDetails(listingId: number) {
 // Create a default listing for a newly created property
 export async function createDefaultListing(propertyId: number) {
   try {
+    const accountId = await getCurrentUserAccountId();
     const listingData = {
+      accountId: BigInt(accountId),
       propertyId: BigInt(propertyId),
       agentId: BigInt(1), // Default agent ID
       listingType: "Sale" as const,

@@ -7,7 +7,7 @@ import type { Property, PropertyImage } from "../../lib/data";
 import { retrieveCadastralData } from "../cadastral/retrieve_cadastral";
 import { createDefaultListing } from "./listing";
 import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
-import { getSecureDb, getCurrentAccountId } from "~/lib/dal";
+import { getSecureDb, getCurrentUserAccountId } from "~/lib/dal";
 
 // Generate a unique reference number
 export async function generateReferenceNumber(): Promise<string> {
@@ -23,7 +23,7 @@ export async function generateReferenceNumber(): Promise<string> {
       .from(properties)
       .where(
         and(
-          eq(properties.accountId, accountId),
+          eq(properties.accountId, BigInt(accountId)),
           sql`YEAR(${properties.createdAt}) = ${currentYear}`
         )
       );
@@ -64,7 +64,7 @@ export async function createProperty(
       .insert(properties)
       .values({
         ...data,
-        accountId,
+        accountId: BigInt(accountId),
         referenceNumber,
       })
       .$returningId();
@@ -76,7 +76,7 @@ export async function createProperty(
       .where(
         and(
           eq(properties.propertyId, BigInt(result.propertyId)),
-          eq(properties.accountId, accountId)
+          eq(properties.accountId, BigInt(accountId))
         )
       );
     return newProperty;
@@ -347,7 +347,7 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
     const propertyData = {
       cadastralReference,
       referenceNumber,
-      accountId,
+      accountId: BigInt(accountId),
       propertyType: cadastralData?.propertyType ?? ("piso" as const),
       propertySubtype: undefined, // Will be set by user in form
       formPosition: 1, // Starting form position
@@ -385,7 +385,7 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
       .where(
         and(
           eq(properties.propertyId, BigInt(result.propertyId)),
-          eq(properties.accountId, accountId)
+          eq(properties.accountId, BigInt(accountId))
         )
       );
 
@@ -441,7 +441,7 @@ export async function createPropertyFromLocation(locationData: {
     // Create property with location data and sensible defaults (similar to cadastral version)
     const propertyData = {
       referenceNumber,
-      accountId,
+      accountId: BigInt(accountId),
       propertyType: locationData.propertyType ?? ("piso" as const),
       propertySubtype: undefined, // Will be set by user in form
       formPosition: 1, // Starting form position
@@ -477,7 +477,7 @@ export async function createPropertyFromLocation(locationData: {
       .where(
         and(
           eq(properties.propertyId, BigInt(result.propertyId)),
-          eq(properties.accountId, accountId)
+          eq(properties.accountId, BigInt(accountId))
         )
       );
 
