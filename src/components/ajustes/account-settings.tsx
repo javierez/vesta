@@ -2,7 +2,6 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -31,7 +30,6 @@ import {
   updateAccountSettingsAction,
   getAccountSettingsAction,
 } from "~/app/actions/settings";
-import { accountSettingsSchema } from "~/types/settings";
 import type { AccountInput, AccountSettings } from "~/types/settings";
 
 interface AccountSettingsProps {
@@ -51,7 +49,6 @@ export function AccountSettings({
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<AccountInput>({
-    resolver: zodResolver(accountSettingsSchema),
     defaultValues: {
       name: initialData?.name ?? "",
       address: initialData?.address ?? "",
