@@ -268,7 +268,7 @@ export function PropertyListingForm() {
             completar el proceso.
           </p>
           <Button asChild>
-            <Link href="/">Volver al inicio</Link>
+            <Link href="/dashboard">Volver al inicio</Link>
           </Button>
         </CardContent>
       </Card>

@@ -286,7 +286,9 @@ export default function PropertyIdentificationForm() {
       };
 
       // Call the server action directly without Nominatim validation
-      const newProperty = await createPropertyFromLocation(placeholderLocationData);
+      const newProperty = await createPropertyFromLocation(
+        placeholderLocationData,
+      );
       console.log("Property created from documents:", newProperty);
 
       // Rename S3 folder if we have uploaded documents
@@ -409,7 +411,11 @@ export default function PropertyIdentificationForm() {
           result.address?.city ??
           result.address?.town ??
           "",
-        province: locationData.province ?? (result.address?.state ? translateComunidad(result.address.state) : ""),
+        province:
+          locationData.province ??
+          (result.address?.state
+            ? translateComunidad(result.address.state)
+            : ""),
         municipality:
           locationData.municipality ??
           result.address?.city ??
@@ -580,7 +586,9 @@ export default function PropertyIdentificationForm() {
         ...prev,
         postalCode: result.address?.postcode ?? prev.postalCode ?? "",
         city: result.address?.city ?? result.address?.town ?? prev.city ?? "",
-        province: result.address?.state ? translateComunidad(result.address.state) : prev.province ?? "",
+        province: result.address?.state
+          ? translateComunidad(result.address.state)
+          : (prev.province ?? ""),
         municipality:
           result.address?.city ??
           result.address?.town ??
@@ -760,25 +768,25 @@ export default function PropertyIdentificationForm() {
   // Helper function to translate autonomous communities from English to Spanish
   const translateComunidad = (englishName: string) => {
     const translations: Record<string, string> = {
-      "Andalusia": "Andalucía",
-      "Aragon": "Aragón",
-      "Asturias": "Asturias",
+      Andalusia: "Andalucía",
+      Aragon: "Aragón",
+      Asturias: "Asturias",
       "Balearic Islands": "Islas Baleares",
       "Basque Country": "País Vasco",
       "Canary Islands": "Islas Canarias",
-      "Cantabria": "Cantabria",
+      Cantabria: "Cantabria",
       "Castile and León": "Castilla y León",
       "Castile-La Mancha": "Castilla-La Mancha",
-      "Catalonia": "Cataluña",
-      "Ceuta": "Ceuta",
+      Catalonia: "Cataluña",
+      Ceuta: "Ceuta",
       "Community of Madrid": "Comunidad de Madrid",
-      "Extremadura": "Extremadura",
-      "Galicia": "Galicia",
+      Extremadura: "Extremadura",
+      Galicia: "Galicia",
       "La Rioja": "La Rioja",
-      "Melilla": "Melilla",
-      "Murcia": "Murcia",
-      "Navarre": "Navarra",
-      "Valencia": "Comunidad Valenciana",
+      Melilla: "Melilla",
+      Murcia: "Murcia",
+      Navarre: "Navarra",
+      Valencia: "Comunidad Valenciana",
       "Valencian Community": "Comunidad Valenciana",
     };
     return translations[englishName] ?? englishName;

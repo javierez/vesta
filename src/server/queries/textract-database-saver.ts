@@ -23,7 +23,6 @@ export async function saveExtractedDataToDatabase(
   extractedFields: ExtractedFieldResult[],
   confidenceThreshold = 80,
 ): Promise<DatabaseSaveResult> {
-
   const startTime = Date.now();
   const result: DatabaseSaveResult = {
     success: false,
@@ -42,7 +41,6 @@ export async function saveExtractedDataToDatabase(
       (field) => field.confidence >= confidenceThreshold,
     );
 
-
     if (highConfidenceFields.length === 0) {
       console.log(
         `⚠️ [DATABASE] No fields meet confidence threshold. Skipping database save.`,
@@ -59,37 +57,35 @@ export async function saveExtractedDataToDatabase(
       (field) => field.dbTable === "listings",
     );
 
-
     // Extract location fields for special handling
     const extractedLocationData = {
-      city: '',
-      province: '',
-      municipality: '',
+      city: "",
+      province: "",
+      municipality: "",
     };
-    
+
     // Build property update data
     const propertyUpdateData: Record<string, unknown> = {};
     if (propertyFields.length > 0) {
       for (const field of propertyFields) {
         try {
           // Handle location fields specially - don't save to properties table
-          if (field.dbColumn === 'extractedCity') {
+          if (field.dbColumn === "extractedCity") {
             extractedLocationData.city = String(field.value);
             continue;
           }
-          if (field.dbColumn === 'extractedProvince') {
+          if (field.dbColumn === "extractedProvince") {
             extractedLocationData.province = String(field.value);
             continue;
           }
-          if (field.dbColumn === 'extractedMunicipality') {
+          if (field.dbColumn === "extractedMunicipality") {
             extractedLocationData.municipality = String(field.value);
             continue;
           }
-          
+
           // Type-safe assignment with proper conversion for regular fields
           const key = field.dbColumn;
           propertyUpdateData[key] = field.value;
-
         } catch (error) {
           const errorMsg = `Failed to prepare property field ${field.dbColumn}: ${String(error)}`;
           console.error(`❌ [DATABASE] ${errorMsg}`);
@@ -148,24 +144,35 @@ export async function saveExtractedDataToDatabase(
         });
 
         // Check if cadastral reference was extracted and use cadastral service
-        const cadastralRefValue = propertyUpdateData.cadastralReference as string | undefined;
-        const hasCadastralRef = cadastralRefValue && 
-          cadastralRefValue.trim() !== "";
-        
+        const cadastralRefValue = propertyUpdateData.cadastralReference as
+          | string
+          | undefined;
+        const hasCadastralRef =
+          cadastralRefValue && cadastralRefValue.trim() !== "";
+
         if (hasCadastralRef) {
           console.log(
             `🏛️ [DATABASE] Cadastral reference detected, retrieving cadastral data...`,
           );
           try {
-            const cadastralRef = (propertyUpdateData.cadastralReference as string).trim();
-            console.log(`🔍 [DATABASE] Retrieving cadastral data for: ${cadastralRef}`);
-            
+            const cadastralRef = (
+              propertyUpdateData.cadastralReference as string
+            ).trim();
+            console.log(
+              `🔍 [DATABASE] Retrieving cadastral data for: ${cadastralRef}`,
+            );
+
             const cadastralData = await retrieveCadastralData(cadastralRef);
-            
+
             if (cadastralData) {
               // First, create or find the location in the locations table
               let neighborhoodId: number | undefined;
-              if (cadastralData.city && cadastralData.province && cadastralData.municipality && cadastralData.neighborhood) {
+              if (
+                cadastralData.city &&
+                cadastralData.province &&
+                cadastralData.municipality &&
+                cadastralData.neighborhood
+              ) {
                 try {
                   neighborhoodId = await findOrCreateLocation({
                     city: cadastralData.city,
@@ -173,9 +180,13 @@ export async function saveExtractedDataToDatabase(
                     municipality: cadastralData.municipality,
                     neighborhood: cadastralData.neighborhood,
                   });
-                  console.log(`🏛️ [DATABASE] Location created/found with neighborhoodId: ${neighborhoodId}`);
+                  console.log(
+                    `🏛️ [DATABASE] Location created/found with neighborhoodId: ${neighborhoodId}`,
+                  );
                 } catch (locationError) {
-                  console.error(`❌ [DATABASE] Failed to create/find location: ${String(locationError)}`);
+                  console.error(
+                    `❌ [DATABASE] Failed to create/find location: ${String(locationError)}`,
+                  );
                 }
               }
 
@@ -188,17 +199,21 @@ export async function saveExtractedDataToDatabase(
                 propertyType: cadastralData.propertyType,
                 postalCode: cadastralData.postalCode,
               };
-              
+
               if (cadastralData.latitude) {
-                cadastralUpdateData.latitude = parseFloat(cadastralData.latitude);
+                cadastralUpdateData.latitude = parseFloat(
+                  cadastralData.latitude,
+                );
               }
               if (cadastralData.longitude) {
-                cadastralUpdateData.longitude = parseFloat(cadastralData.longitude);
+                cadastralUpdateData.longitude = parseFloat(
+                  cadastralData.longitude,
+                );
               }
               if (neighborhoodId) {
                 cadastralUpdateData.neighborhoodId = BigInt(neighborhoodId);
               }
-              
+
               await updateProperty(
                 propertyId,
                 cadastralUpdateData as Omit<
@@ -206,7 +221,7 @@ export async function saveExtractedDataToDatabase(
                   "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
                 >,
               );
-              
+
               console.log(
                 `✅ [DATABASE] Cadastral data retrieved and property updated with comprehensive data`,
               );
@@ -215,10 +230,14 @@ export async function saveExtractedDataToDatabase(
               console.log(`   └─ Surface: ${cadastralData.squareMeter}m²`);
               console.log(`   └─ Year Built: ${cadastralData.yearBuilt}`);
               if (cadastralData.latitude && cadastralData.longitude) {
-                console.log(`   └─ Coordinates: ${cadastralData.latitude}, ${cadastralData.longitude}`);
+                console.log(
+                  `   └─ Coordinates: ${cadastralData.latitude}, ${cadastralData.longitude}`,
+                );
               }
               if (cadastralData.neighborhood) {
-                console.log(`   └─ Neighborhood: ${cadastralData.neighborhood}`);
+                console.log(
+                  `   └─ Neighborhood: ${cadastralData.neighborhood}`,
+                );
               }
             } else {
               console.warn(
@@ -234,123 +253,157 @@ export async function saveExtractedDataToDatabase(
         } else {
           // Check if we have address info that was just standardized and saved
           const streetValue = propertyUpdateData.street as string | undefined;
-          const hasAddressInfo = streetValue && 
-            streetValue !== "Dirección a completar";
-          
+          const hasAddressInfo =
+            streetValue && streetValue !== "Dirección a completar";
+
           if (hasAddressInfo) {
-            
             // Geocoding needs to run AFTER the standardized address is saved to database
             // We'll trigger it in a separate async operation to avoid blocking
-            setImmediate(() => void (async () => {
-              try {
-                
-                // Import here to avoid circular dependencies
-                const { db } = await import("../db");
-                const { properties } = await import("../db/schema");
-                const { eq } = await import("drizzle-orm");
-                
-                // Get the updated property with standardized address
-                const [updatedProperty] = await db
-                  .select({
-                    street: properties.street,
-                    postalCode: properties.postalCode,
-                    neighborhoodId: properties.neighborhoodId,
-                  })
-                  .from(properties)
-                  .where(eq(properties.propertyId, BigInt(propertyId)))
-                  .limit(1);
-                
-                if (!updatedProperty?.street || updatedProperty.street === "Dirección a completar") {
-                  return;
-                }
-                
-                // Build full address from standardized database fields like cadastral approach
-                // Use extracted location data if available
-                let fullAddress = updatedProperty.street;
-                if (extractedLocationData.municipality || extractedLocationData.city) {
-                  const city = extractedLocationData.municipality || extractedLocationData.city;
-                  const province = extractedLocationData.province;
-                  if (province) {
-                    fullAddress = `${updatedProperty.street}, ${city}, ${province}, España`;
-                  } else {
-                    fullAddress = `${updatedProperty.street}, ${city}, España`;
-                  }
-                } else {
-                  // Fallback - just street and country
-                  fullAddress = `${updatedProperty.street}, España`;
-                }
-                
-                
-                // First validate the extracted address with Nominatim
-                try {
-                  const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&addressdetails=1`;
-                  const response = await fetch(nominatimUrl);
-                  const nominatimResults = await response.json() as Array<{
-                    address?: {
-                      postcode?: string;
-                      city?: string;
-                      town?: string;
-                      state?: string;
-                      suburb?: string;
-                    };
-                    lat?: string;
-                    lon?: string;
-                  }>;
+            setImmediate(
+              () =>
+                void (async () => {
+                  try {
+                    // Import here to avoid circular dependencies
+                    const { db } = await import("../db");
+                    const { properties } = await import("../db/schema");
+                    const { eq } = await import("drizzle-orm");
 
-                  if (nominatimResults.length === 0 || !nominatimResults[0]?.lat || !nominatimResults[0]?.lon) {
-                    return;
-                  }
-                  
-                  // Now proceed with our geocoding service since Nominatim validation passed
-                  const geoData = await retrieveGeocodingData(fullAddress);
-                
-                if (geoData) {
-                  // First, create or find the location in the locations table
-                  // Prefer extracted location data, fallback to geocoding data
-                  let neighborhoodId: number | undefined;
-                  
-                  const locationToCreate = {
-                    city: extractedLocationData.city ?? geoData.city ?? "Unknown",
-                    province: extractedLocationData.province ?? geoData.province ?? "Unknown", 
-                    municipality: extractedLocationData.municipality ?? geoData.municipality ?? extractedLocationData.city ?? geoData.city ?? "Unknown",
-                    neighborhood: geoData.neighborhood ?? "Unknown",
-                  };
-                  
-                  // Only create location if we have meaningful data
-                  if (locationToCreate.city !== "Unknown" || locationToCreate.province !== "Unknown") {
-                    try {
-                      neighborhoodId = await findOrCreateLocation(locationToCreate);
-                    } catch (locationError) {
-                      console.error(`❌ Location error: ${String(locationError)}`);
+                    // Get the updated property with standardized address
+                    const [updatedProperty] = await db
+                      .select({
+                        street: properties.street,
+                        postalCode: properties.postalCode,
+                        neighborhoodId: properties.neighborhoodId,
+                      })
+                      .from(properties)
+                      .where(eq(properties.propertyId, BigInt(propertyId)))
+                      .limit(1);
+
+                    if (
+                      !updatedProperty?.street ||
+                      updatedProperty.street === "Dirección a completar"
+                    ) {
+                      return;
                     }
-                  }
 
-                  const geoUpdateData: Record<string, unknown> = {
-                    latitude: parseFloat(geoData.latitude),
-                    longitude: parseFloat(geoData.longitude),
-                  };
-                  
-                  // Note: city, province, municipality, neighborhood are stored in locations table via neighborhoodId
-                  if (neighborhoodId) {
-                    geoUpdateData.neighborhoodId = BigInt(neighborhoodId);
+                    // Build full address from standardized database fields like cadastral approach
+                    // Use extracted location data if available
+                    let fullAddress = updatedProperty.street;
+                    if (
+                      extractedLocationData.municipality ||
+                      extractedLocationData.city
+                    ) {
+                      const city =
+                        extractedLocationData.municipality ||
+                        extractedLocationData.city;
+                      const province = extractedLocationData.province;
+                      if (province) {
+                        fullAddress = `${updatedProperty.street}, ${city}, ${province}, España`;
+                      } else {
+                        fullAddress = `${updatedProperty.street}, ${city}, España`;
+                      }
+                    } else {
+                      // Fallback - just street and country
+                      fullAddress = `${updatedProperty.street}, España`;
+                    }
+
+                    // First validate the extracted address with Nominatim
+                    try {
+                      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&addressdetails=1`;
+                      const response = await fetch(nominatimUrl);
+                      const nominatimResults =
+                        (await response.json()) as Array<{
+                          address?: {
+                            postcode?: string;
+                            city?: string;
+                            town?: string;
+                            state?: string;
+                            suburb?: string;
+                          };
+                          lat?: string;
+                          lon?: string;
+                        }>;
+
+                      if (
+                        nominatimResults.length === 0 ||
+                        !nominatimResults[0]?.lat ||
+                        !nominatimResults[0]?.lon
+                      ) {
+                        return;
+                      }
+
+                      // Now proceed with our geocoding service since Nominatim validation passed
+                      const geoData = await retrieveGeocodingData(fullAddress);
+
+                      if (geoData) {
+                        // First, create or find the location in the locations table
+                        // Prefer extracted location data, fallback to geocoding data
+                        let neighborhoodId: number | undefined;
+
+                        const locationToCreate = {
+                          city:
+                            extractedLocationData.city ??
+                            geoData.city ??
+                            "Unknown",
+                          province:
+                            extractedLocationData.province ??
+                            geoData.province ??
+                            "Unknown",
+                          municipality:
+                            extractedLocationData.municipality ??
+                            geoData.municipality ??
+                            extractedLocationData.city ??
+                            geoData.city ??
+                            "Unknown",
+                          neighborhood: geoData.neighborhood ?? "Unknown",
+                        };
+
+                        // Only create location if we have meaningful data
+                        if (
+                          locationToCreate.city !== "Unknown" ||
+                          locationToCreate.province !== "Unknown"
+                        ) {
+                          try {
+                            neighborhoodId =
+                              await findOrCreateLocation(locationToCreate);
+                          } catch (locationError) {
+                            console.error(
+                              `❌ Location error: ${String(locationError)}`,
+                            );
+                          }
+                        }
+
+                        const geoUpdateData: Record<string, unknown> = {
+                          latitude: parseFloat(geoData.latitude),
+                          longitude: parseFloat(geoData.longitude),
+                        };
+
+                        // Note: city, province, municipality, neighborhood are stored in locations table via neighborhoodId
+                        if (neighborhoodId) {
+                          geoUpdateData.neighborhoodId = BigInt(neighborhoodId);
+                        }
+
+                        await updateProperty(
+                          propertyId,
+                          geoUpdateData as Omit<
+                            Partial<Property>,
+                            | "propertyId"
+                            | "createdAt"
+                            | "updatedAt"
+                            | "referenceNumber"
+                          >,
+                        );
+                      }
+                    } catch (nominatimError) {
+                      console.error(
+                        `❌ Geocoding error: ${String(nominatimError)}`,
+                      );
+                    }
+                  } catch (geoError) {
+                    console.error(`❌ Geocoding error: ${String(geoError)}`);
                   }
-                  
-                  await updateProperty(
-                    propertyId,
-                    geoUpdateData as Omit<
-                      Partial<Property>,
-                      "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
-                    >,
-                  );
-                  
-                }
-                } catch (nominatimError) {
-                  console.error(`❌ Geocoding error: ${String(nominatimError)}`);
-                }
-              } catch (geoError) {
-                console.error(`❌ Geocoding error: ${String(geoError)}`);
-              }
-            })());
+                })(),
+            );
           }
         }
       } catch (error) {

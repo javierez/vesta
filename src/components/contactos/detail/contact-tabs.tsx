@@ -4,7 +4,7 @@ import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
-import { Tabs, TabsContent } from "~/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { cn } from "~/lib/utils";
 import { useState, useEffect } from "react";
 import { User, Building, Plus } from "lucide-react";
@@ -143,13 +143,12 @@ export function ContactTabs({ contact }: ContactTabsProps) {
 
   // Build tabs array based on contact type
   const tabs = [
-    { value: "informacion", label: "INFORMACIÓN" },
-    { value: "notas", label: "NOTAS" },
+    { value: "informacion", label: "Información" },
     ...(showSolicitudes
-      ? [{ value: "solicitudes", label: "SOLICITUDES" }]
+      ? [{ value: "solicitudes", label: "Solicitudes" }]
       : []),
     ...(showPropiedades
-      ? [{ value: "propiedades", label: "PROPIEDADES" }]
+      ? [{ value: "propiedades", label: "Propiedades" }]
       : []),
   ];
 
@@ -537,126 +536,143 @@ export function ContactTabs({ contact }: ContactTabsProps) {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <div className="relative mb-6 flex">
-        {tabs.map((tab, index) => (
-          <div
-            key={tab.value}
-            className={`flex-1 -skew-x-2 transform rounded-t-xl px-8 py-4 font-semibold shadow-md transition duration-300 ${
-              index > 0 ? "-ml-2" : ""
-            } ${
-              activeTab === tab.value
-                ? "z-10 border-b-4 border-blue-600 bg-white text-gray-800"
-                : "border-b-2 border-gray-300 bg-gray-200 hover:bg-gray-100"
-            }`}
-            style={{ zIndex: activeTab === tab.value ? 10 : index }}
-          >
-            <button
-              onClick={() => setActiveTab(tab.value)}
-              className="block flex h-full w-full items-center justify-center font-semibold text-inherit transition-colors duration-300"
-            >
-              <span className="text-sm tracking-widest">{tab.label}</span>
-            </button>
-          </div>
+      <TabsList className={`grid w-full grid-cols-${tabs.length}`}>
+        {tabs.map((tab) => (
+          <TabsTrigger key={tab.value} value={tab.value}>
+            {tab.label}
+          </TabsTrigger>
         ))}
-      </div>
+      </TabsList>
 
       <TabsContent value="informacion" className="mt-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Basic Information */}
-          <Card
-            className={cn(
-              "relative p-4 transition-all duration-500 ease-out",
-              getCardStyles("basicInfo"),
-            )}
-          >
-            <ModernSaveIndicator
-              state={moduleStates.basicInfo?.saveState ?? "idle"}
-              onSave={() => saveModule("basicInfo")}
-            />
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-wide">
-                INFORMACIÓN BÁSICA
-              </h3>
-            </div>
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="firstName" className="text-sm">
-                  Nombre
-                </Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => {
-                    setFirstName(e.target.value);
-                    updateModuleState("basicInfo", true);
-                  }}
-                  className="h-8 text-gray-500"
-                />
+        <div className="mx-auto max-w-4xl space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Basic Information */}
+            <Card
+              className={cn(
+                "relative p-4 transition-all duration-500 ease-out",
+                getCardStyles("basicInfo"),
+              )}
+            >
+              <ModernSaveIndicator
+                state={moduleStates.basicInfo?.saveState ?? "idle"}
+                onSave={() => saveModule("basicInfo")}
+              />
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold tracking-wide">
+                  INFORMACIÓN BÁSICA
+                </h3>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="lastName" className="text-sm">
-                  Apellidos
-                </Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => {
-                    setLastName(e.target.value);
-                    updateModuleState("basicInfo", true);
-                  }}
-                  className="h-8 text-gray-500"
-                />
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="firstName" className="text-sm">
+                    Nombre
+                  </Label>
+                  <Input
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      updateModuleState("basicInfo", true);
+                    }}
+                    className="h-8 text-gray-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lastName" className="text-sm">
+                    Apellidos
+                  </Label>
+                  <Input
+                    id="lastName"
+                    value={lastName}
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                      updateModuleState("basicInfo", true);
+                    }}
+                    className="h-8 text-gray-500"
+                  />
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
 
-          {/* Contact Details */}
+            {/* Contact Details */}
+            <Card
+              className={cn(
+                "relative p-4 transition-all duration-500 ease-out",
+                getCardStyles("contactDetails"),
+              )}
+            >
+              <ModernSaveIndicator
+                state={moduleStates.contactDetails?.saveState ?? "idle"}
+                onSave={() => saveModule("contactDetails")}
+              />
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold tracking-wide">
+                  DATOS DE CONTACTO
+                </h3>
+              </div>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-sm">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      updateModuleState("contactDetails", true);
+                    }}
+                    className="h-8 text-gray-500"
+                    placeholder="contacto@email.com"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-sm">
+                    Teléfono
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      updateModuleState("contactDetails", true);
+                    }}
+                    className="h-8 text-gray-500"
+                    placeholder="+34 600 000 000"
+                  />
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Notes Section */}
           <Card
             className={cn(
               "relative p-4 transition-all duration-500 ease-out",
-              getCardStyles("contactDetails"),
+              getCardStyles("notes"),
             )}
           >
             <ModernSaveIndicator
-              state={moduleStates.contactDetails?.saveState ?? "idle"}
-              onSave={() => saveModule("contactDetails")}
+              state={moduleStates.notes?.saveState ?? "idle"}
+              onSave={() => saveModule("notes")}
             />
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-wide">
-                DATOS DE CONTACTO
-              </h3>
+              <h3 className="text-sm font-semibold tracking-wide">NOTAS</h3>
             </div>
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
+                <Textarea
+                  id="notes"
+                  value={notes}
                   onChange={(e) => {
-                    setEmail(e.target.value);
-                    updateModuleState("contactDetails", true);
+                    setNotes(e.target.value);
+                    updateModuleState("notes", true);
                   }}
-                  className="h-8 text-gray-500"
-                  placeholder="contacto@email.com"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="phone" className="text-sm">
-                  Teléfono
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value);
-                    updateModuleState("contactDetails", true);
-                  }}
-                  className="h-8 text-gray-500"
-                  placeholder="+34 600 000 000"
+                  className="min-h-[120px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300"
+                  placeholder="Información adicional sobre el contacto..."
                 />
               </div>
             </div>
@@ -664,161 +680,134 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         </div>
       </TabsContent>
 
-      <TabsContent value="notas" className="mt-6">
-        <Card
-          className={cn(
-            "relative p-4 transition-all duration-500 ease-out",
-            getCardStyles("notes"),
-          )}
-        >
-          <ModernSaveIndicator
-            state={moduleStates.notes?.saveState ?? "idle"}
-            onSave={() => saveModule("notes")}
-          />
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold tracking-wide">NOTAS</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => {
-                  setNotes(e.target.value);
-                  updateModuleState("notes", true);
-                }}
-                className="min-h-[120px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300"
-                placeholder="Información adicional sobre el contacto..."
-              />
-            </div>
-          </div>
-        </Card>
-      </TabsContent>
-
       {/* Solicitudes Tab - Show for demandante, interesado, and propietario */}
       {showSolicitudes && (
         <TabsContent value="solicitudes" className="mt-6">
-          <Card className="relative p-4 transition-all duration-500 ease-out">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-wide">
-                SOLICITUDES DE BÚSQUEDA
-              </h3>
-              {!showNewForm && interestForms.length === 0 && (
-                <Button
-                  onClick={createNewForm}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Añadir solicitud
-                </Button>
-              )}
-            </div>
+          <div className="mx-auto max-w-4xl">
+            <Card className="relative p-4 transition-all duration-500 ease-out">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-semibold tracking-wide">
+                  SOLICITUDES DE BÚSQUEDA
+                </h3>
+                {!showNewForm && interestForms.length === 0 && (
+                  <Button
+                    onClick={createNewForm}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Añadir solicitud
+                  </Button>
+                )}
+              </div>
 
-            {/* Show saved prospects in compact view - Always visible */}
-            {prospects.length > 0 && (
-              <div className="mb-6 space-y-3">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {prospects.map((prospect) => (
-                    <ContactProspectCompact
-                      key={prospect.id.toString()}
-                      prospect={prospect}
-                      onEdit={handleEditProspect}
-                    />
+              {/* Show saved prospects in compact view - Always visible */}
+              {prospects.length > 0 && (
+                <div className="mb-6 space-y-3">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {prospects.map((prospect) => (
+                      <ContactProspectCompact
+                        key={prospect.id.toString()}
+                        prospect={prospect}
+                        onEdit={handleEditProspect}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Show edit form when editing or creating new */}
+              {(showNewForm || interestForms.length > 0) && (
+                <div className="space-y-6">
+                  {interestForms.map((form, index) => (
+                    <div key={form.id} className="space-y-4">
+                      <ContactInterestForm
+                        data={form}
+                        onUpdate={(data) => updateInterestForm(form.id, data)}
+                        onRemove={() => {
+                          setInterestForms([]);
+                          setShowNewForm(false);
+                          setEditingProspectId(null);
+                        }}
+                        isRemovable={true}
+                        index={index}
+                        contactId={contact.contactId}
+                        onSaved={handleFormSaved}
+                        onDeleted={handleFormSaved}
+                      />
+                    </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Show edit form when editing or creating new */}
-            {(showNewForm || interestForms.length > 0) && (
-              <div className="space-y-6">
-                {interestForms.map((form, index) => (
-                  <div key={form.id} className="space-y-4">
-                    <ContactInterestForm
-                      data={form}
-                      onUpdate={(data) => updateInterestForm(form.id, data)}
-                      onRemove={() => {
-                        setInterestForms([]);
-                        setShowNewForm(false);
-                        setEditingProspectId(null);
-                      }}
-                      isRemovable={true}
-                      index={index}
-                      contactId={contact.contactId}
-                      onSaved={handleFormSaved}
-                      onDeleted={handleFormSaved}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Empty state */}
-            {prospects.length === 0 &&
-              !showNewForm &&
-              interestForms.length === 0 && (
-                <div className="py-8 text-center text-gray-500">
-                  <User className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-                  <p className="text-sm">
-                    No hay solicitudes de búsqueda configuradas
-                  </p>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Haz clic en &quot;Añadir solicitud&quot; para crear la
-                    primera solicitud
-                  </p>
-                </div>
               )}
-          </Card>
+
+              {/* Empty state */}
+              {prospects.length === 0 &&
+                !showNewForm &&
+                interestForms.length === 0 && (
+                  <div className="py-8 text-center text-gray-500">
+                    <User className="mx-auto mb-3 h-12 w-12 text-gray-300" />
+                    <p className="text-sm">
+                      No hay solicitudes de búsqueda configuradas
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">
+                      Haz clic en &quot;Añadir solicitud&quot; para crear la
+                      primera solicitud
+                    </p>
+                  </div>
+                )}
+            </Card>
+          </div>
         </TabsContent>
       )}
 
       {/* Propiedades Tab - Show for propietario and demandante */}
       {showPropiedades && (
         <TabsContent value="propiedades" className="mt-6">
-          <Card className="relative p-4 transition-all duration-500 ease-out">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-wide">
-                {contact.contactType === "propietario"
-                  ? "PROPIEDADES ASOCIADAS"
-                  : "PROPIEDADES DE INTERÉS"}
-              </h3>
-            </div>
-
-            {isLoadingListings ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="mb-3 aspect-[4/3] rounded-lg bg-gray-200"></div>
-                    <div className="space-y-2">
-                      <div className="h-4 w-3/4 rounded bg-gray-200"></div>
-                      <div className="h-3 w-1/2 rounded bg-gray-200"></div>
-                      <div className="h-3 w-2/3 rounded bg-gray-200"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : contactListings.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {contactListings.map((listing) => (
-                  <PropertyCard
-                    key={listing.listingId?.toString() ?? "unknown"}
-                    listing={listing as unknown as PropertyCardListing}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center text-gray-500">
-                <Building className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-                <p className="text-sm">
+          <div className="mx-auto max-w-4xl">
+            <Card className="relative p-4 transition-all duration-500 ease-out">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-semibold tracking-wide">
                   {contact.contactType === "propietario"
-                    ? "No hay propiedades asociadas a este contacto"
-                    : "No hay propiedades de interés asociadas a este contacto"}
-                </p>
+                    ? "PROPIEDADES ASOCIADAS"
+                    : "PROPIEDADES DE INTERÉS"}
+                </h3>
               </div>
-            )}
-          </Card>
+
+              {isLoadingListings ? (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="mb-3 aspect-[4/3] rounded-lg bg-gray-200"></div>
+                      <div className="space-y-2">
+                        <div className="h-4 w-3/4 rounded bg-gray-200"></div>
+                        <div className="h-3 w-1/2 rounded bg-gray-200"></div>
+                        <div className="h-3 w-2/3 rounded bg-gray-200"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : contactListings.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {contactListings.map((listing) => (
+                    <PropertyCard
+                      key={listing.listingId?.toString() ?? "unknown"}
+                      listing={listing as unknown as PropertyCardListing}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-gray-500">
+                  <Building className="mx-auto mb-3 h-12 w-12 text-gray-300" />
+                  <p className="text-sm">
+                    {contact.contactType === "propietario"
+                      ? "No hay propiedades asociadas a este contacto"
+                      : "No hay propiedades de interés asociadas a este contacto"}
+                  </p>
+                </div>
+              )}
+            </Card>
+          </div>
         </TabsContent>
       )}
     </Tabs>

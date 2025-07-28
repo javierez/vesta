@@ -38,7 +38,10 @@ export async function getAccountById(accountId: number | bigint) {
 // Get account by name
 export async function getAccountByName(name: string) {
   try {
-    const [account] = await db.select().from(accounts).where(eq(accounts.name, name));
+    const [account] = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.name, name));
     return account;
   } catch (error) {
     console.error("Error fetching account by name:", error);
@@ -82,7 +85,11 @@ export async function deleteAccount(accountId: number | bigint) {
 export async function listAccounts(page = 1, limit = 10) {
   try {
     const offset = (page - 1) * limit;
-    const allAccounts = await db.select().from(accounts).limit(limit).offset(offset);
+    const allAccounts = await db
+      .select()
+      .from(accounts)
+      .limit(limit)
+      .offset(offset);
     return allAccounts;
   } catch (error) {
     console.error("Error listing accounts:", error);
@@ -93,7 +100,10 @@ export async function listAccounts(page = 1, limit = 10) {
 // Get account by email
 export async function getAccountByEmail(email: string) {
   try {
-    const [account] = await db.select().from(accounts).where(eq(accounts.email, email));
+    const [account] = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.email, email));
     return account;
   } catch (error) {
     console.error("Error fetching account by email:", error);
@@ -127,4 +137,4 @@ export async function getActiveAccounts() {
     console.error("Error fetching active accounts:", error);
     throw error;
   }
-} 
+}

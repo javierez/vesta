@@ -155,20 +155,23 @@ pnpm build
 
 # TODOs: 
 
-- Separators (tabs on top) in Property and Contact detail pages -- only change remaining 
+- Separators (tabs on top) in Property and Contact detail pages -- improve UI (secondary)
 
-- Rent: fianza (x)
+- Rent: add deposit information (x)
 
 - Properties: Reading the formulario nueva creación (xxx)
     - Generación de Nota de encargo: P000460
-    - Documentos: P000427 
+    - Improve Readiness of Documents: P000427 
 
-- Auth
+- Authentication
 - Pasarela de pagos
 
 
 - Images: watermark (!xxx)
+    - Logo of the RE business
+    
 - Images: create cartelería y marcas de agua (!xxx)
+
 
 - Logos: remove background and get palette.
 

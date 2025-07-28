@@ -77,100 +77,101 @@ const toUpperCase = (value: string): string => {
 
 // Address standardization function for Spanish addresses
 const standardizeSpanishAddress = (address: string): string => {
-  if (!address || typeof address !== 'string') {
-    return address || '';
+  if (!address || typeof address !== "string") {
+    return address || "";
   }
 
   const cleanAddress = address.trim();
 
   // Standardize street type abbreviations to full names
   const streetTypeMap: Record<string, string> = {
-    'c/': 'Calle',
-    'cl': 'Calle', 
-    'calle': 'Calle',
-    'av/': 'Avenida',
-    'av': 'Avenida',
-    'avda': 'Avenida',
-    'avenida': 'Avenida',
-    'pl/': 'Plaza',
-    'pl': 'Plaza',
-    'plaza': 'Plaza',
-    'ps/': 'Paseo',
-    'ps': 'Paseo', 
-    'paseo': 'Paseo',
-    'cr/': 'Carrera',
-    'cr': 'Carrera',
-    'carrera': 'Carrera',
-    'tr/': 'Travesía',
-    'tr': 'Travesía',
-    'travesia': 'Travesía',
-    'travesía': 'Travesía',
-    'ct/': 'Cuesta',
-    'ct': 'Cuesta',
-    'cuesta': 'Cuesta',
-    'cm/': 'Camino',
-    'cm': 'Camino',
-    'camino': 'Camino',
-    'rd/': 'Ronda',
-    'rd': 'Ronda',
-    'ronda': 'Ronda'
+    "c/": "Calle",
+    cl: "Calle",
+    calle: "Calle",
+    "av/": "Avenida",
+    av: "Avenida",
+    avda: "Avenida",
+    avenida: "Avenida",
+    "pl/": "Plaza",
+    pl: "Plaza",
+    plaza: "Plaza",
+    "ps/": "Paseo",
+    ps: "Paseo",
+    paseo: "Paseo",
+    "cr/": "Carrera",
+    cr: "Carrera",
+    carrera: "Carrera",
+    "tr/": "Travesía",
+    tr: "Travesía",
+    travesia: "Travesía",
+    travesía: "Travesía",
+    "ct/": "Cuesta",
+    ct: "Cuesta",
+    cuesta: "Cuesta",
+    "cm/": "Camino",
+    cm: "Camino",
+    camino: "Camino",
+    "rd/": "Ronda",
+    rd: "Ronda",
+    ronda: "Ronda",
   };
 
   // Extract the street type at the beginning
-  const streetTypePattern = /^(c\/|cl|calle|av\/|av|avda|avenida|pl\/|pl|plaza|ps\/|ps|paseo|cr\/|cr|carrera|tr\/|tr|travesia|travesía|ct\/|ct|cuesta|cm\/|cm|camino|rd\/|rd|ronda)\s+/i;
+  const streetTypePattern =
+    /^(c\/|cl|calle|av\/|av|avda|avenida|pl\/|pl|plaza|ps\/|ps|paseo|cr\/|cr|carrera|tr\/|tr|travesia|travesía|ct\/|ct|cuesta|cm\/|cm|camino|rd\/|rd|ronda)\s+/i;
   const streetTypeMatch = streetTypePattern.exec(cleanAddress);
-  
-  let streetType = '';
+
+  let streetType = "";
   let restOfAddress = cleanAddress;
-  
+
   if (streetTypeMatch?.[1]) {
     const matchedType = streetTypeMatch[1].toLowerCase();
     streetType = streetTypeMap[matchedType] ?? streetTypeMatch[1];
     restOfAddress = cleanAddress.slice(streetTypeMatch[0].length);
   }
-  
+
   // Extract street name and portal number
   // Look for the first number which should be the portal number
   // Stop at any additional numbers that might be floor/door (like "4:6" for floor:door)
   const addressPattern = /^([^0-9]+?)\s*(\d+)(?:[\s:]+\d+.*)?$/;
   const addressMatch = addressPattern.exec(restOfAddress);
-  
+
   if (addressMatch?.[1] && addressMatch?.[2]) {
     const streetName = addressMatch[1].trim();
     const portalNumber = addressMatch[2];
-    
+
     // Capitalize street name properly
     const capitalizedStreetName = streetName
       .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-    
-      // Build standardized address
-    const standardizedAddress = streetType ? 
-      `${streetType} ${capitalizedStreetName}, ${portalNumber}` :
-      `Calle ${capitalizedStreetName}, ${portalNumber}`;
-    
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+    // Build standardized address
+    const standardizedAddress = streetType
+      ? `${streetType} ${capitalizedStreetName}, ${portalNumber}`
+      : `Calle ${capitalizedStreetName}, ${portalNumber}`;
+
     return standardizedAddress;
   }
-  
+
   // If pattern doesn't match, try to at least standardize the street type
   if (streetTypeMatch) {
     const streetName = restOfAddress.trim();
     const capitalizedStreetName = streetName
       .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
     return `${streetType} ${capitalizedStreetName}`;
   }
-  
+
   // If nothing else works, return cleaned address with proper capitalization
   return cleanAddress
     .toLowerCase()
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
 // Properties table field mappings
@@ -310,7 +311,15 @@ export const PROPERTY_FIELD_MAPPINGS: FieldMapping[] = [
   {
     dbColumn: "street",
     dbTable: "properties",
-    aliases: ["dirección", "direccion", "calle", "avenida", "paseo", "plaza", "domicilio"],
+    aliases: [
+      "dirección",
+      "direccion",
+      "calle",
+      "avenida",
+      "paseo",
+      "plaza",
+      "domicilio",
+    ],
     dataType: "string",
     converter: standardizeSpanishAddress,
     category: "location",
@@ -339,7 +348,7 @@ export const PROPERTY_FIELD_MAPPINGS: FieldMapping[] = [
     category: "location",
   },
   {
-    dbColumn: "extractedProvince", 
+    dbColumn: "extractedProvince",
     dbTable: "properties", // Temporary - will be processed via findOrCreateLocation
     aliases: ["provincia", "prov"],
     dataType: "string",

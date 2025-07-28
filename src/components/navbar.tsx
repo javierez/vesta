@@ -89,7 +89,11 @@ export default function Navbar({
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Left section - Logo */}
         <div className="flex-shrink-0">
-          <Link href="/" className="flex items-center gap-2" aria-label="Home">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2"
+            aria-label="Home"
+          >
             <Building className="h-6 w-6" />
             <span className="text-xl font-bold">{shortName}</span>
           </Link>
