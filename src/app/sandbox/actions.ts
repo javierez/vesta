@@ -10,6 +10,7 @@ import {
   mockUsers,
   contacts as mockContacts,
   listingContacts as mockListingContacts,
+  accounts as mockAccounts,
 } from "~/lib/data";
 import {
   properties as dbProperties,
@@ -19,11 +20,13 @@ import {
   users,
   contacts,
   listingContacts,
+  accounts,
 } from "~/server/db/schema";
 import { createProperty } from "~/server/queries/properties";
 import { createListing } from "~/server/queries/listing";
 import { createPropertyImage } from "~/server/queries/property_images";
 import { createLocation } from "~/server/queries/locations";
+import { createAccount } from "~/server/queries/accounts";
 import { sql } from "drizzle-orm";
 
 // Helper function to convert property to DB format
@@ -89,6 +92,32 @@ function toDbProperty(property: Property) {
   return dbProperty;
 }
 
+// Seed accounts data
+async function seedAccounts() {
+  try {
+    for (const account of mockAccounts) {
+      await createAccount({
+        name: account.name,
+        logo: account.logo,
+        address: account.address,
+        phone: account.phone,
+        email: account.email,
+        website: account.website,
+        portalSettings: account.portalSettings,
+        paymentSettings: account.paymentSettings,
+        preferences: account.preferences,
+        plan: account.plan,
+        subscriptionStatus: account.subscriptionStatus,
+        isActive: account.isActive,
+      });
+    }
+    console.log("Accounts seeded successfully");
+  } catch (error) {
+    console.error("Error seeding accounts:", error);
+    throw error;
+  }
+}
+
 // Seed locations data
 async function seedLocations() {
   try {
@@ -115,7 +144,7 @@ async function seedUsers() {
     for (const user of mockUsers) {
       await db.insert(users).values({
         userId: user.userId,
-        accountId: BigInt(1), // Default account for seeded users
+        accountId: user.accountId, // Use the accountId from user data
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -172,6 +201,7 @@ async function clearDatabase() {
     await db.delete(contacts).where(sql`1=1`);
     await db.delete(locations).where(sql`1=1`);
     await db.delete(users).where(sql`1=1`);
+    await db.delete(accounts).where(sql`1=1`);
     console.log("Database cleared successfully");
   } catch (error) {
     console.error("Error clearing database:", error);
@@ -183,6 +213,9 @@ export async function seedDatabase() {
   try {
     // First clear existing data
     await clearDatabase();
+
+    // Then seed accounts first (since users depend on accounts)
+    await seedAccounts();
 
     // Then seed users
     await seedUsers();

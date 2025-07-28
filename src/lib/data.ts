@@ -707,23 +707,27 @@ export type WebsiteConfig = {
 };
 
 export type Account = {
-  accountId: string;
+  accountId: bigint;
   name: string;
-  shortName: string;
-  status: "active" | "inactive" | "suspended";
-  subscriptionType: string;
-  subscriptionStartDate: Date;
-  subscriptionEndDate: Date | null;
-  maxOffices: number;
-  maxUsers: number;
+  logo?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  portalSettings?: Record<string, unknown>;
+  paymentSettings?: Record<string, unknown>;
+  preferences?: Record<string, unknown>;
+  plan: string;
+  subscriptionStatus: string;
   createdAt: Date;
   updatedAt: Date;
+  isActive: boolean;
 };
 
 export const websiteConfigs: WebsiteConfig[] = [
   {
     id: "1",
-    accountId: "1234",
+    accountId: "1",
     socialLinks: {
       facebook: "https://facebook.com/acropolisrealestate",
       linkedin: "https://linkedin.com/company/acropolisrealestate",
@@ -997,17 +1001,36 @@ export const websiteConfigs: WebsiteConfig[] = [
 
 export const accounts: Account[] = [
   {
-    accountId: "1234",
+    accountId: BigInt(1),
     name: "Acropolis Real Estate",
-    shortName: "Acropolis",
-    status: "active",
-    subscriptionType: "premium",
-    subscriptionStartDate: new Date("2024-01-01"),
-    subscriptionEndDate: null,
-    maxOffices: 5,
-    maxUsers: 20,
+    logo: "/logos/acropolis-logo.png",
+    address: "123 Avenida Inmobiliaria, León, CL 24001, España",
+    phone: "+34 987 123 456",
+    email: "info@acropolis-realestate.com",
+    website: "https://acropolis-realestate.com",
+    portalSettings: {
+      fotocasa: { enabled: true, apiKey: "fc_key_123" },
+      idealista: { enabled: true, apiKey: "idealista_key_456" },
+      habitaclia: { enabled: false },
+      pisoscom: { enabled: false },
+      yaencontre: { enabled: false },
+      milanuncios: { enabled: false },
+    },
+    paymentSettings: {
+      stripe: { enabled: true, publishableKey: "pk_test_123" },
+      paypal: { enabled: false },
+    },
+    preferences: {
+      defaultLanguage: "es",
+      defaultTimezone: "Europe/Madrid",
+      currency: "EUR",
+      dateFormat: "DD/MM/YYYY",
+    },
+    plan: "premium",
+    subscriptionStatus: "active",
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
+    isActive: true,
   },
 ];
 
@@ -1197,6 +1220,7 @@ export type Document = {
 export const mockUsers = [
   {
     userId: BigInt(1),
+    accountId: BigInt(1),
     email: "azucena.ramos@acropolis-realestate.com",
     firstName: "Azucena",
     lastName: "Ramos",
@@ -1218,6 +1242,7 @@ export const mockUsers = [
   },
   {
     userId: BigInt(2),
+    accountId: BigInt(1),
     email: "santos.martinez@acropolis-realestate.com",
     firstName: "Santos",
     lastName: "Martínez",
@@ -1239,6 +1264,7 @@ export const mockUsers = [
   },
   {
     userId: BigInt(3),
+    accountId: BigInt(1),
     email: "alberto.martinez@acropolis-realestate.com",
     firstName: "Alberto",
     lastName: "Martínez",
