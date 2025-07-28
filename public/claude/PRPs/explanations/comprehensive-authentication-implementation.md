@@ -21,6 +21,8 @@
 
 This document provides a comprehensive explanation of the authentication system implementation for Vesta CRM using BetterAuth. The implementation transforms the application from an unprotected system to a fully secure, multi-tenant CRM with comprehensive user management, role-based access control, and account-level data isolation.
 
+**Key Architecture Decision**: Users authenticate (have passwords), not accounts. Users belong to accounts (organizations/companies), and all data is filtered by the user's accountId for multi-tenant security.
+
 ### Key Goals Achieved
 - **Complete Authentication System**: Email/password and OAuth authentication
 - **Multi-Tenant Security**: Account-level data isolation ensuring customers can only access their own data
@@ -48,10 +50,25 @@ This document provides a comprehensive explanation of the authentication system 
                     ┌──────────────────┐
                     │   Database       │
                     │                  │
-                    │ • Auth Tables    │
+                    │ • Users (auth)   │
+                    │ • Accounts (org) │
                     │ • Multi-tenant   │
-                    │ • Account Filter │
                     └──────────────────┘
+```
+
+### Authentication Architecture Flow
+
+```
+User Authentication Flow:
+1. Users have passwords and authenticate
+2. Users belong to Accounts (organizations)
+3. Accounts have configurations and settings
+4. All data is filtered by user's accountId
+
+┌──────────┐ belongs to ┌──────────┐ contains ┌──────────┐
+│   User   │───────────►│ Account  │─────────►│   Data   │
+│ (login)  │            │ (tenant) │          │(filtered)│
+└──────────┘            └──────────┘          └──────────┘
 ```
 
 ### Security Layers
@@ -100,12 +117,15 @@ export const auth = betterAuth({
   
   user: {
     fields: {
-      name: "firstName",
       email: "email",
+      name: "firstName", // Maps BetterAuth 'name' to our 'firstName'
     },
     additionalFields: {
-      accountId: { type: "number", required: true },
+      accountId: { type: "number", required: true }, // Link to organization
       lastName: { type: "string", required: true },
+      phone: { type: "string", required: false },
+      timezone: { type: "string", required: false },
+      language: { type: "string", required: false },
     },
   },
   
@@ -170,10 +190,23 @@ export async function getSecureSession(): Promise<SecureSession | null> {
 }
 ```
 
+#### `getCurrentUserAccountId()`: Get User's Account Context
+```typescript
+export async function getCurrentUserAccountId(): Promise<number> {
+  const session = await getSecureSession();
+  
+  if (!session) {
+    throw new Error('No authenticated user session found');
+  }
+
+  return session.user.accountId; // The user's organization/company ID
+}
+```
+
 #### `getSecureDb()`: Account-Filtered Database Access
 ```typescript
 export async function getSecureDb() {
-  const accountId = await getCurrentAccountId();
+  const accountId = await getCurrentUserAccountId(); // From user session
   
   return {
     db,
@@ -230,9 +263,10 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(signInUrl);
       }
 
-      // Add user context to headers
+      // Add user context to headers for server components
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-user-id', session.user.id);
+      requestHeaders.set('x-user-email', session.user.email);
       requestHeaders.set('x-user-account-id', session.user.accountId?.toString() || '');
 
       return NextResponse.next({ request: { headers: requestHeaders } });
@@ -353,10 +387,19 @@ CREATE TABLE `verification_tokens` (
 
 **Added BetterAuth Fields**:
 ```sql
--- Authentication fields
+-- Authentication fields (users authenticate, not accounts)
 password varchar(255),
 email_verified boolean DEFAULT false,
 email_verified_at timestamp,
+-- Account relationship (users belong to accounts/organizations)
+account_id bigint NOT NULL, -- Links user to their organization
+```
+
+**Removed from Accounts Table**:
+```sql
+-- These fields were removed since accounts don't authenticate
+-- password varchar(255), -- REMOVED
+-- email_verified boolean, -- REMOVED
 ```
 
 ### 3. Multi-Tenant Security Fields
@@ -375,21 +418,26 @@ email_verified_at timestamp,
 ```mermaid
 graph TD
     A[User visits /auth/signup] --> B[Fill registration form]
-    B --> C[Submit form data]
-    C --> D[Validate form client-side]
-    D --> E[Call signUp.email()]
-    E --> F[BetterAuth creates user]
-    F --> G[Create account record]
-    G --> H[Auto sign-in user]
-    H --> I[Redirect to dashboard]
+    B --> C[Submit: firstName, lastName, email, password, companyName]
+    C --> D[Custom /api/auth/signup endpoint]
+    D --> E[Create account record first]
+    E --> F[Call BetterAuth signUpEmail]
+    F --> G[BetterAuth creates user]
+    G --> H[Update user with accountId]
+    H --> I[Auto sign-in user]
+    I --> J[Redirect to dashboard]
 ```
 
 **Detailed Steps**:
-1. **Form Validation**: Client-side validation of required fields
-2. **Account Creation**: Backend creates both user and account records
-3. **Password Hashing**: BetterAuth handles secure password hashing
-4. **Session Creation**: Automatic session creation and cookie setting
-5. **Redirect**: User redirected to dashboard with active session
+1. **Form Validation**: Client-side validation of required fields including company name
+2. **Account Creation First**: Backend creates account (organization) record
+3. **User Creation**: BetterAuth creates user with standard fields
+4. **Account Linking**: Immediately update user record with accountId to link to organization
+5. **Password Hashing**: BetterAuth handles secure password hashing
+6. **Session Creation**: Automatic session creation and cookie setting
+7. **Redirect**: User redirected to dashboard with active session
+
+**Key Architecture Point**: The signup process creates both an account (organization) and a user, then links them via a database update since BetterAuth doesn't natively support custom fields in signUpEmail.
 
 ### 2. Sign-In Flow
 
@@ -496,9 +544,11 @@ export async function requirePermission(permission: Permission): Promise<void> {
 
 ## API Integration
 
-### 1. Authentication API Route (`/api/auth/[...all]/route.ts`)
+### 1. Authentication API Routes
 
-**Purpose**: Handles all BetterAuth API endpoints through a single catch-all route.
+#### Main BetterAuth Route (`/api/auth/[...all]/route.ts`)
+
+**Purpose**: Handles all standard BetterAuth API endpoints through a single catch-all route.
 
 ```typescript
 import { toNextJsHandler } from "better-auth/next-js";
@@ -507,14 +557,64 @@ import { auth } from "~/lib/auth";
 export const { POST, GET } = toNextJsHandler(auth);
 ```
 
-**Endpoints Provided**:
+**Standard Endpoints Provided**:
 - `POST /api/auth/sign-in` - Email/password sign-in
-- `POST /api/auth/sign-up` - User registration
 - `POST /api/auth/sign-out` - Session termination
 - `GET /api/auth/session` - Current session info
 - `POST /api/auth/oauth/google` - Google OAuth
 - `POST /api/auth/oauth/apple` - Apple OAuth
 - `POST /api/auth/oauth/linkedin` - LinkedIn OAuth
+
+#### Custom Signup Route (`/api/auth/signup/route.ts`)
+
+**Purpose**: Handles account + user creation with proper linking.
+
+**Why Custom**: BetterAuth's standard signUpEmail doesn't support custom fields like `accountId`, so we create the account first, then create the user, then link them.
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '~/server/db';
+import { accounts, users } from '~/server/db/schema';
+import { auth } from '~/lib/auth';
+import { eq } from 'drizzle-orm';
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  
+  // 1. Create the account (organization) first
+  const [newAccount] = await db
+    .insert(accounts)
+    .values({
+      name: body.companyName.trim(),
+      email: body.email.toLowerCase(),
+    })
+    .$returningId();
+
+  // 2. Create user with BetterAuth (standard fields only)
+  const authResult = await auth.api.signUpEmail({
+    body: {
+      email: body.email.toLowerCase(),
+      password: body.password,
+      name: body.firstName.trim(),
+      lastName: body.lastName.trim(),
+    },
+  });
+
+  // 3. Link user to account with separate update
+  await db
+    .update(users)
+    .set({ accountId: BigInt(newAccount.accountId) })
+    .where(eq(users.userId, BigInt(authResult.user.id)));
+
+  return NextResponse.json({ success: true });
+}
+```
+
+**Flow**:
+1. Create account (organization) record first
+2. Create user with BetterAuth using only standard supported fields
+3. Update user record to add accountId link via separate database update
+4. Handle cleanup if any step fails (atomic transaction)
 
 ### 2. Protected API Routes
 
@@ -754,15 +854,33 @@ client: {
 ### 1. Database Migration Strategy
 
 **Migration Files Generated**:
-- `0001_silent_apocalypse.sql` - Adds accountId fields to core tables
+- Adds `accountId` fields to core tables (properties, listings, contacts)
+- Updates users table with BetterAuth authentication fields
+- Creates BetterAuth tables (sessions, authAccounts, verification_tokens)
+- Removes password fields from accounts table (users authenticate, not accounts)
 
 **Migration Commands**:
 ```bash
-# Generate migration
+# Generate migration after schema changes
 npm run db:generate
 
-# Apply migration (when ready)
+# Apply migration to database
 npm run db:push
+```
+
+**Critical Schema Changes**:
+```sql
+-- Users now authenticate (added password field)
+ALTER TABLE users ADD COLUMN password VARCHAR(255);
+ALTER TABLE users ADD COLUMN account_id BIGINT NOT NULL;
+
+-- Accounts no longer authenticate (removed password field)
+ALTER TABLE accounts DROP COLUMN password;
+
+-- All data tables get account filtering
+ALTER TABLE properties ADD COLUMN account_id BIGINT NOT NULL;
+ALTER TABLE listings ADD COLUMN account_id BIGINT NOT NULL;
+ALTER TABLE contacts ADD COLUMN account_id BIGINT NOT NULL;
 ```
 
 ### 2. Query Updates Pattern
@@ -774,8 +892,20 @@ export async function getProperties() {
 }
 ```
 
-**After (Secure)**:
+**After (Secure with User→Account Architecture)**:
 ```typescript
+export async function getProperties() {
+  // Get the account ID from the authenticated user's session
+  const accountId = await getCurrentUserAccountId();
+  
+  // Filter all queries by the user's account
+  return await db
+    .select()
+    .from(properties)
+    .where(eq(properties.accountId, BigInt(accountId)));
+}
+
+// Alternative using secure DB helper
 export async function getProperties() {
   const { db: secureDb, withAccountFilter } = await getSecureDb();
   return await secureDb
