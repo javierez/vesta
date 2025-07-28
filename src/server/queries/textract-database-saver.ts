@@ -21,15 +21,8 @@ export async function saveExtractedDataToDatabase(
   propertyId: number,
   listingId: number,
   extractedFields: ExtractedFieldResult[],
-  confidenceThreshold = 50,
+  confidenceThreshold = 80,
 ): Promise<DatabaseSaveResult> {
-  console.log(
-    `💾 [DATABASE] Starting save operation for property ${propertyId}, listing ${listingId}`,
-  );
-  console.log(`🎯 [DATABASE] Confidence threshold: ${confidenceThreshold}%`);
-  console.log(
-    `📊 [DATABASE] Total fields to process: ${extractedFields.length}`,
-  );
 
   const startTime = Date.now();
   const result: DatabaseSaveResult = {
@@ -49,9 +42,6 @@ export async function saveExtractedDataToDatabase(
       (field) => field.confidence >= confidenceThreshold,
     );
 
-    console.log(
-      `🔍 [DATABASE] Fields above ${confidenceThreshold}% confidence: ${highConfidenceFields.length}/${extractedFields.length}`,
-    );
 
     if (highConfidenceFields.length === 0) {
       console.log(
@@ -69,12 +59,6 @@ export async function saveExtractedDataToDatabase(
       (field) => field.dbTable === "listings",
     );
 
-    console.log(
-      `📋 [DATABASE] Property fields to save: ${propertyFields.length}`,
-    );
-    console.log(
-      `📋 [DATABASE] Listing fields to save: ${listingFields.length}`,
-    );
 
     // Extract location fields for special handling
     const extractedLocationData = {
@@ -91,17 +75,14 @@ export async function saveExtractedDataToDatabase(
           // Handle location fields specially - don't save to properties table
           if (field.dbColumn === 'extractedCity') {
             extractedLocationData.city = String(field.value);
-            console.log(`🌍 [DATABASE] Extracted city: "${field.value}"`);
             continue;
           }
           if (field.dbColumn === 'extractedProvince') {
             extractedLocationData.province = String(field.value);
-            console.log(`🌍 [DATABASE] Extracted province: "${field.value}"`);
             continue;
           }
           if (field.dbColumn === 'extractedMunicipality') {
             extractedLocationData.municipality = String(field.value);
-            console.log(`🌍 [DATABASE] Extracted municipality: "${field.value}"`);
             continue;
           }
           
@@ -109,10 +90,6 @@ export async function saveExtractedDataToDatabase(
           const key = field.dbColumn;
           propertyUpdateData[key] = field.value;
 
-          // Special logging for street field to verify standardization
-          if (field.dbColumn === 'street') {
-            console.log(`🏠 [DATABASE] Street address: "${String(field.value)}"`);
-          }
         } catch (error) {
           const errorMsg = `Failed to prepare property field ${field.dbColumn}: ${String(error)}`;
           console.error(`❌ [DATABASE] ${errorMsg}`);
@@ -261,15 +238,11 @@ export async function saveExtractedDataToDatabase(
             streetValue !== "Dirección a completar";
           
           if (hasAddressInfo) {
-            console.log(
-              `🌍 [DATABASE] Standardized address detected, running geocoding after database save...`,
-            );
             
             // Geocoding needs to run AFTER the standardized address is saved to database
             // We'll trigger it in a separate async operation to avoid blocking
             setImmediate(() => void (async () => {
               try {
-                console.log(`🔍 [DATABASE] Starting post-save geocoding for property ${propertyId}...`);
                 
                 // Import here to avoid circular dependencies
                 const { db } = await import("../db");
@@ -288,7 +261,6 @@ export async function saveExtractedDataToDatabase(
                   .limit(1);
                 
                 if (!updatedProperty?.street || updatedProperty.street === "Dirección a completar") {
-                  console.log(`⚠️ [DATABASE] No valid standardized address found for geocoding`);
                   return;
                 }
                 
@@ -308,7 +280,6 @@ export async function saveExtractedDataToDatabase(
                   fullAddress = `${updatedProperty.street}, España`;
                 }
                 
-                console.log(`🔍 [DATABASE] Geocoding address: ${fullAddress}`);
                 
                 // First validate the extracted address with Nominatim
                 try {
@@ -326,14 +297,7 @@ export async function saveExtractedDataToDatabase(
                     lon?: string;
                   }>;
 
-                  if (nominatimResults.length === 0) {
-                    console.warn(`⚠️ [DATABASE] Address not found: ${fullAddress}`);
-                    return;
-                  }
-
-                  const nominatimResult = nominatimResults[0];
-                  if (!nominatimResult?.lat || !nominatimResult?.lon) {
-                    console.warn(`⚠️ [DATABASE] No coordinates for: ${fullAddress}`);
+                  if (nominatimResults.length === 0 || !nominatimResults[0]?.lat || !nominatimResults[0]?.lon) {
                     return;
                   }
                   
@@ -346,19 +310,18 @@ export async function saveExtractedDataToDatabase(
                   let neighborhoodId: number | undefined;
                   
                   const locationToCreate = {
-                    city: extractedLocationData.city || geoData.city || "Unknown",
-                    province: extractedLocationData.province || geoData.province || "Unknown", 
-                    municipality: extractedLocationData.municipality || geoData.municipality || extractedLocationData.city || geoData.city || "Unknown",
-                    neighborhood: geoData.neighborhood || "Unknown",
+                    city: extractedLocationData.city ?? geoData.city ?? "Unknown",
+                    province: extractedLocationData.province ?? geoData.province ?? "Unknown", 
+                    municipality: extractedLocationData.municipality ?? geoData.municipality ?? extractedLocationData.city ?? geoData.city ?? "Unknown",
+                    neighborhood: geoData.neighborhood ?? "Unknown",
                   };
                   
                   // Only create location if we have meaningful data
                   if (locationToCreate.city !== "Unknown" || locationToCreate.province !== "Unknown") {
                     try {
                       neighborhoodId = await findOrCreateLocation(locationToCreate);
-                      console.log(`🌍 [DATABASE] Location: ${locationToCreate.city}, ${locationToCreate.province} (ID: ${neighborhoodId})`);
                     } catch (locationError) {
-                      console.error(`❌ [DATABASE] Location creation failed: ${String(locationError)}`);
+                      console.error(`❌ Location error: ${String(locationError)}`);
                     }
                   }
 
@@ -380,15 +343,12 @@ export async function saveExtractedDataToDatabase(
                     >,
                   );
                   
-                  console.log(`✅ [DATABASE] Geocoding completed: ${geoData.latitude}, ${geoData.longitude}`);
-                } else {
-                  console.warn(`⚠️ [DATABASE] Geocoding failed: ${fullAddress}`);
                 }
                 } catch (nominatimError) {
-                  console.error(`❌ [DATABASE] Geocoding error: ${String(nominatimError)}`);
+                  console.error(`❌ Geocoding error: ${String(nominatimError)}`);
                 }
               } catch (geoError) {
-                console.error(`❌ [DATABASE] Geocoding error: ${String(geoError)}`);
+                console.error(`❌ Geocoding error: ${String(geoError)}`);
               }
             })());
           }

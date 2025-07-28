@@ -117,7 +117,6 @@ function extractFromFormFields(
         try {
           convertedValue = mapping.converter(fieldData.text);
         } catch (err) {
-          console.log(`⚠️ [EXTRACTION] Conversion failed for "${fieldKey}": ${String(err)}`);
           convertedValue = fieldData.text;
         }
       }
@@ -257,7 +256,6 @@ function extractFromTextPatterns(
             try {
               convertedValue = fieldMapping.converter(value);
             } catch (err) {
-              console.log(`⚠️ [EXTRACTION] Text pattern conversion failed for "${fieldMapping.dbColumn}": ${String(err)}`);
               convertedValue = value;
             }
           }
@@ -343,7 +341,6 @@ function extractFromTables(blocks: Block[]): ExtractedFieldResult[] {
           try {
             convertedValue = mapping.converter(valueCell.Text);
           } catch (err) {
-            console.log(`⚠️ [EXTRACTION] Table conversion failed for "${mapping.dbColumn}": ${String(err)}`);
             convertedValue = valueCell.Text;
           }
         }

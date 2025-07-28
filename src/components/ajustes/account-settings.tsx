@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
-// @ts-ignore - zodResolver import issue with type definitions
+// @ts-expect-error - zodResolver import issue with type definitions
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { Button } from "~/components/ui/button";
