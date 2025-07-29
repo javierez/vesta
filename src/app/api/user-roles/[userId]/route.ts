@@ -31,6 +31,7 @@ export async function GET(
     }
 
     const userRoles = await getUserRoles(userId);
+    console.log(`User roles API - userId: ${userId}, roles:`, userRoles);
     return NextResponse.json(userRoles);
   } catch (error) {
     console.error("Error fetching user roles:", error);

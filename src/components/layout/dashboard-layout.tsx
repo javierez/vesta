@@ -41,11 +41,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, isPending } = useSession();
-  const { isSuperAdmin } = useUserRole();
+  const { hasRoleId, loading, roles, session: enrichedSession } = useUserRole();
 
-  // Build navigation based on user role
+  // Debug logging
+  console.log("Dashboard Layout Debug:", {
+    hasRoleId2: hasRoleId(2),
+    roles: roles,
+    enrichedSession: enrichedSession,
+    loading: loading,
+  });
+
+  // Build navigation based on user role (role ID 2 as requested)
   const navigation = [...baseNavigation];
-  if (isSuperAdmin()) {
+  if (hasRoleId(2)) {
     navigation.push(...adminNavigation);
   }
 

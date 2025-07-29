@@ -1,6 +1,7 @@
 import { getSecureDb, getCurrentUser } from "~/lib/dal";
 import { users, roles, userRoles } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
+import { headers } from "next/headers";
 
 /**
  * Permission System for Role-Based Access Control (RBAC)
@@ -134,10 +135,23 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
 };
 
 /**
- * Get all roles for the current user
+ * Get all roles for the current user (optimized with middleware cache)
  */
 export async function getCurrentUserRoles(): Promise<string[]> {
   try {
+    // Try to get roles from middleware headers first (cached)
+    const headersList = await headers();
+    const rolesHeader = headersList.get("x-user-roles");
+    
+    if (rolesHeader) {
+      try {
+        return JSON.parse(rolesHeader);
+      } catch (parseError) {
+        console.warn("Failed to parse roles from header, falling back to DB");
+      }
+    }
+
+    // Fallback to database query
     const { db, accountId } = await getSecureDb();
     const currentUser = await getCurrentUser();
 
@@ -150,7 +164,7 @@ export async function getCurrentUserRoles(): Promise<string[]> {
       .innerJoin(users, eq(users.id, userRoles.userId))
       .where(
         and(
-          eq(userRoles.userId, BigInt(currentUser.id)),
+          eq(userRoles.userId, currentUser.id),
           eq(users.accountId, BigInt(accountId)),
           eq(userRoles.isActive, true),
           eq(roles.isActive, true),
@@ -165,10 +179,23 @@ export async function getCurrentUserRoles(): Promise<string[]> {
 }
 
 /**
- * Get all permissions for the current user based on their roles
+ * Get all permissions for the current user based on their roles (optimized with middleware cache)
  */
 export async function getCurrentUserPermissions(): Promise<Permission[]> {
   try {
+    // Try to get permissions from middleware headers first (cached)
+    const headersList = await headers();
+    const permissionsHeader = headersList.get("x-user-permissions");
+    
+    if (permissionsHeader) {
+      try {
+        return JSON.parse(permissionsHeader);
+      } catch (parseError) {
+        console.warn("Failed to parse permissions from header, falling back to calculation");
+      }
+    }
+
+    // Fallback to calculating from roles
     const roles = await getCurrentUserRoles();
     const permissionsSet = new Set<Permission>();
 

@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
     const cookieHeader = headers.get("cookie");
 
     const response = await fetch(
-      `${request.nextUrl.origin}/api/auth/get-session`,
+      `${request.nextUrl.origin}/api/auth/enriched-session`,
       {
         headers: {
           cookie: cookieHeader || "",
@@ -62,6 +62,14 @@ export async function middleware(request: NextRequest) {
       "x-user-name",
       `${session.user.firstName || ""} ${session.user.lastName || ""}`.trim(),
     );
+
+    // Add roles and permissions to headers if available
+    if (session.user.roles) {
+      requestHeaders.set("x-user-roles", JSON.stringify(session.user.roles));
+    }
+    if (session.user.permissions) {
+      requestHeaders.set("x-user-permissions", JSON.stringify(session.user.permissions));
+    }
 
     return NextResponse.next({
       request: {

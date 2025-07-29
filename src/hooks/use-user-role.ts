@@ -2,44 +2,136 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "~/lib/auth-client";
+import type { Permission } from "~/lib/permissions";
+
+interface EnrichedSession {
+  user: {
+    id: string;
+    roles?: string[];
+    permissions?: Permission[];
+    [key: string]: any;
+  };
+}
 
 export function useUserRole() {
   const { data: session, isPending } = useSession();
-  const [userRoles, setUserRoles] = useState<number[]>([]);
+  const [enrichedSession, setEnrichedSession] = useState<EnrichedSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [legacyRoles, setLegacyRoles] = useState<number[]>([]);
 
   useEffect(() => {
-    async function fetchUserRoles() {
+    async function fetchEnrichedSession() {
       if (!session?.user?.id) {
         setLoading(false);
         return;
       }
 
       try {
-        // Since middleware already validates authentication,
-        // this call should be fast and only needed once per session
-        const response = await fetch(`/api/user-roles/${session.user.id}`);
-        if (response.ok) {
-          const roles = await response.json();
-          setUserRoles(roles.map((role: any) => Number(role.roleId)));
+        // Try both endpoints for maximum compatibility
+        const [enrichedResponse, legacyResponse] = await Promise.all([
+          fetch("/api/auth/enriched-session"),
+          fetch(`/api/user-roles/${session.user.id}`)
+        ]);
+        
+        console.log("API responses:", {
+          enrichedStatus: enrichedResponse.status,
+          legacyStatus: legacyResponse.status
+        });
+        
+        // Handle legacy roles API
+        if (legacyResponse.ok) {
+          const roles = await legacyResponse.json();
+          const roleIds = roles.map((role: any) => Number(role.roleId));
+          setLegacyRoles(roleIds);
+          console.log("Legacy role IDs:", roleIds);
+        }
+        
+        // Handle enriched session
+        if (enrichedResponse.ok) {
+          const enrichedData = await enrichedResponse.json();
+          console.log("Enriched session data:", enrichedData);
+          setEnrichedSession(enrichedData);
+        } else {
+          const errorData = await enrichedResponse.json();
+          console.error("Enriched session error:", errorData);
+          // Fallback to basic session if enriched session fails
+          setEnrichedSession(session as EnrichedSession);
         }
       } catch (error) {
-        console.error("Error fetching user roles:", error);
+        console.error("Error fetching session data:", error);
+        // Fallback to basic session
+        setEnrichedSession(session as EnrichedSession);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchUserRoles();
+    fetchEnrichedSession();
   }, [session?.user?.id]);
 
-  const hasRole = (roleId: number) => userRoles.includes(roleId);
-  const isSuperAdmin = () => hasRole(2);
+  // Role checking functions
+  const hasRole = (roleName: string) => 
+    enrichedSession?.user?.roles?.includes(roleName) ?? false;
+  
+  const hasPermission = (permission: Permission) => 
+    enrichedSession?.user?.permissions?.includes(permission) ?? false;
+  
+  const hasAnyPermission = (permissions: Permission[]) => 
+    permissions.some(permission => hasPermission(permission));
+  
+  const hasAllPermissions = (permissions: Permission[]) => 
+    permissions.every(permission => hasPermission(permission));
+
+  const isAdmin = () => hasRole("admin");
+  const isAgent = () => hasRole("agent");
+  const isViewer = () => hasRole("viewer");
+  
+  // Specific role ID checking (as requested by user)
+  const hasRoleId = (roleId: number) => {
+    console.log("Checking hasRoleId:", roleId, {
+      enrichedRoles: enrichedSession?.user?.roles,
+      legacyRoles: legacyRoles
+    });
+    
+    // First check legacy roles directly
+    if (legacyRoles.includes(roleId)) {
+      return true;
+    }
+    
+    // Then check mapped role names
+    // Since role ID 2 maps to "agent" in the database seed data
+    if (roleId === 2) {
+      return hasRole("agent");
+    }
+    // Role ID 1 maps to "admin"
+    if (roleId === 1) {
+      return hasRole("admin");
+    }
+    return false;
+  };
+
+  // Legacy compatibility
+  const isSuperAdmin = () => hasRoleId(2); // As specifically requested
+  const userRoles = enrichedSession?.user?.roles?.map(() => 1) ?? []; // Legacy number array
 
   return {
-    userRoles,
+    // New role/permission checking
+    roles: enrichedSession?.user?.roles ?? [],
+    permissions: enrichedSession?.user?.permissions ?? [],
     hasRole,
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
+    isAdmin,
+    isAgent,
+    isViewer,
+    
+    // Legacy compatibility  
+    userRoles,
     isSuperAdmin,
+    hasRoleId,
+    
     loading: isPending || loading,
+    session: enrichedSession,
   };
 }
