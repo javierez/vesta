@@ -7,12 +7,19 @@ import {
   Menu,
   X,
   ChevronDown,
-  Home,
-  Building2,
-  Store,
-  LandPlot,
-  Car,
-  PlusCircle,
+  Package,
+  Users,
+  BookOpen,
+  Info,
+  Shield,
+  Code,
+  DollarSign,
+  FileText,
+  GraduationCap,
+  MessageSquare,
+  HeadphonesIcon,
+  Briefcase,
+  UserPlus,
 } from "lucide-react";
 import { useState, useCallback, memo } from "react";
 import { cn } from "~/lib/utils";
@@ -104,43 +111,29 @@ export default function Navbar({
           <DropdownMenu>
             <DropdownMenuTrigger
               className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary"
-              aria-label="Comprar opciones"
+              aria-label="Opciones de producto"
             >
-              Comprar <ChevronDown className="h-4 w-4" />
+              Producto <ChevronDown className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
               <DropdownMenuItem>
-                <Link href="/venta-pisos/todas-ubicaciones" className="w-full">
-                  Pisos
+                <Link href="#features" className="w-full">
+                  Características
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="/venta-casas/todas-ubicaciones" className="w-full">
-                  Casas
+                <Link href="#integrations" className="w-full">
+                  Integraciones
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link
-                  href="/venta-locales/todas-ubicaciones"
-                  className="w-full"
-                >
-                  Locales
+                <Link href="#security" className="w-full">
+                  Seguridad
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link
-                  href="/venta-solares/todas-ubicaciones"
-                  className="w-full"
-                >
-                  Solares
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link
-                  href="/venta-garajes/todas-ubicaciones"
-                  className="w-full"
-                >
-                  Garajes
+                <Link href="#api" className="w-full">
+                  API y Desarrolladores
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -149,82 +142,133 @@ export default function Navbar({
           <DropdownMenu>
             <DropdownMenuTrigger
               className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary"
-              aria-label="Alquilar opciones"
+              aria-label="Opciones de soluciones"
             >
-              Alquilar <ChevronDown className="h-4 w-4" />
+              Soluciones <ChevronDown className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
               <DropdownMenuItem>
-                <Link
-                  href="/alquiler-pisos/todas-ubicaciones"
-                  className="w-full"
-                >
-                  Pisos
+                <Link href="#sales-teams" className="w-full">
+                  Equipos de Ventas
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link
-                  href="/alquiler-casas/todas-ubicaciones"
-                  className="w-full"
-                >
-                  Casas
+                <Link href="#marketing-teams" className="w-full">
+                  Equipos de Marketing
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link
-                  href="/alquiler-locales/todas-ubicaciones"
-                  className="w-full"
-                >
-                  Locales
+                <Link href="#customer-service" className="w-full">
+                  Servicio al Cliente
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link
-                  href="/alquiler-garajes/todas-ubicaciones"
-                  className="w-full"
-                >
-                  Garajes
+                <Link href="#small-business" className="w-full">
+                  Pequeñas Empresas
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#enterprise" className="w-full">
+                  Empresas
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <Link
-            href="/vender"
+            href="#pricing"
             className="text-sm font-medium transition-colors hover:text-primary"
-            aria-label="Vender propiedad"
+            aria-label="Precios"
           >
-            Vender
+            Precios
           </Link>
-          <Link
-            href="#about"
-            className="text-sm font-medium transition-colors hover:text-primary"
-            aria-label="Sobre nosotros"
-          >
-            Nosotros
-          </Link>
-          <Link
-            href="#reviews"
-            className="text-sm font-medium transition-colors hover:text-primary"
-            aria-label="Reseñas"
-          >
-            Reseñas
-          </Link>
-          <Link
-            href="#contactos"
-            className="text-sm font-medium transition-colors hover:text-primary"
-            aria-label="Contactos"
-          >
-            Contactos
-          </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary"
+              aria-label="Opciones de recursos"
+            >
+              Recursos <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center">
+              <DropdownMenuItem>
+                <Link href="#documentation" className="w-full">
+                  Documentación
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#blog" className="w-full">
+                  Blog
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#academy" className="w-full">
+                  Academia
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#community" className="w-full">
+                  Comunidad
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#support" className="w-full">
+                  Soporte
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary"
+              aria-label="Opciones de empresa"
+            >
+              Empresa <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center">
+              <DropdownMenuItem>
+                <Link href="#about" className="w-full">
+                  Acerca de Nosotros
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#careers" className="w-full">
+                  Carreras
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#partners" className="w-full">
+                  Socios
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="#contact" className="w-full">
+                  Contacto
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
-        {/* Right section - Social Links and Mobile Menu */}
+        {/* Right section - Auth Buttons, Social Links and Mobile Menu */}
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex">
+          <div className="hidden items-center gap-4 md:flex">
             {socialLinks && socialLinks.length > 0 && (
               <SocialLinks links={socialLinks} />
             )}
+            <Link
+              href="/auth/signin"
+              className="text-sm font-medium transition-colors hover:text-primary"
+              aria-label="Iniciar Sesión"
+            >
+              Iniciar Sesión
+            </Link>
+            <Button asChild size="sm" className="hidden lg:inline-flex">
+              <Link href="/auth/signup" aria-label="Registrarse">
+                Registrarse
+              </Link>
+            </Button>
           </div>
           <Button
             variant="ghost"
@@ -267,130 +311,216 @@ export default function Navbar({
           {/* Main Navigation */}
           <div className="flex-1 overflow-y-auto">
             <div className="space-y-6 px-4 py-6">
-              {/* Comprar Section */}
+              {/* Auth Section */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Button asChild className="w-full" size="sm">
+                    <Link href="/auth/signup" onClick={handleMenuClose}>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Registrarse
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="w-full"
+                    size="sm"
+                  >
+                    <Link href="/auth/signin" onClick={handleMenuClose}>
+                      Iniciar Sesión
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Product Section */}
               <div className="space-y-3">
                 <h3 className="px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Comprar
+                  Producto
                 </h3>
                 <div className="space-y-1">
                   <Link
-                    href="/venta-pisos/todas-ubicaciones"
+                    href="#features"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    <Home className="h-4 w-4" />
-                    Pisos
+                    <Package className="h-4 w-4" />
+                    Características
                   </Link>
                   <Link
-                    href="/venta-casas/todas-ubicaciones"
+                    href="#integrations"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    <Building2 className="h-4 w-4" />
-                    Casas
+                    <Code className="h-4 w-4" />
+                    Integraciones
                   </Link>
                   <Link
-                    href="/venta-locales/todas-ubicaciones"
+                    href="#security"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    <Store className="h-4 w-4" />
-                    Locales
+                    <Shield className="h-4 w-4" />
+                    Seguridad
                   </Link>
                   <Link
-                    href="/venta-solares/todas-ubicaciones"
+                    href="#api"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    <LandPlot className="h-4 w-4" />
-                    Solares
-                  </Link>
-                  <Link
-                    href="/venta-garajes/todas-ubicaciones"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Car className="h-4 w-4" />
-                    Garajes
+                    <Code className="h-4 w-4" />
+                    API y Desarrolladores
                   </Link>
                 </div>
               </div>
 
-              {/* Alquilar Section */}
+              {/* Solutions Section */}
               <div className="space-y-3">
                 <h3 className="px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Alquilar
+                  Soluciones
                 </h3>
                 <div className="space-y-1">
                   <Link
-                    href="/alquiler-pisos/todas-ubicaciones"
+                    href="#sales-teams"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    <Home className="h-4 w-4" />
-                    Pisos
+                    <Users className="h-4 w-4" />
+                    Equipos de Ventas
                   </Link>
                   <Link
-                    href="/alquiler-casas/todas-ubicaciones"
+                    href="#marketing-teams"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    <Building2 className="h-4 w-4" />
-                    Casas
+                    <Users className="h-4 w-4" />
+                    Equipos de Marketing
                   </Link>
                   <Link
-                    href="/alquiler-locales/todas-ubicaciones"
+                    href="#customer-service"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    <Store className="h-4 w-4" />
-                    Locales
+                    <HeadphonesIcon className="h-4 w-4" />
+                    Servicio al Cliente
                   </Link>
                   <Link
-                    href="/alquiler-garajes/todas-ubicaciones"
+                    href="#small-business"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    <Car className="h-4 w-4" />
-                    Garajes
+                    <Briefcase className="h-4 w-4" />
+                    Pequeñas Empresas
+                  </Link>
+                  <Link
+                    href="#enterprise"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={handleMenuClose}
+                  >
+                    <Building className="h-4 w-4" />
+                    Empresas
                   </Link>
                 </div>
               </div>
 
-              {/* Other Links */}
+              {/* Precios Link */}
+              <div className="space-y-3">
+                <Link
+                  href="#pricing"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                  onClick={handleMenuClose}
+                >
+                  <DollarSign className="h-4 w-4" />
+                  Precios
+                </Link>
+              </div>
+
+              {/* Resources Section */}
               <div className="space-y-3">
                 <h3 className="px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Más
+                  Recursos
                 </h3>
                 <div className="space-y-1">
                   <Link
-                    href="/vender"
+                    href="#documentation"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    <PlusCircle className="h-4 w-4" />
-                    Vender
+                    <FileText className="h-4 w-4" />
+                    Documentación
                   </Link>
+                  <Link
+                    href="#blog"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={handleMenuClose}
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Blog
+                  </Link>
+                  <Link
+                    href="#academy"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={handleMenuClose}
+                  >
+                    <GraduationCap className="h-4 w-4" />
+                    Academia
+                  </Link>
+                  <Link
+                    href="#community"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={handleMenuClose}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Comunidad
+                  </Link>
+                  <Link
+                    href="#support"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={handleMenuClose}
+                  >
+                    <HeadphonesIcon className="h-4 w-4" />
+                    Soporte
+                  </Link>
+                </div>
+              </div>
+
+              {/* Company Section */}
+              <div className="space-y-3">
+                <h3 className="px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  Empresa
+                </h3>
+                <div className="space-y-1">
                   <Link
                     href="#about"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    Nosotros
+                    <Info className="h-4 w-4" />
+                    Acerca de Nosotros
                   </Link>
                   <Link
-                    href="#reviews"
+                    href="#careers"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    Reseñas
+                    <Briefcase className="h-4 w-4" />
+                    Carreras
                   </Link>
                   <Link
-                    href="#contactos"
+                    href="#partners"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
-                    Contactos
+                    <Users className="h-4 w-4" />
+                    Socios
+                  </Link>
+                  <Link
+                    href="#contact"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={handleMenuClose}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Contacto
                   </Link>
                 </div>
               </div>

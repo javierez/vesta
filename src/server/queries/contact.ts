@@ -81,8 +81,8 @@ export async function createContact(
       .where(
         and(
           eq(contacts.contactId, BigInt(result.contactId)),
-          eq(contacts.accountId, BigInt(accountId))
-        )
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
       );
     return newContact;
   } catch (error) {
@@ -163,8 +163,8 @@ export async function createContactWithListings(
       .where(
         and(
           eq(contacts.contactId, newContactId),
-          eq(contacts.accountId, BigInt(accountId))
-        )
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
       );
 
     return newContact;
@@ -394,10 +394,7 @@ export async function listContactsWithTypes(
       .offset(offset)
       .orderBy(contacts.createdAt);
 
-    console.log("🔄 Unique contacts:", uniqueContacts);
-
     const contactIds = uniqueContacts.map((c) => c.contactId);
-    console.log("🔄 Contact IDs:", contactIds);
 
     // Use the inArray function from drizzle-orm for proper IN clause handling
     const allProspects = await db
@@ -416,7 +413,6 @@ export async function listContactsWithTypes(
       )
       .orderBy(prospects.createdAt);
 
-    console.log("🔄 All prospects:", allProspects);
 
     // OPTIMIZATION: Batch fetch all listings for all contacts in one query
     const allContactListings = await db
@@ -454,7 +450,6 @@ export async function listContactsWithTypes(
       )
       .orderBy(listings.createdAt);
 
-    console.log("🔄 All contact listings:", allContactListings);
     // Group prospects by contactId for faster lookup
     const prospectsByContact = allProspects.reduce(
       (acc, prospect) => {
@@ -466,7 +461,6 @@ export async function listContactsWithTypes(
       {} as Record<string, typeof allProspects>,
     );
 
-    console.log("🔄 Prospects by contact:", prospectsByContact);
 
     // Group listings by contactId for faster lookup
     const listingsByContact = allContactListings.reduce(
@@ -479,7 +473,6 @@ export async function listContactsWithTypes(
       {} as Record<string, typeof allContactListings>,
     );
 
-    console.log("🔄 Listings by contact:", listingsByContact);
 
     // For each contact, process their prospects and listings
     const contactsWithProspects = await Promise.all(

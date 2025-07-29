@@ -27,6 +27,7 @@ import { createListing } from "~/server/queries/listing";
 import { createPropertyImage } from "~/server/queries/property_images";
 import { createLocation } from "~/server/queries/locations";
 import { createAccount } from "~/server/queries/accounts";
+import { getCurrentUserAccountId } from "~/lib/dal";
 import { sql } from "drizzle-orm";
 
 // Helper function to convert property to DB format
@@ -170,17 +171,16 @@ async function seedUsers() {
 // Seed contacts data
 async function seedContacts() {
   try {
+    const accountId = await getCurrentUserAccountId();
     for (const contact of mockContacts) {
       await db.insert(contacts).values({
-        contactId: contact.contactId,
+        accountId: BigInt(accountId),
         firstName: contact.firstName,
         lastName: contact.lastName,
         email: contact.email,
         phone: contact.phone,
         additionalInfo: contact.additionalInfo,
         isActive: contact.isActive,
-        createdAt: contact.createdAt,
-        updatedAt: contact.updatedAt,
       });
     }
     console.log("Contacts seeded successfully");

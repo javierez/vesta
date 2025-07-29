@@ -1,16 +1,16 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { useSession as useBetterAuthSession } from "~/lib/auth-client";
-import { useRouter, usePathname } from "next/navigation";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-export interface User {
+// Types for authentication state
+interface User {
   id: string;
   email: string;
+  name: string;
   firstName?: string;
   lastName?: string;
-  name?: string;
-  accountId: number; // Required: User must belong to an account/organization
+  accountId?: number;
   phone?: string;
   timezone?: string;
   language?: string;
@@ -18,108 +18,141 @@ export interface User {
   emailVerified?: boolean;
 }
 
-export interface Session {
-  user: User;
-  session: {
-    id: string;
-    expiresAt: Date;
-  };
-}
-
 interface AuthContextType {
-  session: Session | null;
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  isLoading: true,
-  isAuthenticated: false,
-});
+// Create the auth context
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
-  const { data: betterAuthSession, isPending } = useBetterAuthSession();
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
-
-  // Public paths that don't require authentication
-  const publicPaths = [
-    '/',
-    '/auth/signin',
-    '/auth/signup',
-    '/auth/forgot-password',
-  ];
-
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
-
-  useEffect(() => {
-    if (!isPending) {
-      setIsLoading(false);
-      
-      // Redirect logic for protected routes
-      if (!betterAuthSession && !isPublicPath) {
-        router.push('/auth/signin');
-      }
-    }
-  }, [betterAuthSession, isPending, isPublicPath, router]);
-
-  const session: Session | null = betterAuthSession && betterAuthSession.user.accountId ? {
-    user: {
-      id: betterAuthSession.user.id,
-      email: betterAuthSession.user.email,
-      firstName: betterAuthSession.user.name, // BetterAuth uses 'name' field
-      lastName: betterAuthSession.user.lastName || '',
-      name: betterAuthSession.user.name,
-      accountId: betterAuthSession.user.accountId, // Required for valid session
-      phone: betterAuthSession.user.phone || undefined,
-      timezone: betterAuthSession.user.timezone || undefined,
-      language: betterAuthSession.user.language || undefined,
-      image: betterAuthSession.user.image || undefined,
-      emailVerified: betterAuthSession.user.emailVerified,
-    },
-    session: {
-      id: betterAuthSession.session.id,
-      expiresAt: betterAuthSession.session.expiresAt,
-    }
-  } : null;
-
-  const contextValue: AuthContextType = {
-    session,
-    user: session?.user || null,
-    isLoading: isLoading || isPending,
-    isAuthenticated: !!session,
-  };
-
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
+// Custom hook to use the auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
 
-// Additional hooks for convenience
-export function useUser() {
-  const { user } = useAuth();
-  return user;
+// Auth provider component
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  // Check if user is authenticated
+  const isAuthenticated = !!user;
+
+  // Fetch current user session
+  const fetchUser = async () => {
+    try {
+      const response = await fetch("/api/auth/get-session", {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const sessionData = await response.json();
+        if (sessionData?.user) {
+          // Map the session data to our User type
+          const userData: User = {
+            id: sessionData.user.id,
+            email: sessionData.user.email,
+            name: sessionData.user.name || sessionData.user.firstName || "",
+            firstName: sessionData.user.firstName,
+            lastName: sessionData.user.lastName || "",
+            accountId: sessionData.user.accountId,
+            phone: sessionData.user.phone || "",
+            timezone: sessionData.user.timezone || "UTC",
+            language: sessionData.user.language || "en",
+            image: sessionData.user.image,
+            emailVerified: sessionData.user.emailVerified,
+          };
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Error fetching user session:", error);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Login function
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/auth/sign-in", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        await fetchUser(); // Refresh user data after login
+        router.push("/dashboard");
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Logout function
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/sign-out", {
+        method: "POST",
+        credentials: "include",
+      });
+      setUser(null);
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if logout fails, clear the local state
+      setUser(null);
+      router.push("/");
+    }
+  };
+
+  // Refresh user data
+  const refreshUser = async () => {
+    await fetchUser();
+  };
+
+  // Check authentication status on mount
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  const value: AuthContextType = {
+    user,
+    isLoading,
+    isAuthenticated,
+    login,
+    logout,
+    refreshUser,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useIsAuthenticated() {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated;
-}
+// Optional: Export the context for advanced use cases
+export { AuthContext };

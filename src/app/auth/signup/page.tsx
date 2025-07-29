@@ -6,7 +6,13 @@ import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { signUp, signIn } from "~/lib/auth-client";
 import { AlertCircle, Eye, EyeOff, CheckCircle } from "lucide-react";
 
@@ -17,21 +23,21 @@ export default function SignUpPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    companyName: "",
+    inviteCode: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  
+
   const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -60,8 +66,8 @@ export default function SignUpPage() {
       setError("Las contraseñas no coinciden");
       return false;
     }
-    if (!formData.companyName.trim()) {
-      setError("El nombre de la empresa es obligatorio");
+    if (!formData.inviteCode.trim()) {
+      setError("El código de invitación es obligatorio");
       return false;
     }
     return true;
@@ -79,17 +85,17 @@ export default function SignUpPage() {
 
     try {
       // Call our custom signup endpoint that creates both account and user
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           firstName: formData.firstName,
-          lastName: formData.lastName, 
+          lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
-          companyName: formData.companyName,
+          inviteCode: formData.inviteCode,
         }),
       });
 
@@ -101,12 +107,11 @@ export default function SignUpPage() {
       }
 
       setSuccess(true);
-      
+
       // Redirect to dashboard after successful registration
       setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
-      
     } catch (err) {
       setError("Error inesperado al crear la cuenta");
       console.error("Sign up error:", err);
@@ -132,18 +137,18 @@ export default function SignUpPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="flex min-h-screen flex-col justify-center bg-gray-50 py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <Card>
-            <CardContent className="text-center py-8">
-              <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <CardContent className="py-8 text-center">
+              <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-500" />
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">
                 ¡Cuenta creada exitosamente!
               </h2>
-              <p className="text-gray-600 mb-4">
+              <p className="mb-4 text-gray-600">
                 Te estamos redirigiendo al dashboard...
               </p>
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
             </CardContent>
           </Card>
         </div>
@@ -152,7 +157,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen flex-col justify-center bg-gray-50 py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Vesta CRM</h1>
@@ -161,8 +166,8 @@ export default function SignUpPage() {
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             ¿Ya tienes una cuenta?{" "}
-            <Link 
-              href="/auth/signin" 
+            <Link
+              href="/auth/signin"
               className="font-medium text-blue-600 hover:text-blue-500"
             >
               Inicia sesión
@@ -222,17 +227,20 @@ export default function SignUpPage() {
               </div>
 
               <div>
-                <Label htmlFor="companyName">Empresa</Label>
+                <Label htmlFor="inviteCode">Código de Invitación</Label>
                 <Input
-                  id="companyName"
-                  name="companyName"
+                  id="inviteCode"
+                  name="inviteCode"
                   type="text"
-                  value={formData.companyName}
+                  value={formData.inviteCode}
                   onChange={handleInputChange}
                   required
                   disabled={isLoading}
-                  placeholder="Nombre de tu empresa"
+                  placeholder="Ingresa tu código de invitación"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Solicita un código de invitación a tu administrador
+                </p>
               </div>
 
               <div>
@@ -309,11 +317,7 @@ export default function SignUpPage() {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
               </Button>
             </form>
@@ -323,7 +327,9 @@ export default function SignUpPage() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">O continúa con</span>
+                <span className="bg-white px-2 text-gray-500">
+                  O continúa con
+                </span>
               </div>
             </div>
 
@@ -334,7 +340,7 @@ export default function SignUpPage() {
               onClick={handleGoogleSignUp}
               disabled={isLoading}
             >
-              <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -355,13 +361,16 @@ export default function SignUpPage() {
               Continuar con Google
             </Button>
 
-            <div className="text-xs text-gray-500 text-center">
+            <div className="text-center text-xs text-gray-500">
               Al crear una cuenta, aceptas nuestros{" "}
               <Link href="/terms" className="text-blue-600 hover:text-blue-500">
                 Términos de Servicio
               </Link>{" "}
               y{" "}
-              <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
+              <Link
+                href="/privacy"
+                className="text-blue-600 hover:text-blue-500"
+              >
                 Política de Privacidad
               </Link>
             </div>

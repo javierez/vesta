@@ -4,7 +4,7 @@ import { eq, and } from "drizzle-orm";
 
 /**
  * Permission System for Role-Based Access Control (RBAC)
- * 
+ *
  * This system provides:
  * 1. User role checking
  * 2. Permission validation
@@ -14,62 +14,62 @@ import { eq, and } from "drizzle-orm";
 // Standard permissions for the CRM system
 export const PERMISSIONS = {
   // Property management
-  PROPERTY_VIEW: 'property:view',
-  PROPERTY_CREATE: 'property:create',
-  PROPERTY_EDIT: 'property:edit',
-  PROPERTY_DELETE: 'property:delete',
-  
+  PROPERTY_VIEW: "property:view",
+  PROPERTY_CREATE: "property:create",
+  PROPERTY_EDIT: "property:edit",
+  PROPERTY_DELETE: "property:delete",
+
   // Listing management
-  LISTING_VIEW: 'listing:view',
-  LISTING_CREATE: 'listing:create',
-  LISTING_EDIT: 'listing:edit',
-  LISTING_DELETE: 'listing:delete',
-  LISTING_PUBLISH: 'listing:publish',
-  
+  LISTING_VIEW: "listing:view",
+  LISTING_CREATE: "listing:create",
+  LISTING_EDIT: "listing:edit",
+  LISTING_DELETE: "listing:delete",
+  LISTING_PUBLISH: "listing:publish",
+
   // Contact management
-  CONTACT_VIEW: 'contact:view',
-  CONTACT_CREATE: 'contact:create',
-  CONTACT_EDIT: 'contact:edit',
-  CONTACT_DELETE: 'contact:delete',
-  
+  CONTACT_VIEW: "contact:view",
+  CONTACT_CREATE: "contact:create",
+  CONTACT_EDIT: "contact:edit",
+  CONTACT_DELETE: "contact:delete",
+
   // Lead management
-  LEAD_VIEW: 'lead:view',
-  LEAD_CREATE: 'lead:create',
-  LEAD_EDIT: 'lead:edit',
-  LEAD_DELETE: 'lead:delete',
-  LEAD_ASSIGN: 'lead:assign',
-  
+  LEAD_VIEW: "lead:view",
+  LEAD_CREATE: "lead:create",
+  LEAD_EDIT: "lead:edit",
+  LEAD_DELETE: "lead:delete",
+  LEAD_ASSIGN: "lead:assign",
+
   // Deal management
-  DEAL_VIEW: 'deal:view',
-  DEAL_CREATE: 'deal:create',
-  DEAL_EDIT: 'deal:edit',
-  DEAL_DELETE: 'deal:delete',
-  
+  DEAL_VIEW: "deal:view",
+  DEAL_CREATE: "deal:create",
+  DEAL_EDIT: "deal:edit",
+  DEAL_DELETE: "deal:delete",
+
   // User management
-  USER_VIEW: 'user:view',
-  USER_CREATE: 'user:create',
-  USER_EDIT: 'user:edit',
-  USER_DELETE: 'user:delete',
-  USER_MANAGE_ROLES: 'user:manage_roles',
-  
+  USER_VIEW: "user:view",
+  USER_CREATE: "user:create",
+  USER_EDIT: "user:edit",
+  USER_DELETE: "user:delete",
+  USER_MANAGE_ROLES: "user:manage_roles",
+
   // Settings and configuration
-  SETTINGS_VIEW: 'settings:view',
-  SETTINGS_EDIT: 'settings:edit',
-  SETTINGS_INTEGRATION: 'settings:integration',
-  
+  SETTINGS_VIEW: "settings:view",
+  SETTINGS_EDIT: "settings:edit",
+  SETTINGS_INTEGRATION: "settings:integration",
+
   // Reports and analytics
-  REPORTS_VIEW: 'reports:view',
-  REPORTS_EXPORT: 'reports:export',
-  
+  REPORTS_VIEW: "reports:view",
+  REPORTS_EXPORT: "reports:export",
+
   // System administration
-  ADMIN_FULL_ACCESS: 'admin:full_access',
+  ADMIN_FULL_ACCESS: "admin:full_access",
 } as const;
 
-export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 // Standard roles with their permissions
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  'admin': [
+  admin: [
     PERMISSIONS.PROPERTY_VIEW,
     PERMISSIONS.PROPERTY_CREATE,
     PERMISSIONS.PROPERTY_EDIT,
@@ -104,7 +104,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.REPORTS_EXPORT,
     PERMISSIONS.ADMIN_FULL_ACCESS,
   ],
-  'agent': [
+  agent: [
     PERMISSIONS.PROPERTY_VIEW,
     PERMISSIONS.PROPERTY_CREATE,
     PERMISSIONS.PROPERTY_EDIT,
@@ -123,7 +123,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.DEAL_EDIT,
     PERMISSIONS.REPORTS_VIEW,
   ],
-  'viewer': [
+  viewer: [
     PERMISSIONS.PROPERTY_VIEW,
     PERMISSIONS.LISTING_VIEW,
     PERMISSIONS.CONTACT_VIEW,
@@ -147,19 +147,19 @@ export async function getCurrentUserRoles(): Promise<string[]> {
       })
       .from(userRoles)
       .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
-      .innerJoin(users, eq(users.userId, userRoles.userId))
+      .innerJoin(users, eq(users.id, userRoles.userId))
       .where(
         and(
           eq(userRoles.userId, BigInt(currentUser.id)),
           eq(users.accountId, BigInt(accountId)),
           eq(userRoles.isActive, true),
           eq(roles.isActive, true),
-        )
+        ),
       );
 
-    return userRolesList.map(role => role.roleName);
+    return userRolesList.map((role) => role.roleName);
   } catch (error) {
-    console.error('Error fetching user roles:', error);
+    console.error("Error fetching user roles:", error);
     return [];
   }
 }
@@ -173,16 +173,16 @@ export async function getCurrentUserPermissions(): Promise<Permission[]> {
     const permissionsSet = new Set<Permission>();
 
     // Aggregate permissions from all roles
-    roles.forEach(role => {
+    roles.forEach((role) => {
       const rolePermissions = ROLE_PERMISSIONS[role] || [];
-      rolePermissions.forEach(permission => {
+      rolePermissions.forEach((permission) => {
         permissionsSet.add(permission);
       });
     });
 
     return Array.from(permissionsSet);
   } catch (error) {
-    console.error('Error fetching user permissions:', error);
+    console.error("Error fetching user permissions:", error);
     return [];
   }
 }
@@ -193,9 +193,12 @@ export async function getCurrentUserPermissions(): Promise<Permission[]> {
 export async function hasPermission(permission: Permission): Promise<boolean> {
   try {
     const userPermissions = await getCurrentUserPermissions();
-    return userPermissions.includes(permission) || userPermissions.includes(PERMISSIONS.ADMIN_FULL_ACCESS);
+    return (
+      userPermissions.includes(permission) ||
+      userPermissions.includes(PERMISSIONS.ADMIN_FULL_ACCESS)
+    );
   } catch (error) {
-    console.error('Error checking permission:', error);
+    console.error("Error checking permission:", error);
     return false;
   }
 }
@@ -203,16 +206,22 @@ export async function hasPermission(permission: Permission): Promise<boolean> {
 /**
  * Check if the current user has any of the specified permissions
  */
-export async function hasAnyPermission(permissions: Permission[]): Promise<boolean> {
+export async function hasAnyPermission(
+  permissions: Permission[],
+): Promise<boolean> {
   try {
     const userPermissions = await getCurrentUserPermissions();
-    const hasAdminAccess = userPermissions.includes(PERMISSIONS.ADMIN_FULL_ACCESS);
-    
+    const hasAdminAccess = userPermissions.includes(
+      PERMISSIONS.ADMIN_FULL_ACCESS,
+    );
+
     if (hasAdminAccess) return true;
-    
-    return permissions.some(permission => userPermissions.includes(permission));
+
+    return permissions.some((permission) =>
+      userPermissions.includes(permission),
+    );
   } catch (error) {
-    console.error('Error checking permissions:', error);
+    console.error("Error checking permissions:", error);
     return false;
   }
 }
@@ -220,16 +229,22 @@ export async function hasAnyPermission(permissions: Permission[]): Promise<boole
 /**
  * Check if the current user has all of the specified permissions
  */
-export async function hasAllPermissions(permissions: Permission[]): Promise<boolean> {
+export async function hasAllPermissions(
+  permissions: Permission[],
+): Promise<boolean> {
   try {
     const userPermissions = await getCurrentUserPermissions();
-    const hasAdminAccess = userPermissions.includes(PERMISSIONS.ADMIN_FULL_ACCESS);
-    
+    const hasAdminAccess = userPermissions.includes(
+      PERMISSIONS.ADMIN_FULL_ACCESS,
+    );
+
     if (hasAdminAccess) return true;
-    
-    return permissions.every(permission => userPermissions.includes(permission));
+
+    return permissions.every((permission) =>
+      userPermissions.includes(permission),
+    );
   } catch (error) {
-    console.error('Error checking permissions:', error);
+    console.error("Error checking permissions:", error);
     return false;
   }
 }
@@ -242,7 +257,7 @@ export async function hasRole(roleName: string): Promise<boolean> {
     const roles = await getCurrentUserRoles();
     return roles.includes(roleName);
   } catch (error) {
-    console.error('Error checking role:', error);
+    console.error("Error checking role:", error);
     return false;
   }
 }
@@ -251,7 +266,7 @@ export async function hasRole(roleName: string): Promise<boolean> {
  * Check if the current user is an admin
  */
 export async function isAdmin(): Promise<boolean> {
-  return hasRole('admin');
+  return hasRole("admin");
 }
 
 /**
@@ -270,6 +285,6 @@ export async function requirePermission(permission: Permission): Promise<void> {
 export async function requireAdmin(): Promise<void> {
   const isUserAdmin = await isAdmin();
   if (!isUserAdmin) {
-    throw new Error('Access denied: admin privileges required');
+    throw new Error("Access denied: admin privileges required");
   }
 }

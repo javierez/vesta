@@ -13,7 +13,7 @@ import { getSecureDb, getCurrentUserAccountId } from "~/lib/dal";
 export async function generateReferenceNumber(): Promise<string> {
   try {
     const { db: secureDb, accountId } = await getSecureDb();
-    
+
     // Get the current year
     const currentYear = new Date().getFullYear();
 
@@ -24,8 +24,8 @@ export async function generateReferenceNumber(): Promise<string> {
       .where(
         and(
           eq(properties.accountId, BigInt(accountId)),
-          sql`YEAR(${properties.createdAt}) = ${currentYear}`
-        )
+          sql`YEAR(${properties.createdAt}) = ${currentYear}`,
+        ),
       );
 
     const count = result?.count ?? 0;
@@ -56,7 +56,7 @@ export async function createProperty(
 ) {
   try {
     const { db: secureDb, accountId } = await getSecureDb();
-    
+
     // Generate a unique reference number
     const referenceNumber = await generateReferenceNumber();
 
@@ -69,15 +69,15 @@ export async function createProperty(
       })
       .$returningId();
     if (!result) throw new Error("Failed to create property");
-    
+
     const [newProperty] = await secureDb
       .select()
       .from(properties)
       .where(
         and(
           eq(properties.propertyId, BigInt(result.propertyId)),
-          eq(properties.accountId, BigInt(accountId))
-        )
+          eq(properties.accountId, BigInt(accountId)),
+        ),
       );
     return newProperty;
   } catch (error) {
@@ -90,15 +90,15 @@ export async function createProperty(
 export async function getPropertyById(propertyId: number) {
   try {
     const { db: secureDb, withAccountFilter } = await getSecureDb();
-    
+
     const [property] = await secureDb
       .select()
       .from(properties)
       .where(
         withAccountFilter(
           properties,
-          eq(properties.propertyId, BigInt(propertyId))
-        )
+          eq(properties.propertyId, BigInt(propertyId)),
+        ),
       );
     return property;
   } catch (error) {
@@ -338,11 +338,10 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
     // Generate a unique reference number
     const referenceNumber = await generateReferenceNumber();
 
-    //console.log('cadastralData', cadastralData)
 
     // Get secure database access
     const { db: secureDb, accountId } = await getSecureDb();
-    
+
     // Create property with cadastral data and sensible defaults
     const propertyData = {
       cadastralReference,
@@ -385,8 +384,8 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
       .where(
         and(
           eq(properties.propertyId, BigInt(result.propertyId)),
-          eq(properties.accountId, BigInt(accountId))
-        )
+          eq(properties.accountId, BigInt(accountId)),
+        ),
       );
 
     if (!newProperty) throw new Error("Failed to retrieve created property");
@@ -429,12 +428,11 @@ export async function createPropertyFromLocation(locationData: {
     // First, retrieve geocoding data from the address
     const fullAddress =
       `${locationData.street}, ${locationData.postalCode}, ${locationData.city ?? ""}, ${locationData.province ?? ""}`.trim();
-    console.log("fullAddress", fullAddress);
     const geocodingData = await retrieveGeocodingData(fullAddress);
 
     // Generate a unique reference number
     const referenceNumber = await generateReferenceNumber();
-    
+
     // Get secure database access
     const { db: secureDb, accountId } = await getSecureDb();
 
@@ -477,8 +475,8 @@ export async function createPropertyFromLocation(locationData: {
       .where(
         and(
           eq(properties.propertyId, BigInt(result.propertyId)),
-          eq(properties.accountId, BigInt(accountId))
-        )
+          eq(properties.accountId, BigInt(accountId)),
+        ),
       );
 
     if (!newProperty) throw new Error("Failed to retrieve created property");
@@ -539,10 +537,6 @@ export async function updatePropertyLocation(
           municipality: locationData.municipality,
           neighborhood: locationData.neighborhood,
         });
-        console.log(
-          "Location created/updated with neighborhoodId:",
-          neighborhoodId,
-        );
       } catch (error) {
         console.error("Error creating/updating location:", error);
         // Continue without neighborhoodId if there's an error

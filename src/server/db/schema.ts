@@ -39,25 +39,28 @@ export const accounts = singlestoreTable("accounts", {
 
 // Users table (Enhanced for BetterAuth compatibility)
 export const users = singlestoreTable("users", {
-  userId: bigint("user_id", { mode: "bigint" }).primaryKey().autoincrement(),
-  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  // BetterAuth required fields (with exact names it expects)
+  id: varchar("id", { length: 36 }).primaryKey(), // BetterAuth expects string id
+  name: varchar("name", { length: 200 }).notNull(), // BetterAuth expects 'name' field
   email: varchar("email", { length: 255 }).notNull(),
+  emailVerified: boolean("email_verified").default(false),
+  emailVerifiedAt: timestamp("email_verified_at"),
+  image: varchar("image", { length: 255 }), // BetterAuth expects 'image' not 'profileImageUrl'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  password: varchar("password", { length: 255 }),
+  
+  // Your additional fields
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),
   phone: varchar("phone", { length: 20 }),
-  profileImageUrl: varchar("profile_image_url", { length: 255 }),
   timezone: varchar("timezone", { length: 50 }).default("UTC"),
   language: varchar("language", { length: 10 }).default("en"),
   preferences: json("preferences").default({}),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   lastLogin: timestamp("last_login"),
   isVerified: boolean("is_verified").default(false),
   isActive: boolean("is_active").default(true),
-  // BetterAuth required fields
-  password: varchar("password", { length: 255 }),
-  emailVerified: boolean("email_verified").default(false),
-  emailVerifiedAt: timestamp("email_verified_at"),
 });
 
 // Roles table
@@ -92,7 +95,7 @@ export const sessions = singlestoreTable("sessions", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  userId: bigint("user_id", { mode: "bigint" }).notNull(),
+  userId: varchar("user_id", { length: 36 }).notNull(), // Changed to varchar to match users.id
 });
 
 // OAuth provider accounts linked to users (renamed from oauth_accounts for clarity)
@@ -100,7 +103,7 @@ export const authAccounts = singlestoreTable("auth_accounts", {
   id: varchar("id", { length: 36 }).primaryKey(),
   providerId: text("provider_id").notNull(), // e.g., "google", "apple", "linkedin"
   providerAccountId: text("provider_account_id").notNull(), // The ID from the OAuth provider
-  userId: bigint("user_id", { mode: "bigint" }).notNull(), // FK → users.user_id
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   idToken: text("id_token"),
@@ -298,7 +301,7 @@ export const listings = singlestoreTable("listings", {
     .primaryKey()
     .autoincrement(),
 
-  // Account for multi-tenant security  
+  // Account for multi-tenant security
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
 
   // Basic Information
@@ -365,7 +368,7 @@ export const contacts = singlestoreTable("contacts", {
   contactId: bigint("contact_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
-  // Account for multi-tenant security  
+  // Account for multi-tenant security
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),

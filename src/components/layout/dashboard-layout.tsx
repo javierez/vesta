@@ -94,15 +94,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="border-t border-gray-200 p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-300">
                   <User className="h-4 w-4 text-gray-600" />
                 </div>
               </div>
-              <div className="ml-3 flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {session?.user?.firstName || session?.user?.name || 'Usuario'}
+              <div className="ml-3 min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-gray-900">
+                  {session?.user?.firstName || session?.user?.name || "Usuario"}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="truncate text-xs text-gray-500">
                   {session?.user?.email}
                 </p>
               </div>
@@ -156,15 +156,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="border-t border-gray-200 p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-300">
                   <User className="h-4 w-4 text-gray-600" />
                 </div>
               </div>
-              <div className="ml-3 flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {session?.user?.firstName || session?.user?.name || 'Usuario'}
+              <div className="ml-3 min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-gray-900">
+                  {session?.user?.firstName || session?.user?.name || "Usuario"}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="truncate text-xs text-gray-500">
                   {session?.user?.email}
                 </p>
               </div>

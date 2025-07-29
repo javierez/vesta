@@ -259,7 +259,7 @@ export const properties: Property[] = [
     communityPool: false,
     privatePool: false,
     tennisCourt: false,
-  }
+  },
 ];
 
 export const propertyImages: PropertyImage[] = [
@@ -1494,7 +1494,7 @@ export const listings: Listing[] = [
     pisoscom: false,
     yaencontre: false,
     milanuncios: false,
-  }
+  },
 ];
 
 // Mock data for leads

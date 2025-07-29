@@ -24,7 +24,7 @@ The AI agent only gets the context you are appending to the PRP and training dat
 
 ## PRP Generation
 
-Using public/claude/prp_base.md as template:
+Using /Users/javierperezgarcia/Downloads/vesta/public/claude/PRPs/templates/prp_base.md as template:
 
 ### Critical Context to Include and pass to the AI agent as part of the PRP
 

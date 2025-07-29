@@ -996,3 +996,500 @@ The implementation transforms Vesta CRM from an unprotected application to a sec
 ---
 
 *This documentation covers the complete authentication implementation as of the current deployment. For technical questions or implementation details, refer to the individual component files and their inline documentation.*
+
+---
+
+## Database Tables Explained
+
+### Authentication Tables Overview
+
+The authentication system uses several database tables, each serving a specific purpose. Here's a comprehensive explanation of each table and its necessity:
+
+### 1. **users** Table (REQUIRED)
+**Purpose**: Core user profile and authentication data  
+**Key Fields**:
+```sql
+- id (varchar(36)) - Unique identifier for the user
+- name (varchar(200)) - Display name (we populate from firstName + lastName)
+- email (varchar(255)) - User's email address
+- password (varchar(255)) - Hashed password for email/password auth
+- emailVerified (boolean) - Whether email is verified
+- emailVerifiedAt (timestamp) - When email was verified
+- image (varchar(255)) - Profile image URL
+- accountId (bigint) - Links user to their organization/company
+- firstName, lastName - Additional fields for full name details
+- phone, timezone, language - User preferences
+```
+**Usage**: This is the primary table that stores all user information. Users authenticate (have passwords), not accounts.
+
+### 2. **accounts** Table (CUSTOM - Not BetterAuth)
+**Purpose**: Multi-tenant organizations/companies  
+**Key Fields**:
+```sql
+- accountId (bigint) - Unique identifier for the organization
+- name (varchar(255)) - Company/organization name
+- email, phone, website - Organization contact info
+- plan, subscriptionStatus - Billing information
+- portalSettings, preferences - Configuration JSON
+```
+**Usage**: This is NOT a BetterAuth table. It's our custom table for multi-tenancy. Each user belongs to an account (organization). All data in the system is filtered by accountId for data isolation.
+
+### 3. **auth_accounts** Table (REQUIRED by BetterAuth)
+**Purpose**: OAuth and authentication provider accounts  
+**Key Fields**:
+```sql
+- id (varchar(36)) - Unique identifier
+- userId (varchar(36)) - Links to users.id
+- providerId (text) - Provider name (google, apple, etc.)
+- providerAccountId (text) - ID from the OAuth provider
+- accessToken, refreshToken - OAuth tokens
+- scope - OAuth permissions granted
+```
+**Usage**: BetterAuth uses this to store OAuth provider connections. When a user signs in with Google, their Google account info is stored here linked to their user record.
+
+### 4. **sessions** Table (REQUIRED by BetterAuth)
+**Purpose**: Active user sessions  
+**Key Fields**:
+```sql
+- id (varchar(36)) - Session identifier
+- userId (varchar(36)) - Links to users.id
+- token (varchar(255)) - Session token
+- expiresAt (timestamp) - When session expires
+- ipAddress, userAgent - Session metadata
+```
+**Usage**: BetterAuth creates a session record when users sign in. The session token is stored in an HTTP-only cookie. Sessions expire after 7 days.
+
+### 5. **verification_tokens** Table (REQUIRED by BetterAuth)
+**Purpose**: Email verification and password reset tokens  
+**Key Fields**:
+```sql
+- id (varchar(36)) - Token identifier
+- identifier (text) - What's being verified (email address)
+- value (text) - The verification token
+- expiresAt (timestamp) - Token expiration
+```
+**Usage**: When email verification is enabled or password reset is requested, BetterAuth creates temporary tokens here.
+
+### 6. **user_roles** Table (OPTIONAL - Custom)
+**Purpose**: Many-to-many relationship between users and roles  
+**Key Fields**:
+```sql
+- userRoleId (bigint) - Primary key
+- userId (bigint) - Links to users (needs update to varchar)
+- roleId (bigint) - Links to roles table
+```
+**Usage**: We use this for role-based access control (RBAC). Currently needs schema update since userId should be varchar(36) to match new user schema.
+
+### Which Tables Are Necessary?
+
+**Required by BetterAuth (4 tables)**:
+1. `users` - User profiles and authentication
+2. `sessions` - Active sessions management
+3. `auth_accounts` - OAuth provider accounts
+4. `verification_tokens` - Email verification/password reset
+
+**Required for Multi-Tenancy (1 table)**:
+1. `accounts` - Organizations/companies (our custom table)
+
+**Optional for Enhanced Features (1 table)**:
+1. `user_roles` - For role-based permissions (can use simple role field on users table instead)
+
+### Authentication Flow with Tables
+
+1. **Sign Up**:
+   - Create record in `accounts` table (organization)
+   - Create record in `users` table with password
+   - Create session in `sessions` table
+   - Set HTTP-only cookie with session token
+
+2. **Sign In with Email/Password**:
+   - Lookup user in `users` table by email
+   - Verify password hash
+   - Create session in `sessions` table
+   - Set HTTP-only cookie with session token
+
+3. **Sign In with OAuth (Google/Apple/LinkedIn)**:
+   - OAuth provider returns user info
+   - Create/update record in `users` table
+   - Create/update record in `auth_accounts` table with provider info
+   - Create session in `sessions` table
+   - Set HTTP-only cookie with session token
+
+4. **Session Validation**:
+   - Extract session token from cookie
+   - Lookup session in `sessions` table
+   - Check if session is not expired
+   - Get user info from `users` table
+   - Get account context from user's accountId
+
+5. **Data Access**:
+   - All queries filtered by user's accountId
+   - Ensures tenant isolation in multi-tenant system
+
+### Summary
+
+The authentication system uses 6 tables total:
+- 4 required by BetterAuth for core authentication
+- 1 custom table for multi-tenant organizations
+- 1 optional table for role-based permissions
+
+The key architectural decision is that users authenticate (not accounts), and users belong to accounts. This enables proper multi-tenant data isolation while maintaining a standard authentication flow.
+
+---
+
+## Current Status
+
+### Authentication System Assessment
+
+Based on the current codebase analysis, here's the comprehensive status of the authentication implementation:
+
+#### ✅ **IMPLEMENTED - Working Components**
+
+1. **Core Authentication Infrastructure**:
+   - BetterAuth server configuration in `src/lib/auth.ts` with MySQL/SingleStore adapter
+   - Client-side authentication methods in `src/lib/auth-client.ts`
+   - Multi-provider support (Google, Apple, LinkedIn) with proper OAuth configuration
+   - Rate limiting and session management (7-day expiration)
+
+2. **Database Schema**:
+   - All required BetterAuth tables properly defined in schema
+   - Users table enhanced with BetterAuth compatibility (varchar ID, proper field mapping)
+   - Multi-tenant architecture with accountId fields on core tables
+   - Accounts table for organization management
+
+3. **Data Access Layer (DAL)**:
+   - Comprehensive security wrapper in `src/lib/dal.ts`
+   - Account-filtered database access with `getSecureDb()`
+   - Session validation with `getSecureSession()`
+   - Error handling for unauthorized access
+
+4. **Permission System**:
+   - Complete RBAC implementation in `src/lib/permissions.ts`
+   - Granular permissions for properties, contacts, listings, users
+   - Role definitions (admin, agent, viewer) with appropriate permissions
+   - Permission checking functions with admin override
+
+5. **Frontend Authentication**:
+   - Sign-in page with email/password and OAuth options
+   - Sign-up page with multi-step form and company creation
+   - Error handling and loading states
+   - Password visibility toggles and validation
+
+6. **Route Protection**:
+   - Middleware configuration for protected routes
+   - Session validation on dashboard access
+   - Callback URL handling for post-login redirects
+
+#### ⚠️ **PARTIALLY IMPLEMENTED - Issues Found**
+
+1. **Schema Inconsistencies**:
+   - Users table has mixed ID types (some references use bigint, some varchar)
+   - Line 70 in DAL: `id: session.user.accountId` should be `accountId: session.user.accountId`
+   - UserRoles table userId field needs to match users.id type (varchar(36))
+
+2. **Missing Signup API**:
+   - Signup page references `/api/auth/signup` endpoint
+   - This custom endpoint is deleted but still referenced in signup form
+   - Need to either implement custom signup or modify form to use BetterAuth directly
+
+3. **Account Creation Logic**:
+   - Signup process expects invite codes but no validation exists
+   - No account creation logic in current signup flow
+   - Multi-tenant setup incomplete for new registrations
+
+#### ❌ **NOT IMPLEMENTED - Missing Components**
+
+1. **Custom Signup Endpoint**:
+   - `/api/auth/signup/route.ts` is deleted but still referenced
+   - Account + user creation flow not implemented
+   - Invite code validation system missing
+
+2. **Admin User Management**:
+   - No admin user creation process
+   - No user role assignment interface
+   - No account setup for initial users
+
+3. **Session Provider Integration**:
+   - AuthProvider component exists but needs Better-Auth integration
+   - Dashboard layout needs session context updates
+
+#### 🔧 **IMMEDIATE FIXES NEEDED**
+
+1. **Fix DAL Session Mapping** (`src/lib/dal.ts:70`):
+   ```typescript
+   // Current (incorrect):
+   id: session.user.accountId,
+   
+   // Should be:
+   accountId: session.user.accountId,
+   ```
+
+2. **Implement Signup Flow**:
+   - Create custom `/api/auth/signup` endpoint
+   - Handle account creation + user creation + linking
+   - Add invite code validation
+
+3. **Schema Consistency**:
+   - Update userRoles.userId to varchar(36)
+   - Ensure all foreign key references match primary key types
+
+### SQL for Creating Admin User
+
+Here's the SQL code to create an admin user and the explanation of required fields:
+
+```sql
+-- 1. First create an account/organization
+INSERT INTO accounts (
+  name,
+  email,
+  phone,
+  plan,
+  subscription_status,
+  created_at,
+  updated_at,
+  is_active
+) VALUES (
+  'Admin Organization',
+  'admin@vestacrm.com',
+  '+1234567890',
+  'enterprise',
+  'active',
+  NOW(),
+  NOW(),
+  true
+);
+
+-- Get the account ID (assuming it's 1 for this example)
+SET @account_id = LAST_INSERT_ID();
+
+-- 2. Create the admin user
+INSERT INTO users (
+  id,
+  name,
+  email,
+  email_verified,
+  password,
+  account_id,
+  first_name,
+  last_name,
+  phone,
+  timezone,
+  language,
+  is_verified,
+  is_active,
+  created_at,
+  updated_at
+) VALUES (
+  UUID(),  -- BetterAuth expects varchar UUID
+  'Admin User',
+  'admin@vestacrm.com',
+  true,
+  '$2a$12$example.hashed.password.here',  -- Use BetterAuth to hash: await auth.api.signUpEmail()
+  @account_id,
+  'Admin',
+  'User',
+  '+1234567890',
+  'UTC',
+  'en',
+  true,
+  true,
+  NOW(),
+  NOW()
+);
+
+-- Get the user ID
+SET @user_id = (SELECT id FROM users WHERE email = 'admin@vestacrm.com');
+
+-- 3. Create admin role if it doesn't exist
+INSERT IGNORE INTO roles (
+  name,
+  description,
+  permissions,
+  created_at,
+  updated_at,
+  is_active
+) VALUES (
+  'admin',
+  'Full system administrator access',
+  '{}',  -- Empty JSON, permissions are handled in code
+  NOW(),
+  NOW(),
+  true
+);
+
+-- Get the role ID
+SET @role_id = (SELECT role_id FROM roles WHERE name = 'admin');
+
+-- 4. Assign admin role to user
+INSERT INTO user_roles (
+  user_id,
+  role_id,
+  created_at,
+  updated_at,
+  is_active
+) VALUES (
+  @user_id,  -- Note: This needs to be updated to varchar to match users.id
+  @role_id,
+  NOW(),
+  NOW(),
+  true
+);
+```
+
+### Required Fields in Other Tables
+
+For a complete admin user setup, you need data in these tables:
+
+1. **accounts** table:
+   - `account_id` (primary key, auto-increment)
+   - `name` (organization name)
+   - `email` (organization contact email)
+   - `plan` (subscription level)
+   - `subscription_status` (billing status)
+
+2. **users** table:
+   - `id` (varchar UUID - BetterAuth requirement)
+   - `email` (unique login identifier)
+   - `password` (hashed password)
+   - `account_id` (links to organization)
+   - `first_name`, `last_name` (user details)
+   - `is_active` (user status)
+
+3. **roles** table:
+   - `role_id` (primary key)
+   - `name` ('admin' for admin role)
+   - `is_active` (role status)
+
+4. **user_roles** table:
+   - `user_id` (links to users - needs schema fix)
+   - `role_id` (links to roles)
+   - `is_active` (assignment status)
+
+### Database Schema Fix Queries
+
+Here are the exact SQL queries needed to fix the current schema issues:
+
+#### 1. Fix user_roles table to match new users schema:
+```sql
+-- Update user_roles.user_id to varchar to match users.id
+ALTER TABLE user_roles MODIFY COLUMN user_id VARCHAR(36) NOT NULL;
+
+-- Add foreign key constraint for data integrity
+ALTER TABLE user_roles 
+ADD CONSTRAINT fk_user_roles_user_id 
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+-- Add foreign key constraint for roles
+ALTER TABLE user_roles 
+ADD CONSTRAINT fk_user_roles_role_id 
+FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE;
+```
+
+#### 2. Fix sessions table to match new users schema:
+```sql
+-- Update sessions.user_id to varchar to match users.id
+ALTER TABLE sessions MODIFY COLUMN user_id VARCHAR(36) NOT NULL;
+
+-- Add foreign key constraint
+ALTER TABLE sessions 
+ADD CONSTRAINT fk_sessions_user_id 
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+```
+
+#### 3. Fix auth_accounts table to match new users schema:
+```sql
+-- Update auth_accounts.user_id to varchar to match users.id
+ALTER TABLE auth_accounts MODIFY COLUMN user_id VARCHAR(36) NOT NULL;
+
+-- Add foreign key constraint
+ALTER TABLE auth_accounts 
+ADD CONSTRAINT fk_auth_accounts_user_id 
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+```
+
+#### 4. Create proper admin user with BetterAuth compatible password:
+```sql
+-- First, create the account
+INSERT INTO accounts (
+  name, email, phone, plan, subscription_status, 
+  created_at, updated_at, is_active
+) VALUES (
+  'Admin Organization', 'admin@vestacrm.com', '+1234567890', 
+  'enterprise', 'active', NOW(), NOW(), true
+);
+
+-- Get the account ID
+SET @account_id = LAST_INSERT_ID();
+
+-- Create admin user with proper UUID and BetterAuth fields
+-- Note: Use BetterAuth API to create the user to ensure proper password hashing
+-- This is a manual creation for emergency access only
+INSERT INTO users (
+  id, name, email, email_verified, email_verified_at, password,
+  account_id, first_name, last_name, phone, timezone, language,
+  is_verified, is_active, created_at, updated_at
+) VALUES (
+  UUID(), 'Admin User', 'admin@vestacrm.com', true, NOW(),
+  -- Use bcrypt hash for password 'admin123' (change this!)
+  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewsBg3YEoj4C3A5W',
+  @account_id, 'Admin', 'User', '+1234567890', 'UTC', 'en',
+  true, true, NOW(), NOW()
+);
+
+-- Get the user ID for role assignment
+SET @user_id = (SELECT id FROM users WHERE email = 'admin@vestacrm.com');
+
+-- Create admin role
+INSERT IGNORE INTO roles (
+  name, description, permissions, created_at, updated_at, is_active
+) VALUES (
+  'admin', 'Full system administrator access', '{}',
+  NOW(), NOW(), true
+);
+
+-- Get role ID
+SET @role_id = (SELECT role_id FROM roles WHERE name = 'admin');
+
+-- Assign admin role to user (now with correct varchar user_id)
+INSERT INTO user_roles (
+  user_id, role_id, created_at, updated_at, is_active
+) VALUES (
+  @user_id, @role_id, NOW(), NOW(), true
+);
+```
+
+#### 5. Verify data consistency:
+```sql
+-- Check that all foreign keys are properly linked
+SELECT 
+  u.id as user_id,
+  u.email,
+  u.account_id,
+  a.name as account_name,
+  r.name as role_name
+FROM users u
+LEFT JOIN accounts a ON u.account_id = a.account_id
+LEFT JOIN user_roles ur ON u.id = ur.user_id
+LEFT JOIN roles r ON ur.role_id = r.role_id
+WHERE u.email = 'admin@vestacrm.com';
+
+-- Verify sessions table compatibility
+DESCRIBE sessions;
+
+-- Verify auth_accounts table compatibility  
+DESCRIBE auth_accounts;
+
+-- Verify user_roles table compatibility
+DESCRIBE user_roles;
+```
+
+### Next Steps for Complete Implementation
+
+1. ✅ **Fix the DAL session mapping bug** (COMPLETED)
+2. ✅ **Fix permissions.ts query error** (COMPLETED) 
+3. ✅ **Add accountId to BetterAuth config** (COMPLETED)
+4. **Run the schema fix queries above**
+5. **Implement the custom signup API endpoint**
+6. **Create admin user using the provided SQL**
+7. **Test multi-tenant data isolation**
+8. **Implement role-based UI components**

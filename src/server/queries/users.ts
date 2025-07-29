@@ -5,15 +5,26 @@ import type { User } from "../../lib/data";
 
 // Create a new user
 export async function createUser(
-  data: Omit<User, "userId" | "createdAt" | "updatedAt">,
+  data: { 
+    id: string;
+    name: string;
+    email: string;
+    accountId: bigint;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    timezone?: string;
+    language?: string;
+    isVerified?: boolean;
+    isActive?: boolean;
+  },
 ) {
   try {
-    const [result] = await db.insert(users).values(data).$returningId();
-    if (!result) throw new Error("Failed to create user");
+    await db.insert(users).values(data);
     const [newUser] = await db
       .select()
       .from(users)
-      .where(eq(users.userId, BigInt(result.userId)));
+      .where(eq(users.id, data.id));
     return newUser;
   } catch (error) {
     console.error("Error creating user:", error);
@@ -22,12 +33,12 @@ export async function createUser(
 }
 
 // Get user by ID
-export async function getUserById(userId: number) {
+export async function getUserById(userId: string) {
   try {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.userId, BigInt(userId)));
+      .where(eq(users.id, userId));
     return user;
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -48,18 +59,18 @@ export async function getUserByEmail(email: string) {
 
 // Update user
 export async function updateUser(
-  userId: number,
-  data: Omit<Partial<User>, "userId">,
+  userId: string,
+  data: Omit<Partial<User>, "id">,
 ) {
   try {
     await db
       .update(users)
       .set(data)
-      .where(eq(users.userId, BigInt(userId)));
+      .where(eq(users.id, userId));
     const [updatedUser] = await db
       .select()
       .from(users)
-      .where(eq(users.userId, BigInt(userId)));
+      .where(eq(users.id, userId));
     return updatedUser;
   } catch (error) {
     console.error("Error updating user:", error);
@@ -68,9 +79,9 @@ export async function updateUser(
 }
 
 // Delete user
-export async function deleteUser(userId: number) {
+export async function deleteUser(userId: string) {
   try {
-    await db.delete(users).where(eq(users.userId, BigInt(userId)));
+    await db.delete(users).where(eq(users.id, userId));
     return { success: true };
   } catch (error) {
     console.error("Error deleting user:", error);

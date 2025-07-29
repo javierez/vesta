@@ -66,8 +66,8 @@ export async function createListing(
       .where(
         and(
           eq(listings.listingId, BigInt(result.listingId)),
-          eq(listings.accountId, BigInt(accountId))
-        )
+          eq(listings.accountId, BigInt(accountId)),
+        ),
       );
     return newListing;
   } catch (error) {
@@ -347,7 +347,7 @@ export async function listListings(
         listingId: listings.listingId,
         propertyId: listings.propertyId,
         agentId: listings.agentId,
-        agentName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+        agentName: users.name,
         price: listings.price,
         status: listings.status,
         listingType: listings.listingType,
@@ -455,12 +455,13 @@ export async function listListings(
 
         // Agent information
         agent: {
-          id: users.userId,
+          id: users.id,
+          name: users.name,
           firstName: users.firstName,
           lastName: users.lastName,
           email: users.email,
           phone: users.phone,
-          profileImageUrl: users.profileImageUrl,
+          image: users.image,
         },
 
         // Owner information (just full name)
@@ -481,7 +482,7 @@ export async function listListings(
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .leftJoin(users, eq(listings.agentId, users.userId));
+      .leftJoin(users, sql`${listings.agentId} = CAST(${users.id} AS UNSIGNED)`);
 
     // Get total count for pagination
     const countResult = await db
@@ -492,7 +493,7 @@ export async function listListings(
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .leftJoin(users, eq(listings.agentId, users.userId))
+      .leftJoin(users, sql`${listings.agentId} = CAST(${users.id} AS UNSIGNED)`)
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
 
     const count = countResult[0]?.count ?? 0;
@@ -517,7 +518,6 @@ export async function listListings(
       .orderBy(sql`${listings.isFeatured} DESC, ${listings.createdAt} DESC`)
       .limit(limit)
       .offset(offset);
-
 
     return {
       listings: allListings,
@@ -592,7 +592,7 @@ export async function listListingsCompact(filters?: {
         bathrooms: properties.bathrooms,
         squareMeter: properties.squareMeter,
         city: locations.city,
-        agentName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+        agentName: users.name,
         isOwned: sql<boolean>`CASE WHEN ${listingContacts.contactId} IS NOT NULL THEN true ELSE false END`,
         imageUrl: propertyImages.imageUrl,
       })
@@ -602,7 +602,7 @@ export async function listListingsCompact(filters?: {
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .leftJoin(users, eq(listings.agentId, users.userId))
+      .leftJoin(users, sql`${listings.agentId} = CAST(${users.id} AS UNSIGNED)`)
       .leftJoin(
         listingContacts,
         and(
@@ -645,12 +645,12 @@ export async function getAllAgents() {
   try {
     const agents = await db
       .select({
-        id: users.userId,
-        name: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+        id: users.id,
+        name: users.name,
       })
       .from(users)
       .where(eq(users.isActive, true))
-      .orderBy(sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`);
+      .orderBy(users.name);
 
     return agents;
   } catch (error) {
@@ -808,12 +808,13 @@ export async function getListingDetails(listingId: number) {
 
         // Agent information
         agent: {
-          id: users.userId,
+          id: users.id,
+          name: users.name,
           firstName: users.firstName,
           lastName: users.lastName,
           email: users.email,
           phone: users.phone,
-          profileImageUrl: users.profileImageUrl,
+          image: users.image,
         },
 
         // Owner information (just full name)
@@ -834,7 +835,7 @@ export async function getListingDetails(listingId: number) {
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .leftJoin(users, eq(listings.agentId, users.userId))
+      .leftJoin(users, sql`${listings.agentId} = CAST(${users.id} AS UNSIGNED)`)
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
