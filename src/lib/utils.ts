@@ -41,7 +41,7 @@ export const formFormatters = {
     return formattedValue.replace(/[^\d]/g, "");
   },
 
-  // Format area measurements with m² symbol
+  // Format area measurements (without m² symbol - add it in the label instead)
   formatAreaInput: (value: string | number): string => {
     if (!value) return "";
     const numericValue =
@@ -49,7 +49,7 @@ export const formFormatters = {
         ? value.replace(/[^\d]/g, "")
         : value.toString();
     if (!numericValue) return "";
-    return `${numericValue} m²`;
+    return numericValue;
   },
 
   // Get numeric value from formatted area
