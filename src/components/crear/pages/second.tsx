@@ -57,7 +57,7 @@ const initialFormData: SecondPageFormData = {
   bathrooms: "1",
   squareMeter: "80",
   builtSurfaceArea: "85",
-  yearBuilt: "2000",
+  yearBuilt: "1980",
   lastRenovationYear: "",
   isRenovated: false,
   buildingFloors: "",
@@ -104,18 +104,20 @@ export default function SecondPage({
       }
 
       // Pre-populate form with existing data
+      const isRenovated = Boolean(
+        details.lastRenovationYear &&
+          details.lastRenovationYear !== details.yearBuilt,
+      );
+      
       setFormData((prev) => ({
         ...prev,
         bedrooms: details.bedrooms?.toString() ?? "2",
         bathrooms: details.bathrooms?.toString() ?? "1",
         squareMeter: displaySquareMeter ?? "80",
         builtSurfaceArea: displayBuiltSurfaceArea ?? "85",
-        yearBuilt: details.yearBuilt?.toString() ?? "2000",
-        lastRenovationYear: details.lastRenovationYear?.toString() ?? "",
-        isRenovated: Boolean(
-          details.lastRenovationYear &&
-            details.lastRenovationYear !== details.yearBuilt,
-        ),
+        yearBuilt: details.yearBuilt?.toString() ?? "1980",
+        lastRenovationYear: details.lastRenovationYear?.toString() ?? (isRenovated ? "2015" : ""),
+        isRenovated: isRenovated,
         buildingFloors: details.buildingFloors?.toString() ?? "",
         conservationStatus: details.conservationStatus ?? 1,
       }));
@@ -322,7 +324,7 @@ export default function SecondPage({
         <div className="space-y-2">
           <YearSlider
             label="Año de Construcción"
-            value={Number(formData.yearBuilt) || 2000}
+            value={Number(formData.yearBuilt) || 1980}
             onChange={(val) => updateFormData("yearBuilt", val.toString())}
             min={1900}
             max={new Date().getFullYear()}
@@ -346,9 +348,9 @@ export default function SecondPage({
             <div className="relative flex h-full">
               <button
                 onClick={() => {
-                  updateFormData("isRenovated", "false");
-                  // Set renovation year to construction year when "No" is selected
-                  updateFormData("lastRenovationYear", formData.yearBuilt);
+                  updateFormData("isRenovated", false);
+                  // Clear renovation year when "No" is selected
+                  updateFormData("lastRenovationYear", "");
                 }}
                 className={cn(
                   "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
@@ -358,7 +360,13 @@ export default function SecondPage({
                 No
               </button>
               <button
-                onClick={() => updateFormData("isRenovated", "true")}
+                onClick={() => {
+                  updateFormData("isRenovated", true);
+                  // Set default renovation year to 2015 when "Sí" is selected
+                  if (!formData.lastRenovationYear) {
+                    updateFormData("lastRenovationYear", "2015");
+                  }
+                }}
                 className={cn(
                   "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
                   formData.isRenovated ? "text-gray-900" : "text-gray-600",
@@ -378,7 +386,7 @@ export default function SecondPage({
             <div className="space-y-2">
               <YearSlider
                 label="Año de Última Reforma"
-                value={Number(formData.lastRenovationYear) || 2000}
+                value={Number(formData.lastRenovationYear) || 2015}
                 onChange={(val) =>
                   updateFormData("lastRenovationYear", val.toString())
                 }

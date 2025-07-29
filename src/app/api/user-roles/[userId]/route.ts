@@ -30,9 +30,15 @@ export async function GET(
       }
     }
 
-    const userRoles = await getUserRoles(userId);
-    console.log(`User roles API - userId: ${userId}, roles:`, userRoles);
-    return NextResponse.json(userRoles);
+    const userRoles = await getUserRoles(userId);    
+    // Convert BigInt values to strings for JSON serialization
+    const serializedRoles = userRoles.map(role => ({
+      ...role,
+      userRoleId: role.userRoleId.toString(),
+      roleId: role.roleId.toString(),
+    }));
+    
+    return NextResponse.json(serializedRoles);
   } catch (error) {
     console.error("Error fetching user roles:", error);
     return NextResponse.json(

@@ -163,7 +163,7 @@ pnpm build
     - Generación de Nota de encargo: P000460
     - Improve Readiness of Documents: P000427 
 
-- Authentication
+- Authentication: check if we really have separation of data per request and user.
 - Pasarela de pagos
 
 
@@ -208,4 +208,8 @@ Changes
 - add multimedia material (videos, tours)
 - add multichannel (spanishhouses, kyero, pisos.com, think spain, listglobally basic)
 
+
+
+FIXES
+- € formatting in @first.tsx
 

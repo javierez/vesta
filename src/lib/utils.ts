@@ -23,7 +23,7 @@ export function formatPrice(price: string | number): string {
 
 // Form input formatting utilities
 export const formFormatters = {
-  // Format price for form inputs with € symbol
+  // Format price for form inputs with thousand separators
   formatPriceInput: (value: string | number): string => {
     if (!value) return "";
     const numericValue =
@@ -31,7 +31,9 @@ export const formFormatters = {
         ? value.replace(/[^\d]/g, "")
         : value.toString();
     if (!numericValue) return "";
-    return `${numericValue} €`;
+    // Add thousand separators with dots
+    const formatted = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return formatted;
   },
 
   // Get numeric value from formatted price

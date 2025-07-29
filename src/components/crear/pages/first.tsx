@@ -102,7 +102,9 @@ export default function FirstPage({
         ? value.replace(/[^\d]/g, "")
         : value.toString();
     if (!numericValue) return "";
-    return `${numericValue} €`;
+    // Add thousand separators
+    const formatted = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return formatted;
   };
 
   const getNumericPrice = (formattedValue: string): string => {
@@ -215,45 +217,57 @@ export default function FirstPage({
   // Background save function - completely silent and non-blocking
   const saveInBackground = async () => {
     try {
-      // Fire and forget - no await, no blocking!
-      await Promise.all([
-        // Update property form position to 2 and property type
-        globalFormData?.listingDetails?.propertyId
-          ? (async () => {
-              const updateData: Record<string, unknown> = {
-                propertyType: formData.propertyType,
-                propertySubtype: formData.propertySubtype || null,
-              };
+      const promises = [];
+      
+      // Update property if we have a valid propertyId
+      const propertyId = globalFormData?.listingDetails?.propertyId;
+      if (propertyId) {
+        const updateData: Record<string, unknown> = {
+          propertyType: formData.propertyType,
+          propertySubtype: formData.propertySubtype || null,
+        };
 
-              // Only update formPosition if current position is lower than 2
-              if (
-                globalFormData?.listingDetails &&
-                (!globalFormData.listingDetails.formPosition ||
-                  globalFormData.listingDetails.formPosition < 2)
-              ) {
-                updateData.formPosition = 2;
-              }
+        // Only update formPosition if current position is lower than 2
+        const currentPosition = globalFormData?.listingDetails?.formPosition;
+        if (!currentPosition || currentPosition < 2) {
+          updateData.formPosition = 2;
+        }
 
-              await updateProperty(
-                Number(globalFormData.listingDetails?.propertyId),
-                updateData,
-              );
-            })()
-          : Promise.resolve(),
+        promises.push(updateProperty(Number(propertyId), updateData));
+      }
 
-        // Update listing with price, listing type, and agent
-        updateListing(Number(listingId), {
+      // Update listing if we have valid listingId
+      if (listingId) {
+        const listingUpdate: {
+          price: string;
+          listingType: "Sale" | "Rent";
+          agentId?: bigint;
+        } = {
           price: formData.price,
           listingType: formData.listingType as "Sale" | "Rent",
-          agentId: BigInt(formData.agentId),
-        }),
+        };
+        
+        // Only add agentId if it's a valid number
+        if (formData.agentId && !isNaN(Number(formData.agentId))) {
+          listingUpdate.agentId = BigInt(formData.agentId);
+        }
+        
+        promises.push(updateListing(Number(listingId), listingUpdate));
+      }
 
-        // Update listing contacts
-        updateListingOwners(
-          Number(listingId),
-          formData.selectedContactIds.map((id) => Number(id)),
-        ),
-      ]);
+      // Update listing contacts if we have valid listingId and contacts
+      if (listingId && formData.selectedContactIds.length > 0) {
+        const validContactIds = formData.selectedContactIds
+          .filter((id) => id && !isNaN(Number(id)))
+          .map((id) => Number(id));
+          
+        if (validContactIds.length > 0) {
+          promises.push(updateListingOwners(Number(listingId), validContactIds));
+        }
+      }
+
+      // Execute all promises
+      await Promise.all(promises);
 
       // Refresh global data after successful save
       refreshListingDetails?.();
@@ -325,7 +339,7 @@ export default function FirstPage({
           formatPriceInput(formData.price)
         }
         onChange={handlePriceChange}
-        placeholder="Precio"
+        placeholder="Precio (€)"
         type="text"
       />
 
