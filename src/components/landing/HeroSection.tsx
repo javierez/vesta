@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "~/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Play, Volume2, VolumeX } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,30 @@ import Link from "next/link";
 
 export function HeroSection() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleVideoEnd = () => {
+      // Wait 2 seconds before restarting the video
+      setTimeout(() => {
+        video.currentTime = 0;
+        video.play().catch(console.error);
+      }, 2000);
+    };
+
+    video.addEventListener('ended', handleVideoEnd);
+    
+    // Auto-play when component mounts
+    video.play().catch(console.error);
+
+    return () => {
+      video.removeEventListener('ended', handleVideoEnd);
+    };
+  }, []);
 
   return (
     <section className="relative bg-gradient-to-b from-gray-50 to-white px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
@@ -109,20 +133,61 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Hero Image/Illustration */}
-          <div className="relative">
-            <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-2xl">
-              <div className="flex h-full items-center justify-center">
+          {/* Hero Video/Dashboard Preview */}
+          <div className="relative group">
+            <div className="aspect-[4/3] overflow-hidden rounded-2xl shadow-2xl relative">
+              <video
+                ref={videoRef}
+                src="https://vesta-configuration-files.s3.amazonaws.com/marketing/Room_Assembles_From_a_Box.mp4"
+                className="h-full w-full object-cover"
+                preload="metadata"
+                muted={isMuted}
+                playsInline
+                poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmOWZhZmIiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlNWU3ZWIiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic3lzdGVtLXVpLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmaWxsPSIjNjI3Mzk2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zZW0iPkRhc2hib2FyZCBQcmV2aWV3PC90ZXh0Pjwvc3ZnPg=="
+                onError={(e) => {
+                  console.error("Video failed to load:", e);
+                  const target = e.target as HTMLVideoElement;
+                  target.style.display = 'none';
+                  const fallback = target.parentElement?.querySelector('.fallback-content') as HTMLElement | null;
+                  if (fallback) {
+                    fallback.style.display = 'flex';
+                    fallback.classList.remove('hidden');
+                  }
+                }}
+              >
+                Tu navegador no soporta el elemento de video.
+              </video>
+              
+              {/* Fallback content */}
+              <div className="fallback-content hidden absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
                 <div className="text-center">
                   <div className="mx-auto mb-4 h-32 w-32 rounded-full bg-primary/20" />
                   <p className="text-lg font-medium text-gray-600">
                     Dashboard Preview
                   </p>
                   <p className="text-sm text-gray-500">
-                    Visualización disponible próximamente
+                    Cargando video...
                   </p>
                 </div>
               </div>
+              
+              {/* Custom mute button */}
+              <button
+                onClick={() => {
+                  setIsMuted(!isMuted);
+                  if (videoRef.current) {
+                    videoRef.current.muted = !isMuted;
+                  }
+                }}
+                className="absolute bottom-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
+                aria-label={isMuted ? "Unmute video" : "Mute video"}
+              >
+                {isMuted ? (
+                  <VolumeX className="h-4 w-4" />
+                ) : (
+                  <Volume2 className="h-4 w-4" />
+                )}
+              </button>
             </div>
 
             {/* Decorative elements */}
