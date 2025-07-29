@@ -42,12 +42,12 @@ export async function getTaskById(taskId: number) {
 }
 
 // Get tasks by user ID
-export async function getUserTasks(userId: number) {
+export async function getUserTasks(userId: string) {
   try {
     const userTasks = await db
       .select()
       .from(tasks)
-      .where(and(eq(tasks.userId, BigInt(userId)), eq(tasks.isActive, true)));
+      .where(and(eq(tasks.userId, userId), eq(tasks.isActive, true))); // userId is now string
     return userTasks;
   } catch (error) {
     console.error("Error fetching user tasks:", error);
@@ -187,7 +187,7 @@ export async function listTasks(
   page = 1,
   limit = 10,
   filters?: {
-    userId?: number;
+    userId?: string; // Changed to string for BetterAuth compatibility
     completed?: boolean;
     isActive?: boolean;
   },
@@ -199,7 +199,7 @@ export async function listTasks(
     const whereConditions = [];
     if (filters) {
       if (filters.userId) {
-        whereConditions.push(eq(tasks.userId, BigInt(filters.userId)));
+        whereConditions.push(eq(tasks.userId, filters.userId)); // userId is now string
       }
       if (filters.completed !== undefined) {
         whereConditions.push(eq(tasks.completed, filters.completed));

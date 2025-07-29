@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
 
   // Allow public paths and static assets
   if (
-    publicPaths.some((path) => pathname.startsWith(path)) ||
+    publicPaths.some((path) => path === "/" ? pathname === "/" : pathname.startsWith(path)) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname.includes(".")
@@ -44,10 +44,9 @@ export async function middleware(request: NextRequest) {
     const session = await response.json();
 
     if (!session?.user) {
-      // Redirect to signin with return URL
-      const signInUrl = new URL("/auth/signin", request.url);
-      signInUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(signInUrl);
+      // Redirect to signin page
+      const signinUrl = new URL("/auth/signin", request.url);
+      return NextResponse.redirect(signinUrl);
     }
 
     // Add authenticated user context to request headers for server components
@@ -70,10 +69,9 @@ export async function middleware(request: NextRequest) {
       },
     });
   } catch (error) {
-    // Session validation failed, redirect to signin
-    const signInUrl = new URL("/auth/signin", request.url);
-    signInUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(signInUrl);
+    // Session validation failed, redirect to signin page
+    const signinUrl = new URL("/auth/signin", request.url);
+    return NextResponse.redirect(signinUrl);
   }
 }
 

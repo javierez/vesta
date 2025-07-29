@@ -21,12 +21,12 @@ import type {
 
 interface SettingsTabsProps {
   defaultTab?: SettingsTab;
-  userId?: bigint;
+  userId: string; // Changed to string for Better Auth compatibility
 }
 
 export function SettingsTabs({
   defaultTab = "account",
-  userId = BigInt(1),
+  userId,
 }: SettingsTabsProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>(defaultTab);
   const [accountData, setAccountData] = useState<AccountSettingsType | null>(

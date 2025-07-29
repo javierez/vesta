@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { useSession, signOut } from "~/lib/auth-client";
+import { useUserRole } from "~/hooks/use-user-role";
 import {
   Building2,
   Users,
@@ -16,14 +17,19 @@ import {
   X,
   LogOut,
   User,
+  Shield,
 } from "lucide-react";
 
-const navigation = [
+const baseNavigation = [
   { name: "Resumen", href: "/dashboard", icon: BarChart3 },
   { name: "Propiedades", href: "/propiedades", icon: Building2 },
   { name: "Contactos", href: "/contactos", icon: Users },
   { name: "Calendario", href: "/calendario", icon: Calendar },
   { name: "Ajustes", href: "/ajustes", icon: Settings },
+];
+
+const adminNavigation = [
+  { name: "Administración", href: "/admin", icon: Shield },
 ];
 
 interface DashboardLayoutProps {
@@ -33,10 +39,19 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session, isPending } = useSession();
+  const { isSuperAdmin } = useUserRole();
+
+  // Build navigation based on user role
+  const navigation = [...baseNavigation];
+  if (isSuperAdmin()) {
+    navigation.push(...adminNavigation);
+  }
 
   const handleSignOut = async () => {
     await signOut();
+    router.push("/");
   };
 
   return (
@@ -100,7 +115,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
               <div className="ml-3 min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-gray-900">
-                  {session?.user?.firstName || session?.user?.name || "Usuario"}
+                  {session?.user?.name || "Usuario"}
                 </p>
                 <p className="truncate text-xs text-gray-500">
                   {session?.user?.email}
@@ -162,7 +177,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
               <div className="ml-3 min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-gray-900">
-                  {session?.user?.firstName || session?.user?.name || "Usuario"}
+                  {session?.user?.name || "Usuario"}
                 </p>
                 <p className="truncate text-xs text-gray-500">
                   {session?.user?.email}

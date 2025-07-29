@@ -148,13 +148,13 @@ export async function updateAccountPaymentSettings(
 
 // User Settings Queries
 export async function getUserSettings(
-  userId: bigint,
+  userId: string, // Changed to string for BetterAuth compatibility
 ): Promise<UserSettings | null> {
   try {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.userId, userId))
+      .where(eq(users.id, userId)) // Fixed: users.id not users.userId
       .limit(1);
 
     if (!user) {
@@ -177,7 +177,7 @@ export async function getUserSettings(
 }
 
 export async function updateUserSettings(
-  userId: bigint,
+  userId: string, // Changed to string for BetterAuth compatibility
   data: Partial<UserInput>,
 ): Promise<UserSettings> {
   try {
@@ -186,7 +186,7 @@ export async function updateUserSettings(
     if (data.language !== undefined) updateData.language = data.language;
     // Add other user settings fields when they exist in the schema
 
-    await db.update(users).set(updateData).where(eq(users.userId, userId));
+    await db.update(users).set(updateData).where(eq(users.id, userId)); // Fixed: users.id not users.userId
 
     const updatedUser = await getUserSettings(userId);
     if (!updatedUser) {
@@ -202,13 +202,13 @@ export async function updateUserSettings(
 
 // Helper function to get account ID for a user
 export async function getAccountIdForUser(
-  userId: bigint,
+  userId: string, // Changed to string for BetterAuth compatibility
 ): Promise<bigint | null> {
   try {
     const [user] = await db
       .select({ accountId: users.accountId })
       .from(users)
-      .where(eq(users.userId, userId))
+      .where(eq(users.id, userId)) // Fixed: users.id not users.userId
       .limit(1);
 
     return user?.accountId ?? null;

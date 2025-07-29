@@ -103,8 +103,8 @@ export const auth = betterAuth({
       },
       accountId: {
         type: "number",
-        required: true,
-        input: false,
+        required: false,
+        input: true,
       },
     },
   },

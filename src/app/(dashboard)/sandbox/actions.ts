@@ -99,14 +99,10 @@ async function seedAccounts() {
     for (const account of mockAccounts) {
       await createAccount({
         name: account.name,
-        logo: account.logo,
         address: account.address,
         phone: account.phone,
         email: account.email,
         website: account.website,
-        portalSettings: account.portalSettings,
-        paymentSettings: account.paymentSettings,
-        preferences: account.preferences,
         plan: account.plan,
         subscriptionStatus: account.subscriptionStatus,
         isActive: account.isActive,
@@ -144,13 +140,14 @@ async function seedUsers() {
   try {
     for (const user of mockUsers) {
       await db.insert(users).values({
-        userId: user.userId,
+        id: user.userId, // Already a string for BetterAuth compatibility
+        name: `${user.firstName} ${user.lastName}`, // Required by BetterAuth schema
         accountId: user.accountId, // Use the accountId from user data
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
-        profileImageUrl: user.profileImageUrl,
+        image: user.profileImageUrl, // Correct field name from schema
         timezone: user.timezone,
         language: user.language,
         preferences: user.preferences,

@@ -15,6 +15,7 @@ import {
 } from "~/components/ui/card";
 import { signUp, signIn } from "~/lib/auth-client";
 import { AlertCircle, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { assignUserRole } from "~/app/actions/user-roles";
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -84,26 +85,41 @@ export default function SignUpPage() {
     }
 
     try {
-      // Call our custom signup endpoint that creates both account and user
-      const response = await fetch("/api/auth/signup", {
+      // Make a direct API call to Better Auth's signup endpoint with additional fields
+      const response = await fetch("/api/auth/sign-up/email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
-          inviteCode: formData.inviteCode,
+          name: `${formData.firstName} ${formData.lastName}`,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          accountId: Number(formData.inviteCode)
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok || result.error) {
-        setError(result.error || "Error al crear la cuenta");
+        setError(result.error?.message || result.message || "Error al crear la cuenta");
         return;
+      }
+
+      // Assign agent role to the new user
+      if (result.user?.id) {
+        try {
+          console.log("Attempting to assign role to user:", result.user.id);
+          const roleResult = await assignUserRole(result.user.id, 1); // Assign agent role (roleId = 1)
+          console.log("Role assignment result:", roleResult);
+        } catch (roleError) {
+          console.error("Failed to assign user role:", roleError);
+          // Don't fail the signup process if role assignment fails
+        }
+      } else {
+        console.log("No user ID found in result:", result);
       }
 
       setSuccess(true);

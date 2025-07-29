@@ -171,7 +171,7 @@ export async function updatePaymentSettingsAction(
 
 // User Settings Update
 export async function updateUserSettingsAction(
-  userId: bigint,
+  userId: string,
   data: UserInput,
 ): Promise<UserSettingsResponse> {
   try {
@@ -226,7 +226,7 @@ export async function getAccountSettingsAction(
 
 // Fetch User Settings
 export async function getUserSettingsAction(
-  userId: bigint,
+  userId: string,
 ): Promise<UserSettingsResponse> {
   try {
     const userSettings = await getUserSettings(userId);
@@ -253,7 +253,7 @@ export async function getUserSettingsAction(
 
 // Helper function to get account ID for current user
 export async function getCurrentUserAccountId(
-  userId: bigint,
+  userId: string,
 ): Promise<bigint | null> {
   try {
     return await getAccountIdForUser(userId);

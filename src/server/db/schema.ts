@@ -79,7 +79,7 @@ export const userRoles = singlestoreTable("user_roles", {
   userRoleId: bigint("user_role_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
-  userId: bigint("user_id", { mode: "bigint" }).notNull(),
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
   roleId: bigint("role_id", { mode: "bigint" }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
@@ -98,11 +98,11 @@ export const sessions = singlestoreTable("sessions", {
   userId: varchar("user_id", { length: 36 }).notNull(), // Changed to varchar to match users.id
 });
 
-// OAuth provider accounts linked to users (renamed from oauth_accounts for clarity)
-export const authAccounts = singlestoreTable("auth_accounts", {
+// OAuth provider accounts linked to users
+export const authAccounts = singlestoreTable("account", {
   id: varchar("id", { length: 36 }).primaryKey(),
-  providerId: text("provider_id").notNull(), // e.g., "google", "apple", "linkedin"
-  providerAccountId: text("provider_account_id").notNull(), // The ID from the OAuth provider
+  accountId: text("account_id").notNull(), // OAuth provider account ID
+  providerId: text("provider_id").notNull(), // e.g., "google", "apple", "linkedin"  
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
@@ -110,6 +110,7 @@ export const authAccounts = singlestoreTable("auth_accounts", {
   accessTokenExpiresAt: timestamp("access_token_expires_at"),
   refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
   scope: text("scope"),
+  password: text("password"), // For email/password auth
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
@@ -438,7 +439,7 @@ export const appointments = singlestoreTable("appointments", {
   appointmentId: bigint("appointment_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
-  userId: bigint("user_id", { mode: "bigint" }).notNull(), // FK → users.user_id
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
   leadId: bigint("lead_id", { mode: "bigint" }), // FK → leads.lead_id (nullable)
@@ -456,7 +457,7 @@ export const appointments = singlestoreTable("appointments", {
 // Tasks
 export const tasks = singlestoreTable("tasks", {
   taskId: bigint("task_id", { mode: "bigint" }).primaryKey().autoincrement(),
-  userId: bigint("user_id", { mode: "bigint" }).notNull(), // FK → users.user_id
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
   description: text("description").notNull(),
   dueDate: timestamp("due_date"),
   completed: boolean("completed").default(false),
@@ -476,7 +477,7 @@ export const documents = singlestoreTable("documents", {
   filename: varchar("filename", { length: 255 }).notNull(),
   fileType: varchar("file_type", { length: 50 }).notNull(), // e.g. "PDF", "DOC", "Image"
   fileUrl: varchar("file_url", { length: 2048 }).notNull(), // Public S3 URL
-  userId: bigint("user_id", { mode: "bigint" }).notNull(), // FK → users.user_id (who uploaded)
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (who uploaded, BetterAuth compatible)
 
   // Entity relationships (only one should be set per document)
   propertyId: bigint("property_id", { mode: "bigint" }), // FK → properties.property_id (nullable)
@@ -531,7 +532,7 @@ export const prospectHistory = singlestoreTable("prospect_history", {
   prospectId: bigint("prospect_id", { mode: "bigint" }).notNull(),
   previousStatus: varchar("previous_status", { length: 50 }),
   newStatus: varchar("new_status", { length: 50 }).notNull(),
-  changedBy: bigint("changed_by", { mode: "bigint" }).notNull(), // FK → users.user_id
+  changedBy: varchar("changed_by", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
   changeReason: text("change_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

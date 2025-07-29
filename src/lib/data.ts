@@ -957,7 +957,7 @@ export const accounts: Account[] = [
 ];
 
 export type User = {
-  userId: number;
+  userId: string; // Changed to string for BetterAuth compatibility
   accountId: bigint;
   email: string;
   firstName: string;
@@ -986,7 +986,7 @@ export type Role = {
 
 export type UserRole = {
   userRoleId: number;
-  userId: number;
+  userId: string; // Changed to string to match User type
   roleId: number;
   createdAt: Date;
   updatedAt: Date;
@@ -1086,7 +1086,7 @@ export type DealParticipant = {
 
 export type Appointment = {
   appointmentId: bigint;
-  userId: bigint;
+  userId: string; // Changed to string to match User type
   contactId: bigint;
   listingId?: bigint;
   leadId?: bigint;
@@ -1102,7 +1102,7 @@ export type Appointment = {
 
 export type Task = {
   taskId: bigint;
-  userId: bigint;
+  userId: string; // Changed to string to match User type
   description: string;
   dueDate?: Date;
   completed: boolean;
@@ -1120,7 +1120,7 @@ export type Document = {
   filename: string;
   fileType: string;
   fileUrl: string;
-  userId: bigint;
+  userId: string; // Changed to string to match User type
   contactId?: bigint;
   uploadedAt: Date;
   listingId?: bigint;
@@ -1138,10 +1138,32 @@ export type Document = {
   updatedAt: Date;
 };
 
-// Mock data for users (real estate agents)
+// Mock data for users (real estate agents and admin)
 export const mockUsers = [
   {
-    userId: BigInt(1),
+    userId: "1", // Changed to string for BetterAuth compatibility
+    accountId: BigInt(1),
+    email: "admin@vestacrm.com",
+    firstName: "Super",
+    lastName: "Admin",
+    phone: "+34 987 000 001",
+    profileImageUrl: "/agents/admin-user.jpg",
+    timezone: "Europe/Madrid",
+    language: "es",
+    preferences: {
+      notifications: true,
+      theme: "light",
+      emailNotifications: true,
+      smsNotifications: false,
+    },
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    lastLogin: new Date("2024-03-15"),
+    isVerified: true,
+    isActive: true,
+  },
+  {
+    userId: "2", // Changed to string for BetterAuth compatibility
     accountId: BigInt(1),
     email: "azucena.ramos@acropolis-realestate.com",
     firstName: "Azucena",
@@ -1163,7 +1185,7 @@ export const mockUsers = [
     isActive: true,
   },
   {
-    userId: BigInt(2),
+    userId: "3", // Changed to string for BetterAuth compatibility
     accountId: BigInt(1),
     email: "santos.martinez@acropolis-realestate.com",
     firstName: "Santos",
@@ -1185,7 +1207,7 @@ export const mockUsers = [
     isActive: true,
   },
   {
-    userId: BigInt(3),
+    userId: "4", // Changed to string for BetterAuth compatibility
     accountId: BigInt(1),
     email: "alberto.martinez@acropolis-realestate.com",
     firstName: "Alberto",
@@ -1241,7 +1263,7 @@ export const roles: Role[] = [
 export const userRoles: UserRole[] = [
   {
     userRoleId: 1,
-    userId: 1,
+    userId: "1", // Super Admin gets admin role - changed to string
     roleId: 1,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -1249,7 +1271,23 @@ export const userRoles: UserRole[] = [
   },
   {
     userRoleId: 2,
-    userId: 2,
+    userId: "2", // Azucena gets agent role - changed to string
+    roleId: 2,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    isActive: true,
+  },
+  {
+    userRoleId: 3,
+    userId: "3", // Santos gets agent role - changed to string
+    roleId: 2,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    isActive: true,
+  },
+  {
+    userRoleId: 4,
+    userId: "4", // Alberto gets agent role - changed to string
     roleId: 2,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -1556,7 +1594,7 @@ export const dealParticipants: DealParticipant[] = [
 export const appointments: Appointment[] = [
   {
     appointmentId: BigInt(1),
-    userId: BigInt(1),
+    userId: "1", // Changed to string
     contactId: BigInt(1),
     listingId: BigInt(1),
     leadId: BigInt(1),
@@ -1571,7 +1609,7 @@ export const appointments: Appointment[] = [
   },
   {
     appointmentId: BigInt(2),
-    userId: BigInt(2),
+    userId: "2", // Changed to string
     contactId: BigInt(2),
     listingId: BigInt(2),
     leadId: BigInt(2),
@@ -1589,7 +1627,7 @@ export const appointments: Appointment[] = [
 export const tasks: Task[] = [
   {
     taskId: BigInt(1),
-    userId: BigInt(1),
+    userId: "1", // Changed to string
     description: "Follow up with buyer about property viewing",
     dueDate: new Date("2024-03-19"),
     completed: false,
@@ -1603,7 +1641,7 @@ export const tasks: Task[] = [
   },
   {
     taskId: BigInt(2),
-    userId: BigInt(2),
+    userId: "2", // Changed to string
     description: "Prepare rental agreement for new tenant",
     dueDate: new Date("2024-03-22"),
     completed: false,
@@ -1622,7 +1660,7 @@ export const documents: Document[] = [
     filename: "property_deed.pdf",
     fileType: "PDF",
     fileUrl: "/documents/property_deed.pdf",
-    userId: BigInt(1),
+    userId: "1", // Changed to string
     contactId: BigInt(1),
     uploadedAt: new Date("2024-03-15"),
     listingId: BigInt(1),
@@ -1640,7 +1678,7 @@ export const documents: Document[] = [
     filename: "rental_agreement.pdf",
     fileType: "PDF",
     fileUrl: "/documents/rental_agreement.pdf",
-    userId: BigInt(2),
+    userId: "2", // Changed to string
     contactId: BigInt(2),
     uploadedAt: new Date("2024-03-16"),
     listingId: BigInt(2),

@@ -30,7 +30,7 @@ interface EnergyCertificateProps {
   } | null;
   className?: string;
   propertyId?: bigint;
-  userId?: bigint;
+  userId?: string;
   listingId?: bigint;
   referenceNumber?: string;
   // New props for database fields

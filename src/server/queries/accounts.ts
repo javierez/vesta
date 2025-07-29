@@ -1,20 +1,32 @@
 import { db } from "../db";
 import { accounts } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, like, or } from "drizzle-orm";
 import type { Account } from "../../lib/data";
 
 // Create a new account
-export async function createAccount(
-  data: Omit<Account, "accountId" | "createdAt" | "updatedAt">,
-) {
+export async function createAccount(data: {
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  address?: string | null;
+  plan?: string | null;
+  subscriptionStatus?: string | null;
+  isActive?: boolean | null;
+}) {
   try {
-    const [result] = await db.insert(accounts).values(data).$returningId();
-    if (!result) throw new Error("Failed to create account");
-    const [newAccount] = await db
-      .select()
-      .from(accounts)
-      .where(eq(accounts.accountId, BigInt(result.accountId)));
-    return newAccount;
+    await db.insert(accounts).values({
+      name: data.name,
+      email: data.email || null,
+      phone: data.phone || null,
+      website: data.website || null,
+      address: data.address || null,
+      plan: data.plan || "basic",
+      subscriptionStatus: data.subscriptionStatus || "active",
+      isActive: data.isActive ?? true,
+    });
+
+    return { success: true, message: "Account created successfully" };
   } catch (error) {
     console.error("Error creating account:", error);
     throw error;
@@ -49,32 +61,79 @@ export async function getAccountByName(name: string) {
   }
 }
 
+// Search accounts
+export async function searchAccounts(searchTerm: string = "") {
+  try {
+    const baseQuery = db.select().from(accounts);
+
+    let results;
+    if (searchTerm.trim()) {
+      results = await baseQuery
+        .where(
+          or(
+            like(accounts.name, `%${searchTerm}%`),
+            like(accounts.email, `%${searchTerm}%`),
+            like(accounts.phone, `%${searchTerm}%`)
+          )
+        )
+        .orderBy(accounts.createdAt);
+    } else {
+      results = await baseQuery.orderBy(accounts.createdAt);
+    }
+    
+    return results;
+  } catch (error) {
+    console.error("Error searching accounts:", error);
+    throw error;
+  }
+}
+
 // Update account
-export async function updateAccount(
-  accountId: number | bigint,
-  data: Omit<Partial<Account>, "accountId">,
-) {
+export async function updateAccount(accountId: number | bigint, data: {
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  address?: string | null;
+  plan?: string | null;
+  subscriptionStatus?: string | null;
+  isActive?: boolean | null;
+}) {
   try {
     await db
       .update(accounts)
-      .set(data)
+      .set({
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+        website: data.website || null,
+        address: data.address || null,
+        plan: data.plan || "basic",
+        subscriptionStatus: data.subscriptionStatus || "active",
+        isActive: data.isActive ?? true,
+        updatedAt: new Date(),
+      })
       .where(eq(accounts.accountId, BigInt(accountId)));
-    const [updatedAccount] = await db
-      .select()
-      .from(accounts)
-      .where(eq(accounts.accountId, BigInt(accountId)));
-    return updatedAccount;
+
+    return { success: true, message: "Account updated successfully" };
   } catch (error) {
     console.error("Error updating account:", error);
     throw error;
   }
 }
 
-// Delete account
+// Delete account (soft delete by setting isActive to false)
 export async function deleteAccount(accountId: number | bigint) {
   try {
-    await db.delete(accounts).where(eq(accounts.accountId, BigInt(accountId)));
-    return { success: true };
+    await db
+      .update(accounts)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.accountId, BigInt(accountId)));
+
+    return { success: true, message: "Account deleted successfully" };
   } catch (error) {
     console.error("Error deleting account:", error);
     throw error;

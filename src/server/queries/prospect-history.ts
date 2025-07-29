@@ -6,7 +6,7 @@ export type CreateProspectHistoryInput = {
   prospectId: bigint;
   previousStatus?: string;
   newStatus: string;
-  changedBy: bigint;
+  changedBy: string; // Changed to string for BetterAuth compatibility
   changeReason?: string;
 };
 
@@ -35,11 +35,11 @@ export async function getProspectHistory(prospectId: bigint) {
 }
 
 // Get history by user who made the change
-export async function getProspectHistoryByUser(changedBy: bigint) {
+export async function getProspectHistoryByUser(changedBy: string) {
   return await db
     .select()
     .from(prospectHistory)
-    .where(eq(prospectHistory.changedBy, changedBy))
+    .where(eq(prospectHistory.changedBy, changedBy)) // changedBy is now string
     .orderBy(desc(prospectHistory.createdAt));
 }
 

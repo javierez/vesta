@@ -69,7 +69,7 @@ echo "✓ Database operations succeed"
 
 ## Output
 
-Save as: `PRPs/{feature-name}.md`
+Save as: `public/PRPs/executions/{feature-name}.md`
 
 ## Quality Checklist
 

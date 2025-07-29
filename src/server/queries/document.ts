@@ -63,9 +63,9 @@ export async function getDocumentsByReference(
 }
 
 // Get documents by user ID
-export async function getUserDocuments(userId: number, isActive = true) {
+export async function getUserDocuments(userId: string, isActive = true) {
   try {
-    const conditions = [eq(documents.userId, BigInt(userId))];
+    const conditions = [eq(documents.userId, userId)]; // userId is now string
     if (isActive !== undefined) {
       conditions.push(eq(documents.isActive, isActive));
     }
@@ -269,7 +269,7 @@ export async function listDocuments(
   page = 1,
   limit = 10,
   filters?: {
-    userId?: number;
+    userId?: string; // Changed to string for BetterAuth compatibility
     contactId?: number;
     listingId?: number;
     leadId?: number;
@@ -288,7 +288,7 @@ export async function listDocuments(
     const whereConditions = [];
     if (filters) {
       if (filters.userId) {
-        whereConditions.push(eq(documents.userId, BigInt(filters.userId)));
+        whereConditions.push(eq(documents.userId, filters.userId)); // userId is now string
       }
       if (filters.contactId) {
         whereConditions.push(

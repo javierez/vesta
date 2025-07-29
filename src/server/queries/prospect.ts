@@ -25,7 +25,7 @@ export type CreateProspectInput = {
 };
 
 export type UpdateProspectInput = Partial<CreateProspectInput> & {
-  changedBy?: bigint;
+  changedBy?: string; // Changed to string for BetterAuth compatibility
   changeReason?: string;
 };
 

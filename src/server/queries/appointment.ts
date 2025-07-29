@@ -47,14 +47,14 @@ export async function getAppointmentById(appointmentId: number) {
 }
 
 // Get appointments by user ID
-export async function getUserAppointments(userId: number) {
+export async function getUserAppointments(userId: string) {
   try {
     const userAppointments = await db
       .select()
       .from(appointments)
       .where(
         and(
-          eq(appointments.userId, BigInt(userId)),
+          eq(appointments.userId, userId), // userId is now string
           eq(appointments.isActive, true),
         ),
       );

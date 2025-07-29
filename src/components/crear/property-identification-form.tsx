@@ -28,6 +28,7 @@ import {
   renameDocumentFolder,
 } from "~/app/actions/upload";
 import { processDocumentInBackgroundEnhanced } from "~/server/ocr/ocr-initial-form";
+import { useSession } from "~/lib/auth-client";
 import {
   Dialog,
   DialogContent,
@@ -109,6 +110,7 @@ export default function PropertyIdentificationForm() {
   const [showUploadTooltip, setShowUploadTooltip] = useState(false);
   const [isCreatingProperty, setIsCreatingProperty] = useState(false);
   const router = useRouter();
+  const { data: session, isPending } = useSession();
 
   // File upload state
   const [uploadedDocuments, setUploadedDocuments] = useState<
@@ -642,7 +644,10 @@ export default function PropertyIdentificationForm() {
           setTempReferenceNumber(currentTempRef);
         }
 
-        const userId = BigInt(1); // You may want to get this from context or props
+        const userId = session?.user?.id;
+        if (!userId) {
+          throw new Error("Usuario no autenticado");
+        }
 
         const uploadedDocument = await uploadDocument(
           file,
@@ -1107,6 +1112,35 @@ export default function PropertyIdentificationForm() {
         );
     }
   };
+
+  if (isPending) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="mx-auto max-w-2xl">
+          <Card className="p-6">
+            <div className="flex items-center justify-center py-8">
+              <Loader className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Cargando...</span>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session?.user?.id) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="mx-auto max-w-2xl">
+          <Card className="p-6">
+            <div className="py-8 text-center">
+              <p>Debes iniciar sesión para crear una propiedad</p>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">

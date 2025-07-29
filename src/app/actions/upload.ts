@@ -125,7 +125,7 @@ export async function updateImageOrders(
 
 export async function uploadDocument(
   file: File,
-  userId: bigint,
+  userId: string, // Changed to string for BetterAuth compatibility
   referenceNumber: string,
   documentOrder: number,
   documentTag?: string,

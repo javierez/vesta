@@ -5,6 +5,7 @@ import { ImageGallery } from "./image-gallery";
 import { PortalSelection } from "./portal-selection";
 import { EnergyCertificate } from "./energy-certificate";
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form";
+import { useSession } from "~/lib/auth-client";
 import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
 
@@ -51,6 +52,8 @@ export function PropertyTabs({
   images,
   energyCertificate,
 }: PropertyTabsProps) {
+  const { data: session } = useSession();
+
   return (
     <Tabs defaultValue="general" className="w-full">
       <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
@@ -103,7 +106,7 @@ export function PropertyTabs({
                 : null
             }
             propertyId={listing.propertyId}
-            userId={listing.agentId ?? BigInt(1)} // TODO: Get from auth context
+            userId={session?.user?.id || "1"} // Use authenticated user ID
             listingId={listing.listingId}
             referenceNumber={listing.referenceNumber ?? ""}
             energyCertificateStatus={listing.energyCertificateStatus ?? null}
