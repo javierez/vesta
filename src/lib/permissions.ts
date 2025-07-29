@@ -145,8 +145,8 @@ export async function getCurrentUserRoles(): Promise<string[]> {
     
     if (rolesHeader) {
       try {
-        return JSON.parse(rolesHeader);
-      } catch (parseError) {
+        return JSON.parse(rolesHeader) as string[];
+      } catch {
         console.warn("Failed to parse roles from header, falling back to DB");
       }
     }
@@ -189,8 +189,8 @@ export async function getCurrentUserPermissions(): Promise<Permission[]> {
     
     if (permissionsHeader) {
       try {
-        return JSON.parse(permissionsHeader);
-      } catch (parseError) {
+        return JSON.parse(permissionsHeader) as Permission[];
+      } catch {
         console.warn("Failed to parse permissions from header, falling back to calculation");
       }
     }
@@ -201,7 +201,7 @@ export async function getCurrentUserPermissions(): Promise<Permission[]> {
 
     // Aggregate permissions from all roles
     roles.forEach((role) => {
-      const rolePermissions = ROLE_PERMISSIONS[role] || [];
+      const rolePermissions = ROLE_PERMISSIONS[role] ?? [];
       rolePermissions.forEach((permission) => {
         permissionsSet.add(permission);
       });

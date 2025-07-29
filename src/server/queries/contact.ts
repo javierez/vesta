@@ -69,7 +69,7 @@ export async function createContact(
         lastName: data.lastName,
         email: data.email,
         phone: data.phone,
-        additionalInfo: data.additionalInfo || {},
+        additionalInfo: data.additionalInfo ?? {},
         accountId: BigInt(accountId),
         isActive: true,
       })
@@ -108,7 +108,7 @@ export async function createContactWithListings(
         lastName: contactData.lastName,
         email: contactData.email,
         phone: contactData.phone,
-        additionalInfo: contactData.additionalInfo || {},
+        additionalInfo: contactData.additionalInfo ?? {},
         accountId: BigInt(accountId),
         isActive: true,
       })

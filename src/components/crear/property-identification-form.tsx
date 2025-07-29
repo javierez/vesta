@@ -37,6 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import type { FC } from "react";
 
 // Base form data interface
 interface BaseFormData {
@@ -102,7 +103,7 @@ const stepConfigurations = {
 
 type PropertyType = keyof typeof stepConfigurations;
 
-export default function PropertyIdentificationForm() {
+const PropertyIdentificationForm: FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<BaseFormData>(initialFormData);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
@@ -686,7 +687,7 @@ export default function PropertyIdentificationForm() {
         alert("Error al subir el archivo. Por favor, inténtalo de nuevo.");
       }
     },
-    [tempReferenceNumber, uploadedDocuments.length],
+    [tempReferenceNumber, uploadedDocuments.length, session?.user?.id],
   );
 
   // File upload handlers
@@ -1252,4 +1253,6 @@ export default function PropertyIdentificationForm() {
       </div>
     </div>
   );
-}
+};
+
+export default PropertyIdentificationForm;

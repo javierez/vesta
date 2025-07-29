@@ -9,7 +9,7 @@ interface EnrichedSession {
     id: string;
     roles?: string[];
     permissions?: Permission[];
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -40,34 +40,34 @@ export function useUserRole() {
         
         // Handle legacy roles API
         if (legacyResponse.ok) {
-          const roles = await legacyResponse.json();
-          const roleIds = roles.map((role: any) => Number(role.roleId));
+          const roles = await legacyResponse.json() as { roleId: number }[];
+          const roleIds = (roles as { roleId: number }[]).map((role) => Number(role.roleId));
           setLegacyRoles(roleIds);
           console.log("Legacy role IDs:", roleIds);
         }
         
         // Handle enriched session
         if (enrichedResponse.ok) {
-          const enrichedData = await enrichedResponse.json();
+          const enrichedData = await enrichedResponse.json() as EnrichedSession;
           console.log("Enriched session data:", enrichedData);
           setEnrichedSession(enrichedData);
         } else {
-          const errorData = await enrichedResponse.json();
+          const errorData = await enrichedResponse.json() as { error?: string };
           console.error("Enriched session error:", errorData);
           // Fallback to basic session if enriched session fails
-          setEnrichedSession(session as EnrichedSession);
+          if (session) setEnrichedSession(session as EnrichedSession);
         }
       } catch (error) {
         console.error("Error fetching session data:", error);
         // Fallback to basic session
-        setEnrichedSession(session as EnrichedSession);
+        if (session) setEnrichedSession(session as EnrichedSession);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchEnrichedSession();
-  }, [session?.user?.id]);
+    void fetchEnrichedSession();
+  }, [session]);
 
   // Role checking functions
   const hasRole = (roleName: string) => 

@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { signUp, signIn } from "~/lib/auth-client";
+import { signIn } from "~/lib/auth-client";
 import { AlertCircle, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { assignUserRole } from "~/app/actions/user-roles";
 
@@ -101,10 +101,10 @@ export default function SignUpPage() {
         }),
       });
 
-      const result = await response.json();
+      const result = await response.json() as { error?: { message?: string }; message?: string; user?: { id: string } };
 
       if (!response.ok || result.error) {
-        setError(result.error?.message || result.message || "Error al crear la cuenta");
+        setError(result.error?.message ?? result.message ?? "Error al crear la cuenta");
         return;
       }
 
@@ -125,7 +125,7 @@ export default function SignUpPage() {
       setSuccess(true);
 
       // Redirect to dashboard after successful registration
-      setTimeout(() => {
+      void setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
     } catch (err) {

@@ -1,9 +1,10 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardDescription, CardTitle } from "~/components/ui/card";
 import { Users } from "lucide-react";
+import type { FC } from "react";
 
-export function UsersManagement() {
+export const UsersManagement: FC = () => {
   return (
     <div className="space-y-6">
       <div>
@@ -23,4 +24,4 @@ export function UsersManagement() {
       </Card>
     </div>
   );
-}
+};

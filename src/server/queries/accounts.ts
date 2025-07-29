@@ -1,7 +1,6 @@
 import { db } from "../db";
 import { accounts } from "../db/schema";
 import { eq, like, or } from "drizzle-orm";
-import type { Account } from "../../lib/data";
 
 // Create a new account
 export async function createAccount(data: {
@@ -17,12 +16,12 @@ export async function createAccount(data: {
   try {
     await db.insert(accounts).values({
       name: data.name,
-      email: data.email || null,
-      phone: data.phone || null,
-      website: data.website || null,
-      address: data.address || null,
-      plan: data.plan || "basic",
-      subscriptionStatus: data.subscriptionStatus || "active",
+      email: data.email ?? null,
+      phone: data.phone ?? null,
+      website: data.website ?? null,
+      address: data.address ?? null,
+      plan: data.plan ?? "basic",
+      subscriptionStatus: data.subscriptionStatus ?? "active",
       isActive: data.isActive ?? true,
     });
 
@@ -62,7 +61,7 @@ export async function getAccountByName(name: string) {
 }
 
 // Search accounts
-export async function searchAccounts(searchTerm: string = "") {
+export async function searchAccounts(searchTerm = "") {
   try {
     const baseQuery = db.select().from(accounts);
 
@@ -104,12 +103,12 @@ export async function updateAccount(accountId: number | bigint, data: {
       .update(accounts)
       .set({
         name: data.name,
-        email: data.email || null,
-        phone: data.phone || null,
-        website: data.website || null,
-        address: data.address || null,
-        plan: data.plan || "basic",
-        subscriptionStatus: data.subscriptionStatus || "active",
+        email: data.email ?? null,
+        phone: data.phone ?? null,
+        website: data.website ?? null,
+        address: data.address ?? null,
+        plan: data.plan ?? "basic",
+        subscriptionStatus: data.subscriptionStatus ?? "active",
         isActive: data.isActive ?? true,
         updatedAt: new Date(),
       })

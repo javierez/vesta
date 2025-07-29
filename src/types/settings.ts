@@ -30,7 +30,7 @@ export interface AccountInput {
 
 // User Settings Types
 export interface UserSettings {
-  userId: bigint;
+  userId: string;
   language: "es" | "en";
   theme: "light" | "dark" | "system";
   notifications: boolean;

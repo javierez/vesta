@@ -1,9 +1,10 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardDescription, CardTitle } from "~/components/ui/card";
 import { Settings } from "lucide-react";
+import type { FC } from "react";
 
-export function SystemSettings() {
+export const SystemSettings: FC = () => {
   return (
     <div className="space-y-6">
       <div>
@@ -23,4 +24,4 @@ export function SystemSettings() {
       </Card>
     </div>
   );
-}
+};

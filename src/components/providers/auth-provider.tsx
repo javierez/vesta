@@ -56,19 +56,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (response.ok) {
-        const sessionData = await response.json();
+        const sessionData = await response.json() as {
+          user?: {
+            id: string;
+            email: string;
+            name?: string;
+            firstName?: string;
+            lastName?: string;
+            accountId: number;
+            phone?: string;
+            timezone?: string;
+            language?: string;
+            image?: string;
+            emailVerified?: boolean;
+          };
+        };
         if (sessionData?.user) {
           // Map the session data to our User type
           const userData: User = {
             id: sessionData.user.id,
             email: sessionData.user.email,
-            name: sessionData.user.name || sessionData.user.firstName || "",
+            name: sessionData.user.name ?? sessionData.user.firstName ?? "",
             firstName: sessionData.user.firstName,
-            lastName: sessionData.user.lastName || "",
+            lastName: sessionData.user.lastName ?? "",
             accountId: sessionData.user.accountId,
-            phone: sessionData.user.phone || "",
-            timezone: sessionData.user.timezone || "UTC",
-            language: sessionData.user.language || "en",
+            phone: sessionData.user.phone ?? "",
+            timezone: sessionData.user.timezone ?? "UTC",
+            language: sessionData.user.language ?? "en",
             image: sessionData.user.image,
             emailVerified: sessionData.user.emailVerified,
           };
@@ -104,8 +118,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await fetchUser(); // Refresh user data after login
         router.push("/dashboard");
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Login failed");
+        const errorData = await response.json() as { message?: string };
+        throw new Error(errorData.message ?? "Login failed");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -139,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check authentication status on mount
   useEffect(() => {
-    fetchUser();
+    void fetchUser();
   }, []);
 
   const value: AuthContextType = {

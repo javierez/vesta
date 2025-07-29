@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/lib/auth";
 import { getUserRolesFromDB, getPermissionsForRoles } from "~/lib/auth";
 import { headers } from "next/headers";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get session with proper headers
     const session = await auth.api.getSession({
@@ -33,9 +33,10 @@ export async function GET(request: NextRequest) {
     };
     
     // Convert BigInt values to strings to avoid serialization issues
-    const serializedSession = JSON.parse(JSON.stringify(enrichedSession, (key, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    ));
+    const serializedData = JSON.stringify(enrichedSession, (_key, value: unknown) =>
+      typeof value === 'bigint' ? value.toString() : value as string | number | boolean | null | undefined | object
+    );
+    const serializedSession: Record<string, unknown> = JSON.parse(serializedData) as Record<string, unknown>;
     
     return NextResponse.json(serializedSession);
   } catch (error) {

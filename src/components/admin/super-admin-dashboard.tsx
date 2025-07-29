@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import type { FC } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { AccountsManagement } from "./accounts-management";
 import { UsersManagement } from "./users-management";
 import { SystemSettings } from "./system-settings";
 
-export function SuperAdminDashboard() {
+export const SuperAdminDashboard: FC = () => {
   return (
     <Tabs defaultValue="accounts" className="space-y-6">
       <TabsList className="grid w-full grid-cols-3">
@@ -28,4 +28,4 @@ export function SuperAdminDashboard() {
       </TabsContent>
     </Tabs>
   );
-}
+};

@@ -2,7 +2,7 @@
 
 import { assignUserRole as assignUserRoleQuery } from "~/server/queries/user-roles";
 
-export async function assignUserRole(userId: string, roleId: number = 1) {
+export async function assignUserRole(userId: string, roleId = 1) {
   try {
     await assignUserRoleQuery(userId, roleId);
     return { success: true };

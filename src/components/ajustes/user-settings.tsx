@@ -39,7 +39,7 @@ import { userSettingsSchema } from "~/types/settings";
 import type { UserInput, UserSettings } from "~/types/settings";
 
 interface UserSettingsProps {
-  userId: bigint;
+  userId: string;
   initialData?: UserSettings;
 }
 

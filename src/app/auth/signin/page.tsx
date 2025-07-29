@@ -15,8 +15,9 @@ import {
 } from "~/components/ui/card";
 import { signIn } from "~/lib/auth-client";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import type { FC } from "react";
 
-export default function SignInPage() {
+const SignInPage: FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +26,7 @@ export default function SignInPage() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +41,7 @@ export default function SignInPage() {
       });
 
       if (result.error) {
-        setError(result.error.message || "Error al iniciar sesión");
+        setError(result.error.message ?? "Error al iniciar sesión");
         return;
       }
 
@@ -216,4 +217,6 @@ export default function SignInPage() {
       </div>
     </div>
   );
-}
+};
+
+export default SignInPage;

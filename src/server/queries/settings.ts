@@ -162,7 +162,7 @@ export async function getUserSettings(
     }
 
     return {
-      userId: user.userId,
+      userId: user.id,
       language: (user.language as "es" | "en") ?? "es",
       theme: "system", // Default, can be expanded when added to schema
       notifications: true, // Default, can be expanded when added to schema

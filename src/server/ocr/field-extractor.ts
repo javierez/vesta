@@ -116,7 +116,7 @@ function extractFromFormFields(
       if (mapping.converter) {
         try {
           convertedValue = mapping.converter(fieldData.text);
-        } catch (err) {
+        } catch {
           convertedValue = fieldData.text;
         }
       }
@@ -255,7 +255,7 @@ function extractFromTextPatterns(
           if (fieldMapping.converter) {
             try {
               convertedValue = fieldMapping.converter(value);
-            } catch (err) {
+            } catch {
               convertedValue = value;
             }
           }
@@ -340,7 +340,7 @@ function extractFromTables(blocks: Block[]): ExtractedFieldResult[] {
         if (mapping.converter) {
           try {
             convertedValue = mapping.converter(valueCell.Text);
-          } catch (err) {
+          } catch {
             convertedValue = valueCell.Text;
           }
         }

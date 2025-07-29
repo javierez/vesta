@@ -46,7 +46,7 @@ export async function createAccount(data: {
 }
 
 // Search accounts
-export async function searchAccounts(searchTerm: string = "") {
+export async function searchAccounts(searchTerm = "") {
   await checkSuperAdminAccess();
   return await searchAccountsQuery(searchTerm);
 }

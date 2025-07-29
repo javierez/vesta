@@ -23,7 +23,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 interface PropertyFilterProps {
   view: "grid" | "table";
-  agents?: Array<{ id: bigint; name: string }>;
+  agents?: Array<{ id: string; name: string }>;
 }
 
 export function PropertyFilter({ view, agents = [] }: PropertyFilterProps) {

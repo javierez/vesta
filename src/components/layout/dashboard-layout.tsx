@@ -19,6 +19,7 @@ import {
   User,
   Shield,
 } from "lucide-react";
+import type { FC, ReactNode } from "react";
 
 const baseNavigation = [
   { name: "Resumen", href: "/dashboard", icon: BarChart3 },
@@ -33,23 +34,15 @@ const adminNavigation = [
 ];
 
 interface DashboardLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session, isPending } = useSession();
-  const { hasRoleId, loading, roles, session: enrichedSession } = useUserRole();
-
-  // Debug logging
-  console.log("Dashboard Layout Debug:", {
-    hasRoleId2: hasRoleId(2),
-    roles: roles,
-    enrichedSession: enrichedSession,
-    loading: loading,
-  });
+  const { data: session } = useSession();
+  const { hasRoleId } = useUserRole();
 
   // Build navigation based on user role (role ID 2 as requested)
   const navigation = [...baseNavigation];
@@ -224,4 +217,4 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
     </div>
   );
-}
+};

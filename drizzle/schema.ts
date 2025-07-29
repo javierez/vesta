@@ -1,5 +1,4 @@
-import { singlestoreTable, singlestoreSchema, AnySingleStoreColumn, primaryKey, varchar, text, timestamp, bigint, tinyint, int, decimal, smallint } from "drizzle-orm/singlestore-core"
-import { sql } from "drizzle-orm"
+import { singlestoreTable, singlestoreSchema, primaryKey, varchar, text, timestamp, bigint, tinyint, int, decimal, smallint, json } from "drizzle-orm/singlestore-core"
 
 export const account = singlestoreTable("account", {
 	id: varchar({ length: 36 }).notNull(),

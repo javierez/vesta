@@ -1,8 +1,7 @@
 import { headers } from "next/headers";
 import { auth } from "~/lib/auth";
 import { db } from "~/server/db";
-import { and, eq } from "drizzle-orm";
-import type { Session } from "better-auth/types";
+import { and, eq, type SQL, type SQLWrapper, type Column } from "drizzle-orm";
 
 /**
  * Data Access Layer (DAL) - Provides account-level security for all database operations
@@ -65,12 +64,12 @@ export async function getSecureSession(): Promise<SecureSession | null> {
       user: {
         id: session.user.id,
         email: session.user.email,
-        firstName: session.user.name || "", // BetterAuth uses 'name' field
-        lastName: session.user.lastName || "",
+        firstName: session.user.name ?? "", // BetterAuth uses 'name' field
+        lastName: session.user.lastName ?? "",
         accountId: session.user.accountId, // The user's organization/company
-        phone: session.user.phone || undefined,
-        timezone: session.user.timezone || undefined,
-        language: session.user.language || undefined,
+        phone: session.user.phone ?? undefined,
+        timezone: session.user.timezone ?? undefined,
+        language: session.user.language ?? undefined,
       },
       session: {
         id: session.session.id,
@@ -126,7 +125,7 @@ export async function getSecureDb() {
     db,
     accountId, // The authenticated user's account/organization ID
     // Helper to add account filtering to any where condition
-    withAccountFilter: (table: any, additionalWhere?: any) => {
+    withAccountFilter: (table: { accountId: Column }, additionalWhere?: SQL | SQLWrapper) => {
       const accountFilter = eq(table.accountId, accountId);
       return additionalWhere
         ? and(accountFilter, additionalWhere)
@@ -145,7 +144,7 @@ export async function verifyAccountAccess(
   try {
     const currentAccountId = await getCurrentUserAccountId();
     return currentAccountId === resourceAccountId;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

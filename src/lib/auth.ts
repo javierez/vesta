@@ -10,7 +10,7 @@ import type { Permission } from "~/lib/permissions";
 /**
  * Get user roles from database
  */
-export async function getUserRolesFromDB(userId: string, accountId: number): Promise<string[]> {
+export async function getUserRolesFromDB(userId: string, _accountId: number): Promise<string[]> {
   try {
     const userRolesList = await db
       .select({
@@ -40,7 +40,7 @@ export function getPermissionsForRoles(roleNames: string[]): Permission[] {
   const permissionsSet = new Set<Permission>();
   
   roleNames.forEach((roleName) => {
-    const rolePermissions = ROLE_PERMISSIONS[roleName] || [];
+    const rolePermissions = ROLE_PERMISSIONS[roleName] ?? [];
     rolePermissions.forEach((permission) => {
       permissionsSet.add(permission);
     });

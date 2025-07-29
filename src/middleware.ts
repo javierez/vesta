@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
       `${request.nextUrl.origin}/api/auth/enriched-session`,
       {
         headers: {
-          cookie: cookieHeader || "",
+          cookie: cookieHeader ?? "",
         },
       },
     );
@@ -41,7 +41,17 @@ export async function middleware(request: NextRequest) {
       throw new Error("No valid session");
     }
 
-    const session = await response.json();
+    const session = await response.json() as {
+      user?: {
+        id: string;
+        email: string;
+        firstName?: string;
+        lastName?: string;
+        accountId?: number;
+        roles?: string[];
+        permissions?: string[];
+      };
+    };
 
     if (!session?.user) {
       // Redirect to signin page
@@ -56,11 +66,11 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set("x-user-email", session.user.email);
     requestHeaders.set(
       "x-user-account-id",
-      session.user.accountId?.toString() || "",
+      session.user.accountId?.toString() ?? "",
     );
     requestHeaders.set(
       "x-user-name",
-      `${session.user.firstName || ""} ${session.user.lastName || ""}`.trim(),
+      `${session.user.firstName ?? ""} ${session.user.lastName ?? ""}`.trim(),
     );
 
     // Add roles and permissions to headers if available
@@ -76,7 +86,7 @@ export async function middleware(request: NextRequest) {
         headers: requestHeaders,
       },
     });
-  } catch (error) {
+  } catch {
     // Session validation failed, redirect to signin page
     const signinUrl = new URL("/auth/signin", request.url);
     return NextResponse.redirect(signinUrl);

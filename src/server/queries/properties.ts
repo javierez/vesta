@@ -7,7 +7,7 @@ import type { Property, PropertyImage } from "../../lib/data";
 import { retrieveCadastralData } from "../cadastral/retrieve_cadastral";
 import { createDefaultListing } from "./listing";
 import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
-import { getSecureDb, getCurrentUserAccountId } from "~/lib/dal";
+import { getSecureDb } from "~/lib/dal";
 
 // Generate a unique reference number
 export async function generateReferenceNumber(): Promise<string> {

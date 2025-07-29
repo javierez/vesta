@@ -23,7 +23,7 @@ export default function PropertiesPage() {
   const [currentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   // Removed unused variable: totalCount
-  const [agents, setAgents] = useState<Array<{ id: bigint; name: string }>>([]);
+  const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [error, setError] = useState<string | null>(null);
 
   const view = (searchParams.get("view") ?? "grid") as "grid" | "table";

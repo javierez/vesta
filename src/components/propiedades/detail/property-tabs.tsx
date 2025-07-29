@@ -106,7 +106,7 @@ export function PropertyTabs({
                 : null
             }
             propertyId={listing.propertyId}
-            userId={session?.user?.id || "1"} // Use authenticated user ID
+            userId={session?.user?.id ?? "1"} // Use authenticated user ID
             listingId={listing.listingId}
             referenceNumber={listing.referenceNumber ?? ""}
             energyCertificateStatus={listing.energyCertificateStatus ?? null}

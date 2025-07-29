@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { FC } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent } from "~/components/ui/card";
@@ -28,7 +29,7 @@ interface Account {
   updatedAt: Date;
 }
 
-export function AccountsManagement() {
+export const AccountsManagement: FC = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -85,7 +86,7 @@ export function AccountsManagement() {
       toast.success("Cuenta creada exitosamente");
       setIsCreateDialogOpen(false);
       resetForm();
-      handleSearch(); // Refresh list
+      void handleSearch(); // Refresh list
     } catch (error) {
       toast.error("Error al crear la cuenta");
       console.error(error);
@@ -104,7 +105,7 @@ export function AccountsManagement() {
       setIsEditDialogOpen(false);
       setSelectedAccount(null);
       resetForm();
-      handleSearch(); // Refresh list
+      void handleSearch(); // Refresh list
     } catch (error) {
       toast.error("Error al actualizar la cuenta");
       console.error(error);
@@ -119,7 +120,7 @@ export function AccountsManagement() {
     try {
       await deleteAccount(Number(accountId));
       toast.success("Cuenta eliminada exitosamente");
-      handleSearch(); // Refresh list
+      void handleSearch(); // Refresh list
     } catch (error) {
       toast.error("Error al eliminar la cuenta");
       console.error(error);
@@ -130,12 +131,12 @@ export function AccountsManagement() {
     setSelectedAccount(account);
     setFormData({
       name: account.name,
-      email: account.email || "",
-      phone: account.phone || "",
-      website: account.website || "",
-      address: account.address || "",
-      plan: account.plan || "basic",
-      subscriptionStatus: account.subscriptionStatus || "active",
+      email: account.email ?? "",
+      phone: account.phone ?? "",
+      website: account.website ?? "",
+      address: account.address ?? "",
+      plan: account.plan ?? "basic",
+      subscriptionStatus: account.subscriptionStatus ?? "active",
       isActive: account.isActive ?? true,
     });
     setIsEditDialogOpen(true);
@@ -143,7 +144,8 @@ export function AccountsManagement() {
 
   // Load accounts on component mount
   useEffect(() => {
-    handleSearch();
+    void handleSearch();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -352,7 +354,7 @@ export function AccountsManagement() {
                     {account.isActive ? "Activo" : "Inactivo"}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    {account.plan || "básico"}
+                    {account.plan ?? "básico"}
                   </Badge>
                 </div>
               </CardContent>
@@ -479,4 +481,4 @@ export function AccountsManagement() {
       </Dialog>
     </div>
   );
-}
+};
