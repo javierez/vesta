@@ -116,7 +116,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
               </div>
               <div className="ml-3 min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-gray-900">
-                  {session?.user?.name || "Usuario"}
+                  {session?.user?.name ?? "Usuario"}
                 </p>
                 <p className="truncate text-xs text-gray-500">
                   {session?.user?.email}
@@ -178,7 +178,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
               </div>
               <div className="ml-3 min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-gray-900">
-                  {session?.user?.name || "Usuario"}
+                  {session?.user?.name ?? "Usuario"}
                 </p>
                 <p className="truncate text-xs text-gray-500">
                   {session?.user?.email}
