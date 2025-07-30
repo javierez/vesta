@@ -88,7 +88,7 @@ const STATIC_FORM_OPTIONS = {
 interface GlobalFormData {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   listingDetails: any;
-  agents: Array<{ id: number; name: string }>;
+  agents: Array<{ id: string; name: string }>; // Changed from number to string
   contacts: Array<{ id: number; name: string }>;
   currentContacts: string[];
   staticOptions: typeof STATIC_FORM_OPTIONS;
@@ -143,7 +143,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         setGlobalFormData({
           listingDetails,
           agents: agents.map((agent) => ({
-            id: Number(agent.id),
+            id: agent.id, // Keep as string - don't convert to Number
             name: agent.name,
           })),
           contacts: contacts.map((contact) => ({

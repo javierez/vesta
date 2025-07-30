@@ -262,7 +262,7 @@ export async function seedDatabase() {
 
         const newListing = await createListing({
           propertyId: BigInt(createdProperty.propertyId),
-          agentId: mockListing?.agentId ?? BigInt(1),
+          agentId: mockListing?.agentId ?? "1",
           listingType: mockListing?.listingType ?? "Sale",
           price: mockListing?.price ?? property.price ?? "0",
           status: mockListing?.status ?? "Active",

@@ -304,7 +304,7 @@ export function PropertyCharacteristicsFormLocal({
 
           // Update listing with agent
           listingData = {
-            agentId: BigInt(selectedAgentId),
+            agentId: selectedAgentId,
           };
 
           // Update owner relationships separately
@@ -425,7 +425,7 @@ export function PropertyCharacteristicsFormLocal({
   const [newConstruction, setNewConstruction] = useState(
     listing.newConstruction ?? false,
   );
-  const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([]);
+  const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [isFurnished, setIsFurnished] = useState(listing.isFurnished ?? false);
   const [isHeating, setIsHeating] = useState(listing.hasHeating ?? false);
   const [heatingType, setHeatingType] = useState(listing.heatingType ?? "");
@@ -546,7 +546,7 @@ export function PropertyCharacteristicsFormLocal({
         const agentsList = await getAllAgents();
         setAgents(
           agentsList.map((agent) => ({
-            id: Number(agent.id),
+            id: agent.id,
             name: agent.name,
           })),
         );
@@ -636,7 +636,10 @@ export function PropertyCharacteristicsFormLocal({
                     : "outline"
                 }
                 size="sm"
-                onClick={() => setListingType("Sale")}
+                onClick={() => {
+                  setListingType("Sale");
+                  updateModuleState("basicInfo", true);
+                }}
                 className="flex-1"
               >
                 Venta
@@ -651,7 +654,10 @@ export function PropertyCharacteristicsFormLocal({
                     : "outline"
                 }
                 size="sm"
-                onClick={() => setListingType("Rent")}
+                onClick={() => {
+                  setListingType("Rent");
+                  updateModuleState("basicInfo", true);
+                }}
                 className="flex-1"
               >
                 Alquiler

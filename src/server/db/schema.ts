@@ -307,7 +307,7 @@ export const listings = singlestoreTable("listings", {
 
   // Basic Information
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(), // FK → properties.property_id
-  agentId: bigint("agent_id", { mode: "bigint" }).notNull(), // FK → users.user_id (agent)
+  agentId: varchar("agent_id", { length: 36 }).notNull(), // FK → users.user_id (agent) - Changed to varchar to match users.id
   listingType: varchar("listing_type", { length: 20 }).notNull(), // e.g. "Sale" or "Rent"
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
   status: varchar("status", { length: 20 }).notNull(), // e.g. "En Venta", "En Alquiler", "Vendido"

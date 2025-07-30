@@ -67,7 +67,7 @@ export default function PropertiesPage() {
           } else if (key === "type") {
             filters.propertyType = value.split(",");
           } else if (key === "agent") {
-            filters.agentId = value.split(",").map(Number);
+            filters.agentId = value.split(",");
           } else if (
             [
               "minPrice",

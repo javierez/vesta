@@ -211,5 +211,12 @@ Changes
 
 
 FIXES
-- € formatting in @first.tsx
+- Cliked state in Finalizar
+- Armarios empotrados
+- Código de invitación (non-mock)
+- Change design of 'Redirigiendo al dashboard'
+- Redirecting me to pages if I want to go quick: from first to second, to third, and so on.
+- Reduce barrios lenght
 
+VERIFICATIONS 
+- Form for solar/local/garaje

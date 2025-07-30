@@ -188,7 +188,7 @@ export default function RentPage({
             propertyId: BigInt(listingDetails.propertyId),
             listingType: "Rent" as const,
             price: formData.rentalPrice.toString(),
-            agentId: BigInt(listingDetails.agentId),
+            agentId: listingDetails.agentId?.toString() ?? "",
             studentFriendly: formData.studentFriendly,
             petsAllowed: formData.petsAllowed,
             appliancesIncluded: formData.appliancesIncluded,

@@ -344,7 +344,7 @@ export function PropertyCharacteristicsFormSolar({
             return;
           }
           listingData = {
-            agentId: Number(selectedAgentId),
+            agentId: selectedAgentId,
           };
           // Update owner relationships
           await updateListingOwners(
@@ -435,7 +435,7 @@ export function PropertyCharacteristicsFormSolar({
     listing.listingType ?? "Sale", // Default to 'Sale' if none selected
   );
   const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false);
-  const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([]);
+  const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [views, setViews] = useState(listing.views ?? false);
   const [mountainViews, setMountainViews] = useState(
     listing.mountainViews ?? false,
@@ -466,7 +466,7 @@ export function PropertyCharacteristicsFormSolar({
         const agentsList = await getAllAgents();
         setAgents(
           agentsList.map((agent) => ({
-            id: Number(agent.id),
+            id: agent.id,
             name: agent.name,
           })),
         );

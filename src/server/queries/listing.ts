@@ -115,13 +115,13 @@ export async function getListingsByPropertyId(propertyId: number) {
 }
 
 // Get listings by agent ID
-export async function getListingsByAgentId(agentId: number) {
+export async function getListingsByAgentId(agentId: string) {
   try {
     const agentListings = await db
       .select()
       .from(listings)
       .where(
-        and(eq(listings.agentId, BigInt(agentId)), eq(listings.isActive, true)),
+        and(eq(listings.agentId, agentId), eq(listings.isActive, true)),
       );
     return agentListings;
   } catch (error) {
@@ -188,7 +188,7 @@ export async function listListings(
   filters?: {
     status?: "Active" | "Pending" | "Sold";
     listingType?: "Sale" | "Rent";
-    agentId?: number[];
+    agentId?: string[];
     propertyId?: number;
     isActive?: boolean;
     isFeatured?: boolean;
@@ -230,7 +230,7 @@ export async function listListings(
       }
       if (filters.agentId && filters.agentId.length > 0) {
         whereConditions.push(
-          sql`${listings.agentId} IN (${filters.agentId.map((id) => BigInt(id))})`,
+          sql`${listings.agentId} IN (${filters.agentId})`,
         );
       }
       if (filters.propertyId) {
@@ -482,7 +482,7 @@ export async function listListings(
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .leftJoin(users, sql`${listings.agentId} = CAST(${users.id} AS UNSIGNED)`);
+      .leftJoin(users, eq(listings.agentId, users.id));
 
     // Get total count for pagination
     const countResult = await db
@@ -493,7 +493,7 @@ export async function listListings(
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .leftJoin(users, sql`${listings.agentId} = CAST(${users.id} AS UNSIGNED)`)
+      .leftJoin(users, eq(listings.agentId, users.id))
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
 
     const count = countResult[0]?.count ?? 0;
@@ -602,7 +602,7 @@ export async function listListingsCompact(filters?: {
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .leftJoin(users, sql`${listings.agentId} = CAST(${users.id} AS UNSIGNED)`)
+      .leftJoin(users, eq(listings.agentId, users.id))
       .leftJoin(
         listingContacts,
         and(
@@ -651,7 +651,7 @@ export async function getAllAgents() {
       .from(users)
       .where(eq(users.isActive, true))
       .orderBy(users.name);
-
+    
     return agents;
   } catch (error) {
     console.error("Error fetching agents:", error);
@@ -835,7 +835,7 @@ export async function getListingDetails(listingId: number) {
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .leftJoin(users, sql`${listings.agentId} = CAST(${users.id} AS UNSIGNED)`)
+      .leftJoin(users, eq(listings.agentId, users.id))
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
@@ -861,7 +861,7 @@ export async function createDefaultListing(propertyId: number) {
     const listingData = {
       accountId: BigInt(accountId),
       propertyId: BigInt(propertyId),
-      agentId: BigInt(1), // Default agent ID
+      agentId: "1", // Default agent ID
       listingType: "Sale" as const,
       price: "0", // Default price as string (decimal type)
       status: "Draft" as const, // Default status in Spanish

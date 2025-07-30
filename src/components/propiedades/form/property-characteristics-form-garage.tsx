@@ -230,7 +230,7 @@ export function PropertyCharacteristicsFormGarage({
             return;
           }
           listingData = {
-            agentId: Number(selectedAgentId),
+            agentId: selectedAgentId,
           };
           // Update owner relationships
           await updateListingOwners(
@@ -346,7 +346,7 @@ export function PropertyCharacteristicsFormGarage({
     listing.listingType ?? "Sale", // Default to 'Sale' if none selected
   );
   const [isBankOwned, setIsBankOwned] = useState(listing.isBankOwned ?? false);
-  const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([]);
+  const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [garageType, setGarageType] = useState(listing.garageType ?? "");
   const [garageSpaces, setGarageSpaces] = useState(listing.garageSpaces ?? 1);
   const [garageInBuilding, setGarageInBuilding] = useState(
@@ -387,7 +387,7 @@ export function PropertyCharacteristicsFormGarage({
         const agentsList = await getAllAgents();
         setAgents(
           agentsList.map((agent) => ({
-            id: Number(agent.id),
+            id: agent.id,
             name: agent.name,
           })),
         );

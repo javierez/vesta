@@ -996,7 +996,7 @@ export type UserRole = {
 export type Listing = {
   listingId: bigint;
   propertyId: bigint;
-  agentId: bigint;
+  agentId: string; // Changed from bigint to match users.id type
   listingType: "Sale" | "Rent" | "Sold";
   price: string;
   status: "Active" | "Pending" | "Resolved";
@@ -1425,7 +1425,7 @@ export const listings: Listing[] = [
   {
     listingId: BigInt(1),
     propertyId: BigInt(1),
-    agentId: BigInt(1),
+    agentId: "1",
     listingType: "Sale",
     price: "1250000.00",
     status: "Active",
@@ -1463,7 +1463,7 @@ export const listings: Listing[] = [
   {
     listingId: BigInt(2),
     propertyId: BigInt(2),
-    agentId: BigInt(2),
+    agentId: "2",
     listingType: "Rent",
     price: "350000.00",
     status: "Active",
@@ -1501,7 +1501,7 @@ export const listings: Listing[] = [
   {
     listingId: BigInt(3),
     propertyId: BigInt(3),
-    agentId: BigInt(1),
+    agentId: "1",
     listingType: "Sold",
     price: "450000.00",
     status: "Active",

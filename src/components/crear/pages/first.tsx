@@ -27,7 +27,7 @@ interface Contact {
 }
 
 interface Agent {
-  id: number;
+  id: string; // Changed from number to match users.id type
   name: string;
 }
 
@@ -241,15 +241,15 @@ export default function FirstPage({
         const listingUpdate: {
           price: string;
           listingType: "Sale" | "Rent";
-          agentId?: bigint;
+          agentId?: string;
         } = {
           price: formData.price,
           listingType: formData.listingType as "Sale" | "Rent",
         };
         
-        // Only add agentId if it's a valid number
-        if (formData.agentId && !isNaN(Number(formData.agentId))) {
-          listingUpdate.agentId = BigInt(formData.agentId);
+        // Add agentId if it exists
+        if (formData.agentId) {
+          listingUpdate.agentId = formData.agentId;
         }
         
         promises.push(updateListing(Number(listingId), listingUpdate));
@@ -665,7 +665,7 @@ export default function FirstPage({
           </SelectTrigger>
           <SelectContent>
             {globalFormData?.agents?.map((agent: Agent) => (
-              <SelectItem key={agent.id} value={agent.id.toString()}>
+              <SelectItem key={agent.id} value={agent.id}>
                 {agent.name}
               </SelectItem>
             ))}

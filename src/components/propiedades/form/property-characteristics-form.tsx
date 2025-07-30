@@ -54,7 +54,7 @@ import type { PropertyListing } from "~/types/property-listing";
 
 // Type definitions
 interface Agent {
-  id: number;
+  id: string; // Changed from number to match users.id type
   name: string;
 }
 
@@ -309,7 +309,7 @@ export function PropertyCharacteristicsForm({
           break;
 
         case "contactInfo":
-          if (!selectedAgentId) {
+          if (!selectedAgentId || selectedAgentId === "") {
             throw new Error("Please select an agent");
           }
           if (selectedOwnerIds.length === 0) {
@@ -318,7 +318,7 @@ export function PropertyCharacteristicsForm({
 
           // Update listing with agent
           listingData = {
-            agentId: BigInt(selectedAgentId),
+            agentId: selectedAgentId,
           };
 
           // Update owner relationships separately
@@ -710,7 +710,7 @@ export function PropertyCharacteristicsForm({
         const agentsList = await getAllAgents();
         setAgents(
           agentsList.map((agent) => ({
-            id: Number(agent.id),
+            id: agent.id, // Keep as string
             name: agent.name,
           })),
         );
@@ -748,6 +748,13 @@ export function PropertyCharacteristicsForm({
     };
     void fetchOwners();
   }, [listing.listingId]);
+
+  // Set selectedAgentId when listing agent data is available
+  useEffect(() => {
+    if (listing.agent?.id) {
+      setSelectedAgentId(listing.agent.id.toString());
+    }
+  }, [listing.agent?.id]);
 
   const toggleListingType = (type: string) => {
     setListingTypes([type]); // Replace the current type with the new one
@@ -3070,7 +3077,10 @@ export function PropertyCharacteristicsForm({
                       </Label>
                       <Select
                         value={carpentryType}
-                        onValueChange={setCarpentryType}
+                        onValueChange={(value) => {
+                          setCarpentryType(value);
+                          updateModuleState("materials", true);
+                        }}
                       >
                         <SelectTrigger className="h-8 text-gray-500">
                           <SelectValue placeholder="Seleccionar tipo" />
@@ -3089,7 +3099,10 @@ export function PropertyCharacteristicsForm({
                       </Label>
                       <Select
                         value={shutterType}
-                        onValueChange={setShutterType}
+                        onValueChange={(value) => {
+                          setShutterType(value);
+                          updateModuleState("materials", true);
+                        }}
                       >
                         <SelectTrigger className="h-8 text-gray-500">
                           <SelectValue placeholder="Seleccionar tipo" />
@@ -3116,7 +3129,10 @@ export function PropertyCharacteristicsForm({
                       </Label>
                       <Select
                         value={mainFloorType}
-                        onValueChange={setMainFloorType}
+                        onValueChange={(value) => {
+                          setMainFloorType(value);
+                          updateModuleState("materials", true);
+                        }}
                       >
                         <SelectTrigger className="h-8 text-gray-500">
                           <SelectValue placeholder="Seleccionar tipo" />

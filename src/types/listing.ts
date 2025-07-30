@@ -13,7 +13,7 @@ export type ListingOverview = {
   // Listing fields
   listingId: bigint;
   propertyId: bigint;
-  agentId: bigint;
+  agentId: string; // Changed from bigint to match users.id type
   agentName: string | null;
   ownerName: string | null;
   price: string;

@@ -147,7 +147,7 @@ export interface PropertyListing {
 
   // Relationships
   agent?: {
-    id: number;
+    id: string;
     name: string;
   };
 }
@@ -281,7 +281,7 @@ export function convertDbListingToPropertyListing(
       typeof dbListing.agent === "object" &&
       dbListing.agent !== null
         ? {
-            id: Number((dbListing.agent as Record<string, unknown>).id),
+            id: String((dbListing.agent as Record<string, unknown>).id),
             name: `${String((dbListing.agent as Record<string, unknown>).firstName)} ${String((dbListing.agent as Record<string, unknown>).lastName)}`,
           }
         : undefined,

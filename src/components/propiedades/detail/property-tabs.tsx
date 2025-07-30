@@ -30,7 +30,7 @@ interface PropertyTabsProps {
     habitaclia?: boolean | null;
     milanuncios?: boolean | null;
     energyCertification?: string | null;
-    agentId?: bigint | null;
+    agentId?: string | null; // Changed from bigint to match users.id type
     energyCertificateStatus?: string | null;
     energyConsumptionScale?: string | null;
     energyConsumptionValue?: string | null;
