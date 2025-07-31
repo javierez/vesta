@@ -91,7 +91,8 @@ export async function middleware(request: NextRequest) {
     const signinUrl = new URL("/auth/signin", request.url);
     return NextResponse.redirect(signinUrl);
   }
-}
+} 
+
 
 export const config = {
   matcher: [
