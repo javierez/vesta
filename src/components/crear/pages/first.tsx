@@ -14,8 +14,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { updateProperty } from "~/server/queries/properties";
-import { updateListing } from "~/server/queries/listing";
-import { updateListingOwners } from "~/server/queries/contact";
+import { updateListingWithAuth } from "~/server/queries/listing";
+import { updateListingOwnersWithAuth } from "~/server/queries/contact";
 import FormSkeleton from "./form-skeleton";
 import ContactPopup from "./contact-popup";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -252,7 +252,7 @@ export default function FirstPage({
           listingUpdate.agentId = formData.agentId;
         }
         
-        promises.push(updateListing(Number(listingId), listingUpdate));
+        promises.push(updateListingWithAuth(Number(listingId), listingUpdate));
       }
 
       // Update listing contacts if we have valid listingId and contacts
@@ -262,7 +262,7 @@ export default function FirstPage({
           .map((id) => Number(id));
           
         if (validContactIds.length > 0) {
-          promises.push(updateListingOwners(Number(listingId), validContactIds));
+          promises.push(updateListingOwnersWithAuth(Number(listingId), validContactIds));
         }
       }
 

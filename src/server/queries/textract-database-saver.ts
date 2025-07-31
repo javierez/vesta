@@ -11,6 +11,10 @@ import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
 import { retrieveCadastralData } from "../cadastral/retrieve_cadastral";
 import type { Property, Listing } from "~/lib/data";
 
+type DbProperty = Omit<Property, 'builtInWardrobes'> & {
+  builtInWardrobes?: boolean;
+};
+
 /**
  * Database Persistence Layer for Textract Extracted Data
  * Saves extracted property and listing data with confidence filtering
@@ -20,6 +24,7 @@ import type { Property, Listing } from "~/lib/data";
 export async function saveExtractedDataToDatabase(
   propertyId: number,
   listingId: number,
+  accountId: number,
   extractedFields: ExtractedFieldResult[],
   confidenceThreshold = 80,
 ): Promise<DatabaseSaveResult> {
@@ -65,7 +70,7 @@ export async function saveExtractedDataToDatabase(
     };
 
     // Build property update data
-    const propertyUpdateData: Record<string, unknown> = {};
+    const propertyUpdateData: Partial<Omit<DbProperty, "propertyId" | "createdAt" | "updatedAt" | "referenceNumber">> = {};
     if (propertyFields.length > 0) {
       for (const field of propertyFields) {
         try {
@@ -84,8 +89,10 @@ export async function saveExtractedDataToDatabase(
           }
 
           // Type-safe assignment with proper conversion for regular fields
-          const key = field.dbColumn;
-          propertyUpdateData[key] = field.value;
+          const key = field.dbColumn as keyof typeof propertyUpdateData;
+          if (key in propertyUpdateData) {
+            propertyUpdateData[key] = field.value as never;
+          }
         } catch (error) {
           const errorMsg = `Failed to prepare property field ${field.dbColumn}: ${String(error)}`;
           console.error(`❌ [DATABASE] ${errorMsg}`);
@@ -123,10 +130,7 @@ export async function saveExtractedDataToDatabase(
 
         await updateProperty(
           propertyId,
-          propertyUpdateData as Omit<
-            Partial<Property>,
-            "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
-          >,
+          propertyUpdateData,
         );
 
         result.propertyUpdated = true;
@@ -144,9 +148,7 @@ export async function saveExtractedDataToDatabase(
         });
 
         // Check if cadastral reference was extracted and use cadastral service
-        const cadastralRefValue = propertyUpdateData.cadastralReference as
-          | string
-          | undefined;
+        const cadastralRefValue = propertyUpdateData.cadastralReference;
         const hasCadastralRef =
           cadastralRefValue && cadastralRefValue.trim() !== "";
 
@@ -155,9 +157,7 @@ export async function saveExtractedDataToDatabase(
             `🏛️ [DATABASE] Cadastral reference detected, retrieving cadastral data...`,
           );
           try {
-            const cadastralRef = (
-              propertyUpdateData.cadastralReference as string
-            ).trim();
+            const cadastralRef = cadastralRefValue.trim();
             console.log(
               `🔍 [DATABASE] Retrieving cadastral data for: ${cadastralRef}`,
             );
@@ -217,7 +217,7 @@ export async function saveExtractedDataToDatabase(
               await updateProperty(
                 propertyId,
                 cadastralUpdateData as Omit<
-                  Partial<Property>,
+                  Partial<DbProperty>,
                   "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
                 >,
               );
@@ -252,7 +252,7 @@ export async function saveExtractedDataToDatabase(
           }
         } else {
           // Check if we have address info that was just standardized and saved
-          const streetValue = propertyUpdateData.street as string | undefined;
+          const streetValue = propertyUpdateData.street;
           const hasAddressInfo =
             streetValue && streetValue !== "Dirección a completar";
 
@@ -386,7 +386,7 @@ export async function saveExtractedDataToDatabase(
                         await updateProperty(
                           propertyId,
                           geoUpdateData as Omit<
-                            Partial<Property>,
+                            Partial<DbProperty>,
                             | "propertyId"
                             | "createdAt"
                             | "updatedAt"
@@ -424,6 +424,7 @@ export async function saveExtractedDataToDatabase(
 
         await updateListing(
           listingId,
+          accountId,
           listingUpdateData as Omit<
             Partial<Listing>,
             "listingId" | "createdAt" | "updatedAt"
@@ -496,6 +497,7 @@ export async function saveExtractedDataToDatabase(
 export async function getPropertyAndListingIds(documentKey: string): Promise<{
   propertyId?: number;
   listingId?: number;
+  accountId?: number;
 } | null> {
   console.log(
     `🔍 [DATABASE] Extracting property/listing IDs from document key: ${documentKey}`,
@@ -539,14 +541,15 @@ export async function getPropertyAndListingIds(documentKey: string): Promise<{
 
     // Find listing for this property
     const [listing] = await db
-      .select({ listingId: listings.listingId })
+      .select({ listingId: listings.listingId, accountId: listings.accountId })
       .from(listings)
       .where(eq(listings.propertyId, property.propertyId))
       .limit(1);
 
     const listingId = listing ? Number(listing.listingId) : undefined;
+    const accountId = listing ? Number(listing.accountId) : undefined;
     if (listingId) {
-      console.log(`✅ [DATABASE] Found listing ID: ${listingId}`);
+      console.log(`✅ [DATABASE] Found listing ID: ${listingId}, account ID: ${accountId}`);
     } else {
       console.warn(
         `⚠️ [DATABASE] No listing found for property ID: ${propertyId}`,
@@ -556,6 +559,7 @@ export async function getPropertyAndListingIds(documentKey: string): Promise<{
     return {
       propertyId,
       listingId,
+      accountId,
     };
   } catch (error) {
     console.error(

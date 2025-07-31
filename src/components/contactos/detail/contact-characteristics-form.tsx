@@ -9,9 +9,9 @@ import { useState, useEffect } from "react";
 import { User, Building, Plus } from "lucide-react";
 import { Textarea } from "~/components/ui/textarea";
 import {
-  updateContact,
-  getListingsByContact,
-  getListingsByContactAsBuyer,
+  updateContactWithAuth,
+  getListingsByContactWithAuth,
+  getListingsByContactAsBuyerWithAuth,
 } from "~/server/queries/contact";
 import { toast } from "sonner";
 import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern-save-indicator";
@@ -174,10 +174,10 @@ export function ContactCharacteristicsForm({
         try {
           let allListings;
           if (contact.contactType === "propietario") {
-            allListings = await getListingsByContact(Number(contact.contactId));
+            allListings = await getListingsByContactWithAuth(Number(contact.contactId));
           } else {
             // For demandante, get listings where they are the buyer
-            allListings = await getListingsByContactAsBuyer(
+            allListings = await getListingsByContactAsBuyerWithAuth(
               Number(contact.contactId),
             );
           }
@@ -444,7 +444,7 @@ export function ContactCharacteristicsForm({
           break;
       }
 
-      await updateContact(contactId, contactData);
+      await updateContactWithAuth(contactId, contactData);
 
       setModuleStates((prev) => ({
         ...prev,

@@ -15,18 +15,18 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { useState, useEffect } from "react";
 import { Building2, BanknoteIcon, Link } from "lucide-react";
-import { getAllAgents } from "~/server/queries/listing";
+import { getAllAgentsWithAuth } from "~/server/queries/listing";
 import { Textarea } from "~/components/ui/textarea";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProperty } from "~/server/queries/properties";
-import { updateListing } from "~/server/queries/listing";
+import { updateListingWithAuth } from "~/server/queries/listing";
 import { toast } from "sonner";
 import { PropertyTitle } from "./common/property-title";
 import { ModernSaveIndicator } from "./common/modern-save-indicator";
 import {
-  getAllPotentialOwners,
-  getCurrentListingOwners,
-  updateListingOwners,
+  getAllPotentialOwnersWithAuth,
+  getCurrentListingOwnersWithAuth,
+  updateListingOwnersWithAuth,
 } from "~/server/queries/contact";
 import type { PropertyListing } from "~/types/property-listing";
 
@@ -233,7 +233,7 @@ export function PropertyCharacteristicsFormGarage({
             agentId: selectedAgentId,
           };
           // Update owner relationships
-          await updateListingOwners(
+          await updateListingOwnersWithAuth(
             listingId,
             selectedOwnerIds.map((id) => Number(id)),
           );
@@ -247,7 +247,7 @@ export function PropertyCharacteristicsFormGarage({
 
       // Update listing if there's listing data
       if (Object.keys(listingData).length > 0) {
-        await updateListing(listingId, listingData);
+        await updateListingWithAuth(listingId, listingData);
       }
 
       setModuleStates((prev) => {
@@ -384,7 +384,7 @@ export function PropertyCharacteristicsFormGarage({
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const agentsList = await getAllAgents();
+        const agentsList = await getAllAgentsWithAuth();
         setAgents(
           agentsList.map((agent) => ({
             id: agent.id,
@@ -411,7 +411,7 @@ export function PropertyCharacteristicsFormGarage({
   useEffect(() => {
     const fetchOwners = async () => {
       try {
-        const ownersList = await getAllPotentialOwners();
+        const ownersList = await getAllPotentialOwnersWithAuth();
         setOwners(
           ownersList.map((owner) => ({
             id: Number(owner.id),
@@ -421,7 +421,7 @@ export function PropertyCharacteristicsFormGarage({
 
         // Load current owners only if we have a valid listingId
         if (listing.listingId) {
-          const currentOwners = await getCurrentListingOwners(
+          const currentOwners = await getCurrentListingOwnersWithAuth(
             Number(listing.listingId),
           );
           setSelectedOwnerIds(

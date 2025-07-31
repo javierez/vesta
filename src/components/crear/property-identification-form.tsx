@@ -110,6 +110,7 @@ const PropertyIdentificationForm: FC = () => {
   const [showCadastralTooltip, setShowCadastralTooltip] = useState(false);
   const [showUploadTooltip, setShowUploadTooltip] = useState(false);
   const [isCreatingProperty, setIsCreatingProperty] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
@@ -465,6 +466,7 @@ const PropertyIdentificationForm: FC = () => {
         );
 
         if (newProperty?.listingId) {
+          setIsNavigating(true);
           router.push(
             `/propiedades/crear/${newProperty.listingId}?method=catastro`,
           );
@@ -484,6 +486,7 @@ const PropertyIdentificationForm: FC = () => {
         const newProperty = await handleCreatePropertyFromDocuments();
 
         if (newProperty?.listingId) {
+          setIsNavigating(true);
           router.push(
             `/propiedades/crear/${newProperty.listingId}?method=upload`,
           );
@@ -520,6 +523,7 @@ const PropertyIdentificationForm: FC = () => {
         }
 
         if (newProperty?.listingId) {
+          setIsNavigating(true);
           router.push(
             `/propiedades/crear/${newProperty.listingId}?method=manual`,
           );
@@ -1176,7 +1180,7 @@ const PropertyIdentificationForm: FC = () => {
             <Button
               variant="outline"
               onClick={prevStep}
-              disabled={currentStep === 0 || isCreatingProperty}
+              disabled={currentStep === 0 || isCreatingProperty || isNavigating}
               className="flex h-8 items-center space-x-2"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -1186,10 +1190,10 @@ const PropertyIdentificationForm: FC = () => {
             {currentStep === 1 && !areAllLocationFieldsFilled() ? (
               <Button
                 onClick={autoCompleteAddress}
-                disabled={isCreatingProperty || !formData.street.trim()}
+                disabled={isCreatingProperty || isNavigating || !formData.street.trim()}
                 className="flex h-8 items-center space-x-2"
               >
-                {isCreatingProperty ? (
+                {isCreatingProperty || isNavigating ? (
                   <>
                     <Loader className="h-4 w-4 animate-spin" />
                     <span>Autocompletando...</span>
@@ -1204,13 +1208,13 @@ const PropertyIdentificationForm: FC = () => {
             ) : (
               <Button
                 onClick={nextStep}
-                disabled={isCreatingProperty}
+                disabled={isCreatingProperty || isNavigating}
                 className="flex h-8 items-center space-x-2"
               >
-                {isCreatingProperty ? (
+                {isCreatingProperty || isNavigating ? (
                   <>
                     <Loader className="h-4 w-4 animate-spin" />
-                    <span>Creando propiedad...</span>
+                    <span>{isNavigating ? "Redirigiendo..." : "Creando propiedad..."}</span>
                   </>
                 ) : (
                   <>

@@ -8,7 +8,7 @@ import { Switch } from "~/components/ui/switch";
 import { Button } from "~/components/ui/button";
 import { MoreVertical, RefreshCcw } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { updateListing } from "~/server/queries/listing";
+import { updateListingWithAuth } from "~/server/queries/listing";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -207,7 +207,7 @@ export function PortalSelection({
       };
 
       // Update the listing with the new portal values
-      await updateListing(Number(listingId), portalUpdates);
+      await updateListingWithAuth(Number(listingId), portalUpdates);
 
       // Get the previous states to check what changed
       const previousFotocasaState = initialPlatformStates.fotocasa;

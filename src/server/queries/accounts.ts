@@ -196,3 +196,23 @@ export async function getActiveAccounts() {
     throw error;
   }
 }
+
+// Validate invitation code (check if account exists and is active)
+export async function validateInvitationCode(accountId: number) {
+  try {
+    const account = await getAccountById(accountId);
+    
+    if (!account) {
+      return { isValid: false, message: "Código de invitación inválido" };
+    }
+    
+    if (!account.isActive) {
+      return { isValid: false, message: "La cuenta asociada no está activa" };
+    }
+    
+    return { isValid: true, message: "Código de invitación válido", account };
+  } catch (error) {
+    console.error("Error validating invitation code:", error);
+    return { isValid: false, message: "Error al validar el código de invitación" };
+  }
+}

@@ -30,9 +30,14 @@ import { createAccount } from "~/server/queries/accounts";
 import { getCurrentUserAccountId } from "~/lib/dal";
 import { sql } from "drizzle-orm";
 
+// Type for database property with correct boolean conversion
+type DbProperty = Omit<Property, 'builtInWardrobes'> & {
+  builtInWardrobes?: boolean;
+};
+
 // Helper function to convert property to DB format
-function toDbProperty(property: Property) {
-  const dbProperty: Partial<Property> = {
+function toDbProperty(property: Property): Partial<DbProperty> {
+  const dbProperty: Partial<DbProperty> = {
     referenceNumber: property.referenceNumber,
     title: property.title,
     description: property.description,
@@ -89,6 +94,13 @@ function toDbProperty(property: Property) {
     dbProperty.privatePool = property.privatePool;
   if (property.tennisCourt !== undefined)
     dbProperty.tennisCourt = property.tennisCourt;
+
+  // Convert string boolean fields to actual booleans for database storage
+  if (property.builtInWardrobes !== undefined) {
+    dbProperty.builtInWardrobes = typeof property.builtInWardrobes === 'string' 
+      ? property.builtInWardrobes === 'true' || property.builtInWardrobes === '1'
+      : Boolean(property.builtInWardrobes);
+  }
 
   return dbProperty;
 }
@@ -238,7 +250,7 @@ export async function seedDatabase() {
         hasStorageRoom: property.hasStorageRoom,
         isActive: true,
       } as Omit<
-        Property,
+        DbProperty,
         | "propertyId"
         | "referenceNumber"
         | "formPosition"

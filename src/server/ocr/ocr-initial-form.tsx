@@ -787,10 +787,11 @@ export async function processDocumentInBackgroundEnhanced(
         }
 
         // Save to database
-        if (validationResult.valid.length > 0 && ids.listingId) {
+        if (validationResult.valid.length > 0 && ids.listingId && ids.accountId) {
           const saveResult = await saveExtractedDataToDatabase(
             ids.propertyId,
             ids.listingId,
+            ids.accountId,
             validationResult.valid,
             confidenceThreshold,
           );

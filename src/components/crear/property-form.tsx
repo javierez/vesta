@@ -5,10 +5,10 @@ import { Card } from "~/components/ui/card";
 import { Loader, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { getListingDetails, getAllAgents } from "~/server/queries/listing";
+import { getListingDetailsWithAuth, getAllAgentsWithAuth } from "~/server/queries/listing";
 import {
-  getAllPotentialOwners,
-  getCurrentListingOwners,
+  getAllPotentialOwnersWithAuth,
+  getCurrentListingOwnersWithAuth,
 } from "~/server/queries/contact";
 import ProgressBar from "./progress-bar";
 import FirstPage from "./pages/first";
@@ -124,10 +124,10 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
         // Fetch all data in parallel for maximum speed
         const [listingDetails, agents, contacts, currentContacts] =
           await Promise.all([
-            getListingDetails(Number(listingId)),
-            getAllAgents(),
-            getAllPotentialOwners(),
-            getCurrentListingOwners(Number(listingId)),
+            getListingDetailsWithAuth(Number(listingId)),
+            getAllAgentsWithAuth(),
+            getAllPotentialOwnersWithAuth(),
+            getCurrentListingOwnersWithAuth(Number(listingId)),
           ]);
 
         // Set current step based on form position
@@ -168,8 +168,8 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   const refreshListingDetails = useCallback(async () => {
     try {
       const [updatedDetails, currentContacts] = await Promise.all([
-        getListingDetails(Number(listingId)),
-        getCurrentListingOwners(Number(listingId)),
+        getListingDetailsWithAuth(Number(listingId)),
+        getCurrentListingOwnersWithAuth(Number(listingId)),
       ]);
 
       setGlobalFormData((prev) => ({
@@ -185,18 +185,18 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
   }, [listingId]);
 
   // Sync currentStep with formPosition when listingDetails updates
-  useEffect(() => {
-    const listingDetails = globalFormData.listingDetails as {
-      formPosition?: number;
-    } | null;
-    if (listingDetails?.formPosition) {
-      const stepIndex = Math.max(
-        0,
-        Math.min((listingDetails.formPosition ?? 1) - 1, steps.length - 1),
-      );
-      setCurrentStep(stepIndex);
-    }
-  }, [globalFormData.listingDetails]);
+  // useEffect(() => {
+  //   const listingDetails = globalFormData.listingDetails as {
+  //     formPosition?: number;
+  //   } | null;
+  //   if (listingDetails?.formPosition) {
+  //     const stepIndex = Math.max(
+  //       0,
+  //       Math.min((listingDetails.formPosition ?? 1) - 1, steps.length - 1),
+  //     );
+  //     setCurrentStep(stepIndex);
+  //   }
+  // }, [globalFormData.listingDetails]);
 
   // Memoize skipped steps calculation
   const getSkippedSteps = useCallback((propertyType: string): number[] => {

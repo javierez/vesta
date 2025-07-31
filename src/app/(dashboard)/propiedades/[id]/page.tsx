@@ -3,7 +3,7 @@ import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-bre
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { PropertyTabs } from "~/components/propiedades/detail/property-tabs";
 import { getPropertyImages } from "~/server/queries/property_images";
-import { getListingDetails } from "~/server/queries/listing";
+import { getListingDetailsWithAuth } from "~/server/queries/listing";
 import { getEnergyCertificate } from "~/server/queries/document";
 import type { PropertyImage } from "~/lib/data";
 import { convertDbListingToPropertyListing } from "~/types/property-listing";
@@ -16,7 +16,7 @@ interface PropertyPageProps {
 
 export default async function PropertyPage({ params }: PropertyPageProps) {
   const unwrappedParams = await params;
-  const listing = await getListingDetails(parseInt(unwrappedParams.id));
+  const listing = await getListingDetailsWithAuth(parseInt(unwrappedParams.id));
 
   if (!listing) {
     notFound();

@@ -3,13 +3,6 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import {
   ChevronLeft,
   ChevronRight,
   Layout,
@@ -347,25 +340,17 @@ export default function EighthPage({
             <BedDouble className="h-4 w-4 text-gray-400" />
           </div>
           <div className="space-y-3">
-            <div className="space-y-1.5">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="builtInWardrobes"
+                checked={formData.builtInWardrobes}
+                onCheckedChange={(checked) =>
+                  updateFormData("builtInWardrobes", !!checked)
+                }
+              />
               <Label htmlFor="builtInWardrobes" className="text-sm">
                 Armarios empotrados
               </Label>
-              <Select
-                value={formData.builtInWardrobes ? "completo" : "ninguno"}
-                onValueChange={(value) =>
-                  updateFormData("builtInWardrobes", value === "completo")
-                }
-              >
-                <SelectTrigger className="h-8 text-gray-500">
-                  <SelectValue placeholder="Seleccionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ninguno">Ninguno</SelectItem>
-                  <SelectItem value="parcial">Parcial</SelectItem>
-                  <SelectItem value="completo">Completo</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </div>

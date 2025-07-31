@@ -211,12 +211,14 @@ Changes
 
 
 FIXES
-- Cliked state in Finalizar
-- Armarios empotrados
-- Código de invitación (non-mock)
-- Change design of 'Redirigiendo al dashboard'
+- Cliked state in Finalizar -- change the clicked state.
+- Armarios empotrados -- apparently fixed (to be checked)
+- Código de invitación (non-mock) -- apparently fixed (to be checked)
+- Change design of 'Redirigiendo al dashboard' -- change cliked state
+
+
 - Redirecting me to pages if I want to go quick: from first to second, to third, and so on.
-- Reduce barrios lenght
+
+- Reduce barrios lenght (admin task)
 
 VERIFICATIONS 
-- Form for solar/local/garaje

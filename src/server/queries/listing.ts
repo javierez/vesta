@@ -13,6 +13,52 @@ import { eq, and, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
+// Wrapper functions that automatically get accountId from current session
+// These maintain backward compatibility while adding account filtering
+
+export async function getListingByIdWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getListingById(listingId, accountId);
+}
+
+export async function listListingsWithAuth(page = 1, limit = 10, filters?: Parameters<typeof listListings>[3]) {
+  const accountId = await getCurrentUserAccountId();
+  return listListings(accountId, page, limit, filters);
+}
+
+export async function listListingsCompactWithAuth(filters?: Parameters<typeof listListingsCompact>[1]) {
+  const accountId = await getCurrentUserAccountId();
+  return listListingsCompact(accountId, filters);
+}
+
+export async function getAllAgentsWithAuth() {
+  const accountId = await getCurrentUserAccountId();
+  return getAllAgents(accountId);
+}
+
+export async function updateListingWithAuth(
+  listingId: number,
+  data: Parameters<typeof updateListing>[2]
+) {
+  const accountId = await getCurrentUserAccountId();
+  return updateListing(listingId, accountId, data);
+}
+
+export async function getListingDetailsWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getListingDetails(listingId, accountId);
+}
+
+export async function getDraftListingsWithAuth() {
+  const accountId = await getCurrentUserAccountId();
+  return getDraftListings(accountId);
+}
+
+export async function deleteDraftListingWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return deleteDraftListing(listingId, accountId);
+}
+
 // Create a new listing
 export async function createListing(
   data: Omit<Listing, "listingId" | "createdAt" | "updatedAt">,
@@ -77,7 +123,7 @@ export async function createListing(
 }
 
 // Get listing by ID
-export async function getListingById(listingId: number) {
+export async function getListingById(listingId: number, accountId: number) {
   try {
     const [listing] = await db
       .select()
@@ -85,6 +131,7 @@ export async function getListingById(listingId: number) {
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
           eq(listings.isActive, true),
         ),
       );
@@ -96,7 +143,7 @@ export async function getListingById(listingId: number) {
 }
 
 // Get listings by property ID
-export async function getListingsByPropertyId(propertyId: number) {
+export async function getListingsByPropertyId(propertyId: number, accountId: number) {
   try {
     const propertyListings = await db
       .select()
@@ -104,6 +151,7 @@ export async function getListingsByPropertyId(propertyId: number) {
       .where(
         and(
           eq(listings.propertyId, BigInt(propertyId)),
+          eq(listings.accountId, BigInt(accountId)),
           eq(listings.isActive, true),
         ),
       );
@@ -115,13 +163,17 @@ export async function getListingsByPropertyId(propertyId: number) {
 }
 
 // Get listings by agent ID
-export async function getListingsByAgentId(agentId: string) {
+export async function getListingsByAgentId(agentId: string, accountId: number) {
   try {
     const agentListings = await db
       .select()
       .from(listings)
       .where(
-        and(eq(listings.agentId, agentId), eq(listings.isActive, true)),
+        and(
+          eq(listings.agentId, agentId),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true)
+        ),
       );
     return agentListings;
   } catch (error) {
@@ -133,6 +185,7 @@ export async function getListingsByAgentId(agentId: string) {
 // Update listing
 export async function updateListing(
   listingId: number,
+  accountId: number,
   data: Omit<Partial<Listing>, "listingId" | "createdAt" | "updatedAt">,
 ) {
   try {
@@ -142,13 +195,19 @@ export async function updateListing(
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
           eq(listings.isActive, true),
         ),
       );
     const [updatedListing] = await db
       .select()
       .from(listings)
-      .where(eq(listings.listingId, BigInt(listingId)));
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId))
+        )
+      );
     return updatedListing;
   } catch (error) {
     console.error("Error updating listing:", error);
@@ -157,12 +216,17 @@ export async function updateListing(
 }
 
 // Soft delete listing (set isActive to false)
-export async function softDeleteListing(listingId: number) {
+export async function softDeleteListing(listingId: number, accountId: number) {
   try {
     await db
       .update(listings)
       .set({ isActive: false })
-      .where(eq(listings.listingId, BigInt(listingId)));
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId))
+        )
+      );
     return { success: true };
   } catch (error) {
     console.error("Error soft deleting listing:", error);
@@ -171,9 +235,14 @@ export async function softDeleteListing(listingId: number) {
 }
 
 // Hard delete listing (remove from database)
-export async function deleteListing(listingId: number) {
+export async function deleteListing(listingId: number, accountId: number) {
   try {
-    await db.delete(listings).where(eq(listings.listingId, BigInt(listingId)));
+    await db.delete(listings).where(
+      and(
+        eq(listings.listingId, BigInt(listingId)),
+        eq(listings.accountId, BigInt(accountId))
+      )
+    );
     return { success: true };
   } catch (error) {
     console.error("Error deleting listing:", error);
@@ -183,6 +252,7 @@ export async function deleteListing(listingId: number) {
 
 // List all listings (with pagination and optional filters)
 export async function listListings(
+  accountId: number,
   page = 1,
   limit = 10,
   filters?: {
@@ -337,8 +407,9 @@ export async function listListings(
       whereConditions.push(eq(listings.isActive, true));
     }
 
-    // Always filter for Active status listings
+    // Always filter for Active status listings and account
     whereConditions.push(eq(listings.status, "Active"));
+    whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
     // Create the base query with property, location, agent, and owner details
     const query = db
@@ -538,7 +609,7 @@ export async function listListings(
 }
 
 // Compact version of listListings for contact form - returns only essential fields
-export async function listListingsCompact(filters?: {
+export async function listListingsCompact(accountId: number, filters?: {
   status?: "Active" | "Pending" | "Sold";
   listingType?: "Sale" | "Rent";
   propertyType?: string[];
@@ -575,9 +646,10 @@ export async function listListingsCompact(filters?: {
       }
     }
 
-    // Always show active listings only
+    // Always show active listings only for this account
     whereConditions.push(eq(listings.isActive, true));
     whereConditions.push(eq(listings.status, "Active"));
+    whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
     // Create the compact query with only essential fields
     const query = db
@@ -640,8 +712,8 @@ export async function listListingsCompact(filters?: {
   }
 }
 
-// Get all active agents
-export async function getAllAgents() {
+// Get all active agents for an account
+export async function getAllAgents(accountId: number) {
   try {
     const agents = await db
       .select({
@@ -649,7 +721,12 @@ export async function getAllAgents() {
         name: users.name,
       })
       .from(users)
-      .where(eq(users.isActive, true))
+      .where(
+        and(
+          eq(users.accountId, BigInt(accountId)),
+          eq(users.isActive, true)
+        )
+      )
       .orderBy(users.name);
     
     return agents;
@@ -660,7 +737,7 @@ export async function getAllAgents() {
 }
 
 // Get detailed listing information including all related data
-export async function getListingDetails(listingId: number) {
+export async function getListingDetails(listingId: number, accountId: number) {
   try {
     const [listingDetails] = await db
       .select({
@@ -839,6 +916,7 @@ export async function getListingDetails(listingId: number) {
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
           eq(listings.isActive, true),
         ),
       );
@@ -887,7 +965,7 @@ export async function createDefaultListing(propertyId: number) {
 }
 
 // Get draft listings with property and location information
-export async function getDraftListings() {
+export async function getDraftListings(accountId: number) {
   try {
     const draftListings = await db
       .select({
@@ -901,7 +979,13 @@ export async function getDraftListings() {
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .where(and(eq(listings.status, "Draft"), eq(listings.isActive, true)))
+      .where(
+        and(
+          eq(listings.status, "Draft"),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true)
+        )
+      )
       .orderBy(listings.createdAt);
 
     return draftListings;
@@ -912,15 +996,16 @@ export async function getDraftListings() {
 }
 
 // Delete a draft listing
-export async function deleteDraftListing(listingId: number) {
+export async function deleteDraftListing(listingId: number, accountId: number) {
   try {
-    // First verify it's actually a draft
+    // First verify it's actually a draft and belongs to this account
     const [draft] = await db
       .select()
       .from(listings)
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
           eq(listings.status, "Draft"),
           eq(listings.isActive, true),
         ),
@@ -931,7 +1016,12 @@ export async function deleteDraftListing(listingId: number) {
     }
 
     // Delete the draft listing
-    await db.delete(listings).where(eq(listings.listingId, BigInt(listingId)));
+    await db.delete(listings).where(
+      and(
+        eq(listings.listingId, BigInt(listingId)),
+        eq(listings.accountId, BigInt(accountId))
+      )
+    );
 
     return { success: true, message: "Borrador eliminado correctamente" };
   } catch (error) {

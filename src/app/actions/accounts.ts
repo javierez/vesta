@@ -9,6 +9,7 @@ import {
   updateAccount as updateAccountQuery,
   deleteAccount as deleteAccountQuery,
   getAccountById as getAccountByIdQuery,
+  validateInvitationCode as validateInvitationCodeQuery,
 } from "~/server/queries/accounts";
 
 // Helper function to check superadmin access
@@ -76,4 +77,9 @@ export async function deleteAccount(accountId: number) {
 export async function getAccountById(accountId: number) {
   await checkSuperAdminAccess();
   return await getAccountByIdQuery(accountId);
+}
+
+// Validate invitation code (no auth required for signup)
+export async function validateInvitationCode(accountId: number) {
+  return await validateInvitationCodeQuery(accountId);
 }

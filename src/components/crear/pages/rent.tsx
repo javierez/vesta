@@ -10,10 +10,11 @@ import {
   Zap,
   Car,
   Package,
+  Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { updateProperty } from "~/server/queries/properties";
-import { createListing, updateListing } from "~/server/queries/listing";
+import { createListing, updateListingWithAuth } from "~/server/queries/listing";
 import { formFormatters } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
@@ -90,6 +91,7 @@ export default function RentPage({
   const [formData, setFormData] = useState<RentPageFormData>(initialFormData);
   const [propertyType, setPropertyType] = useState<string>("");
   const [isSaleListing, setIsSaleListing] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const updateFormData = (field: keyof RentPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -132,6 +134,9 @@ export default function RentPage({
   );
 
   const handleNext = () => {
+    // Prevent multiple submissions
+    if (isSubmitting) return;
+
     // Validate rental price if creating rental listing
     if (
       isSaleListing &&
@@ -141,6 +146,9 @@ export default function RentPage({
       alert("Por favor, introduce el precio del alquiler.");
       return;
     }
+
+    // Set submitting state
+    setIsSubmitting(true);
 
     // Navigate IMMEDIATELY (optimistic) - finish form instantly!
     if (globalFormData?.listingDetails?.listingId) {
@@ -171,7 +179,7 @@ export default function RentPage({
 
         // Update the sale listing status to 'Active'
         if (listingDetails.listingId) {
-          await updateListing(Number(listingDetails.listingId), {
+          await updateListingWithAuth(Number(listingDetails.listingId), {
             status: "Active",
             internet: formData.internet,
           });
@@ -463,12 +471,20 @@ export default function RentPage({
             </Button>
           </motion.div>
 
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <motion.div whileHover={{ scale: isSubmitting ? 1 : 1.02 }} whileTap={{ scale: isSubmitting ? 1 : 0.98 }}>
             <Button
               onClick={handleNext}
-              className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
+              disabled={isSubmitting}
+              className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed"
             >
-              <span>Finalizar</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Finalizando...</span>
+                </>
+              ) : (
+                <span>Finalizar</span>
+              )}
             </Button>
           </motion.div>
         </motion.div>
@@ -613,12 +629,20 @@ export default function RentPage({
           </Button>
         </motion.div>
 
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+        <motion.div whileHover={{ scale: isSubmitting ? 1 : 1.02 }} whileTap={{ scale: isSubmitting ? 1 : 0.98 }}>
           <Button
             onClick={handleNext}
-            className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
+            disabled={isSubmitting}
+            className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed"
           >
-            <span>Finalizar</span>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Finalizando...</span>
+              </>
+            ) : (
+              <span>Finalizar</span>
+            )}
           </Button>
         </motion.div>
       </motion.div>

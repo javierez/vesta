@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getDraftListings, deleteDraftListing } from "~/server/queries/listing";
+import { getDraftListingsWithAuth, deleteDraftListingWithAuth } from "~/server/queries/listing";
 import { Card, CardContent } from "~/components/ui/card";
 import {
   Table,
@@ -35,7 +35,7 @@ export default function BorradoresPage() {
     const fetchDraftListings = async () => {
       try {
         setLoading(true);
-        const listings = await getDraftListings();
+        const listings = await getDraftListingsWithAuth();
         setDraftListings(listings);
       } catch (err) {
         console.error("Error fetching draft listings:", err);
@@ -65,7 +65,7 @@ export default function BorradoresPage() {
 
     try {
       setDeletingId(listingId);
-      await deleteDraftListing(Number(listingId));
+      await deleteDraftListingWithAuth(Number(listingId));
 
       // Remove the deleted draft from the local state
       setDraftListings((prev) =>

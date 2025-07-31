@@ -4,6 +4,11 @@ import { db } from "../db";
 import { properties, propertyImages } from "../db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import type { Property, PropertyImage } from "../../lib/data";
+
+// Type for database property with correct boolean conversion
+type DbProperty = Omit<Property, 'builtInWardrobes'> & {
+  builtInWardrobes?: boolean;
+};
 import { retrieveCadastralData } from "../cadastral/retrieve_cadastral";
 import { createDefaultListing } from "./listing";
 import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
@@ -45,7 +50,7 @@ export async function generateReferenceNumber(): Promise<string> {
 // Create a new property
 export async function createProperty(
   data: Omit<
-    Property,
+    DbProperty,
     | "propertyId"
     | "accountId"
     | "createdAt"
@@ -125,7 +130,7 @@ export async function getPropertiesByFormPosition(formPosition: number) {
 export async function updateProperty(
   propertyId: number,
   data: Omit<
-    Partial<Property>,
+    Partial<DbProperty>,
     "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
   >,
 ) {
@@ -559,8 +564,8 @@ export async function updatePropertyLocation(
     await updateProperty(
       propertyId,
       updateData as Omit<
-        Partial<Property>,
-        "propertyId" | "createdAt" | "updatedAt"
+        Partial<DbProperty>,
+        "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
       >,
     );
 

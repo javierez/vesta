@@ -252,7 +252,7 @@ export const properties = singlestoreTable("properties", {
   buildingFloors: smallint("building_floors"),
 
   // Interior Features
-  builtInWardrobes: varchar("built_in_wardrobes", { length: 50 }),
+  builtInWardrobes: boolean("built_in_wardrobes").default(false),
   mainFloorType: varchar("main_floor_type", { length: 50 }),
   shutterType: varchar("shutter_type", { length: 50 }),
   carpentryType: varchar("carpentry_type", { length: 50 }),

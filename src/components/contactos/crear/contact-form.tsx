@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createContactWithListings } from "~/server/queries/contact";
-import { listListingsCompact } from "~/server/queries/listing";
+import { listListingsCompactWithAuth } from "~/server/queries/listing";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
@@ -136,7 +136,7 @@ export default function ContactForm() {
     const fetchListings = async () => {
       setIsLoadingListings(true);
       try {
-        const listingsData = await listListingsCompact();
+        const listingsData = await listListingsCompactWithAuth();
         setListings(listingsData);
       } catch (error) {
         console.error("Error fetching listings:", error);

@@ -9,7 +9,7 @@ import { PropertyFilter } from "~/components/propiedades/property-filter";
 import { PropertyTable } from "~/components/propiedades/property-table";
 import { PropertyGrid } from "~/components/propiedades/property-grid";
 import { NoResults } from "~/components/propiedades/no-results";
-import { listListings, getAllAgents } from "~/server/queries/listing";
+import { listListingsWithAuth, getAllAgentsWithAuth } from "~/server/queries/listing";
 import type { ListingOverview } from "~/types/listing";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -32,7 +32,7 @@ export default function PropertiesPage() {
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const allAgents = await getAllAgents();
+        const allAgents = await getAllAgentsWithAuth();
         setAgents(allAgents);
       } catch (error) {
         console.error("Error fetching agents:", error);
@@ -95,7 +95,7 @@ export default function PropertiesPage() {
           }
         }
 
-        const result = await listListings(page, ITEMS_PER_PAGE, filters);
+        const result = await listListingsWithAuth(page, ITEMS_PER_PAGE, filters);
 
         setListings(
           result.listings.map((listing) => ({

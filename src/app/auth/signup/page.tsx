@@ -16,6 +16,7 @@ import {
 import { signIn } from "~/lib/auth-client";
 import { AlertCircle, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { assignUserRole } from "~/app/actions/user-roles";
+import { validateInvitationCode } from "~/app/actions/accounts";
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -42,7 +43,7 @@ export default function SignUpPage() {
     }));
   };
 
-  const validateForm = () => {
+  const validateForm = async () => {
     if (!formData.firstName.trim()) {
       setError("El nombre es obligatorio");
       return false;
@@ -71,6 +72,25 @@ export default function SignUpPage() {
       setError("El código de invitación es obligatorio");
       return false;
     }
+
+    // Validate invitation code
+    const accountId = parseInt(formData.inviteCode);
+    if (isNaN(accountId)) {
+      setError("El código de invitación debe ser un número válido");
+      return false;
+    }
+
+    try {
+      const validation = await validateInvitationCode(accountId);
+      if (!validation.isValid) {
+        setError(validation.message);
+        return false;
+      }
+    } catch {
+      setError("Error al validar el código de invitación");
+      return false;
+    }
+
     return true;
   };
 
@@ -79,7 +99,7 @@ export default function SignUpPage() {
     setIsLoading(true);
     setError("");
 
-    if (!validateForm()) {
+    if (!(await validateForm())) {
       setIsLoading(false);
       return;
     }

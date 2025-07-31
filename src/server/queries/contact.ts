@@ -14,6 +14,93 @@ import { listingContacts } from "../db/schema";
 import { prospectUtils } from "../../lib/utils";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
+// Wrapper functions that automatically get accountId from current session
+// These maintain backward compatibility while adding account filtering
+
+export async function getContactByIdWithAuth(contactId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getContactById(contactId, accountId);
+}
+
+export async function getContactsByOrgIdWithAuth(orgId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getContactsByOrgId(orgId, accountId);
+}
+
+export async function searchContactsWithAuth(query: string) {
+  const accountId = await getCurrentUserAccountId();
+  return searchContacts(query, accountId);
+}
+
+export async function updateContactWithAuth(
+  contactId: number,
+  data: Parameters<typeof updateContact>[2]
+) {
+  const accountId = await getCurrentUserAccountId();
+  return updateContact(contactId, accountId, data);
+}
+
+export async function softDeleteContactWithAuth(contactId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return softDeleteContact(contactId, accountId);
+}
+
+export async function deleteContactWithAuth(contactId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return deleteContact(contactId, accountId);
+}
+
+export async function listContactsWithTypesWithAuth(
+  page = 1,
+  limit = 100,
+  filters?: Parameters<typeof listContactsWithTypes>[3]
+) {
+  const accountId = await getCurrentUserAccountId();
+  return listContactsWithTypes(accountId, page, limit, filters);
+}
+
+export async function listContactsWithAuth(
+  page = 1,
+  limit = 10,
+  filters?: Parameters<typeof listContacts>[3]
+) {
+  const accountId = await getCurrentUserAccountId();
+  return listContacts(accountId, page, limit, filters);
+}
+
+export async function getAllPotentialOwnersWithAuth() {
+  const accountId = await getCurrentUserAccountId();
+  return getAllPotentialOwners(accountId);
+}
+
+export async function getCurrentListingOwnersWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getCurrentListingOwners(listingId, accountId);
+}
+
+export async function updateListingOwnersWithAuth(
+  listingId: number,
+  ownerIds: number[]
+) {
+  const accountId = await getCurrentUserAccountId();
+  return updateListingOwners(listingId, ownerIds, accountId);
+}
+
+export async function getContactByIdWithTypeWithAuth(contactId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getContactByIdWithType(contactId, accountId);
+}
+
+export async function getListingsByContactWithAuth(contactId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getListingsByContact(contactId, accountId);
+}
+
+export async function getListingsByContactAsBuyerWithAuth(contactId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getListingsByContactAsBuyer(contactId, accountId);
+}
+
 // Helper function to get preferred area from prospect data
 type PreferredArea = { neighborhoodId?: number | string; name?: string };
 type ProspectWithPreferredAreas = { preferredAreas?: string | PreferredArea[] };
@@ -175,7 +262,7 @@ export async function createContactWithListings(
 }
 
 // Get contact by ID
-export async function getContactById(contactId: number) {
+export async function getContactById(contactId: number, accountId: number) {
   try {
     const [contact] = await db
       .select()
@@ -183,6 +270,7 @@ export async function getContactById(contactId: number) {
       .where(
         and(
           eq(contacts.contactId, BigInt(contactId)),
+          eq(contacts.accountId, BigInt(accountId)),
           eq(contacts.isActive, true),
         ),
       );
@@ -194,13 +282,17 @@ export async function getContactById(contactId: number) {
 }
 
 // Get contacts by organization ID
-export async function getContactsByOrgId(orgId: number) {
+export async function getContactsByOrgId(orgId: number, accountId: number) {
   try {
     const orgContacts = await db
       .select()
       .from(contacts)
       .where(
-        and(eq(contacts.orgId, BigInt(orgId)), eq(contacts.isActive, true)),
+        and(
+          eq(contacts.orgId, BigInt(orgId)),
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true)
+        ),
       );
     return orgContacts;
   } catch (error) {
@@ -210,13 +302,14 @@ export async function getContactsByOrgId(orgId: number) {
 }
 
 // Search contacts by name or email
-export async function searchContacts(query: string) {
+export async function searchContacts(query: string, accountId: number) {
   try {
     const searchResults = await db
       .select()
       .from(contacts)
       .where(
         and(
+          eq(contacts.accountId, BigInt(accountId)),
           eq(contacts.isActive, true),
           or(
             like(contacts.firstName, `%${query}%`),
@@ -235,6 +328,7 @@ export async function searchContacts(query: string) {
 // Update contact
 export async function updateContact(
   contactId: number,
+  accountId: number,
   data: Omit<Partial<Contact>, "contactId" | "createdAt" | "updatedAt">,
 ) {
   try {
@@ -244,13 +338,19 @@ export async function updateContact(
       .where(
         and(
           eq(contacts.contactId, BigInt(contactId)),
+          eq(contacts.accountId, BigInt(accountId)),
           eq(contacts.isActive, true),
         ),
       );
     const [updatedContact] = await db
       .select()
       .from(contacts)
-      .where(eq(contacts.contactId, BigInt(contactId)));
+      .where(
+        and(
+          eq(contacts.contactId, BigInt(contactId)),
+          eq(contacts.accountId, BigInt(accountId))
+        )
+      );
     return updatedContact;
   } catch (error) {
     console.error("Error updating contact:", error);
@@ -259,12 +359,17 @@ export async function updateContact(
 }
 
 // Soft delete contact (set isActive to false)
-export async function softDeleteContact(contactId: number) {
+export async function softDeleteContact(contactId: number, accountId: number) {
   try {
     await db
       .update(contacts)
       .set({ isActive: false })
-      .where(eq(contacts.contactId, BigInt(contactId)));
+      .where(
+        and(
+          eq(contacts.contactId, BigInt(contactId)),
+          eq(contacts.accountId, BigInt(accountId))
+        )
+      );
     return { success: true };
   } catch (error) {
     console.error("Error soft deleting contact:", error);
@@ -273,9 +378,14 @@ export async function softDeleteContact(contactId: number) {
 }
 
 // Hard delete contact (remove from database)
-export async function deleteContact(contactId: number) {
+export async function deleteContact(contactId: number, accountId: number) {
   try {
-    await db.delete(contacts).where(eq(contacts.contactId, BigInt(contactId)));
+    await db.delete(contacts).where(
+      and(
+        eq(contacts.contactId, BigInt(contactId)),
+        eq(contacts.accountId, BigInt(accountId))
+      )
+    );
     return { success: true };
   } catch (error) {
     console.error("Error deleting contact:", error);
@@ -285,6 +395,7 @@ export async function deleteContact(contactId: number) {
 
 // List all contact-listing relationships (each contact can appear multiple times)
 export async function listContactsWithTypes(
+  accountId: number,
   page = 1,
   limit = 100,
   filters?: {
@@ -321,6 +432,9 @@ export async function listContactsWithTypes(
       // By default, only show active contacts
       whereConditions.push(eq(contacts.isActive, true));
     }
+    
+    // Always filter by account
+    whereConditions.push(eq(contacts.accountId, BigInt(accountId)));
 
     // Get unique contacts with calculated role counts using LEFT JOINs and GROUP BY
     const uniqueContacts = await db
@@ -592,6 +706,7 @@ export async function listContactsWithTypes(
 
 // List all contacts (with pagination and optional filters)
 export async function listContacts(
+  accountId: number,
   page = 1,
   limit = 10,
   filters?: {
@@ -615,6 +730,9 @@ export async function listContacts(
       // By default, only show active contacts
       whereConditions.push(eq(contacts.isActive, true));
     }
+    
+    // Always filter by account
+    whereConditions.push(eq(contacts.accountId, BigInt(accountId)));
 
     // Create the base query
     const query = db.select().from(contacts);
@@ -634,7 +752,7 @@ export async function listContacts(
 }
 
 // Get all potential owners (active contacts)
-export async function getAllPotentialOwners() {
+export async function getAllPotentialOwners(accountId: number) {
   try {
     const owners = await db
       .select({
@@ -642,7 +760,12 @@ export async function getAllPotentialOwners() {
         name: sql<string>`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
       })
       .from(contacts)
-      .where(and(eq(contacts.isActive, true)))
+      .where(
+        and(
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true)
+        )
+      )
       .orderBy(sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`);
 
     return owners;
@@ -653,7 +776,7 @@ export async function getAllPotentialOwners() {
 }
 
 // Get current owners for a specific listing
-export async function getCurrentListingOwners(listingId: number) {
+export async function getCurrentListingOwners(listingId: number, accountId: number) {
   try {
     const owners = await db
       .select({
@@ -667,6 +790,7 @@ export async function getCurrentListingOwners(listingId: number) {
           eq(listingContacts.listingId, BigInt(listingId)),
           eq(listingContacts.contactType, "owner"),
           eq(listingContacts.isActive, true),
+          eq(contacts.accountId, BigInt(accountId)),
           eq(contacts.isActive, true),
         ),
       )
@@ -683,9 +807,26 @@ export async function getCurrentListingOwners(listingId: number) {
 export async function updateListingOwners(
   listingId: number,
   ownerIds: number[],
+  accountId: number,
 ) {
   try {
-    // First, deactivate all existing owner relationships for this listing
+    // First, verify the listing belongs to this account
+    const [listing] = await db
+      .select({ listingId: listings.listingId })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true)
+        )
+      );
+    
+    if (!listing) {
+      throw new Error("Listing not found or access denied");
+    }
+
+    // Deactivate all existing owner relationships for this listing
     await db
       .update(listingContacts)
       .set({ isActive: false })
@@ -716,7 +857,7 @@ export async function updateListingOwners(
 }
 
 // Get contact by ID with type information for display
-export async function getContactByIdWithType(contactId: number) {
+export async function getContactByIdWithType(contactId: number, accountId: number) {
   try {
     // First, get the basic contact information
     const [contact] = await db
@@ -736,6 +877,7 @@ export async function getContactByIdWithType(contactId: number) {
       .where(
         and(
           eq(contacts.contactId, BigInt(contactId)),
+          eq(contacts.accountId, BigInt(accountId)),
           eq(contacts.isActive, true),
         ),
       );
@@ -824,7 +966,7 @@ export async function getContactByIdWithType(contactId: number) {
 }
 
 // Get listings associated with a specific contact (owner)
-export async function getListingsByContact(contactId: number) {
+export async function getListingsByContact(contactId: number, accountId: number) {
   try {
     const contactListings = await db
       .select({
@@ -877,6 +1019,7 @@ export async function getListingsByContact(contactId: number) {
           eq(listingContacts.contactId, BigInt(contactId)),
           eq(listingContacts.contactType, "owner"),
           eq(listingContacts.isActive, true),
+          eq(listings.accountId, BigInt(accountId)),
         ),
       )
       .orderBy(listings.createdAt);
@@ -889,7 +1032,7 @@ export async function getListingsByContact(contactId: number) {
 }
 
 // Get listings associated with a specific contact (buyer)
-export async function getListingsByContactAsBuyer(contactId: number) {
+export async function getListingsByContactAsBuyer(contactId: number, accountId: number) {
   try {
     const contactListings = await db
       .select({
@@ -981,6 +1124,7 @@ export async function getListingsByContactAsBuyer(contactId: number) {
           eq(listingContacts.contactId, BigInt(contactId)),
           eq(listingContacts.contactType, "buyer"),
           eq(listingContacts.isActive, true),
+          eq(listings.accountId, BigInt(accountId)),
         ),
       )
       .orderBy(listings.createdAt);

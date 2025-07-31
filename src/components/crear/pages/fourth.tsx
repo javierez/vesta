@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { updateProperty } from "~/server/queries/properties";
-import { updateListing } from "~/server/queries/listing";
+import { updateListingWithAuth } from "~/server/queries/listing";
 import { formFormatters } from "~/lib/utils";
 import FormSkeleton from "./form-skeleton";
 
@@ -305,7 +305,7 @@ export default function FourthPage({
           : Promise.resolve(),
 
         // Update listing with optional prices and furniture data
-        updateListing(Number(listingId), {
+        updateListingWithAuth(Number(listingId), {
           optionalGaragePrice: formData.hasGarage
             ? Math.round(formData.optionalGaragePrice).toString()
             : "0",

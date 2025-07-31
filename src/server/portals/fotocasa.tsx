@@ -1,6 +1,6 @@
 "use server";
 
-import { getListingDetails } from "../queries/listing";
+import { getListingDetailsWithAuth } from "../queries/listing";
 import { getPropertyImages } from "../queries/property_images";
 import { env } from "~/env";
 
@@ -140,7 +140,7 @@ export async function buildFotocasaPayload(
 ): Promise<FotocasaProperty> {
   try {
     // Get listing details and property images
-    const listing = await getListingDetails(listingId);
+    const listing = await getListingDetailsWithAuth(listingId);
     const images = await getPropertyImages(listing.propertyId);
 
     // Extract floor number from addressDetails (get second number if exists)

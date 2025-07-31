@@ -15,11 +15,11 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { Building2, ChevronDown, Loader2, MoreVertical } from "lucide-react";
-import { getAllAgents } from "~/server/queries/listing";
+import { getAllAgentsWithAuth } from "~/server/queries/listing";
 import {
-  getAllPotentialOwners,
-  getCurrentListingOwners,
-  updateListingOwners,
+  getAllPotentialOwnersWithAuth,
+  getCurrentListingOwnersWithAuth,
+  updateListingOwnersWithAuth,
 } from "~/server/queries/contact";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Textarea } from "~/components/ui/textarea";
@@ -28,7 +28,7 @@ import { PropertyCharacteristicsFormSolar } from "./property-characteristics-for
 import { PropertyCharacteristicsFormLocal } from "./property-characteristics-form-local";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProperty } from "~/server/queries/properties";
-import { updateListing } from "~/server/queries/listing";
+import { updateListingWithAuth } from "~/server/queries/listing";
 import { toast } from "sonner";
 import { PropertyTitle } from "./common/property-title";
 import { ModernSaveIndicator } from "./common/modern-save-indicator";
@@ -322,7 +322,7 @@ export function PropertyCharacteristicsForm({
           };
 
           // Update owner relationships separately
-          await updateListingOwners(
+          await updateListingOwnersWithAuth(
             listingId,
             selectedOwnerIds.map((id) => Number(id)),
           );
@@ -430,7 +430,7 @@ export function PropertyCharacteristicsForm({
 
       // Update listing if there's listing data
       if (Object.keys(listingData).length > 0) {
-        await updateListing(listingId, listingData);
+        await updateListingWithAuth(listingId, listingData);
       }
 
       setModuleStates((prev) => {
@@ -599,8 +599,8 @@ export function PropertyCharacteristicsForm({
   const [buildingFloors, setBuildingFloors] = useState(
     listing.buildingFloors ?? 0,
   );
-  const [builtInWardrobes, setBuiltInWardrobes] = useState(
-    listing.builtInWardrobes ?? "",
+  const [builtInWardrobes, setBuiltInWardrobes] = useState<boolean>(
+    Boolean(listing.builtInWardrobes) ?? false,
   );
   const [mainFloorType, setMainFloorType] = useState(
     listing.mainFloorType ?? "",
@@ -707,7 +707,7 @@ export function PropertyCharacteristicsForm({
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const agentsList = await getAllAgents();
+        const agentsList = await getAllAgentsWithAuth();
         setAgents(
           agentsList.map((agent) => ({
             id: agent.id, // Keep as string
@@ -725,7 +725,7 @@ export function PropertyCharacteristicsForm({
     const fetchOwners = async () => {
       try {
         // Get all potential owners for the dropdown
-        const potentialOwners = await getAllPotentialOwners();
+        const potentialOwners = await getAllPotentialOwnersWithAuth();
         setOwners(
           potentialOwners.map((owner) => ({
             id: Number(owner.id),
@@ -735,7 +735,7 @@ export function PropertyCharacteristicsForm({
 
         // Get current owners for this listing
         if (listing.listingId) {
-          const currentOwners = await getCurrentListingOwners(
+          const currentOwners = await getCurrentListingOwnersWithAuth(
             Number(listing.listingId),
           );
           setSelectedOwnerIds(
@@ -2975,26 +2975,18 @@ export function PropertyCharacteristicsForm({
                     <h4 className="text-xs font-medium text-muted-foreground">
                       Empotrados
                     </h4>
-                    <div className="space-y-1.5">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="builtInWardrobes"
+                        checked={builtInWardrobes}
+                        onCheckedChange={(checked) => {
+                          setBuiltInWardrobes(!!checked);
+                          updateModuleState("additionalSpaces", true);
+                        }}
+                      />
                       <Label htmlFor="builtInWardrobes" className="text-sm">
                         Armarios empotrados
                       </Label>
-                      <Select
-                        value={builtInWardrobes}
-                        onValueChange={(value) => {
-                          setBuiltInWardrobes(value);
-                          updateModuleState("additionalSpaces", true);
-                        }}
-                      >
-                        <SelectTrigger className="h-8 text-gray-500">
-                          <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ninguno">Ninguno</SelectItem>
-                          <SelectItem value="parcial">Parcial</SelectItem>
-                          <SelectItem value="completo">Completo</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                 </div>

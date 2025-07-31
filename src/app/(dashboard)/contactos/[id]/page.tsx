@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getContactByIdWithType } from "~/server/queries/contact";
+import { getContactByIdWithTypeWithAuth } from "~/server/queries/contact";
 import { ContactDetailLayout } from "~/components/contactos/detail/contact-detail-layout";
 import type { Contact } from "~/lib/data";
 
@@ -51,7 +51,7 @@ interface ExtendedContact {
 export default async function ContactPage({ params }: ContactPageProps) {
   try {
     const unwrappedParams = await params;
-    const contact = await getContactByIdWithType(parseInt(unwrappedParams.id));
+    const contact = await getContactByIdWithTypeWithAuth(parseInt(unwrappedParams.id));
 
     if (!contact) {
       notFound();

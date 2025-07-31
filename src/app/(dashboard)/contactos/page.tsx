@@ -8,7 +8,7 @@ import { useSearchParams } from "next/navigation";
 
 import { ContactFilter } from "~/components/contactos/table-components/contact-filter";
 import { ContactSpreadsheetTable } from "~/components/contactos/table/contact-table";
-import { listContactsWithTypes } from "~/server/queries/contact";
+import { listContactsWithTypesWithAuth } from "~/server/queries/contact";
 import type { Contact } from "~/lib/data";
 
 // Extended Contact type to include contactType for the UI
@@ -85,7 +85,7 @@ export default function ContactsPage() {
         const filters = getFiltersFromUrl();
 
         // Fetch contacts from the database with filters
-        const rawContacts = await listContactsWithTypes(1, 100, {
+        const rawContacts = await listContactsWithTypesWithAuth(1, 100, {
           searchQuery: filters.searchQuery,
           roles: filters.roles,
           lastContactFilter: filters.lastContactFilter,
