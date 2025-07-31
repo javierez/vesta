@@ -100,7 +100,6 @@ export default function PropertiesPage() {
         setListings(
           result.listings.map((listing) => ({
             ...listing,
-            ownerName: listing.owner,
             // Ensure listingType is cast to ListingType union
             listingType: listing.listingType as ListingOverview["listingType"],
           })),

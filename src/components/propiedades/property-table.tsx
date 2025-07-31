@@ -48,7 +48,7 @@ const statusColors: Record<string, string> = {
   Sold: "bg-slate-50 text-slate-700 border-slate-200",
 };
 
-export function PropertyTable({ listings }: PropertyTableProps) {
+export const PropertyTable = React.memo(function PropertyTable({ listings }: PropertyTableProps) {
   const router = useRouter();
   const defaultPlaceholder = "/properties/suburban-dream.png";
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
@@ -308,4 +308,4 @@ export function PropertyTable({ listings }: PropertyTableProps) {
       </div>
     </div>
   );
-}
+})

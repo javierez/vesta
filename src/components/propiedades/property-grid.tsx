@@ -1,4 +1,5 @@
 
+import React from "react"
 import { PropertyCard } from "~/components/property-card"
 import { PaginationControls } from "~/components/ui/pagination-controls"
 import type { ListingOverview } from "~/types/listing"
@@ -10,7 +11,7 @@ interface PropertyGridProps {
   onPageChange: (page: number) => void
 }
 
-export function PropertyGrid({ 
+export const PropertyGrid = React.memo(function PropertyGrid({ 
   listings, 
   currentPage, 
   totalPages, 
@@ -34,4 +35,4 @@ export function PropertyGrid({
       />
     </>
   )
-}
+})

@@ -411,10 +411,10 @@ export async function listListings(
     whereConditions.push(eq(listings.status, "Active"));
     whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
-    // Create the base query with property, location, agent, and owner details
+    // Create optimized query with only essential fields for list views
     const query = db
       .select({
-        // Listing fields
+        // Essential listing fields
         listingId: listings.listingId,
         propertyId: listings.propertyId,
         agentId: listings.agentId,
@@ -425,63 +425,26 @@ export async function listListings(
         isActive: listings.isActive,
         isFeatured: listings.isFeatured,
         isBankOwned: listings.isBankOwned,
-        visibilityMode: listings.visibilityMode,
         viewCount: listings.viewCount,
         inquiryCount: listings.inquiryCount,
 
-        // Appliance fields
-        isFurnished: listings.isFurnished,
-        furnitureQuality: listings.furnitureQuality,
-        optionalGarage: listings.optionalGarage,
-        optionalGaragePrice: listings.optionalGaragePrice,
-        optionalStorageRoom: listings.optionalStorageRoom,
-        optionalStorageRoomPrice: listings.optionalStorageRoomPrice,
-        hasKeys: listings.hasKeys,
-        studentFriendly: listings.studentFriendly,
-        petsAllowed: listings.petsAllowed,
-        appliancesIncluded: listings.appliancesIncluded,
-        internet: listings.internet,
-        oven: listings.oven,
-        microwave: listings.microwave,
-        washingMachine: listings.washingMachine,
-        fridge: listings.fridge,
-        tv: listings.tv,
-        stoneware: listings.stoneware,
-        fotocasa: listings.fotocasa,
-        idealista: listings.idealista,
-        habitaclia: listings.habitaclia,
-        pisoscom: listings.pisoscom,
-        yaencontre: listings.yaencontre,
-        milanuncios: listings.milanuncios,
-
-        // Property fields
+        // Essential property fields for display
         referenceNumber: properties.referenceNumber,
         title: properties.title,
-        description: properties.description,
         propertyType: properties.propertyType,
-        propertySubtype: properties.propertySubtype,
-        formPosition: properties.formPosition,
         bedrooms: properties.bedrooms,
         bathrooms: properties.bathrooms,
         squareMeter: properties.squareMeter,
-        yearBuilt: properties.yearBuilt,
-        cadastralReference: properties.cadastralReference,
-        builtSurfaceArea: properties.builtSurfaceArea,
         street: properties.street,
         addressDetails: properties.addressDetails,
         postalCode: properties.postalCode,
         latitude: properties.latitude,
         longitude: properties.longitude,
-
-        // Property amenity fields
-        gym: properties.gym,
-        sportsArea: properties.sportsArea,
-        childrenArea: properties.childrenArea,
-        suiteBathroom: properties.suiteBathroom,
-        nearbyPublicTransport: properties.nearbyPublicTransport,
-        communityPool: properties.communityPool,
-        privatePool: properties.privatePool,
-        tennisCourt: properties.tennisCourt,
+        
+        // Basic amenities for card display
+        hasGarage: properties.hasGarage,
+        hasElevator: properties.hasElevator,
+        hasStorageRoom: properties.hasStorageRoom,
 
         // Location fields
         city: locations.city,
@@ -524,19 +487,8 @@ export async function listListings(
           LIMIT 1
         )`,
 
-        // Agent information
-        agent: {
-          id: users.id,
-          name: users.name,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          email: users.email,
-          phone: users.phone,
-          image: users.image,
-        },
-
         // Owner information (just full name)
-        owner: sql<string>`(
+        ownerName: sql<string>`(
           SELECT CONCAT(c.first_name, ' ', c.last_name)
           FROM listing_contacts lc
           JOIN contacts c ON lc.contact_id = c.contact_id

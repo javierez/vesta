@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
@@ -60,7 +60,7 @@ interface PropertyCardProps {
   listing: Listing;
 }
 
-export function PropertyCard({ listing }: PropertyCardProps) {
+export const PropertyCard = React.memo(function PropertyCard({ listing }: PropertyCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [image2Loaded, setImage2Loaded] = useState(false);
@@ -91,21 +91,11 @@ export function PropertyCard({ listing }: PropertyCardProps) {
     listing.imageUrl2 ?? defaultPlaceholder,
   );
 
-  // Debug: Log the image URLs
-  useEffect(() => {
-    console.log("Image URL 1:", listing.imageUrl);
-    console.log("Image URL 2:", listing.imageUrl2);
-    console.log("Current src 1:", imageSrc);
-    console.log("Current src 2:", imageSrc2);
-  }, [listing.imageUrl, listing.imageUrl2, imageSrc, imageSrc2]);
-
   const onImageError = () => {
-    console.log("Image failed to load:", imageSrc);
     setImageSrc(defaultPlaceholder);
   };
 
   const onImage2Error = () => {
-    console.log("Image 2 failed to load:", imageSrc2);
     setImageSrc2(defaultPlaceholder);
   };
 
@@ -261,4 +251,4 @@ export function PropertyCard({ listing }: PropertyCardProps) {
       </Card>
     </Link>
   );
-}
+})

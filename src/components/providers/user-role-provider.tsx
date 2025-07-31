@@ -40,44 +40,29 @@ export function UserRoleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function fetchEnrichedSession() {
-      if (!session?.user?.id) {
+      const userId = session?.user?.id;
+      if (!userId) {
         setLoading(false);
         return;
       }
 
       try {
-        // Try both endpoints for maximum compatibility
-        const [enrichedResponse, legacyResponse] = await Promise.all([
-          fetch("/api/auth/enriched-session"),
-          fetch(`/api/user-roles/${session.user.id}`)
-        ]);
-        
-        console.log("API responses:", {
-          enrichedStatus: enrichedResponse.status,
-          legacyStatus: legacyResponse.status
-        });
+        // Only fetch legacy roles API - enriched session is handled by middleware
+        const legacyResponse = await fetch(`/api/user-roles/${userId}`);
         
         // Handle legacy roles API
         if (legacyResponse.ok) {
           const roles = await legacyResponse.json() as { roleId: string }[];
           const roleIds = roles.map((role) => Number(role.roleId));
           setLegacyRoles(roleIds);
-          console.log("Legacy role IDs:", roleIds);
         }
         
-        // Handle enriched session
-        if (enrichedResponse.ok) {
-          const enrichedData = await enrichedResponse.json() as EnrichedSession;
-          console.log("Enriched session data:", enrichedData);
-          setEnrichedSession(enrichedData);
-        } else {
-          const errorData = await enrichedResponse.json() as { error?: string };
-          console.error("Enriched session error:", errorData);
-          // Fallback to basic session if enriched session fails
-          if (session) setEnrichedSession(session as EnrichedSession);
+        // Use basic session as enriched session
+        if (session) {
+          setEnrichedSession(session as EnrichedSession);
         }
       } catch (error) {
-        console.error("Error fetching session data:", error);
+        console.error("Error fetching user roles:", error);
         // Fallback to basic session
         if (session) setEnrichedSession(session as EnrichedSession);
       } finally {
@@ -86,7 +71,8 @@ export function UserRoleProvider({ children }: { children: ReactNode }) {
     }
 
     void fetchEnrichedSession();
-  }, [session]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id]); // Only depend on user ID, not entire session object
 
   // Role checking functions
   const hasRole = (roleName: string) => 
