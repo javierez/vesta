@@ -68,10 +68,6 @@ export async function middleware(request: NextRequest) {
       "x-user-account-id",
       session.user.accountId?.toString() ?? "",
     );
-    requestHeaders.set(
-      "x-user-name",
-      `${session.user.firstName ?? ""} ${session.user.lastName ?? ""}`.trim(),
-    );
 
     // Add roles and permissions to headers if available
     if (session.user.roles) {
