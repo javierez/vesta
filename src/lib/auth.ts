@@ -170,6 +170,14 @@ export const auth = betterAuth({
     window: 60, // 1 minute window
     max: 5, // max 5 attempts
   },
+
+  // Trusted origins for CORS
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://v0-vesta-eight.vercel.app",
+    ...(process.env.APP_URL ? [process.env.APP_URL] : []),
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+  ],
 });
 
 /**
