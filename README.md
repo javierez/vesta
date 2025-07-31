@@ -222,7 +222,13 @@ FIXES
 - After I click on @property-identification-form on siguiente (once is ready). It has like a clicked state where it says cargando or something like that. But between that and before the property-form is reached, there is some time where I don't have anything and I would be able to click on finish again.
 - Authentication with Google 
 - Authentication in general
-
+- 
 - Reduce barrios lenght (admin task)
+-
 
-VERIFICATIONS 
+OPTIMIZATIONS
+- Concurrent data fethcing: contacts, listings, etc.
+- Query Optimization: reduced queries
+- Middleware caching: 2 minute cache for auth session validation
+- Data Caching: when needed 
+
