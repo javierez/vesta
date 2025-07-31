@@ -50,6 +50,8 @@ export function getPermissionsForRoles(roleNames: string[]): Permission[] {
 }
 
 export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL,
   database: drizzleAdapter(db, {
     provider: "mysql", // SingleStore is MySQL compatible
     schema: {
