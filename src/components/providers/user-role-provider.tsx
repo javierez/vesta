@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { useSession } from "~/lib/auth-client";
 import type { Permission } from "~/lib/permissions";
 
@@ -30,11 +36,14 @@ interface UserRoleContextType {
   session: EnrichedSession | null;
 }
 
-const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined);
+const UserRoleContext = createContext<UserRoleContextType | undefined>(
+  undefined,
+);
 
 export function UserRoleProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = useSession();
-  const [enrichedSession, setEnrichedSession] = useState<EnrichedSession | null>(null);
+  const [enrichedSession, setEnrichedSession] =
+    useState<EnrichedSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [legacyRoles, setLegacyRoles] = useState<number[]>([]);
 
@@ -49,14 +58,14 @@ export function UserRoleProvider({ children }: { children: ReactNode }) {
       try {
         // Only fetch legacy roles API - enriched session is handled by middleware
         const legacyResponse = await fetch(`/api/user-roles/${userId}`);
-        
+
         // Handle legacy roles API
         if (legacyResponse.ok) {
-          const roles = await legacyResponse.json() as { roleId: string }[];
+          const roles = (await legacyResponse.json()) as { roleId: string }[];
           const roleIds = roles.map((role) => Number(role.roleId));
           setLegacyRoles(roleIds);
         }
-        
+
         // Use basic session as enriched session
         if (session) {
           setEnrichedSession(session as EnrichedSession);
@@ -75,29 +84,29 @@ export function UserRoleProvider({ children }: { children: ReactNode }) {
   }, [session?.user?.id]); // Only depend on user ID, not entire session object
 
   // Role checking functions
-  const hasRole = (roleName: string) => 
+  const hasRole = (roleName: string) =>
     enrichedSession?.user?.roles?.includes(roleName) ?? false;
-  
-  const hasPermission = (permission: Permission) => 
+
+  const hasPermission = (permission: Permission) =>
     enrichedSession?.user?.permissions?.includes(permission) ?? false;
-  
-  const hasAnyPermission = (permissions: Permission[]) => 
-    permissions.some(permission => hasPermission(permission));
-  
-  const hasAllPermissions = (permissions: Permission[]) => 
-    permissions.every(permission => hasPermission(permission));
+
+  const hasAnyPermission = (permissions: Permission[]) =>
+    permissions.some((permission) => hasPermission(permission));
+
+  const hasAllPermissions = (permissions: Permission[]) =>
+    permissions.every((permission) => hasPermission(permission));
 
   const isAdmin = () => hasRole("admin");
   const isAgent = () => hasRole("agent");
   const isViewer = () => hasRole("viewer");
-  
+
   // Specific role ID checking (as requested by user)
   const hasRoleId = (roleId: number) => {
     // First check legacy roles directly
     if (legacyRoles.includes(roleId)) {
       return true;
     }
-    
+
     // Then check mapped role names
     // Since role ID 2 maps to "agent" in the database seed data
     if (roleId === 2) {
@@ -125,17 +134,21 @@ export function UserRoleProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isAgent,
     isViewer,
-    
-    // Legacy compatibility  
+
+    // Legacy compatibility
     userRoles,
     isSuperAdmin,
     hasRoleId,
-    
+
     loading: isPending || loading,
     session: enrichedSession,
   };
 
-  return <UserRoleContext.Provider value={value}>{children}</UserRoleContext.Provider>;
+  return (
+    <UserRoleContext.Provider value={value}>
+      {children}
+    </UserRoleContext.Provider>
+  );
 }
 
 export function useUserRole() {

@@ -10,7 +10,7 @@ export async function assignUserRole(userId: string, roleId: number) {
       roleId: BigInt(roleId),
       isActive: true,
     });
-    
+
     return { success: true };
   } catch (error) {
     console.error("❌ Failed to assign user role:", error);
@@ -33,12 +33,14 @@ export async function getUserRoles(userId: string) {
       })
       .from(userRoles)
       .innerJoin(roles, eq(userRoles.roleId, roles.roleId))
-      .where(and(
-        eq(userRoles.userId, userId),
-        eq(userRoles.isActive, true),
-        eq(roles.isActive, true)
-      ));
-    
+      .where(
+        and(
+          eq(userRoles.userId, userId),
+          eq(userRoles.isActive, true),
+          eq(roles.isActive, true),
+        ),
+      );
+
     return userRolesList;
   } catch (error) {
     console.error("Error fetching user roles:", error);
@@ -47,17 +49,22 @@ export async function getUserRoles(userId: string) {
 }
 
 // Check if user has a specific role
-export async function userHasRole(userId: string, roleId: number): Promise<boolean> {
+export async function userHasRole(
+  userId: string,
+  roleId: number,
+): Promise<boolean> {
   try {
     const [userRole] = await db
       .select()
       .from(userRoles)
-      .where(and(
-        eq(userRoles.userId, userId),
-        eq(userRoles.roleId, BigInt(roleId)),
-        eq(userRoles.isActive, true)
-      ));
-    
+      .where(
+        and(
+          eq(userRoles.userId, userId),
+          eq(userRoles.roleId, BigInt(roleId)),
+          eq(userRoles.isActive, true),
+        ),
+      );
+
     return !!userRole;
   } catch (error) {
     console.error("Error checking user role:", error);
@@ -71,11 +78,10 @@ export async function removeUserRole(userId: string, roleId: number) {
     await db
       .update(userRoles)
       .set({ isActive: false, updatedAt: new Date() })
-      .where(and(
-        eq(userRoles.userId, userId),
-        eq(userRoles.roleId, BigInt(roleId))
-      ));
-    
+      .where(
+        and(eq(userRoles.userId, userId), eq(userRoles.roleId, BigInt(roleId))),
+      );
+
     console.log(`✅ Removed role ${roleId} from user ${userId}`);
     return { success: true };
   } catch (error) {
@@ -98,12 +104,14 @@ export async function getUsersWithRole(roleId: number) {
       })
       .from(userRoles)
       .innerJoin(users, eq(userRoles.userId, users.id))
-      .where(and(
-        eq(userRoles.roleId, BigInt(roleId)),
-        eq(userRoles.isActive, true),
-        eq(users.isActive, true)
-      ));
-    
+      .where(
+        and(
+          eq(userRoles.roleId, BigInt(roleId)),
+          eq(userRoles.isActive, true),
+          eq(users.isActive, true),
+        ),
+      );
+
     return usersWithRole;
   } catch (error) {
     console.error("Error fetching users with role:", error);

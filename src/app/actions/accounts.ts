@@ -15,7 +15,7 @@ import {
 // Helper function to check superadmin access
 async function checkSuperAdminAccess() {
   const session = await auth.api.getSession({
-    headers: await import("next/headers").then(m => m.headers()),
+    headers: await import("next/headers").then((m) => m.headers()),
   });
 
   if (!session?.user) {
@@ -23,7 +23,7 @@ async function checkSuperAdminAccess() {
   }
 
   const isSuperAdmin = await userHasRole(session.user.id, 2);
-  
+
   if (!isSuperAdmin) {
     throw new Error("Access denied: Superadmin role required");
   }
@@ -53,16 +53,19 @@ export async function searchAccounts(searchTerm = "") {
 }
 
 // Update an account
-export async function updateAccount(accountId: number, data: {
-  name: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  address?: string;
-  plan?: string;
-  subscriptionStatus?: string;
-  isActive?: boolean;
-}) {
+export async function updateAccount(
+  accountId: number,
+  data: {
+    name: string;
+    email?: string;
+    phone?: string;
+    website?: string;
+    address?: string;
+    plan?: string;
+    subscriptionStatus?: string;
+    isActive?: boolean;
+  },
+) {
   await checkSuperAdminAccess();
   return await updateAccountQuery(accountId, data);
 }

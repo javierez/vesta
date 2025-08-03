@@ -49,7 +49,7 @@ export const users = singlestoreTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   password: varchar("password", { length: 255 }),
-  
+
   // Your additional fields
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   firstName: varchar("first_name", { length: 100 }).notNull(),
@@ -102,7 +102,7 @@ export const sessions = singlestoreTable("sessions", {
 export const authAccounts = singlestoreTable("account", {
   id: varchar("id", { length: 36 }).primaryKey(),
   accountId: text("account_id").notNull(), // OAuth provider account ID
-  providerId: text("provider_id").notNull(), // e.g., "google", "apple", "linkedin"  
+  providerId: text("provider_id").notNull(), // e.g., "google", "apple", "linkedin"
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),

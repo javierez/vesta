@@ -11,7 +11,7 @@ import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
 import { retrieveCadastralData } from "../cadastral/retrieve_cadastral";
 import type { Property, Listing } from "~/lib/data";
 
-type DbProperty = Omit<Property, 'builtInWardrobes'> & {
+type DbProperty = Omit<Property, "builtInWardrobes"> & {
   builtInWardrobes?: boolean;
 };
 
@@ -19,6 +19,44 @@ type DbProperty = Omit<Property, 'builtInWardrobes'> & {
  * Database Persistence Layer for Textract Extracted Data
  * Saves extracted property and listing data with confidence filtering
  */
+
+// Field Priority Configuration for Combined Method
+// These fields are protected when property has cadastral data
+const CADASTRAL_PROTECTED_FIELDS = [
+  "cadastralReference",
+  "squareMeter",
+  "yearBuilt",
+  "street",
+  "propertyType",
+  "builtSurfaceArea",
+  "postalCode",
+  "latitude",
+  "longitude",
+  "neighborhoodId",
+  "addressDetails",
+] as const;
+
+/**
+ * Check if a field is protected from OCR updates in combined method
+ * Protected fields are those that have authoritative cadastral data
+ */
+function isFieldProtected(fieldName: string): boolean {
+  return (CADASTRAL_PROTECTED_FIELDS as readonly string[]).includes(fieldName);
+}
+
+/**
+ * Check if property was created using cadastral data
+ * This helps determine if field protection should be applied
+ */
+function hasCadastralData(propertyData: unknown): boolean {
+  if (!propertyData || typeof propertyData !== "object") return false;
+  const data = propertyData as Record<string, unknown>;
+  return !!(
+    data.cadastralReference &&
+    typeof data.cadastralReference === "string" &&
+    data.cadastralReference.trim() !== ""
+  );
+}
 
 // Save extracted data to database with confidence filtering
 export async function saveExtractedDataToDatabase(
@@ -69,8 +107,32 @@ export async function saveExtractedDataToDatabase(
       municipality: "",
     };
 
+    // Get current property data to check for cadastral data (for field protection)
+    let currentProperty: unknown = null;
+    try {
+      const { db } = await import("../db");
+      const { properties } = await import("../db/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const [property] = await db
+        .select()
+        .from(properties)
+        .where(eq(properties.propertyId, BigInt(propertyId)))
+        .limit(1);
+      currentProperty = property;
+    } catch {
+      // Could not fetch property data for field protection check
+    }
+
+    const hasExistingCadastralData = hasCadastralData(currentProperty);
+
     // Build property update data
-    const propertyUpdateData: Partial<Omit<DbProperty, "propertyId" | "createdAt" | "updatedAt" | "referenceNumber">> = {};
+    const propertyUpdateData: Partial<
+      Omit<
+        DbProperty,
+        "propertyId" | "createdAt" | "updatedAt" | "referenceNumber"
+      >
+    > = {};
     if (propertyFields.length > 0) {
       for (const field of propertyFields) {
         try {
@@ -86,6 +148,11 @@ export async function saveExtractedDataToDatabase(
           if (field.dbColumn === "extractedMunicipality") {
             extractedLocationData.municipality = String(field.value);
             continue;
+          }
+
+          // COMBINED METHOD: Field protection logic
+          if (hasExistingCadastralData && isFieldProtected(field.dbColumn)) {
+            continue; // Skip protected fields when property has cadastral data
           }
 
           // Type-safe assignment with proper conversion for regular fields
@@ -128,10 +195,7 @@ export async function saveExtractedDataToDatabase(
           `🔄 [DATABASE] Updating property ${propertyId} with ${Object.keys(propertyUpdateData).length} fields...`,
         );
 
-        await updateProperty(
-          propertyId,
-          propertyUpdateData,
-        );
+        await updateProperty(propertyId, propertyUpdateData);
 
         result.propertyUpdated = true;
         result.fieldsSaved += Object.keys(propertyUpdateData).length;
@@ -549,7 +613,9 @@ export async function getPropertyAndListingIds(documentKey: string): Promise<{
     const listingId = listing ? Number(listing.listingId) : undefined;
     const accountId = listing ? Number(listing.accountId) : undefined;
     if (listingId) {
-      console.log(`✅ [DATABASE] Found listing ID: ${listingId}, account ID: ${accountId}`);
+      console.log(
+        `✅ [DATABASE] Found listing ID: ${listingId}, account ID: ${accountId}`,
+      );
     } else {
       console.warn(
         `⚠️ [DATABASE] No listing found for property ID: ${propertyId}`,

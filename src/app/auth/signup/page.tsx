@@ -117,14 +117,20 @@ export default function SignUpPage() {
           name: `${formData.firstName} ${formData.lastName}`,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          accountId: Number(formData.inviteCode)
+          accountId: Number(formData.inviteCode),
         }),
       });
 
-      const result = await response.json() as { error?: { message?: string }; message?: string; user?: { id: string } };
+      const result = (await response.json()) as {
+        error?: { message?: string };
+        message?: string;
+        user?: { id: string };
+      };
 
       if (!response.ok || result.error) {
-        setError(result.error?.message ?? result.message ?? "Error al crear la cuenta");
+        setError(
+          result.error?.message ?? result.message ?? "Error al crear la cuenta",
+        );
         return;
       }
 
@@ -274,7 +280,7 @@ export default function SignUpPage() {
                   disabled={isLoading}
                   placeholder="Ingresa tu código de invitación"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Solicita un código de invitación a tu administrador
                 </p>
               </div>

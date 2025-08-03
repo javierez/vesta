@@ -60,7 +60,9 @@ interface PropertyCardProps {
   listing: Listing;
 }
 
-export const PropertyCard = React.memo(function PropertyCard({ listing }: PropertyCardProps) {
+export const PropertyCard = React.memo(function PropertyCard({
+  listing,
+}: PropertyCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [image2Loaded, setImage2Loaded] = useState(false);
@@ -251,4 +253,4 @@ export const PropertyCard = React.memo(function PropertyCard({ listing }: Proper
       </Card>
     </Link>
   );
-})
+});

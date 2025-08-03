@@ -2,7 +2,14 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "~/server/db";
-import { users, sessions, authAccounts, verificationTokens, roles, userRoles } from "~/server/db/schema";
+import {
+  users,
+  sessions,
+  authAccounts,
+  verificationTokens,
+  roles,
+  userRoles,
+} from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { ROLE_PERMISSIONS } from "~/lib/permissions";
 import type { Permission } from "~/lib/permissions";
@@ -10,7 +17,10 @@ import type { Permission } from "~/lib/permissions";
 /**
  * Get user roles from database
  */
-export async function getUserRolesFromDB(userId: string, _accountId: number): Promise<string[]> {
+export async function getUserRolesFromDB(
+  userId: string,
+  _accountId: number,
+): Promise<string[]> {
   try {
     const userRolesList = await db
       .select({
@@ -38,7 +48,7 @@ export async function getUserRolesFromDB(userId: string, _accountId: number): Pr
  */
 export function getPermissionsForRoles(roleNames: string[]): Permission[] {
   const permissionsSet = new Set<Permission>();
-  
+
   roleNames.forEach((roleName) => {
     const rolePermissions = ROLE_PERMISSIONS[roleName] ?? [];
     rolePermissions.forEach((permission) => {
@@ -100,12 +110,12 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       firstName: {
-        type: "string", 
+        type: "string",
         required: true,
         input: true,
       },
       lastName: {
-        type: "string", 
+        type: "string",
         required: true,
         input: true,
       },
@@ -115,14 +125,14 @@ export const auth = betterAuth({
         input: true,
       },
       timezone: {
-        type: "string", 
+        type: "string",
         required: false,
         defaultValue: "UTC",
         input: true,
       },
       language: {
         type: "string",
-        required: false, 
+        required: false,
         defaultValue: "en",
         input: true,
       },
@@ -164,7 +174,6 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 days
   },
 
-
   // Built-in rate limiting
   rateLimit: {
     window: 60, // 1 minute window
@@ -185,23 +194,26 @@ export const auth = betterAuth({
  */
 export async function getEnrichedSession() {
   const session = await auth.api.getSession({
-    headers: new Headers()
+    headers: new Headers(),
   });
-  
+
   if (!session?.user?.accountId) {
     return session;
   }
-  
+
   // Add roles and permissions to session data
-  const userRoles = await getUserRolesFromDB(session.user.id, Number(session.user.accountId));
+  const userRoles = await getUserRolesFromDB(
+    session.user.id,
+    Number(session.user.accountId),
+  );
   const permissions = getPermissionsForRoles(userRoles);
-  
+
   return {
     ...session,
     user: {
       ...session.user,
       roles: userRoles,
       permissions: permissions,
-    }
+    },
   };
 }

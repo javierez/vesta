@@ -21,12 +21,18 @@ export async function getListingByIdWithAuth(listingId: number) {
   return getListingById(listingId, accountId);
 }
 
-export async function listListingsWithAuth(page = 1, limit = 10, filters?: Parameters<typeof listListings>[3]) {
+export async function listListingsWithAuth(
+  page = 1,
+  limit = 10,
+  filters?: Parameters<typeof listListings>[3],
+) {
   const accountId = await getCurrentUserAccountId();
   return listListings(accountId, page, limit, filters);
 }
 
-export async function listListingsCompactWithAuth(filters?: Parameters<typeof listListingsCompact>[1]) {
+export async function listListingsCompactWithAuth(
+  filters?: Parameters<typeof listListingsCompact>[1],
+) {
   const accountId = await getCurrentUserAccountId();
   return listListingsCompact(accountId, filters);
 }
@@ -38,7 +44,7 @@ export async function getAllAgentsWithAuth() {
 
 export async function updateListingWithAuth(
   listingId: number,
-  data: Parameters<typeof updateListing>[2]
+  data: Parameters<typeof updateListing>[2],
 ) {
   const accountId = await getCurrentUserAccountId();
   return updateListing(listingId, accountId, data);
@@ -143,7 +149,10 @@ export async function getListingById(listingId: number, accountId: number) {
 }
 
 // Get listings by property ID
-export async function getListingsByPropertyId(propertyId: number, accountId: number) {
+export async function getListingsByPropertyId(
+  propertyId: number,
+  accountId: number,
+) {
   try {
     const propertyListings = await db
       .select()
@@ -172,7 +181,7 @@ export async function getListingsByAgentId(agentId: string, accountId: number) {
         and(
           eq(listings.agentId, agentId),
           eq(listings.accountId, BigInt(accountId)),
-          eq(listings.isActive, true)
+          eq(listings.isActive, true),
         ),
       );
     return agentListings;
@@ -205,8 +214,8 @@ export async function updateListing(
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
-          eq(listings.accountId, BigInt(accountId))
-        )
+          eq(listings.accountId, BigInt(accountId)),
+        ),
       );
     return updatedListing;
   } catch (error) {
@@ -224,8 +233,8 @@ export async function softDeleteListing(listingId: number, accountId: number) {
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
-          eq(listings.accountId, BigInt(accountId))
-        )
+          eq(listings.accountId, BigInt(accountId)),
+        ),
       );
     return { success: true };
   } catch (error) {
@@ -237,12 +246,14 @@ export async function softDeleteListing(listingId: number, accountId: number) {
 // Hard delete listing (remove from database)
 export async function deleteListing(listingId: number, accountId: number) {
   try {
-    await db.delete(listings).where(
-      and(
-        eq(listings.listingId, BigInt(listingId)),
-        eq(listings.accountId, BigInt(accountId))
-      )
-    );
+    await db
+      .delete(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
     return { success: true };
   } catch (error) {
     console.error("Error deleting listing:", error);
@@ -299,9 +310,7 @@ export async function listListings(
         );
       }
       if (filters.agentId && filters.agentId.length > 0) {
-        whereConditions.push(
-          sql`${listings.agentId} IN (${filters.agentId})`,
-        );
+        whereConditions.push(sql`${listings.agentId} IN (${filters.agentId})`);
       }
       if (filters.propertyId) {
         whereConditions.push(
@@ -440,7 +449,7 @@ export async function listListings(
         postalCode: properties.postalCode,
         latitude: properties.latitude,
         longitude: properties.longitude,
-        
+
         // Basic amenities for card display
         hasGarage: properties.hasGarage,
         hasElevator: properties.hasElevator,
@@ -561,12 +570,15 @@ export async function listListings(
 }
 
 // Compact version of listListings for contact form - returns only essential fields
-export async function listListingsCompact(accountId: number, filters?: {
-  status?: "Active" | "Pending" | "Sold";
-  listingType?: "Sale" | "Rent";
-  propertyType?: string[];
-  searchQuery?: string;
-}) {
+export async function listListingsCompact(
+  accountId: number,
+  filters?: {
+    status?: "Active" | "Pending" | "Sold";
+    listingType?: "Sale" | "Rent";
+    propertyType?: string[];
+    searchQuery?: string;
+  },
+) {
   try {
     // Build the where conditions array
     const whereConditions = [];
@@ -674,13 +686,10 @@ export async function getAllAgents(accountId: number) {
       })
       .from(users)
       .where(
-        and(
-          eq(users.accountId, BigInt(accountId)),
-          eq(users.isActive, true)
-        )
+        and(eq(users.accountId, BigInt(accountId)), eq(users.isActive, true)),
       )
       .orderBy(users.name);
-    
+
     return agents;
   } catch (error) {
     console.error("Error fetching agents:", error);
@@ -935,8 +944,8 @@ export async function getDraftListings(accountId: number) {
         and(
           eq(listings.status, "Draft"),
           eq(listings.accountId, BigInt(accountId)),
-          eq(listings.isActive, true)
-        )
+          eq(listings.isActive, true),
+        ),
       )
       .orderBy(listings.createdAt);
 
@@ -968,12 +977,14 @@ export async function deleteDraftListing(listingId: number, accountId: number) {
     }
 
     // Delete the draft listing
-    await db.delete(listings).where(
-      and(
-        eq(listings.listingId, BigInt(listingId)),
-        eq(listings.accountId, BigInt(accountId))
-      )
-    );
+    await db
+      .delete(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
 
     return { success: true, message: "Borrador eliminado correctamente" };
   } catch (error) {

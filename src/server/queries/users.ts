@@ -4,21 +4,19 @@ import { eq } from "drizzle-orm";
 import type { User } from "../../lib/data";
 
 // Create a new user
-export async function createUser(
-  data: { 
-    id: string;
-    name: string;
-    email: string;
-    accountId: bigint;
-    firstName: string;
-    lastName: string;
-    phone?: string;
-    timezone?: string;
-    language?: string;
-    isVerified?: boolean;
-    isActive?: boolean;
-  },
-) {
+export async function createUser(data: {
+  id: string;
+  name: string;
+  email: string;
+  accountId: bigint;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  timezone?: string;
+  language?: string;
+  isVerified?: boolean;
+  isActive?: boolean;
+}) {
   try {
     await db.insert(users).values(data);
     const [newUser] = await db
@@ -35,10 +33,7 @@ export async function createUser(
 // Get user by ID
 export async function getUserById(userId: string) {
   try {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId));
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
     return user;
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -63,10 +58,7 @@ export async function updateUser(
   data: Omit<Partial<User>, "id">,
 ) {
   try {
-    await db
-      .update(users)
-      .set(data)
-      .where(eq(users.id, userId));
+    await db.update(users).set(data).where(eq(users.id, userId));
     const [updatedUser] = await db
       .select()
       .from(users)

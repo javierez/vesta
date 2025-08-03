@@ -6,7 +6,7 @@ import { eq, and, sql } from "drizzle-orm";
 import type { Property, PropertyImage } from "../../lib/data";
 
 // Type for database property with correct boolean conversion
-type DbProperty = Omit<Property, 'builtInWardrobes'> & {
+type DbProperty = Omit<Property, "builtInWardrobes"> & {
   builtInWardrobes?: boolean;
 };
 import { retrieveCadastralData } from "../cadastral/retrieve_cadastral";
@@ -343,7 +343,6 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
     // Generate a unique reference number
     const referenceNumber = await generateReferenceNumber();
 
-
     // Get secure database access
     const { db: secureDb, accountId } = await getSecureDb();
 
@@ -505,6 +504,70 @@ export async function createPropertyFromLocation(locationData: {
     };
   } catch (error) {
     console.error("Error creating property from location:", error);
+    throw error;
+  }
+}
+
+// Create a property using combined method (cadastral + documents)
+export async function createPropertyFromCombined(
+  cadastralReference: string,
+  uploadedDocuments: Array<{
+    docId: bigint;
+    documentKey: string;
+    fileUrl: string;
+    filename: string;
+    fileType: string;
+  }>,
+  tempReferenceNumber: string,
+) {
+  try {
+    // STEP 1: Create property using cadastral data (authoritative source)
+    const newProperty = await createPropertyFromCadastral(cadastralReference);
+
+    if (!newProperty) {
+      throw new Error("Failed to create property from cadastral data");
+    }
+
+    // STEP 2: Rename uploaded documents to use actual property reference number
+    if (uploadedDocuments.length > 0 && newProperty.referenceNumber) {
+      try {
+        const { renameDocumentFolder } = await import(
+          "../../app/actions/upload"
+        );
+        const documentIds = uploadedDocuments.map((doc) => doc.docId);
+
+        const renamedDocuments = await renameDocumentFolder(
+          tempReferenceNumber,
+          newProperty.referenceNumber,
+          documentIds,
+        );
+
+        // STEP 3: Trigger OCR processing for each renamed document
+        const { processDocumentInBackgroundEnhanced } = await import(
+          "../ocr/ocr-initial-form"
+        );
+
+        for (const renamedDoc of renamedDocuments) {
+          // Use void to fire-and-forget, but catch errors to prevent unhandled rejections
+          void processDocumentInBackgroundEnhanced(
+            renamedDoc.newDocumentKey,
+          ).catch((error) => {
+            console.error(
+              `OCR processing failed for ${renamedDoc.newDocumentKey}:`,
+              error,
+            );
+            // Don't throw here - OCR failures shouldn't break property creation
+          });
+        }
+      } catch (documentError) {
+        console.error("Error during document processing:", documentError);
+        // Continue with property creation even if document processing fails
+      }
+    }
+
+    return newProperty;
+  } catch (error) {
+    console.error("Error in combined property creation:", error);
     throw error;
   }
 }

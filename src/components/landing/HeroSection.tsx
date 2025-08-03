@@ -32,13 +32,13 @@ export function HeroSection() {
       }, 2000);
     };
 
-    video.addEventListener('ended', handleVideoEnd);
-    
+    video.addEventListener("ended", handleVideoEnd);
+
     // Auto-play when component mounts
     video.play().catch(console.error);
 
     return () => {
-      video.removeEventListener('ended', handleVideoEnd);
+      video.removeEventListener("ended", handleVideoEnd);
     };
   }, []);
 
@@ -134,8 +134,8 @@ export function HeroSection() {
           </div>
 
           {/* Hero Video/Dashboard Preview */}
-          <div className="relative group">
-            <div className="aspect-[4/3] overflow-hidden rounded-2xl shadow-2xl relative">
+          <div className="group relative">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-2xl">
               <video
                 ref={videoRef}
                 src="https://vesta-configuration-files.s3.amazonaws.com/marketing/Room_Assembles_From_a_Box.mp4"
@@ -147,30 +147,30 @@ export function HeroSection() {
                 onError={(e) => {
                   console.error("Video failed to load:", e);
                   const target = e.target as HTMLVideoElement;
-                  target.style.display = 'none';
-                  const fallback = target.parentElement?.querySelector('.fallback-content') as HTMLElement | null;
+                  target.style.display = "none";
+                  const fallback = target.parentElement?.querySelector(
+                    ".fallback-content",
+                  ) as HTMLElement | null;
                   if (fallback) {
-                    fallback.style.display = 'flex';
-                    fallback.classList.remove('hidden');
+                    fallback.style.display = "flex";
+                    fallback.classList.remove("hidden");
                   }
                 }}
               >
                 Tu navegador no soporta el elemento de video.
               </video>
-              
+
               {/* Fallback content */}
-              <div className="fallback-content hidden absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+              <div className="fallback-content absolute inset-0 flex hidden items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
                 <div className="text-center">
                   <div className="mx-auto mb-4 h-32 w-32 rounded-full bg-primary/20" />
                   <p className="text-lg font-medium text-gray-600">
                     Dashboard Preview
                   </p>
-                  <p className="text-sm text-gray-500">
-                    Cargando video...
-                  </p>
+                  <p className="text-sm text-gray-500">Cargando video...</p>
                 </div>
               </div>
-              
+
               {/* Custom mute button */}
               <button
                 onClick={() => {
@@ -179,7 +179,7 @@ export function HeroSection() {
                     videoRef.current.muted = !isMuted;
                   }
                 }}
-                className="absolute bottom-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
+                className="absolute bottom-4 right-4 rounded-full bg-black/50 p-2 text-white opacity-0 transition-all duration-200 hover:bg-black/70 group-hover:opacity-100"
                 aria-label={isMuted ? "Unmute video" : "Mute video"}
               >
                 {isMuted ? (

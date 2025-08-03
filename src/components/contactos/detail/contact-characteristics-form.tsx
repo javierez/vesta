@@ -174,7 +174,9 @@ export function ContactCharacteristicsForm({
         try {
           let allListings;
           if (contact.contactType === "propietario") {
-            allListings = await getListingsByContactWithAuth(Number(contact.contactId));
+            allListings = await getListingsByContactWithAuth(
+              Number(contact.contactId),
+            );
           } else {
             // For demandante, get listings where they are the buyer
             allListings = await getListingsByContactAsBuyerWithAuth(

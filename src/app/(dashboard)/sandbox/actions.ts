@@ -31,7 +31,7 @@ import { getCurrentUserAccountId } from "~/lib/dal";
 import { sql } from "drizzle-orm";
 
 // Type for database property with correct boolean conversion
-type DbProperty = Omit<Property, 'builtInWardrobes'> & {
+type DbProperty = Omit<Property, "builtInWardrobes"> & {
   builtInWardrobes?: boolean;
 };
 
@@ -97,9 +97,11 @@ function toDbProperty(property: Property): Partial<DbProperty> {
 
   // Convert string boolean fields to actual booleans for database storage
   if (property.builtInWardrobes !== undefined) {
-    dbProperty.builtInWardrobes = typeof property.builtInWardrobes === 'string' 
-      ? property.builtInWardrobes === 'true' || property.builtInWardrobes === '1'
-      : Boolean(property.builtInWardrobes);
+    dbProperty.builtInWardrobes =
+      typeof property.builtInWardrobes === "string"
+        ? property.builtInWardrobes === "true" ||
+          property.builtInWardrobes === "1"
+        : Boolean(property.builtInWardrobes);
   }
 
   return dbProperty;

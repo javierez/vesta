@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (response.ok) {
-        const sessionData = await response.json() as {
+        const sessionData = (await response.json()) as {
           user?: {
             id: string;
             email: string;
@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await fetchUser(); // Refresh user data after login
         router.push("/dashboard");
       } else {
-        const errorData = await response.json() as { message?: string };
+        const errorData = (await response.json()) as { message?: string };
         throw new Error(errorData.message ?? "Login failed");
       }
     } catch (error) {

@@ -5,14 +5,33 @@ import type { FC } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent } from "~/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
 import { Switch } from "~/components/ui/switch";
 import { Badge } from "~/components/ui/badge";
 import { Search, Plus, Edit, Trash2, Building2 } from "lucide-react";
-import { createAccount, searchAccounts, updateAccount, deleteAccount } from "~/app/actions/accounts";
+import {
+  createAccount,
+  searchAccounts,
+  updateAccount,
+  deleteAccount,
+} from "~/app/actions/accounts";
 import { toast } from "sonner";
 
 interface Account {
@@ -79,7 +98,7 @@ export const AccountsManagement: FC = () => {
 
   const handleCreateAccount = async () => {
     if (isCreating) return; // Prevent double-clicks
-    
+
     setIsCreating(true);
     try {
       await createAccount(formData);
@@ -97,7 +116,7 @@ export const AccountsManagement: FC = () => {
 
   const handleEditAccount = async () => {
     if (!selectedAccount || isUpdating) return; // Prevent double-clicks
-    
+
     setIsUpdating(true);
     try {
       await updateAccount(Number(selectedAccount.accountId), formData);
@@ -116,7 +135,7 @@ export const AccountsManagement: FC = () => {
 
   const handleDeleteAccount = async (accountId: bigint) => {
     if (!confirm("¿Estás seguro de que quieres eliminar esta cuenta?")) return;
-    
+
     try {
       await deleteAccount(Number(accountId));
       toast.success("Cuenta eliminada exitosamente");
@@ -145,22 +164,26 @@ export const AccountsManagement: FC = () => {
   // Load accounts on component mount
   useEffect(() => {
     void handleSearch();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Gestión de Cuentas</h2>
-          <p className="text-sm text-gray-500">Crear y gestionar cuentas organizacionales</p>
+          <h2 className="text-xl font-semibold text-gray-900">
+            Gestión de Cuentas
+          </h2>
+          <p className="text-sm text-gray-500">
+            Crear y gestionar cuentas organizacionales
+          </p>
         </div>
-        
+
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Nueva Cuenta
             </Button>
           </DialogTrigger>
@@ -168,7 +191,8 @@ export const AccountsManagement: FC = () => {
             <DialogHeader>
               <DialogTitle>Crear Nueva Cuenta</DialogTitle>
               <DialogDescription>
-                Completa la información para crear una nueva cuenta organizacional.
+                Completa la información para crear una nueva cuenta
+                organizacional.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -179,7 +203,9 @@ export const AccountsManagement: FC = () => {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   className="col-span-3"
                   required
                 />
@@ -192,7 +218,9 @@ export const AccountsManagement: FC = () => {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   className="col-span-3"
                 />
               </div>
@@ -203,7 +231,9 @@ export const AccountsManagement: FC = () => {
                 <Input
                   id="phone"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
                   className="col-span-3"
                 />
               </div>
@@ -214,7 +244,9 @@ export const AccountsManagement: FC = () => {
                 <Input
                   id="website"
                   value={formData.website}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, website: e.target.value })
+                  }
                   className="col-span-3"
                 />
               </div>
@@ -225,7 +257,9 @@ export const AccountsManagement: FC = () => {
                 <Textarea
                   id="address"
                   value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
                   className="col-span-3"
                   rows={2}
                 />
@@ -234,7 +268,12 @@ export const AccountsManagement: FC = () => {
                 <Label htmlFor="plan" className="text-right">
                   Plan
                 </Label>
-                <Select value={formData.plan} onValueChange={(value) => setFormData({ ...formData, plan: value })}>
+                <Select
+                  value={formData.plan}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, plan: value })
+                  }
+                >
                   <SelectTrigger className="col-span-3">
                     <SelectValue />
                   </SelectTrigger>
@@ -249,7 +288,12 @@ export const AccountsManagement: FC = () => {
                 <Label htmlFor="status" className="text-right">
                   Estado
                 </Label>
-                <Select value={formData.subscriptionStatus} onValueChange={(value) => setFormData({ ...formData, subscriptionStatus: value })}>
+                <Select
+                  value={formData.subscriptionStatus}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, subscriptionStatus: value })
+                  }
+                >
                   <SelectTrigger className="col-span-3">
                     <SelectValue />
                   </SelectTrigger>
@@ -267,7 +311,9 @@ export const AccountsManagement: FC = () => {
                 <Switch
                   id="isActive"
                   checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, isActive: checked })
+                  }
                 />
               </div>
             </div>
@@ -283,7 +329,7 @@ export const AccountsManagement: FC = () => {
       {/* Search */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
           <Input
             placeholder="Buscar cuentas por nombre, email o teléfono..."
             value={searchTerm}
@@ -301,9 +347,11 @@ export const AccountsManagement: FC = () => {
         {accounts.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <Building2 className="h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-500 text-center">
-                {searchTerm ? "No se encontraron cuentas" : "No hay cuentas registradas"}
+              <Building2 className="mb-4 h-12 w-12 text-gray-400" />
+              <p className="text-center text-gray-500">
+                {searchTerm
+                  ? "No se encontraron cuentas"
+                  : "No hay cuentas registradas"}
               </p>
             </CardContent>
           </Card>
@@ -311,46 +359,69 @@ export const AccountsManagement: FC = () => {
           accounts.map((account) => (
             <Card key={account.accountId.toString()} className="py-3">
               <CardContent className="py-3">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-base truncate mb-1">{account.name}</h3>
+                <div className="mb-3 flex items-start justify-between">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="mb-1 truncate text-base font-semibold">
+                      {account.name}
+                    </h3>
                     <p className="text-xs text-gray-500">
-                      ID: {account.accountId.toString()} • {account.createdAt.toLocaleDateString()}
+                      ID: {account.accountId.toString()} •{" "}
+                      {account.createdAt.toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex gap-1 ml-2">
-                    <Button variant="outline" size="sm" onClick={() => openEditDialog(account)} className="h-7 px-2">
+                  <div className="ml-2 flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditDialog(account)}
+                      className="h-7 px-2"
+                    >
                       <Edit className="h-3 w-3" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDeleteAccount(account.accountId)} className="h-7 px-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteAccount(account.accountId)}
+                      className="h-7 px-2"
+                    >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-1 gap-y-1 text-xs mb-3">
+
+                <div className="mb-3 grid grid-cols-1 gap-y-1 text-xs">
                   {account.email && (
                     <div className="truncate">
-                      <span className="text-gray-500">Email:</span> {account.email}
+                      <span className="text-gray-500">Email:</span>{" "}
+                      {account.email}
                     </div>
                   )}
                   {account.website && (
                     <div className="truncate">
                       <span className="text-gray-500">Web:</span>{" "}
-                      <a href={account.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      <a
+                        href={account.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
                         {account.website}
                       </a>
                     </div>
                   )}
                   {account.address && (
                     <div className="truncate">
-                      <span className="text-gray-500">Dir:</span> {account.address}
+                      <span className="text-gray-500">Dir:</span>{" "}
+                      {account.address}
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex justify-end gap-2">
-                  <Badge variant={account.isActive ? "default" : "secondary"} className="text-xs">
+                  <Badge
+                    variant={account.isActive ? "default" : "secondary"}
+                    className="text-xs"
+                  >
                     {account.isActive ? "Activo" : "Inactivo"}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
@@ -380,7 +451,9 @@ export const AccountsManagement: FC = () => {
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="col-span-3"
                 required
               />
@@ -393,7 +466,9 @@ export const AccountsManagement: FC = () => {
                 id="edit-email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 className="col-span-3"
               />
             </div>
@@ -404,7 +479,9 @@ export const AccountsManagement: FC = () => {
               <Input
                 id="edit-phone"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
                 className="col-span-3"
               />
             </div>
@@ -415,7 +492,9 @@ export const AccountsManagement: FC = () => {
               <Input
                 id="edit-website"
                 value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, website: e.target.value })
+                }
                 className="col-span-3"
               />
             </div>
@@ -426,7 +505,9 @@ export const AccountsManagement: FC = () => {
               <Textarea
                 id="edit-address"
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
                 className="col-span-3"
                 rows={2}
               />
@@ -435,7 +516,12 @@ export const AccountsManagement: FC = () => {
               <Label htmlFor="edit-plan" className="text-right">
                 Plan
               </Label>
-              <Select value={formData.plan} onValueChange={(value) => setFormData({ ...formData, plan: value })}>
+              <Select
+                value={formData.plan}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, plan: value })
+                }
+              >
                 <SelectTrigger className="col-span-3">
                   <SelectValue />
                 </SelectTrigger>
@@ -450,7 +536,12 @@ export const AccountsManagement: FC = () => {
               <Label htmlFor="edit-status" className="text-right">
                 Estado
               </Label>
-              <Select value={formData.subscriptionStatus} onValueChange={(value) => setFormData({ ...formData, subscriptionStatus: value })}>
+              <Select
+                value={formData.subscriptionStatus}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, subscriptionStatus: value })
+                }
+              >
                 <SelectTrigger className="col-span-3">
                   <SelectValue />
                 </SelectTrigger>
@@ -468,7 +559,9 @@ export const AccountsManagement: FC = () => {
               <Switch
                 id="edit-isActive"
                 checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isActive: checked })
+                }
               />
             </div>
           </div>

@@ -155,16 +155,33 @@ pnpm build
 
 # TODOs: 
 
-- Separators (tabs on top) in Property and Contact detail pages -- improve UI (secondary)
-
-- Rent: add deposit information (x)
-
-- Properties: Reading the formulario nueva creación (xxx)
-    - Generación de Nota de encargo: P000460
-    - Improve Readiness of Documents: P000427 
-
-- Authentication: check if we really have separation of data per request and user.
+## High Priority
 - Pasarela de pagos
+
+
+## Med Priority
+- Generación de Nota de encargo: P000460
+
+## Low Priority
+- Rent: add deposit information
+- Separators (tabs on top) in Property and Contact detail pages -> improve UI 
+
+
+## To Validate
+- Properties: Reading the formulario nueva creación
+- Reading Ficha de Venta: try out other formularios
+- Authentication: check if we really have separation of data per request and user.
+
+
+
+## 
+
+
+
+
+    
+     
+
 
 
 - Images: watermark (!xxx)

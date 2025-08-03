@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getDraftListingsWithAuth, deleteDraftListingWithAuth } from "~/server/queries/listing";
+import {
+  getDraftListingsWithAuth,
+  deleteDraftListingWithAuth,
+} from "~/server/queries/listing";
 import { Card, CardContent } from "~/components/ui/card";
 import {
   Table,

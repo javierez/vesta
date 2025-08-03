@@ -51,7 +51,9 @@ interface ExtendedContact {
 export default async function ContactPage({ params }: ContactPageProps) {
   try {
     const unwrappedParams = await params;
-    const contact = await getContactByIdWithTypeWithAuth(parseInt(unwrappedParams.id));
+    const contact = await getContactByIdWithTypeWithAuth(
+      parseInt(unwrappedParams.id),
+    );
 
     if (!contact) {
       notFound();

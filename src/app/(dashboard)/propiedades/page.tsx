@@ -9,7 +9,10 @@ import { PropertyFilter } from "~/components/propiedades/property-filter";
 import { PropertyTable } from "~/components/propiedades/property-table";
 import { PropertyGrid } from "~/components/propiedades/property-grid";
 import { NoResults } from "~/components/propiedades/no-results";
-import { listListingsWithAuth, getAllAgentsWithAuth } from "~/server/queries/listing";
+import {
+  listListingsWithAuth,
+  getAllAgentsWithAuth,
+} from "~/server/queries/listing";
 import type { ListingOverview } from "~/types/listing";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -95,7 +98,11 @@ export default function PropertiesPage() {
           }
         }
 
-        const result = await listListingsWithAuth(page, ITEMS_PER_PAGE, filters);
+        const result = await listListingsWithAuth(
+          page,
+          ITEMS_PER_PAGE,
+          filters,
+        );
 
         setListings(
           result.listings.map((listing) => ({

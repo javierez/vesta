@@ -218,7 +218,7 @@ export default function FirstPage({
   const saveInBackground = async () => {
     try {
       const promises = [];
-      
+
       // Update property if we have a valid propertyId
       const propertyId = globalFormData?.listingDetails?.propertyId;
       if (propertyId) {
@@ -246,12 +246,12 @@ export default function FirstPage({
           price: formData.price,
           listingType: formData.listingType as "Sale" | "Rent",
         };
-        
+
         // Add agentId if it exists
         if (formData.agentId) {
           listingUpdate.agentId = formData.agentId;
         }
-        
+
         promises.push(updateListingWithAuth(Number(listingId), listingUpdate));
       }
 
@@ -260,9 +260,11 @@ export default function FirstPage({
         const validContactIds = formData.selectedContactIds
           .filter((id) => id && !isNaN(Number(id)))
           .map((id) => Number(id));
-          
+
         if (validContactIds.length > 0) {
-          promises.push(updateListingOwnersWithAuth(Number(listingId), validContactIds));
+          promises.push(
+            updateListingOwnersWithAuth(Number(listingId), validContactIds),
+          );
         }
       }
 

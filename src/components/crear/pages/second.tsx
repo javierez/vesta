@@ -108,7 +108,7 @@ export default function SecondPage({
         details.lastRenovationYear &&
           details.lastRenovationYear !== details.yearBuilt,
       );
-      
+
       setFormData((prev) => ({
         ...prev,
         bedrooms: details.bedrooms?.toString() ?? "2",
@@ -116,7 +116,8 @@ export default function SecondPage({
         squareMeter: displaySquareMeter ?? "80",
         builtSurfaceArea: displayBuiltSurfaceArea ?? "85",
         yearBuilt: details.yearBuilt?.toString() ?? "1980",
-        lastRenovationYear: details.lastRenovationYear?.toString() ?? (isRenovated ? "2015" : ""),
+        lastRenovationYear:
+          details.lastRenovationYear?.toString() ?? (isRenovated ? "2015" : ""),
         isRenovated: isRenovated,
         buildingFloors: details.buildingFloors?.toString() ?? "",
         conservationStatus: details.conservationStatus ?? 1,

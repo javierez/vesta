@@ -125,7 +125,10 @@ export async function getSecureDb() {
     db,
     accountId, // The authenticated user's account/organization ID
     // Helper to add account filtering to any where condition
-    withAccountFilter: (table: { accountId: Column }, additionalWhere?: SQL | SQLWrapper) => {
+    withAccountFilter: (
+      table: { accountId: Column },
+      additionalWhere?: SQL | SQLWrapper,
+    ) => {
       const accountFilter = eq(table.accountId, accountId);
       return additionalWhere
         ? and(accountFilter, additionalWhere)

@@ -14,7 +14,9 @@ export async function middleware(request: NextRequest) {
 
   // Allow public paths and static assets
   if (
-    publicPaths.some((path) => path === "/" ? pathname === "/" : pathname.startsWith(path)) ||
+    publicPaths.some((path) =>
+      path === "/" ? pathname === "/" : pathname.startsWith(path),
+    ) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname.includes(".")
@@ -41,7 +43,7 @@ export async function middleware(request: NextRequest) {
       throw new Error("No valid session");
     }
 
-    const session = await response.json() as {
+    const session = (await response.json()) as {
       user?: {
         id: string;
         email: string;
@@ -74,7 +76,10 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set("x-user-roles", JSON.stringify(session.user.roles));
     }
     if (session.user.permissions) {
-      requestHeaders.set("x-user-permissions", JSON.stringify(session.user.permissions));
+      requestHeaders.set(
+        "x-user-permissions",
+        JSON.stringify(session.user.permissions),
+      );
     }
 
     return NextResponse.next({
@@ -87,8 +92,7 @@ export async function middleware(request: NextRequest) {
     const signinUrl = new URL("/auth/signin", request.url);
     return NextResponse.redirect(signinUrl);
   }
-} 
-
+}
 
 export const config = {
   matcher: [

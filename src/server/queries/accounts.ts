@@ -72,14 +72,14 @@ export async function searchAccounts(searchTerm = "") {
           or(
             like(accounts.name, `%${searchTerm}%`),
             like(accounts.email, `%${searchTerm}%`),
-            like(accounts.phone, `%${searchTerm}%`)
-          )
+            like(accounts.phone, `%${searchTerm}%`),
+          ),
         )
         .orderBy(accounts.createdAt);
     } else {
       results = await baseQuery.orderBy(accounts.createdAt);
     }
-    
+
     return results;
   } catch (error) {
     console.error("Error searching accounts:", error);
@@ -88,16 +88,19 @@ export async function searchAccounts(searchTerm = "") {
 }
 
 // Update account
-export async function updateAccount(accountId: number | bigint, data: {
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  website?: string | null;
-  address?: string | null;
-  plan?: string | null;
-  subscriptionStatus?: string | null;
-  isActive?: boolean | null;
-}) {
+export async function updateAccount(
+  accountId: number | bigint,
+  data: {
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    address?: string | null;
+    plan?: string | null;
+    subscriptionStatus?: string | null;
+    isActive?: boolean | null;
+  },
+) {
   try {
     await db
       .update(accounts)
@@ -201,18 +204,21 @@ export async function getActiveAccounts() {
 export async function validateInvitationCode(accountId: number) {
   try {
     const account = await getAccountById(accountId);
-    
+
     if (!account) {
       return { isValid: false, message: "Código de invitación inválido" };
     }
-    
+
     if (!account.isActive) {
       return { isValid: false, message: "La cuenta asociada no está activa" };
     }
-    
+
     return { isValid: true, message: "Código de invitación válido", account };
   } catch (error) {
     console.error("Error validating invitation code:", error);
-    return { isValid: false, message: "Error al validar el código de invitación" };
+    return {
+      isValid: false,
+      message: "Error al validar el código de invitación",
+    };
   }
 }

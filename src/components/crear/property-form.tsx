@@ -5,7 +5,10 @@ import { Card } from "~/components/ui/card";
 import { Loader, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { getListingDetailsWithAuth, getAllAgentsWithAuth } from "~/server/queries/listing";
+import {
+  getListingDetailsWithAuth,
+  getAllAgentsWithAuth,
+} from "~/server/queries/listing";
 import {
   getAllPotentialOwnersWithAuth,
   getCurrentListingOwnersWithAuth,

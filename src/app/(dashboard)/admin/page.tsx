@@ -5,7 +5,7 @@ import { SuperAdminDashboard } from "~/components/admin/super-admin-dashboard";
 
 export default async function AdminPage() {
   const session = await auth.api.getSession({
-    headers: await import("next/headers").then(m => m.headers()),
+    headers: await import("next/headers").then((m) => m.headers()),
   });
 
   if (!session?.user) {
@@ -14,7 +14,7 @@ export default async function AdminPage() {
 
   // Check if user has role ID 2 (as specifically requested)
   const hasRequiredRole = await userHasRole(session.user.id, 2);
-  
+
   if (!hasRequiredRole) {
     redirect("/dashboard");
   }
@@ -27,7 +27,7 @@ export default async function AdminPage() {
           Panel de administración para superadministradores
         </p>
       </div>
-      
+
       <SuperAdminDashboard />
     </div>
   );

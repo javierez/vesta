@@ -1,475 +1,694 @@
-import { singlestoreTable, singlestoreSchema, primaryKey, varchar, text, timestamp, bigint, tinyint, int, decimal, smallint, json } from "drizzle-orm/singlestore-core"
+import {
+  singlestoreTable,
+  singlestoreSchema,
+  primaryKey,
+  varchar,
+  text,
+  timestamp,
+  bigint,
+  tinyint,
+  int,
+  decimal,
+  smallint,
+  json,
+} from "drizzle-orm/singlestore-core";
 
-export const account = singlestoreTable("account", {
-	id: varchar({ length: 36 }).notNull(),
-	providerId: text("provider_id").notNull(),
-	accountId: text("account_id").notNull(),
-	userId: varchar("user_id", { length: 36 }).notNull(),
-	accessToken: text("access_token"),
-	refreshToken: text("refresh_token"),
-	idToken: text("id_token"),
-	accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: 'string' }),
-	refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { mode: 'string' }),
-	scope: text(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	password: text(),
-},
-(table) => [
-	primaryKey({ columns: [table.id], name: "account_id"}),
-]);
+export const account = singlestoreTable(
+  "account",
+  {
+    id: varchar({ length: 36 }).notNull(),
+    providerId: text("provider_id").notNull(),
+    accountId: text("account_id").notNull(),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      mode: "string",
+    }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      mode: "string",
+    }),
+    scope: text(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+    password: text(),
+  },
+  (table) => [primaryKey({ columns: [table.id], name: "account_id" })],
+);
 
-export const accounts = singlestoreTable("accounts", {
-	accountId: bigint("account_id", { mode: "number" }).autoincrement().notNull(),
-	name: varchar({ length: 255 }).notNull(),
-	logo: varchar({ length: 2048 }),
-	address: varchar({ length: 500 }),
-	phone: varchar({ length: 20 }),
-	email: varchar({ length: 255 }),
-	website: varchar({ length: 255 }),
-	portalSettings: json("portal_settings").default('{}'),
-	paymentSettings: json("payment_settings").default('{}'),
-	preferences: json().default('{}'),
-	plan: varchar({ length: 50 }).default('basic'),
-	subscriptionStatus: varchar("subscription_status", { length: 20 }).default('active'),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	isActive: tinyint("is_active").default(1),
-},
-(table) => [
-	primaryKey({ columns: [table.accountId], name: "accounts_account_id"}),
-]);
+export const accounts = singlestoreTable(
+  "accounts",
+  {
+    accountId: bigint("account_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    name: varchar({ length: 255 }).notNull(),
+    logo: varchar({ length: 2048 }),
+    address: varchar({ length: 500 }),
+    phone: varchar({ length: 20 }),
+    email: varchar({ length: 255 }),
+    website: varchar({ length: 255 }),
+    portalSettings: json("portal_settings").default("{}"),
+    paymentSettings: json("payment_settings").default("{}"),
+    preferences: json().default("{}"),
+    plan: varchar({ length: 50 }).default("basic"),
+    subscriptionStatus: varchar("subscription_status", { length: 20 }).default(
+      "active",
+    ),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+    isActive: tinyint("is_active").default(1),
+  },
+  (table) => [
+    primaryKey({ columns: [table.accountId], name: "accounts_account_id" }),
+  ],
+);
 
-export const appointments = singlestoreTable("appointments", {
-	appointmentId: bigint("appointment_id", { mode: "number" }).autoincrement().notNull(),
-	userId: varchar("user_id", { length: 36 }).notNull(),
-	contactId: bigint("contact_id", { mode: "number" }).notNull(),
-	listingId: bigint("listing_id", { mode: "number" }),
-	leadId: bigint("lead_id", { mode: "number" }),
-	dealId: bigint("deal_id", { mode: "number" }),
-	prospectId: bigint("prospect_id", { mode: "number" }),
-	datetimeStart: timestamp("datetime_start", { mode: 'string' }).notNull(),
-	datetimeEnd: timestamp("datetime_end", { mode: 'string' }).notNull(),
-	status: varchar({ length: 20 }).default('Scheduled').notNull(),
-	notes: text(),
-	isActive: tinyint("is_active").default(1),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.appointmentId], name: "appointments_appointment_id"}),
-]);
+export const appointments = singlestoreTable(
+  "appointments",
+  {
+    appointmentId: bigint("appointment_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    contactId: bigint("contact_id", { mode: "number" }).notNull(),
+    listingId: bigint("listing_id", { mode: "number" }),
+    leadId: bigint("lead_id", { mode: "number" }),
+    dealId: bigint("deal_id", { mode: "number" }),
+    prospectId: bigint("prospect_id", { mode: "number" }),
+    datetimeStart: timestamp("datetime_start", { mode: "string" }).notNull(),
+    datetimeEnd: timestamp("datetime_end", { mode: "string" }).notNull(),
+    status: varchar({ length: 20 }).default("Scheduled").notNull(),
+    notes: text(),
+    isActive: tinyint("is_active").default(1),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.appointmentId],
+      name: "appointments_appointment_id",
+    }),
+  ],
+);
 
-export const contacts = singlestoreTable("contacts", {
-	contactId: bigint("contact_id", { mode: "number" }).autoincrement().notNull(),
-	accountId: bigint("account_id", { mode: "number" }).notNull(),
-	firstName: varchar("first_name", { length: 100 }).notNull(),
-	lastName: varchar("last_name", { length: 100 }).notNull(),
-	email: varchar({ length: 255 }),
-	phone: varchar({ length: 20 }),
-	additionalInfo: json("additional_info").default('{}'),
-	orgId: bigint("org_id", { mode: "number" }),
-	isActive: tinyint("is_active").default(1),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.contactId], name: "contacts_contact_id"}),
-]);
+export const contacts = singlestoreTable(
+  "contacts",
+  {
+    contactId: bigint("contact_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    accountId: bigint("account_id", { mode: "number" }).notNull(),
+    firstName: varchar("first_name", { length: 100 }).notNull(),
+    lastName: varchar("last_name", { length: 100 }).notNull(),
+    email: varchar({ length: 255 }),
+    phone: varchar({ length: 20 }),
+    additionalInfo: json("additional_info").default("{}"),
+    orgId: bigint("org_id", { mode: "number" }),
+    isActive: tinyint("is_active").default(1),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.contactId], name: "contacts_contact_id" }),
+  ],
+);
 
 export const dealParticipants = singlestoreTable("deal_participants", {
-	dealId: bigint("deal_id", { mode: "number" }).notNull(),
-	contactId: bigint("contact_id", { mode: "number" }).notNull(),
-	role: varchar({ length: 50 }).notNull(),
+  dealId: bigint("deal_id", { mode: "number" }).notNull(),
+  contactId: bigint("contact_id", { mode: "number" }).notNull(),
+  role: varchar({ length: 50 }).notNull(),
 });
 
-export const deals = singlestoreTable("deals", {
-	dealId: bigint("deal_id", { mode: "number" }).autoincrement().notNull(),
-	listingId: bigint("listing_id", { mode: "number" }).notNull(),
-	stage: varchar({ length: 20 }).notNull(),
-	closeDate: timestamp("close_date", { mode: 'string' }),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.dealId], name: "deals_deal_id"}),
-]);
+export const deals = singlestoreTable(
+  "deals",
+  {
+    dealId: bigint("deal_id", { mode: "number" }).autoincrement().notNull(),
+    listingId: bigint("listing_id", { mode: "number" }).notNull(),
+    stage: varchar({ length: 20 }).notNull(),
+    closeDate: timestamp("close_date", { mode: "string" }),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.dealId], name: "deals_deal_id" })],
+);
 
-export const documents = singlestoreTable("documents", {
-	docId: bigint("doc_id", { mode: "number" }).autoincrement().notNull(),
-	filename: varchar({ length: 255 }).notNull(),
-	fileType: varchar("file_type", { length: 50 }).notNull(),
-	fileUrl: varchar("file_url", { length: 2048 }).notNull(),
-	userId: varchar("user_id", { length: 36 }).notNull(),
-	propertyId: bigint("property_id", { mode: "number" }),
-	contactId: bigint("contact_id", { mode: "number" }),
-	listingId: bigint("listing_id", { mode: "number" }),
-	leadId: bigint("lead_id", { mode: "number" }),
-	dealId: bigint("deal_id", { mode: "number" }),
-	appointmentId: bigint("appointment_id", { mode: "number" }),
-	prospectId: bigint("prospect_id", { mode: "number" }),
-	documentKey: varchar("document_key", { length: 2048 }).notNull(),
-	s3Key: varchar({ length: 2048 }).notNull(),
-	documentTag: varchar("document_tag", { length: 255 }),
-	documentOrder: int("document_order").default(0).notNull(),
-	uploadedAt: timestamp("uploaded_at", { mode: 'string' }).defaultNow().notNull(),
-	isActive: tinyint("is_active").default(1),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.docId], name: "documents_doc_id"}),
-]);
+export const documents = singlestoreTable(
+  "documents",
+  {
+    docId: bigint("doc_id", { mode: "number" }).autoincrement().notNull(),
+    filename: varchar({ length: 255 }).notNull(),
+    fileType: varchar("file_type", { length: 50 }).notNull(),
+    fileUrl: varchar("file_url", { length: 2048 }).notNull(),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    propertyId: bigint("property_id", { mode: "number" }),
+    contactId: bigint("contact_id", { mode: "number" }),
+    listingId: bigint("listing_id", { mode: "number" }),
+    leadId: bigint("lead_id", { mode: "number" }),
+    dealId: bigint("deal_id", { mode: "number" }),
+    appointmentId: bigint("appointment_id", { mode: "number" }),
+    prospectId: bigint("prospect_id", { mode: "number" }),
+    documentKey: varchar("document_key", { length: 2048 }).notNull(),
+    s3Key: varchar({ length: 2048 }).notNull(),
+    documentTag: varchar("document_tag", { length: 255 }),
+    documentOrder: int("document_order").default(0).notNull(),
+    uploadedAt: timestamp("uploaded_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    isActive: tinyint("is_active").default(1),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.docId], name: "documents_doc_id" })],
+);
 
-export const leads = singlestoreTable("leads", {
-	leadId: bigint("lead_id", { mode: "number" }).autoincrement().notNull(),
-	contactId: bigint("contact_id", { mode: "number" }).notNull(),
-	listingId: bigint("listing_id", { mode: "number" }),
-	source: varchar({ length: 50 }).notNull(),
-	status: varchar({ length: 20 }).notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.leadId], name: "leads_lead_id"}),
-]);
+export const leads = singlestoreTable(
+  "leads",
+  {
+    leadId: bigint("lead_id", { mode: "number" }).autoincrement().notNull(),
+    contactId: bigint("contact_id", { mode: "number" }).notNull(),
+    listingId: bigint("listing_id", { mode: "number" }),
+    source: varchar({ length: 50 }).notNull(),
+    status: varchar({ length: 20 }).notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.leadId], name: "leads_lead_id" })],
+);
 
-export const listingContacts = singlestoreTable("listing_contacts", {
-	listingContactId: bigint("listing_contact_id", { mode: "number" }).autoincrement().notNull(),
-	listingId: bigint("listing_id", { mode: "number" }).notNull(),
-	contactId: bigint("contact_id", { mode: "number" }).notNull(),
-	contactType: varchar("contact_type", { length: 20 }).notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	isActive: tinyint("is_active").default(1),
-},
-(table) => [
-	primaryKey({ columns: [table.listingContactId], name: "listing_contacts_listing_contact_id"}),
-]);
+export const listingContacts = singlestoreTable(
+  "listing_contacts",
+  {
+    listingContactId: bigint("listing_contact_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    listingId: bigint("listing_id", { mode: "number" }).notNull(),
+    contactId: bigint("contact_id", { mode: "number" }).notNull(),
+    contactType: varchar("contact_type", { length: 20 }).notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+    isActive: tinyint("is_active").default(1),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.listingContactId],
+      name: "listing_contacts_listing_contact_id",
+    }),
+  ],
+);
 
-export const listings = singlestoreTable("listings", {
-	listingId: bigint("listing_id", { mode: "number" }).autoincrement().notNull(),
-	accountId: bigint("account_id", { mode: "number" }).notNull(),
-	propertyId: bigint("property_id", { mode: "number" }).notNull(),
-	agentId: bigint("agent_id", { mode: "number" }).notNull(),
-	listingType: varchar("listing_type", { length: 20 }).notNull(),
-	price: decimal({ precision: 12, scale: 2 }).notNull(),
-	status: varchar({ length: 20 }).notNull(),
-	isFurnished: tinyint("is_furnished"),
-	furnitureQuality: varchar("furniture_quality", { length: 50 }),
-	optionalGarage: tinyint("optional_garage"),
-	optionalGaragePrice: decimal("optional_garage_price", { precision: 12, scale: 2 }),
-	optionalStorageRoom: tinyint("optional_storage_room").default(0).notNull(),
-	optionalStorageRoomPrice: decimal("optional_storage_room_price", { precision: 12, scale: 2 }),
-	hasKeys: tinyint("has_keys").default(0).notNull(),
-	studentFriendly: tinyint("student_friendly"),
-	petsAllowed: tinyint("pets_allowed"),
-	appliancesIncluded: tinyint("appliances_included"),
-	internet: tinyint().default(0),
-	oven: tinyint().default(0),
-	microwave: tinyint().default(0),
-	washingMachine: tinyint("washing_machine").default(0),
-	fridge: tinyint().default(0),
-	tv: tinyint().default(0),
-	stoneware: tinyint().default(0),
-	isFeatured: tinyint("is_featured").default(0),
-	isBankOwned: tinyint("is_bank_owned").default(0),
-	isActive: tinyint("is_active").default(1),
-	visibilityMode: smallint("visibility_mode").default(1),
-	viewCount: int("view_count").default(0),
-	inquiryCount: int("inquiry_count").default(0),
-	fotocasa: tinyint().default(0),
-	idealista: tinyint().default(0),
-	habitaclia: tinyint().default(0),
-	pisoscom: tinyint().default(0),
-	yaencontre: tinyint().default(0),
-	milanuncios: tinyint().default(0),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.listingId], name: "listings_listing_id"}),
-]);
+export const listings = singlestoreTable(
+  "listings",
+  {
+    listingId: bigint("listing_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    accountId: bigint("account_id", { mode: "number" }).notNull(),
+    propertyId: bigint("property_id", { mode: "number" }).notNull(),
+    agentId: bigint("agent_id", { mode: "number" }).notNull(),
+    listingType: varchar("listing_type", { length: 20 }).notNull(),
+    price: decimal({ precision: 12, scale: 2 }).notNull(),
+    status: varchar({ length: 20 }).notNull(),
+    isFurnished: tinyint("is_furnished"),
+    furnitureQuality: varchar("furniture_quality", { length: 50 }),
+    optionalGarage: tinyint("optional_garage"),
+    optionalGaragePrice: decimal("optional_garage_price", {
+      precision: 12,
+      scale: 2,
+    }),
+    optionalStorageRoom: tinyint("optional_storage_room").default(0).notNull(),
+    optionalStorageRoomPrice: decimal("optional_storage_room_price", {
+      precision: 12,
+      scale: 2,
+    }),
+    hasKeys: tinyint("has_keys").default(0).notNull(),
+    studentFriendly: tinyint("student_friendly"),
+    petsAllowed: tinyint("pets_allowed"),
+    appliancesIncluded: tinyint("appliances_included"),
+    internet: tinyint().default(0),
+    oven: tinyint().default(0),
+    microwave: tinyint().default(0),
+    washingMachine: tinyint("washing_machine").default(0),
+    fridge: tinyint().default(0),
+    tv: tinyint().default(0),
+    stoneware: tinyint().default(0),
+    isFeatured: tinyint("is_featured").default(0),
+    isBankOwned: tinyint("is_bank_owned").default(0),
+    isActive: tinyint("is_active").default(1),
+    visibilityMode: smallint("visibility_mode").default(1),
+    viewCount: int("view_count").default(0),
+    inquiryCount: int("inquiry_count").default(0),
+    fotocasa: tinyint().default(0),
+    idealista: tinyint().default(0),
+    habitaclia: tinyint().default(0),
+    pisoscom: tinyint().default(0),
+    yaencontre: tinyint().default(0),
+    milanuncios: tinyint().default(0),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.listingId], name: "listings_listing_id" }),
+  ],
+);
 
-export const locations = singlestoreTable("locations", {
-	neighborhoodId: bigint("neighborhood_id", { mode: "number" }).autoincrement().notNull(),
-	city: varchar({ length: 100 }).notNull(),
-	province: varchar({ length: 100 }).notNull(),
-	municipality: varchar({ length: 100 }).notNull(),
-	neighborhood: varchar({ length: 100 }).notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	isActive: tinyint("is_active").default(1),
-},
-(table) => [
-	primaryKey({ columns: [table.neighborhoodId], name: "locations_neighborhood_id"}),
-]);
+export const locations = singlestoreTable(
+  "locations",
+  {
+    neighborhoodId: bigint("neighborhood_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    city: varchar({ length: 100 }).notNull(),
+    province: varchar({ length: 100 }).notNull(),
+    municipality: varchar({ length: 100 }).notNull(),
+    neighborhood: varchar({ length: 100 }).notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+    isActive: tinyint("is_active").default(1),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.neighborhoodId],
+      name: "locations_neighborhood_id",
+    }),
+  ],
+);
 
-export const organizations = singlestoreTable("organizations", {
-	orgId: bigint("org_id", { mode: "number" }).autoincrement().notNull(),
-	orgName: varchar("org_name", { length: 255 }).notNull(),
-	address: varchar({ length: 255 }),
-	city: varchar({ length: 100 }),
-	state: varchar({ length: 100 }),
-	postalCode: varchar("postal_code", { length: 20 }),
-	country: varchar({ length: 100 }),
-},
-(table) => [
-	primaryKey({ columns: [table.orgId], name: "organizations_org_id"}),
-]);
+export const organizations = singlestoreTable(
+  "organizations",
+  {
+    orgId: bigint("org_id", { mode: "number" }).autoincrement().notNull(),
+    orgName: varchar("org_name", { length: 255 }).notNull(),
+    address: varchar({ length: 255 }),
+    city: varchar({ length: 100 }),
+    state: varchar({ length: 100 }),
+    postalCode: varchar("postal_code", { length: 20 }),
+    country: varchar({ length: 100 }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.orgId], name: "organizations_org_id" }),
+  ],
+);
 
-export const properties = singlestoreTable("properties", {
-	propertyId: bigint("property_id", { mode: "number" }).autoincrement().notNull(),
-	accountId: bigint("account_id", { mode: "number" }).notNull(),
-	referenceNumber: varchar("reference_number", { length: 32 }),
-	title: varchar({ length: 255 }),
-	description: text(),
-	propertyType: varchar("property_type", { length: 20 }).default('piso'),
-	propertySubtype: varchar("property_subtype", { length: 50 }),
-	formPosition: int("form_position").default(1).notNull(),
-	bedrooms: smallint(),
-	bathrooms: decimal({ precision: 3, scale: 1 }),
-	squareMeter: int("square_meter"),
-	yearBuilt: smallint("year_built"),
-	cadastralReference: varchar("cadastral_reference", { length: 255 }),
-	builtSurfaceArea: decimal("built_surface_area", { precision: 10, scale: 2 }),
-	conservationStatus: smallint("conservation_status").default(1),
-	street: varchar({ length: 255 }),
-	addressDetails: varchar("address_details", { length: 255 }),
-	postalCode: varchar("postal_code", { length: 20 }),
-	neighborhoodId: bigint("neighborhood_id", { mode: "number" }),
-	latitude: decimal({ precision: 10, scale: 8 }),
-	longitude: decimal({ precision: 11, scale: 8 }),
-	energyCertification: text("energy_certification"),
-	energyCertificateStatus: varchar("energy_certificate_status", { length: 20 }),
-	energyConsumptionScale: varchar("energy_consumption_scale", { length: 2 }),
-	energyConsumptionValue: decimal("energy_consumption_value", { precision: 6, scale: 2 }),
-	emissionsScale: varchar("emissions_scale", { length: 2 }),
-	emissionsValue: decimal("emissions_value", { precision: 6, scale: 2 }),
-	hasHeating: tinyint("has_heating").default(0),
-	heatingType: varchar("heating_type", { length: 50 }),
-	hasElevator: tinyint("has_elevator").default(0),
-	hasGarage: tinyint("has_garage").default(0),
-	hasStorageRoom: tinyint("has_storage_room").default(0),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	isActive: tinyint("is_active").default(1),
-	garageType: varchar("garage_type", { length: 50 }),
-	garageSpaces: smallint("garage_spaces"),
-	garageInBuilding: tinyint("garage_in_building"),
-	elevatorToGarage: tinyint("elevator_to_garage"),
-	garageNumber: varchar("garage_number", { length: 20 }),
-	gym: tinyint().default(0),
-	sportsArea: tinyint("sports_area").default(0),
-	childrenArea: tinyint("children_area").default(0),
-	suiteBathroom: tinyint("suite_bathroom").default(0),
-	nearbyPublicTransport: tinyint("nearby_public_transport").default(0),
-	communityPool: tinyint("community_pool").default(0),
-	privatePool: tinyint("private_pool").default(0),
-	tennisCourt: tinyint("tennis_court").default(0),
-	disabledAccessible: tinyint("disabled_accessible"),
-	vpo: tinyint(),
-	videoIntercom: tinyint("video_intercom"),
-	conciergeService: tinyint("concierge_service"),
-	securityGuard: tinyint("security_guard"),
-	satelliteDish: tinyint("satellite_dish"),
-	doubleGlazing: tinyint("double_glazing"),
-	alarm: tinyint(),
-	securityDoor: tinyint("security_door"),
-	brandNew: tinyint("brand_new"),
-	newConstruction: tinyint("new_construction"),
-	underConstruction: tinyint("under_construction"),
-	needsRenovation: tinyint("needs_renovation"),
-	lastRenovationYear: smallint("last_renovation_year"),
-	kitchenType: varchar("kitchen_type", { length: 50 }),
-	hotWaterType: varchar("hot_water_type", { length: 50 }),
-	openKitchen: tinyint("open_kitchen"),
-	frenchKitchen: tinyint("french_kitchen"),
-	furnishedKitchen: tinyint("furnished_kitchen"),
-	pantry: tinyint(),
-	storageRoomSize: int("storage_room_size"),
-	storageRoomNumber: varchar("storage_room_number", { length: 20 }),
-	terrace: tinyint(),
-	terraceSize: int("terrace_size"),
-	wineCellar: tinyint("wine_cellar"),
-	wineCellarSize: int("wine_cellar_size"),
-	livingRoomSize: int("living_room_size"),
-	balconyCount: smallint("balcony_count"),
-	galleryCount: smallint("gallery_count"),
-	buildingFloors: smallint("building_floors"),
-	builtInWardrobes: varchar("built_in_wardrobes", { length: 50 }),
-	mainFloorType: varchar("main_floor_type", { length: 50 }),
-	shutterType: varchar("shutter_type", { length: 50 }),
-	carpentryType: varchar("carpentry_type", { length: 50 }),
-	orientation: varchar({ length: 50 }),
-	airConditioningType: varchar("air_conditioning_type", { length: 50 }),
-	windowType: varchar("window_type", { length: 50 }),
-	exterior: tinyint(),
-	bright: tinyint(),
-	views: tinyint(),
-	mountainViews: tinyint("mountain_views"),
-	seaViews: tinyint("sea_views"),
-	beachfront: tinyint(),
-	jacuzzi: tinyint(),
-	hydromassage: tinyint(),
-	garden: tinyint(),
-	pool: tinyint(),
-	homeAutomation: tinyint("home_automation"),
-	musicSystem: tinyint("music_system"),
-	laundryRoom: tinyint("laundry_room"),
-	coveredClothesline: tinyint("covered_clothesline"),
-	fireplace: tinyint(),
-},
-(table) => [
-	primaryKey({ columns: [table.propertyId], name: "properties_property_id"}),
-]);
+export const properties = singlestoreTable(
+  "properties",
+  {
+    propertyId: bigint("property_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    accountId: bigint("account_id", { mode: "number" }).notNull(),
+    referenceNumber: varchar("reference_number", { length: 32 }),
+    title: varchar({ length: 255 }),
+    description: text(),
+    propertyType: varchar("property_type", { length: 20 }).default("piso"),
+    propertySubtype: varchar("property_subtype", { length: 50 }),
+    formPosition: int("form_position").default(1).notNull(),
+    bedrooms: smallint(),
+    bathrooms: decimal({ precision: 3, scale: 1 }),
+    squareMeter: int("square_meter"),
+    yearBuilt: smallint("year_built"),
+    cadastralReference: varchar("cadastral_reference", { length: 255 }),
+    builtSurfaceArea: decimal("built_surface_area", {
+      precision: 10,
+      scale: 2,
+    }),
+    conservationStatus: smallint("conservation_status").default(1),
+    street: varchar({ length: 255 }),
+    addressDetails: varchar("address_details", { length: 255 }),
+    postalCode: varchar("postal_code", { length: 20 }),
+    neighborhoodId: bigint("neighborhood_id", { mode: "number" }),
+    latitude: decimal({ precision: 10, scale: 8 }),
+    longitude: decimal({ precision: 11, scale: 8 }),
+    energyCertification: text("energy_certification"),
+    energyCertificateStatus: varchar("energy_certificate_status", {
+      length: 20,
+    }),
+    energyConsumptionScale: varchar("energy_consumption_scale", { length: 2 }),
+    energyConsumptionValue: decimal("energy_consumption_value", {
+      precision: 6,
+      scale: 2,
+    }),
+    emissionsScale: varchar("emissions_scale", { length: 2 }),
+    emissionsValue: decimal("emissions_value", { precision: 6, scale: 2 }),
+    hasHeating: tinyint("has_heating").default(0),
+    heatingType: varchar("heating_type", { length: 50 }),
+    hasElevator: tinyint("has_elevator").default(0),
+    hasGarage: tinyint("has_garage").default(0),
+    hasStorageRoom: tinyint("has_storage_room").default(0),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+    isActive: tinyint("is_active").default(1),
+    garageType: varchar("garage_type", { length: 50 }),
+    garageSpaces: smallint("garage_spaces"),
+    garageInBuilding: tinyint("garage_in_building"),
+    elevatorToGarage: tinyint("elevator_to_garage"),
+    garageNumber: varchar("garage_number", { length: 20 }),
+    gym: tinyint().default(0),
+    sportsArea: tinyint("sports_area").default(0),
+    childrenArea: tinyint("children_area").default(0),
+    suiteBathroom: tinyint("suite_bathroom").default(0),
+    nearbyPublicTransport: tinyint("nearby_public_transport").default(0),
+    communityPool: tinyint("community_pool").default(0),
+    privatePool: tinyint("private_pool").default(0),
+    tennisCourt: tinyint("tennis_court").default(0),
+    disabledAccessible: tinyint("disabled_accessible"),
+    vpo: tinyint(),
+    videoIntercom: tinyint("video_intercom"),
+    conciergeService: tinyint("concierge_service"),
+    securityGuard: tinyint("security_guard"),
+    satelliteDish: tinyint("satellite_dish"),
+    doubleGlazing: tinyint("double_glazing"),
+    alarm: tinyint(),
+    securityDoor: tinyint("security_door"),
+    brandNew: tinyint("brand_new"),
+    newConstruction: tinyint("new_construction"),
+    underConstruction: tinyint("under_construction"),
+    needsRenovation: tinyint("needs_renovation"),
+    lastRenovationYear: smallint("last_renovation_year"),
+    kitchenType: varchar("kitchen_type", { length: 50 }),
+    hotWaterType: varchar("hot_water_type", { length: 50 }),
+    openKitchen: tinyint("open_kitchen"),
+    frenchKitchen: tinyint("french_kitchen"),
+    furnishedKitchen: tinyint("furnished_kitchen"),
+    pantry: tinyint(),
+    storageRoomSize: int("storage_room_size"),
+    storageRoomNumber: varchar("storage_room_number", { length: 20 }),
+    terrace: tinyint(),
+    terraceSize: int("terrace_size"),
+    wineCellar: tinyint("wine_cellar"),
+    wineCellarSize: int("wine_cellar_size"),
+    livingRoomSize: int("living_room_size"),
+    balconyCount: smallint("balcony_count"),
+    galleryCount: smallint("gallery_count"),
+    buildingFloors: smallint("building_floors"),
+    builtInWardrobes: varchar("built_in_wardrobes", { length: 50 }),
+    mainFloorType: varchar("main_floor_type", { length: 50 }),
+    shutterType: varchar("shutter_type", { length: 50 }),
+    carpentryType: varchar("carpentry_type", { length: 50 }),
+    orientation: varchar({ length: 50 }),
+    airConditioningType: varchar("air_conditioning_type", { length: 50 }),
+    windowType: varchar("window_type", { length: 50 }),
+    exterior: tinyint(),
+    bright: tinyint(),
+    views: tinyint(),
+    mountainViews: tinyint("mountain_views"),
+    seaViews: tinyint("sea_views"),
+    beachfront: tinyint(),
+    jacuzzi: tinyint(),
+    hydromassage: tinyint(),
+    garden: tinyint(),
+    pool: tinyint(),
+    homeAutomation: tinyint("home_automation"),
+    musicSystem: tinyint("music_system"),
+    laundryRoom: tinyint("laundry_room"),
+    coveredClothesline: tinyint("covered_clothesline"),
+    fireplace: tinyint(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.propertyId], name: "properties_property_id" }),
+  ],
+);
 
-export const propertyImages = singlestoreTable("property_images", {
-	propertyImageId: bigint("property_image_id", { mode: "number" }).autoincrement().notNull(),
-	propertyId: bigint("property_id", { mode: "number" }).notNull(),
-	referenceNumber: varchar("reference_number", { length: 32 }).notNull(),
-	imageUrl: varchar("image_url", { length: 255 }).notNull(),
-	isActive: tinyint("is_active").default(1),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	imageKey: varchar("image_key", { length: 2048 }).notNull(),
-	imageTag: varchar("image_tag", { length: 255 }),
-	s3Key: varchar({ length: 2048 }).notNull(),
-	imageOrder: int("image_order").default(0).notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.propertyImageId], name: "property_images_property_image_id"}),
-]);
+export const propertyImages = singlestoreTable(
+  "property_images",
+  {
+    propertyImageId: bigint("property_image_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    propertyId: bigint("property_id", { mode: "number" }).notNull(),
+    referenceNumber: varchar("reference_number", { length: 32 }).notNull(),
+    imageUrl: varchar("image_url", { length: 255 }).notNull(),
+    isActive: tinyint("is_active").default(1),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+    imageKey: varchar("image_key", { length: 2048 }).notNull(),
+    imageTag: varchar("image_tag", { length: 255 }),
+    s3Key: varchar({ length: 2048 }).notNull(),
+    imageOrder: int("image_order").default(0).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.propertyImageId],
+      name: "property_images_property_image_id",
+    }),
+  ],
+);
 
-export const prospectHistory = singlestoreTable("prospect_history", {
-	historyId: bigint("history_id", { mode: "number" }).autoincrement().notNull(),
-	prospectId: bigint("prospect_id", { mode: "number" }).notNull(),
-	previousStatus: varchar("previous_status", { length: 50 }),
-	newStatus: varchar("new_status", { length: 50 }).notNull(),
-	changedBy: varchar("changed_by", { length: 36 }).notNull(),
-	changeReason: text("change_reason"),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.historyId], name: "prospect_history_history_id"}),
-]);
+export const prospectHistory = singlestoreTable(
+  "prospect_history",
+  {
+    historyId: bigint("history_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    prospectId: bigint("prospect_id", { mode: "number" }).notNull(),
+    previousStatus: varchar("previous_status", { length: 50 }),
+    newStatus: varchar("new_status", { length: 50 }).notNull(),
+    changedBy: varchar("changed_by", { length: 36 }).notNull(),
+    changeReason: text("change_reason"),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.historyId],
+      name: "prospect_history_history_id",
+    }),
+  ],
+);
 
-export const prospects = singlestoreTable("prospects", {
-	prospectId: bigint("prospect_id", { mode: "number" }).autoincrement().notNull(),
-	contactId: bigint("contact_id", { mode: "number" }).notNull(),
-	status: varchar({ length: 50 }).notNull(),
-	listingType: varchar("listing_type", { length: 20 }),
-	propertyType: varchar("property_type", { length: 20 }),
-	minPrice: decimal("min_price", { precision: 12, scale: 2 }),
-	maxPrice: decimal("max_price", { precision: 12, scale: 2 }),
-	preferredAreas: json("preferred_areas"),
-	minBedrooms: smallint("min_bedrooms"),
-	minBathrooms: smallint("min_bathrooms"),
-	minSquareMeters: int("min_square_meters"),
-	maxSquareMeters: int("max_square_meters"),
-	moveInBy: timestamp("move_in_by", { mode: 'string' }),
-	extras: json(),
-	urgencyLevel: smallint("urgency_level"),
-	fundingReady: tinyint("funding_ready"),
-	notesInternal: text("notes_internal"),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.prospectId], name: "prospects_prospect_id"}),
-]);
+export const prospects = singlestoreTable(
+  "prospects",
+  {
+    prospectId: bigint("prospect_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    contactId: bigint("contact_id", { mode: "number" }).notNull(),
+    status: varchar({ length: 50 }).notNull(),
+    listingType: varchar("listing_type", { length: 20 }),
+    propertyType: varchar("property_type", { length: 20 }),
+    minPrice: decimal("min_price", { precision: 12, scale: 2 }),
+    maxPrice: decimal("max_price", { precision: 12, scale: 2 }),
+    preferredAreas: json("preferred_areas"),
+    minBedrooms: smallint("min_bedrooms"),
+    minBathrooms: smallint("min_bathrooms"),
+    minSquareMeters: int("min_square_meters"),
+    maxSquareMeters: int("max_square_meters"),
+    moveInBy: timestamp("move_in_by", { mode: "string" }),
+    extras: json(),
+    urgencyLevel: smallint("urgency_level"),
+    fundingReady: tinyint("funding_ready"),
+    notesInternal: text("notes_internal"),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.prospectId], name: "prospects_prospect_id" }),
+  ],
+);
 
-export const roles = singlestoreTable("roles", {
-	roleId: bigint("role_id", { mode: "number" }).autoincrement().notNull(),
-	name: varchar({ length: 50 }).notNull(),
-	description: varchar({ length: 255 }),
-	permissions: json().default('{}'),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	isActive: tinyint("is_active").default(1),
-},
-(table) => [
-	primaryKey({ columns: [table.roleId], name: "roles_role_id"}),
-]);
+export const roles = singlestoreTable(
+  "roles",
+  {
+    roleId: bigint("role_id", { mode: "number" }).autoincrement().notNull(),
+    name: varchar({ length: 50 }).notNull(),
+    description: varchar({ length: 255 }),
+    permissions: json().default("{}"),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+    isActive: tinyint("is_active").default(1),
+  },
+  (table) => [primaryKey({ columns: [table.roleId], name: "roles_role_id" })],
+);
 
-export const sessions = singlestoreTable("sessions", {
-	id: varchar({ length: 36 }).notNull(),
-	expiresAt: timestamp("expires_at", { mode: 'string' }).notNull(),
-	token: varchar({ length: 255 }).notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	ipAddress: text("ip_address"),
-	userAgent: text("user_agent"),
-	userId: varchar("user_id", { length: 36 }).notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.id], name: "sessions_id"}),
-]);
+export const sessions = singlestoreTable(
+  "sessions",
+  {
+    id: varchar({ length: 36 }).notNull(),
+    expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
+    token: varchar({ length: 255 }).notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.id], name: "sessions_id" })],
+);
 
-export const tasks = singlestoreTable("tasks", {
-	taskId: bigint("task_id", { mode: "number" }).autoincrement().notNull(),
-	userId: varchar("user_id", { length: 36 }).notNull(),
-	description: text().notNull(),
-	dueDate: timestamp("due_date", { mode: 'string' }),
-	completed: tinyint().default(0),
-	listingId: bigint("listing_id", { mode: "number" }),
-	leadId: bigint("lead_id", { mode: "number" }),
-	dealId: bigint("deal_id", { mode: "number" }),
-	appointmentId: bigint("appointment_id", { mode: "number" }),
-	prospectId: bigint("prospect_id", { mode: "number" }),
-	isActive: tinyint("is_active").default(1),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.taskId], name: "tasks_task_id"}),
-]);
+export const tasks = singlestoreTable(
+  "tasks",
+  {
+    taskId: bigint("task_id", { mode: "number" }).autoincrement().notNull(),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    description: text().notNull(),
+    dueDate: timestamp("due_date", { mode: "string" }),
+    completed: tinyint().default(0),
+    listingId: bigint("listing_id", { mode: "number" }),
+    leadId: bigint("lead_id", { mode: "number" }),
+    dealId: bigint("deal_id", { mode: "number" }),
+    appointmentId: bigint("appointment_id", { mode: "number" }),
+    prospectId: bigint("prospect_id", { mode: "number" }),
+    isActive: tinyint("is_active").default(1),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.taskId], name: "tasks_task_id" })],
+);
 
-export const userRoles = singlestoreTable("user_roles", {
-	userRoleId: bigint("user_role_id", { mode: "number" }).autoincrement().notNull(),
-	userId: varchar("user_id", { length: 36 }).notNull(),
-	roleId: bigint("role_id", { mode: "number" }).notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	isActive: tinyint("is_active").default(1),
-},
-(table) => [
-	primaryKey({ columns: [table.userRoleId], name: "user_roles_user_role_id"}),
-]);
+export const userRoles = singlestoreTable(
+  "user_roles",
+  {
+    userRoleId: bigint("user_role_id", { mode: "number" })
+      .autoincrement()
+      .notNull(),
+    userId: varchar("user_id", { length: 36 }).notNull(),
+    roleId: bigint("role_id", { mode: "number" }).notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+    isActive: tinyint("is_active").default(1),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.userRoleId],
+      name: "user_roles_user_role_id",
+    }),
+  ],
+);
 
-export const users = singlestoreTable("users", {
-	id: varchar({ length: 36 }).notNull(),
-	name: varchar({ length: 200 }).notNull(),
-	email: varchar({ length: 255 }).notNull(),
-	emailVerified: tinyint("email_verified").default(0),
-	emailVerifiedAt: timestamp("email_verified_at", { mode: 'string' }),
-	image: varchar({ length: 255 }),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	password: varchar({ length: 255 }),
-	accountId: bigint("account_id", { mode: "number" }).notNull(),
-	firstName: varchar("first_name", { length: 100 }).notNull(),
-	lastName: varchar("last_name", { length: 100 }).notNull(),
-	phone: varchar({ length: 20 }),
-	timezone: varchar({ length: 50 }).default('UTC'),
-	language: varchar({ length: 10 }).default('en'),
-	preferences: json().default('{}'),
-	lastLogin: timestamp("last_login", { mode: 'string' }),
-	isVerified: tinyint("is_verified").default(0),
-	isActive: tinyint("is_active").default(1),
-},
-(table) => [
-	primaryKey({ columns: [table.id], name: "users_id"}),
-]);
+export const users = singlestoreTable(
+  "users",
+  {
+    id: varchar({ length: 36 }).notNull(),
+    name: varchar({ length: 200 }).notNull(),
+    email: varchar({ length: 255 }).notNull(),
+    emailVerified: tinyint("email_verified").default(0),
+    emailVerifiedAt: timestamp("email_verified_at", { mode: "string" }),
+    image: varchar({ length: 255 }),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+    password: varchar({ length: 255 }),
+    accountId: bigint("account_id", { mode: "number" }).notNull(),
+    firstName: varchar("first_name", { length: 100 }).notNull(),
+    lastName: varchar("last_name", { length: 100 }).notNull(),
+    phone: varchar({ length: 20 }),
+    timezone: varchar({ length: 50 }).default("UTC"),
+    language: varchar({ length: 10 }).default("en"),
+    preferences: json().default("{}"),
+    lastLogin: timestamp("last_login", { mode: "string" }),
+    isVerified: tinyint("is_verified").default(0),
+    isActive: tinyint("is_active").default(1),
+  },
+  (table) => [primaryKey({ columns: [table.id], name: "users_id" })],
+);
 
-export const verificationTokens = singlestoreTable("verification_tokens", {
-	id: varchar({ length: 36 }).notNull(),
-	identifier: text().notNull(),
-	value: text().notNull(),
-	expiresAt: timestamp("expires_at", { mode: 'string' }).notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	primaryKey({ columns: [table.id], name: "verification_tokens_id"}),
-]);
+export const verificationTokens = singlestoreTable(
+  "verification_tokens",
+  {
+    id: varchar({ length: 36 }).notNull(),
+    identifier: text().notNull(),
+    value: text().notNull(),
+    expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .onUpdateNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.id], name: "verification_tokens_id" }),
+  ],
+);

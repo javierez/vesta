@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   createPropertyFromCadastral,
   createPropertyFromLocation,
+  createPropertyFromCombined,
 } from "~/server/queries/properties";
 import {
   uploadDocument,
@@ -457,7 +458,52 @@ const PropertyIdentificationForm: FC = () => {
     }
   };
 
+  // Client-side function that calls the server action for combined method (cadastral + documents)
+  const handleCreatePropertyFromCombined = async () => {
+    try {
+      setIsCreatingProperty(true);
+
+      // Call the server action for combined method
+      const newProperty = await createPropertyFromCombined(
+        formData.cadastralReference.trim(),
+        uploadedDocuments,
+        tempReferenceNumber,
+      );
+
+      return newProperty; // Return the property data for redirection
+    } catch (error) {
+      console.error("Error creating property from combined method:", error);
+      alert("Error al crear la propiedad. Por favor, inténtalo de nuevo.");
+      throw error; // Re-throw the error so the calling function can handle it
+    } finally {
+      setIsCreatingProperty(false);
+    }
+  };
+
   const nextStep = async () => {
+    // COMBINED METHOD: If we have both cadastral reference AND documents, use combined method
+    if (
+      currentStep === 0 &&
+      formData.cadastralReference.trim() &&
+      uploadedDocuments.length > 0
+    ) {
+      try {
+        const newProperty = await handleCreatePropertyFromCombined();
+
+        if (newProperty?.listingId) {
+          setIsNavigating(true);
+          router.push(
+            `/propiedades/crear/${newProperty.listingId}?method=combined`,
+          );
+          return;
+        }
+      } catch (error) {
+        console.error("Error creating property from combined method:", error);
+        alert("Error al crear la propiedad. Por favor, inténtalo de nuevo.");
+        return;
+      }
+    }
+
     // If we're on the initial step and cadastral reference is filled, create property and redirect
     if (currentStep === 0 && formData.cadastralReference.trim()) {
       try {
@@ -985,13 +1031,16 @@ const PropertyIdentificationForm: FC = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="group relative h-[300px]">
-                          <Image
-                            src={document.fileUrl}
-                            alt={`Document ${index + 1}`}
-                            fill
-                            className="bg-gray-50 object-contain"
-                          />
+                        <div className="group relative">
+                          <div className="max-h-96 overflow-y-auto">
+                            <Image
+                              src={document.fileUrl}
+                              alt={`Document ${index + 1}`}
+                              width={800}
+                              height={600}
+                              className="bg-gray-50 w-full h-auto object-cover"
+                            />
+                          </div>
                           <div className="pointer-events-none absolute inset-0 bg-black/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                             <div className="pointer-events-auto absolute bottom-3 right-3 flex gap-2">
                               <button
@@ -1028,20 +1077,7 @@ const PropertyIdentificationForm: FC = () => {
                     </div>
                   ))}
 
-                  {/* Add more files button */}
-                  <button
-                    onClick={() =>
-                      document.getElementById("fichaPropiedadInput")?.click()
-                    }
-                    className="group w-full rounded-lg border-2 border-dashed border-gray-300 p-4 text-center transition-colors hover:border-gray-400 hover:bg-gray-50"
-                  >
-                    <div className="flex items-center justify-center space-x-2 text-gray-600 group-hover:text-gray-700">
-                      <Upload className="h-4 w-4" />
-                      <span className="text-sm font-medium">
-                        Añadir más archivos
-                      </span>
-                    </div>
-                  </button>
+                  {/* Add more files button - DISABLED */}
                 </div>
               )}
 
@@ -1190,7 +1226,9 @@ const PropertyIdentificationForm: FC = () => {
             {currentStep === 1 && !areAllLocationFieldsFilled() ? (
               <Button
                 onClick={autoCompleteAddress}
-                disabled={isCreatingProperty || isNavigating || !formData.street.trim()}
+                disabled={
+                  isCreatingProperty || isNavigating || !formData.street.trim()
+                }
                 className="flex h-8 items-center space-x-2"
               >
                 {isCreatingProperty || isNavigating ? (
@@ -1214,7 +1252,11 @@ const PropertyIdentificationForm: FC = () => {
                 {isCreatingProperty || isNavigating ? (
                   <>
                     <Loader className="h-4 w-4 animate-spin" />
-                    <span>{isNavigating ? "Redirigiendo..." : "Creando propiedad..."}</span>
+                    <span>
+                      {isNavigating
+                        ? "Redirigiendo..."
+                        : "Creando propiedad..."}
+                    </span>
                   </>
                 ) : (
                   <>

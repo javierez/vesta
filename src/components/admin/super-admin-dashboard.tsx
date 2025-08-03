@@ -14,15 +14,15 @@ export const SuperAdminDashboard: FC = () => {
         <TabsTrigger value="users">Usuarios</TabsTrigger>
         <TabsTrigger value="settings">Configuración</TabsTrigger>
       </TabsList>
-      
+
       <TabsContent value="accounts" className="space-y-6">
         <AccountsManagement />
       </TabsContent>
-      
+
       <TabsContent value="users" className="space-y-6">
         <UsersManagement />
       </TabsContent>
-      
+
       <TabsContent value="settings" className="space-y-6">
         <SystemSettings />
       </TabsContent>

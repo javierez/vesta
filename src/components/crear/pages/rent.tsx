@@ -471,11 +471,14 @@ export default function RentPage({
             </Button>
           </motion.div>
 
-          <motion.div whileHover={{ scale: isSubmitting ? 1 : 1.02 }} whileTap={{ scale: isSubmitting ? 1 : 0.98 }}>
+          <motion.div
+            whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+            whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+          >
             <Button
               onClick={handleNext}
               disabled={isSubmitting}
-              className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed"
+              className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-600"
             >
               {isSubmitting ? (
                 <>
@@ -629,11 +632,14 @@ export default function RentPage({
           </Button>
         </motion.div>
 
-        <motion.div whileHover={{ scale: isSubmitting ? 1 : 1.02 }} whileTap={{ scale: isSubmitting ? 1 : 0.98 }}>
+        <motion.div
+          whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+          whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+        >
           <Button
             onClick={handleNext}
             disabled={isSubmitting}
-            className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed"
+            className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-600"
           >
             {isSubmitting ? (
               <>

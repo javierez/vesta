@@ -142,7 +142,7 @@ export async function getCurrentUserRoles(): Promise<string[]> {
     // Try to get roles from middleware headers first (cached)
     const headersList = await headers();
     const rolesHeader = headersList.get("x-user-roles");
-    
+
     if (rolesHeader) {
       try {
         return JSON.parse(rolesHeader) as string[];
@@ -186,12 +186,14 @@ export async function getCurrentUserPermissions(): Promise<Permission[]> {
     // Try to get permissions from middleware headers first (cached)
     const headersList = await headers();
     const permissionsHeader = headersList.get("x-user-permissions");
-    
+
     if (permissionsHeader) {
       try {
         return JSON.parse(permissionsHeader) as Permission[];
       } catch {
-        console.warn("Failed to parse permissions from header, falling back to calculation");
+        console.warn(
+          "Failed to parse permissions from header, falling back to calculation",
+        );
       }
     }
 
