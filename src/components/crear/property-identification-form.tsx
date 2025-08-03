@@ -1038,7 +1038,7 @@ const PropertyIdentificationForm: FC = () => {
                               alt={`Document ${index + 1}`}
                               width={800}
                               height={600}
-                              className="bg-gray-50 w-full h-auto object-cover"
+                              className="h-auto w-full bg-gray-50 object-cover"
                             />
                           </div>
                           <div className="pointer-events-none absolute inset-0 bg-black/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">

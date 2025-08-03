@@ -33,6 +33,10 @@ const adminNavigation = [
   { name: "Administración", href: "/admin", icon: Shield },
 ];
 
+const accountAdminNavigation = [
+  { name: "Administración", href: "/account-admin", icon: Shield },
+];
+
 interface DashboardLayoutProps {
   children: ReactNode;
 }
@@ -44,10 +48,14 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   const { data: session } = useSession();
   const { hasRoleId } = useUserRole();
 
-  // Build navigation based on user role (role ID 2 as requested)
+  // Build navigation based on user role
   const navigation = [...baseNavigation];
   if (hasRoleId(2)) {
     navigation.push(...adminNavigation);
+  }
+  // Add account admin navigation for role ID 3
+  if (hasRoleId(3)) {
+    navigation.push(...accountAdminNavigation);
   }
 
   const handleSignOut = async () => {

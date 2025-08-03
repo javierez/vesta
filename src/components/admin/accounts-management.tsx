@@ -171,15 +171,6 @@ export const AccountsManagement: FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            Gestión de Cuentas
-          </h2>
-          <p className="text-sm text-gray-500">
-            Crear y gestionar cuentas organizacionales
-          </p>
-        </div>
-
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>

@@ -1,34 +1,17 @@
-import { redirect } from "next/navigation";
-import { auth } from "~/lib/auth";
-import { userHasRole } from "~/server/queries/user-roles";
-import { SuperAdminDashboard } from "~/components/admin/super-admin-dashboard";
+import { AdminNavigationCards } from "~/components/admin/admin-navigation-cards";
 
-export default async function AdminPage() {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
-
-  if (!session?.user) {
-    redirect("/auth/signin");
-  }
-
-  // Check if user has role ID 2 (as specifically requested)
-  const hasRequiredRole = await userHasRole(session.user.id, 2);
-
-  if (!hasRequiredRole) {
-    redirect("/dashboard");
-  }
-
+export default function AdminPage() {
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Administración</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Panel de administración para superadministradores
+          Panel de administración para superadministradores. Selecciona el área
+          que deseas administrar.
         </p>
       </div>
 
-      <SuperAdminDashboard />
+      <AdminNavigationCards />
     </div>
   );
 }

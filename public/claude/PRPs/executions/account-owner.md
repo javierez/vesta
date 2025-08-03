@@ -5,9 +5,9 @@ Create a new admin panel for account administrators (userRole=3) with similar na
 
 ## Requirements Summary
 - New admin tab in side navigation for users with role ID 3 (Account Admin)
-- Admin page with menu sections: Reports, Configuration, Other
+- Admin page with menu sections: Reports, Configuration, Other (please give recommendations)
 - Configuration section with Logo upload functionality
-- Logo uploads should go to AWS S3 in `inmobiliariaAcropolis/configFiles` folder
+- Logo uploads should go to AWS S3 in `inmobiliariaAcropolis/config` folder
 - Must not disrupt existing functionality (except side nav addition)
 
 ## Critical Context from Codebase Research

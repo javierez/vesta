@@ -12,15 +12,6 @@ import type { FC } from "react";
 export const UsersManagement: FC = () => {
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900">
-          Gestión de Usuarios
-        </h2>
-        <p className="text-sm text-gray-500">
-          Administrar usuarios y sus roles
-        </p>
-      </div>
-
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <Users className="mb-4 h-12 w-12 text-gray-400" />

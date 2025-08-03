@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { uploadImageToS3 } from "~/lib/s3";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
   getAccountSettings,
   updateAccountSettings,
@@ -260,5 +261,76 @@ export async function getCurrentUserAccountId(
   } catch (error) {
     console.error("Error getting account ID for user:", error);
     return null;
+  }
+}
+
+// Add this new function specifically for config files
+export async function uploadAccountLogoForConfig(
+  formData: FormData,
+): Promise<AccountSettingsResponse> {
+  try {
+    const file = formData.get("logo") as File;
+    const accountId = formData.get("accountId") as string;
+
+    if (!file || !accountId) {
+      return {
+        success: false,
+        error: "Archivo y ID de cuenta requeridos",
+      };
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      return {
+        success: false,
+        error: "El archivo debe ser una imagen",
+      };
+    }
+
+    // Create a custom upload function for the config folder
+    const fileExtension = file.name.split(".").pop();
+    const logoKey = `inmobiliariaAcropolis/config/logo_${accountId}_${Date.now()}.${fileExtension}`;
+
+    // Convert File to Buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Upload to S3 directly with custom key
+    const s3Client = new S3Client({
+      region: process.env.AWS_REGION!,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    });
+
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET!,
+        Key: logoKey,
+        Body: buffer,
+        ContentType: file.type,
+      }),
+    );
+
+    const imageUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${logoKey}`;
+
+    // Update account with new logo URL
+    const updatedAccount = await updateAccountLogo(BigInt(accountId), imageUrl);
+
+    // Revalidate pages
+    revalidatePath("/account-admin");
+    revalidatePath("/ajustes");
+
+    return {
+      success: true,
+      data: updatedAccount,
+    };
+  } catch (error) {
+    console.error("Error uploading account logo:", error);
+    return {
+      success: false,
+      error: "Error al subir el logo",
+    };
   }
 }
