@@ -1,5 +1,3 @@
-"use client";
-
 import type { FC } from "react";
 import { cn } from "~/lib/utils";
 import type { TemplateConfiguration } from "~/types/template-data";
@@ -109,6 +107,11 @@ export const TemplateStyleSelector: FC<TemplateStyleSelectorProps> = ({
             }
           };
 
+          const styleColor = colorClasses[style.color] ?? {
+            selected: "bg-blue-50 border-blue-500 text-blue-700",
+            unselected: "hover:border-blue-300"
+          };
+
           return (
             <button
               key={style.value}
@@ -119,10 +122,10 @@ export const TemplateStyleSelector: FC<TemplateStyleSelectorProps> = ({
                 "focus:outline-none focus:ring-2 focus:ring-offset-2",
                 isAvailable && "hover:shadow-md",
                 !isAvailable && "opacity-50 cursor-not-allowed bg-gray-50",
-                isSelected && isAvailable && colorClasses[style.color].selected,
+                isSelected && isAvailable && styleColor.selected,
                 isSelected && isAvailable && "focus:ring-current",
                 !isSelected && isAvailable && "bg-white border-gray-200 hover:border-gray-300 focus:ring-gray-500",
-                !isSelected && isAvailable && colorClasses[style.color].unselected
+                !isSelected && isAvailable && styleColor.unselected
               )}
             >
               <div className="flex items-center justify-between mb-2">
