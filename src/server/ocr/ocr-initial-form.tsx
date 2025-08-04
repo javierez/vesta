@@ -59,12 +59,6 @@ interface EnhancedProcessingLog {
   listingFieldsSaved: number;
   errors: string[];
   warnings: string[];
-  performanceMetrics: {
-    ocrDuration: number;
-    extractionDuration: number;
-    databaseDuration: number;
-    totalDuration: number;
-  };
 }
 
 /**
@@ -668,12 +662,6 @@ export async function processDocumentInBackgroundEnhanced(
     listingFieldsSaved: 0,
     errors: [],
     warnings: [],
-    performanceMetrics: {
-      ocrDuration: 0,
-      extractionDuration: 0,
-      databaseDuration: 0,
-      totalDuration: 0,
-    },
   };
 
   try {
@@ -686,7 +674,6 @@ export async function processDocumentInBackgroundEnhanced(
     );
 
     // Step 1: OCR Processing
-    const ocrStartTime = Date.now();
     console.log(`🔍 [OCR-ENHANCED] Step 1: OCR text extraction...`);
 
     const ocrResult = await analyzeDocumentStructure(
@@ -696,8 +683,6 @@ export async function processDocumentInBackgroundEnhanced(
       true,
     );
 
-    const ocrDuration = Date.now() - ocrStartTime;
-    log.performanceMetrics.ocrDuration = ocrDuration;
     log.ocrConfidence = ocrResult.confidence;
 
     if (!ocrResult.success) {
@@ -706,11 +691,10 @@ export async function processDocumentInBackgroundEnhanced(
     }
 
     console.log(
-      `✅ [OCR-ENHANCED] OCR completed in ${ocrDuration}ms (${ocrResult.confidence.toFixed(1)}% confidence)`,
+      `✅ [OCR-ENHANCED] OCR completed (${ocrResult.confidence.toFixed(1)}% confidence)`,
     );
 
     // Step 2: Enhanced Field Extraction
-    const extractionStartTime = Date.now();
     console.log(`🔬 [OCR-ENHANCED] Step 2: Enhanced field extraction...`);
 
     const { extractEnhancedPropertyData } = await import("./field-extractor");
@@ -721,12 +705,10 @@ export async function processDocumentInBackgroundEnhanced(
       confidence: ocrResult.confidence,
     });
 
-    const extractionDuration = Date.now() - extractionStartTime;
-    log.performanceMetrics.extractionDuration = extractionDuration;
     log.fieldsExtracted = extractionResult.extractedFields.length;
 
     console.log(
-      `✅ [OCR-ENHANCED] Field extraction completed in ${extractionDuration}ms (${extractionResult.extractedFields.length} fields)`,
+      `✅ [OCR-ENHANCED] Field extraction completed (${extractionResult.extractedFields.length} fields)`,
     );
 
     // Step 3: Confidence Filtering
@@ -752,9 +734,7 @@ export async function processDocumentInBackgroundEnhanced(
     }
 
     // Step 4: Database Integration
-    let databaseDuration = 0;
     if (highConfidenceFields.length > 0) {
-      const databaseStartTime = Date.now();
       console.log(`💾 [OCR-ENHANCED] Step 3: Database integration...`);
 
       // Get property and listing IDs
@@ -843,33 +823,16 @@ export async function processDocumentInBackgroundEnhanced(
         );
       }
 
-      databaseDuration = Date.now() - databaseStartTime;
-      log.performanceMetrics.databaseDuration = databaseDuration;
       console.log(
-        `✅ [OCR-ENHANCED] Database operations completed in ${databaseDuration}ms`,
+        `✅ [OCR-ENHANCED] Database operations completed`,
       );
     }
 
     // Final logging and metrics
     log.processingEndTime = new Date();
-    log.performanceMetrics.totalDuration =
-      log.processingEndTime.getTime() - processingStartTime.getTime();
 
     console.log(
       `🎯 [OCR-ENHANCED] Enhanced processing completed successfully:`,
-    );
-    console.log(`   📊 Performance Metrics:`);
-    console.log(
-      `      - Total duration: ${log.performanceMetrics.totalDuration}ms`,
-    );
-    console.log(
-      `      - OCR duration: ${log.performanceMetrics.ocrDuration}ms`,
-    );
-    console.log(
-      `      - Extraction duration: ${log.performanceMetrics.extractionDuration}ms`,
-    );
-    console.log(
-      `      - Database duration: ${log.performanceMetrics.databaseDuration}ms`,
     );
     console.log(`   📈 Extraction Results:`);
     console.log(`      - OCR confidence: ${log.ocrConfidence.toFixed(1)}%`);
@@ -892,17 +855,12 @@ export async function processDocumentInBackgroundEnhanced(
     );
   } catch (error) {
     log.processingEndTime = new Date();
-    log.performanceMetrics.totalDuration =
-      log.processingEndTime.getTime() - processingStartTime.getTime();
     log.errors.push(error instanceof Error ? error.message : "Unknown error");
 
     console.error(
       `❌ [OCR-ENHANCED] Enhanced processing failed for: ${documentKey}`,
     );
     console.error(`❌ [OCR-ENHANCED] Error:`, error);
-    console.error(
-      `❌ [OCR-ENHANCED] Processing duration: ${log.performanceMetrics.totalDuration}ms`,
-    );
     console.error(`❌ [OCR-ENHANCED] Error log:`, JSON.stringify(log, null, 2));
 
     if (error instanceof Error && error.stack) {

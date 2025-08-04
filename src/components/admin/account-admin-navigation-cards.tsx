@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { BarChart3, Settings, Users, Palette } from "lucide-react";
+import { BarChart3, Settings, Users, Palette, FileImage } from "lucide-react";
 
 interface AccountAdminCard {
   title: string;
@@ -39,6 +39,13 @@ const accountAdminSections: AccountAdminCard[] = [
     description: "Gestiona la identidad visual y elementos de marca",
     icon: Palette,
     href: "/account-admin/branding",
+    available: true,
+  },
+  {
+    title: "Cartelería",
+    description: "Selecciona y personaliza plantillas para carteles inmobiliarios",
+    icon: FileImage,
+    href: "/account-admin/carteleria",
     available: true,
   },
   {

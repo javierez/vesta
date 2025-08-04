@@ -66,7 +66,6 @@ export async function saveExtractedDataToDatabase(
   extractedFields: ExtractedFieldResult[],
   confidenceThreshold = 80,
 ): Promise<DatabaseSaveResult> {
-  const startTime = Date.now();
   const result: DatabaseSaveResult = {
     success: false,
     propertyUpdated: false,
@@ -523,8 +522,7 @@ export async function saveExtractedDataToDatabase(
     result.success =
       !hasErrors && (hasUpdates || highConfidenceFields.length === 0);
 
-    const duration = Date.now() - startTime;
-    console.log(`🎯 [DATABASE] Save operation completed in ${duration}ms:`);
+    console.log(`🎯 [DATABASE] Save operation completed:`);
     console.log(`   - Success: ${result.success}`);
     console.log(`   - Property updated: ${result.propertyUpdated}`);
     console.log(`   - Listing updated: ${result.listingUpdated}`);
@@ -543,9 +541,8 @@ export async function saveExtractedDataToDatabase(
 
     return result;
   } catch (error) {
-    const duration = Date.now() - startTime;
     console.error(
-      `❌ [DATABASE] Critical error during save operation (${duration}ms):`,
+      `❌ [DATABASE] Critical error during save operation:`,
       error,
     );
 

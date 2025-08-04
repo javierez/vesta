@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from "react";
@@ -33,32 +34,6 @@ export const BrandColorPalette: FC<BrandColorPaletteProps> = ({
               index={index + 1}
             />
           ))}
-        </div>
-        
-        {showHexValues && (
-          <div className="mt-6 space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">
-              Valores de Color
-            </h4>
-            <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3">
-              {finalColors.map((color, index) => (
-                <div
-                  key={`hex-${color}-${index}`}
-                  className="flex items-center justify-between rounded-md bg-muted px-3 py-2"
-                >
-                  <span className="font-medium">Color {index + 1}:</span>
-                  <span className="font-mono">{color.toUpperCase()}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        <div className="mt-4 text-xs text-muted-foreground">
-          <p>
-            Utiliza estos colores para mantener la consistencia de tu marca en 
-            toda la plataforma. Los colores están ordenados por prominencia en tu logo.
-          </p>
         </div>
       </CardContent>
     </Card>

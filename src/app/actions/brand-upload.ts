@@ -85,8 +85,6 @@ export async function uploadBrandAsset(
   originalFileName: string,
 ): Promise<BrandAsset> {
   try {
-    console.log('Starting brand asset upload for account:', accountId);
-
     // 1. Upload original logo to S3
     const originalUpload = await uploadBrandAssetToS3(
       originalFile,
@@ -144,7 +142,6 @@ export async function uploadBrandAsset(
       updatedAt: now,
     };
 
-    console.log('Brand asset upload completed successfully');
     return brandAsset;
   } catch (error) {
     console.error("Error uploading brand asset:", error);
@@ -203,18 +200,19 @@ export async function deleteBrandAsset(accountId: string): Promise<{ success: bo
     await Promise.all(deletePromises);
 
     // 3. Update database to remove brand data
+    // Keep other preferences but remove brand-related ones
+    const cleanedPreferences = { ...preferences };
+    delete cleanedPreferences.logoTransparent;
+    delete cleanedPreferences.logoTransparentS3Key;
+    delete cleanedPreferences.logoTransparentImageKey;
+    delete cleanedPreferences.colorPalette;
+    delete cleanedPreferences.brandingUpdatedAt;
+    
     await db
       .update(accounts)
       .set({
         logo: null,
-        preferences: {
-          ...preferences,
-          logoTransparent: null,
-          logoTransparentS3Key: null,
-          logoTransparentImageKey: null,
-          colorPalette: null,
-          brandingUpdatedAt: null,
-        },
+        preferences: cleanedPreferences,
         updatedAt: new Date(),
       })
       .where(eq(accounts.accountId, BigInt(accountId)));
@@ -257,6 +255,56 @@ export async function getBrandAsset(accountId: string): Promise<BrandAsset | nul
   } catch (error) {
     console.error("Error getting brand asset:", error);
     throw error;
+  }
+}
+
+/**
+ * Update color palette for an account
+ * This allows users to adjust extracted colors to be more appealing
+ */
+export async function updateColorPalette(
+  accountId: string,
+  newColorPalette: string[]
+): Promise<{ success: boolean; colorPalette: string[] }> {
+  try {
+    console.log('Updating color palette for account:', accountId);
+
+    // 1. Get current account data
+    const [account] = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.accountId, BigInt(accountId)));
+
+    if (!account) {
+      throw new Error("Account not found");
+    }
+
+    const currentPreferences = (account.preferences as AccountPreferences) ?? {};
+
+    // 2. Update preferences with new color palette
+    const updatedPreferences: AccountPreferences = {
+      ...currentPreferences,
+      colorPalette: newColorPalette,
+      brandingUpdatedAt: new Date().toISOString(),
+    };
+
+    // 3. Update database
+    await db
+      .update(accounts)
+      .set({
+        preferences: updatedPreferences,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.accountId, BigInt(accountId)));
+
+    console.log('Color palette updated successfully');
+    return { 
+      success: true,
+      colorPalette: newColorPalette
+    };
+  } catch (error) {
+    console.error("Error updating color palette:", error);
+    throw new Error("Failed to update color palette");
   }
 }
 

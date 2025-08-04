@@ -1,11 +1,18 @@
-"use client";
 
 import type React from "react";
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import { Upload, X, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Upload, AlertCircle, CheckCircle2, Loader2, CheckCircle, Trash2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { LogoUploadProps } from "~/types/brand";
 
@@ -24,6 +31,7 @@ export function LogoUpload({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Validate file before processing
   const validateFile = useCallback(
@@ -130,6 +138,7 @@ export function LogoUpload({
     }
     setPreviewUrl(null);
     setError(null);
+    setShowDeleteDialog(false);
   }, [previewUrl]);
 
   // Progress indicator
@@ -172,9 +181,9 @@ export function LogoUpload({
               variant="destructive"
               size="icon"
               className="absolute -right-2 -top-2 h-8 w-8 rounded-full"
-              onClick={handleRemove}
+              onClick={() => setShowDeleteDialog(true)}
             >
-              <X className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
             </Button>
           )}
           
@@ -247,28 +256,139 @@ export function LogoUpload({
         </div>
       )}
       
-      {/* Processing stages info */}
+      {/* Processing stages visualization */}
       {isUploading && progress && (
-        <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-          <div className="space-y-1">
-            <div className="font-medium">Procesando logo:</div>
-            <ul className="list-inside list-disc space-y-1 text-xs">
-              <li className={progress.stage === 'uploading' ? 'text-primary' : ''}>
-                Subiendo archivo original
-              </li>
-              <li className={progress.stage === 'processing' ? 'text-primary' : ''}>
-                Removiendo fondo automáticamente
-              </li>
-              <li className={progress.stage === 'extracting' ? 'text-primary' : ''}>
-                Extrayendo paleta de colores
-              </li>
-              <li className={progress.stage === 'saving' ? 'text-primary' : ''}>
-                Guardando en almacenamiento
-              </li>
-            </ul>
+        <div className="relative overflow-hidden rounded-lg border bg-gradient-to-br from-background to-muted/20 p-4">
+          {/* Animated background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 opacity-0 animate-pulse" />
+          
+          <div className="relative space-y-4">
+            {/* Header with overall progress */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <span className="text-sm font-medium">Procesando logo</span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {progress.stage === 'uploading' ? '25%' :
+                 progress.stage === 'processing' ? '50%' :
+                 progress.stage === 'extracting' ? '75%' :
+                 progress.stage === 'saving' ? '90%' : '0%'}
+              </span>
+            </div>
+
+            {/* Connected stages with progress line */}
+            <div className="relative">
+              {/* Background progress line */}
+              <div className="absolute left-[11px] top-0 h-full w-[2px] bg-border" />
+              
+              {/* Active progress line */}
+              <div 
+                className="absolute left-[11px] top-0 w-[2px] bg-primary transition-all duration-500 ease-out"
+                style={{
+                  height: progress.stage === 'uploading' ? '25%' :
+                          progress.stage === 'processing' ? '50%' :
+                          progress.stage === 'extracting' ? '75%' :
+                          progress.stage === 'saving' ? '100%' : '0%'
+                }}
+              />
+
+              {/* Stages */}
+              <div className="relative space-y-3">
+                {[
+                  { key: 'uploading', label: 'Subiendo archivo', detail: 'Preparando imagen' },
+                  { key: 'processing', label: 'Borrando fondo', detail: 'IA procesando' },
+                  { key: 'extracting', label: 'Extrayendo colores', detail: 'Analizando paleta' },
+                  { key: 'saving', label: 'Guardando', detail: 'Finalizando' },
+                ].map((stage, index) => {
+                  const isActive = progress.stage === stage.key;
+                  const stageIndex = ['uploading', 'processing', 'extracting', 'saving'].indexOf(progress.stage);
+                  const isPassed = index < stageIndex;
+                  const isNext = index === stageIndex + 1;
+
+                  return (
+                    <div
+                      key={stage.key}
+                      className={cn(
+                        "flex items-start gap-3 transition-all duration-300",
+                        isActive && "scale-[1.02]"
+                      )}
+                    >
+                      {/* Stage indicator */}
+                      <div className="relative z-10 flex h-6 w-6 items-center justify-center">
+                        <div className={cn(
+                          "absolute inset-0 rounded-full transition-all duration-300",
+                          isActive && "animate-pulse bg-primary/20"
+                        )} />
+                        <div className={cn(
+                          "relative flex h-6 w-6 items-center justify-center rounded-full border-2 bg-background transition-all duration-300",
+                          isPassed && "border-primary bg-primary",
+                          isActive && "border-primary bg-background",
+                          !isPassed && !isActive && "border-border bg-background"
+                        )}>
+                          {isPassed ? (
+                            <CheckCircle className="h-3.5 w-3.5 text-white" />
+                          ) : isActive ? (
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                          ) : (
+                            <div className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              isNext ? "bg-border" : "bg-muted"
+                            )} />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Stage content */}
+                      <div className="flex-1 -mt-0.5">
+                        <div className={cn(
+                          "text-sm font-medium transition-all duration-300",
+                          isActive && "text-foreground",
+                          isPassed && "text-muted-foreground",
+                          !isActive && !isPassed && "text-muted-foreground/60"
+                        )}>
+                          {stage.label}
+                        </div>
+                        {isActive && (
+                          <div className="mt-0.5 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-1">
+                            {stage.detail}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar logo?</DialogTitle>
+            <DialogDescription>
+              Esta acción eliminará el logo seleccionado. Tendrás que subir uno nuevo si deseas cambiarlo.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRemove}
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
