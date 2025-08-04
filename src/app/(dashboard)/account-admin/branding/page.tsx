@@ -1,5 +1,5 @@
-import { AccountBranding } from "~/components/admin/account-branding";
-import { AccountAdminBreadcrumb } from "~/components/admin/account-admin-breadcrumb";
+import { AccountBranding } from "~/components/admin/account/branding";
+import { AccountAdminBreadcrumb } from "~/components/admin/account/breadcrumb";
 
 export default function AccountAdminBrandingPage() {
   return (

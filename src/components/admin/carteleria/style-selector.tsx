@@ -1,7 +1,5 @@
-"use client";
 
 import type { FC } from "react";
-import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -9,10 +7,10 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
-import { Palette, CheckCircle2 } from "lucide-react";
+import { Palette, CheckCircle2, Clock } from "lucide-react";
 import type { StyleSelectorProps } from "~/types/carteleria";
 import { templateStyles } from "~/lib/carteleria/templates";
+import { TemplatePreviewRenderer } from "./templates/template-renderer";
 
 export const StyleSelector: FC<StyleSelectorProps> = ({
   selectedStyleId,
@@ -49,33 +47,49 @@ interface StyleCardProps {
 }
 
 const StyleCard: FC<StyleCardProps> = ({ style, isSelected, onSelect }) => {
+  const isInactive = !style.isActive;
+  
   return (
     <Card
-      className={`group cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg ${
-        isSelected
+      className={`group transition-all duration-200 ${
+        isInactive
+          ? "cursor-not-allowed opacity-60 grayscale"
+          : "cursor-pointer hover:scale-105 hover:shadow-lg"
+      } ${
+        isSelected && !isInactive
           ? "scale-105 shadow-lg ring-2 ring-primary"
+          : isInactive
+          ? ""
           : "hover:shadow-md"
       }`}
-      onClick={onSelect}
+      onClick={isInactive ? undefined : onSelect}
     >
       <CardHeader className="space-y-3">
-        {/* Preview Image */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-gradient-to-br from-gray-100 to-gray-200">
-          <Image
-            src={style.preview}
-            alt={`Vista previa del estilo ${style.name}`}
-            fill
-            className="object-cover transition-transform duration-200 group-hover:scale-110"
-            onError={(e) => {
-              // Fallback to gradient background if image fails to load
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-            }}
-          />
+        {/* Template Preview */}
+        <div className="relative aspect-[210/297] overflow-hidden rounded-lg bg-gradient-to-br from-gray-100 to-gray-200">
+          <div className="absolute inset-0">
+            <TemplatePreviewRenderer
+              styleId={style.id}
+              size="small"
+              className={`transition-transform duration-200 ${!isInactive ? "group-hover:scale-105" : ""}`}
+            />
+          </div>
+
+          {/* Próximamente overlay for inactive templates */}
+          {isInactive && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+              <div className="text-center">
+                <div className="rounded-lg bg-white/90 px-4 py-2 shadow-lg">
+                  <p className="text-sm font-semibold text-gray-900">Próximamente</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Overlay with selection indicator */}
-          {isSelected && (
-            <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
-              <div className="rounded-full bg-primary p-2">
+          {isSelected && !isInactive && (
+            <div className="absolute inset-0 flex items-center justify-center bg-primary/20 backdrop-blur-sm">
+              <div className="rounded-full bg-primary p-2 shadow-lg">
                 <CheckCircle2 className="h-6 w-6 text-white" />
               </div>
             </div>
@@ -84,14 +98,9 @@ const StyleCard: FC<StyleCardProps> = ({ style, isSelected, onSelect }) => {
 
         {/* Style Info */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg transition-colors group-hover:text-primary">
-              {style.name}
-            </CardTitle>
-            <Badge variant="outline" className="text-xs capitalize">
-              {style.category}
-            </Badge>
-          </div>
+          <CardTitle className={`text-lg transition-colors ${!isInactive ? "group-hover:text-primary" : ""}`}>
+            {style.name}
+          </CardTitle>
         </div>
       </CardHeader>
 
@@ -127,8 +136,17 @@ const StyleCard: FC<StyleCardProps> = ({ style, isSelected, onSelect }) => {
           </div>
         </div>
 
-        {/* Selection Feedback */}
-        {isSelected && (
+        {/* Status Feedback */}
+        {isInactive && (
+          <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-3">
+            <div className="flex items-center gap-2 text-orange-700">
+              <Clock className="h-4 w-4" />
+              <span className="text-sm font-medium">Próximamente disponible</span>
+            </div>
+          </div>
+        )}
+        
+        {isSelected && !isInactive && (
           <div className="mt-4 rounded-lg border border-primary/20 bg-primary/10 p-3">
             <div className="flex items-center gap-2 text-primary">
               <CheckCircle2 className="h-4 w-4" />

@@ -1,5 +1,5 @@
-import { UsersManagement } from "~/components/admin/users-management";
-import { AdminBreadcrumb } from "~/components/admin/admin-breadcrumb";
+import { UsersManagement } from "~/components/admin/management/users";
+import { AdminBreadcrumb } from "~/components/admin/navigation/admin-breadcrumb";
 
 export default function AdminUsersPage() {
   return (

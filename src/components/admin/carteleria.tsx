@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Progress } from "~/components/ui/progress";
 import {
   ChevronLeft,
   ChevronRight,
@@ -95,7 +94,7 @@ const steps: StepConfig[] = [
 
 const STORAGE_KEY = "carteleria_selection";
 
-export const CarteleriaRedesigned: FC = () => {
+export const Carteleria: FC = () => {
   const { toast } = useToast();
 
   // Main state management
@@ -259,13 +258,13 @@ export const CarteleriaRedesigned: FC = () => {
   return (
     <div className="space-y-8">
       {/* Progress Header */}
-      <div className="space-y-4">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
               Configurar Cartelería
             </h1>
-            <p className="mt-1 text-gray-600">
+            <p className="mt-2 text-sm text-gray-600">
               Personaliza tus plantillas de carteles inmobiliarios
             </p>
           </div>
@@ -274,13 +273,23 @@ export const CarteleriaRedesigned: FC = () => {
           </Badge>
         </div>
 
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>Progreso</span>
-            <span>{Math.round(progressPercentage)}% completado</span>
+        {/* Modern Progress Bar */}
+        <div className="space-y-6">
+          {/* Custom Progress Bar */}
+          <div className="relative h-3 overflow-hidden rounded-full bg-gray-100 shadow-inner">
+            <div
+              className="h-full rounded-full shadow-sm transition-all duration-700 ease-out"
+              style={{
+                width: `${progressPercentage}%`,
+                background:
+                  "linear-gradient(90deg, #c2c2d6 0%, #a8a8c8 50%, #c2c2d6 100%)",
+                boxShadow:
+                  progressPercentage > 0
+                    ? "0 1px 3px rgba(194, 194, 214, 0.4)"
+                    : "none",
+              }}
+            />
           </div>
-          <Progress value={progressPercentage} className="h-2" />
         </div>
 
         {/* Step Navigation */}

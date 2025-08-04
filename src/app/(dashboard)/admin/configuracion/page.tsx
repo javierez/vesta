@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "~/lib/auth";
 import { userHasRole } from "~/server/queries/user-roles";
-import { SystemSettings } from "~/components/admin/system-settings";
+import { SystemSettings } from "~/components/admin/management/system-settings";
 import Link from "next/link";
 
 export default async function AdminConfiguracionPage() {

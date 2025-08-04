@@ -2,7 +2,7 @@
 
 import type { FC } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { AccountReports } from "./account-reports";
+// import { AccountReports } from "./account-reports";
 import { AccountConfiguration } from "./account-configuration";
 import { AccountOther } from "./account-other";
 
@@ -16,7 +16,9 @@ export const AccountAdminDashboard: FC = () => {
       </TabsList>
 
       <TabsContent value="reports" className="space-y-6">
-        <AccountReports />
+        <div className="p-8 text-center text-gray-500">
+          <p>Reportes no disponibles temporalmente</p>
+        </div>
       </TabsContent>
 
       <TabsContent value="configuration" className="space-y-6">

@@ -16,6 +16,12 @@ const config = {
       },
       {
         protocol: "https",
+        hostname: "inmobiliaria-acropolis.s3.amazonaws.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "vesta-configuration-files.s3.amazonaws.com",
         port: "",
         pathname: "/**",

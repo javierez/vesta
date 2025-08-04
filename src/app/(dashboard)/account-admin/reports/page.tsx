@@ -1,5 +1,5 @@
-import { AccountReports } from "~/components/admin/account-reports";
-import { AccountAdminBreadcrumb } from "~/components/admin/account-admin-breadcrumb";
+import { AccountReports } from "~/components/admin/account/reports";
+import { AccountAdminBreadcrumb } from "~/components/admin/account/breadcrumb";
 
 export default function AccountAdminReportsPage() {
   return (

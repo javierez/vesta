@@ -19,6 +19,7 @@ export const templateStyles: TemplateStyle[] = [
       secondary: "#64748b",
       accent: "#0ea5e9",
     },
+    isActive: true,
   },
   {
     id: "classic",
@@ -31,6 +32,7 @@ export const templateStyles: TemplateStyle[] = [
       secondary: "#6b7280",
       accent: "#d97706",
     },
+    isActive: false,
   },
   {
     id: "minimalist",
@@ -43,6 +45,7 @@ export const templateStyles: TemplateStyle[] = [
       secondary: "#9ca3af",
       accent: "#ffffff",
     },
+    isActive: false,
   },
   {
     id: "luxury",
@@ -55,6 +58,7 @@ export const templateStyles: TemplateStyle[] = [
       secondary: "#a3a3a3",
       accent: "#fbbf24",
     },
+    isActive: false,
   },
   {
     id: "creative",
@@ -67,6 +71,7 @@ export const templateStyles: TemplateStyle[] = [
       secondary: "#f59e0b",
       accent: "#ec4899",
     },
+    isActive: false,
   },
   {
     id: "professional",
@@ -79,6 +84,7 @@ export const templateStyles: TemplateStyle[] = [
       secondary: "#374151",
       accent: "#059669",
     },
+    isActive: false,
   },
 ];
 

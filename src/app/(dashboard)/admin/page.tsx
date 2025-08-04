@@ -1,4 +1,4 @@
-import { AdminNavigationCards } from "~/components/admin/admin-navigation-cards";
+import { AdminNavigationCards } from "~/components/admin/navigation/admin-cards";
 
 export default function AdminPage() {
   return (

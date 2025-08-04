@@ -1,4 +1,4 @@
-import { AccountAdminNavigationCards } from "~/components/admin/account-admin-navigation-cards";
+import { AccountAdminNavigationCards } from "~/components/admin/account/navigation-cards";
 
 export default function AccountAdminPage() {
   return (

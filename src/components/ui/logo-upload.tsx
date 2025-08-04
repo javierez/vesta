@@ -160,20 +160,7 @@ export function LogoUpload({
   const renderProgress = () => {
     if (!progress || !isUploading) return null;
 
-    return (
-      <div className="w-full space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">{progress.message}</span>
-          <span className="font-medium">{progress.percentage}%</span>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full bg-primary transition-all duration-300 ease-out"
-            style={{ width: `${progress.percentage}%` }}
-          />
-        </div>
-      </div>
-    );
+    return <div className="w-full space-y-2"></div>;
   };
 
   // Main upload area

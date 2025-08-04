@@ -43,8 +43,8 @@ async function uploadBrandAssetToS3(
       fileType === "transparent" ? "png" : getFileExtension(originalFileName);
 
     // Create the S3 key following the required structure:
-    // inmobiliariaacripolis/[accountId]/branding/logo_[type]_[timestamp].[ext]
-    const imageKey = `inmobiliariaacripolis/${accountId}/branding/logo_${fileType}_${timestamp}_${nanoid(6)}.${fileExtension}`;
+    // inmobiliariaacropolis/[accountId]/branding/logo_[type]_[timestamp].[ext]
+    const imageKey = `branding/logo_${fileType}_${timestamp}_${nanoid(6)}.${fileExtension}`;
     const s3key = `s3://${process.env.AWS_S3_BUCKET}/${imageKey}`;
 
     // Convert Blob to Buffer

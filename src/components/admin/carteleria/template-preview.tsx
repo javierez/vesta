@@ -1,8 +1,5 @@
-"use client";
-
 import type { FC } from "react";
 import { useState } from "react";
-import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +27,7 @@ import {
   getFormatById,
   getPropertyTypeById,
 } from "~/lib/carteleria/templates";
+import { TemplateRenderer } from "./templates/template-renderer";
 
 export const TemplatePreview: FC<TemplatePreviewProps> = ({
   template,
@@ -38,7 +36,7 @@ export const TemplatePreview: FC<TemplatePreviewProps> = ({
   onDownload,
 }) => {
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isTemplateLoaded] = useState(true); // Templates are loaded by default
   const { toast } = useToast();
 
   if (!template) return null;
@@ -52,23 +50,24 @@ export const TemplatePreview: FC<TemplatePreviewProps> = ({
       if (onDownload) {
         onDownload(template);
       } else {
-        // Default download behavior
-        const link = document.createElement("a");
-        link.href = template.preview;
-        link.download = `${template.name.replace(/\s+/g, "_")}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // For now, show info that template can be used in the system
+        toast({
+          title: "Plantilla disponible",
+          description:
+            "Esta plantilla está lista para usar en el sistema de cartelería",
+          variant: "default",
+        });
+        return;
       }
 
       toast({
         title: "Descarga iniciada",
-        description: `Descargando ${template.name}...`,
+        description: `Procesando ${template.name}...`,
       });
     } catch {
       toast({
         title: "Error",
-        description: "No se pudo descargar la plantilla",
+        description: "No se pudo procesar la plantilla",
         variant: "destructive",
       });
     }
@@ -174,7 +173,7 @@ Tipo: ${propertyType?.name ?? "N/A"}
           </div>
         </DialogHeader>
 
-        {/* Preview Image Container */}
+        {/* Template Preview Container */}
         <div
           className="relative flex-1 overflow-auto bg-gray-50"
           style={{ minHeight: "400px" }}
@@ -186,25 +185,21 @@ Tipo: ${propertyType?.name ?? "N/A"}
               transformOrigin: "center center",
             }}
           >
-            <div className="relative max-h-full max-w-full overflow-hidden rounded-lg bg-white shadow-2xl">
-              <Image
-                src={template.preview}
-                alt={`Vista previa completa de ${template.name}`}
-                width={600}
-                height={800}
-                className="object-contain"
-                onLoad={() => setIsImageLoaded(true)}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                  setIsImageLoaded(false);
-                }}
-                priority
+            <div className="relative max-h-full max-w-full overflow-hidden rounded-lg shadow-2xl">
+              {/* Render the actual template design */}
+              <TemplateRenderer
+                styleId={template.styleId}
+                propertyTypeId={template.propertyTypeId}
+                formatId={template.formatId}
+                style={style ?? undefined}
+                format={format ?? undefined}
+                className="pointer-events-none" // Disable interactions in preview
+                showMockData={true}
               />
 
-              {/* Fallback when image fails to load */}
-              {!isImageLoaded && (
-                <div className="flex h-[800px] w-[600px] items-center justify-center bg-gray-100">
+              {/* Fallback when template fails to render */}
+              {!isTemplateLoaded && (
+                <div className="flex h-[500px] w-[400px] items-center justify-center rounded-lg bg-gray-100">
                   <div className="space-y-4 text-center">
                     <FileImage className="mx-auto h-20 w-20 text-gray-400" />
                     <div>
@@ -212,7 +207,7 @@ Tipo: ${propertyType?.name ?? "N/A"}
                         Vista previa no disponible
                       </p>
                       <p className="text-sm text-gray-500">
-                        La imagen no se pudo cargar
+                        La plantilla no se pudo cargar
                       </p>
                     </div>
                   </div>
@@ -294,10 +289,16 @@ Tipo: ${propertyType?.name ?? "N/A"}
 
             <Button
               variant="outline"
-              onClick={() => window.open(template.preview, "_blank")}
+              onClick={() => {
+                toast({
+                  title: "Vista ampliada",
+                  description:
+                    "La plantilla se muestra en tamaño completo en esta ventana",
+                });
+              }}
             >
               <ExternalLink className="mr-2 h-4 w-4" />
-              Abrir original
+              Vista completa
             </Button>
 
             <div className="flex-1" />

@@ -473,7 +473,9 @@ const FieldCard: FC<FieldCardProps> = ({
               </div>
 
               {field.placeholder && (
-                <p className="text-xs text-gray-500">&ldquo;{field.placeholder}&rdquo;</p>
+                <p className="text-xs text-gray-500">
+                  &ldquo;{field.placeholder}&rdquo;
+                </p>
               )}
 
               <div className="flex gap-2">

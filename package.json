@@ -63,6 +63,7 @@
     "react-dom": "^19.0.0",
     "react-dropdown-menu": "^0.0.2",
     "react-hook-form": "^7.57.0",
+    "react-qr-code": "^2.0.18",
     "react-radio-group": "^3.0.3",
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.2.0",

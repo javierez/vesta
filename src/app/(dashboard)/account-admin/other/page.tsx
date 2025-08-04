@@ -1,5 +1,5 @@
-import { AccountOther } from "~/components/admin/account-other";
-import { AccountAdminBreadcrumb } from "~/components/admin/account-admin-breadcrumb";
+import { AccountOther } from "~/components/admin/account/other";
+import { AccountAdminBreadcrumb } from "~/components/admin/account/breadcrumb";
 
 export default function AccountAdminOtherPage() {
   return (

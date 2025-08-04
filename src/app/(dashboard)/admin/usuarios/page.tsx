@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "~/lib/auth";
 import { userHasRole } from "~/server/queries/user-roles";
-import { UsersManagement } from "~/components/admin/users-management";
+import { UsersManagement } from "~/components/admin/management/users";
 import Link from "next/link";
 
 export default async function AdminUsuariosPage() {

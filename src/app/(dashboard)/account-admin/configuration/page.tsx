@@ -1,5 +1,5 @@
-import { AccountConfiguration } from "~/components/admin/account-configuration";
-import { AccountAdminBreadcrumb } from "~/components/admin/account-admin-breadcrumb";
+import { AccountConfiguration } from "~/components/admin/account/configuration";
+import { AccountAdminBreadcrumb } from "~/components/admin/account/breadcrumb";
 
 export default function AccountAdminConfigurationPage() {
   return (

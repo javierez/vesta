@@ -17,6 +17,7 @@ export interface TemplateStyle {
     secondary: string;
     accent: string;
   };
+  isActive: boolean;
 }
 
 export interface TemplateFormat {

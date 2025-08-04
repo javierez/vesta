@@ -1,5 +1,5 @@
-import { SystemSettings } from "~/components/admin/system-settings";
-import { AdminBreadcrumb } from "~/components/admin/admin-breadcrumb";
+import { SystemSettings } from "~/components/admin/management/system-settings";
+import { AdminBreadcrumb } from "~/components/admin/navigation/admin-breadcrumb";
 
 export default function AdminSettingsPage() {
   return (

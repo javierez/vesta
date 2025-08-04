@@ -1,5 +1,5 @@
-import { AccountsManagement } from "~/components/admin/accounts-management";
-import { AdminBreadcrumb } from "~/components/admin/admin-breadcrumb";
+import { AccountsManagement } from "~/components/admin/management/accounts";
+import { AdminBreadcrumb } from "~/components/admin/navigation/admin-breadcrumb";
 
 export default function AdminAccountsPage() {
   return (
