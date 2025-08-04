@@ -823,9 +823,7 @@ export async function processDocumentInBackgroundEnhanced(
         );
       }
 
-      console.log(
-        `✅ [OCR-ENHANCED] Database operations completed`,
-      );
+      console.log(`✅ [OCR-ENHANCED] Database operations completed`);
     }
 
     // Final logging and metrics

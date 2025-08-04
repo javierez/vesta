@@ -541,10 +541,7 @@ export async function saveExtractedDataToDatabase(
 
     return result;
   } catch (error) {
-    console.error(
-      `❌ [DATABASE] Critical error during save operation:`,
-      error,
-    );
+    console.error(`❌ [DATABASE] Critical error during save operation:`, error);
 
     result.success = false;
     result.propertyErrors.push(`Critical error: ${String(error)}`);

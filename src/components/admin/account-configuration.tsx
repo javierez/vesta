@@ -78,7 +78,6 @@ export const AccountConfiguration = () => {
 
   return (
     <div className="space-y-6">
-
       <Tabs defaultValue="logo" className="space-y-6">
         <TabsList>
           <TabsTrigger value="logo">Logo</TabsTrigger>

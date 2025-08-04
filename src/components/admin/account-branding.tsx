@@ -6,14 +6,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { LogoUpload } from "~/components/ui/logo-upload";
-import { removeBackground, canRemoveBackground, cleanupUrls } from "~/lib/background-removal";
+import {
+  removeBackground,
+  canRemoveBackground,
+  cleanupUrls,
+} from "~/lib/background-removal";
 import { extractColorPalette, getHexColors } from "~/lib/color-extraction";
-import { uploadBrandAsset, getBrandAsset, deleteBrandAsset, updateColorPalette } from "~/app/actions/brand-upload";
+import {
+  uploadBrandAsset,
+  getBrandAsset,
+  deleteBrandAsset,
+  updateColorPalette,
+} from "~/app/actions/brand-upload";
 import { getColorAdjustmentPreviews } from "~/lib/color-adjustment";
 import { getCurrentUserAccountId } from "~/app/actions/settings";
 import { useToast } from "~/components/hooks/use-toast";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
-import { Eye, Download, Trash2, AlertTriangle, CheckCircle2, HelpCircle, Palette, RefreshCw } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
+import {
+  Eye,
+  Download,
+  Trash2,
+  AlertTriangle,
+  CheckCircle2,
+  HelpCircle,
+  Palette,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -30,12 +53,14 @@ import Image from "next/image";
 export const AccountBranding = () => {
   const { data: session } = useSession();
   const { toast } = useToast();
-  
+
   // State management
   const [accountId, setAccountId] = useState<string | null>(null);
   const [brandAsset, setBrandAsset] = useState<BrandAsset | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<LogoUploadProgress | undefined>();
+  const [uploadProgress, setUploadProgress] = useState<
+    LogoUploadProgress | undefined
+  >();
   const [colorPalette, setColorPalette] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -43,7 +68,9 @@ export const AccountBranding = () => {
   const [isUpdatingColors, setIsUpdatingColors] = useState(false);
   const [workingPalette, setWorkingPalette] = useState<string[]>([]);
   const [selectedColorIndex, setSelectedColorIndex] = useState<number>(0);
-  const [colorVariations, setColorVariations] = useState<Record<string, string>>({});
+  const [colorVariations, setColorVariations] = useState<
+    Record<string, string>
+  >({});
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   // Load account data on mount
@@ -55,7 +82,7 @@ export const AccountBranding = () => {
           if (userAccountId) {
             const accountIdStr = userAccountId.toString();
             setAccountId(accountIdStr);
-            
+
             // Load existing brand asset if available
             const existingBrand = await getBrandAsset(accountIdStr);
             if (existingBrand) {
@@ -64,7 +91,7 @@ export const AccountBranding = () => {
             }
           }
         } catch (error) {
-          console.error('Error loading account data:', error);
+          console.error("Error loading account data:", error);
           toast({
             title: "Error",
             description: "No se pudo cargar la información de la cuenta",
@@ -88,15 +115,31 @@ export const AccountBranding = () => {
   // Client-side progress simulation with smooth animation
   const simulateProgress = () => {
     const stages = [
-      { stage: 'uploading' as const, message: 'Iniciando subida...', duration: 7000 },
-      { stage: 'processing' as const, message: 'Removiendo fondo automáticamente...', duration: 7000 },
-      { stage: 'extracting' as const, message: 'Extrayendo colores de marca...', duration: 7000 },
-      { stage: 'saving' as const, message: 'Guardando en almacenamiento...', duration: 0 } // Final stage waits for server
+      {
+        stage: "uploading" as const,
+        message: "Iniciando subida...",
+        duration: 7000,
+      },
+      {
+        stage: "processing" as const,
+        message: "Removiendo fondo automáticamente...",
+        duration: 7000,
+      },
+      {
+        stage: "extracting" as const,
+        message: "Extrayendo colores de marca...",
+        duration: 7000,
+      },
+      {
+        stage: "saving" as const,
+        message: "Guardando en almacenamiento...",
+        duration: 0,
+      }, // Final stage waits for server
     ];
 
     let currentStageIndex = 0;
     let stageTimeout: NodeJS.Timeout;
-    
+
     const runStage = () => {
       if (currentStageIndex >= stages.length) {
         return;
@@ -109,7 +152,7 @@ export const AccountBranding = () => {
       setUploadProgress({
         stage: currentStage.stage,
         percentage: 25 * (currentStageIndex + 1),
-        message: currentStage.message
+        message: currentStage.message,
       });
 
       // If it's the final stage, don't auto-advance (wait for server completion)
@@ -151,16 +194,21 @@ export const AccountBranding = () => {
 
     try {
       // Step 1: Validate file
-      if (!file.type.startsWith('image/')) {
-        throw new Error('Por favor selecciona un archivo de imagen válido');
+      if (!file.type.startsWith("image/")) {
+        throw new Error("Por favor selecciona un archivo de imagen válido");
       }
 
       // Step 2: Remove background (runs independently of progress animation)
       const bgRemovalResult = await removeBackground(file);
-      tempUrls.push(bgRemovalResult.originalUrl, bgRemovalResult.transparentUrl);
+      tempUrls.push(
+        bgRemovalResult.originalUrl,
+        bgRemovalResult.transparentUrl,
+      );
 
       // Step 3: Extract colors from original (runs independently of progress animation)
-      const colorPaletteResult = await extractColorPalette(bgRemovalResult.originalUrl);
+      const colorPaletteResult = await extractColorPalette(
+        bgRemovalResult.originalUrl,
+      );
       const hexColors = getHexColors(colorPaletteResult.colors);
 
       // Step 4: Upload both versions to S3
@@ -169,14 +217,14 @@ export const AccountBranding = () => {
         bgRemovalResult.transparentBlob,
         accountId,
         hexColors,
-        file.name
+        file.name,
       );
 
       // Server processing complete - update to final stage
       setUploadProgress({
-        stage: 'complete',
+        stage: "complete",
         percentage: 100,
-        message: 'Completado exitosamente'
+        message: "Completado exitosamente",
       });
 
       // Step 5: Update UI state
@@ -188,17 +236,17 @@ export const AccountBranding = () => {
         title: "¡Éxito!",
         description: "Logo subido y procesado correctamente",
       });
-
     } catch (error) {
-      console.error('Logo upload failed:', error);
-      
+      console.error("Logo upload failed:", error);
+
       // Clean up progress animation and temporary URLs on error
       cleanupProgress();
       cleanupUrls(tempUrls);
-      
+
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : 'Error al procesar el logo',
+        description:
+          error instanceof Error ? error.message : "Error al procesar el logo",
         variant: "destructive",
       });
     } finally {
@@ -217,7 +265,7 @@ export const AccountBranding = () => {
     setIsDeleting(true);
     try {
       await deleteBrandAsset(accountId);
-      
+
       // Clear all brand-related state
       setBrandAsset(null);
       setColorPalette([]);
@@ -231,7 +279,7 @@ export const AccountBranding = () => {
         description: "Logo y paleta de colores eliminados correctamente",
       });
     } catch (error) {
-      console.error('Error deleting brand asset:', error);
+      console.error("Error deleting brand asset:", error);
       toast({
         title: "Error",
         description: "No se pudo eliminar el logo",
@@ -252,8 +300,9 @@ export const AccountBranding = () => {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Tu navegador no soporta la remoción automática de fondos. 
-            Por favor actualiza tu navegador o usa Chrome 88+, Firefox 79+, Safari 14.1+, o Edge 88+.
+            Tu navegador no soporta la remoción automática de fondos. Por favor
+            actualiza tu navegador o usa Chrome 88+, Firefox 79+, Safari 14.1+,
+            o Edge 88+.
           </AlertDescription>
         </Alert>
       )}
@@ -262,7 +311,6 @@ export const AccountBranding = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Gestión de Marca y Logo</CardTitle>
             {brandAsset && (
               <Badge variant="outline" className="text-green-600">
                 <CheckCircle2 className="mr-1 h-3 w-3" />
@@ -283,17 +331,19 @@ export const AccountBranding = () => {
                     fill
                     className="object-contain"
                   />
-                  
+
                   {/* Hover buttons - same pattern as image-gallery */}
                   <button
                     type="button"
                     className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
-                    onClick={() => window.open(brandAsset.logoOriginalUrl, '_blank')}
+                    onClick={() =>
+                      window.open(brandAsset.logoOriginalUrl, "_blank")
+                    }
                     aria-label="Ver original"
                   >
                     <Eye className="h-3.5 w-3.5" />
                   </button>
-                  
+
                   <button
                     type="button"
                     className="absolute right-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-red-500 group-hover:opacity-100"
@@ -303,14 +353,14 @@ export const AccountBranding = () => {
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                  
+
                   <button
                     type="button"
                     className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 disabled:opacity-50 group-hover:opacity-100"
                     onClick={() => {
-                      const a = document.createElement('a');
+                      const a = document.createElement("a");
                       a.href = brandAsset.logoTransparentUrl;
-                      a.download = 'logo-transparente.png';
+                      a.download = "logo-transparente.png";
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
@@ -320,7 +370,7 @@ export const AccountBranding = () => {
                     <Download className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                
+
                 <div className="mt-2 text-center">
                   <Badge variant="secondary">Fondo Transparente</Badge>
                 </div>
@@ -331,7 +381,7 @@ export const AccountBranding = () => {
               onUpload={handleLogoUpload}
               isUploading={isUploading}
               progress={uploadProgress}
-              className="max-w-lg mx-auto"
+              className="mx-auto max-w-lg"
             />
           )}
         </CardContent>
@@ -343,28 +393,42 @@ export const AccountBranding = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">Paleta de Colores Extraída</CardTitle>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-muted-foreground hover:text-foreground">
-                      <HelpCircle className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <div className="space-y-2 text-sm">
-                      <p className="font-medium">Consejos para tu Logo:</p>
-                      <ul className="list-disc pl-4 space-y-1">
-                        <li>Usa imágenes de alta calidad (mínimo 300x300 píxeles)</li>
-                        <li>Los logos con fondos sólidos se procesan mejor</li>
-                        <li>El sistema extrae automáticamente los 6 colores más prominentes</li>
-                        <li>La versión sin fondo es perfecta para diferentes fondos</li>
-                        <li>Los colores te ayudarán a mantener consistencia visual</li>
-                      </ul>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                <CardTitle className="text-lg">Paleta de Colores</CardTitle>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="text-muted-foreground hover:text-foreground">
+                        <HelpCircle className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <div className="space-y-2 text-sm">
+                        <p className="font-medium">Consejos para tu Logo:</p>
+                        <ul className="list-disc space-y-1 pl-4">
+                          <li>
+                            Usa imágenes de alta calidad (mínimo 300x300
+                            píxeles)
+                          </li>
+                          <li>
+                            Los logos con fondos sólidos se procesan mejor
+                          </li>
+                          <li>
+                            El sistema extrae automáticamente los 6 colores más
+                            prominentes
+                          </li>
+                          <li>
+                            La versión sin fondo es perfecta para diferentes
+                            fondos
+                          </li>
+                          <li>
+                            Los colores te ayudarán a mantener consistencia
+                            visual
+                          </li>
+                        </ul>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               <Button
                 variant="outline"
@@ -373,7 +437,7 @@ export const AccountBranding = () => {
                   // Initialize working palette and generate variations for first color
                   setWorkingPalette([...colorPalette]);
                   setSelectedColorIndex(0);
-                  
+
                   // Generate variations for the first color
                   const firstColor = colorPalette[0];
                   if (firstColor) {
@@ -384,7 +448,7 @@ export const AccountBranding = () => {
                     });
                     setColorVariations(variations);
                   }
-                  
+
                   setShowColorAdjustment(true);
                 }}
                 className="flex items-center gap-2"
@@ -397,7 +461,10 @@ export const AccountBranding = () => {
           <CardContent>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
               {colorPalette.slice(0, 6).map((color, index) => (
-                <div key={`${color}-${index}`} className="flex flex-col items-center space-y-2">
+                <div
+                  key={`${color}-${index}`}
+                  className="flex flex-col items-center space-y-2"
+                >
                   <button
                     onClick={async () => {
                       try {
@@ -407,7 +474,7 @@ export const AccountBranding = () => {
                           description: `Color ${color} copiado al portapapeles`,
                         });
                       } catch (error) {
-                        console.error('Failed to copy color:', error);
+                        console.error("Failed to copy color:", error);
                       }
                     }}
                     className="group relative h-16 w-full min-w-16 rounded-lg border-2 border-white shadow-md transition-all duration-200 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -424,7 +491,7 @@ export const AccountBranding = () => {
                     <div className="text-xs font-medium text-foreground">
                       Color {index + 1}
                     </div>
-                    <div className="text-xs font-mono text-muted-foreground">
+                    <div className="font-mono text-xs text-muted-foreground">
                       {color.toUpperCase()}
                     </div>
                   </div>
@@ -441,10 +508,11 @@ export const AccountBranding = () => {
           <DialogHeader>
             <DialogTitle>Ajustar Paleta de Colores</DialogTitle>
             <DialogDescription>
-              Selecciona cada color individualmente y elige su variación preferida
+              Selecciona cada color individualmente y elige su variación
+              preferida
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Current Palette Preview */}
             <div className="space-y-3">
@@ -465,13 +533,13 @@ export const AccountBranding = () => {
                     }}
                     className={`relative h-16 w-16 rounded-lg border-2 transition-all hover:scale-110 ${
                       selectedColorIndex === index
-                        ? 'border-primary ring-2 ring-primary/30 scale-110'
-                        : 'border-gray-300'
+                        ? "scale-110 border-primary ring-2 ring-primary/30"
+                        : "border-gray-300"
                     }`}
                     style={{ backgroundColor: color }}
                   >
                     {selectedColorIndex === index && (
-                      <div className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      <div className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
                         {index + 1}
                       </div>
                     )}
@@ -498,22 +566,30 @@ export const AccountBranding = () => {
                       newPalette[selectedColorIndex] = color;
                       setWorkingPalette(newPalette);
                     }}
-                    className="space-y-2 p-3 rounded-lg border hover:border-primary hover:bg-accent transition-all"
+                    className="space-y-2 rounded-lg border p-3 transition-all hover:border-primary hover:bg-accent"
                   >
                     <div
                       className="h-12 w-full rounded-md shadow-sm"
                       style={{ backgroundColor: color }}
                     />
                     <div className="text-xs font-medium">
-                      {strategy === 'original' ? 'Original' :
-                       strategy === 'pastel' ? 'Pastel' :
-                       strategy === 'muted' ? 'Apagado' :
-                       strategy === 'soft' ? 'Suave' :
-                       strategy === 'warm' ? 'Cálido' :
-                       strategy === 'cool' ? 'Frío' :
-                       strategy === 'balanced' ? 'Balanceado' : strategy}
+                      {strategy === "original"
+                        ? "Original"
+                        : strategy === "pastel"
+                          ? "Pastel"
+                          : strategy === "muted"
+                            ? "Apagado"
+                            : strategy === "soft"
+                              ? "Suave"
+                              : strategy === "warm"
+                                ? "Cálido"
+                                : strategy === "cool"
+                                  ? "Frío"
+                                  : strategy === "balanced"
+                                    ? "Balanceado"
+                                    : strategy}
                     </div>
-                    <div className="text-xs text-muted-foreground font-mono">
+                    <div className="font-mono text-xs text-muted-foreground">
                       {color}
                     </div>
                   </button>
@@ -522,7 +598,7 @@ export const AccountBranding = () => {
             </div>
 
             {/* Final Preview */}
-            <div className="space-y-3 pt-4 border-t">
+            <div className="space-y-3 border-t pt-4">
               <Label className="text-sm font-medium">Vista Previa Final</Label>
               <div className="flex gap-2">
                 {workingPalette.map((color, index) => (
@@ -531,7 +607,7 @@ export const AccountBranding = () => {
                       className="h-14 w-14 rounded-lg border-2 border-white shadow-md"
                       style={{ backgroundColor: color }}
                     />
-                    <div className="text-xs mt-1 font-mono text-muted-foreground">
+                    <div className="mt-1 font-mono text-xs text-muted-foreground">
                       {color.slice(0, 7)}
                     </div>
                   </div>
@@ -566,19 +642,23 @@ export const AccountBranding = () => {
                 setIsUpdatingColors(true);
                 try {
                   if (!accountId) return;
-                  
-                  const result = await updateColorPalette(accountId, workingPalette);
+
+                  const result = await updateColorPalette(
+                    accountId,
+                    workingPalette,
+                  );
                   if (result.success) {
                     setColorPalette(result.colorPalette);
                     toast({
                       title: "¡Colores actualizados!",
-                      description: "La paleta de colores ha sido personalizada exitosamente",
+                      description:
+                        "La paleta de colores ha sido personalizada exitosamente",
                     });
                     setShowColorAdjustment(false);
                     setWorkingPalette([]);
                   }
                 } catch (error) {
-                  console.error('Error updating colors:', error);
+                  console.error("Error updating colors:", error);
                   toast({
                     title: "Error",
                     description: "No se pudieron actualizar los colores",
@@ -588,7 +668,10 @@ export const AccountBranding = () => {
                   setIsUpdatingColors(false);
                 }
               }}
-              disabled={isUpdatingColors || JSON.stringify(workingPalette) === JSON.stringify(colorPalette)}
+              disabled={
+                isUpdatingColors ||
+                JSON.stringify(workingPalette) === JSON.stringify(colorPalette)
+              }
             >
               {isUpdatingColors ? (
                 <>
@@ -596,7 +679,7 @@ export const AccountBranding = () => {
                   Actualizando...
                 </>
               ) : (
-                'Guardar Cambios'
+                "Guardar Cambios"
               )}
             </Button>
           </DialogFooter>
@@ -604,7 +687,10 @@ export const AccountBranding = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+      <Dialog
+        open={showDeleteConfirmation}
+        onOpenChange={setShowDeleteConfirmation}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader className="space-y-4">
             <DialogTitle className="flex items-center gap-2 text-red-600">
@@ -612,19 +698,21 @@ export const AccountBranding = () => {
               Confirmar Eliminación
             </DialogTitle>
             <DialogDescription>
-              ¿Estás seguro de que deseas eliminar permanentemente el logo y la paleta de colores de tu marca?
+              ¿Estás seguro de que deseas eliminar permanentemente el logo y la
+              paleta de colores de tu marca?
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <p className="text-sm text-red-800 dark:text-red-200 font-medium">
+
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
+            <p className="text-sm font-medium text-red-800 dark:text-red-200">
               ⚠️ Esta acción no se puede deshacer
             </p>
-            <p className="text-sm text-red-700 dark:text-red-300 mt-2">
-              Se eliminarán todos los archivos del logo y los datos de la paleta de colores asociados.
+            <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+              Se eliminarán todos los archivos del logo y los datos de la paleta
+              de colores asociados.
             </p>
           </div>
-          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
             <Button
               variant="outline"
               onClick={() => setShowDeleteConfirmation(false)}

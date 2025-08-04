@@ -32,7 +32,7 @@ export interface BackgroundRemovalResult {
 }
 
 export interface LogoUploadProgress {
-  stage: 'uploading' | 'processing' | 'extracting' | 'saving' | 'complete';
+  stage: "uploading" | "processing" | "extracting" | "saving" | "complete";
   percentage: number;
   message: string;
 }

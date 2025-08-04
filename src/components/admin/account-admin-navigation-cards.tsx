@@ -43,7 +43,8 @@ const accountAdminSections: AccountAdminCard[] = [
   },
   {
     title: "Cartelería",
-    description: "Selecciona y personaliza plantillas para carteles inmobiliarios",
+    description:
+      "Selecciona y personaliza plantillas para carteles inmobiliarios",
     icon: FileImage,
     href: "/account-admin/carteleria",
     available: true,
@@ -60,7 +61,6 @@ const accountAdminSections: AccountAdminCard[] = [
 export const AccountAdminNavigationCards: FC = () => {
   return (
     <div className="space-y-6">
-
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {accountAdminSections.map((section) => {
           const Icon = section.icon;
@@ -92,7 +92,7 @@ export const AccountAdminNavigationCards: FC = () => {
 
           return (
             <Link key={section.title} href={section.href}>
-              <Card className="cursor-pointer transition-all duration-200 hover:bg-gray-100 group">
+              <Card className="group cursor-pointer transition-all duration-200 hover:bg-gray-100">
                 <CardHeader className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <div className="rounded-lg bg-gray-100 p-2 group-hover:bg-gray-200">

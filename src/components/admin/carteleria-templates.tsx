@@ -89,7 +89,8 @@ export const CarteleriaTemplates: FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const filteredTemplates = templates.filter(
-    (template) => selectedCategory === "all" || template.category === selectedCategory
+    (template) =>
+      selectedCategory === "all" || template.category === selectedCategory,
   );
 
   const featuredTemplates = templates.filter((template) => template.featured);
@@ -148,8 +149,8 @@ export const CarteleriaTemplates: FC = () => {
       {/* All Templates Section */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">
-          {selectedCategory === "all" 
-            ? "Todas las Plantillas" 
+          {selectedCategory === "all"
+            ? "Todas las Plantillas"
             : `Plantillas de ${categoryLabels[selectedCategory as keyof typeof categoryLabels]}`}
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -166,7 +167,7 @@ const TemplateCard: FC<{ template: CarteleriaTemplate }> = ({ template }) => {
   return (
     <Card className="group cursor-pointer transition-all duration-200 hover:shadow-lg">
       <CardHeader className="space-y-3">
-        <div className="aspect-[3/4] rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+        <div className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-lg bg-gray-100">
           <FileImage className="h-16 w-16 text-gray-400" />
         </div>
         <div className="space-y-2">
@@ -175,7 +176,7 @@ const TemplateCard: FC<{ template: CarteleriaTemplate }> = ({ template }) => {
               {template.name}
             </CardTitle>
             {template.featured && (
-              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+              <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
             )}
           </div>
           <Badge className={categoryColors[template.category]}>
@@ -189,7 +190,7 @@ const TemplateCard: FC<{ template: CarteleriaTemplate }> = ({ template }) => {
         </CardDescription>
         <div className="flex gap-2">
           <Button size="sm" className="flex-1">
-            <Eye className="h-4 w-4 mr-2" />
+            <Eye className="mr-2 h-4 w-4" />
             Vista previa
           </Button>
           <Button size="sm" variant="outline">

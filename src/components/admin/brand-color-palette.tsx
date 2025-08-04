@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { FC } from "react";
@@ -15,7 +14,7 @@ export const BrandColorPalette: FC<BrandColorPaletteProps> = ({
   // Ensure we have exactly 6 colors (pad with neutrals if needed)
   const displayColors = [...colors];
   while (displayColors.length < 6) {
-    displayColors.push('#E2E8F0'); // Default neutral color
+    displayColors.push("#E2E8F0"); // Default neutral color
   }
   const finalColors = displayColors.slice(0, 6);
 
@@ -53,7 +52,7 @@ const ColorSwatch: FC<ColorSwatchProps> = ({ color, showHex, index }) => {
       // Could add a toast notification here
       console.log(`Copied ${color} to clipboard`);
     } catch (error) {
-      console.error('Failed to copy color:', error);
+      console.error("Failed to copy color:", error);
     }
   };
 
@@ -72,7 +71,7 @@ const ColorSwatch: FC<ColorSwatchProps> = ({ color, showHex, index }) => {
             background: `linear-gradient(135deg, ${color} 0%, transparent 100%)`,
           }}
         />
-        
+
         {/* Copy indicator */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
           <div className="rounded-full bg-black/50 px-2 py-1 text-xs text-white">
@@ -80,13 +79,13 @@ const ColorSwatch: FC<ColorSwatchProps> = ({ color, showHex, index }) => {
           </div>
         </div>
       </button>
-      
+
       {showHex && (
         <div className="text-center">
           <div className="text-xs font-medium text-foreground">
             Color {index}
           </div>
-          <div className="text-xs font-mono text-muted-foreground">
+          <div className="font-mono text-xs text-muted-foreground">
             {color.toUpperCase()}
           </div>
         </div>
@@ -98,13 +97,13 @@ const ColorSwatch: FC<ColorSwatchProps> = ({ color, showHex, index }) => {
 // Utility component for displaying a simple color palette without card wrapper
 export const SimpleColorPalette: FC<{
   colors: string[];
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   className?: string;
-}> = ({ colors, size = 'md', className }) => {
+}> = ({ colors, size = "md", className }) => {
   const sizeClasses = {
-    sm: 'h-8 w-8',
-    md: 'h-12 w-12',
-    lg: 'h-16 w-16',
+    sm: "h-8 w-8",
+    md: "h-12 w-12",
+    lg: "h-16 w-16",
   };
 
   return (
@@ -114,7 +113,7 @@ export const SimpleColorPalette: FC<{
           key={`simple-${color}-${index}`}
           className={cn(
             "rounded-full border-2 border-white shadow-sm",
-            sizeClasses[size]
+            sizeClasses[size],
           )}
           style={{ backgroundColor: color }}
           title={color}

@@ -157,6 +157,12 @@ pnpm build
 
 ## High Priority
 - Pasarela de pagos
+- Watermark
+- Cartelería
+- Upscaller images
+- Operations page
+- Calendar integration
+
 
 
 ## Med Priority
@@ -165,65 +171,55 @@ pnpm build
 ## Low Priority
 - Rent: add deposit information
 - Separators (tabs on top) in Property and Contact detail pages -> improve UI 
+- Short name for barrios
 
 
 ## To Validate
 - Properties: Reading the formulario nueva creación
 - Reading Ficha de Venta: try out other formularios
 - Authentication: check if we really have separation of data per request and user.
+- Make sure forms are 'similar' to the casa/piso one (!)
 
 
 
-## 
 
 
 
+## To improve
+- Progress bar when uploading logo -- also changing the tooltip of best recommendations to before when image was uploaded
+- Add multimedia material in Fotocasa integration (videos, tours)
+- Add multichannel publishing (spanishhouses, kyero, pisos.com, think spain, listglobally basic)
 
-    
+
+
      
 
 
 
-- Images: watermark (!xxx)
-    - Logo of the RE business
     
-- Images: create cartelería y marcas de agua (!xxx)
 
 
-- Logos: remove background and get palette.
 
 
-### Should I do a operations page?
+### Operations Page?
 With and without tasks to do. Each of it with its process and its documents
-- Prospect: 
-- Lead: 
-- Deal: 
+- Prospect: ---
+- Lead: ----
+- Deal: -------
 
 
-- Rent: Rent Assistant (xxx)
-- Portal: Integración Idealista (not urgent)
-- Properties: Converesational agent (xxxxx)
+### Rent: Rent Assistant (xxx)
 
+### Portal: Integración Idealista (not urgent)
 
-
-
-Checks:
-- Adjust forms to make them similar to the casa/piso one (!)
-- Listing Types: find synonyms and add labels (badges)
+### Properties: Converesational agent
 
 
 
-    ### FOTOCASA INTEGRATION
-    Errors or doubts
-    - When I 'publish', I just upload info, but it does not get published
-    - superficie de parecela does not appear in the api docs (!)
-    - being extremely careful with locations
-    - Fotocasa; Habitaclia; Milanuncios
-    - Leads API
+
+
 
 Changes 
-- add multimedia material (videos, tours)
-- add multichannel (spanishhouses, kyero, pisos.com, think spain, listglobally basic)
 
 
 

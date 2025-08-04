@@ -1,4 +1,3 @@
-
 import type React from "react";
 import { useState, useCallback } from "react";
 import Image from "next/image";
@@ -12,12 +11,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Upload, AlertCircle, CheckCircle2, Loader2, CheckCircle, Trash2 } from "lucide-react";
+import {
+  Upload,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  CheckCircle,
+  Trash2,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { LogoUploadProps } from "~/types/brand";
 
 const DEFAULT_MAX_SIZE = 5 * 1024 * 1024; // 5MB
-const DEFAULT_ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+const DEFAULT_ACCEPTED_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+];
 
 export function LogoUpload({
   onUpload,
@@ -39,8 +50,8 @@ export function LogoUpload({
       // Check file type
       if (!acceptedTypes.includes(file.type)) {
         return `Formato no soportado. Formatos permitidos: ${acceptedTypes
-          .map(type => type.split('/')[1]?.toUpperCase())
-          .join(', ')}`;
+          .map((type) => type.split("/")[1]?.toUpperCase())
+          .join(", ")}`;
       }
 
       // Check file size
@@ -51,7 +62,7 @@ export function LogoUpload({
 
       return null;
     },
-    [acceptedTypes, maxSize]
+    [acceptedTypes, maxSize],
   );
 
   // Handle file selection (either via drag-drop or file input)
@@ -68,7 +79,7 @@ export function LogoUpload({
 
       // Set file and preview
       setSelectedFile(file);
-      
+
       // Create preview URL
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -77,8 +88,12 @@ export function LogoUpload({
       try {
         await onUpload(file);
       } catch (uploadError) {
-        console.error('Upload failed:', uploadError);
-        setError(uploadError instanceof Error ? uploadError.message : 'Error al subir el archivo');
+        console.error("Upload failed:", uploadError);
+        setError(
+          uploadError instanceof Error
+            ? uploadError.message
+            : "Error al subir el archivo",
+        );
         // Clean up on error
         setSelectedFile(null);
         if (previewUrl) {
@@ -87,7 +102,7 @@ export function LogoUpload({
         setPreviewUrl(null);
       }
     },
-    [validateFile, onUpload, previewUrl]
+    [validateFile, onUpload, previewUrl],
   );
 
   // Drag and drop handlers
@@ -114,7 +129,7 @@ export function LogoUpload({
         }
       }
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   // File input change handler
@@ -127,7 +142,7 @@ export function LogoUpload({
         }
       }
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   // Remove selected file
@@ -166,7 +181,7 @@ export function LogoUpload({
     if (selectedFile && previewUrl && !error) {
       return (
         <div className="relative">
-          <div className="relative aspect-square w-full max-w-48 mx-auto overflow-hidden rounded-lg bg-muted">
+          <div className="relative mx-auto aspect-square w-full max-w-48 overflow-hidden rounded-lg bg-muted">
             <Image
               src={previewUrl}
               alt="Logo preview"
@@ -174,7 +189,7 @@ export function LogoUpload({
               className="object-contain"
             />
           </div>
-          
+
           {!isUploading && (
             <Button
               type="button"
@@ -186,8 +201,8 @@ export function LogoUpload({
               <Trash2 className="h-4 w-4" />
             </Button>
           )}
-          
-          {progress?.stage === 'complete' && (
+
+          {progress?.stage === "complete" && (
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-green-500 p-2">
               <CheckCircle2 className="h-4 w-4 text-white" />
             </div>
@@ -203,32 +218,34 @@ export function LogoUpload({
           dragActive || isUploading
             ? "border-primary bg-primary/5"
             : "border-muted-foreground/25 hover:border-muted-foreground/50",
-          isUploading && "cursor-not-allowed"
+          isUploading && "cursor-not-allowed",
         )}
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
         onDragLeave={handleDrag}
         onDrop={handleDrop}
-        onClick={() => !isUploading && document.getElementById("logo-upload")?.click()}
+        onClick={() =>
+          !isUploading && document.getElementById("logo-upload")?.click()
+        }
       >
         <Input
           id="logo-upload"
           type="file"
-          accept={acceptedTypes.join(',')}
+          accept={acceptedTypes.join(",")}
           className="hidden"
           onChange={handleInputChange}
           disabled={isUploading}
         />
-        
+
         {isUploading ? (
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         ) : (
           <Upload className="h-8 w-8 text-muted-foreground" />
         )}
-        
+
         <div className="mt-4 space-y-2">
           <p className="text-sm font-medium text-foreground">
-            {isUploading ? 'Procesando logo...' : 'Subir Logo'}
+            {isUploading ? "Procesando logo..." : "Subir Logo"}
           </p>
           <p className="text-xs text-muted-foreground">
             Arrastra y suelta tu logo aquí o haz clic para seleccionar
@@ -244,10 +261,10 @@ export function LogoUpload({
   return (
     <div className={cn("space-y-4", className)}>
       {renderUploadArea()}
-      
+
       {/* Progress indicator */}
       {renderProgress()}
-      
+
       {/* Error message */}
       {error && (
         <div className="flex items-center space-x-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
@@ -255,13 +272,13 @@ export function LogoUpload({
           <span>{error}</span>
         </div>
       )}
-      
+
       {/* Processing stages visualization */}
       {isUploading && progress && (
         <div className="relative overflow-hidden rounded-lg border bg-gradient-to-br from-background to-muted/20 p-4">
           {/* Animated background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 opacity-0 animate-pulse" />
-          
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 opacity-0" />
+
           <div className="relative space-y-4">
             {/* Header with overall progress */}
             <div className="flex items-center justify-between">
@@ -270,10 +287,15 @@ export function LogoUpload({
                 <span className="text-sm font-medium">Procesando logo</span>
               </div>
               <span className="text-xs text-muted-foreground">
-                {progress.stage === 'uploading' ? '25%' :
-                 progress.stage === 'processing' ? '50%' :
-                 progress.stage === 'extracting' ? '75%' :
-                 progress.stage === 'saving' ? '90%' : '0%'}
+                {progress.stage === "uploading"
+                  ? "25%"
+                  : progress.stage === "processing"
+                    ? "50%"
+                    : progress.stage === "extracting"
+                      ? "75%"
+                      : progress.stage === "saving"
+                        ? "90%"
+                        : "0%"}
               </span>
             </div>
 
@@ -281,28 +303,51 @@ export function LogoUpload({
             <div className="relative">
               {/* Background progress line */}
               <div className="absolute left-[11px] top-0 h-full w-[2px] bg-border" />
-              
+
               {/* Active progress line */}
-              <div 
+              <div
                 className="absolute left-[11px] top-0 w-[2px] bg-primary transition-all duration-500 ease-out"
                 style={{
-                  height: progress.stage === 'uploading' ? '25%' :
-                          progress.stage === 'processing' ? '50%' :
-                          progress.stage === 'extracting' ? '75%' :
-                          progress.stage === 'saving' ? '100%' : '0%'
+                  height:
+                    progress.stage === "uploading"
+                      ? "25%"
+                      : progress.stage === "processing"
+                        ? "50%"
+                        : progress.stage === "extracting"
+                          ? "75%"
+                          : progress.stage === "saving"
+                            ? "100%"
+                            : "0%",
                 }}
               />
 
               {/* Stages */}
               <div className="relative space-y-3">
                 {[
-                  { key: 'uploading', label: 'Subiendo archivo', detail: 'Preparando imagen' },
-                  { key: 'processing', label: 'Borrando fondo', detail: 'IA procesando' },
-                  { key: 'extracting', label: 'Extrayendo colores', detail: 'Analizando paleta' },
-                  { key: 'saving', label: 'Guardando', detail: 'Finalizando' },
+                  {
+                    key: "uploading",
+                    label: "Subiendo archivo",
+                    detail: "Preparando imagen",
+                  },
+                  {
+                    key: "processing",
+                    label: "Borrando fondo",
+                    detail: "IA procesando",
+                  },
+                  {
+                    key: "extracting",
+                    label: "Extrayendo colores",
+                    detail: "Analizando paleta",
+                  },
+                  { key: "saving", label: "Guardando", detail: "Finalizando" },
                 ].map((stage, index) => {
                   const isActive = progress.stage === stage.key;
-                  const stageIndex = ['uploading', 'processing', 'extracting', 'saving'].indexOf(progress.stage);
+                  const stageIndex = [
+                    "uploading",
+                    "processing",
+                    "extracting",
+                    "saving",
+                  ].indexOf(progress.stage);
                   const isPassed = index < stageIndex;
                   const isNext = index === stageIndex + 1;
 
@@ -311,46 +356,58 @@ export function LogoUpload({
                       key={stage.key}
                       className={cn(
                         "flex items-start gap-3 transition-all duration-300",
-                        isActive && "scale-[1.02]"
+                        isActive && "scale-[1.02]",
                       )}
                     >
                       {/* Stage indicator */}
                       <div className="relative z-10 flex h-6 w-6 items-center justify-center">
-                        <div className={cn(
-                          "absolute inset-0 rounded-full transition-all duration-300",
-                          isActive && "animate-pulse bg-primary/20"
-                        )} />
-                        <div className={cn(
-                          "relative flex h-6 w-6 items-center justify-center rounded-full border-2 bg-background transition-all duration-300",
-                          isPassed && "border-primary bg-primary",
-                          isActive && "border-primary bg-background",
-                          !isPassed && !isActive && "border-border bg-background"
-                        )}>
+                        <div
+                          className={cn(
+                            "absolute inset-0 rounded-full transition-all duration-300",
+                            isActive && "animate-pulse bg-primary/20",
+                          )}
+                        />
+                        <div
+                          className={cn(
+                            "relative flex h-6 w-6 items-center justify-center rounded-full border-2 bg-background transition-all duration-300",
+                            isPassed && "border-primary bg-primary",
+                            isActive && "border-primary bg-background",
+                            !isPassed &&
+                              !isActive &&
+                              "border-border bg-background",
+                          )}
+                        >
                           {isPassed ? (
                             <CheckCircle className="h-3.5 w-3.5 text-white" />
                           ) : isActive ? (
-                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                            <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
                           ) : (
-                            <div className={cn(
-                              "h-1.5 w-1.5 rounded-full",
-                              isNext ? "bg-border" : "bg-muted"
-                            )} />
+                            <div
+                              className={cn(
+                                "h-1.5 w-1.5 rounded-full",
+                                isNext ? "bg-border" : "bg-muted",
+                              )}
+                            />
                           )}
                         </div>
                       </div>
 
                       {/* Stage content */}
-                      <div className="flex-1 -mt-0.5">
-                        <div className={cn(
-                          "text-sm font-medium transition-all duration-300",
-                          isActive && "text-foreground",
-                          isPassed && "text-muted-foreground",
-                          !isActive && !isPassed && "text-muted-foreground/60"
-                        )}>
+                      <div className="-mt-0.5 flex-1">
+                        <div
+                          className={cn(
+                            "text-sm font-medium transition-all duration-300",
+                            isActive && "text-foreground",
+                            isPassed && "text-muted-foreground",
+                            !isActive &&
+                              !isPassed &&
+                              "text-muted-foreground/60",
+                          )}
+                        >
                           {stage.label}
                         </div>
                         {isActive && (
-                          <div className="mt-0.5 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-1">
+                          <div className="animate-in fade-in slide-in-from-left-1 mt-0.5 text-xs text-muted-foreground">
                             {stage.detail}
                           </div>
                         )}
@@ -370,7 +427,8 @@ export function LogoUpload({
           <DialogHeader>
             <DialogTitle>¿Eliminar logo?</DialogTitle>
             <DialogDescription>
-              Esta acción eliminará el logo seleccionado. Tendrás que subir uno nuevo si deseas cambiarlo.
+              Esta acción eliminará el logo seleccionado. Tendrás que subir uno
+              nuevo si deseas cambiarlo.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -380,10 +438,7 @@ export function LogoUpload({
             >
               Cancelar
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleRemove}
-            >
+            <Button variant="destructive" onClick={handleRemove}>
               Eliminar
             </Button>
           </DialogFooter>

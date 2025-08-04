@@ -25,7 +25,7 @@ interface AccountPreferences {
 async function uploadBrandAssetToS3(
   file: Blob,
   accountId: string,
-  fileType: 'original' | 'transparent',
+  fileType: "original" | "transparent",
   originalFileName: string,
 ): Promise<{ imageUrl: string; s3key: string; imageKey: string }> {
   try {
@@ -39,8 +39,9 @@ async function uploadBrandAssetToS3(
 
     // Generate file extension based on type
     const timestamp = Date.now();
-    const fileExtension = fileType === 'transparent' ? 'png' : getFileExtension(originalFileName);
-    
+    const fileExtension =
+      fileType === "transparent" ? "png" : getFileExtension(originalFileName);
+
     // Create the S3 key following the required structure:
     // inmobiliariaacripolis/[accountId]/branding/logo_[type]_[timestamp].[ext]
     const imageKey = `inmobiliariaacripolis/${accountId}/branding/logo_${fileType}_${timestamp}_${nanoid(6)}.${fileExtension}`;
@@ -56,7 +57,9 @@ async function uploadBrandAssetToS3(
         Bucket: process.env.AWS_S3_BUCKET!,
         Key: imageKey,
         Body: buffer,
-        ContentType: file.type || (fileType === 'transparent' ? 'image/png' : 'image/jpeg'),
+        ContentType:
+          file.type ||
+          (fileType === "transparent" ? "image/png" : "image/jpeg"),
       }),
     );
 
@@ -89,16 +92,16 @@ export async function uploadBrandAsset(
     const originalUpload = await uploadBrandAssetToS3(
       originalFile,
       accountId,
-      'original',
-      originalFileName
+      "original",
+      originalFileName,
     );
 
     // 2. Upload transparent logo to S3
     const transparentUpload = await uploadBrandAssetToS3(
       transparentFile,
       accountId,
-      'transparent',
-      originalFileName
+      "transparent",
+      originalFileName,
     );
 
     // 3. Update account record in database
@@ -152,7 +155,9 @@ export async function uploadBrandAsset(
 /**
  * Delete brand assets from S3 and database
  */
-export async function deleteBrandAsset(accountId: string): Promise<{ success: boolean }> {
+export async function deleteBrandAsset(
+  accountId: string,
+): Promise<{ success: boolean }> {
   try {
     // 1. Get current account data to find S3 keys
     const [account] = await db
@@ -178,8 +183,8 @@ export async function deleteBrandAsset(accountId: string): Promise<{ success: bo
             new DeleteObjectCommand({
               Bucket: process.env.AWS_S3_BUCKET!,
               Key: originalKey,
-            })
-          )
+            }),
+          ),
         );
       }
     }
@@ -191,8 +196,8 @@ export async function deleteBrandAsset(accountId: string): Promise<{ success: bo
           new DeleteObjectCommand({
             Bucket: process.env.AWS_S3_BUCKET!,
             Key: preferences.logoTransparentImageKey,
-          })
-        )
+          }),
+        ),
       );
     }
 
@@ -207,7 +212,7 @@ export async function deleteBrandAsset(accountId: string): Promise<{ success: bo
     delete cleanedPreferences.logoTransparentImageKey;
     delete cleanedPreferences.colorPalette;
     delete cleanedPreferences.brandingUpdatedAt;
-    
+
     await db
       .update(accounts)
       .set({
@@ -217,7 +222,7 @@ export async function deleteBrandAsset(accountId: string): Promise<{ success: bo
       })
       .where(eq(accounts.accountId, BigInt(accountId)));
 
-    console.log('Brand asset deleted successfully');
+    console.log("Brand asset deleted successfully");
     return { success: true };
   } catch (error) {
     console.error("Error deleting brand asset:", error);
@@ -228,7 +233,9 @@ export async function deleteBrandAsset(accountId: string): Promise<{ success: bo
 /**
  * Get brand asset information for an account
  */
-export async function getBrandAsset(accountId: string): Promise<BrandAsset | null> {
+export async function getBrandAsset(
+  accountId: string,
+): Promise<BrandAsset | null> {
   try {
     const [account] = await db
       .select()
@@ -245,9 +252,9 @@ export async function getBrandAsset(accountId: string): Promise<BrandAsset | nul
       id: nanoid(),
       accountId: accountId,
       logoOriginalUrl: account.logo,
-      logoTransparentUrl: preferences?.logoTransparent ?? '',
+      logoTransparentUrl: preferences?.logoTransparent ?? "",
       colorPalette: preferences?.colorPalette ?? [],
-      fileName: 'logo', // We don't store original filename, so use generic
+      fileName: "logo", // We don't store original filename, so use generic
       fileSize: 0, // Not stored in current schema
       uploadedAt: new Date(preferences?.brandingUpdatedAt ?? account.createdAt),
       updatedAt: account.updatedAt,
@@ -264,10 +271,10 @@ export async function getBrandAsset(accountId: string): Promise<BrandAsset | nul
  */
 export async function updateColorPalette(
   accountId: string,
-  newColorPalette: string[]
+  newColorPalette: string[],
 ): Promise<{ success: boolean; colorPalette: string[] }> {
   try {
-    console.log('Updating color palette for account:', accountId);
+    console.log("Updating color palette for account:", accountId);
 
     // 1. Get current account data
     const [account] = await db
@@ -279,7 +286,8 @@ export async function updateColorPalette(
       throw new Error("Account not found");
     }
 
-    const currentPreferences = (account.preferences as AccountPreferences) ?? {};
+    const currentPreferences =
+      (account.preferences as AccountPreferences) ?? {};
 
     // 2. Update preferences with new color palette
     const updatedPreferences: AccountPreferences = {
@@ -297,10 +305,10 @@ export async function updateColorPalette(
       })
       .where(eq(accounts.accountId, BigInt(accountId)));
 
-    console.log('Color palette updated successfully');
-    return { 
+    console.log("Color palette updated successfully");
+    return {
       success: true,
-      colorPalette: newColorPalette
+      colorPalette: newColorPalette,
     };
   } catch (error) {
     console.error("Error updating color palette:", error);
@@ -310,15 +318,15 @@ export async function updateColorPalette(
 
 // Helper functions
 function getFileExtension(filename: string): string {
-  const parts = filename.split('.');
-  return parts.length > 1 ? parts[parts.length - 1]! : 'jpg';
+  const parts = filename.split(".");
+  return parts.length > 1 ? parts[parts.length - 1]! : "jpg";
 }
 
 function extractS3KeyFromUrl(url: string): string | null {
   try {
     // Extract key from S3 URL format: https://bucket.s3.region.amazonaws.com/key
-    const urlParts = url.split('.com/');
-    return urlParts.length > 1 ? urlParts[1] ?? null : null;
+    const urlParts = url.split(".com/");
+    return urlParts.length > 1 ? (urlParts[1] ?? null) : null;
   } catch {
     return null;
   }

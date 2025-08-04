@@ -85,7 +85,7 @@ export const AdminNavigationCards: FC = () => {
 
           return (
             <Link key={section.title} href={section.href}>
-              <Card className="cursor-pointer transition-all duration-200 hover:bg-gray-100 group">
+              <Card className="group cursor-pointer transition-all duration-200 hover:bg-gray-100">
                 <CardHeader className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <div className="rounded-lg bg-gray-100 p-2 group-hover:bg-gray-200">
