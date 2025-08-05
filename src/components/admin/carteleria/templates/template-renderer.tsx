@@ -2,9 +2,7 @@
 
 import type { FC } from "react";
 import { useState, useMemo } from "react";
-import type {
-  TemplatePropertyData,
-} from "~/types/template-data";
+import type { TemplatePropertyData } from "~/types/template-data";
 import type { TemplateStyle, TemplateFormat } from "~/types/carteleria";
 import {
   getDefaultPropertyData,
@@ -97,29 +95,14 @@ export const TemplateRenderer: FC<TemplateRendererProps> = ({
 
   // If error occurred, render base template as fallback
   if (hasError) {
-    return (
-      <BaseTemplate
-        data={propertyData}
-        className={className}
-      />
-    );
+    return <BaseTemplate data={propertyData} className={className} />;
   }
 
   try {
-    return (
-      <TemplateComponent
-        data={propertyData}
-        className={className}
-      />
-    );
+    return <TemplateComponent data={propertyData} className={className} />;
   } catch (error) {
     handleTemplateError(error as Error);
-    return (
-      <BaseTemplate
-        data={propertyData}
-        className={className}
-      />
-    );
+    return <BaseTemplate data={propertyData} className={className} />;
   }
 };
 
@@ -139,7 +122,7 @@ export const TemplatePreviewRenderer: FC<TemplatePreviewRendererProps> = ({
 }) => {
   const sizeClasses = {
     small: "w-full h-full",
-    medium: "w-full h-full", 
+    medium: "w-full h-full",
     large: "w-full h-full",
   };
 

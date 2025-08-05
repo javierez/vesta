@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 import { ConfigurableTemplate } from "~/components/admin/carteleria/templates/configurable-template";
-import { mockPropertyData, getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
-import type { TemplateConfiguration, ExtendedTemplatePropertyData } from "~/types/template-data";
+import {
+  mockPropertyData,
+  getExtendedDefaultPropertyData,
+} from "~/lib/carteleria/mock-data";
+import type {
+  TemplateConfiguration,
+  ExtendedTemplatePropertyData,
+} from "~/types/template-data";
 import { DisplayToggles } from "~/components/admin/carteleria/controls/display-toggles";
 import { AdditionalFieldsSelector } from "~/components/admin/carteleria/controls/additional-fields-selector";
 import { ImageCountSelector } from "~/components/admin/carteleria/controls/image-count-selector";
@@ -12,10 +18,11 @@ import { TemplateStyleSelector } from "~/components/admin/carteleria/controls/te
 import { cn } from "~/lib/utils";
 
 export default function PlaygroundPage() {
-  const [propertyData, setPropertyData] = useState<ExtendedTemplatePropertyData>(
-    getExtendedDefaultPropertyData("piso")
-  );
-  
+  const [propertyData, setPropertyData] =
+    useState<ExtendedTemplatePropertyData>(
+      getExtendedDefaultPropertyData("piso"),
+    );
+
   // Template configuration state for new controls
   const [config, setConfig] = useState<TemplateConfiguration>({
     templateStyle: "modern",
@@ -28,25 +35,27 @@ export default function PlaygroundPage() {
     showPhone: true,
     showShortDescription: false,
     listingType: "venta",
-    additionalFields: []
+    additionalFields: [],
   });
 
   // Handler for updating template configuration
   const updateConfig = (updates: Partial<TemplateConfiguration>) => {
-    setConfig(prev => {
+    setConfig((prev) => {
       const newConfig = { ...prev, ...updates };
-      
+
       // Update title when listingType changes
       if (updates.listingType) {
         const title = `${propertyData.propertyType.charAt(0).toUpperCase() + propertyData.propertyType.slice(1)} en ${updates.listingType}`;
-        setPropertyData(prevData => ({ ...prevData, title }));
+        setPropertyData((prevData) => ({ ...prevData, title }));
       }
-      
+
       return newConfig;
     });
   };
 
-  const handlePropertyTypeChange = (propertyType: "piso" | "casa" | "local" | "garaje" | "solar") => {
+  const handlePropertyTypeChange = (
+    propertyType: "piso" | "casa" | "local" | "garaje" | "solar",
+  ) => {
     // Use extended property data with additional fields
     const extendedData = getExtendedDefaultPropertyData(propertyType);
     // Update title based on propertyType and listingType
@@ -57,49 +66,48 @@ export default function PlaygroundPage() {
   };
 
   const handleLocationChange = (city: string, neighborhood: string) => {
-    setPropertyData(prev => ({
+    setPropertyData((prev) => ({
       ...prev,
-      location: { city, neighborhood }
+      location: { city, neighborhood },
     }));
   };
 
   const handlePriceChange = (price: number) => {
-    setPropertyData(prev => ({ ...prev, price }));
+    setPropertyData((prev) => ({ ...prev, price }));
   };
 
-
   const handleSquareMetersChange = (squareMeters: number) => {
-    setPropertyData(prev => ({
+    setPropertyData((prev) => ({
       ...prev,
-      specs: { ...prev.specs, squareMeters }
+      specs: { ...prev.specs, squareMeters },
     }));
   };
 
   const handleBedroomsChange = (bedrooms: number | undefined) => {
-    setPropertyData(prev => ({
+    setPropertyData((prev) => ({
       ...prev,
-      specs: { ...prev.specs, bedrooms }
+      specs: { ...prev.specs, bedrooms },
     }));
   };
 
   const handleBathroomsChange = (bathrooms: number | undefined) => {
-    setPropertyData(prev => ({
+    setPropertyData((prev) => ({
       ...prev,
-      specs: { ...prev.specs, bathrooms }
+      specs: { ...prev.specs, bathrooms },
     }));
   };
 
   const handlePhoneChange = (phone: string) => {
-    setPropertyData(prev => ({
+    setPropertyData((prev) => ({
       ...prev,
-      contact: { ...prev.contact, phone }
+      contact: { ...prev.contact, phone },
     }));
   };
 
   const handleEmailChange = (email: string) => {
-    setPropertyData(prev => ({
+    setPropertyData((prev) => ({
       ...prev,
-      contact: { ...prev.contact, email }
+      contact: { ...prev.contact, email },
     }));
   };
 
@@ -115,28 +123,39 @@ export default function PlaygroundPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="mb-8 text-3xl font-bold">Área de Pruebas de Plantilla Moderna</h1>
-      
+      <h1 className="mb-8 text-3xl font-bold">
+        Área de Pruebas de Plantilla Moderna
+      </h1>
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Panel de Controles - Single scrollable list */}
         <div>
-          <div className="rounded-lg border p-6 h-[800px] overflow-y-auto">
-            <h2 className="mb-6 text-xl font-semibold sticky top-0 bg-white pb-2 border-b">
+          <div className="h-[800px] overflow-y-auto rounded-lg border p-6">
+            <h2 className="sticky top-0 mb-6 border-b bg-white pb-2 text-xl font-semibold">
               Controles de Plantilla
             </h2>
-            
+
             <div className="space-y-6">
               {/* Template Style Selector */}
               <div>
-                <TemplateStyleSelector config={config} onChange={updateConfig} />
+                <TemplateStyleSelector
+                  config={config}
+                  onChange={updateConfig}
+                />
               </div>
 
               {/* Selector de Orientación */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Orientación</label>
+                <label className="mb-2 block text-sm font-medium">
+                  Orientación
+                </label>
                 <select
                   value={config.orientation}
-                  onChange={(e) => updateConfig({ orientation: e.target.value as "vertical" | "horizontal" })}
+                  onChange={(e) =>
+                    updateConfig({
+                      orientation: e.target.value as "vertical" | "horizontal",
+                    })
+                  }
                   className="w-full rounded border border-gray-300 px-3 py-2"
                 >
                   <option value="vertical">Vertical (A4 Retrato)</option>
@@ -146,13 +165,24 @@ export default function PlaygroundPage() {
 
               {/* Selector de Tipo de Propiedad */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Tipo de Propiedad</label>
+                <label className="mb-2 block text-sm font-medium">
+                  Tipo de Propiedad
+                </label>
                 <select
                   value={propertyData.propertyType}
-                  onChange={(e) => handlePropertyTypeChange(e.target.value as "piso" | "casa" | "local" | "garaje" | "solar")}
+                  onChange={(e) =>
+                    handlePropertyTypeChange(
+                      e.target.value as
+                        | "piso"
+                        | "casa"
+                        | "local"
+                        | "garaje"
+                        | "solar",
+                    )
+                  }
                   className="w-full rounded border border-gray-300 px-3 py-2"
                 >
-                  {Object.keys(mockPropertyData).map(type => (
+                  {Object.keys(mockPropertyData).map((type) => (
                     <option key={type} value={type}>
                       {type.charAt(0).toUpperCase() + type.slice(1)}
                     </option>
@@ -167,7 +197,9 @@ export default function PlaygroundPage() {
 
               {/* Localización */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Localización</label>
+                <label className="mb-2 block text-sm font-medium">
+                  Localización
+                </label>
                 <select
                   value={`${propertyData.location.city}|${propertyData.location.neighborhood}`}
                   onChange={(e) => {
@@ -176,7 +208,7 @@ export default function PlaygroundPage() {
                   }}
                   className="w-full rounded border border-gray-300 px-3 py-2"
                 >
-                  {cities.map(city => (
+                  {cities.map((city) => (
                     <option key={city.value} value={city.value}>
                       {city.label}
                     </option>
@@ -199,22 +231,32 @@ export default function PlaygroundPage() {
 
               {/* Campo de Metros Cuadrados */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Metros Cuadrados</label>
+                <label className="mb-2 block text-sm font-medium">
+                  Metros Cuadrados
+                </label>
                 <input
                   type="number"
                   value={propertyData.specs.squareMeters}
-                  onChange={(e) => handleSquareMetersChange(Number(e.target.value))}
+                  onChange={(e) =>
+                    handleSquareMetersChange(Number(e.target.value))
+                  }
                   className="w-full rounded border border-gray-300 px-3 py-2"
                 />
               </div>
 
               {/* Campo de Habitaciones */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Habitaciones</label>
+                <label className="mb-2 block text-sm font-medium">
+                  Habitaciones
+                </label>
                 <input
                   type="number"
                   value={propertyData.specs.bedrooms ?? ""}
-                  onChange={(e) => handleBedroomsChange(e.target.value ? Number(e.target.value) : undefined)}
+                  onChange={(e) =>
+                    handleBedroomsChange(
+                      e.target.value ? Number(e.target.value) : undefined,
+                    )
+                  }
                   className="w-full rounded border border-gray-300 px-3 py-2"
                   placeholder="Opcional"
                 />
@@ -226,7 +268,11 @@ export default function PlaygroundPage() {
                 <input
                   type="number"
                   value={propertyData.specs.bathrooms ?? ""}
-                  onChange={(e) => handleBathroomsChange(e.target.value ? Number(e.target.value) : undefined)}
+                  onChange={(e) =>
+                    handleBathroomsChange(
+                      e.target.value ? Number(e.target.value) : undefined,
+                    )
+                  }
                   className="w-full rounded border border-gray-300 px-3 py-2"
                   placeholder="Opcional"
                 />
@@ -234,7 +280,9 @@ export default function PlaygroundPage() {
 
               {/* Campo de Teléfono */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Teléfono</label>
+                <label className="mb-2 block text-sm font-medium">
+                  Teléfono
+                </label>
                 <input
                   type="text"
                   value={propertyData.contact.phone}
@@ -245,7 +293,9 @@ export default function PlaygroundPage() {
 
               {/* Campo de Correo Electrónico */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Correo Electrónico</label>
+                <label className="mb-2 block text-sm font-medium">
+                  Correo Electrónico
+                </label>
                 <input
                   type="email"
                   value={propertyData.contact.email ?? ""}
@@ -267,7 +317,10 @@ export default function PlaygroundPage() {
 
               {/* Additional Fields Selector */}
               <div>
-                <AdditionalFieldsSelector config={config} onChange={updateConfig} />
+                <AdditionalFieldsSelector
+                  config={config}
+                  onChange={updateConfig}
+                />
               </div>
             </div>
           </div>
@@ -275,13 +328,17 @@ export default function PlaygroundPage() {
 
         {/* Vista Previa de Plantilla */}
         <div className="rounded-lg border p-6">
-          <h2 className="mb-4 text-xl font-semibold">Vista Previa de Plantilla</h2>
+          <h2 className="mb-4 text-xl font-semibold">
+            Vista Previa de Plantilla
+          </h2>
           <div className="flex justify-center">
-            <div className={cn(
-              "w-full",
-              config.orientation === "vertical" ? "max-w-md" : "max-w-lg"
-            )}>
-              <ConfigurableTemplate 
+            <div
+              className={cn(
+                "w-full",
+                config.orientation === "vertical" ? "max-w-md" : "max-w-lg",
+              )}
+            >
+              <ConfigurableTemplate
                 data={propertyData}
                 config={config}
                 className="border shadow-lg"

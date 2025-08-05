@@ -1,4 +1,7 @@
-import type { TemplatePropertyData, ExtendedTemplatePropertyData } from "~/types/template-data";
+import type {
+  TemplatePropertyData,
+  ExtendedTemplatePropertyData,
+} from "~/types/template-data";
 
 // AWS S3 image URLs for template mock data
 // CRITICAL: Use exact AWS S3 structure from vesta-configuration-files bucket
@@ -287,8 +290,13 @@ export const formatLocation = (location: {
 };
 
 // Format price for display with Spanish formatting
-export const formatPrice = (price: number, propertyType?: string, listingType?: string): string => {
-  const isRental = listingType === "alquiler" || (propertyType === "local" && price < 5000);
+export const formatPrice = (
+  price: number,
+  propertyType?: string,
+  listingType?: string,
+): string => {
+  const isRental =
+    listingType === "alquiler" || (propertyType === "local" && price < 5000);
   const suffix = isRental ? "€/mes" : "€";
 
   return price.toLocaleString("es-ES") + " " + suffix;
@@ -328,7 +336,8 @@ const extendedPropertyFields = {
     orientation: "Sur",
     conservationStatus: 2, // Pretty good
     heatingType: "Gas natural",
-    shortDescription: "Precioso piso en el centro de León, totalmente reformado con acabados de alta calidad. Ideal para parejas o pequeñas familias.",
+    shortDescription:
+      "Precioso piso en el centro de León, totalmente reformado con acabados de alta calidad. Ideal para parejas o pequeñas familias.",
     listingType: "venta" as const,
   },
   casa: {
@@ -344,7 +353,8 @@ const extendedPropertyFields = {
     orientation: "Sureste",
     conservationStatus: 1, // Good
     heatingType: "Calefacción central",
-    shortDescription: "Amplia casa familiar con jardín y garaje. Perfecta para familias que buscan tranquilidad sin renunciar a las comodidades urbanas.",
+    shortDescription:
+      "Amplia casa familiar con jardín y garaje. Perfecta para familias que buscan tranquilidad sin renunciar a las comodidades urbanas.",
     listingType: "venta" as const,
   },
   local: {
@@ -358,7 +368,8 @@ const extendedPropertyFields = {
     orientation: "Norte",
     conservationStatus: 4, // Needs renovation
     heatingType: "Eléctrica",
-    shortDescription: "Local comercial en zona céntrica con gran potencial. Ideal para oficinas, consulta médica o pequeño negocio.",
+    shortDescription:
+      "Local comercial en zona céntrica con gran potencial. Ideal para oficinas, consulta médica o pequeño negocio.",
     listingType: "alquiler" as const,
   },
   garaje: {
@@ -366,14 +377,16 @@ const extendedPropertyFields = {
     hasElevator: false,
     orientation: "Interior",
     conservationStatus: 3, // Almost new
-    shortDescription: "Plaza de garaje amplia y de fácil acceso. Perfecta para coches grandes o para almacenamiento adicional.",
+    shortDescription:
+      "Plaza de garaje amplia y de fácil acceso. Perfecta para coches grandes o para almacenamiento adicional.",
     listingType: "venta" as const,
   },
   solar: {
     yearBuilt: undefined, // Land doesn't have built year
     orientation: "Sur",
     conservationStatus: 1, // Good (for land)
-    shortDescription: "Parcela urbana con excelentes vistas y buena orientación. Ideal para construcción de vivienda unifamiliar.",
+    shortDescription:
+      "Parcela urbana con excelentes vistas y buena orientación. Ideal para construcción de vivienda unifamiliar.",
     listingType: "venta" as const,
   },
 };
@@ -384,21 +397,21 @@ export const getExtendedDefaultPropertyData = (
 ): ExtendedTemplatePropertyData => {
   const baseData = getDefaultPropertyData(propertyType);
   const extendedFields = extendedPropertyFields[propertyType];
-  
+
   return {
     ...baseData,
     ...extendedFields,
   };
 };
 
-// Get extended random property data 
+// Get extended random property data
 export const getExtendedRandomPropertyData = (
   propertyType?: "piso" | "casa" | "local" | "garaje" | "solar",
 ): ExtendedTemplatePropertyData => {
   const baseData = getRandomPropertyData(propertyType);
   const actualPropertyType = propertyType ?? baseData.propertyType;
   const extendedFields = extendedPropertyFields[actualPropertyType];
-  
+
   return {
     ...baseData,
     ...extendedFields,

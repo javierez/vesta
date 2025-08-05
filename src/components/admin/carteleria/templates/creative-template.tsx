@@ -40,7 +40,7 @@ export const CreativeTemplate: FC<BaseTemplateProps> = ({
     <div
       className={cn(
         "relative overflow-hidden bg-white",
-        "w-full h-full aspect-[210/297] rounded-2xl", // A4 portrait ratio filling container with creative rounded corners
+        "aspect-[210/297] h-full w-full rounded-2xl", // A4 portrait ratio filling container with creative rounded corners
         className,
       )}
       style={{
@@ -324,7 +324,6 @@ export const CreativeTemplate: FC<BaseTemplateProps> = ({
           </div>
         </div>
       </div>
-
     </div>
   );
 };

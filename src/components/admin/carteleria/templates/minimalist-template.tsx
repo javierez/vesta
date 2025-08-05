@@ -38,7 +38,7 @@ export const MinimalistTemplate: FC<BaseTemplateProps> = ({
     <div
       className={cn(
         "relative bg-white",
-        "w-full h-full aspect-[210/297] border border-gray-100", // A4 portrait ratio filling container, minimal border
+        "aspect-[210/297] h-full w-full border border-gray-100", // A4 portrait ratio filling container, minimal border
         className,
       )}
       data-testid="template-minimalist"

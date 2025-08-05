@@ -15,20 +15,20 @@ const LISTING_TYPES = [
     label: "Venta",
     icon: "🏷️",
     description: "Propiedad en venta",
-    color: "green"
+    color: "green",
   },
   {
     value: "alquiler" as const,
     label: "Alquiler",
     icon: "🔑",
     description: "Propiedad en alquiler",
-    color: "blue"
-  }
+    color: "blue",
+  },
 ] as const;
 
-export const ListingTypeSelector: FC<ListingTypeSelectorProps> = ({ 
-  config, 
-  onChange 
+export const ListingTypeSelector: FC<ListingTypeSelectorProps> = ({
+  config,
+  onChange,
 }) => {
   const handleListingTypeChange = (listingType: "venta" | "alquiler") => {
     onChange({ listingType });
@@ -49,12 +49,12 @@ export const ListingTypeSelector: FC<ListingTypeSelectorProps> = ({
           const colorClasses = {
             green: {
               selected: "bg-green-50 border-green-500 text-green-700",
-              unselected: "hover:border-green-300"
+              unselected: "hover:border-green-300",
             },
             blue: {
-              selected: "bg-blue-50 border-blue-500 text-blue-700", 
-              unselected: "hover:border-blue-300"
-            }
+              selected: "bg-blue-50 border-blue-500 text-blue-700",
+              unselected: "hover:border-blue-300",
+            },
           };
 
           return (
@@ -62,25 +62,26 @@ export const ListingTypeSelector: FC<ListingTypeSelectorProps> = ({
               key={type.value}
               onClick={() => handleListingTypeChange(type.value)}
               className={cn(
-                "p-4 rounded-lg border-2 text-left transition-all duration-200",
+                "rounded-lg border-2 p-4 text-left transition-all duration-200",
                 "hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2",
                 isSelected && colorClasses[type.color].selected,
                 isSelected && "focus:ring-current",
-                !isSelected && "bg-white border-gray-200 hover:border-gray-300 focus:ring-gray-500",
-                !isSelected && colorClasses[type.color].unselected
+                !isSelected &&
+                  "border-gray-200 bg-white hover:border-gray-300 focus:ring-gray-500",
+                !isSelected && colorClasses[type.color].unselected,
               )}
             >
-              <div className="flex items-center mb-2">
-                <span className="text-2xl mr-3">{type.icon}</span>
+              <div className="mb-2 flex items-center">
+                <span className="mr-3 text-2xl">{type.icon}</span>
                 <div>
-                  <div className="font-medium text-base">{type.label}</div>
+                  <div className="text-base font-medium">{type.label}</div>
                   <div className="text-sm opacity-75">{type.description}</div>
                 </div>
               </div>
-              
+
               {isSelected && (
-                <div className="flex items-center mt-2">
-                  <div className="w-2 h-2 bg-current rounded-full mr-2" />
+                <div className="mt-2 flex items-center">
+                  <div className="mr-2 h-2 w-2 rounded-full bg-current" />
                   <span className="text-xs font-medium">Seleccionado</span>
                 </div>
               )}
@@ -90,13 +91,14 @@ export const ListingTypeSelector: FC<ListingTypeSelectorProps> = ({
       </div>
 
       {/* Information about how this affects the template */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
         <p className="text-sm text-gray-700">
-          <span className="font-medium">💡 Efecto:</span> Esto cambiará el formato del precio 
-          {config.listingType === "venta" 
-            ? " (se mostrará el precio total en euros)" 
-            : " (se mostrará el precio mensual con €/mes)"
-          } y puede afectar otros elementos de la plantilla.
+          <span className="font-medium">💡 Efecto:</span> Esto cambiará el
+          formato del precio
+          {config.listingType === "venta"
+            ? " (se mostrará el precio total en euros)"
+            : " (se mostrará el precio mensual con €/mes)"}{" "}
+          y puede afectar otros elementos de la plantilla.
         </p>
       </div>
     </div>

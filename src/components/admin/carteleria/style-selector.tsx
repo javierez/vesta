@@ -1,4 +1,3 @@
-
 import type { FC } from "react";
 import {
   Card,
@@ -48,7 +47,7 @@ interface StyleCardProps {
 
 const StyleCard: FC<StyleCardProps> = ({ style, isSelected, onSelect }) => {
   const isInactive = !style.isActive;
-  
+
   return (
     <Card
       className={`group transition-all duration-200 ${
@@ -59,8 +58,8 @@ const StyleCard: FC<StyleCardProps> = ({ style, isSelected, onSelect }) => {
         isSelected && !isInactive
           ? "scale-105 shadow-lg ring-2 ring-primary"
           : isInactive
-          ? ""
-          : "hover:shadow-md"
+            ? ""
+            : "hover:shadow-md"
       }`}
       onClick={isInactive ? undefined : onSelect}
     >
@@ -80,7 +79,9 @@ const StyleCard: FC<StyleCardProps> = ({ style, isSelected, onSelect }) => {
             <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
               <div className="text-center">
                 <div className="rounded-lg bg-white/90 px-4 py-2 shadow-lg">
-                  <p className="text-sm font-semibold text-gray-900">Próximamente</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Próximamente
+                  </p>
                 </div>
               </div>
             </div>
@@ -98,7 +99,9 @@ const StyleCard: FC<StyleCardProps> = ({ style, isSelected, onSelect }) => {
 
         {/* Style Info */}
         <div className="space-y-2">
-          <CardTitle className={`text-lg transition-colors ${!isInactive ? "group-hover:text-primary" : ""}`}>
+          <CardTitle
+            className={`text-lg transition-colors ${!isInactive ? "group-hover:text-primary" : ""}`}
+          >
             {style.name}
           </CardTitle>
         </div>
@@ -141,11 +144,13 @@ const StyleCard: FC<StyleCardProps> = ({ style, isSelected, onSelect }) => {
           <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-3">
             <div className="flex items-center gap-2 text-orange-700">
               <Clock className="h-4 w-4" />
-              <span className="text-sm font-medium">Próximamente disponible</span>
+              <span className="text-sm font-medium">
+                Próximamente disponible
+              </span>
             </div>
           </div>
         )}
-        
+
         {isSelected && !isInactive && (
           <div className="mt-4 rounded-lg border border-primary/20 bg-primary/10 p-3">
             <div className="flex items-center gap-2 text-primary">

@@ -9,7 +9,18 @@ Let's create the actual templates that will render in the section named 'Estilo'
 Use for the mockups mostly neutral colors, as we will adapt the palette of colors later.
 
 
-
+ Let's redefine template controls:\                                                                                             │
+│   First we would have to select\                                                                                                 │
+│   1. template type: horizontal/vertical\\                                                                                        │
+│   2. property type: piso, casa, etc... you already know about it\                                                                │
+│   3. number of pictures in the template (from 3 to 4)\                                                                           │
+│   4. Iconos (yes/no)\                                                                                                            │
+│   5. QR (y/n)\                                                                                                                   │
+│   6. Marca de Agua (y/n)\                                                                                                        │
+│   7. Teléfono (y/n)\                                                                                                             │
+│   8. Other information rather than beds, baths and sqmtrs (select max two out of all the fields or columns from the properties   │
+│   or listings table)\                                                                                                            │
+│   9.     
 
 
 ## EXAMPLES:

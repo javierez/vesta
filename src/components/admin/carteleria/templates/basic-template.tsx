@@ -5,12 +5,20 @@ import Image from "next/image";
 import type { ConfigurableTemplateProps } from "~/types/template-data";
 import { PropertyQRCode } from "../qr-code";
 import { getTemplateImages } from "~/lib/carteleria/s3-images";
-import {
-  formatLocation,
-  formatPrice,
-} from "~/lib/carteleria/mock-data";
+import { formatLocation, formatPrice } from "~/lib/carteleria/mock-data";
 import { cn } from "~/lib/utils";
-import { MapPin, Bath, Bed, Square, Zap, Calendar, Car, Home, Compass, Flame } from "lucide-react";
+import {
+  MapPin,
+  Bath,
+  Bed,
+  Square,
+  Zap,
+  Calendar,
+  Car,
+  Home,
+  Compass,
+  Flame,
+} from "lucide-react";
 
 // Basic style color palette - simple colors with green accents
 const basicColors = {
@@ -34,7 +42,11 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
   };
 
   const locationText = formatLocation(data.location);
-  const priceText = formatPrice(data.price, data.propertyType, config.listingType);
+  const priceText = formatPrice(
+    data.price,
+    data.propertyType,
+    config.listingType,
+  );
 
   // Get images based on configuration
   const templateImages = getTemplateImages(config.imageCount);
@@ -60,7 +72,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             </div>
             <div className="grid grid-cols-3 gap-2">
               {templateImages.slice(1, 4).map((image, index) => (
-                <div key={index} className="relative overflow-hidden rounded-lg">
+                <div
+                  key={index}
+                  className="relative overflow-hidden rounded-lg"
+                >
                   <Image
                     src={image}
                     alt={`${data.title} - Imagen ${index + 2}`}
@@ -90,7 +105,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             </div>
             <div className="grid grid-cols-2 gap-2">
               {templateImages.slice(1, 3).map((image, index) => (
-                <div key={index} className="relative overflow-hidden rounded-lg">
+                <div
+                  key={index}
+                  className="relative overflow-hidden rounded-lg"
+                >
                   <Image
                     src={image}
                     alt={`${data.title} - Imagen ${index + 2}`}
@@ -122,7 +140,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             </div>
             <div className="col-span-2 grid grid-rows-3 gap-2">
               {templateImages.slice(1, 4).map((image, index) => (
-                <div key={index} className="relative overflow-hidden rounded-lg">
+                <div
+                  key={index}
+                  className="relative overflow-hidden rounded-lg"
+                >
                   <Image
                     src={image}
                     alt={`${data.title} - Imagen ${index + 2}`}
@@ -152,7 +173,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             </div>
             <div className="flex flex-col gap-2">
               {templateImages.slice(1, 3).map((image, index) => (
-                <div key={index} className="relative flex-1 overflow-hidden rounded-lg">
+                <div
+                  key={index}
+                  className="relative flex-1 overflow-hidden rounded-lg"
+                >
                   <Image
                     src={image}
                     alt={`${data.title} - Imagen ${index + 2}`}
@@ -193,7 +217,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
       const labelMap: Record<string, string> = {
         energyConsumptionScale: "Certificación",
         yearBuilt: "Año",
-        hasElevator: "Ascensor", 
+        hasElevator: "Ascensor",
         hasGarage: "Garaje",
         hasStorageRoom: "Trastero",
         terrace: "Terraza",
@@ -205,25 +229,24 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
     };
 
     const getFieldValue = (fieldValue: string): string => {
-      const extendedData = data as Record<string, unknown>;
-      const value = extendedData[fieldValue];
-      
+      const value = (data as unknown as Record<string, unknown>)[fieldValue];
+
       if (value === undefined || value === null) return "N/A";
       if (typeof value === "boolean") return value ? "Sí" : "No";
       if (fieldValue === "conservationStatus" && typeof value === "number") {
         const statusMap: Record<number, string> = {
           1: "Bueno",
-          2: "Muy bueno", 
+          2: "Muy bueno",
           3: "Como nuevo",
           4: "A reformar",
-          6: "Reformado"
+          6: "Reformado",
         };
         return statusMap[value] ?? "N/A";
       }
-      if (typeof value === 'object' && value !== null) {
+      if (typeof value === "object" && value !== null) {
         return "N/A"; // Don't stringify objects
       }
-      if (typeof value === 'string' || typeof value === 'number') {
+      if (typeof value === "string" || typeof value === "number") {
         return String(value);
       }
       return "N/A";
@@ -232,7 +255,14 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
     return (
       <div className="mb-3 px-6">
         {config.showIcons ? (
-          <div className={cn("grid gap-2", config.additionalFields.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
+          <div
+            className={cn(
+              "grid gap-2",
+              config.additionalFields.length === 1
+                ? "grid-cols-1"
+                : "grid-cols-2",
+            )}
+          >
             {config.additionalFields.map((fieldValue) => {
               const IconComponent = getFieldIcon(fieldValue);
               return (
@@ -264,9 +294,18 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
         ) : (
           <div className="space-y-1">
             {config.additionalFields.map((fieldValue) => (
-              <div key={fieldValue} className="flex items-center text-sm" style={{ color: basicColors.text }}>
-                <span className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: basicColors.primary }}></span>
-                <span>{getFieldLabel(fieldValue)}: {getFieldValue(fieldValue)}</span>
+              <div
+                key={fieldValue}
+                className="flex items-center text-sm"
+                style={{ color: basicColors.text }}
+              >
+                <span
+                  className="mr-3 h-2 w-2 rounded-full"
+                  style={{ backgroundColor: basicColors.primary }}
+                ></span>
+                <span>
+                  {getFieldLabel(fieldValue)}: {getFieldValue(fieldValue)}
+                </span>
               </div>
             ))}
           </div>
@@ -280,20 +319,22 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
     <div
       className={cn(
         "relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm",
-        config.orientation === "vertical" ? "aspect-[210/297]" : "aspect-[297/210]",
-        "w-full h-full",
+        config.orientation === "vertical"
+          ? "aspect-[210/297]"
+          : "aspect-[297/210]",
+        "h-full w-full",
         className,
       )}
       data-testid={`template-basic-${config.orientation}`}
     >
       {/* Watermark overlay */}
       {config.showWatermark && (
-        <div 
-          className="absolute inset-0 pointer-events-none z-10"
+        <div
+          className="pointer-events-none absolute inset-0 z-10"
           style={{ opacity: 0.1 }}
           data-testid="watermark"
         >
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rotate-45">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 transform">
             <span className="text-6xl font-bold text-gray-400">MUESTRA</span>
           </div>
         </div>
@@ -315,14 +356,16 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 border: `1px solid ${basicColors.border}`,
               }}
             >
-              {data.propertyType.charAt(0).toUpperCase() + data.propertyType.slice(1)} en {config.listingType}
+              {data.propertyType.charAt(0).toUpperCase() +
+                data.propertyType.slice(1)}{" "}
+              en {config.listingType}
             </div>
 
             {/* Title */}
             <h2
               className={cn(
                 "mb-2 font-semibold",
-                config.orientation === "vertical" ? "text-xl" : "text-2xl"
+                config.orientation === "vertical" ? "text-xl" : "text-2xl",
               )}
               style={{ color: basicColors.text }}
             >
@@ -344,7 +387,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             <div
               className={cn(
                 "font-bold",
-                config.orientation === "vertical" ? "text-2xl" : "text-3xl"
+                config.orientation === "vertical" ? "text-2xl" : "text-3xl",
               )}
               style={{ color: basicColors.accent }}
             >
@@ -357,7 +400,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
       {/* Short description */}
       {config.showShortDescription && data.shortDescription && (
         <div className="px-6 pb-4">
-          <p className="text-sm text-gray-600 italic">
+          <p className="text-sm italic text-gray-600">
             {data.shortDescription}
           </p>
         </div>
@@ -367,7 +410,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
       <div
         className={cn(
           "relative mx-6 mb-3 overflow-hidden rounded-xl",
-          config.orientation === "vertical" ? "h-[30%]" : "h-[40%]"
+          config.orientation === "vertical" ? "h-[30%]" : "h-[40%]",
         )}
         style={{ backgroundColor: basicColors.muted }}
       >
@@ -447,19 +490,37 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           </div>
         ) : (
           <div className="space-y-1">
-            <div className="flex items-center text-sm" style={{ color: basicColors.text }}>
-              <span className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: basicColors.primary }}></span>
+            <div
+              className="flex items-center text-sm"
+              style={{ color: basicColors.text }}
+            >
+              <span
+                className="mr-3 h-2 w-2 rounded-full"
+                style={{ backgroundColor: basicColors.primary }}
+              ></span>
               <span>{data.specs.squareMeters} m²</span>
             </div>
             {data.specs.bedrooms && (
-              <div className="flex items-center text-sm" style={{ color: basicColors.text }}>
-                <span className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: basicColors.primary }}></span>
+              <div
+                className="flex items-center text-sm"
+                style={{ color: basicColors.text }}
+              >
+                <span
+                  className="mr-3 h-2 w-2 rounded-full"
+                  style={{ backgroundColor: basicColors.primary }}
+                ></span>
                 <span>{data.specs.bedrooms} habitaciones</span>
               </div>
             )}
             {data.specs.bathrooms && (
-              <div className="flex items-center text-sm" style={{ color: basicColors.text }}>
-                <span className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: basicColors.primary }}></span>
+              <div
+                className="flex items-center text-sm"
+                style={{ color: basicColors.text }}
+              >
+                <span
+                  className="mr-3 h-2 w-2 rounded-full"
+                  style={{ backgroundColor: basicColors.primary }}
+                ></span>
                 <span>{data.specs.bathrooms} baños</span>
               </div>
             )}

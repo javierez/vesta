@@ -4,10 +4,7 @@ import type { FC } from "react";
 import Image from "next/image";
 import type { BaseTemplateProps } from "~/types/template-data";
 import { PropertyQRCode } from "../qr-code";
-import {
-  formatLocation,
-  formatPrice,
-} from "~/lib/carteleria/mock-data";
+import { formatLocation, formatPrice } from "~/lib/carteleria/mock-data";
 import { cn } from "~/lib/utils";
 import { MapPin, Bath, Bed, Square } from "lucide-react";
 
@@ -22,10 +19,7 @@ const modernColors = {
   muted: "#f8fafc",
 };
 
-export const ModernTemplate: FC<BaseTemplateProps> = ({
-  data,
-  className,
-}) => {
+export const ModernTemplate: FC<BaseTemplateProps> = ({ data, className }) => {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
     target.style.display = "none";
@@ -38,7 +32,7 @@ export const ModernTemplate: FC<BaseTemplateProps> = ({
     <div
       className={cn(
         "relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm",
-        "w-full h-full aspect-[210/297]", // A4 portrait ratio filling container
+        "aspect-[210/297] h-full w-full", // A4 portrait ratio filling container
         className,
       )}
       data-testid="template-modern"
@@ -243,7 +237,6 @@ export const ModernTemplate: FC<BaseTemplateProps> = ({
           </div>
         </div>
       </div>
-
     </div>
   );
 };

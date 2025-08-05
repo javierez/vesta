@@ -12,10 +12,7 @@ import {
 import { cn } from "~/lib/utils";
 import { MapPin, Home, Bath, Bed } from "lucide-react";
 
-export const BaseTemplate: FC<BaseTemplateProps> = ({
-  data,
-  className,
-}) => {
+export const BaseTemplate: FC<BaseTemplateProps> = ({ data, className }) => {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
     target.style.display = "none";
@@ -28,7 +25,7 @@ export const BaseTemplate: FC<BaseTemplateProps> = ({
   return (
     <div
       className={cn(
-        "relative w-full h-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm",
+        "relative h-full w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm",
         "aspect-[210/297]", // A4 portrait ratio (210mm x 297mm)
         className,
       )}
@@ -138,7 +135,6 @@ export const BaseTemplate: FC<BaseTemplateProps> = ({
           </div>
         </div>
       </div>
-
     </div>
   );
 };
@@ -158,7 +154,7 @@ export const ResponsiveTemplateWrapper: FC<ResponsiveTemplateWrapperProps> = ({
   className,
 }) => {
   const baseClasses = "mx-auto bg-white w-full h-full";
-  
+
   const getFormatClasses = () => {
     switch (format) {
       case "A4":

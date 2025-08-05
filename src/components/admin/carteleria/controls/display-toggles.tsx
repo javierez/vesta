@@ -9,7 +9,10 @@ interface DisplayTogglesProps {
   onChange: (updates: Partial<TemplateConfiguration>) => void;
 }
 
-export const DisplayToggles: FC<DisplayTogglesProps> = ({ config, onChange }) => {
+export const DisplayToggles: FC<DisplayTogglesProps> = ({
+  config,
+  onChange,
+}) => {
   const handleToggle = (field: keyof TemplateConfiguration, value: boolean) => {
     onChange({ [field]: value });
   };
@@ -54,7 +57,9 @@ export const DisplayToggles: FC<DisplayTogglesProps> = ({ config, onChange }) =>
       {/* Watermark Toggle */}
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <label className="text-sm font-medium text-gray-700">Marca de Agua</label>
+          <label className="text-sm font-medium text-gray-700">
+            Marca de Agua
+          </label>
           <p className="text-xs text-gray-500">
             Superponer marca de agua en la plantilla
           </p>
@@ -91,7 +96,9 @@ export const DisplayToggles: FC<DisplayTogglesProps> = ({ config, onChange }) =>
         </div>
         <Switch
           checked={config.showShortDescription}
-          onCheckedChange={(checked) => handleToggle("showShortDescription", checked)}
+          onCheckedChange={(checked) =>
+            handleToggle("showShortDescription", checked)
+          }
         />
       </div>
     </div>

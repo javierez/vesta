@@ -115,7 +115,13 @@ export interface TemplatePreviewConfig {
 
 // Template configuration for playground controls
 export interface TemplateConfiguration {
-  templateStyle: "modern" | "basic" | "classic" | "luxury" | "professional" | "creative";
+  templateStyle:
+    | "modern"
+    | "basic"
+    | "classic"
+    | "luxury"
+    | "professional"
+    | "creative";
   orientation: "vertical" | "horizontal";
   propertyType: "piso" | "casa" | "local" | "garaje" | "solar";
   imageCount: 3 | 4;

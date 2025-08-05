@@ -10,14 +10,7 @@ import {
   formatSquareMeters,
 } from "~/lib/carteleria/mock-data";
 import { cn } from "~/lib/utils";
-import {
-  MapPin,
-  Bath,
-  Bed,
-  Square,
-  Briefcase,
-  Building2,
-} from "lucide-react";
+import { MapPin, Bath, Bed, Square, Briefcase, Building2 } from "lucide-react";
 
 // Professional style color palette - business neutrals with navy accents
 const professionalColors = {
@@ -47,7 +40,7 @@ export const ProfessionalTemplate: FC<BaseTemplateProps> = ({
     <div
       className={cn(
         "relative bg-white",
-        "w-full h-full aspect-[210/297] rounded-lg border-2", // A4 portrait ratio filling container with clean professional borders
+        "aspect-[210/297] h-full w-full rounded-lg border-2", // A4 portrait ratio filling container with clean professional borders
         className,
       )}
       style={{
@@ -351,7 +344,6 @@ export const ProfessionalTemplate: FC<BaseTemplateProps> = ({
         className="h-1"
         style={{ backgroundColor: professionalColors.accent }}
       ></div>
-
     </div>
   );
 };

@@ -4,10 +4,7 @@ import type { FC } from "react";
 import Image from "next/image";
 import type { BaseTemplateProps } from "~/types/template-data";
 import { PropertyQRCode } from "../qr-code";
-import {
-  formatLocation,
-  formatPrice,
-} from "~/lib/carteleria/mock-data";
+import { formatLocation, formatPrice } from "~/lib/carteleria/mock-data";
 import { cn } from "~/lib/utils";
 import { MapPin, Bath, Bed, Square, Crown } from "lucide-react";
 
@@ -23,10 +20,7 @@ const luxuryColors = {
   premium: "#f59e0b", // Darker gold for accents
 };
 
-export const LuxuryTemplate: FC<BaseTemplateProps> = ({
-  data,
-  className,
-}) => {
+export const LuxuryTemplate: FC<BaseTemplateProps> = ({ data, className }) => {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
     target.style.display = "none";
@@ -39,7 +33,7 @@ export const LuxuryTemplate: FC<BaseTemplateProps> = ({
     <div
       className={cn(
         "relative overflow-hidden",
-        "w-full h-full aspect-[210/297] rounded-xl", // A4 portrait ratio filling container with elegant corners
+        "aspect-[210/297] h-full w-full rounded-xl", // A4 portrait ratio filling container with elegant corners
         className,
       )}
       style={{
@@ -332,7 +326,6 @@ export const LuxuryTemplate: FC<BaseTemplateProps> = ({
           </div>
         </div>
       </div>
-
     </div>
   );
 };

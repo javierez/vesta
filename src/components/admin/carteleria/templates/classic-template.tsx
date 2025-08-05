@@ -24,10 +24,7 @@ const classicColors = {
   decorative: "#e5e7eb", // Decorative elements
 };
 
-export const ClassicTemplate: FC<BaseTemplateProps> = ({
-  data,
-  className,
-}) => {
+export const ClassicTemplate: FC<BaseTemplateProps> = ({ data, className }) => {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
     target.style.display = "none";
@@ -40,7 +37,7 @@ export const ClassicTemplate: FC<BaseTemplateProps> = ({
     <div
       className={cn(
         "relative overflow-hidden",
-        "w-full h-full aspect-[210/297] rounded-lg border-2", // A4 portrait ratio filling container with traditional border
+        "aspect-[210/297] h-full w-full rounded-lg border-2", // A4 portrait ratio filling container with traditional border
         className,
       )}
       style={{
@@ -276,7 +273,6 @@ export const ClassicTemplate: FC<BaseTemplateProps> = ({
         className="h-1"
         style={{ backgroundColor: classicColors.accent }}
       ></div>
-
     </div>
   );
 };
