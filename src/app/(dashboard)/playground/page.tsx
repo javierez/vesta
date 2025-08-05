@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ConfigurableTemplate } from "~/components/admin/carteleria/templates/configurable-template";
+import { ModernTemplate } from "~/components/admin/carteleria/templates/modern/modern-template";
+import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-template";
 import {
   mockPropertyData,
   getExtendedDefaultPropertyData,
@@ -327,7 +328,7 @@ export default function PlaygroundPage() {
         </div>
 
         {/* Vista Previa de Plantilla */}
-        <div className="rounded-lg border p-6">
+        <div className="border p-6">
           <h2 className="mb-4 text-xl font-semibold">
             Vista Previa de Plantilla
           </h2>
@@ -338,11 +339,19 @@ export default function PlaygroundPage() {
                 config.orientation === "vertical" ? "max-w-md" : "max-w-lg",
               )}
             >
-              <ConfigurableTemplate
-                data={propertyData}
-                config={config}
-                className="border shadow-lg"
-              />
+              {config.templateStyle === "classic" ? (
+                <ClassicTemplate
+                  data={propertyData}
+                  config={config}
+                  className="border shadow-lg"
+                />
+              ) : (
+                <ModernTemplate
+                  data={propertyData}
+                  config={config}
+                  className="border shadow-lg"
+                />
+              )}
             </div>
           </div>
         </div>

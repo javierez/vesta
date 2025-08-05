@@ -81,10 +81,10 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
       // Remove field
       newFields = currentFields.filter((field) => field !== fieldValue);
     } else {
-      // Add field (respecting 2-item limit)
-      if (currentFields.length >= 2) {
+      // Add field (respecting 3-item limit)
+      if (currentFields.length >= 3) {
         // Replace the first field with the new one
-        newFields = [currentFields[1]!, fieldValue];
+        newFields = [currentFields[1]!, currentFields[2]!, fieldValue];
       } else {
         newFields = [...currentFields, fieldValue];
       }
@@ -98,11 +98,11 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
       <div className="mb-2">
         <h3 className="text-lg font-medium">Información Adicional</h3>
         <p className="text-sm text-gray-600">
-          Selecciona hasta 2 campos adicionales para mostrar (máximo 2)
+          Selecciona hasta 3 campos adicionales para mostrar (máximo 3)
         </p>
         {config.additionalFields.length > 0 && (
           <p className="text-xs text-blue-600">
-            Seleccionados: {config.additionalFields.length}/2
+            Seleccionados: {config.additionalFields.length}/3
           </p>
         )}
       </div>
@@ -110,7 +110,7 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
       <div className="grid grid-cols-3 gap-2">
         {AVAILABLE_FIELDS.map((field) => {
           const isSelected = config.additionalFields.includes(field.value);
-          const isDisabled = !isSelected && config.additionalFields.length >= 2;
+          const isDisabled = !isSelected && config.additionalFields.length >= 3;
 
           return (
             <button
@@ -128,7 +128,7 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
                   "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400 opacity-60",
               )}
               title={
-                isDisabled ? "Máximo 2 campos seleccionados" : field.description
+                isDisabled ? "Máximo 3 campos seleccionados" : field.description
               }
             >
               <span className="mb-1 text-lg">{field.icon}</span>
@@ -141,7 +141,7 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
         })}
       </div>
 
-      {config.additionalFields.length === 2 && (
+      {config.additionalFields.length === 3 && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
           <p className="text-sm text-blue-800">
             ✓ Límite alcanzado. Selecciona otro campo para reemplazar uno

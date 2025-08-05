@@ -3,8 +3,8 @@
 import type { FC } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 // import { AccountReports } from "./account-reports";
-import { AccountConfiguration } from "./account-configuration";
-import { AccountOther } from "./account-other";
+import { AccountConfiguration } from "./configuration";
+import { AccountOther } from "./other";
 
 export const AccountAdminDashboard: FC = () => {
   return (

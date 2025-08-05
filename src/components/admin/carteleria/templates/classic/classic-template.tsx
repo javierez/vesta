@@ -3,23 +3,28 @@
 import type { FC } from "react";
 import Image from "next/image";
 import type { ConfigurableTemplateProps } from "~/types/template-data";
-import { BasicTemplate } from "./basic-template";
-import { PropertyQRCode } from "../qr-code";
+import { BasicTemplate } from "../basic-template";
+import { PropertyQRCode } from "../../qr-code";
 import { getTemplateImages } from "~/lib/carteleria/s3-images";
 import { formatLocation, formatPrice } from "~/lib/carteleria/mock-data";
 import { cn } from "~/lib/utils";
+import { FeaturesGrid } from "./features-grid";
 import {
   MapPin,
-  Bath,
-  Bed,
-  Square,
-  Zap,
   Calendar,
   Car,
   Home,
   Compass,
   Flame,
+  Phone,
+  Mail,
+  Package,
+  Trees,
+  Wrench,
+  ArrowUp,
+  Award,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 // Import other templates when available
 // import { ClassicTemplate } from "./classic-template";
@@ -29,7 +34,7 @@ import {
 
 // Modern overlay style color palette - for white text on dark overlay
 const modernColors = {
-  overlay: "bg-gray-600/50", // More transparent overlay (reduced to 35%)
+  overlay: "bg-gray-400/70", // More transparent overlay (reduced to 35%)
   qrBackground: "bg-black", // Black background for QR code
   text: "text-white", // White text for contrast
   iconText: "text-white", // White icon text
@@ -37,7 +42,7 @@ const modernColors = {
   badge: "bg-white/20 text-white border-white/30", // Semi-transparent white badge
 };
 
-export const ConfigurableTemplate: FC<ConfigurableTemplateProps> = ({
+export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   data,
   config,
   className,
@@ -80,6 +85,26 @@ export const ConfigurableTemplate: FC<ConfigurableTemplateProps> = ({
   };
 
   const locationText = formatLocation(data.location);
+  
+  // Split location text based on listing type character limit
+  const formatLocationWithBreak = (text: string) => {
+    const charLimit = config.listingType === 'alquiler' ? 18 : 15;
+    
+    if (text.length <= charLimit) return text;
+    
+    // Find a good break point (prefer breaking at comma or space)
+    let breakPoint = text.lastIndexOf(', ', charLimit);
+    if (breakPoint === -1) breakPoint = text.lastIndexOf(' ', charLimit);
+    if (breakPoint === -1) breakPoint = charLimit;
+    
+    return (
+      <>
+        {text.substring(0, breakPoint)}
+        <br />
+        {text.substring(breakPoint).trim()}
+      </>
+    );
+  };
   const priceText = formatPrice(
     data.price,
     data.propertyType,
@@ -220,16 +245,16 @@ export const ConfigurableTemplate: FC<ConfigurableTemplateProps> = ({
 
   // Helper functions for additional fields
   const getFieldIcon = (fieldValue: string) => {
-    const iconMap: Record<string, typeof Zap> = {
-      energyConsumptionScale: Zap,
+    const iconMap: Record<string, LucideIcon> = {
+      energyConsumptionScale: Award,
       yearBuilt: Calendar,
-      hasElevator: Home,
+      hasElevator: ArrowUp,
       hasGarage: Car,
-      hasStorageRoom: Home,
-      terrace: Home,
+      hasStorageRoom: Package,
+      terrace: Trees,
       orientation: Compass,
       heatingType: Flame,
-      conservationStatus: Home,
+      conservationStatus: Wrench,
     };
     return iconMap[fieldValue] ?? Home;
   };
@@ -278,18 +303,22 @@ export const ConfigurableTemplate: FC<ConfigurableTemplateProps> = ({
     let count = 1; // Always have square meters
     if (data.specs.bathrooms) count++;
     if (data.specs.bedrooms) count++;
-    count += config.additionalFields.length;
+    count += Math.min(config.additionalFields.length, 3); // Max 3 additional fields
     return count;
   };
 
   const totalFeatures = getTotalFeatures();
-  const shouldMovePrice = totalFeatures > 4;
+  const shouldCompactIcons = totalFeatures > 4; // Compact icons when more than 4 features
+  
+  // Adjust price font size based on number of digits
+  const priceDigits = data.price.toString().length;
+  const priceFontSize = priceDigits >= 8 ? "19px" : priceDigits >= 7 ? "21px" : "24px";
 
   // New overlay-based template structure
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl",
+        "relative overflow-hidden",
         config.orientation === "vertical"
           ? "aspect-[210/297]"
           : "aspect-[297/210]",
@@ -301,216 +330,109 @@ export const ConfigurableTemplate: FC<ConfigurableTemplateProps> = ({
       {/* Background images layer (z-0) */}
       <div className="absolute inset-0 z-0">{renderImages()}</div>
 
-      {/* Left overlay - fixed 40% width, fixed height (z-10) */}
+      {/* Left overlay - fixed height, variable width (z-10) */}
       <div
         className={cn(
-          "absolute left-0 top-0 z-10 h-[50%] w-[40%]",
+          "absolute left-0 top-0 z-10 h-[50%]",
           modernColors.overlay,
+          "backdrop-blur-sm"
         )}
       >
         <div className="flex h-full flex-col p-4">
           {/* Top section with title and content - variable size */}
           <div className="flex-1">
-            {/* Title - listing type only */}
-            <h2
-              className={cn(
-                "font-bold leading-tight mb-3 uppercase",
-                modernColors.text,
-              )}
-              style={{ fontSize: "28px" }}
-            >
-              {config.listingType}
-            </h2>
+            {/* Title - listing type and property type */}
+            <div className="mb-3">
+              <h2
+                className={cn(
+                  "font-bold leading-tight uppercase",
+                  modernColors.text,
+                )}
+                style={{ fontSize: "28px" }}
+              >
+                {config.listingType}
+              </h2>
+              <h3
+                className={cn(
+                  "font-bold leading-tight uppercase",
+                  modernColors.text,
+                )}
+                style={{ fontSize: "28px" }}
+              >
+                {data.propertyType}
+              </h3>
+            </div>
 
             {/* Location and features - right under title */}
-            <div className="space-y-5">
+            <div className="space-y-2">
             {/* Location */}
             <div
               className={cn(
-                "inline-flex items-center rounded-lg bg-white/20 px-3 py-1",
+                "inline-flex items-start rounded-lg bg-white/20 px-3 py-1",
                 modernColors.text,
               )}
             >
-              <MapPin className="mr-2 h-4 w-4" />
-              <span className="font-medium" style={{ fontSize: "12px" }}>{locationText}</span>
+              <MapPin className="-ml-1 mr-1 h-4 w-4 flex-shrink-0" />
+              <span className="font-medium" style={{ fontSize: "12px" }}>{formatLocationWithBreak(locationText)}</span>
             </div>
 
             {/* Grid of characteristics - tight grouping */}
-            <div>
-              {config.showIcons ? (
-                (() => {
-                  // Create all feature items array
-                  const features = [];
-                  
-                  // Add main specs
-                  if (data.specs.bathrooms) {
-                    features.push({
-                      icon: Bath,
-                      value: data.specs.bathrooms,
-                      key: 'bathrooms'
-                    });
-                  }
-                  if (data.specs.bedrooms) {
-                    features.push({
-                      icon: Bed,
-                      value: data.specs.bedrooms,
-                      key: 'bedrooms'
-                    });
-                  }
-                  features.push({
-                    icon: Square,
-                    value: `${data.specs.squareMeters} m²`,
-                    key: 'squareMeters'
-                  });
-                  
-                  // Add additional fields
-                  config.additionalFields.forEach((fieldValue) => {
-                    features.push({
-                      icon: getFieldIcon(fieldValue),
-                      value: getFieldValue(fieldValue),
-                      key: fieldValue
-                    });
-                  });
-                  
-                  const totalFeatures = features.length;
-                  const isOdd = totalFeatures % 2 !== 0;
-                  
-                  return (
-                    <div className="grid grid-cols-2 gap-0 ">
-                      {features.map((feature, index) => {
-                        const IconComponent = feature.icon;
-                        const isLastAndOdd = isOdd && index === totalFeatures - 1;
-                        
-                        return (
-                          <div 
-                            key={feature.key} 
-                            className={cn(
-                              "text-center py-1",
-                              isLastAndOdd && "col-span-2"
-                            )}
-                          >
-                            <IconComponent
-                              className={cn(
-                                "mx-auto mb-1 h-5 w-5",
-                                modernColors.iconText,
-                              )}
-                            />
-                            <div className={cn(modernColors.text)} style={{ fontSize: "11px" }}>
-                              {feature.value}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()
-              ) : (
-                /* Non-icon layout - horizontal compact */
-                <div className="flex flex-wrap items-center gap-2" style={{ fontSize: "12px" }}>
-                  <span className={cn("flex items-center", modernColors.text)}>
-                    <Bath className="mr-1 h-2 w-2" />
-                    {data.specs.bathrooms}
-                  </span>
-                  <span className={cn("flex items-center", modernColors.text)}>
-                    <Bed className="mr-1 h-2 w-2" />
-                    {data.specs.bedrooms}
-                  </span>
-                  <span className={cn("flex items-center", modernColors.text)}>
-                    <Square className="mr-1 h-2 w-2" />
-                    {data.specs.squareMeters} m²
-                  </span>
-
-                  {/* Additional fields in same row */}
-                  {config.additionalFields.map((fieldValue) => {
-                    const IconComponent = getFieldIcon(fieldValue);
-                    return (
-                      <span
-                        key={fieldValue}
-                        className={cn("flex items-center", modernColors.text)}
-                      >
-                        <IconComponent className="mr-1 h-2 w-2" />
-                        {getFieldValue(fieldValue)}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <FeaturesGrid 
+              data={data}
+              config={config}
+              modernColors={modernColors}
+              getFieldIcon={getFieldIcon}
+              getFieldValue={getFieldValue}
+              getFieldLabel={getFieldLabel}
+              shouldCompact={shouldCompactIcons}
+            />
             </div>
           </div>
 
-          {/* Bottom section with price - only show if 4 or fewer features */}
-          {!shouldMovePrice && (
-            <div className="text-center mt-auto">
-              <div className={cn("font-bold", modernColors.price)} style={{ fontSize: "24px" }}>
-                {config.listingType === "alquiler" ? (
-                  <>
-                    {priceText.replace(" €/mes", "")}
-                    <span className="font-normal" style={{ fontSize: "12px" }}> €/mes</span>
-                  </>
-                ) : (
-                  priceText
-                )}
-              </div>
+          {/* Bottom section with price - always shown */}
+          <div className="text-center mt-auto">
+            <div className={cn("font-bold", modernColors.price)} style={{ fontSize: priceFontSize }}>
+              {config.listingType === "alquiler" ? (
+                <>
+                  {priceText.replace(" €/mes", "")}
+                  <span className="font-normal" style={{ fontSize: "12px" }}> €/mes</span>
+                </>
+              ) : (
+                priceText
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Bottom overlay - 20% of image height (z-10) */}
-      <div
-        className={cn(
-          "absolute bottom-0 left-0 right-0 z-10",
-          modernColors.overlay,
-        )}
-        style={{ height: "10%" }}
-      >
-        <div className="p-2">
-          {/* Contact info and short description */}
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              {/* Contact info */}
+      {/* Bottom right contact overlay (z-10) */}
+      {(config.showPhone || data.contact.email) && (
+        <div
+          className={cn(
+            "absolute bottom-3 right-3 z-10",
+            modernColors.overlay,
+            "rounded-md backdrop-blur-sm"
+          )}
+        >
+          <div className="px-3 py-2">
+            {/* Contact info with icons */}
+            <div className="space-y-1">
               {config.showPhone && (
-                <div className={cn("font-medium", modernColors.text)} style={{ fontSize: "14px" }}>
-                  {data.contact.phone}
+                <div className={cn("flex items-center gap-1.5", modernColors.text)}>
+                  <Phone className="h-3 w-3" />
+                  <span style={{ fontSize: "12px" }}>{data.contact.phone}</span>
                 </div>
               )}
               {data.contact.email && (
-                <div className={cn("opacity-90", modernColors.text)} style={{ fontSize: "12px" }}>
-                  {data.contact.email}
+                <div className={cn("flex items-center gap-1.5", modernColors.text)}>
+                  <Mail className="h-3 w-3" />
+                  <span style={{ fontSize: "11px" }}>{data.contact.email}</span>
                 </div>
               )}
             </div>
-
-            {/* Price when moved here (more than 4 features) */}
-            {shouldMovePrice && (
-              <div className="flex-1 text-right">
-                <div className={cn("font-bold", modernColors.price)} style={{ fontSize: "24px" }}>
-                  {config.listingType === "alquiler" ? (
-                    <>
-                      {priceText.replace(" €/mes", "")}
-                      <span className="font-normal" style={{ fontSize: "14px" }}> €/mes</span>
-                    </>
-                  ) : (
-                    priceText
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Short description - only when price is not moved here */}
-            {!shouldMovePrice && config.showShortDescription && data.shortDescription && (
-              <div className="flex-1 text-right">
-                <p className={cn("opacity-90", modernColors.text)} style={{ fontSize: "12px" }}>
-                  {data.shortDescription.length > 60
-                    ? `${data.shortDescription.substring(0, 60)}...`
-                    : data.shortDescription}
-                </p>
-              </div>
-            )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* QR Code in top-right corner (z-20) - much smaller size */}
       {config.showQR && (
