@@ -333,7 +333,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
       {/* Left overlay - fixed height, variable width (z-10) */}
       <div
         className={cn(
-          "absolute left-0 top-0 z-10 h-[50%]",
+          "absolute left-2 top-2 z-10 h-[50%]",
           modernColors.overlay,
           "backdrop-blur-sm"
         )}

@@ -30,7 +30,7 @@ const TEMPLATE_STYLES = [
     icon: "🏛️",
     description: "Elegancia tradicional",
     color: "amber",
-    available: false,
+    available: true,
   },
   {
     value: "luxury" as const,
