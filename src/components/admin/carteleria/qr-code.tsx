@@ -62,16 +62,23 @@ export const QRCode: FC<QRCodeComponentProps> = ({
     return (
       <div
         className={cn(
-          "inline-flex items-center justify-center rounded bg-white p-4 shadow-sm",
+          "inline-flex items-center justify-center rounded p-2",
           className,
         )}
-        style={{ width: size + 32, height: size + 32 }}
+        style={{ 
+          width: size + 16, 
+          height: size + 16,
+          backgroundColor: "rgba(128, 128, 128, 0.7)",
+          backdropFilter: "blur(4px)"
+        }}
       >
         <QRCodeLibrary
           value={qrValue}
           size={size}
           level={level}
           className="h-full w-full"
+          bgColor="#000000"
+          fgColor="#FFFFFF"
         />
       </div>
     );

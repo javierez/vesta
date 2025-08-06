@@ -2,7 +2,7 @@
 
 import type { FC } from "react";
 import { useState, useMemo } from "react";
-import type { TemplatePropertyData } from "~/types/template-data";
+import type { TemplatePropertyData, BaseTemplateProps, TemplateConfiguration, ExtendedTemplatePropertyData } from "~/types/template-data";
 import type { TemplateStyle, TemplateFormat } from "~/types/carteleria";
 import {
   getDefaultPropertyData,
@@ -10,13 +10,15 @@ import {
 } from "~/lib/carteleria/mock-data";
 
 // Import all template components
-import { BaseTemplate } from "./base-template";
-import { ModernTemplateVertical } from "./modern/modern-template-vertical";
-import { ClassicTemplate } from "./classic-template";
-import { MinimalistTemplate } from "./minimalist-template";
-import { LuxuryTemplate } from "./luxury-template";
-import { CreativeTemplate } from "./creative-template";
-import { ProfessionalTemplate } from "./professional-template";
+import { BaseTemplate } from "./base/base-template";
+import { BasicTemplate } from "./basic/basic-template";
+import { ClassicTemplate } from "./classic/classic-template";
+import { ModernTemplate } from "./modern/modern-template";
+import { MinimalistTemplate } from "./minimalist/minimalist-template";
+import { LuxuryTemplate } from "./luxury/luxury-template";
+import { CreativeTemplate } from "./creative/creative-template";
+import { ProfessionalTemplate } from "./professional/professional-template";
+import { cn } from "~/lib/utils";
 
 interface TemplateRendererProps {
   styleId: string;
@@ -29,14 +31,56 @@ interface TemplateRendererProps {
   showMockData?: boolean;
 }
 
+// Modern template preview using the template-classic image
+const ModernTemplateWrapper: FC<BaseTemplateProps> = ({ data: _data, className }) => {
+  return (
+    <div className={cn("relative overflow-hidden aspect-[210/297] h-full w-full", className)}>
+      <img 
+        src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/templates/template-classic.png"
+        alt="Modern Template Preview"
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+};
+
+const ClassicTemplateWrapper: FC<BaseTemplateProps> = ({ data: _data, className: _className }) => {
+  // Classic style has no preview - return null
+  return null;
+};
+
+// Basic template wrapper - uses BaseTemplate for simplicity
+const BasicTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
+  return <BaseTemplate data={data} className={className} />;
+};
+
+// Wrapper for other templates using BaseTemplate as fallback
+const MinimalistTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
+  return <MinimalistTemplate data={data} className={className} />;
+};
+
+const LuxuryTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
+  return <LuxuryTemplate data={data} className={className} />;
+};
+
+const CreativeTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
+  return <CreativeTemplate data={data} className={className} />;
+};
+
+const ProfessionalTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
+  return <ProfessionalTemplate data={data} className={className} />;
+};
+
 // Template component mapping for dynamic rendering
 const templateComponents = {
-  modern: ModernTemplateVertical,
-  classic: ClassicTemplate,
-  minimalist: MinimalistTemplate,
-  luxury: LuxuryTemplate,
-  creative: CreativeTemplate,
-  professional: ProfessionalTemplate,
+  base: BaseTemplate,
+  basic: BasicTemplateWrapper,
+  modern: ModernTemplateWrapper,
+  classic: ClassicTemplateWrapper,
+  minimalist: MinimalistTemplateWrapper,
+  luxury: LuxuryTemplateWrapper,
+  creative: CreativeTemplateWrapper,
+  professional: ProfessionalTemplateWrapper,
 } as const;
 
 export const TemplateRenderer: FC<TemplateRendererProps> = ({

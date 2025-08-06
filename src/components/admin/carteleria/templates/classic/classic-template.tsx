@@ -18,6 +18,7 @@ import {
   Flame,
   Phone,
   Mail,
+  Globe,
   Package,
   Trees,
   Wrench,
@@ -32,14 +33,35 @@ import type { LucideIcon } from "lucide-react";
 // import { ProfessionalTemplate } from "./professional-template";
 // import { CreativeTemplate } from "./creative-template";
 
-// Modern overlay style color palette - for white text on dark overlay
-const modernColors = {
-  overlay: "bg-gray-400/70", // More transparent overlay (reduced to 35%)
-  qrBackground: "bg-black", // Black background for QR code
-  text: "text-white", // White text for contrast
-  iconText: "text-white", // White icon text
-  price: "text-white", // White price text
-  badge: "bg-white/20 text-white border-white/30", // Semi-transparent white badge
+// Helper functions for dynamic styling
+const getFontClass = (fontType: string) => {
+  const fontMap: Record<string, string> = {
+    default: "font-sans",
+    serif: "font-serif",
+    sans: "font-sans", 
+    mono: "font-mono",
+    elegant: "font-serif",
+    modern: "font-sans font-light",
+  };
+  return fontMap[fontType] ?? "font-sans";
+};
+
+const getOverlayClass = (overlayType: string) => {
+  const overlayMap: Record<string, string> = {
+    default: "bg-gray-400/70",
+    dark: "bg-gray-800/80",
+    light: "bg-gray-200/80",
+    blue: "bg-blue-500/70",
+    green: "bg-green-500/70", 
+    purple: "bg-purple-500/70",
+    red: "bg-red-500/70",
+  };
+  return overlayMap[overlayType] ?? "bg-gray-400/70";
+};
+
+const getTextColor = (overlayType: string) => {
+  // Light overlay needs dark text, others need white text
+  return overlayType === "light" ? "text-gray-900" : "text-white";
 };
 
 export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
@@ -47,6 +69,15 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   config,
   className,
 }) => {
+  // Get dynamic colors based on config
+  const modernColors = {
+    overlay: getOverlayClass(config.overlayColor),
+    qrBackground: "bg-black",
+    text: getTextColor(config.overlayColor),
+    iconText: getTextColor(config.overlayColor),
+    price: getTextColor(config.overlayColor),
+    badge: `bg-white/20 ${getTextColor(config.overlayColor)} border-white/30`,
+  };
   // Route to different template components based on style
   switch (config.templateStyle) {
     case "basic":
@@ -86,11 +117,51 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
 
   const locationText = formatLocation(data.location);
   
-  // Split location text based on listing type character limit
-  const formatLocationWithBreak = (text: string) => {
-    const charLimit = config.listingType === 'alquiler' ? 18 : 15;
+  // Format location with truncation + line breaks
+  const formatLocationWithTruncationAndBreaks = (location: { city: string; neighborhood: string }) => {
+    let city = location.city;
+    let neighborhood = location.neighborhood;
     
-    if (text.length <= charLimit) return text;
+    // Step 1: Truncate if total > 30 chars
+    const formatLength = neighborhood.length + city.length + 3; // +3 for " ()"
+    
+    if (formatLength > 30) {
+      // Need to truncate - target is 27 chars of text (30 - 3 for formatting)
+      const targetTextLength = 27;
+      
+      // Truncate the longer one first
+      if (neighborhood.length >= city.length) {
+        // Truncate neighborhood first
+        if (city.length + 3 < targetTextLength) {
+          const availableForNeighborhood = targetTextLength - city.length - 3;
+          neighborhood = neighborhood.substring(0, availableForNeighborhood) + '...';
+        } else {
+          // Both need truncating, split available space
+          const halfSpace = Math.floor(targetTextLength / 2);
+          neighborhood = neighborhood.substring(0, halfSpace - 2) + '...';
+          city = city.substring(0, targetTextLength - halfSpace - 1) + '...';
+        }
+      } else {
+        // Truncate city first
+        if (neighborhood.length + 3 < targetTextLength) {
+          const availableForCity = targetTextLength - neighborhood.length - 3;
+          city = city.substring(0, availableForCity) + '...';
+        } else {
+          // Both need truncating, split available space
+          const halfSpace = Math.floor(targetTextLength / 2);
+          city = city.substring(0, halfSpace - 2) + '...';
+          neighborhood = neighborhood.substring(0, targetTextLength - halfSpace - 1) + '...';
+        }
+      }
+    }
+    
+    // Step 2: Apply line breaks based on listing type
+    const text = `${neighborhood} (${city})`;
+    const charLimit = config.listingType === 'alquiler' ? 17 : 15;
+    
+    if (text.length <= charLimit) {
+      return text;
+    }
     
     // Find a good break point (prefer breaking at comma or space)
     let breakPoint = text.lastIndexOf(', ', charLimit);
@@ -105,6 +176,10 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
       </>
     );
   };
+
+  // Check if location needs line break for overlay height adjustment
+  const charLimit = config.listingType === 'alquiler' ? 18 : 15;
+  const locationNeedsLineBreak = locationText.length > charLimit;
   const priceText = formatPrice(
     data.price,
     data.propertyType,
@@ -133,6 +208,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
+              {renderWatermark('large')}
             </div>
 
             {/* Supporting images - increased to 50% of vertical space (6 rows) split into 3 columns */}
@@ -147,6 +223,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                     onError={handleImageError}
                     sizes="(max-width: 768px) 33vw, (max-width: 1200px) 16vw, 11vw"
                   />
+                  {renderWatermark('small')}
                 </div>
               ))}
             </div>
@@ -166,6 +243,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
+              {renderWatermark('large')}
             </div>
 
             {/* Supporting images - increased to 50% of vertical space (6 rows) split into 2 columns */}
@@ -180,6 +258,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                     onError={handleImageError}
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
                   />
+                  {renderWatermark('medium')}
                 </div>
               ))}
             </div>
@@ -200,6 +279,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
               onError={handleImageError}
               sizes="(max-width: 768px) 65vw, (max-width: 1200px) 65vw, 65vw"
             />
+            {renderWatermark('large')}
           </div>
 
           {/* Supporting images - 35% of horizontal space */}
@@ -217,6 +297,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                       onError={handleImageError}
                       sizes="(max-width: 768px) 35vw, (max-width: 1200px) 35vw, 35vw"
                     />
+                    {renderWatermark('small')}
                   </div>
                 ))}
               </>
@@ -233,6 +314,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                       onError={handleImageError}
                       sizes="(max-width: 768px) 35vw, (max-width: 1200px) 35vw, 35vw"
                     />
+                    {renderWatermark('medium')}
                   </div>
                 ))}
               </>
@@ -298,6 +380,143 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
     return "N/A";
   };
 
+  // Generate descriptive text for short description mode
+  // Render logo watermark for individual images
+  const renderWatermark = (size: 'large' | 'medium' | 'small') => {
+    if (!config.showWatermark) return null;
+    
+    const sizeMap = {
+      large: { width: 200, height: 200 },
+      medium: { width: 150, height: 150 },
+      small: { width: 100, height: 100 }
+    };
+    
+    const { width, height } = sizeMap[size];
+    
+    return (
+      <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+        <Image
+          src="https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/branding/logo_transparent_1754307054237_gBmkUg.png"
+          alt="Logo watermark"
+          width={width}
+          height={height}
+          className="object-contain opacity-20"
+        />
+      </div>
+    );
+  };
+
+  const generateShortDescription = () => {
+    const parts: string[] = [];
+    
+    // Start with property type and location
+    parts.push(`${data.propertyType.charAt(0).toUpperCase() + data.propertyType.slice(1)} en ${data.location.neighborhood}, ${data.location.city}`);
+    
+    // Add basic specs
+    const specs: string[] = [];
+    if (data.specs.bedrooms || data.specs.bathrooms) {
+      const roomSpecs: string[] = [];
+      if (data.specs.bedrooms) {
+        roomSpecs.push(data.specs.bedrooms === 1 ? "una habitación" : `${data.specs.bedrooms} habitaciones`);
+      }
+      if (data.specs.bathrooms) {
+        roomSpecs.push(data.specs.bathrooms === 1 ? "un baño" : `${data.specs.bathrooms} baños`);
+      }
+      specs.push(`Cuenta con ${roomSpecs.join(" y ")}`);
+    }
+    specs.push(`${data.specs.squareMeters} metros cuadrados`);
+    
+    if (specs.length > 0) {
+      parts.push(specs.join(", "));
+    }
+    
+    // Add additional features
+    const features: string[] = [];
+    config.additionalFields.slice(0, 3).forEach((fieldValue) => {
+      const value = getFieldValue(fieldValue);
+      const label = getFieldLabel(fieldValue);
+      
+      if (value !== "N/A") {
+        switch (fieldValue) {
+          case "hasElevator":
+            if (value === "Sí") features.push("Con ascensor");
+            break;
+          case "hasGarage":
+            if (value === "Sí") features.push("Con garaje");
+            break;
+          case "hasStorageRoom":
+            if (value === "Sí") features.push("Con trastero");
+            break;
+          case "terrace":
+            if (value === "Sí") features.push("Con terraza");
+            break;
+          case "energyConsumptionScale":
+            features.push(`Certificación energética ${value}`);
+            break;
+          case "yearBuilt":
+            features.push(`Construido en ${value}`);
+            break;
+          case "orientation":
+            features.push(`Orientación ${value}`);
+            break;
+          case "heatingType":
+            features.push(`Calefacción ${value}`);
+            break;
+          case "conservationStatus":
+            features.push(`Estado ${value.toLowerCase()}`);
+            break;
+          default:
+            features.push(`${label} ${value}`);
+        }
+      }
+    });
+    
+    // Join all parts into one continuous text
+    let fullText = parts.join(". ");
+    if (features.length > 0) {
+      fullText += ". " + features.join(". ");
+    }
+    fullText += ".";
+    
+    const charLimit = config.listingType === 'alquiler' ? 23 : 20;
+    
+    // Split text into lines based on character limit
+    const words = fullText.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+    
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      
+      if (testLine.length <= charLimit) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          // Single word longer than limit, force add it
+          lines.push(word);
+        }
+      }
+    }
+    
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    
+    return (
+      <>
+        {lines.map((line, index) => (
+          <span key={index}>
+            {line}
+            {index < lines.length - 1 && <br />}
+          </span>
+        ))}
+      </>
+    );
+  };
+
   // Calculate total number of features for layout decisions
   const getTotalFeatures = () => {
     let count = 1; // Always have square meters
@@ -310,9 +529,10 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   const totalFeatures = getTotalFeatures();
   const shouldCompactIcons = totalFeatures > 4; // Compact icons when more than 4 features
   
-  // Adjust price font size based on number of digits
+  // Adjust price font size based on number of digits and listing type
   const priceDigits = data.price.toString().length;
-  const priceFontSize = priceDigits >= 8 ? "19px" : priceDigits >= 7 ? "21px" : "24px";
+  const basePriceFontSize = priceDigits >= 8 ? 19 : priceDigits >= 7 ? 21 : 24;
+  const priceFontSize = config.listingType === "alquiler" ? `${basePriceFontSize + 5}px` : `${basePriceFontSize}px`;
 
   // New overlay-based template structure
   return (
@@ -333,7 +553,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
       {/* Left overlay - fixed height, variable width (z-10) */}
       <div
         className={cn(
-          "absolute left-2 top-2 z-10 h-[50%]",
+          "absolute left-2 top-2 z-10 h-[48%] rounded-2xl",
           modernColors.overlay,
           "backdrop-blur-sm"
         )}
@@ -347,8 +567,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 className={cn(
                   "font-bold leading-tight uppercase",
                   modernColors.text,
+                  getFontClass(config.titleFont)
                 )}
-                style={{ fontSize: "28px" }}
+                style={{ fontSize: locationNeedsLineBreak ? "23px" : "28px" }}
               >
                 {config.listingType}
               </h2>
@@ -356,8 +577,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 className={cn(
                   "font-bold leading-tight uppercase",
                   modernColors.text,
+                  getFontClass(config.titleFont)
                 )}
-                style={{ fontSize: "28px" }}
+                style={{ fontSize: locationNeedsLineBreak ? "23px" : "28px" }}
               >
                 {data.propertyType}
               </h3>
@@ -372,26 +594,32 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 modernColors.text,
               )}
             >
-              <MapPin className="-ml-1 mr-1 h-4 w-4 flex-shrink-0" />
-              <span className="font-medium" style={{ fontSize: "12px" }}>{formatLocationWithBreak(locationText)}</span>
+              <MapPin className="-ml-1.5 mr-1 h-4 w-4 flex-shrink-0" />
+              <span className="font-medium" style={{ fontSize: "12px" }}>{formatLocationWithTruncationAndBreaks(data.location)}</span>
             </div>
 
-            {/* Grid of characteristics - tight grouping */}
-            <FeaturesGrid 
-              data={data}
-              config={config}
-              modernColors={modernColors}
-              getFieldIcon={getFieldIcon}
-              getFieldValue={getFieldValue}
-              getFieldLabel={getFieldLabel}
-              shouldCompact={shouldCompactIcons}
-            />
+            {/* Features display - icons, bullets, or text */}
+            {config.showShortDescription ? (
+              <div className={cn("mt-4 leading-relaxed", modernColors.text)} style={{ fontSize: "11px" }}>
+                {generateShortDescription()}
+              </div>
+            ) : (
+              <FeaturesGrid 
+                data={data}
+                config={config}
+                modernColors={modernColors}
+                getFieldIcon={getFieldIcon}
+                getFieldValue={getFieldValue}
+                getFieldLabel={getFieldLabel}
+                shouldCompact={shouldCompactIcons}
+              />
+            )}
             </div>
           </div>
 
           {/* Bottom section with price - always shown */}
-          <div className="text-center mt-auto">
-            <div className={cn("font-bold", modernColors.price)} style={{ fontSize: priceFontSize }}>
+          <div className="text-center mt-2">
+            <div className={cn("font-bold", modernColors.price, getFontClass(config.priceFont))} style={{ fontSize: priceFontSize }}>
               {config.listingType === "alquiler" ? (
                 <>
                   {priceText.replace(" €/mes", "")}
@@ -406,7 +634,8 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
       </div>
 
       {/* Bottom right contact overlay (z-10) */}
-      {(config.showPhone || data.contact.email) && (
+      {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
+      {(config.showPhone || data.contact.email || (config.showWebsite && data.contact.website)) && (
         <div
           className={cn(
             "absolute bottom-3 right-3 z-10",
@@ -420,7 +649,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
               {config.showPhone && (
                 <div className={cn("flex items-center gap-1.5", modernColors.text)}>
                   <Phone className="h-3 w-3" />
-                  <span style={{ fontSize: "12px" }}>{data.contact.phone}</span>
+                  <span style={{ fontSize: "11px" }}>{data.contact.phone}</span>
                 </div>
               )}
               {data.contact.email && (
@@ -429,8 +658,27 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   <span style={{ fontSize: "11px" }}>{data.contact.email}</span>
                 </div>
               )}
+              {config.showWebsite && data.contact.website && (
+                <div className={cn("flex items-center gap-1.5", modernColors.text)}>
+                  <Globe className="h-3 w-3" />
+                  <span style={{ fontSize: "11px" }}>{data.contact.website.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                </div>
+              )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Property reference in bottom-left corner (z-20) */}
+      {config.showReference && data.reference && (
+        <div className="absolute left-2 bottom-2 z-20">
+          <span className={cn(
+            "font-medium uppercase tracking-wide text-white"
+          )} style={{ 
+            fontSize: "9px"
+          }}>
+            {data.reference}
+          </span>
         </div>
       )}
 
@@ -446,32 +694,6 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
         </div>
       )}
 
-      {/* Logo watermark overlay - positioned over all images */}
-      {config.showWatermark && (
-        <div
-          className="pointer-events-none absolute inset-0 z-30"
-          style={{ opacity: 0.15 }}
-          data-testid="watermark"
-        >
-          {/* TODO: Replace with actual logo from account.brandAsset.logoTransparentUrl */}
-          {/* For now, keeping text watermark until logo URL is available in props */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 transform">
-            <span className="font-bold text-white opacity-60" style={{ fontSize: "48px" }}>ACROPOLIS</span>
-          </div>
-          
-          {/* Future implementation when logo URL is available:
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform">
-            <Image
-              src={config.logoUrl} // Need to add this to TemplateConfiguration
-              alt="Logo watermark"
-              width={120}
-              height={120}
-              className="object-contain opacity-60"
-            />
-          </div>
-          */}
-        </div>
-      )}
     </div>
   );
 };

@@ -16,6 +16,7 @@ import { AdditionalFieldsSelector } from "~/components/admin/carteleria/controls
 import { ImageCountSelector } from "~/components/admin/carteleria/controls/image-count-selector";
 import { ListingTypeSelector } from "~/components/admin/carteleria/controls/listing-type-selector";
 import { TemplateStyleSelector } from "~/components/admin/carteleria/controls/template-style-selector";
+import { TypographyOverlaySelector } from "~/components/admin/carteleria/controls/typography-overlay-selector";
 import { cn } from "~/lib/utils";
 
 export default function PlaygroundPage() {
@@ -34,7 +35,12 @@ export default function PlaygroundPage() {
     showQR: true,
     showWatermark: false,
     showPhone: true,
+    showWebsite: false,
+    showReference: false,
     showShortDescription: false,
+    titleFont: "default",
+    priceFont: "default",
+    overlayColor: "default",
     listingType: "venta",
     additionalFields: [],
   });
@@ -109,6 +115,20 @@ export default function PlaygroundPage() {
     setPropertyData((prev) => ({
       ...prev,
       contact: { ...prev.contact, email },
+    }));
+  };
+
+  const handleWebsiteChange = (website: string) => {
+    setPropertyData((prev) => ({
+      ...prev,
+      contact: { ...prev.contact, website },
+    }));
+  };
+
+  const handleReferenceChange = (reference: string) => {
+    setPropertyData((prev) => ({
+      ...prev,
+      reference: reference.toUpperCase(),
     }));
   };
 
@@ -306,6 +326,34 @@ export default function PlaygroundPage() {
                 />
               </div>
 
+              {/* Campo de Sitio Web */}
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Sitio Web
+                </label>
+                <input
+                  type="url"
+                  value={propertyData.contact.website ?? ""}
+                  onChange={(e) => handleWebsiteChange(e.target.value)}
+                  className="w-full rounded border border-gray-300 px-3 py-2"
+                  placeholder="ej: www.inmobiliaria.com"
+                />
+              </div>
+
+              {/* Campo de Referencia */}
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Referencia del Piso
+                </label>
+                <input
+                  type="text"
+                  value={propertyData.reference ?? ""}
+                  onChange={(e) => handleReferenceChange(e.target.value)}
+                  className="w-full rounded border border-gray-300 px-3 py-2"
+                  placeholder="ej: VESTA-003"
+                />
+              </div>
+
               {/* Image Count Selector */}
               <div>
                 <ImageCountSelector config={config} onChange={updateConfig} />
@@ -319,6 +367,14 @@ export default function PlaygroundPage() {
               {/* Additional Fields Selector */}
               <div>
                 <AdditionalFieldsSelector
+                  config={config}
+                  onChange={updateConfig}
+                />
+              </div>
+
+              {/* Typography and Overlay Selector */}
+              <div>
+                <TypographyOverlaySelector
                   config={config}
                   onChange={updateConfig}
                 />

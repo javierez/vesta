@@ -160,7 +160,10 @@ export function LogoUpload({
   const renderProgress = () => {
     if (!progress || !isUploading) return null;
 
-    return <div className="w-full space-y-2"></div>;
+    return (
+      <div className="w-full space-y-2">
+      </div>
+    );
   };
 
   // Main upload area

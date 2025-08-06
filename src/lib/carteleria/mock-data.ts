@@ -31,7 +31,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-003",
       propertyType: "piso",
     },
     {
@@ -51,7 +53,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-003",
       propertyType: "piso",
     },
     {
@@ -71,7 +75,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-003",
       propertyType: "piso",
     },
   ],
@@ -94,7 +100,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-007",
       propertyType: "casa",
     },
     {
@@ -114,7 +122,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-007",
       propertyType: "casa",
     },
   ],
@@ -135,7 +145,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-015",
       propertyType: "local",
     },
     {
@@ -153,7 +165,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-015",
       propertyType: "local",
     },
   ],
@@ -174,7 +188,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-022",
       propertyType: "garaje",
     },
     {
@@ -192,7 +208,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-022",
       propertyType: "garaje",
     },
   ],
@@ -213,7 +231,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-035",
       propertyType: "solar",
     },
     {
@@ -231,7 +251,9 @@ export const mockPropertyData: Record<string, TemplatePropertyData[]> = {
       contact: {
         phone: "987 654 321",
         email: "contacto@inmobiliaria-acropolis.com",
+        website: "www.inmobiliaria-acropolis.com",
       },
+      reference: "VESTA-035",
       propertyType: "solar",
     },
   ],

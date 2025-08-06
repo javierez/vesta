@@ -18,7 +18,9 @@ export interface TemplatePropertyData {
   contact: {
     phone: string;
     email?: string;
+    website?: string;
   };
+  reference?: string;
   propertyType: "piso" | "casa" | "local" | "garaje" | "solar";
 }
 
@@ -65,6 +67,7 @@ export interface PropertySpecs {
 export interface ContactDisplay {
   phone: string;
   email?: string;
+  website?: string;
   showQR?: boolean;
   qrSize?: number;
 }
@@ -129,9 +132,14 @@ export interface TemplateConfiguration {
   showQR: boolean;
   showWatermark: boolean;
   showPhone: boolean;
+  showWebsite: boolean;
+  showReference: boolean;
   showShortDescription: boolean;
   listingType: "venta" | "alquiler";
   additionalFields: string[]; // max 2 fields from property schema
+  titleFont: "default" | "serif" | "sans" | "mono" | "elegant" | "modern";
+  priceFont: "default" | "serif" | "sans" | "mono" | "elegant" | "modern";
+  overlayColor: "default" | "dark" | "light" | "blue" | "green" | "purple" | "red";
 }
 
 // Extended template property data with additional database fields

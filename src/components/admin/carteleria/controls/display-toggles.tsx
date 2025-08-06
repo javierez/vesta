@@ -61,7 +61,7 @@ export const DisplayToggles: FC<DisplayTogglesProps> = ({
             Marca de Agua
           </label>
           <p className="text-xs text-gray-500">
-            Superponer marca de agua en la plantilla
+            Mostrar logo como marca de agua en cada imagen
           </p>
         </div>
         <Switch
@@ -81,6 +81,34 @@ export const DisplayToggles: FC<DisplayTogglesProps> = ({
         <Switch
           checked={config.showPhone}
           onCheckedChange={(checked) => handleToggle("showPhone", checked)}
+        />
+      </div>
+
+      {/* Website Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <label className="text-sm font-medium text-gray-700">Sitio Web</label>
+          <p className="text-xs text-gray-500">
+            Mostrar sitio web en la información de contacto
+          </p>
+        </div>
+        <Switch
+          checked={config.showWebsite}
+          onCheckedChange={(checked) => handleToggle("showWebsite", checked)}
+        />
+      </div>
+
+      {/* Reference Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <label className="text-sm font-medium text-gray-700">Referencia</label>
+          <p className="text-xs text-gray-500">
+            Mostrar referencia del piso en la esquina superior izquierda
+          </p>
+        </div>
+        <Switch
+          checked={config.showReference}
+          onCheckedChange={(checked) => handleToggle("showReference", checked)}
         />
       </div>
 
