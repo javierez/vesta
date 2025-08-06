@@ -2,18 +2,16 @@
 
 import type { FC } from "react";
 import { useState, useMemo } from "react";
-import type { TemplatePropertyData, BaseTemplateProps, TemplateConfiguration, ExtendedTemplatePropertyData } from "~/types/template-data";
+import type { TemplatePropertyData, BaseTemplateProps } from "~/types/template-data";
 import type { TemplateStyle, TemplateFormat } from "~/types/carteleria";
 import {
   getDefaultPropertyData,
   getRandomPropertyData,
 } from "~/lib/carteleria/mock-data";
+import Image from "next/image";
 
 // Import all template components
 import { BaseTemplate } from "./base/base-template";
-import { BasicTemplate } from "./basic/basic-template";
-import { ClassicTemplate } from "./classic/classic-template";
-import { ModernTemplate } from "./modern/modern-template";
 import { MinimalistTemplate } from "./minimalist/minimalist-template";
 import { LuxuryTemplate } from "./luxury/luxury-template";
 import { CreativeTemplate } from "./creative/creative-template";
@@ -35,10 +33,12 @@ interface TemplateRendererProps {
 const ModernTemplateWrapper: FC<BaseTemplateProps> = ({ data: _data, className }) => {
   return (
     <div className={cn("relative overflow-hidden aspect-[210/297] h-full w-full", className)}>
-      <img 
+      <Image 
         src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/templates/template-classic.png"
         alt="Modern Template Preview"
-        className="w-full h-full object-cover"
+        fill
+        className="object-cover"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
       />
     </div>
   );

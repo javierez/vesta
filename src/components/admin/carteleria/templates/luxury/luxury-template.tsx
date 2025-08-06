@@ -3,7 +3,7 @@
 import type { FC } from "react";
 import Image from "next/image";
 import type { BaseTemplateProps } from "~/types/template-data";
-import { PropertyQRCode } from "../qr-code";
+import { PropertyQRCode } from "../../qr-code";
 import { formatLocation, formatPrice } from "~/lib/carteleria/mock-data";
 import { cn } from "~/lib/utils";
 import { MapPin, Bath, Bed, Square, Crown } from "lucide-react";

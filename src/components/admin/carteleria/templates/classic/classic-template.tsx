@@ -3,7 +3,7 @@
 import type { FC } from "react";
 import Image from "next/image";
 import type { ConfigurableTemplateProps } from "~/types/template-data";
-import { BasicTemplate } from "../basic-template";
+import { BasicTemplate } from "../basic/basic-template";
 import { PropertyQRCode } from "../../qr-code";
 import { getTemplateImages } from "~/lib/carteleria/s3-images";
 import { formatLocation, formatPrice } from "~/lib/carteleria/mock-data";
