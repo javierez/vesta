@@ -2,8 +2,12 @@
 
 import type { FC } from "react";
 import { useState, useMemo } from "react";
-import type { TemplatePropertyData, BaseTemplateProps } from "~/types/template-data";
+import type {
+  TemplatePropertyData,
+  BaseTemplateProps,
+} from "~/types/template-data";
 import type { TemplateStyle, TemplateFormat } from "~/types/carteleria";
+import type { PosterPreferences } from "~/types/poster-preferences";
 import {
   getDefaultPropertyData,
   getRandomPropertyData,
@@ -27,13 +31,22 @@ interface TemplateRendererProps {
   format?: TemplateFormat;
   className?: string;
   showMockData?: boolean;
+  displayOptions?: PosterPreferences;
 }
 
 // Modern template preview using the template-classic image
-const ModernTemplateWrapper: FC<BaseTemplateProps> = ({ data: _data, className }) => {
+const ModernTemplateWrapper: FC<BaseTemplateProps> = ({
+  data: _data,
+  className,
+}) => {
   return (
-    <div className={cn("relative overflow-hidden aspect-[210/297] h-full w-full", className)}>
-      <Image 
+    <div
+      className={cn(
+        "relative aspect-[210/297] h-full w-full overflow-hidden",
+        className,
+      )}
+    >
+      <Image
         src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/templates/template-classic.png"
         alt="Modern Template Preview"
         fill
@@ -44,7 +57,10 @@ const ModernTemplateWrapper: FC<BaseTemplateProps> = ({ data: _data, className }
   );
 };
 
-const ClassicTemplateWrapper: FC<BaseTemplateProps> = ({ data: _data, className: _className }) => {
+const ClassicTemplateWrapper: FC<BaseTemplateProps> = ({
+  data: _data,
+  className: _className,
+}) => {
   // Classic style has no preview - return null
   return null;
 };
@@ -55,7 +71,10 @@ const BasicTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
 };
 
 // Wrapper for other templates using BaseTemplate as fallback
-const MinimalistTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
+const MinimalistTemplateWrapper: FC<BaseTemplateProps> = ({
+  data,
+  className,
+}) => {
   return <MinimalistTemplate data={data} className={className} />;
 };
 
@@ -63,11 +82,17 @@ const LuxuryTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
   return <LuxuryTemplate data={data} className={className} />;
 };
 
-const CreativeTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
+const CreativeTemplateWrapper: FC<BaseTemplateProps> = ({
+  data,
+  className,
+}) => {
   return <CreativeTemplate data={data} className={className} />;
 };
 
-const ProfessionalTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
+const ProfessionalTemplateWrapper: FC<BaseTemplateProps> = ({
+  data,
+  className,
+}) => {
   return <ProfessionalTemplate data={data} className={className} />;
 };
 
@@ -92,6 +117,7 @@ export const TemplateRenderer: FC<TemplateRendererProps> = ({
   format: _format,
   className,
   showMockData = true,
+  displayOptions: _displayOptions,
 }) => {
   // Generate or use provided property data
   const propertyData = useMemo(() => {
@@ -143,6 +169,8 @@ export const TemplateRenderer: FC<TemplateRendererProps> = ({
   }
 
   try {
+    // TODO: Pass displayOptions to template components when they support it
+    // For now, displayOptions are accepted but not yet used by individual templates
     return <TemplateComponent data={propertyData} className={className} />;
   } catch (error) {
     handleTemplateError(error as Error);

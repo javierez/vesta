@@ -1,7 +1,7 @@
 "use client";
 
 import type { FC } from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -12,33 +12,29 @@ import {
   Settings,
   Palette,
   FileText,
-  Building,
-  LayoutTemplate,
-  Eye,
+  Loader2,
+  Save,
 } from "lucide-react";
 import { useToast } from "~/components/hooks/use-toast";
+import { useSession } from "~/lib/auth-client";
+import { getCurrentUserAccountId } from "~/app/actions/settings";
+import { 
+  loadPosterPreferencesWithDefaults,
+  savePosterPreferences 
+} from "~/app/actions/poster-preferences";
+import type { PosterPreferences } from "~/types/poster-preferences";
+import { defaultPosterPreferences } from "~/types/poster-preferences";
 
 // Import all the sub-components
 import { StyleSelector } from "./carteleria/style-selector";
 import { FormatSelector } from "./carteleria/format-selector";
-import { PropertyTypeSelector } from "./carteleria/property-type-selector";
-import { TemplateGallery } from "./carteleria/template-gallery";
+import { Personalization } from "./carteleria/personalization";
 import { TemplatePreview } from "./carteleria/template-preview";
-import { TemplateCustomizer } from "./carteleria/template-customizer";
 
-import type {
-  CarteleriaState,
-  CarteleriaSelection,
-  CarteleriaTemplate,
-} from "~/types/carteleria";
-import {
-  templateStyles,
-  templateFormats,
-  propertyTypes,
-  getTemplatesByFilters,
-} from "~/lib/carteleria/templates";
+import type { CarteleriaState, CarteleriaSelection } from "~/types/carteleria";
+import { templateStyles, templateFormats } from "~/lib/carteleria/templates";
 
-type Step = "style" | "format" | "property" | "template" | "customize";
+type Step = "style" | "format" | "personalization";
 
 interface StepConfig {
   id: Step;
@@ -67,24 +63,8 @@ const steps: StepConfig[] = [
     canProceed: (state) => state.selections.formatIds.length > 0,
   },
   {
-    id: "property",
-    title: "Tipos",
-    description: "Tipos de propiedad",
-    icon: Building,
-    isComplete: (state) => state.selections.propertyTypeIds.length > 0,
-    canProceed: (state) => state.selections.propertyTypeIds.length > 0,
-  },
-  {
-    id: "template",
-    title: "Plantillas",
-    description: "Elige tus plantillas",
-    icon: LayoutTemplate,
-    isComplete: (state) => state.selections.templateIds.length > 0,
-    canProceed: (state) => state.selections.templateIds.length > 0,
-  },
-  {
-    id: "customize",
-    title: "Personalizar",
+    id: "personalization",
+    title: "Personalización",
     description: "Ajusta los detalles",
     icon: Settings,
     isComplete: () => true, // Always completable
@@ -96,6 +76,12 @@ const STORAGE_KEY = "carteleria_selection";
 
 export const Carteleria: FC = () => {
   const { toast } = useToast();
+  const { data: session } = useSession();
+  const [accountId, setAccountId] = useState<number | null>(null);
+  const [preferences, setPreferences] = useState<PosterPreferences>(defaultPosterPreferences);
+  const [loadingPreferences, setLoadingPreferences] = useState(false);
+  const [savingPreferences, setSavingPreferences] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Main state management
   const [state, setState] = useState<CarteleriaState>({
@@ -112,11 +98,9 @@ export const Carteleria: FC = () => {
 
   // Modal states
   const [showPreview, setShowPreview] = useState(false);
-  const [showCustomizer, setShowCustomizer] = useState(false);
-  const [customizerTemplate, setCustomizerTemplate] =
-    useState<CarteleriaTemplate | null>(null);
 
-  // Load saved state on mount
+
+  // Load saved state on mount with migration
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -125,12 +109,79 @@ export const Carteleria: FC = () => {
         setState((prev) => ({
           ...prev,
           selections: parsedState,
+          // Reset to first step if coming from old version
+          currentStep: "style",
         }));
       }
     } catch (error) {
       console.error("Error loading saved state:", error);
     }
   }, []);
+
+  // Load account data on mount
+  useEffect(() => {
+    async function loadAccountData() {
+      if (session?.user?.id) {
+        try {
+          const userAccountId = await getCurrentUserAccountId(session.user.id);
+          if (userAccountId) {
+            setAccountId(Number(userAccountId));
+          }
+        } catch (error) {
+          console.error("Error loading account ID:", error);
+        }
+      }
+    }
+    void loadAccountData();
+  }, [session]);
+
+  // Load preferences when accountId is available
+  useEffect(() => {
+    if (!accountId) return;
+    
+    const loadPreferences = async () => {
+      setLoadingPreferences(true);
+      try {
+        const result = await loadPosterPreferencesWithDefaults(accountId);
+        if (result.success && result.data) {
+          const data = result.data;
+          setPreferences(data);
+          
+          // Update state with saved style and format preferences
+          if (data.template_style || data.format_ids) {
+            setState(prevState => ({
+              ...prevState,
+              selections: {
+                ...prevState.selections,
+                styleId: data.template_style ?? null,
+                formatIds: data.format_ids ?? [],
+              },
+            }));
+          }
+          
+          // Mark as saved (no unsaved changes)
+          setHasUnsavedChanges(false);
+        } else if (result.error) {
+          toast({
+            title: "Error",
+            description: result.error,
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading preferences:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las preferencias guardadas",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingPreferences(false);
+      }
+    };
+    
+    void loadPreferences();
+  }, [accountId, toast]);
 
   // Save state to localStorage whenever selections change
   useEffect(() => {
@@ -152,6 +203,49 @@ export const Carteleria: FC = () => {
   const setCurrentStep = (step: Step) => {
     setState((prev) => ({ ...prev, currentStep: step }));
   };
+
+
+  // Save preferences function
+  const handleSavePreferences = useCallback(async () => {
+    if (!accountId) {
+      toast({
+        title: "Error",
+        description: "No se encontró el ID de la cuenta",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingPreferences(true);
+    try {
+      const fullPreferences: PosterPreferences = {
+        ...preferences,
+        template_style: state.selections.styleId ?? undefined,
+        format_ids: state.selections.formatIds,
+      };
+
+      const result = await savePosterPreferences(accountId, fullPreferences);
+      
+      if (result.success) {
+        setHasUnsavedChanges(false);
+        toast({
+          title: "Preferencias guardadas",
+          description: "Tus configuraciones han sido guardadas exitosamente",
+        });
+      } else {
+        throw new Error(result.error ?? "Error al guardar");
+      }
+    } catch (error) {
+      console.error("Error saving preferences:", error);
+      toast({
+        title: "Error al guardar",
+        description: "No se pudieron guardar las preferencias",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingPreferences(false);
+    }
+  }, [accountId, preferences, state.selections.styleId, state.selections.formatIds, toast]);
 
   const currentStepIndex = steps.findIndex(
     (step) => step.id === state.currentStep,
@@ -185,9 +279,11 @@ export const Carteleria: FC = () => {
 
   // Selection handlers
   const handleStyleSelect = (styleId: string) => {
-    updateSelections({ styleId });
-    // Auto-advance to next step
-    setTimeout(() => goNext(), 500);
+    // Allow toggling - if clicking the same style, unselect it
+    const newStyleId = state.selections.styleId === styleId ? null : styleId;
+    updateSelections({ styleId: newStyleId });
+    setHasUnsavedChanges(true);
+    // Remove auto-advance - user must click "Siguiente" to continue
   };
 
   const handleFormatToggle = (formatId: string) => {
@@ -196,60 +292,8 @@ export const Carteleria: FC = () => {
       : [...state.selections.formatIds, formatId];
 
     updateSelections({ formatIds });
+    setHasUnsavedChanges(true);
   };
-
-  const handlePropertyTypeToggle = (propertyTypeId: string) => {
-    const propertyTypeIds = state.selections.propertyTypeIds.includes(
-      propertyTypeId,
-    )
-      ? state.selections.propertyTypeIds.filter((id) => id !== propertyTypeId)
-      : [...state.selections.propertyTypeIds, propertyTypeId];
-
-    updateSelections({ propertyTypeIds });
-  };
-
-  const handleTemplateToggle = (templateId: string) => {
-    const templateIds = state.selections.templateIds.includes(templateId)
-      ? state.selections.templateIds.filter((id) => id !== templateId)
-      : [...state.selections.templateIds, templateId];
-
-    updateSelections({ templateIds });
-  };
-
-  const handleCustomizationChange = (
-    templateId: string,
-    key: string,
-    value: unknown,
-  ) => {
-    const templateCustomizations =
-      state.selections.customizations[templateId] ?? {};
-    const updatedCustomizations = {
-      ...state.selections.customizations,
-      [templateId]: {
-        ...templateCustomizations,
-        [key]: value,
-      },
-    };
-
-    updateSelections({ customizations: updatedCustomizations });
-  };
-
-  const handlePreviewTemplate = (template: CarteleriaTemplate) => {
-    setState((prev) => ({ ...prev, previewTemplate: template }));
-    setShowPreview(true);
-  };
-
-  const handleCustomizeTemplate = (template: CarteleriaTemplate) => {
-    setCustomizerTemplate(template);
-    setShowCustomizer(true);
-  };
-
-  // Get filtered templates based on current selections
-  const availableTemplates = getTemplatesByFilters({
-    styleId: state.selections.styleId,
-    formatIds: state.selections.formatIds,
-    propertyTypeIds: state.selections.propertyTypeIds,
-  });
 
   // Calculate progress
   const completedSteps = steps.filter((step) => step.isComplete(state)).length;
@@ -341,7 +385,16 @@ export const Carteleria: FC = () => {
           </div>
         </CardHeader>
 
-        <CardContent className="min-h-[500px]">
+        <CardContent className="min-h-[500px] relative">
+          {loadingPreferences && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Cargando preferencias guardadas...</span>
+              </div>
+            </div>
+          )}
+          
           {state.currentStep === "style" && (
             <StyleSelector
               selectedStyleId={state.selections.styleId}
@@ -358,129 +411,22 @@ export const Carteleria: FC = () => {
             />
           )}
 
-          {state.currentStep === "property" && (
-            <PropertyTypeSelector
-              selectedPropertyTypeIds={state.selections.propertyTypeIds}
-              onPropertyTypeToggle={handlePropertyTypeToggle}
-              propertyTypes={propertyTypes}
-            />
-          )}
-
-          {state.currentStep === "template" && (
-            <TemplateGallery
-              templates={availableTemplates}
-              selectedTemplateIds={state.selections.templateIds}
-              onTemplateToggle={handleTemplateToggle}
-              filters={{
+          {state.currentStep === "personalization" && (
+            <Personalization
+              currentSelection={{
                 styleId: state.selections.styleId,
                 formatIds: state.selections.formatIds,
-                propertyTypeIds: state.selections.propertyTypeIds,
+              }}
+              preferences={preferences}
+              onUpdate={(updates) => {
+                // Update preferences locally (no auto-save)
+                setPreferences(prevPrefs => ({
+                  ...prevPrefs,
+                  ...updates.displayOptions,
+                }));
+                setHasUnsavedChanges(true);
               }}
             />
-          )}
-
-          {state.currentStep === "customize" && (
-            <div className="space-y-6">
-              <div className="space-y-2 text-center">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Personalización Final
-                </h2>
-                <p className="text-gray-600">
-                  Revisa tus selecciones y personaliza cada plantilla
-                </p>
-              </div>
-
-              {/* Selection Summary */}
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <Palette className="h-4 w-4 text-primary" />
-                      <span className="font-medium">Estilo</span>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {templateStyles.find(
-                        (s) => s.id === state.selections.styleId,
-                      )?.name ?? "No seleccionado"}
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary" />
-                      <span className="font-medium">Formatos</span>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {state.selections.formatIds.length} seleccionados
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <LayoutTemplate className="h-4 w-4 text-primary" />
-                      <span className="font-medium">Plantillas</span>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {state.selections.templateIds.length} seleccionadas
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Selected Templates Actions */}
-              {state.selections.templateIds.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">
-                    Tus Plantillas Seleccionadas
-                  </h3>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {availableTemplates
-                      .filter((t) =>
-                        state.selections.templateIds.includes(t.id),
-                      )
-                      .map((template) => (
-                        <Card
-                          key={template.id}
-                          className="transition-shadow hover:shadow-md"
-                        >
-                          <CardContent className="p-4">
-                            <h4 className="mb-2 font-medium">
-                              {template.name}
-                            </h4>
-                            <p className="mb-4 text-sm text-gray-600">
-                              {template.description}
-                            </p>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handlePreviewTemplate(template)}
-                              >
-                                <Eye className="mr-1 h-4 w-4" />
-                                Ver
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  handleCustomizeTemplate(template)
-                                }
-                              >
-                                <Settings className="mr-1 h-4 w-4" />
-                                Personalizar
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
           )}
         </CardContent>
       </Card>
@@ -497,18 +443,28 @@ export const Carteleria: FC = () => {
         </Button>
 
         <div className="flex items-center gap-4">
-          {state.currentStep === "customize" ? (
+          {state.currentStep === "personalization" ? (
             <Button
-              onClick={() => {
-                toast({
-                  title: "¡Configuración completada!",
-                  description: "Tu cartelería ha sido configurada exitosamente",
-                });
-              }}
-              disabled={state.selections.templateIds.length === 0}
+              onClick={handleSavePreferences}
+              disabled={savingPreferences || !hasUnsavedChanges}
+              variant={hasUnsavedChanges ? "default" : "outline"}
             >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Finalizar Configuración
+              {savingPreferences ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : hasUnsavedChanges ? (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Guardar preferencias
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Guardado
+                </>
+              )}
             </Button>
           ) : (
             <Button onClick={goNext} disabled={!canGoNext}>
@@ -524,15 +480,6 @@ export const Carteleria: FC = () => {
         template={state.previewTemplate}
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
-      />
-
-      <TemplateCustomizer
-        template={customizerTemplate!}
-        customizations={state.selections.customizations}
-        onCustomizationChange={handleCustomizationChange}
-        isOpen={showCustomizer}
-        onClose={() => setShowCustomizer(false)}
-        onSave={() => setShowCustomizer(false)}
       />
     </div>
   );

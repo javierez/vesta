@@ -3,7 +3,6 @@
 import type { FC } from "react";
 import Image from "next/image";
 import type { ConfigurableTemplateProps } from "~/types/template-data";
-import { BasicTemplate } from "../basic-template";
 import { PropertyQRCode } from "../../qr-code";
 import { getTemplateImages } from "~/lib/carteleria/s3-images";
 import { formatPrice } from "~/lib/carteleria/mock-data";
@@ -38,7 +37,7 @@ const getFontClass = (fontType: string) => {
   const fontMap: Record<string, string> = {
     default: "font-sans",
     serif: "font-serif",
-    sans: "font-sans", 
+    sans: "font-sans",
     mono: "font-mono",
     elegant: "font-serif",
     modern: "font-sans font-light",
@@ -52,7 +51,7 @@ const getOverlayClass = (overlayType: string) => {
     dark: "bg-gray-800/80",
     light: "bg-gray-200/80",
     blue: "bg-blue-500/70",
-    green: "bg-green-500/70", 
+    green: "bg-green-500/70",
     purple: "bg-purple-500/70",
     red: "bg-red-500/70",
   };
@@ -79,95 +78,68 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
     badge: `bg-white/20 ${getTextColor(config.overlayColor)} border-white/30`,
   };
 
-  // Route to different template components based on style
-  switch (config.templateStyle) {
-    case "basic":
-      return (
-        <BasicTemplate data={data} config={config} className={className} />
-      );
-
-    case "classic":
-      // return <ClassicTemplate data={data} config={config} className={className} />;
-      // Fallback to modern until classic is implemented
-      break;
-
-    case "luxury":
-      // return <LuxuryTemplate data={data} config={config} className={className} />;
-      // Fallback to modern until luxury is implemented
-      break;
-
-    case "professional":
-      // return <ProfessionalTemplate data={data} config={config} className={className} />;
-      // Fallback to modern until professional is implemented
-      break;
-
-    case "creative":
-      // return <CreativeTemplate data={data} config={config} className={className} />;
-      // Fallback to modern until creative is implemented
-      break;
-
-    case "modern":
-    default:
-      // Modern template implementation below
-      break;
-  }
+  // This is the ModernTemplate component - render modern style directly
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
     target.style.display = "none";
   };
 
-  
   // Format location with truncation + line breaks
-  const formatLocationWithTruncationAndBreaks = (location: { city: string; neighborhood: string }) => {
+  const formatLocationWithTruncationAndBreaks = (location: {
+    city: string;
+    neighborhood: string;
+  }) => {
     let city = location.city;
     let neighborhood = location.neighborhood;
-    
+
     // Step 1: Truncate if total > 30 chars
     const formatLength = neighborhood.length + city.length + 3; // +3 for " ()"
-    
+
     if (formatLength > 30) {
       // Need to truncate - target is 27 chars of text (30 - 3 for formatting)
       const targetTextLength = 27;
-      
+
       // Truncate the longer one first
       if (neighborhood.length >= city.length) {
         // Truncate neighborhood first
         if (city.length + 3 < targetTextLength) {
           const availableForNeighborhood = targetTextLength - city.length - 3;
-          neighborhood = neighborhood.substring(0, availableForNeighborhood) + '...';
+          neighborhood =
+            neighborhood.substring(0, availableForNeighborhood) + "...";
         } else {
           // Both need truncating, split available space
           const halfSpace = Math.floor(targetTextLength / 2);
-          neighborhood = neighborhood.substring(0, halfSpace - 2) + '...';
-          city = city.substring(0, targetTextLength - halfSpace - 1) + '...';
+          neighborhood = neighborhood.substring(0, halfSpace - 2) + "...";
+          city = city.substring(0, targetTextLength - halfSpace - 1) + "...";
         }
       } else {
         // Truncate city first
         if (neighborhood.length + 3 < targetTextLength) {
           const availableForCity = targetTextLength - neighborhood.length - 3;
-          city = city.substring(0, availableForCity) + '...';
+          city = city.substring(0, availableForCity) + "...";
         } else {
           // Both need truncating, split available space
           const halfSpace = Math.floor(targetTextLength / 2);
-          city = city.substring(0, halfSpace - 2) + '...';
-          neighborhood = neighborhood.substring(0, targetTextLength - halfSpace - 1) + '...';
+          city = city.substring(0, halfSpace - 2) + "...";
+          neighborhood =
+            neighborhood.substring(0, targetTextLength - halfSpace - 1) + "...";
         }
       }
     }
-    
+
     // Step 2: Apply line breaks based on listing type
     const text = `${neighborhood} (${city})`;
-    const charLimit = config.listingType === 'alquiler' ? 18 : 15;
-    
+    const charLimit = config.listingType === "alquiler" ? 18 : 15;
+
     if (text.length <= charLimit) {
       return text;
     }
-    
+
     // Find a good break point (prefer breaking at comma or space)
-    let breakPoint = text.lastIndexOf(', ', charLimit);
-    if (breakPoint === -1) breakPoint = text.lastIndexOf(' ', charLimit);
+    let breakPoint = text.lastIndexOf(", ", charLimit);
+    if (breakPoint === -1) breakPoint = text.lastIndexOf(" ", charLimit);
     if (breakPoint === -1) breakPoint = charLimit;
-    
+
     return (
       <>
         {text.substring(0, breakPoint)}
@@ -204,7 +176,7 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
-              {renderWatermark('large')}
+              {renderWatermark("large")}
             </div>
 
             {/* Supporting images - increased to 50% of vertical space (6 rows) split into 3 columns */}
@@ -219,7 +191,7 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
                     onError={handleImageError}
                     sizes="(max-width: 768px) 33vw, (max-width: 1200px) 16vw, 11vw"
                   />
-                  {renderWatermark('small')}
+                  {renderWatermark("small")}
                 </div>
               ))}
             </div>
@@ -239,7 +211,7 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
-              {renderWatermark('large')}
+              {renderWatermark("large")}
             </div>
 
             {/* Supporting images - increased to 50% of vertical space (6 rows) split into 2 columns */}
@@ -254,7 +226,7 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
                     onError={handleImageError}
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
                   />
-                  {renderWatermark('medium')}
+                  {renderWatermark("medium")}
                 </div>
               ))}
             </div>
@@ -275,7 +247,7 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
               onError={handleImageError}
               sizes="(max-width: 768px) 65vw, (max-width: 1200px) 65vw, 65vw"
             />
-            {renderWatermark('large')}
+            {renderWatermark("large")}
           </div>
 
           {/* Supporting images - 35% of horizontal space */}
@@ -293,7 +265,7 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
                       onError={handleImageError}
                       sizes="(max-width: 768px) 35vw, (max-width: 1200px) 35vw, 35vw"
                     />
-                    {renderWatermark('small')}
+                    {renderWatermark("small")}
                   </div>
                 ))}
               </>
@@ -310,7 +282,7 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
                       onError={handleImageError}
                       sizes="(max-width: 768px) 35vw, (max-width: 1200px) 35vw, 35vw"
                     />
-                    {renderWatermark('medium')}
+                    {renderWatermark("medium")}
                   </div>
                 ))}
               </>
@@ -378,19 +350,19 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
 
   // Generate descriptive text for short description mode
   // Render logo watermark for individual images
-  const renderWatermark = (size: 'large' | 'medium' | 'small') => {
+  const renderWatermark = (size: "large" | "medium" | "small") => {
     if (!config.showWatermark) return null;
-    
+
     const sizeMap = {
       large: { width: 120, height: 120 },
       medium: { width: 80, height: 80 },
-      small: { width: 60, height: 60 }
+      small: { width: 60, height: 60 },
     };
-    
+
     const { width, height } = sizeMap[size];
-    
+
     return (
-      <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+      <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
         <Image
           src="https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/branding/logo_transparent_1754307054237_gBmkUg.png"
           alt="Logo watermark"
@@ -404,34 +376,44 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
 
   const generateShortDescription = () => {
     const parts: string[] = [];
-    
+
     // Start with property type and location
-    parts.push(`${data.propertyType.charAt(0).toUpperCase() + data.propertyType.slice(1)} en ${data.location.neighborhood}, ${data.location.city}`);
-    
+    parts.push(
+      `${data.propertyType.charAt(0).toUpperCase() + data.propertyType.slice(1)} en ${data.location.neighborhood}, ${data.location.city}`,
+    );
+
     // Add basic specs
     const specs: string[] = [];
     if (data.specs.bedrooms || data.specs.bathrooms) {
       const roomSpecs: string[] = [];
       if (data.specs.bedrooms) {
-        roomSpecs.push(data.specs.bedrooms === 1 ? "una habitación" : `${data.specs.bedrooms} habitaciones`);
+        roomSpecs.push(
+          data.specs.bedrooms === 1
+            ? "una habitación"
+            : `${data.specs.bedrooms} habitaciones`,
+        );
       }
       if (data.specs.bathrooms) {
-        roomSpecs.push(data.specs.bathrooms === 1 ? "un baño" : `${data.specs.bathrooms} baños`);
+        roomSpecs.push(
+          data.specs.bathrooms === 1
+            ? "un baño"
+            : `${data.specs.bathrooms} baños`,
+        );
       }
       specs.push(`Cuenta con ${roomSpecs.join(" y ")}`);
     }
     specs.push(`${data.specs.squareMeters} metros cuadrados`);
-    
+
     if (specs.length > 0) {
       parts.push(specs.join(", "));
     }
-    
+
     // Add additional features
     const features: string[] = [];
     config.additionalFields.slice(0, 3).forEach((fieldValue) => {
       const value = getFieldValue(fieldValue);
       const label = getFieldLabel(fieldValue);
-      
+
       if (value !== "N/A") {
         switch (fieldValue) {
           case "hasElevator":
@@ -466,24 +448,24 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
         }
       }
     });
-    
+
     // Join all parts into one continuous text
     let fullText = parts.join(". ");
     if (features.length > 0) {
       fullText += ". " + features.join(". ");
     }
     fullText += ".";
-    
-    const charLimit = config.listingType === 'alquiler' ? 21 : 18;
-    
+
+    const charLimit = config.listingType === "alquiler" ? 21 : 18;
+
     // Split text into lines based on character limit
-    const words = fullText.split(' ');
+    const words = fullText.split(" ");
     const lines: string[] = [];
-    let currentLine = '';
-    
+    let currentLine = "";
+
     for (const word of words) {
       const testLine = currentLine ? `${currentLine} ${word}` : word;
-      
+
       if (testLine.length <= charLimit) {
         currentLine = testLine;
       } else {
@@ -496,11 +478,11 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
         }
       }
     }
-    
+
     if (currentLine) {
       lines.push(currentLine);
     }
-    
+
     return (
       <>
         {lines.map((line, index) => (
@@ -524,10 +506,11 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
 
   const totalFeatures = getTotalFeatures();
   const shouldCompactIcons = totalFeatures > 4; // Compact icons when more than 4 features
-  
+
   // Adjust price font size based on number of digits
   const priceDigits = data.price.toString().length;
-  const priceFontSize = priceDigits >= 8 ? "19px" : priceDigits >= 7 ? "21px" : "24px";
+  const priceFontSize =
+    priceDigits >= 8 ? "19px" : priceDigits >= 7 ? "21px" : "24px";
 
   // New overlay-based template structure
   return (
@@ -550,7 +533,7 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
         className={cn(
           "absolute left-0 top-0 z-10 h-[50%]",
           modernColors.overlay,
-          "backdrop-blur-sm"
+          "backdrop-blur-sm",
         )}
       >
         <div className="flex h-full flex-col p-4">
@@ -560,9 +543,9 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
             <div className="mb-3">
               <h2
                 className={cn(
-                  "font-bold leading-tight uppercase",
+                  "font-bold uppercase leading-tight",
                   modernColors.text,
-                  getFontClass(config.titleFont)
+                  getFontClass(config.titleFont),
                 )}
                 style={{ fontSize: "28px" }}
               >
@@ -570,9 +553,9 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
               </h2>
               <h3
                 className={cn(
-                  "font-bold leading-tight uppercase",
+                  "font-bold uppercase leading-tight",
                   modernColors.text,
-                  getFontClass(config.titleFont)
+                  getFontClass(config.titleFont),
                 )}
                 style={{ fontSize: "28px" }}
               >
@@ -582,43 +565,58 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
 
             {/* Location and features - right under title */}
             <div className="space-y-2">
-            {/* Location */}
-            <div
-              className={cn(
-                "inline-flex items-start rounded-lg bg-white/20 px-3 py-1",
-                modernColors.text,
-              )}
-            >
-              <MapPin className="-ml-1 mr-1 h-4 w-4 flex-shrink-0" />
-              <span className="font-medium" style={{ fontSize: "12px" }}>{formatLocationWithTruncationAndBreaks(data.location)}</span>
-            </div>
-
-            {/* Features display - icons, bullets, or text */}
-            {config.showShortDescription ? (
-              <div className={cn("mt-4 leading-relaxed", modernColors.text)} style={{ fontSize: "11px" }}>
-                {generateShortDescription()}
+              {/* Location */}
+              <div
+                className={cn(
+                  "inline-flex items-start rounded-lg bg-white/20 px-3 py-1",
+                  modernColors.text,
+                )}
+              >
+                <MapPin className="-ml-1 mr-1 h-4 w-4 flex-shrink-0" />
+                <span className="font-medium" style={{ fontSize: "12px" }}>
+                  {formatLocationWithTruncationAndBreaks(data.location)}
+                </span>
               </div>
-            ) : (
-              <FeaturesGrid 
-                data={data}
-                config={config}
-                modernColors={modernColors}
-                getFieldIcon={getFieldIcon}
-                getFieldValue={getFieldValue}
-                getFieldLabel={getFieldLabel}
-                shouldCompact={shouldCompactIcons}
-              />
-            )}
+
+              {/* Features display - icons, bullets, or text */}
+              {config.showShortDescription ? (
+                <div
+                  className={cn("mt-4 leading-relaxed", modernColors.text)}
+                  style={{ fontSize: "11px" }}
+                >
+                  {generateShortDescription()}
+                </div>
+              ) : (
+                <FeaturesGrid
+                  data={data}
+                  config={config}
+                  modernColors={modernColors}
+                  getFieldIcon={getFieldIcon}
+                  getFieldValue={getFieldValue}
+                  getFieldLabel={getFieldLabel}
+                  shouldCompact={shouldCompactIcons}
+                />
+              )}
             </div>
           </div>
 
           {/* Bottom section with price - always shown */}
-          <div className="text-center mt-auto">
-            <div className={cn("font-bold", modernColors.price, getFontClass(config.priceFont))} style={{ fontSize: priceFontSize }}>
+          <div className="mt-auto text-center">
+            <div
+              className={cn(
+                "font-bold",
+                modernColors.price,
+                getFontClass(config.priceFont),
+              )}
+              style={{ fontSize: priceFontSize }}
+            >
               {config.listingType === "alquiler" ? (
                 <>
                   {priceText.replace(" €/mes", "")}
-                  <span className="font-normal" style={{ fontSize: "12px" }}> €/mes</span>
+                  <span className="font-normal" style={{ fontSize: "12px" }}>
+                    {" "}
+                    €/mes
+                  </span>
                 </>
               ) : (
                 priceText
@@ -629,34 +627,43 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
       </div>
 
       {/* Bottom right contact overlay (z-10) */}
-      {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
-      {(config.showPhone || data.contact.email || (config.showWebsite && data.contact.website)) && (
+      {(config.showPhone ??
+        (config.showEmail && data.contact.email) ??
+        (config.showWebsite && data.contact.website)) && (
         <div
           className={cn(
             "absolute bottom-3 right-3 z-10",
             modernColors.overlay,
-            "rounded-md backdrop-blur-sm"
+            "rounded-md backdrop-blur-sm",
           )}
         >
           <div className="px-3 py-2">
             {/* Contact info with icons */}
             <div className="space-y-1">
               {config.showPhone && (
-                <div className={cn("flex items-center gap-1.5", modernColors.text)}>
+                <div
+                  className={cn("flex items-center gap-1.5", modernColors.text)}
+                >
                   <Phone className="h-3 w-3" />
                   <span style={{ fontSize: "11px" }}>{data.contact.phone}</span>
                 </div>
               )}
-              {data.contact.email && (
-                <div className={cn("flex items-center gap-1.5", modernColors.text)}>
+              {config.showEmail && data.contact.email && (
+                <div
+                  className={cn("flex items-center gap-1.5", modernColors.text)}
+                >
                   <Mail className="h-3 w-3" />
                   <span style={{ fontSize: "11px" }}>{data.contact.email}</span>
                 </div>
               )}
               {config.showWebsite && data.contact.website && (
-                <div className={cn("flex items-center gap-1.5", modernColors.text)}>
+                <div
+                  className={cn("flex items-center gap-1.5", modernColors.text)}
+                >
                   <Globe className="h-3 w-3" />
-                  <span style={{ fontSize: "11px" }}>{data.contact.website.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                  <span style={{ fontSize: "11px" }}>
+                    {data.contact.website.replace(/^https?:\/\/(www\.)?/, "")}
+                  </span>
                 </div>
               )}
             </div>
@@ -666,12 +673,13 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
 
       {/* Property reference in bottom-left corner (z-20) */}
       {config.showReference && data.reference && (
-        <div className="absolute left-2 bottom-2 z-20">
-          <span className={cn(
-            "font-medium uppercase tracking-wide text-white"
-          )} style={{ 
-            fontSize: "9px"
-          }}>
+        <div className="absolute bottom-2 left-2 z-20">
+          <span
+            className={cn("font-medium uppercase tracking-wide text-white")}
+            style={{
+              fontSize: "9px",
+            }}
+          >
             {data.reference}
           </span>
         </div>
@@ -688,7 +696,6 @@ export const ModernTemplate: FC<ConfigurableTemplateProps> = ({
           />
         </div>
       )}
-
     </div>
   );
 };

@@ -32,7 +32,7 @@ export const templateStyles: TemplateStyle[] = [
       secondary: "#6b7280",
       accent: "#d97706",
     },
-    isActive: false,
+    isActive: true,
   },
   {
     id: "minimalist",
@@ -88,61 +88,33 @@ export const templateStyles: TemplateStyle[] = [
   },
 ];
 
-// Template Formats - A4, A3, A2, vertical, horizontal
+// Template Formats - Paper and digital formats
 export const templateFormats: TemplateFormat[] = [
   {
-    id: "a4-portrait",
-    name: "A4 Vertical",
+    id: "vertical",
+    name: "Vertical",
     dimensions: { width: 210, height: 297, unit: "mm" },
     orientation: "portrait",
     category: "paper",
   },
   {
-    id: "a4-landscape",
-    name: "A4 Horizontal",
+    id: "horizontal",
+    name: "Horizontal",
     dimensions: { width: 297, height: 210, unit: "mm" },
     orientation: "landscape",
     category: "paper",
   },
   {
-    id: "a3-portrait",
-    name: "A3 Vertical",
-    dimensions: { width: 297, height: 420, unit: "mm" },
-    orientation: "portrait",
-    category: "paper",
-  },
-  {
-    id: "a3-landscape",
-    name: "A3 Horizontal",
-    dimensions: { width: 420, height: 297, unit: "mm" },
-    orientation: "landscape",
-    category: "paper",
-  },
-  {
-    id: "a2-portrait",
-    name: "A2 Vertical",
-    dimensions: { width: 420, height: 594, unit: "mm" },
-    orientation: "portrait",
-    category: "paper",
-  },
-  {
-    id: "a2-landscape",
-    name: "A2 Horizontal",
-    dimensions: { width: 594, height: 420, unit: "mm" },
-    orientation: "landscape",
-    category: "paper",
-  },
-  {
-    id: "digital-square",
-    name: "Cuadrado Digital",
-    dimensions: { width: 1080, height: 1080, unit: "px" },
+    id: "story",
+    name: "Story",
+    dimensions: { width: 1080, height: 1920, unit: "px" },
     orientation: "portrait",
     category: "digital",
   },
   {
-    id: "digital-story",
-    name: "Stories",
-    dimensions: { width: 1080, height: 1920, unit: "px" },
+    id: "post",
+    name: "Post",
+    dimensions: { width: 1080, height: 1080, unit: "px" },
     orientation: "portrait",
     category: "digital",
   },

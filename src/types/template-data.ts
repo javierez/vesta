@@ -132,6 +132,7 @@ export interface TemplateConfiguration {
   showQR: boolean;
   showWatermark: boolean;
   showPhone: boolean;
+  showEmail: boolean;
   showWebsite: boolean;
   showReference: boolean;
   showShortDescription: boolean;
@@ -139,7 +140,14 @@ export interface TemplateConfiguration {
   additionalFields: string[]; // max 2 fields from property schema
   titleFont: "default" | "serif" | "sans" | "mono" | "elegant" | "modern";
   priceFont: "default" | "serif" | "sans" | "mono" | "elegant" | "modern";
-  overlayColor: "default" | "dark" | "light" | "blue" | "green" | "purple" | "red";
+  overlayColor:
+    | "default"
+    | "dark"
+    | "light"
+    | "blue"
+    | "green"
+    | "purple"
+    | "red";
 }
 
 // Extended template property data with additional database fields

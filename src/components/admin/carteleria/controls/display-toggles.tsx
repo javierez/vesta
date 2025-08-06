@@ -1,4 +1,3 @@
-"use client";
 
 import type { FC } from "react";
 import { Switch } from "~/components/ui/switch";
@@ -101,9 +100,11 @@ export const DisplayToggles: FC<DisplayTogglesProps> = ({
       {/* Reference Toggle */}
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <label className="text-sm font-medium text-gray-700">Referencia</label>
+          <label className="text-sm font-medium text-gray-700">
+            Referencia
+          </label>
           <p className="text-xs text-gray-500">
-            Mostrar referencia del piso en la esquina superior izquierda
+            Mostrar referencia del piso en la esquina inferior izquierda
           </p>
         </div>
         <Switch

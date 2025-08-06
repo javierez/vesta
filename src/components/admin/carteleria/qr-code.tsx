@@ -65,11 +65,11 @@ export const QRCode: FC<QRCodeComponentProps> = ({
           "inline-flex items-center justify-center rounded p-2",
           className,
         )}
-        style={{ 
-          width: size + 16, 
+        style={{
+          width: size + 16,
           height: size + 16,
           backgroundColor: "rgba(128, 128, 128, 0.7)",
-          backdropFilter: "blur(4px)"
+          backdropFilter: "blur(4px)",
         }}
       >
         <QRCodeLibrary

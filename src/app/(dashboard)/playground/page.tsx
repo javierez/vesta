@@ -35,6 +35,7 @@ export default function PlaygroundPage() {
     showQR: true,
     showWatermark: false,
     showPhone: true,
+    showEmail: false,
     showWebsite: false,
     showReference: false,
     showShortDescription: false,

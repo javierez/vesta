@@ -551,7 +551,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 </div>
               </>
             )}
-            {data.contact.email && (
+            {config.showEmail && data.contact.email && (
               <div
                 className="mt-1 text-xs"
                 style={{ color: basicColors.secondary }}

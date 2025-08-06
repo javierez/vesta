@@ -72,7 +72,7 @@ export interface CarteleriaSelection {
 
 // State management interface for the main component
 export interface CarteleriaState {
-  currentStep: "style" | "format" | "property" | "template" | "customize";
+  currentStep: "style" | "format" | "personalization";
   selections: CarteleriaSelection;
   previewTemplate: CarteleriaTemplate | null;
 }

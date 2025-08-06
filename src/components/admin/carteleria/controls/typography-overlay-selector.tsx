@@ -21,13 +21,48 @@ const FONT_OPTIONS = [
 
 // Overlay color options
 const OVERLAY_OPTIONS = [
-  { value: "default" as const, label: "Por Defecto", color: "bg-gray-400/70", preview: "#9ca3af" },
-  { value: "dark" as const, label: "Oscuro", color: "bg-gray-800/80", preview: "#1f2937" },
-  { value: "light" as const, label: "Claro", color: "bg-gray-200/80", preview: "#e5e7eb" },
-  { value: "blue" as const, label: "Azul", color: "bg-blue-500/70", preview: "#3b82f6" },
-  { value: "green" as const, label: "Verde", color: "bg-green-500/70", preview: "#10b981" },
-  { value: "purple" as const, label: "Morado", color: "bg-purple-500/70", preview: "#8b5cf6" },
-  { value: "red" as const, label: "Rojo", color: "bg-red-500/70", preview: "#ef4444" },
+  {
+    value: "default" as const,
+    label: "Por Defecto",
+    color: "bg-gray-400/70",
+    preview: "#9ca3af",
+  },
+  {
+    value: "dark" as const,
+    label: "Oscuro",
+    color: "bg-gray-800/80",
+    preview: "#1f2937",
+  },
+  {
+    value: "light" as const,
+    label: "Claro",
+    color: "bg-gray-200/80",
+    preview: "#e5e7eb",
+  },
+  {
+    value: "blue" as const,
+    label: "Azul",
+    color: "bg-blue-500/70",
+    preview: "#3b82f6",
+  },
+  {
+    value: "green" as const,
+    label: "Verde",
+    color: "bg-green-500/70",
+    preview: "#10b981",
+  },
+  {
+    value: "purple" as const,
+    label: "Morado",
+    color: "bg-purple-500/70",
+    preview: "#8b5cf6",
+  },
+  {
+    value: "red" as const,
+    label: "Rojo",
+    color: "bg-red-500/70",
+    preview: "#ef4444",
+  },
 ];
 
 export const TypographyOverlaySelector: FC<TypographyOverlaySelectorProps> = ({
@@ -38,11 +73,11 @@ export const TypographyOverlaySelector: FC<TypographyOverlaySelectorProps> = ({
     <div className="space-y-6">
       {/* Typography Section */}
       <div>
-        <h3 className="text-lg font-medium mb-4">Tipografía</h3>
-        
+        <h3 className="mb-4 text-lg font-medium">Tipografía</h3>
+
         {/* Title Font */}
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">
+          <label className="mb-2 block text-sm font-medium">
             Fuente del Título (Tipo de Propiedad)
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -51,11 +86,11 @@ export const TypographyOverlaySelector: FC<TypographyOverlaySelectorProps> = ({
                 key={font.value}
                 onClick={() => onChange({ titleFont: font.value })}
                 className={cn(
-                  "p-2 text-xs border rounded transition-colors",
+                  "rounded border p-2 text-xs transition-colors",
                   font.className,
                   config.titleFont === font.value
                     ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-gray-200 hover:border-gray-300"
+                    : "border-gray-200 hover:border-gray-300",
                 )}
               >
                 {font.label}
@@ -66,7 +101,7 @@ export const TypographyOverlaySelector: FC<TypographyOverlaySelectorProps> = ({
 
         {/* Price Font */}
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">
+          <label className="mb-2 block text-sm font-medium">
             Fuente del Precio
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -75,11 +110,11 @@ export const TypographyOverlaySelector: FC<TypographyOverlaySelectorProps> = ({
                 key={font.value}
                 onClick={() => onChange({ priceFont: font.value })}
                 className={cn(
-                  "p-2 text-xs border rounded transition-colors",
+                  "rounded border p-2 text-xs transition-colors",
                   font.className,
                   config.priceFont === font.value
                     ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-gray-200 hover:border-gray-300"
+                    : "border-gray-200 hover:border-gray-300",
                 )}
               >
                 {font.label}
@@ -91,30 +126,34 @@ export const TypographyOverlaySelector: FC<TypographyOverlaySelectorProps> = ({
 
       {/* Overlay Colors Section */}
       <div>
-        <h3 className="text-lg font-medium mb-4">Color de Overlays</h3>
-        <p className="text-sm text-gray-600 mb-3">
+        <h3 className="mb-4 text-lg font-medium">Color de Overlays</h3>
+        <p className="mb-3 text-sm text-gray-600">
           Cambia el color de fondo de las dos capas de información
         </p>
-        
+
         <div className="grid grid-cols-4 gap-2">
           {OVERLAY_OPTIONS.map((overlay) => (
             <button
               key={overlay.value}
               onClick={() => onChange({ overlayColor: overlay.value })}
               className={cn(
-                "p-2 text-xs border rounded transition-colors flex flex-col items-center gap-1",
+                "flex flex-col items-center gap-1 rounded border p-2 text-xs transition-colors",
                 config.overlayColor === overlay.value
                   ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  : "border-gray-200 hover:border-gray-300",
               )}
             >
-              <div 
-                className="w-6 h-6 rounded border"
+              <div
+                className="h-6 w-6 rounded border"
                 style={{ backgroundColor: overlay.preview + "B3" }} // B3 = ~70% opacity in hex
               />
-              <span className={cn(
-                config.overlayColor === overlay.value ? "text-blue-700" : "text-gray-700"
-              )}>
+              <span
+                className={cn(
+                  config.overlayColor === overlay.value
+                    ? "text-blue-700"
+                    : "text-gray-700",
+                )}
+              >
                 {overlay.label}
               </span>
             </button>
