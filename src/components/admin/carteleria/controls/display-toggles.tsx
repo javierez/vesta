@@ -1,4 +1,3 @@
-
 import type { FC } from "react";
 import { Switch } from "~/components/ui/switch";
 import type { TemplateConfiguration } from "~/types/template-data";

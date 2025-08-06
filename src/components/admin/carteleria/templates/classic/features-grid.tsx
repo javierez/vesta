@@ -6,6 +6,7 @@ import type {
   TemplatePropertyData,
   TemplateConfiguration,
 } from "~/types/template-data";
+import { PRINT_DIMENSIONS } from "~/lib/carteleria/print-constants";
 
 interface FeaturesGridProps {
   data: TemplatePropertyData;
@@ -29,9 +30,12 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
   getFieldLabel,
   shouldCompact = false,
 }) => {
-  // Use different margin for alquiler vs venta
-  const leftMargin = config.listingType === "alquiler" ? "ml-5" : "ml-3";
-  const bulletMargin = "ml-3"; // Same margin for both listing types
+  // Print-optimized margins using fixed pixel values
+  const leftMargin =
+    config.listingType === "alquiler"
+      ? PRINT_DIMENSIONS.SPACING.xl // 20px
+      : PRINT_DIMENSIONS.SPACING.md; // 12px
+  const bulletMargin = PRINT_DIMENSIONS.SPACING.md; // 12px
   return (
     <div>
       {config.showIcons ? (
@@ -73,9 +77,24 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
           const isOdd = totalFeatures % 2 !== 0;
 
           return (
-            <div className={`${shouldCompact ? "mt-3" : "mt-4"} ${leftMargin}`}>
+            <div
+              style={{
+                marginTop: shouldCompact
+                  ? `${PRINT_DIMENSIONS.SPACING.md}px`
+                  : `${PRINT_DIMENSIONS.SPACING.lg}px`,
+                marginLeft: `${leftMargin}px`,
+              }}
+            >
               <div
-                className={`grid grid-cols-2 gap-x-5 ${shouldCompact ? "gap-y-1.5" : "gap-y-1"} max-w-fit`}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  columnGap: `${PRINT_DIMENSIONS.SPACING.xl}px`, // 20px fixed
+                  rowGap: shouldCompact
+                    ? `${PRINT_DIMENSIONS.SPACING.xs + 2}px` // 6px
+                    : `${PRINT_DIMENSIONS.SPACING.xs}px`, // 4px
+                  maxWidth: "fit-content",
+                }}
               >
                 {features.map((feature, index) => {
                   const IconComponent = feature.icon;
@@ -84,22 +103,40 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
                   return (
                     <div
                       key={feature.key}
-                      className={cn(
-                        "text-center",
-                        shouldCompact ? "py-0" : "py-0.5",
-                        isLastAndOdd && "col-span-2",
-                      )}
+                      className={cn("text-center")}
+                      style={{
+                        textAlign: "center",
+                        paddingTop: shouldCompact
+                          ? 0
+                          : `${PRINT_DIMENSIONS.SPACING.xs / 2}px`,
+                        paddingBottom: shouldCompact
+                          ? 0
+                          : `${PRINT_DIMENSIONS.SPACING.xs / 2}px`,
+                        gridColumn: isLastAndOdd ? "span 2" : "auto",
+                      }}
                     >
                       <IconComponent
-                        className={cn(
-                          "mx-auto",
-                          shouldCompact ? "mb-0.5 h-4 w-4" : "mb-0.5 h-6 w-6",
-                          modernColors.iconText,
-                        )}
+                        className={cn("mx-auto", modernColors.iconText)}
+                        style={{
+                          display: "block",
+                          margin: "0 auto",
+                          marginBottom: `${PRINT_DIMENSIONS.SPACING.xs / 2}px`, // 2px
+                          width: shouldCompact
+                            ? `${PRINT_DIMENSIONS.ICONS.small.width}px`
+                            : `${PRINT_DIMENSIONS.ICONS.large.width}px`,
+                          height: shouldCompact
+                            ? `${PRINT_DIMENSIONS.ICONS.small.height}px`
+                            : `${PRINT_DIMENSIONS.ICONS.large.height}px`,
+                        }}
                       />
                       <div
                         className={cn(modernColors.text)}
-                        style={{ fontSize: shouldCompact ? "11px" : "12px" }}
+                        style={{
+                          fontSize: shouldCompact
+                            ? `${PRINT_DIMENSIONS.TYPOGRAPHY.body.small}px`
+                            : `${PRINT_DIMENSIONS.TYPOGRAPHY.body.standard}px`,
+                          lineHeight: "1.2",
+                        }}
                       >
                         {feature.value}
                       </div>
@@ -112,25 +149,83 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
         })()
       ) : (
         /* Non-icon layout - bullet point list */
-        <div className={`${shouldCompact ? "mt-3" : "mt-4"} ${bulletMargin}`}>
+        <div
+          style={{
+            marginTop: shouldCompact
+              ? `${PRINT_DIMENSIONS.SPACING.md}px`
+              : `${PRINT_DIMENSIONS.SPACING.lg}px`,
+            marginLeft: `${bulletMargin}px`,
+          }}
+        >
           <ul
-            className={shouldCompact ? "space-y-0.5" : "space-y-1"}
-            style={{ fontSize: shouldCompact ? "11px" : "12px" }}
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: shouldCompact
+                ? `${PRINT_DIMENSIONS.SPACING.xs / 2}px` // 2px
+                : `${PRINT_DIMENSIONS.SPACING.xs}px`, // 4px
+              fontSize: shouldCompact
+                ? `${PRINT_DIMENSIONS.TYPOGRAPHY.body.small}px`
+                : `${PRINT_DIMENSIONS.TYPOGRAPHY.body.standard}px`,
+              lineHeight: "1.3",
+            }}
           >
             {data.specs.bathrooms && (
-              <li className={cn("flex items-start", modernColors.text)}>
-                <span className="mr-2 mt-0.5">•</span>
+              <li
+                className={cn(modernColors.text)}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                }}
+              >
+                <span
+                  style={{
+                    marginRight: `${PRINT_DIMENSIONS.SPACING.sm}px`,
+                    marginTop: "2px",
+                  }}
+                >
+                  •
+                </span>
                 <span>{data.specs.bathrooms} baños</span>
               </li>
             )}
             {data.specs.bedrooms && (
-              <li className={cn("flex items-start", modernColors.text)}>
-                <span className="mr-2 mt-0.5">•</span>
+              <li
+                className={cn(modernColors.text)}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                }}
+              >
+                <span
+                  style={{
+                    marginRight: `${PRINT_DIMENSIONS.SPACING.sm}px`,
+                    marginTop: "2px",
+                  }}
+                >
+                  •
+                </span>
                 <span>{data.specs.bedrooms} dormitorios</span>
               </li>
             )}
-            <li className={cn("flex items-start", modernColors.text)}>
-              <span className="mr-2 mt-0.5">•</span>
+            <li
+              className={cn(modernColors.text)}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+              }}
+            >
+              <span
+                style={{
+                  marginRight: `${PRINT_DIMENSIONS.SPACING.sm}px`,
+                  marginTop: "2px",
+                }}
+              >
+                •
+              </span>
               <span>{data.specs.squareMeters} m²</span>
             </li>
 
@@ -138,9 +233,20 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
             {config.additionalFields.slice(0, 3).map((fieldValue) => (
               <li
                 key={fieldValue}
-                className={cn("flex items-start", modernColors.text)}
+                className={cn(modernColors.text)}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                }}
               >
-                <span className="mr-2 mt-0.5">•</span>
+                <span
+                  style={{
+                    marginRight: `${PRINT_DIMENSIONS.SPACING.sm}px`,
+                    marginTop: "2px",
+                  }}
+                >
+                  •
+                </span>
                 <span>
                   {getFieldLabel(fieldValue)}: {getFieldValue(fieldValue)}
                 </span>

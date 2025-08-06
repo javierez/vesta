@@ -1,13 +1,10 @@
-
 import type { FC } from "react";
 import { useState, useEffect, useRef } from "react";
 import { DisplayOptions } from "./controls/display-options";
 import { ModernTemplate } from "./templates/modern/modern-template";
 import { ClassicTemplate } from "./templates/classic/classic-template";
 import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
-import type { 
-  TemplateConfiguration
-} from "~/types/template-data";
+import type { TemplateConfiguration } from "~/types/template-data";
 import type {
   PersonalizationProps,
   PosterPreferences,
@@ -19,7 +16,8 @@ export const Personalization: FC<PersonalizationProps> = ({
   preferences: initialPreferences,
   onUpdate,
 }) => {
-  const [preferences, setPreferences] = useState<PosterPreferences>(initialPreferences);
+  const [preferences, setPreferences] =
+    useState<PosterPreferences>(initialPreferences);
   const templateRef = useRef<HTMLDivElement>(null);
 
   // Template property data for preview (like Playground)
@@ -27,8 +25,12 @@ export const Personalization: FC<PersonalizationProps> = ({
 
   // Template configuration for preview (mapping from preferences)
   const [config, setConfig] = useState<TemplateConfiguration>({
-    templateStyle: (currentSelection.styleId ?? "modern") as TemplateConfiguration["templateStyle"],
-    orientation: currentSelection.formatIds[0] === "horizontal" ? "horizontal" : "vertical",
+    templateStyle: (currentSelection.styleId ??
+      "modern") as TemplateConfiguration["templateStyle"],
+    orientation:
+      currentSelection.formatIds[0] === "horizontal"
+        ? "horizontal"
+        : "vertical",
     propertyType: "piso",
     imageCount: 3,
     showIcons: preferences.show_icons,
@@ -48,10 +50,14 @@ export const Personalization: FC<PersonalizationProps> = ({
 
   // Update config when currentSelection changes
   useEffect(() => {
-    setConfig(prevConfig => ({
+    setConfig((prevConfig) => ({
       ...prevConfig,
-      templateStyle: (currentSelection.styleId ?? "modern") as TemplateConfiguration["templateStyle"],
-      orientation: currentSelection.formatIds[0] === "horizontal" ? "horizontal" : "vertical",
+      templateStyle: (currentSelection.styleId ??
+        "modern") as TemplateConfiguration["templateStyle"],
+      orientation:
+        currentSelection.formatIds[0] === "horizontal"
+          ? "horizontal"
+          : "vertical",
     }));
   }, [currentSelection.styleId, currentSelection.formatIds]);
 
@@ -60,13 +66,12 @@ export const Personalization: FC<PersonalizationProps> = ({
     setPreferences(initialPreferences);
   }, [initialPreferences]);
 
-
   const handlePreferenceChange = (updates: Partial<PosterPreferences>) => {
     const newPrefs = { ...preferences, ...updates };
     setPreferences(newPrefs);
 
     // Update template config to reflect the new preferences
-    setConfig(prevConfig => ({
+    setConfig((prevConfig) => ({
       ...prevConfig,
       showIcons: newPrefs.show_icons,
       showQR: newPrefs.show_qr_code,
@@ -81,9 +86,6 @@ export const Personalization: FC<PersonalizationProps> = ({
     // Notify parent component (no auto-save)
     onUpdate({ displayOptions: newPrefs });
   };
-
-
-
 
   return (
     <div className="space-y-6">
@@ -113,9 +115,7 @@ export const Personalization: FC<PersonalizationProps> = ({
         {/* Vista Previa de Plantilla */}
         <div className="rounded-2xl bg-white p-6 shadow-md">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">
-              Vista Previa de Plantilla
-            </h2>
+            <h2 className="text-xl font-semibold">Vista Previa de Plantilla</h2>
           </div>
           <div className="flex justify-center">
             <div

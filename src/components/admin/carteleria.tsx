@@ -18,9 +18,9 @@ import {
 import { useToast } from "~/components/hooks/use-toast";
 import { useSession } from "~/lib/auth-client";
 import { getCurrentUserAccountId } from "~/app/actions/settings";
-import { 
+import {
   loadPosterPreferencesWithDefaults,
-  savePosterPreferences 
+  savePosterPreferences,
 } from "~/app/actions/poster-preferences";
 import type { PosterPreferences } from "~/types/poster-preferences";
 import { defaultPosterPreferences } from "~/types/poster-preferences";
@@ -78,7 +78,9 @@ export const Carteleria: FC = () => {
   const { toast } = useToast();
   const { data: session } = useSession();
   const [accountId, setAccountId] = useState<number | null>(null);
-  const [preferences, setPreferences] = useState<PosterPreferences>(defaultPosterPreferences);
+  const [preferences, setPreferences] = useState<PosterPreferences>(
+    defaultPosterPreferences,
+  );
   const [loadingPreferences, setLoadingPreferences] = useState(false);
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -98,7 +100,6 @@ export const Carteleria: FC = () => {
 
   // Modal states
   const [showPreview, setShowPreview] = useState(false);
-
 
   // Load saved state on mount with migration
   useEffect(() => {
@@ -138,7 +139,7 @@ export const Carteleria: FC = () => {
   // Load preferences when accountId is available
   useEffect(() => {
     if (!accountId) return;
-    
+
     const loadPreferences = async () => {
       setLoadingPreferences(true);
       try {
@@ -146,10 +147,10 @@ export const Carteleria: FC = () => {
         if (result.success && result.data) {
           const data = result.data;
           setPreferences(data);
-          
+
           // Update state with saved style and format preferences
           if (data.template_style || data.format_ids) {
-            setState(prevState => ({
+            setState((prevState) => ({
               ...prevState,
               selections: {
                 ...prevState.selections,
@@ -158,7 +159,7 @@ export const Carteleria: FC = () => {
               },
             }));
           }
-          
+
           // Mark as saved (no unsaved changes)
           setHasUnsavedChanges(false);
         } else if (result.error) {
@@ -179,7 +180,7 @@ export const Carteleria: FC = () => {
         setLoadingPreferences(false);
       }
     };
-    
+
     void loadPreferences();
   }, [accountId, toast]);
 
@@ -204,7 +205,6 @@ export const Carteleria: FC = () => {
     setState((prev) => ({ ...prev, currentStep: step }));
   };
 
-
   // Save preferences function
   const handleSavePreferences = useCallback(async () => {
     if (!accountId) {
@@ -225,7 +225,7 @@ export const Carteleria: FC = () => {
       };
 
       const result = await savePosterPreferences(accountId, fullPreferences);
-      
+
       if (result.success) {
         setHasUnsavedChanges(false);
         toast({
@@ -245,7 +245,13 @@ export const Carteleria: FC = () => {
     } finally {
       setSavingPreferences(false);
     }
-  }, [accountId, preferences, state.selections.styleId, state.selections.formatIds, toast]);
+  }, [
+    accountId,
+    preferences,
+    state.selections.styleId,
+    state.selections.formatIds,
+    toast,
+  ]);
 
   const currentStepIndex = steps.findIndex(
     (step) => step.id === state.currentStep,
@@ -385,16 +391,16 @@ export const Carteleria: FC = () => {
           </div>
         </CardHeader>
 
-        <CardContent className="min-h-[500px] relative">
+        <CardContent className="relative min-h-[500px]">
           {loadingPreferences && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm">
               <div className="flex items-center gap-2 text-gray-600">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span>Cargando preferencias guardadas...</span>
               </div>
             </div>
           )}
-          
+
           {state.currentStep === "style" && (
             <StyleSelector
               selectedStyleId={state.selections.styleId}
@@ -420,7 +426,7 @@ export const Carteleria: FC = () => {
               preferences={preferences}
               onUpdate={(updates) => {
                 // Update preferences locally (no auto-save)
-                setPreferences(prevPrefs => ({
+                setPreferences((prevPrefs) => ({
                   ...prevPrefs,
                   ...updates.displayOptions,
                 }));

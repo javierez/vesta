@@ -78,30 +78,6 @@ export const FormatSelector: FC<FormatSelectorProps> = ({
           ))}
         </div>
       </div>
-
-      {/* Selection Summary */}
-      {selectedFormatIds.length > 0 && (
-        <div className="mt-6 rounded-lg border border-primary/20 bg-primary/10 p-4">
-          <div className="mb-2 flex items-center gap-2">
-            <Ruler className="h-5 w-5 text-primary" />
-            <span className="font-medium text-primary">
-              {selectedFormatIds.length} formato
-              {selectedFormatIds.length > 1 ? "s" : ""} seleccionado
-              {selectedFormatIds.length > 1 ? "s" : ""}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {selectedFormatIds.map((formatId) => {
-              const format = formats.find((f) => f.id === formatId);
-              return format ? (
-                <Badge key={formatId} variant="outline" className="text-xs">
-                  {format.name}
-                </Badge>
-              ) : null;
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
