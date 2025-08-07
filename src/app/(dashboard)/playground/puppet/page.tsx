@@ -91,15 +91,15 @@ export default function PuppeteerPlayground() {
       ...updates,
       location: {
         ...prev.location,
-        ...(updates.location || {}),
+        ...(updates.location ?? {}),
       },
       specs: {
         ...prev.specs,
-        ...(updates.specs || {}),
+        ...(updates.specs ?? {}),
       },
       contact: {
         ...prev.contact,
-        ...(updates.contact || {}),
+        ...(updates.contact ?? {}),
       },
     }));
   };
@@ -522,7 +522,7 @@ export default function PuppeteerPlayground() {
             </CardHeader>
             <CardContent className="space-y-6">
               {templateImages.map((imageUrl, index) => {
-                const position = propertyData.imagePositions?.[imageUrl] || {
+                const position = propertyData.imagePositions?.[imageUrl] ?? {
                   x: 50,
                   y: 50,
                 };
