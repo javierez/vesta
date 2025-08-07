@@ -2,14 +2,13 @@ import type { FC } from "react";
 import { useState, useEffect, useRef } from "react";
 import { DisplayOptions } from "./controls/display-options";
 import { ModernTemplate } from "./templates/modern/modern-template";
-import { ClassicTemplate } from "./templates/classic/classic-template";
+import { ClassicTemplate } from "./templates/classic/classic-vertical-template";
 import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
 import type { TemplateConfiguration } from "~/types/template-data";
 import type {
   PersonalizationProps,
   PosterPreferences,
 } from "~/types/poster-preferences";
-import { cn } from "~/lib/utils";
 
 export const Personalization: FC<PersonalizationProps> = ({
   currentSelection,
@@ -120,24 +119,34 @@ export const Personalization: FC<PersonalizationProps> = ({
           <div className="flex justify-center">
             <div
               ref={templateRef}
-              className={cn(
-                "w-full",
-                config.orientation === "vertical" ? "max-w-lg" : "max-w-xl",
-              )}
+              className="relative border border-gray-300 shadow-lg rounded-lg overflow-hidden bg-white"
+              style={{
+                width: config.orientation === "vertical" ? "397px" : "562px", // 794*0.5 and 1123*0.5
+                height: config.orientation === "vertical" ? "562px" : "397px", // 1123*0.5 and 794*0.5
+              }}
             >
-              {config.templateStyle === "classic" ? (
-                <ClassicTemplate
-                  data={propertyData}
-                  config={config}
-                  className="border shadow-lg"
-                />
-              ) : (
-                <ModernTemplate
-                  data={propertyData}
-                  config={config}
-                  className="border shadow-lg"
-                />
-              )}
+              <div
+                style={{
+                  transform: "scale(0.5)",
+                  transformOrigin: "top left",
+                  width: config.orientation === "vertical" ? "794px" : "1123px",
+                  height: config.orientation === "vertical" ? "1123px" : "794px",
+                }}
+              >
+                {config.templateStyle === "classic" ? (
+                  <ClassicTemplate
+                    data={propertyData}
+                    config={config}
+                    className=""
+                  />
+                ) : (
+                  <ModernTemplate
+                    data={propertyData}
+                    config={config}
+                    className=""
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>

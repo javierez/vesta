@@ -9,7 +9,7 @@ import { Switch } from '~/components/ui/switch';
 import { Input } from '~/components/ui/input';
 import { Slider } from '~/components/ui/slider';
 import { Download, Eye, FileText, Image as ImageIcon, Settings, Loader2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
-import { ClassicTemplate } from '~/components/admin/carteleria/templates/classic/classic-template';
+import { ClassicTemplate } from '~/components/admin/carteleria/templates/classic/classic-vertical-template';
 import { getExtendedDefaultPropertyData } from '~/lib/carteleria/mock-data';
 import type { TemplateConfiguration, ExtendedTemplatePropertyData } from '~/types/template-data';
 import { AdditionalFieldsSelector } from '~/components/admin/carteleria/controls/additional-fields-selector';

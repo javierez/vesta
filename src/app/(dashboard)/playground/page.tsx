@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ModernTemplate } from "~/components/admin/carteleria/templates/modern/modern-template";
-import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-template";
+import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
 import {
   mockPropertyData,
   getExtendedDefaultPropertyData,

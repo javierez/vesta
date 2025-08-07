@@ -1,4 +1,4 @@
-import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-template";
+import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
 import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
 import type { TemplateConfiguration, ExtendedTemplatePropertyData } from "~/types/template-data";
 

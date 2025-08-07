@@ -6,7 +6,7 @@ import type {
   TemplatePropertyData,
   TemplateConfiguration,
 } from "~/types/template-data";
-import { PRINT_DIMENSIONS } from "~/lib/carteleria/print-constants";
+import { PRINT_DIMENSIONS } from "~/lib/carteleria/classic-vertical-constants";
 
 interface FeaturesGridProps {
   data: TemplatePropertyData;
@@ -35,7 +35,6 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
     config.listingType === "alquiler"
       ? PRINT_DIMENSIONS.SPACING.iconsLeftMarginRental
       : PRINT_DIMENSIONS.SPACING.iconsLeftMargin;
-  const bulletMargin = PRINT_DIMENSIONS.SPACING.iconsLeftMargin;
   return (
     <div>
       {config.showIcons ? (
@@ -164,8 +163,7 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
             marginTop: shouldCompact
               ? `${PRINT_DIMENSIONS.SPACING.featuresTopMarginCompact}px`
               : `${PRINT_DIMENSIONS.SPACING.featuresTopMargin}px`,
-            display: "flex",
-            justifyContent: "center",
+            marginLeft: `${leftMargin}px`,
           }}
         >
           <ul

@@ -29,7 +29,7 @@ import {
   PRINT_DIMENSIONS,
   getDimensionsForOrientation,
   getTypographySize,
-} from "~/lib/carteleria/print-constants";
+} from "~/lib/carteleria/classic-vertical-constants";
 import { injectPrintStyles } from "~/lib/carteleria/print-utils";
 
 // Import other templates when available
@@ -250,7 +250,6 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
       if (config.imageCount === 4) {
         // Now the main image takes the remaining width after overlay + gap
         const mainImageWidth = availableWidth;
-        const subImageWidth = Math.floor(availableWidth / 3) - (gap * 2) / 3;
 
         return (
           <div
@@ -275,15 +274,15 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
               }}
             >
               <Image
-                src={templateImages[0]!}
+                src={templateImages[0] ?? ""}
                 alt={`${data.title} - Imagen principal`}
                 fill
                 className="object-cover"
                 onError={handleImageError}
                 sizes={`${containerDims.width}px`}
                 style={{
-                  objectPosition: data.imagePositions?.[templateImages[0]!] 
-                    ? `${data.imagePositions[templateImages[0]!]!.x}% ${data.imagePositions[templateImages[0]!]!.y}%`
+                  objectPosition: data.imagePositions?.[templateImages[0] ?? ""] 
+                    ? `${data.imagePositions[templateImages[0] ?? ""]?.x ?? 50}% ${data.imagePositions[templateImages[0] ?? ""]?.y ?? 50}%`
                     : "50% 50%"
                 }}
                 priority
@@ -315,7 +314,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                     sizes={`${fullWidthSubImageWidth}px`}
                     style={{
                       objectPosition: data.imagePositions?.[image] 
-                        ? `${data.imagePositions[image]!.x}% ${data.imagePositions[image]!.y}%`
+                        ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
                         : "50% 50%"
                     }}
                   />
@@ -328,7 +327,6 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
       } else {
         // 3 images vertical: main image on top, 2 supporting below
         const mainImageWidth = availableWidth;
-        const subImageWidth = Math.floor(availableWidth / 2) - gap / 2;
 
         return (
           <div
@@ -353,15 +351,15 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
               }}
             >
               <Image
-                src={templateImages[0]!}
+                src={templateImages[0] ?? ""}
                 alt={`${data.title} - Imagen principal`}
                 fill
                 className="object-cover"
                 onError={handleImageError}
                 sizes={`${containerDims.width}px`}
                 style={{
-                  objectPosition: data.imagePositions?.[templateImages[0]!] 
-                    ? `${data.imagePositions[templateImages[0]!]!.x}% ${data.imagePositions[templateImages[0]!]!.y}%`
+                  objectPosition: data.imagePositions?.[templateImages[0] ?? ""] 
+                    ? `${data.imagePositions[templateImages[0] ?? ""]?.x ?? 50}% ${data.imagePositions[templateImages[0] ?? ""]?.y ?? 50}%`
                     : "50% 50%"
                 }}
                 priority
@@ -393,7 +391,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                     sizes={`${fullWidthSubImageWidth}px`}
                     style={{
                       objectPosition: data.imagePositions?.[image] 
-                        ? `${data.imagePositions[image]!.x}% ${data.imagePositions[image]!.y}%`
+                        ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
                         : "50% 50%"
                     }}
                   />
@@ -432,15 +430,15 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
             }}
           >
             <Image
-              src={templateImages[0]!}
+              src={templateImages[0] ?? ""}
               alt={`${data.title} - Imagen principal`}
               fill
               className="object-cover"
               onError={handleImageError}
               sizes={`${mainWidth}px`}
               style={{
-                objectPosition: data.imagePositions?.[templateImages[0]!] 
-                  ? `${data.imagePositions[templateImages[0]!]!.x}% ${data.imagePositions[templateImages[0]!]!.y}%`
+                objectPosition: data.imagePositions?.[templateImages[0] ?? ""] 
+                  ? `${data.imagePositions[templateImages[0] ?? ""]?.x ?? 50}% ${data.imagePositions[templateImages[0] ?? ""]?.y ?? 50}%`
                   : "50% 50%"
               }}
               priority
@@ -475,7 +473,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                       sizes={`${gridWidth}px`}
                       style={{
                         objectPosition: data.imagePositions?.[image] 
-                          ? `${data.imagePositions[image]!.x}% ${data.imagePositions[image]!.y}%`
+                          ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
                           : "50% 50%"
                       }}
                     />
@@ -508,7 +506,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                       sizes={`${gridWidth}px`}
                       style={{
                         objectPosition: data.imagePositions?.[image] 
-                          ? `${data.imagePositions[image]!.x}% ${data.imagePositions[image]!.y}%`
+                          ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
                           : "50% 50%"
                       }}
                     />
@@ -887,6 +885,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   className={cn(modernColors.text)}
                   style={{
                     marginTop: `${PRINT_DIMENSIONS.SPACING.featuresTopMargin}px`,
+                    marginLeft: `${PRINT_DIMENSIONS.SPACING.iconsLeftMargin}px`,
                     fontSize: `${getTypographySize("body", { isCompact: true })}px`,
                     lineHeight: "1.5",
                   }}
@@ -952,9 +951,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
       </div>
 
       {/* Bottom right contact overlay - print-optimized (z-10) */}
-      {(config.showPhone ??
-        (config.showEmail && data.contact.email) ??
-        (config.showWebsite && data.contact.website)) && (
+      {((config.showPhone ?? false) ||
+        ((config.showEmail ?? false) && (data.contact.email ?? false)) ||
+        ((config.showWebsite ?? false) && (data.contact.website ?? false))) && (
         <div
           className={cn("no-break", modernColors.overlay)}
           style={{

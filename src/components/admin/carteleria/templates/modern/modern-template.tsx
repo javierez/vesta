@@ -27,7 +27,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 // Import other templates when available
-// import { ClassicTemplate } from "./classic-template";
+// import { ClassicTemplate } from "../classic/classic-vertical-template";
 // import { LuxuryTemplate } from "./luxury-template";
 // import { ProfessionalTemplate } from "./professional-template";
 // import { CreativeTemplate } from "./creative-template";
