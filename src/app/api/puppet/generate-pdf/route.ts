@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
     console.log('🚀 Starting PDF generation with Puppeteer...');
     
     // Launch browser with optimized settings for PDF generation
-    // Use headless: 'new' for better compatibility
+    // Use headless: true for better compatibility
     const browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     // Wait for template to be fully rendered
     try {
       await page.waitForSelector('.template-container', { timeout: 10000 });
-    } catch (error) {
+    } catch (_error) {
       console.error('Template container not found. Page content:', await page.content());
       throw new Error('Template container not found after 10 seconds');
     }
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       await page.waitForFunction(() => window.templateReady === true, {
         timeout: 15000
       });
-    } catch (error) {
+    } catch (_error) {
       console.warn('Template ready signal timeout, proceeding anyway...');
     }
 

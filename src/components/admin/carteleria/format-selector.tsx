@@ -8,7 +8,7 @@ import {
 } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
-import { FileText, Smartphone, Ruler } from "lucide-react";
+import { FileText, Smartphone } from "lucide-react";
 import type { FormatSelectorProps } from "~/types/carteleria";
 import { templateFormats } from "~/lib/carteleria/templates";
 

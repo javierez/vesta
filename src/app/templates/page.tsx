@@ -18,8 +18,8 @@ export default async function TemplatesPage({ searchParams }: TemplatesPageProps
 
   try {
     if (params.config && params.data) {
-      config = JSON.parse(params.config);
-      data = JSON.parse(params.data);
+      config = JSON.parse(params.config) as TemplateConfiguration;
+      data = JSON.parse(params.data) as ExtendedTemplatePropertyData;
     } else {
       // Fallback to default config and data
       data = getExtendedDefaultPropertyData("piso");

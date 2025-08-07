@@ -156,17 +156,29 @@ pnpm build
 # TODOs: 
 
 ## High Priority
-- Pasarela de pagos
-- Watermark
-- Cartelería
-- Upscaller images
+- Watermark:
+   - Determine whether we want to include it or not. 
+   - Investigate a way to upload them without saving the image with watermark
+
+- Cartelería (ongoing)
+   - Create another poster (Amaya's basic one)
+   - Change color or current poster
+
 - Operations page
+
 - Calendar integration
+
+- Webpage
+
 
 
 
 ## Med Priority
 - Generación de Nota de encargo: P000460
+- Pasarela de pagos 
+- Upscaller images
+
+
 
 ## Low Priority
 - Rent: add deposit information
@@ -231,7 +243,7 @@ FIXES
 
 
 - Redirecting me to pages if I want to go quick: from first to second, to third, and so on. (changed but to be tested)
-- What happens if I upload Referencia Catastral but also a Ficha de Venta
+- 
 - After I click on @property-identification-form on siguiente (once is ready). It has like a clicked state where it says cargando or something like that. But between that and before the property-form is reached, there is some time where I don't have anything and I would be able to click on finish again.
 - Authentication with Google 
 - Authentication in general

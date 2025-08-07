@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { BarChart3, Settings, Users, Palette, FileImage } from "lucide-react";
+import { BarChart3, Settings, Users, Palette, FileImage, Globe } from "lucide-react";
 
 interface AccountAdminCard {
   title: string;
