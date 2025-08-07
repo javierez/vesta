@@ -22,12 +22,13 @@ export const AccountAdminBreadcrumb = () => {
   const segments = pathname.split("/").filter(Boolean);
 
   return (
-    <nav className="mb-6 flex items-center space-x-1 text-sm text-gray-500">
+    <nav className="mb-6 flex items-center space-x-1 overflow-x-auto whitespace-nowrap pb-2 text-xs text-gray-500 sm:text-sm">
       <Link
         href="/account-admin"
-        className="flex items-center transition-colors hover:text-gray-900"
+        className="flex flex-shrink-0 items-center transition-colors hover:text-gray-900"
       >
         <Home className="h-4 w-4" />
+        <span className="ml-1 hidden sm:inline">Admin</span>
       </Link>
 
       {segments.map((segment, index) => {
@@ -35,16 +36,16 @@ export const AccountAdminBreadcrumb = () => {
         const isLast = index === segments.length - 1;
 
         return (
-          <div key={path} className="flex items-center">
-            <ChevronRight className="mx-1 h-4 w-4" />
+          <div key={path} className="flex flex-shrink-0 items-center">
+            <ChevronRight className="mx-1 h-3 w-3 sm:h-4 sm:w-4" />
             {isLast ? (
-              <span className="font-medium text-gray-900">
+              <span className="max-w-[120px] truncate font-medium text-gray-900 sm:max-w-none">
                 {routeNames[path] ?? segment}
               </span>
             ) : (
               <Link
                 href={path}
-                className="transition-colors hover:text-gray-900"
+                className="max-w-[100px] truncate transition-colors hover:text-gray-900 sm:max-w-none"
               >
                 {routeNames[path] ?? segment}
               </Link>

@@ -104,6 +104,10 @@ export default function PropertiesPage() {
           filters,
         );
 
+        console.log("Raw result from listListingsWithAuth:", result);
+        console.log("Number of listings:", result.listings.length);
+        console.log("First listing:", result.listings[0]);
+
         setListings(
           result.listings.map((listing) => ({
             ...listing,

@@ -142,17 +142,19 @@ export const Personalization: FC<PersonalizationProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 sm:px-6 lg:px-0">
       {/* Header */}
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Personalización</h2>
-        <p className="text-gray-600">
+        <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
+          Personalización
+        </h2>
+        <p className="text-sm text-gray-600 sm:text-base">
           Personaliza las opciones de visualización para tus carteles
         </p>
       </div>
 
       {/* Two-column layout - Controls and Preview */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:gap-8 xl:grid-cols-2">
         {/* Controls Panel */}
         <div className="space-y-6">
           <DisplayOptions
@@ -167,27 +169,34 @@ export const Personalization: FC<PersonalizationProps> = ({
         </div>
 
         {/* Vista Previa de Plantilla */}
-        <div className="rounded-2xl bg-white p-6 shadow-md">
+        <div className="rounded-2xl bg-white p-4 shadow-md sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Vista Previa de Plantilla</h2>
+            <h2 className="text-lg font-semibold sm:text-xl">
+              Vista Previa de Plantilla
+            </h2>
           </div>
-          <div className="flex justify-center">
+          <div className="flex justify-center overflow-hidden">
             <div
               ref={templateRef}
-              className="relative overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg"
+              className="relative max-w-full overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg"
               style={{
-                width: config.orientation === "vertical" ? "397px" : "562px", // 794*0.5 and 1123*0.5
-                height: config.orientation === "vertical" ? "562px" : "397px", // 1123*0.5 and 794*0.5
+                width: config.orientation === "vertical" ? "300px" : "420px", // Responsive sizes for mobile/desktop
+                height: config.orientation === "vertical" ? "424px" : "300px", // Maintain aspect ratio
+                maxWidth: "100%",
               }}
             >
               <div
                 style={{
-                  transform: "scale(0.5)",
+                  transform:
+                    config.orientation === "vertical"
+                      ? "scale(0.378)" // 300/794 ≈ 0.378 for mobile-friendly size
+                      : "scale(0.374)", // 420/1123 ≈ 0.374
                   transformOrigin: "top left",
                   width: config.orientation === "vertical" ? "794px" : "1123px",
                   height:
                     config.orientation === "vertical" ? "1123px" : "794px",
                 }}
+                className="origin-top-left"
               >
                 {config.templateStyle === "classic" ? (
                   <ClassicTemplate
@@ -211,7 +220,8 @@ export const Personalization: FC<PersonalizationProps> = ({
             <Button
               onClick={downloadSample}
               disabled={isGeneratingPdf}
-              className="w-full max-w-xs"
+              className="w-full max-w-xs sm:max-w-sm"
+              size="sm"
             >
               {isGeneratingPdf ? (
                 <>

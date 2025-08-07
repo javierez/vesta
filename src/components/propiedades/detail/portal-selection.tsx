@@ -412,14 +412,14 @@ export function PortalSelection({
     if (currentActive) {
       if (initialActive) {
         // Was active and is still active (even if toggled off and on again before saving)
-        return "bg-green-50/80";
+        return "bg-white shadow-lg";
       } else {
         // Was inactive, now active (pending save)
-        return "bg-amber-50/80";
+        return "bg-white shadow-sm";
       }
     } else {
       // Inactive
-      return "hover:border-gray-300";
+      return "bg-transparent shadow-sm hover:border-gray-300";
     }
   };
 
@@ -454,10 +454,15 @@ export function PortalSelection({
           >
             <Card
               className={cn(
-                "group relative transition-all duration-300 hover:shadow-md",
+                "group relative transition-all duration-300",
                 getCardStyles(platform),
               )}
             >
+              {/* Orange Dot for Pending State */}
+              {platform.isActive && !initialPlatformStates[platform.id] && (
+                <div className="absolute left-2 top-2 h-2 w-2 rounded-full bg-orange-400"></div>
+              )}
+
               {/* Settings Burger Button - Inside Top Right Corner, Only on Hover */}
               <div className="absolute right-2 top-2 z-10 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                 {/* Settings Burger Button */}

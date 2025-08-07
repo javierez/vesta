@@ -222,3 +222,172 @@ export async function validateInvitationCode(accountId: number) {
     };
   }
 }
+
+// Get account watermark configuration from portal settings and preferences
+export async function getAccountWatermarkConfig(accountId: number | bigint) {
+  try {
+    const account = await getAccountById(accountId);
+
+    if (!account) {
+      console.warn(`Account not found for ID: ${accountId}`);
+      return {
+        watermarkEnabled: false,
+        logoTransparent: null,
+        watermarkPosition: "bottom-right" as const,
+      };
+    }
+
+    // Extract portal settings and preferences with proper type casting
+    const portalSettings =
+      (account.portalSettings as Record<string, unknown>) ?? {};
+    const preferences = (account.preferences as Record<string, unknown>) ?? {};
+
+    // Get watermark settings from general portal configuration
+    const general = (portalSettings.general as Record<string, unknown>) ?? {};
+    const watermarkEnabled = Boolean(general.watermarkEnabled);
+    const watermarkPosition =
+      (general.watermarkPosition as string) || "bottom-right";
+
+    // Get transparent logo URL from preferences
+    const logoTransparent = preferences.logoTransparent as string;
+
+    console.log("Retrieved watermark config for account:", {
+      accountId: accountId.toString(),
+      watermarkEnabled,
+      hasLogo: !!logoTransparent,
+      position: watermarkPosition,
+    });
+
+    return {
+      watermarkEnabled,
+      logoTransparent,
+      watermarkPosition: watermarkPosition as
+        | "top-left"
+        | "top-right"
+        | "bottom-left"
+        | "bottom-right"
+        | "center",
+    };
+  } catch (error) {
+    console.error("Error getting account watermark config:", error);
+
+    // Return safe defaults on error
+    return {
+      watermarkEnabled: false,
+      logoTransparent: null,
+      watermarkPosition: "bottom-right" as const,
+    };
+  }
+}
+
+// Get account ID for a given listing (helper function for Fotocasa integration)
+export async function getAccountIdForListing(
+  listingId: number,
+): Promise<bigint | null> {
+  try {
+    // This would typically join with listings/properties table to get account ID
+    // For now, implementing a simplified version based on existing patterns
+
+    // Import at the top level would be better, but avoiding circular dependencies
+    const { db } = await import("../db");
+    const { listings, properties } = await import("../db/schema");
+    const { eq } = await import("drizzle-orm");
+
+    // Get listing and associated property to find account ID
+    const [listing] = await db
+      .select({
+        accountId: properties.accountId,
+      })
+      .from(listings)
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(eq(listings.listingId, BigInt(listingId)))
+      .limit(1);
+
+    if (!listing) {
+      console.warn(`No account found for listing ID: ${listingId}`);
+      return null;
+    }
+
+    return listing.accountId;
+  } catch (error) {
+    console.error("Error getting account ID for listing:", error);
+    return null;
+  }
+}
+
+// Update account portal settings (helper for watermark configuration updates)
+export async function updateAccountPortalSettings(
+  accountId: number | bigint,
+  portalSettings: Record<string, unknown>,
+) {
+  try {
+    const currentAccount = await getAccountById(accountId);
+
+    if (!currentAccount) {
+      throw new Error(`Account not found: ${accountId}`);
+    }
+
+    // Merge with existing portal settings to avoid data loss
+    const currentPortalSettings =
+      (currentAccount.portalSettings as Record<string, unknown>) ?? {};
+    const updatedPortalSettings = {
+      ...currentPortalSettings,
+      ...portalSettings,
+    };
+
+    await db
+      .update(accounts)
+      .set({
+        portalSettings: updatedPortalSettings,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.accountId, BigInt(accountId)));
+
+    console.log("Updated portal settings for account:", accountId);
+
+    return { success: true, message: "Portal settings updated successfully" };
+  } catch (error) {
+    console.error("Error updating account portal settings:", error);
+    throw error;
+  }
+}
+
+// Update account preferences (helper for logo updates)
+export async function updateAccountPreferences(
+  accountId: number | bigint,
+  preferences: Record<string, unknown>,
+) {
+  try {
+    const currentAccount = await getAccountById(accountId);
+
+    if (!currentAccount) {
+      throw new Error(`Account not found: ${accountId}`);
+    }
+
+    // Merge with existing preferences to avoid data loss
+    const currentPreferences =
+      (currentAccount.preferences as Record<string, unknown>) ?? {};
+    const updatedPreferences = {
+      ...currentPreferences,
+      ...preferences,
+    };
+
+    await db
+      .update(accounts)
+      .set({
+        preferences: updatedPreferences,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.accountId, BigInt(accountId)));
+
+    console.log("Updated preferences for account:", accountId);
+
+    return {
+      success: true,
+      message: "Account preferences updated successfully",
+    };
+  } catch (error) {
+    console.error("Error updating account preferences:", error);
+    throw error;
+  }
+}

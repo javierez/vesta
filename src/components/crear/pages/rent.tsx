@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useEnterKeyNavigation } from "~/hooks/useEnterKeyNavigation";
 import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
@@ -118,6 +119,9 @@ export default function RentPage({
       }));
     }
   }, [globalFormData?.listingDetails]);
+
+  // Add Enter key navigation (same as clicking Finalizar)
+  useEnterKeyNavigation(handleNext);
 
   // Handle price input with formatting for garage and storage room
   const handleGaragePriceChange = formFormatters.handleNumericPriceInputChange(

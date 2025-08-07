@@ -49,6 +49,11 @@ const config = {
     // Set minimum cache TTL
     minimumCacheTTL: 60,
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb", // Increase from 1MB to 10MB for large property data
+    },
+  },
 };
 
 export default config;

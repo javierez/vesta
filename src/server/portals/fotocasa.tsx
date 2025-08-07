@@ -2,6 +2,11 @@
 
 import { getListingDetailsWithAuth } from "../queries/listing";
 import { getPropertyImages } from "../queries/property_images";
+import {
+  getAccountWatermarkConfig,
+  getAccountIdForListing,
+} from "../queries/accounts";
+import { processImageWithWatermark } from "../utils/image-processing";
 import { env } from "~/env";
 
 const FOTOCASA_API_KEY = env.FOTOCASA_API_KEY;
@@ -142,6 +147,90 @@ export async function buildFotocasaPayload(
     // Get listing details and property images
     const listing = await getListingDetailsWithAuth(listingId);
     const images = await getPropertyImages(listing.propertyId);
+
+    // NEW: Get account watermark configuration and process images if needed
+    const accountId = await getAccountIdForListing(listingId);
+    let processedImages = images;
+
+    if (accountId) {
+      try {
+        const watermarkConfig = await getAccountWatermarkConfig(accountId);
+
+        console.log("Processing Fotocasa images with watermarking:", {
+          listingId,
+          accountId: accountId.toString(),
+          watermarkEnabled: watermarkConfig.watermarkEnabled,
+          hasLogo: !!watermarkConfig.logoTransparent,
+          imageCount: images.length,
+        });
+
+        // Process images with watermarking if enabled
+        if (
+          watermarkConfig.watermarkEnabled &&
+          watermarkConfig.logoTransparent &&
+          images.length > 0
+        ) {
+          const imageProcessingInput = images.map((img) => ({
+            imageUrl: img.imageUrl,
+            imageOrder: img.imageOrder,
+          }));
+
+          const watermarkResults = await processImageWithWatermark(
+            imageProcessingInput,
+            watermarkConfig,
+          );
+
+          // Map results back to original image format, preserving all original data
+          processedImages = images.map((originalImage) => {
+            const processedResult = watermarkResults.find(
+              (result) => result.imageOrder === originalImage.imageOrder,
+            );
+
+            if (processedResult?.watermarked) {
+              console.log(
+                `Using watermarked version for image order ${originalImage.imageOrder}`,
+              );
+              return {
+                ...originalImage,
+                imageUrl: processedResult.imageUrl, // Use watermarked URL
+              };
+            } else {
+              // Log but continue with original image (graceful fallback)
+              if (processedResult?.error) {
+                console.warn(
+                  `Watermarking failed for image ${originalImage.imageUrl}:`,
+                  processedResult.error,
+                );
+              }
+              return originalImage;
+            }
+          });
+
+          const watermarkedCount = processedImages.filter(
+            (img, index) => watermarkResults[index]?.watermarked,
+          ).length;
+
+          console.log(
+            `Fotocasa watermarking completed: ${watermarkedCount}/${images.length} images watermarked`,
+          );
+        } else {
+          console.log(
+            "Watermarking disabled or no logo available, using original images",
+          );
+        }
+      } catch (watermarkError) {
+        // CRITICAL: Never fail Fotocasa upload due to watermarking issues
+        console.error(
+          "Error during watermark processing, using original images:",
+          watermarkError,
+        );
+        processedImages = images; // Fallback to original images
+      }
+    } else {
+      console.warn(
+        `Could not find account for listing ${listingId}, skipping watermarking`,
+      );
+    }
 
     // Extract floor number from addressDetails (get second number if exists)
     const getFloorId = (addressDetails: string | null): number | undefined => {
@@ -623,12 +712,12 @@ export async function buildFotocasaPayload(
       }
     }
 
-    // Build PropertyDocument (images) - use actual imageOrder from database
-    const propertyDocuments: PropertyDocument[] = images
+    // Build PropertyDocument (images) - use processed images (watermarked if applicable)
+    const propertyDocuments: PropertyDocument[] = processedImages
       .sort((a, b) => (a.imageOrder || 0) - (b.imageOrder || 0)) // Ensure proper order
       .map((image) => ({
         TypeId: 1, // Image type
-        Url: image.imageUrl,
+        Url: image.imageUrl, // This now contains watermarked URL if watermarking was applied
         SortingId: image.imageOrder ?? 1, // Use actual order set by user in gallery
       }));
 

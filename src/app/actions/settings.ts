@@ -286,9 +286,15 @@ export async function getPortalConfigurationAction(
     // Extract portal configuration from portal_settings
     const portalSettings = accountSettings.portalSettings;
 
-    const fotocasaSettings = portalSettings.fotocasa as Record<string, unknown> | undefined;
-    const idealistaSettings = portalSettings.idealista as Record<string, unknown> | undefined;
-    const generalSettings = portalSettings.general as Record<string, unknown> | undefined;
+    const fotocasaSettings = portalSettings.fotocasa as
+      | Record<string, unknown>
+      | undefined;
+    const idealistaSettings = portalSettings.idealista as
+      | Record<string, unknown>
+      | undefined;
+    const generalSettings = portalSettings.general as
+      | Record<string, unknown>
+      | undefined;
 
     const portalConfiguration = {
       fotocasa: {
@@ -300,8 +306,15 @@ export async function getPortalConfigurationAction(
         apiKey: idealistaSettings?.apiKey as string | undefined,
       },
       general: {
-        watermarkEnabled: (generalSettings?.watermarkEnabled as boolean) ?? false,
-        watermarkPosition: generalSettings?.watermarkPosition as "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center" | undefined,
+        watermarkEnabled:
+          (generalSettings?.watermarkEnabled as boolean) ?? false,
+        watermarkPosition: generalSettings?.watermarkPosition as
+          | "top-left"
+          | "top-right"
+          | "bottom-left"
+          | "bottom-right"
+          | "center"
+          | undefined,
       },
     };
 
