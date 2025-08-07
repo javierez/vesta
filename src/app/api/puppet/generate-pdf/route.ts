@@ -84,7 +84,10 @@ export async function POST(request: NextRequest) {
 
     // Wait for the template ready signal
     try {
-      await page.waitForFunction(() => (window as any).templateReady === true, {
+      await page.waitForFunction(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        return (window as any).templateReady === true;
+      }, {
         timeout: 15000,
       });
     } catch (_error) {
