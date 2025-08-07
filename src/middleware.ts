@@ -7,6 +7,8 @@ const publicPaths = [
   "/auth/signup",
   "/auth/forgot-password",
   "/api/auth",
+  "/api/puppet/template",
+  "/templates",
 ];
 
 export async function middleware(request: NextRequest) {

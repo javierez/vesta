@@ -1,6 +1,6 @@
 "use client";
 
-import type { FC } from "react";
+import React, { type FC } from "react";
 import Image from "next/image";
 import type { ConfigurableTemplateProps } from "~/types/template-data";
 import { PropertyQRCode } from "../../qr-code";
@@ -25,6 +25,12 @@ import {
   Award,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import {
+  PRINT_DIMENSIONS,
+  getDimensionsForOrientation,
+  getTypographySize,
+} from "~/lib/carteleria/print-constants";
+import { injectPrintStyles } from "~/lib/carteleria/print-utils";
 
 // Import other templates when available
 // import { ClassicTemplate } from "./classic-template";
@@ -47,15 +53,15 @@ const getFontClass = (fontType: string) => {
 
 const getOverlayClass = (overlayType: string) => {
   const overlayMap: Record<string, string> = {
-    default: "bg-gray-400/70",
-    dark: "bg-gray-800/80",
-    light: "bg-gray-200/80",
-    blue: "bg-blue-500/70",
-    green: "bg-green-500/70",
-    purple: "bg-purple-500/70",
-    red: "bg-red-500/70",
+    default: "bg-gray-400",
+    dark: "bg-gray-800",
+    light: "bg-gray-200",
+    blue: "bg-blue-500",
+    green: "bg-green-500",
+    purple: "bg-purple-500",
+    red: "bg-red-500",
   };
-  return overlayMap[overlayType] ?? "bg-gray-400/70";
+  return overlayMap[overlayType] ?? "bg-gray-400";
 };
 
 const getTextColor = (overlayType: string) => {
@@ -68,6 +74,39 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   config,
   className,
 }) => {
+  // Inject print styles for PDF generation
+  if (typeof window !== "undefined") {
+    injectPrintStyles();
+  }
+
+  // Get fixed dimensions for print optimization first
+  const containerDimensions = getDimensionsForOrientation(config.orientation);
+
+  // Component-specific print styles
+  const printStylesCSS = `
+    @media print {
+      .template-container {
+        width: ${containerDimensions.width}px !important;
+        height: ${containerDimensions.height}px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        page-break-inside: avoid !important;
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+      
+      .template-container img {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      .template-container .no-break {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+    }
+  `;
   // Get dynamic colors based on config
   const modernColors = {
     overlay: getOverlayClass(config.overlayColor),
@@ -81,6 +120,32 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
     target.style.display = "none";
+  };
+
+  // Safe data object with fallbacks for missing properties
+  const safeData = {
+    ...data,
+    propertyType: data.propertyType ?? "propiedad",
+    title: data.title ?? "Propiedad en venta",
+    location: {
+      ...data.location,
+      city: data.location?.city ?? "Ciudad",
+      neighborhood: data.location?.neighborhood ?? "Zona",
+    },
+    specs: {
+      ...data.specs,
+      squareMeters: data.specs?.squareMeters ?? 0,
+      bedrooms: data.specs?.bedrooms ?? 0,
+      bathrooms: data.specs?.bathrooms ?? 0,
+    },
+    contact: {
+      ...data.contact,
+      phone: data.contact?.phone ?? "",
+      email: data.contact?.email ?? "",
+      website: data.contact?.website ?? "",
+    },
+    reference: data.reference ?? "",
+    price: data.price ?? 0,
   };
 
   const locationText = formatLocation(data.location);
@@ -130,6 +195,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
 
     // Step 2: Apply line breaks based on listing type
     const text = `${neighborhood} (${city})`;
+    // Character limits matching classic template exactly
     const charLimit = config.listingType === "alquiler" ? 17 : 15;
 
     if (text.length <= charLimit) {
@@ -143,16 +209,19 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
 
     return (
       <>
-        {text.substring(0, breakPoint)}
+        <span style={{ lineHeight: "1.3" }}>
+          {text.substring(0, breakPoint)}
+        </span>
         <br />
-        {text.substring(breakPoint).trim()}
+        <span style={{ lineHeight: "1.3" }}>
+          {text.substring(breakPoint).trim()}
+        </span>
       </>
     );
   };
 
   // Check if location needs line break for overlay height adjustment
-  const charLimit = config.listingType === "alquiler" ? 18 : 15;
-  const locationNeedsLineBreak = locationText.length > charLimit;
+  const charLimit = config.listingType === "alquiler" ? 17 : 15;
   const priceText = formatPrice(
     data.price,
     data.propertyType,
@@ -162,137 +231,291 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   // Get images based on configuration
   const templateImages = getTemplateImages(config.imageCount);
 
-  // Render image gallery with orientation-specific layouts
+  // Print-optimized image gallery with fixed positioning
   const renderImages = () => {
     if (templateImages.length === 0) return null;
 
+    const containerDims = getDimensionsForOrientation(config.orientation);
+    const gap = 2; // Fixed 2px gap between images
+    const overlayWidth = PRINT_DIMENSIONS.OVERLAY.left.width; // Account for left overlay
+
     if (config.orientation === "vertical") {
-      // Vertical layout - stack images vertically with proper proportions
+      // Vertical layout - treat overlay as part of the grid layout
+      const mainHeight = Math.floor(containerDims.height / 2) - gap; // 50% height
+      const gridHeight = containerDims.height - mainHeight - gap;
+      
+      // Calculate available space considering overlay takes left portion with same gap as between images
+      const availableWidth = containerDims.width - overlayWidth - gap; // Width available for images after overlay + gap
+
       if (config.imageCount === 4) {
+        // Now the main image takes the remaining width after overlay + gap
+        const mainImageWidth = availableWidth;
+        const subImageWidth = Math.floor(availableWidth / 3) - (gap * 2) / 3;
+
         return (
-          <div className="absolute inset-0 grid grid-rows-12 gap-0.5 bg-white">
-            {/* Main image - reduced to 50% of vertical space (6 rows) */}
-            <div className="relative row-span-6 overflow-hidden">
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "white",
+            }}
+          >
+            {/* Main image - top 50% */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: `${overlayWidth + gap}px`,
+                width: `${mainImageWidth}px`,
+                height: `${mainHeight}px`,
+                overflow: "hidden",
+              }}
+            >
               <Image
                 src={templateImages[0]!}
                 alt={`${data.title} - Imagen principal`}
                 fill
                 className="object-cover"
                 onError={handleImageError}
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                sizes={`${containerDims.width}px`}
+                style={{
+                  objectPosition: data.imagePositions?.[templateImages[0]!] 
+                    ? `${data.imagePositions[templateImages[0]!]!.x}% ${data.imagePositions[templateImages[0]!]!.y}%`
+                    : "50% 50%"
+                }}
+                priority
               />
               {renderWatermark("large")}
             </div>
 
-            {/* Supporting images - increased to 50% of vertical space (6 rows) split into 3 columns */}
-            <div className="row-span-6 grid grid-cols-3 gap-0.5">
-              {templateImages.slice(1, 4).map((image, index) => (
-                <div key={index} className="relative overflow-hidden">
+            {/* Supporting images - bottom 50%, 3 columns - full width since overlay doesn't cover this area */}
+            {templateImages.slice(1, 4).map((image, index) => {
+              const fullWidthSubImageWidth = Math.floor(containerDims.width / 3) - (gap * 2) / 3;
+              return (
+                <div
+                  key={index}
+                  style={{
+                    position: "absolute",
+                    top: `${mainHeight + gap}px`,
+                    left: `${index * (fullWidthSubImageWidth + gap)}px`,
+                    width: `${fullWidthSubImageWidth}px`,
+                    height: `${gridHeight}px`,
+                    overflow: "hidden",
+                  }}
+                >
                   <Image
                     src={image}
                     alt={`${data.title} - Imagen ${index + 2}`}
                     fill
                     className="object-cover"
                     onError={handleImageError}
-                    sizes="(max-width: 768px) 33vw, (max-width: 1200px) 16vw, 11vw"
+                    sizes={`${fullWidthSubImageWidth}px`}
+                    style={{
+                      objectPosition: data.imagePositions?.[image] 
+                        ? `${data.imagePositions[image]!.x}% ${data.imagePositions[image]!.y}%`
+                        : "50% 50%"
+                    }}
                   />
                   {renderWatermark("small")}
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         );
       } else {
         // 3 images vertical: main image on top, 2 supporting below
+        const mainImageWidth = availableWidth;
+        const subImageWidth = Math.floor(availableWidth / 2) - gap / 2;
+
         return (
-          <div className="absolute inset-0 grid grid-rows-12 gap-0.5 bg-white">
-            {/* Main image - reduced to 50% of vertical space (6 rows) */}
-            <div className="relative row-span-6 overflow-hidden">
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "white",
+            }}
+          >
+            {/* Main image - top 50% */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: `${overlayWidth + gap}px`,
+                width: `${mainImageWidth}px`,
+                height: `${mainHeight}px`,
+                overflow: "hidden",
+              }}
+            >
               <Image
                 src={templateImages[0]!}
                 alt={`${data.title} - Imagen principal`}
                 fill
                 className="object-cover"
                 onError={handleImageError}
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                sizes={`${containerDims.width}px`}
+                style={{
+                  objectPosition: data.imagePositions?.[templateImages[0]!] 
+                    ? `${data.imagePositions[templateImages[0]!]!.x}% ${data.imagePositions[templateImages[0]!]!.y}%`
+                    : "50% 50%"
+                }}
+                priority
               />
               {renderWatermark("large")}
             </div>
 
-            {/* Supporting images - increased to 50% of vertical space (6 rows) split into 2 columns */}
-            <div className="row-span-6 grid grid-cols-2 gap-0.5">
-              {templateImages.slice(1, 3).map((image, index) => (
-                <div key={index} className="relative overflow-hidden">
+            {/* Supporting images - bottom 50%, 2 columns - full width since overlay doesn't cover this area */}
+            {templateImages.slice(1, 3).map((image, index) => {
+              const fullWidthSubImageWidth = Math.floor(containerDims.width / 2) - gap / 2;
+              return (
+                <div
+                  key={index}
+                  style={{
+                    position: "absolute",
+                    top: `${mainHeight + gap}px`,
+                    left: `${index * (fullWidthSubImageWidth + gap)}px`,
+                    width: `${fullWidthSubImageWidth}px`,
+                    height: `${gridHeight}px`,
+                    overflow: "hidden",
+                  }}
+                >
                   <Image
                     src={image}
                     alt={`${data.title} - Imagen ${index + 2}`}
                     fill
                     className="object-cover"
                     onError={handleImageError}
-                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
+                    sizes={`${fullWidthSubImageWidth}px`}
+                    style={{
+                      objectPosition: data.imagePositions?.[image] 
+                        ? `${data.imagePositions[image]!.x}% ${data.imagePositions[image]!.y}%`
+                        : "50% 50%"
+                    }}
                   />
                   {renderWatermark("medium")}
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         );
       }
     } else {
-      // Horizontal layout - main image takes 65% horizontally
+      // Horizontal layout - main image takes 67% horizontally
+      const mainWidth = Math.floor(containerDims.width * 0.67) - gap;
+      const gridWidth = containerDims.width - mainWidth - gap;
+
       return (
-        <div className="absolute inset-0 grid grid-cols-12 gap-0.5 bg-white">
-          {/* Main image - 65% of horizontal space */}
-          <div className="relative col-span-8 overflow-hidden">
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "white",
+          }}
+        >
+          {/* Main image - left 67% */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: `${mainWidth}px`,
+              height: `${containerDims.height}px`,
+              overflow: "hidden",
+            }}
+          >
             <Image
               src={templateImages[0]!}
               alt={`${data.title} - Imagen principal`}
               fill
               className="object-cover"
               onError={handleImageError}
-              sizes="(max-width: 768px) 65vw, (max-width: 1200px) 65vw, 65vw"
+              sizes={`${mainWidth}px`}
+              style={{
+                objectPosition: data.imagePositions?.[templateImages[0]!] 
+                  ? `${data.imagePositions[templateImages[0]!]!.x}% ${data.imagePositions[templateImages[0]!]!.y}%`
+                  : "50% 50%"
+              }}
+              priority
             />
             {renderWatermark("large")}
           </div>
 
-          {/* Supporting images - 35% of horizontal space */}
-          <div className="col-span-4 grid gap-0.5">
-            {config.imageCount === 4 ? (
-              // 4 images: show 3 supporting images in a column
-              <>
-                {templateImages.slice(1, 4).map((image, index) => (
-                  <div key={index} className="relative overflow-hidden">
+          {/* Supporting images - right 33% */}
+          {config.imageCount === 4
+            ? // 4 images: show 3 supporting images in a column
+              templateImages.slice(1, 4).map((image, index) => {
+                const subImageHeight =
+                  Math.floor(containerDims.height / 3) - (gap * 2) / 3;
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      position: "absolute",
+                      top: `${index * (subImageHeight + gap)}px`,
+                      left: `${mainWidth + gap}px`,
+                      width: `${gridWidth}px`,
+                      height: `${subImageHeight}px`,
+                      overflow: "hidden",
+                    }}
+                  >
                     <Image
                       src={image}
                       alt={`${data.title} - Imagen ${index + 2}`}
                       fill
                       className="object-cover"
                       onError={handleImageError}
-                      sizes="(max-width: 768px) 35vw, (max-width: 1200px) 35vw, 35vw"
+                      sizes={`${gridWidth}px`}
+                      style={{
+                        objectPosition: data.imagePositions?.[image] 
+                          ? `${data.imagePositions[image]!.x}% ${data.imagePositions[image]!.y}%`
+                          : "50% 50%"
+                      }}
                     />
                     {renderWatermark("small")}
                   </div>
-                ))}
-              </>
-            ) : (
-              // 3 images: show 2 supporting images stacked
-              <>
-                {templateImages.slice(1, 3).map((image, index) => (
-                  <div key={index} className="relative overflow-hidden">
+                );
+              })
+            : // 3 images: show 2 supporting images stacked
+              templateImages.slice(1, 3).map((image, index) => {
+                const subImageHeight =
+                  Math.floor(containerDims.height / 2) - gap / 2;
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      position: "absolute",
+                      top: `${index * (subImageHeight + gap)}px`,
+                      left: `${mainWidth + gap}px`,
+                      width: `${gridWidth}px`,
+                      height: `${subImageHeight}px`,
+                      overflow: "hidden",
+                    }}
+                  >
                     <Image
                       src={image}
                       alt={`${data.title} - Imagen ${index + 2}`}
                       fill
                       className="object-cover"
                       onError={handleImageError}
-                      sizes="(max-width: 768px) 35vw, (max-width: 1200px) 35vw, 35vw"
+                      sizes={`${gridWidth}px`}
+                      style={{
+                        objectPosition: data.imagePositions?.[image] 
+                          ? `${data.imagePositions[image]!.x}% ${data.imagePositions[image]!.y}%`
+                          : "50% 50%"
+                      }}
                     />
                     {renderWatermark("medium")}
                   </div>
-                ))}
-              </>
-            )}
-          </div>
+                );
+              })}
         </div>
       );
     }
@@ -359,9 +582,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
     if (!config.showWatermark) return null;
 
     const sizeMap = {
-      large: { width: 200, height: 200 },
-      medium: { width: 150, height: 150 },
-      small: { width: 100, height: 100 },
+      large: { width: 400, height: 400 },
+      medium: { width: 300, height: 300 },
+      small: { width: 200, height: 200 },
     };
 
     const { width, height } = sizeMap[size];
@@ -373,7 +596,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
           alt="Logo watermark"
           width={width}
           height={height}
-          className="object-contain opacity-20"
+          className="object-contain opacity-25"
         />
       </div>
     );
@@ -461,9 +684,10 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
     }
     fullText += ".";
 
-    const charLimit = config.listingType === "alquiler" ? 23 : 20;
+    // Print-optimized character limits for better legibility
+    const charLimit = config.listingType === "alquiler" ? 25 : 22;
 
-    // Split text into lines based on character limit
+    // Split text into lines based on fixed character limit for print
     const words = fullText.split(" ");
     const lines: string[] = [];
     let currentLine = "";
@@ -491,7 +715,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
     return (
       <>
         {lines.map((line, index) => (
-          <span key={index}>
+          <span key={index} style={{ lineHeight: "1.4" }}>
             {line}
             {index < lines.length - 1 && <br />}
           </span>
@@ -512,76 +736,147 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   const totalFeatures = getTotalFeatures();
   const shouldCompactIcons = totalFeatures > 4; // Compact icons when more than 4 features
 
-  // Adjust price font size based on number of digits and listing type
-  const priceDigits = data.price.toString().length;
-  const basePriceFontSize = priceDigits >= 8 ? 19 : priceDigits >= 7 ? 21 : 24;
-  const priceFontSize =
-    config.listingType === "alquiler"
-      ? `${basePriceFontSize + 5}px`
-      : `${basePriceFontSize}px`;
+  // Print-optimized font sizing is now handled by getTypographySize()
+  // This replaces the old responsive price font calculation
 
-  // New overlay-based template structure
+  const locationNeedsLineBreak = locationText.length > charLimit;
+
+  // Inject component-specific print styles
+  React.useEffect(() => {
+    if (typeof document !== "undefined") {
+      const styleId = "classic-template-print-styles";
+      let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+
+      if (!styleElement) {
+        styleElement = document.createElement("style");
+        styleElement.id = styleId;
+        document.head.appendChild(styleElement);
+      }
+
+      styleElement.textContent = printStylesCSS;
+    }
+  }, [printStylesCSS]);
+
+  // New print-optimized template structure
   return (
     <div
-      className={cn(
-        "relative overflow-hidden",
-        config.orientation === "vertical"
-          ? "aspect-[210/297]"
-          : "aspect-[297/210]",
-        "h-full w-full",
-        className,
-      )}
+      className={cn("template-container no-break", className)}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        width: `${containerDimensions.width}px`,
+        height: `${containerDimensions.height}px`,
+        backgroundColor: "white",
+      }}
       data-testid={`template-configurable-${config.orientation}`}
     >
       {/* Background images layer (z-0) */}
       <div className="absolute inset-0 z-0">{renderImages()}</div>
 
-      {/* Left overlay - fixed height, variable width (z-10) */}
+      {/* Left overlay - print-optimized positioning (z-10) */}
       <div
-        className={cn(
-          "absolute left-2 top-2 z-10 h-[48%] rounded-2xl",
-          modernColors.overlay,
-          "backdrop-blur-sm",
-        )}
+        className={cn("no-break", modernColors.overlay)}
+        style={{
+          position: "absolute",
+          left: `0px`,
+          top: `0px`,
+          zIndex: 10,
+          width: `${PRINT_DIMENSIONS.OVERLAY.left.width}px`,
+          height: `${PRINT_DIMENSIONS.OVERLAY.left.height}px`,
+          borderRadius: "0px",
+          backdropFilter: "blur(4px)",
+        }}
       >
-        <div className="flex h-full flex-col p-4">
+        <div
+          style={{
+            display: "flex",
+            height: "100%",
+            flexDirection: "column",
+            padding: `${PRINT_DIMENSIONS.SPACING.overlayPadding}px`,
+          }}
+        >
           {/* Top section with title and content - variable size */}
-          <div className="flex-1">
+          <div style={{ flex: 1 }}>
             {/* Title - listing type and property type */}
-            <div className="mb-3">
+            <div style={{ 
+              marginBottom: `${PRINT_DIMENSIONS.SPACING.titleToLocation}px`,
+              marginLeft: `${PRINT_DIMENSIONS.SPACING.titleLeftMargin}px`
+            }}>
               <h2
                 className={cn(
-                  "font-bold uppercase leading-tight",
+                  "font-bold uppercase",
                   modernColors.text,
                   getFontClass(config.titleFont),
                 )}
-                style={{ fontSize: locationNeedsLineBreak ? "23px" : "28px" }}
+                style={{
+                  fontSize: `${getTypographySize("title", { 
+                    isCompact: locationNeedsLineBreak,
+                    isRental: config.listingType === "alquiler" 
+                  })}px`,
+                  lineHeight: "1.2",
+                  margin: 0,
+                }}
               >
                 {config.listingType}
               </h2>
               <h3
                 className={cn(
-                  "font-bold uppercase leading-tight",
+                  "font-bold uppercase",
                   modernColors.text,
                   getFontClass(config.titleFont),
                 )}
-                style={{ fontSize: locationNeedsLineBreak ? "23px" : "28px" }}
+                style={{
+                  fontSize: `${getTypographySize("title", { 
+                    isCompact: locationNeedsLineBreak,
+                    isRental: config.listingType === "alquiler" 
+                  })}px`,
+                  lineHeight: "1.2",
+                  margin: 0,
+                }}
               >
-                {data.propertyType}
+                {safeData.propertyType}
               </h3>
             </div>
 
             {/* Location and features - right under title */}
-            <div className="space-y-2">
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: `${PRINT_DIMENSIONS.SPACING.locationToIcons}px`,
+              }}
+            >
               {/* Location */}
               <div
-                className={cn(
-                  "inline-flex items-start rounded-lg bg-white/20 px-3 py-1",
-                  modernColors.text,
-                )}
+                className={cn(modernColors.text)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  borderRadius: "8px",
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  paddingLeft: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
+                  paddingRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
+                  paddingTop: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
+                  paddingBottom: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
+                }}
               >
-                <MapPin className="-ml-1.5 mr-1 h-4 w-4 flex-shrink-0" />
-                <span className="font-medium" style={{ fontSize: "12px" }}>
+                <MapPin
+                  style={{
+                    marginRight: "4px",
+                    marginLeft: "-4px",
+                    width: `${getTypographySize("location")}px`,
+                    height: `${getTypographySize("location")}px`,
+                    flexShrink: 0,
+                  }}
+                />
+                <span
+                  className="font-medium"
+                  style={{
+                    fontSize: `${getTypographySize("location")}px`,
+                    lineHeight: "1.3",
+                    marginLeft: "4px",
+                  }}
+                >
                   {formatLocationWithTruncationAndBreaks(data.location)}
                 </span>
               </div>
@@ -589,8 +884,12 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
               {/* Features display - icons, bullets, or text */}
               {config.showShortDescription ? (
                 <div
-                  className={cn("mt-4 leading-relaxed", modernColors.text)}
-                  style={{ fontSize: "11px" }}
+                  className={cn(modernColors.text)}
+                  style={{
+                    marginTop: `${PRINT_DIMENSIONS.SPACING.featuresTopMargin}px`,
+                    fontSize: `${getTypographySize("body", { isCompact: true })}px`,
+                    lineHeight: "1.5",
+                  }}
                 >
                   {generateShortDescription()}
                 </div>
@@ -609,19 +908,37 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
           </div>
 
           {/* Bottom section with price - always shown */}
-          <div className="mt-2 text-center">
+          <div
+            style={{
+              marginTop: totalFeatures > 4 
+                ? `${PRINT_DIMENSIONS.SPACING.iconsToPrice * 2}px` 
+                : `${PRINT_DIMENSIONS.SPACING.iconsToPrice}px`,
+              textAlign: "center",
+            }}
+          >
             <div
               className={cn(
                 "font-bold",
                 modernColors.price,
                 getFontClass(config.priceFont),
               )}
-              style={{ fontSize: priceFontSize }}
+              style={{
+                fontSize: `${getTypographySize("price", {
+                  isRental: config.listingType === "alquiler",
+                  priceDigits: data.price.toString().length,
+                })}px`,
+                lineHeight: "1.2",
+              }}
             >
               {config.listingType === "alquiler" ? (
                 <>
                   {priceText.replace(" €/mes", "")}
-                  <span className="font-normal" style={{ fontSize: "12px" }}>
+                  <span
+                    className="font-normal"
+                    style={{
+                      fontSize: `${getTypographySize("body")}px`,
+                    }}
+                  >
                     {" "}
                     €/mes
                   </span>
@@ -634,42 +951,108 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
         </div>
       </div>
 
-      {/* Bottom right contact overlay (z-10) */}
+      {/* Bottom right contact overlay - print-optimized (z-10) */}
       {(config.showPhone ??
         (config.showEmail && data.contact.email) ??
         (config.showWebsite && data.contact.website)) && (
         <div
-          className={cn(
-            "absolute bottom-3 right-3 z-10",
-            modernColors.overlay,
-            "rounded-md backdrop-blur-sm",
-          )}
+          className={cn("no-break", modernColors.overlay)}
+          style={{
+            position: "absolute",
+            bottom: `${PRINT_DIMENSIONS.OVERLAY.contact.position.bottom}px`,
+            right: `${PRINT_DIMENSIONS.OVERLAY.contact.position.right}px`,
+            zIndex: 10,
+            borderRadius: "6px",
+            backdropFilter: "blur(4px)",
+          }}
         >
-          <div className="px-3 py-2">
+          <div
+            style={{
+              paddingLeft: `${PRINT_DIMENSIONS.SPACING.contactOverlayPadding}px`,
+              paddingRight: `${PRINT_DIMENSIONS.SPACING.contactOverlayPadding}px`,
+              paddingTop: `${PRINT_DIMENSIONS.SPACING.contactOverlayPadding}px`,
+              paddingBottom: `${PRINT_DIMENSIONS.SPACING.contactOverlayPadding}px`,
+            }}
+          >
             {/* Contact info with icons */}
-            <div className="space-y-1">
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: `${PRINT_DIMENSIONS.SPACING.contactItemsGap}px`,
+              }}
+            >
               {config.showPhone && (
                 <div
-                  className={cn("flex items-center gap-1.5", modernColors.text)}
+                  className={cn(modernColors.text)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
                 >
-                  <Phone className="h-3 w-3" />
-                  <span style={{ fontSize: "11px" }}>{data.contact.phone}</span>
+                  <Phone
+                    style={{
+                      width: `${PRINT_DIMENSIONS.ICONS.tiny.width}px`,
+                      height: `${PRINT_DIMENSIONS.ICONS.tiny.height}px`,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: `${getTypographySize("contact")}px`,
+                      lineHeight: "1.2",
+                    }}
+                  >
+                    {data.contact.phone}
+                  </span>
                 </div>
               )}
               {config.showEmail && data.contact.email && (
                 <div
-                  className={cn("flex items-center gap-1.5", modernColors.text)}
+                  className={cn(modernColors.text)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
                 >
-                  <Mail className="h-3 w-3" />
-                  <span style={{ fontSize: "11px" }}>{data.contact.email}</span>
+                  <Mail
+                    style={{
+                      width: `${PRINT_DIMENSIONS.ICONS.tiny.width}px`,
+                      height: `${PRINT_DIMENSIONS.ICONS.tiny.height}px`,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: `${getTypographySize("contact")}px`,
+                      lineHeight: "1.2",
+                    }}
+                  >
+                    {data.contact.email}
+                  </span>
                 </div>
               )}
               {config.showWebsite && data.contact.website && (
                 <div
-                  className={cn("flex items-center gap-1.5", modernColors.text)}
+                  className={cn(modernColors.text)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
                 >
-                  <Globe className="h-3 w-3" />
-                  <span style={{ fontSize: "11px" }}>
+                  <Globe
+                    style={{
+                      width: `${PRINT_DIMENSIONS.ICONS.tiny.width}px`,
+                      height: `${PRINT_DIMENSIONS.ICONS.tiny.height}px`,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: `${getTypographySize("contact")}px`,
+                      lineHeight: "1.2",
+                    }}
+                  >
                     {data.contact.website.replace(/^https?:\/\/(www\.)?/, "")}
                   </span>
                 </div>
@@ -679,13 +1062,22 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
         </div>
       )}
 
-      {/* Property reference in bottom-left corner (z-20) */}
+      {/* Property reference - print-optimized positioning (z-20) */}
       {config.showReference && data.reference && (
-        <div className="absolute bottom-2 left-2 z-20">
+        <div
+          style={{
+            position: "absolute",
+            bottom: `${PRINT_DIMENSIONS.OVERLAY.reference.position.bottom}px`,
+            left: `${PRINT_DIMENSIONS.OVERLAY.reference.position.left}px`,
+            zIndex: 20,
+          }}
+        >
           <span
-            className={cn("font-medium uppercase tracking-wide text-white")}
+            className={cn("font-medium uppercase text-white")}
             style={{
-              fontSize: "9px",
+              fontSize: `${getTypographySize("reference")}px`,
+              letterSpacing: "0.05em",
+              lineHeight: "1.1",
             }}
           >
             {data.reference}
@@ -693,13 +1085,20 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
         </div>
       )}
 
-      {/* QR Code in top-right corner (z-20) - much smaller size */}
+      {/* QR Code - print-optimized positioning (z-20) */}
       {config.showQR && (
-        <div className="absolute right-2 top-2 z-20">
+        <div
+          style={{
+            position: "absolute",
+            right: `${PRINT_DIMENSIONS.OVERLAY.qr.position.right}px`,
+            top: `${PRINT_DIMENSIONS.OVERLAY.qr.position.top}px`,
+            zIndex: 20,
+          }}
+        >
           <PropertyQRCode
             phone={data.contact.phone}
             email={data.contact.email}
-            size={config.orientation === "vertical" ? 20 : 25}
+            size={config.orientation === "vertical" ? 80 : 100}
             className="border-0 bg-transparent p-0 shadow-none"
           />
         </div>

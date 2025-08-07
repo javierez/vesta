@@ -21,7 +21,7 @@ export const PRINT_DIMENSIONS = {
   OVERLAY: {
     left: {
       width: 300, // Fixed width for left overlay
-      height: 540, // 48% of A4 height (1123 * 0.48 = 539.04)
+      height: 558, // 48% of A4 height (1123 * 0.48 = 539.04)
       position: { top: 8, left: 8 },
     },
     contact: {
@@ -31,7 +31,7 @@ export const PRINT_DIMENSIONS = {
       position: { bottom: 8, left: 8 },
     },
     qr: {
-      position: { top: 8, right: 8 },
+      position: { top: 30, right: 30 },
     },
   },
 
@@ -50,53 +50,73 @@ export const PRINT_DIMENSIONS = {
   // Typography sizing for print legibility
   TYPOGRAPHY: {
     title: {
-      large: 28, // Main titles
-      medium: 23, // Compact titles
-      small: 18, // Minimal titles
+      large: 50, // Sale listings (Venta) - main title text
+      medium: 45, // Rental listings (Alquiler) - main title text
+      small: 44, // Compact mode when location needs line break
     },
     price: {
-      large: 29, // Sale prices (24 + 5)
-      medium: 26, // Sale prices (21 + 5)
-      small: 24, // Sale prices (19 + 5)
+      large: 50, // Sale prices with few digits (< 7 digits)
+      medium: 40, // Sale prices with medium digits (7 digits)
+      small: 36, // Sale prices with many digits (8+ digits)
       rental: {
-        large: 24, // Rental prices base
-        medium: 21, // Rental prices medium
-        small: 19, // Rental prices small
+        large: 50, // Rental prices with few digits (< 7 digits)
+        medium: 40, // Rental prices with medium digits (7 digits)
+        small: 36, // Rental prices with many digits (8+ digits)
       },
     },
     body: {
-      standard: 12, // Standard body text
-      small: 11, // Compact text
-      tiny: 10, // Fine print
+      standard: 20, // Icon labels and general body text
+      small: 20, // Compact mode body text and bullet points
+      tiny: 16, // Fine print and small details
     },
     location: {
-      standard: 12, // Location text
+      standard: 24, // Location text in badge (neighborhood and city)
     },
     contact: {
-      standard: 11, // Contact information
+      standard: 16, // Contact information (phone, email, website)
     },
     reference: {
-      standard: 9, // Reference codes
+      standard: 16, // Property reference code in bottom left
     },
   },
 
   // Icon sizing for print clarity
   ICONS: {
-    large: { width: 24, height: 24 }, // 6x6 equivalent (24px)
-    medium: { width: 20, height: 20 }, // 5x5 equivalent (20px)
-    small: { width: 16, height: 16 }, // 4x4 equivalent (16px)
-    tiny: { width: 12, height: 12 }, // 3x3 equivalent (12px)
+    extraLarge: { width: 60, height: 60 }, // Very large icons for single icon layouts (garaje, solar)
+    large: { width: 50, height: 50 }, // Feature icons in normal mode (bedrooms, bathrooms, sqm, additional fields)
+    medium: { width: 40, height: 40 }, // Medium sized icons (unused currently)
+    small: { width: 40, height: 40 }, // Feature icons in compact mode + location pin icon
+    tiny: { width: 20, height: 20 }, // Contact icons (phone, email, website) in bottom right overlay
   },
 
-  // Fixed spacing values replacing Tailwind classes
+  // Specific spacing values for dedicated uses
   SPACING: {
-    xs: 4, // 0.25rem -> 4px
-    sm: 8, // 0.5rem -> 8px
-    md: 12, // 0.75rem -> 12px
-    lg: 16, // 1rem -> 16px
-    xl: 20, // 1.25rem -> 20px
-    xxl: 24, // 1.5rem -> 24px
-    xxxl: 32, // 2rem -> 32px
+    // Icon and text spacing
+    iconRowGap: 4, // Vertical gap between icon grid rows
+    iconToText: 4, // Space between icon and its label text below
+    iconColumns: 32, // Horizontal gap between feature icon columns
+    
+    // Location spacing
+    locationBadgePadding: 8, // Padding inside location badge
+    titleToLocation: 24, // Space between title section and location
+    locationToIcons: 0, // Space between location and feature icons
+    iconsToPrice: 10, // Space between feature icons and price section
+    
+    // Layout margins
+    overlayPadding: 24, // Main overlay internal padding
+    titleLeftMargin: 24, // Additional left margin for title text only
+    iconsLeftMargin: 24, // Left margin for feature icons grid
+    iconsLeftMarginRental: 32, // Left margin for feature icons in rental listings
+    
+    // Contact section
+    contactItemsGap: 4, // Gap between contact items (phone, email, website)
+    contactOverlayPadding: 8, // Padding inside contact overlay
+    
+    // Features section - spacing from title/location to icons
+    featuresTopMargin: 24, // Top margin for features section in normal mode (5+ icons)
+    featuresTopMarginCompact: 24, // Top margin for features section in compact mode
+    featuresTopMarginMedium: 34, // Top margin when 3-4 icons
+    featuresTopMarginSingle: 46, // Top margin when only 1 icon (garaje, solar)
   },
 
   // Print-specific color adjustments
@@ -151,9 +171,16 @@ export const getTypographySize = (
 
   switch (type) {
     case "title":
-      return isCompact
-        ? PRINT_DIMENSIONS.TYPOGRAPHY.title.medium
-        : PRINT_DIMENSIONS.TYPOGRAPHY.title.large;
+      if (isRental) {
+        // Slightly smaller for rental listings
+        return isCompact
+          ? PRINT_DIMENSIONS.TYPOGRAPHY.title.small
+          : PRINT_DIMENSIONS.TYPOGRAPHY.title.medium;
+      } else {
+        return isCompact
+          ? PRINT_DIMENSIONS.TYPOGRAPHY.title.medium
+          : PRINT_DIMENSIONS.TYPOGRAPHY.title.large;
+      }
 
     case "price":
       if (isRental) {

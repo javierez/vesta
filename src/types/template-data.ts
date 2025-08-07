@@ -150,6 +150,12 @@ export interface TemplateConfiguration {
     | "red";
 }
 
+// Image positioning data for cropping/repositioning within containers
+export interface ImagePosition {
+  x: number; // X offset percentage (0-100)
+  y: number; // Y offset percentage (0-100)
+}
+
 // Extended template property data with additional database fields
 export interface ExtendedTemplatePropertyData extends TemplatePropertyData {
   // Additional displayable fields from database schema
@@ -167,6 +173,8 @@ export interface ExtendedTemplatePropertyData extends TemplatePropertyData {
   heatingType?: string;
   shortDescription?: string;
   listingType?: "venta" | "alquiler";
+  // Image positioning for drag-and-drop cropping (indexed by image URL or position)
+  imagePositions?: Record<string, ImagePosition>;
 }
 
 // Configurable template props interface

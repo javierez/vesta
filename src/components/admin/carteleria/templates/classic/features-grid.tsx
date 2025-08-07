@@ -33,9 +33,9 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
   // Print-optimized margins using fixed pixel values
   const leftMargin =
     config.listingType === "alquiler"
-      ? PRINT_DIMENSIONS.SPACING.xl // 20px
-      : PRINT_DIMENSIONS.SPACING.md; // 12px
-  const bulletMargin = PRINT_DIMENSIONS.SPACING.md; // 12px
+      ? PRINT_DIMENSIONS.SPACING.iconsLeftMarginRental
+      : PRINT_DIMENSIONS.SPACING.iconsLeftMargin;
+  const bulletMargin = PRINT_DIMENSIONS.SPACING.iconsLeftMargin;
   return (
     <div>
       {config.showIcons ? (
@@ -76,23 +76,37 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
           const totalFeatures = features.length;
           const isOdd = totalFeatures % 2 !== 0;
 
+          // Determine spacing based on feature count
+          const getTopMargin = () => {
+            if (shouldCompact) return PRINT_DIMENSIONS.SPACING.featuresTopMarginCompact;
+            if (totalFeatures === 1) return PRINT_DIMENSIONS.SPACING.featuresTopMarginSingle;
+            if (totalFeatures >= 3 && totalFeatures <= 4) return PRINT_DIMENSIONS.SPACING.featuresTopMarginMedium;
+            return PRINT_DIMENSIONS.SPACING.featuresTopMargin;
+          };
+
+          // Determine icon size based on feature count
+          const getIconSize = () => {
+            if (totalFeatures === 1) return PRINT_DIMENSIONS.ICONS.extraLarge;
+            if (shouldCompact) return PRINT_DIMENSIONS.ICONS.small;
+            return PRINT_DIMENSIONS.ICONS.large;
+          };
+
+          const iconSize = getIconSize();
+
           return (
             <div
               style={{
-                marginTop: shouldCompact
-                  ? `${PRINT_DIMENSIONS.SPACING.md}px`
-                  : `${PRINT_DIMENSIONS.SPACING.lg}px`,
-                marginLeft: `${leftMargin}px`,
+                marginTop: `${getTopMargin()}px`,
+                display: "flex",
+                justifyContent: "center",
               }}
             >
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
-                  columnGap: `${PRINT_DIMENSIONS.SPACING.xl}px`, // 20px fixed
-                  rowGap: shouldCompact
-                    ? `${PRINT_DIMENSIONS.SPACING.xs + 2}px` // 6px
-                    : `${PRINT_DIMENSIONS.SPACING.xs}px`, // 4px
+                  columnGap: `${PRINT_DIMENSIONS.SPACING.iconColumns}px`,
+                  rowGap: `${PRINT_DIMENSIONS.SPACING.iconRowGap}px`,
                   maxWidth: "fit-content",
                 }}
               >
@@ -108,10 +122,10 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
                         textAlign: "center",
                         paddingTop: shouldCompact
                           ? 0
-                          : `${PRINT_DIMENSIONS.SPACING.xs / 2}px`,
+                          : `${PRINT_DIMENSIONS.SPACING.iconRowGap / 2}px`,
                         paddingBottom: shouldCompact
                           ? 0
-                          : `${PRINT_DIMENSIONS.SPACING.xs / 2}px`,
+                          : `${PRINT_DIMENSIONS.SPACING.iconRowGap / 2}px`,
                         gridColumn: isLastAndOdd ? "span 2" : "auto",
                       }}
                     >
@@ -120,13 +134,9 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
                         style={{
                           display: "block",
                           margin: "0 auto",
-                          marginBottom: `${PRINT_DIMENSIONS.SPACING.xs / 2}px`, // 2px
-                          width: shouldCompact
-                            ? `${PRINT_DIMENSIONS.ICONS.small.width}px`
-                            : `${PRINT_DIMENSIONS.ICONS.large.width}px`,
-                          height: shouldCompact
-                            ? `${PRINT_DIMENSIONS.ICONS.small.height}px`
-                            : `${PRINT_DIMENSIONS.ICONS.large.height}px`,
+                          marginBottom: `${PRINT_DIMENSIONS.SPACING.iconToText}px`,
+                          width: `${iconSize.width}px`,
+                          height: `${iconSize.height}px`,
                         }}
                       />
                       <div
@@ -152,9 +162,10 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
         <div
           style={{
             marginTop: shouldCompact
-              ? `${PRINT_DIMENSIONS.SPACING.md}px`
-              : `${PRINT_DIMENSIONS.SPACING.lg}px`,
-            marginLeft: `${bulletMargin}px`,
+              ? `${PRINT_DIMENSIONS.SPACING.featuresTopMarginCompact}px`
+              : `${PRINT_DIMENSIONS.SPACING.featuresTopMargin}px`,
+            display: "flex",
+            justifyContent: "center",
           }}
         >
           <ul
@@ -164,9 +175,7 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
               margin: 0,
               display: "flex",
               flexDirection: "column",
-              gap: shouldCompact
-                ? `${PRINT_DIMENSIONS.SPACING.xs / 2}px` // 2px
-                : `${PRINT_DIMENSIONS.SPACING.xs}px`, // 4px
+              gap: `${PRINT_DIMENSIONS.SPACING.iconRowGap}px`,
               fontSize: shouldCompact
                 ? `${PRINT_DIMENSIONS.TYPOGRAPHY.body.small}px`
                 : `${PRINT_DIMENSIONS.TYPOGRAPHY.body.standard}px`,
@@ -183,7 +192,7 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
               >
                 <span
                   style={{
-                    marginRight: `${PRINT_DIMENSIONS.SPACING.sm}px`,
+                    marginRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                     marginTop: "2px",
                   }}
                 >
@@ -202,7 +211,7 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
               >
                 <span
                   style={{
-                    marginRight: `${PRINT_DIMENSIONS.SPACING.sm}px`,
+                    marginRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                     marginTop: "2px",
                   }}
                 >
@@ -220,7 +229,7 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
             >
               <span
                 style={{
-                  marginRight: `${PRINT_DIMENSIONS.SPACING.sm}px`,
+                  marginRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                   marginTop: "2px",
                 }}
               >
@@ -241,7 +250,7 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
               >
                 <span
                   style={{
-                    marginRight: `${PRINT_DIMENSIONS.SPACING.sm}px`,
+                    marginRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                     marginTop: "2px",
                   }}
                 >

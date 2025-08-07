@@ -62,7 +62,7 @@ class ValidationResult {
 const testFiles = [
   'src/lib/carteleria/print-constants.ts',
   'src/lib/carteleria/print-utils.ts',
-  'src/components/admin/carteleria/templates/classic/classic-template-realsize.tsx',
+  'src/components/admin/carteleria/templates/classic/classic-template.tsx',
   'src/components/admin/carteleria/templates/classic/features-grid.tsx'
 ];
 
@@ -202,7 +202,7 @@ function testPrintStyles(result) {
   console.log(`\n${colors.blue}${colors.bold}Testing Print Styles...${colors.reset}`);
   
   try {
-    const templatePath = join(__dirname, 'src/components/admin/carteleria/templates/classic/classic-template-realsize.tsx');
+    const templatePath = join(__dirname, 'src/components/admin/carteleria/templates/classic/classic-template.tsx');
     const content = readFileSync(templatePath, 'utf-8');
     
     // Check for print media queries
@@ -247,7 +247,7 @@ function testTemplateStructure(result) {
   console.log(`\n${colors.blue}${colors.bold}Testing Template Structure...${colors.reset}`);
   
   try {
-    const templatePath = join(__dirname, 'src/components/admin/carteleria/templates/classic/classic-template-realsize.tsx');
+    const templatePath = join(__dirname, 'src/components/admin/carteleria/templates/classic/classic-template.tsx');
     const content = readFileSync(templatePath, 'utf-8');
     
     // Check for required structural elements
