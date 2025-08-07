@@ -233,7 +233,7 @@ export async function getAccountWatermarkConfig(accountId: number | bigint) {
       return {
         watermarkEnabled: false,
         logoTransparent: null,
-        watermarkPosition: "bottom-right" as const,
+        watermarkPosition: "center" as const,
       };
     }
 
@@ -245,8 +245,7 @@ export async function getAccountWatermarkConfig(accountId: number | bigint) {
     // Get watermark settings from general portal configuration
     const general = (portalSettings.general as Record<string, unknown>) ?? {};
     const watermarkEnabled = Boolean(general.watermarkEnabled);
-    const watermarkPosition =
-      (general.watermarkPosition as string) || "bottom-right";
+    const watermarkPosition = (general.watermarkPosition as string) || "center";
 
     // Get transparent logo URL from preferences
     const logoTransparent = preferences.logoTransparent as string;
@@ -275,7 +274,7 @@ export async function getAccountWatermarkConfig(accountId: number | bigint) {
     return {
       watermarkEnabled: false,
       logoTransparent: null,
-      watermarkPosition: "bottom-right" as const,
+      watermarkPosition: "center" as const,
     };
   }
 }

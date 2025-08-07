@@ -6,7 +6,12 @@ import {
   getAccountWatermarkConfig,
   getAccountIdForListing,
 } from "../queries/accounts";
-import { processImageWithWatermark } from "../utils/image-processing";
+import {
+  processAndUploadWatermarkedImages,
+  cleanupWatermarkedImages,
+} from "../utils/watermarked-upload";
+import { POSITION_MAPPING } from "~/types/watermark";
+import type { WatermarkConfig } from "~/types/watermark";
 import { env } from "~/env";
 
 const FOTOCASA_API_KEY = env.FOTOCASA_API_KEY;
@@ -142,7 +147,7 @@ export async function buildFotocasaPayload(
   listingId: number,
   visibilityMode = 1,
   hidePrice = false,
-): Promise<FotocasaProperty> {
+): Promise<{ payload: FotocasaProperty; watermarkedKeys: string[] }> {
   try {
     // Get listing details and property images
     const listing = await getListingDetailsWithAuth(listingId);
@@ -170,15 +175,30 @@ export async function buildFotocasaPayload(
           watermarkConfig.logoTransparent &&
           images.length > 0
         ) {
+          // Convert account watermark settings to WatermarkConfig
+          const watermarkConfigForProcessing: WatermarkConfig = {
+            enabled: watermarkConfig.watermarkEnabled,
+            logoUrl: watermarkConfig.logoTransparent,
+            position:
+              POSITION_MAPPING[watermarkConfig.watermarkPosition ?? "center"] ??
+              "center",
+            size: 40, // 40% of image width
+          };
+
           const imageProcessingInput = images.map((img) => ({
             imageUrl: img.imageUrl,
             imageOrder: img.imageOrder,
           }));
 
-          const watermarkResults = await processImageWithWatermark(
+          // Upload watermarked images to S3 and get their URLs
+          const watermarkResults = await processAndUploadWatermarkedImages(
             imageProcessingInput,
-            watermarkConfig,
+            watermarkConfigForProcessing,
+            listing.referenceNumber ?? listingId.toString(),
           );
+
+          // Store watermarked keys for cleanup later
+          const watermarkedKeys: string[] = [];
 
           // Map results back to original image format, preserving all original data
           processedImages = images.map((originalImage) => {
@@ -190,9 +210,15 @@ export async function buildFotocasaPayload(
               console.log(
                 `Using watermarked version for image order ${originalImage.imageOrder}`,
               );
+
+              // Track watermarked keys for cleanup
+              if (processedResult.watermarkedKey) {
+                watermarkedKeys.push(processedResult.watermarkedKey);
+              }
+
               return {
                 ...originalImage,
-                imageUrl: processedResult.imageUrl, // Use watermarked URL
+                imageUrl: processedResult.imageUrl, // Use S3 watermarked URL
               };
             } else {
               // Log but continue with original image (graceful fallback)
@@ -206,12 +232,17 @@ export async function buildFotocasaPayload(
             }
           });
 
+          // Store watermarked keys in the listing object for later cleanup
+          (
+            listing as typeof listing & { _watermarkedKeys?: string[] }
+          )._watermarkedKeys = watermarkedKeys;
+
           const watermarkedCount = processedImages.filter(
             (img, index) => watermarkResults[index]?.watermarked,
           ).length;
 
           console.log(
-            `Fotocasa watermarking completed: ${watermarkedCount}/${images.length} images watermarked`,
+            `Fotocasa watermarking completed: ${watermarkedCount}/${images.length} images uploaded to S3`,
           );
         } else {
           console.log(
@@ -764,7 +795,15 @@ export async function buildFotocasaPayload(
       ],
     };
 
-    return fotocasaPayload;
+    // Get watermarkedKeys from the tracking variable
+    const watermarkedKeys =
+      (listing as typeof listing & { _watermarkedKeys?: string[] })
+        ._watermarkedKeys ?? [];
+
+    return {
+      payload: fotocasaPayload,
+      watermarkedKeys,
+    };
   } catch (error) {
     // console.error("Error building Fotocasa payload:", error);
     throw error;
@@ -784,7 +823,7 @@ export async function publishToFotocasa(
 }> {
   try {
     // Build the payload
-    const payload = await buildFotocasaPayload(
+    const { payload, watermarkedKeys } = await buildFotocasaPayload(
       listingId,
       visibilityMode,
       hidePrice,
@@ -816,6 +855,28 @@ export async function publishToFotocasa(
       response.ok &&
       (responseData as { StatusCode?: number }).StatusCode === 201
     ) {
+      // Clean up watermarked images after successful upload
+      if (watermarkedKeys.length > 0) {
+        try {
+          const cleanupResult = await cleanupWatermarkedImages(watermarkedKeys);
+          console.log(
+            `Cleanup completed: ${cleanupResult.deletedCount} watermarked images removed`,
+          );
+          if (!cleanupResult.success) {
+            console.warn(
+              "Some watermarked images could not be cleaned up:",
+              cleanupResult.errors,
+            );
+          }
+        } catch (cleanupError) {
+          // Don't fail the main operation due to cleanup issues
+          console.error(
+            "Error during watermarked image cleanup:",
+            cleanupError,
+          );
+        }
+      }
+
       return {
         success: true,
         payload,
@@ -852,7 +913,7 @@ export async function updateFotocasa(
 }> {
   try {
     // Build the payload (same as create operation)
-    const payload = await buildFotocasaPayload(
+    const { payload, watermarkedKeys } = await buildFotocasaPayload(
       listingId,
       visibilityMode,
       hidePrice,
@@ -886,6 +947,28 @@ export async function updateFotocasa(
       response.ok &&
       (responseData as { StatusCode?: number }).StatusCode === 200
     ) {
+      // Clean up watermarked images after successful update
+      if (watermarkedKeys.length > 0) {
+        try {
+          const cleanupResult = await cleanupWatermarkedImages(watermarkedKeys);
+          console.log(
+            `Cleanup completed: ${cleanupResult.deletedCount} watermarked images removed`,
+          );
+          if (!cleanupResult.success) {
+            console.warn(
+              "Some watermarked images could not be cleaned up:",
+              cleanupResult.errors,
+            );
+          }
+        } catch (cleanupError) {
+          // Don't fail the main operation due to cleanup issues
+          console.error(
+            "Error during watermarked image cleanup:",
+            cleanupError,
+          );
+        }
+      }
+
       return {
         success: true,
         payload,

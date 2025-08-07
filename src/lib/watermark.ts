@@ -84,14 +84,14 @@ export async function downloadImageBuffer(
 
 /**
  * Add watermark to image using Sharp composite
- * Implements dynamic watermark sizing (30% of image width)
+ * Implements dynamic watermark sizing (40% of image width) with 70% transparency
  * Follows error handling patterns from color-extraction.ts
  */
 export async function addWatermark(
   imageBuffer: Buffer,
   watermarkUrl: string,
   position: WatermarkPosition = "southeast",
-  sizePercentage = 30,
+  sizePercentage = 40,
 ): Promise<WatermarkResult> {
   try {
     if (!imageBuffer || imageBuffer.length === 0) {
@@ -133,16 +133,24 @@ export async function addWatermark(
     // Calculate watermark size (percentage of image width)
     const watermarkWidth = Math.floor(imageWidth * (sizePercentage / 100));
 
-    console.log(
-      `Resizing watermark to ${watermarkWidth}px (${sizePercentage}% of ${imageWidth}px)`,
-    );
-
-    // Resize watermark dynamically while maintaining aspect ratio
+    // Resize watermark dynamically while maintaining aspect ratio and apply transparency
     const resizedWatermarkBuffer = await sharp(watermarkDownload.buffer)
       .resize(watermarkWidth, null, {
         withoutEnlargement: true, // Don't enlarge if watermark is smaller
         fit: "inside", // Maintain aspect ratio
       })
+      .composite([
+        {
+          input: Buffer.from([255, 255, 255, Math.round(255 * 0.4)]), // 70% transparency
+          raw: {
+            width: 1,
+            height: 1,
+            channels: 4,
+          },
+          tile: true,
+          blend: "dest-in",
+        },
+      ])
       .toBuffer();
 
     // Apply watermark using Sharp composite
@@ -308,7 +316,7 @@ export function getOptimalWatermarkPosition(
       center: "center",
     };
 
-    return positionMap[preferredPosition] ?? "southeast";
+    return positionMap[preferredPosition] ?? "center";
   }
 
   // Smart positioning based on aspect ratio

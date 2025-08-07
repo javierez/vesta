@@ -51,9 +51,8 @@ export async function processImageWithWatermark(
       enabled: watermarkSettings.watermarkEnabled,
       logoUrl: watermarkSettings.logoTransparent,
       position:
-        POSITION_MAPPING[
-          watermarkSettings.watermarkPosition ?? "bottom-right"
-        ] ?? "southeast",
+        POSITION_MAPPING[watermarkSettings.watermarkPosition ?? "center"] ??
+        "center",
       size: 30, // 30% of image width as per PRP requirements
     };
 
@@ -159,8 +158,7 @@ export async function extractWatermarkConfig(
   // Extract watermark settings from portal settings general section
   const general = (portalSettings.general as Record<string, unknown>) ?? {};
   const watermarkEnabled = Boolean(general.watermarkEnabled);
-  const watermarkPosition =
-    (general.watermarkPosition as string) ?? "bottom-right";
+  const watermarkPosition = (general.watermarkPosition as string) ?? "center";
 
   // Extract logo URL from preferences
   const logoTransparent = preferences.logoTransparent as string;
@@ -188,13 +186,13 @@ export async function getSmartWatermarkPosition(
     if (response.ok) {
       // For now, return preferred position or default
       // In the future, could implement image analysis for optimal positioning
-      return preferredPosition ?? "bottom-right";
+      return preferredPosition ?? "center";
     }
   } catch (error) {
     console.warn("Could not analyze image for smart positioning:", error);
   }
 
-  return preferredPosition ?? "bottom-right";
+  return preferredPosition ?? "center";
 }
 
 /**

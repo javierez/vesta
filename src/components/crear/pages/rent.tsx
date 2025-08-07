@@ -119,7 +119,6 @@ export default function RentPage({
     }
   }, [globalFormData?.listingDetails]);
 
-
   // Handle price input with formatting for garage and storage room
   const handleGaragePriceChange = formFormatters.handleNumericPriceInputChange(
     (value) => updateFormData("optionalGaragePrice", value),

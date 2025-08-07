@@ -28,7 +28,6 @@ export interface WatermarkResult {
   error?: string;
 }
 
-
 // Image download result type
 export interface ImageDownloadResult {
   success: boolean;
