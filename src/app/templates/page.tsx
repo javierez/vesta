@@ -3,10 +3,10 @@ import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
 import type { TemplateConfiguration, ExtendedTemplatePropertyData } from "~/types/template-data";
 
 interface TemplatesPageProps {
-  searchParams: {
+  searchParams: Promise<{
     config?: string;
     data?: string;
-  };
+  }>;
 }
 
 export default async function TemplatesPage({ searchParams }: TemplatesPageProps) {

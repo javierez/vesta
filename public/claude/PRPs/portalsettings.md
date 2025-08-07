@@ -1,174 +1,24 @@
 ## FEATURE:
-We have created already a poster defined /Users/javierperezgarcia/Downloads/vesta/src/components/admin/carteleria/templates/classic/classic-template.tsx
-which uses another component in /Users/javierperezgarcia/Downloads/vesta/src/components/admin/carteleria/templates/classic/features-grid.tsx
+In /Users/javierperezgarcia/Downloads/vesta/src/app/(dashboard)/account-admin I would like to add another configuration menu. This would be 'Portales', where we will be configuring the portal settings. We will group settings by portal. We will have a tab for Fotocasa and another tab for Idealista. and another tab for general settings. All tabs could be in the same route, as this is not heavy information. 
 
-What I'm trying to do is render a PDF for the template that is layout sensitive....So based on chatgpt recommendations I would like to have a template but built like a real docment in /Users/javierperezgarcia/Downloads/vesta/src/components/admin/carteleria/templates/classic/classic-template-realsize.tsx. This would be the printable version
+Firstly, when rendering the page, we will have to fetch information using the accountId from the auth and get the portal_settings from the accounts table: account_id,name,logo,address,phone,email,website,portal_settings,payment_settings,preferences,plan,subscription_status,created_at,updated_at,is_active
+2251799813685249,Inmobiliaria Acropolis,https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/branding/logo_original_1754307053196_wfEs0l.png,fkjnafd,44444444,ino2@acropolis.com,https://www.inmobiliariaacropolis.es/,{},{},"{""brandingUpdatedAt"":""2025-08-04T11:30:54.685Z"",""colorPalette"":[""#c2c2d6"",""#fe0000"",""#07007d"",""#7774b8"",""#fe6b6b"",""#2D3748""],""logoTransparent"":""https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/branding/logo_transparent_1754307054237_gBmkUg.png"",""logoTransparentImageKey"":""branding/logo_transparent_1754307054237_gBmkUg.png"",""logoTransparentS3Key"":""s3://inmobiliariaacropolis/branding/logo_transparent_1754307054237_gBmkUg.png"",""poster_preferences"":{""format_ids"":[""vertical"",""story""],""show_description"":true,""show_email"":false,""show_icons"":true,""show_phone"":true,""show_qr_code"":false,""show_reference"":true,""show_watermark"":true,""show_website"":true,""template_style"":""classic""}}",pro,suspended,2025-07-30 12:45:45,2025-08-06 18:06:04,1
 
- These are chatgpt recommendations
-Got it — you're dealing with layout-critical, data-sensitive PDFs in Next.js + React, so fidelity and control matter. That instantly eliminates react-pdf and other "rendered approximations" like html2pdf.js. You need the full power of a headless browser to:
 
-Accurately render your HTML + CSS
+and this is what we will update later. 
 
-Handle custom fonts, branding, spacing
+In the general menu, we will have watermark (y/n) 'marca de agua' to determine if we want to add the logo as watermark for the images we upload to the portals. Please allow me to configure if we want to use it or not.
 
-Dynamically inject data into React templates
-
-Ensure pixel-perfect multi-page rendering with print-specific styles
-
-Here’s how I’d seriously approach this, step by step — no fluff.
-
-✅ Final Stack: Next.js + Puppeteer
-You build the template in React (with exact layout), render it server-side using Puppeteer, and return a PDF.
-
-🧱 Step-by-Step Architecture
-1. React Template Component – Built like a printed document
-Use px, cm, or mm units. Forget em, vh, rem. Think paper, not screen.
-
-tsx
-Copy
-Edit
-// components/InvoiceTemplate.tsx
-export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
-  return (
-    <div style={{ width: '794px', padding: '40px', fontFamily: 'Arial' }}>
-      <h1>Invoice #{data.id}</h1>
-      <p>Customer: {data.customerName}</p>
-      <table>
-        {/* map items */}
-      </table>
-    </div>
-  )
-}
-2. Print Page Route – /print/[id] to render a print-friendly version of the document
-tsx
-Copy
-Edit
-// app/print/[id]/page.tsx
-import InvoiceTemplate from '@/components/InvoiceTemplate'
-import { getInvoiceData } from '@/lib/data'
-
-export default async function PrintPage({ params }) {
-  const data = await getInvoiceData(params.id)
-  return (
-    <html>
-      <head>
-        <title>Invoice PDF</title>
-        <style>{`@media print { ... }`}</style>
-      </head>
-      <body>
-        <InvoiceTemplate data={data} />
-      </body>
-    </html>
-  )
-}
-Make sure this route is SSR, not static — because Puppeteer needs real-time data.
-
-3. PDF API Route – /api/generate-pdf?id=123
-ts
-Copy
-Edit
-// app/api/generate-pdf/route.ts
-import puppeteer from 'puppeteer'
-import { NextRequest, NextResponse } from 'next/server'
-
-export async function GET(req: NextRequest) {
-  const id = req.nextUrl.searchParams.get('id')
-  const url = `${process.env.BASE_URL}/print/${id}`
-
-  const browser = await puppeteer.launch({ headless: 'new' })
-  const page = await browser.newPage()
-
-  await page.goto(url, { waitUntil: 'networkidle0' })
-  const pdfBuffer = await page.pdf({
-    format: 'A4',
-    printBackground: true,
-    margin: { top: '1cm', bottom: '1cm', left: '1cm', right: '1cm' }
-  })
-
-  await browser.close()
-
-  return new NextResponse(pdfBuffer, {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': 'attachment; filename="invoice.pdf"'
-    }
-  })
-}
-Critical: set printBackground: true or CSS backgrounds/images won’t render.
-
-🖨️ CSS for Print Layout
-Use @media print for printable-only tweaks
-
-Use page-break-before: always and break-inside: avoid for multi-page layouts
-
-Avoid flex/grid in nested print content if layout bugs appear
-
-Example:
-
-css
-Copy
-Edit
-@media print {
-  .page-break {
-    page-break-before: always;
-  }
-  .no-break {
-    break-inside: avoid;
-  }
-}
-📦 Deployment Considerations (Vercel, AWS, etc.)
-Puppeteer in Serverless:
-Vercel doesn’t natively support Puppeteer without hacks
-
-Use @sparticuz/chromium with puppeteer-core (for AWS Lambda-compatible builds)
-
-Alternatively, use Browserless.io with API call and skip deploying Chromium yourself
-
-🔐 Data-Safety Considerations
-Never expose raw data in query params or client routes
-
-Make PDF generation API auth-guarded if you include sensitive info
-
-Sanitize the /print/[id] route – only allow SSR and disallow frontend access if needed
-
-👇 Example Workflow
-User clicks "Download PDF"
-
-Triggers API call to /api/generate-pdf?id=123
-
-API fetches and renders /print/123 headlessly via Puppeteer
-
-PDF is streamed back to user with perfect fidelity
-
-🧪 Bonus: Preview before download?
-If needed:
-
-Render /print/123 in an <iframe> for preview
-
-Or render PDF blob as object in modal
-
-Want a Full Working Boilerplate?
-I can scaffold a GitHub repo for you with:
-
-Next.js 14 app router
-
-React template component
-
-SSR print page
-
-Puppeteer API handler
-
-Deployment-ready settings for AWS/Vercel
-
+Then we will have a save button where we will store the infromation in portal_information in accounts table. (use a saving and saved state and track changes to activate the save button again)
 
 
 
 
 ## EXAMPLES:
+we have some calls to accounts in 
 
 ## DOCUMENTATION:
-https://medium.com/@diego.coder/convertir-html-en-pdf-con-puppeteer-y-node-js-e5e623723bcb
-https://pptr.dev/category/introduction
+
 
 
 ## OTHER CONSIDERATIONS:
