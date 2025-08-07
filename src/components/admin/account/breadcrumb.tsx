@@ -8,7 +8,9 @@ const routeNames: Record<string, string> = {
   "/account-admin": "Administración de Cuenta",
   "/account-admin/reports": "Reportes",
   "/account-admin/configuration": "Configuración",
+  "/account-admin/portales": "Portales",
   "/account-admin/branding": "Marca y Logo",
+  "/account-admin/carteleria": "Cartelería",
   "/account-admin/other": "Otras Opciones",
 };
 

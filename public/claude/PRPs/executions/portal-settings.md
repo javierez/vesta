@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create a comprehensive portal settings configuration feature in the account-admin section. The feature should provide a tab-based interface for configuring Fotocasa, Idealista, and general portal settings, including watermark configuration. The settings will be stored in the accounts table's portal_settings JSON field and provide real-time form state management with save/saved states.
+Create a comprehensive portal settings configuration feature in the account-admin section:/Users/javierperezgarcia/Downloads/vesta/src/app/(dashboard)/account-admin/portals/page.tsx . The feature should provide a tab-based interface for configuring Fotocasa, Idealista, and general portal settings, including watermark configuration. The settings will be stored in the accounts table's portal_settings JSON field and provide real-time form state management with save/saved states.
 
 ## Why
 

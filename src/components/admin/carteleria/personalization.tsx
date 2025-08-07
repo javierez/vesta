@@ -94,12 +94,12 @@ export const Personalization: FC<PersonalizationProps> = ({
   const downloadSample = async () => {
     setIsGeneratingPdf(true);
     try {
-      console.log('🔽 Starting PDF sample generation...');
-      
-      const response = await fetch('/api/puppet/generate-pdf', {
-        method: 'POST',
+      console.log("🔽 Starting PDF sample generation...");
+
+      const response = await fetch("/api/puppet/generate-pdf", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           templateConfig: config,
@@ -108,33 +108,34 @@ export const Personalization: FC<PersonalizationProps> = ({
       });
 
       if (!response.ok) {
-        const errorData = await response.json() as { error?: string };
-        throw new Error(errorData.error ?? 'PDF generation failed');
+        const errorData = (await response.json()) as { error?: string };
+        throw new Error(errorData.error ?? "PDF generation failed");
       }
 
       // Get the PDF blob
       const pdfBlob = await response.blob();
-      
+
       // Create download link
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      
+
       // Automatically download the PDF
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = pdfUrl;
       link.download = `muestra-plantilla-${config.templateStyle}-${Date.now()}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Clean up
       URL.revokeObjectURL(pdfUrl);
-      
-      toast.success('¡Muestra PDF generada exitosamente!');
-      console.log('✅ PDF sample generated and downloaded');
-      
+
+      toast.success("¡Muestra PDF generada exitosamente!");
+      console.log("✅ PDF sample generated and downloaded");
     } catch (error) {
-      console.error('❌ PDF sample generation error:', error);
-      toast.error(`Error generando muestra: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      console.error("❌ PDF sample generation error:", error);
+      toast.error(
+        `Error generando muestra: ${error instanceof Error ? error.message : "Error desconocido"}`,
+      );
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -173,7 +174,7 @@ export const Personalization: FC<PersonalizationProps> = ({
           <div className="flex justify-center">
             <div
               ref={templateRef}
-              className="relative border border-gray-300 shadow-lg rounded-lg overflow-hidden bg-white"
+              className="relative overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg"
               style={{
                 width: config.orientation === "vertical" ? "397px" : "562px", // 794*0.5 and 1123*0.5
                 height: config.orientation === "vertical" ? "562px" : "397px", // 1123*0.5 and 794*0.5
@@ -184,7 +185,8 @@ export const Personalization: FC<PersonalizationProps> = ({
                   transform: "scale(0.5)",
                   transformOrigin: "top left",
                   width: config.orientation === "vertical" ? "794px" : "1123px",
-                  height: config.orientation === "vertical" ? "1123px" : "794px",
+                  height:
+                    config.orientation === "vertical" ? "1123px" : "794px",
                 }}
               >
                 {config.templateStyle === "classic" ? (
@@ -203,11 +205,11 @@ export const Personalization: FC<PersonalizationProps> = ({
               </div>
             </div>
           </div>
-          
+
           {/* Download Sample Button */}
-          <div className="flex justify-center mt-4">
-            <Button 
-              onClick={downloadSample} 
+          <div className="mt-4 flex justify-center">
+            <Button
+              onClick={downloadSample}
               disabled={isGeneratingPdf}
               className="w-full max-w-xs"
             >

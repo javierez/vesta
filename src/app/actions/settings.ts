@@ -27,6 +27,11 @@ import {
   portalSettingsSchema,
   paymentSettingsSchema,
 } from "~/types/settings";
+import type {
+  PortalConfigurationInput,
+  PortalConfigurationResponse,
+} from "~/types/portal-settings";
+import { portalConfigurationSchema } from "~/types/portal-settings";
 
 // Account Logo Upload
 export async function uploadAccountLogo(
@@ -261,6 +266,101 @@ export async function getCurrentUserAccountId(
   } catch (error) {
     console.error("Error getting account ID for user:", error);
     return null;
+  }
+}
+
+// Portal Configuration Actions (New portal settings structure)
+export async function getPortalConfigurationAction(
+  accountId: bigint,
+): Promise<PortalConfigurationResponse> {
+  try {
+    const accountSettings = await getAccountSettings(accountId);
+
+    if (!accountSettings) {
+      return {
+        success: false,
+        error: "Configuración de cuenta no encontrada",
+      };
+    }
+
+    // Extract portal configuration from portal_settings
+    const portalSettings = accountSettings.portalSettings;
+
+    const fotocasaSettings = portalSettings.fotocasa as Record<string, unknown> | undefined;
+    const idealistaSettings = portalSettings.idealista as Record<string, unknown> | undefined;
+    const generalSettings = portalSettings.general as Record<string, unknown> | undefined;
+
+    const portalConfiguration = {
+      fotocasa: {
+        enabled: (fotocasaSettings?.enabled as boolean) ?? false,
+        apiKey: fotocasaSettings?.apiKey as string | undefined,
+      },
+      idealista: {
+        enabled: (idealistaSettings?.enabled as boolean) ?? false,
+        apiKey: idealistaSettings?.apiKey as string | undefined,
+      },
+      general: {
+        watermarkEnabled: (generalSettings?.watermarkEnabled as boolean) ?? false,
+        watermarkPosition: generalSettings?.watermarkPosition as "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center" | undefined,
+      },
+    };
+
+    return {
+      success: true,
+      data: portalConfiguration,
+    };
+  } catch (error) {
+    console.error("Error fetching portal configuration:", error);
+    return {
+      success: false,
+      error: "Error al obtener la configuración de portales",
+    };
+  }
+}
+
+export async function updatePortalConfigurationAction(
+  accountId: bigint,
+  data: PortalConfigurationInput,
+): Promise<PortalConfigurationResponse> {
+  try {
+    // Validate input data
+    const validatedData = portalConfigurationSchema.parse(data);
+
+    // Get current account settings to merge with new portal configuration
+    const currentAccount = await getAccountSettings(accountId);
+    if (!currentAccount) {
+      return {
+        success: false,
+        error: "Cuenta no encontrada",
+      };
+    }
+
+    // Merge existing portal settings with new configuration
+    const currentPortalSettings = currentAccount.portalSettings ?? {};
+    const updatedPortalSettings = {
+      ...currentPortalSettings,
+      fotocasa: validatedData.fotocasa ?? currentPortalSettings.fotocasa,
+      idealista: validatedData.idealista ?? currentPortalSettings.idealista,
+      general: validatedData.general ?? currentPortalSettings.general,
+    };
+
+    // Update portal settings
+    await updateAccountPortalSettings(accountId, updatedPortalSettings);
+
+    // Revalidate the settings pages
+    revalidatePath("/account-admin/portales");
+    revalidatePath("/ajustes");
+
+    return {
+      success: true,
+      data: validatedData,
+    };
+  } catch (error) {
+    console.error("Error updating portal configuration:", error);
+    return {
+      success: false,
+      error: "Error al actualizar la configuración de portales",
+    };
   }
 }
 

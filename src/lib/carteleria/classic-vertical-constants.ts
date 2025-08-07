@@ -95,23 +95,23 @@ export const PRINT_DIMENSIONS = {
     iconRowGap: 4, // Vertical gap between icon grid rows
     iconToText: 4, // Space between icon and its label text below
     iconColumns: 32, // Horizontal gap between feature icon columns
-    
+
     // Location spacing
     locationBadgePadding: 8, // Padding inside location badge
     titleToLocation: 24, // Space between title section and location
     locationToIcons: 0, // Space between location and feature icons
     iconsToPrice: 10, // Space between feature icons and price section
-    
+
     // Layout margins
     overlayPadding: 24, // Main overlay internal padding
     titleLeftMargin: 24, // Additional left margin for title text only
     iconsLeftMargin: 24, // Left margin for feature icons grid
     iconsLeftMarginRental: 32, // Left margin for feature icons in rental listings
-    
+
     // Contact section
     contactItemsGap: 4, // Gap between contact items (phone, email, website)
     contactOverlayPadding: 8, // Padding inside contact overlay
-    
+
     // Features section - spacing from title/location to icons
     featuresTopMargin: 24, // Top margin for features section in normal mode (5+ icons)
     featuresTopMarginCompact: 24, // Top margin for features section in compact mode

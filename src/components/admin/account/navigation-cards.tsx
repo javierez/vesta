@@ -9,7 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { BarChart3, Settings, Users, Palette, FileImage, Globe } from "lucide-react";
+import {
+  BarChart3,
+  Settings,
+  Users,
+  Palette,
+  FileImage,
+  Globe,
+} from "lucide-react";
 
 interface AccountAdminCard {
   title: string;
@@ -32,6 +39,13 @@ const accountAdminSections: AccountAdminCard[] = [
     description: "Personaliza y configura los ajustes de tu cuenta",
     icon: Settings,
     href: "/account-admin/configuration",
+    available: true,
+  },
+  {
+    title: "Portales",
+    description: "Configura la publicación en portales inmobiliarios",
+    icon: Globe,
+    href: "/account-admin/portales",
     available: true,
   },
   {

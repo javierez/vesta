@@ -243,7 +243,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
       // Vertical layout - treat overlay as part of the grid layout
       const mainHeight = Math.floor(containerDims.height / 2) - gap; // 50% height
       const gridHeight = containerDims.height - mainHeight - gap;
-      
+
       // Calculate available space considering overlay takes left portion with same gap as between images
       const availableWidth = containerDims.width - overlayWidth - gap; // Width available for images after overlay + gap
 
@@ -281,9 +281,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 sizes={`${containerDims.width}px`}
                 style={{
-                  objectPosition: data.imagePositions?.[templateImages[0] ?? ""] 
+                  objectPosition: data.imagePositions?.[templateImages[0] ?? ""]
                     ? `${data.imagePositions[templateImages[0] ?? ""]?.x ?? 50}% ${data.imagePositions[templateImages[0] ?? ""]?.y ?? 50}%`
-                    : "50% 50%"
+                    : "50% 50%",
                 }}
                 priority
               />
@@ -292,7 +292,8 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
 
             {/* Supporting images - bottom 50%, 3 columns - full width since overlay doesn't cover this area */}
             {templateImages.slice(1, 4).map((image, index) => {
-              const fullWidthSubImageWidth = Math.floor(containerDims.width / 3) - (gap * 2) / 3;
+              const fullWidthSubImageWidth =
+                Math.floor(containerDims.width / 3) - (gap * 2) / 3;
               return (
                 <div
                   key={index}
@@ -313,9 +314,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                     onError={handleImageError}
                     sizes={`${fullWidthSubImageWidth}px`}
                     style={{
-                      objectPosition: data.imagePositions?.[image] 
+                      objectPosition: data.imagePositions?.[image]
                         ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
-                        : "50% 50%"
+                        : "50% 50%",
                     }}
                   />
                   {renderWatermark("small")}
@@ -358,9 +359,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 sizes={`${containerDims.width}px`}
                 style={{
-                  objectPosition: data.imagePositions?.[templateImages[0] ?? ""] 
+                  objectPosition: data.imagePositions?.[templateImages[0] ?? ""]
                     ? `${data.imagePositions[templateImages[0] ?? ""]?.x ?? 50}% ${data.imagePositions[templateImages[0] ?? ""]?.y ?? 50}%`
-                    : "50% 50%"
+                    : "50% 50%",
                 }}
                 priority
               />
@@ -369,7 +370,8 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
 
             {/* Supporting images - bottom 50%, 2 columns - full width since overlay doesn't cover this area */}
             {templateImages.slice(1, 3).map((image, index) => {
-              const fullWidthSubImageWidth = Math.floor(containerDims.width / 2) - gap / 2;
+              const fullWidthSubImageWidth =
+                Math.floor(containerDims.width / 2) - gap / 2;
               return (
                 <div
                   key={index}
@@ -390,9 +392,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                     onError={handleImageError}
                     sizes={`${fullWidthSubImageWidth}px`}
                     style={{
-                      objectPosition: data.imagePositions?.[image] 
+                      objectPosition: data.imagePositions?.[image]
                         ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
-                        : "50% 50%"
+                        : "50% 50%",
                     }}
                   />
                   {renderWatermark("medium")}
@@ -437,9 +439,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
               onError={handleImageError}
               sizes={`${mainWidth}px`}
               style={{
-                objectPosition: data.imagePositions?.[templateImages[0] ?? ""] 
+                objectPosition: data.imagePositions?.[templateImages[0] ?? ""]
                   ? `${data.imagePositions[templateImages[0] ?? ""]?.x ?? 50}% ${data.imagePositions[templateImages[0] ?? ""]?.y ?? 50}%`
-                  : "50% 50%"
+                  : "50% 50%",
               }}
               priority
             />
@@ -472,9 +474,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                       onError={handleImageError}
                       sizes={`${gridWidth}px`}
                       style={{
-                        objectPosition: data.imagePositions?.[image] 
+                        objectPosition: data.imagePositions?.[image]
                           ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
-                          : "50% 50%"
+                          : "50% 50%",
                       }}
                     />
                     {renderWatermark("small")}
@@ -505,9 +507,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                       onError={handleImageError}
                       sizes={`${gridWidth}px`}
                       style={{
-                        objectPosition: data.imagePositions?.[image] 
+                        objectPosition: data.imagePositions?.[image]
                           ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
-                          : "50% 50%"
+                          : "50% 50%",
                       }}
                     />
                     {renderWatermark("medium")}
@@ -796,10 +798,12 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
           {/* Top section with title and content - variable size */}
           <div style={{ flex: 1 }}>
             {/* Title - listing type and property type */}
-            <div style={{ 
-              marginBottom: `${PRINT_DIMENSIONS.SPACING.titleToLocation}px`,
-              marginLeft: `${PRINT_DIMENSIONS.SPACING.titleLeftMargin}px`
-            }}>
+            <div
+              style={{
+                marginBottom: `${PRINT_DIMENSIONS.SPACING.titleToLocation}px`,
+                marginLeft: `${PRINT_DIMENSIONS.SPACING.titleLeftMargin}px`,
+              }}
+            >
               <h2
                 className={cn(
                   "font-bold uppercase",
@@ -807,9 +811,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   getFontClass(config.titleFont),
                 )}
                 style={{
-                  fontSize: `${getTypographySize("title", { 
+                  fontSize: `${getTypographySize("title", {
                     isCompact: locationNeedsLineBreak,
-                    isRental: config.listingType === "alquiler" 
+                    isRental: config.listingType === "alquiler",
                   })}px`,
                   lineHeight: "1.2",
                   margin: 0,
@@ -824,9 +828,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   getFontClass(config.titleFont),
                 )}
                 style={{
-                  fontSize: `${getTypographySize("title", { 
+                  fontSize: `${getTypographySize("title", {
                     isCompact: locationNeedsLineBreak,
-                    isRental: config.listingType === "alquiler" 
+                    isRental: config.listingType === "alquiler",
                   })}px`,
                   lineHeight: "1.2",
                   margin: 0,
@@ -909,9 +913,10 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
           {/* Bottom section with price - always shown */}
           <div
             style={{
-              marginTop: totalFeatures > 4 
-                ? `${PRINT_DIMENSIONS.SPACING.iconsToPrice * 2}px` 
-                : `${PRINT_DIMENSIONS.SPACING.iconsToPrice}px`,
+              marginTop:
+                totalFeatures > 4
+                  ? `${PRINT_DIMENSIONS.SPACING.iconsToPrice * 2}px`
+                  : `${PRINT_DIMENSIONS.SPACING.iconsToPrice}px`,
               textAlign: "center",
             }}
           >

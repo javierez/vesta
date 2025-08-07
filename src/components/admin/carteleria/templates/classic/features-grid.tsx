@@ -77,9 +77,12 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
 
           // Determine spacing based on feature count
           const getTopMargin = () => {
-            if (shouldCompact) return PRINT_DIMENSIONS.SPACING.featuresTopMarginCompact;
-            if (totalFeatures === 1) return PRINT_DIMENSIONS.SPACING.featuresTopMarginSingle;
-            if (totalFeatures >= 3 && totalFeatures <= 4) return PRINT_DIMENSIONS.SPACING.featuresTopMarginMedium;
+            if (shouldCompact)
+              return PRINT_DIMENSIONS.SPACING.featuresTopMarginCompact;
+            if (totalFeatures === 1)
+              return PRINT_DIMENSIONS.SPACING.featuresTopMarginSingle;
+            if (totalFeatures >= 3 && totalFeatures <= 4)
+              return PRINT_DIMENSIONS.SPACING.featuresTopMarginMedium;
             return PRINT_DIMENSIONS.SPACING.featuresTopMargin;
           };
 

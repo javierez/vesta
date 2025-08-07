@@ -7,9 +7,12 @@ export default function AccountAdminPortalesPage() {
       <AccountAdminBreadcrumb />
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Configuración de Portales</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Configuración de Portales
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Gestiona la publicación automática en los principales portales inmobiliarios
+          Gestiona la publicación automática en los principales portales
+          inmobiliarios
         </p>
       </div>
 

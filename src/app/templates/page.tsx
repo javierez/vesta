@@ -1,6 +1,9 @@
 import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
 import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
-import type { TemplateConfiguration, ExtendedTemplatePropertyData } from "~/types/template-data";
+import type {
+  TemplateConfiguration,
+  ExtendedTemplatePropertyData,
+} from "~/types/template-data";
 
 interface TemplatesPageProps {
   searchParams: Promise<{
@@ -9,7 +12,9 @@ interface TemplatesPageProps {
   }>;
 }
 
-export default async function TemplatesPage({ searchParams }: TemplatesPageProps) {
+export default async function TemplatesPage({
+  searchParams,
+}: TemplatesPageProps) {
   // Try to parse config and data from query parameters
   let config: TemplateConfiguration;
   let data: ExtendedTemplatePropertyData;
@@ -44,7 +49,7 @@ export default async function TemplatesPage({ searchParams }: TemplatesPageProps
       };
     }
   } catch (error) {
-    console.error('Error parsing template parameters:', error);
+    console.error("Error parsing template parameters:", error);
     // Fallback to default on parse error
     data = getExtendedDefaultPropertyData("piso");
     config = {
@@ -69,10 +74,11 @@ export default async function TemplatesPage({ searchParams }: TemplatesPageProps
   }
 
   return (
-    <div style={{ margin: 0, padding: 0, backgroundColor: 'white' }}>
+    <div style={{ margin: 0, padding: 0, backgroundColor: "white" }}>
       <ClassicTemplate data={data} config={config} />
-      <script dangerouslySetInnerHTML={{
-        __html: `
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
           // Signal that template is ready for PDF generation
           window.templateReady = true;
           document.body.classList.add('template-ready');
@@ -109,8 +115,9 @@ export default async function TemplatesPage({ searchParams }: TemplatesPageProps
             window.templateReady = true;
             console.log('✅ Template ready (timeout fallback)');
           }, 5000);
-        `
-      }} />
+        `,
+        }}
+      />
     </div>
   );
 }
