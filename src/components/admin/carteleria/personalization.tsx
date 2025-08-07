@@ -1,5 +1,8 @@
 import type { FC } from "react";
 import { useState, useEffect, useRef } from "react";
+import { Button } from "~/components/ui/button";
+import { Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { DisplayOptions } from "./controls/display-options";
 import { ModernTemplate } from "./templates/modern/modern-template";
 import { ClassicTemplate } from "./templates/classic/classic-vertical-template";
@@ -17,6 +20,7 @@ export const Personalization: FC<PersonalizationProps> = ({
 }) => {
   const [preferences, setPreferences] =
     useState<PosterPreferences>(initialPreferences);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const templateRef = useRef<HTMLDivElement>(null);
 
   // Template property data for preview (like Playground)
@@ -86,6 +90,56 @@ export const Personalization: FC<PersonalizationProps> = ({
     onUpdate({ displayOptions: newPrefs });
   };
 
+  // Generate PDF sample using current configuration
+  const downloadSample = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      console.log('🔽 Starting PDF sample generation...');
+      
+      const response = await fetch('/api/puppet/generate-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          templateConfig: config,
+          propertyData: propertyData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json() as { error?: string };
+        throw new Error(errorData.error ?? 'PDF generation failed');
+      }
+
+      // Get the PDF blob
+      const pdfBlob = await response.blob();
+      
+      // Create download link
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      // Automatically download the PDF
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = `muestra-plantilla-${config.templateStyle}-${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      URL.revokeObjectURL(pdfUrl);
+      
+      toast.success('¡Muestra PDF generada exitosamente!');
+      console.log('✅ PDF sample generated and downloaded');
+      
+    } catch (error) {
+      console.error('❌ PDF sample generation error:', error);
+      toast.error(`Error generando muestra: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -148,6 +202,27 @@ export const Personalization: FC<PersonalizationProps> = ({
                 )}
               </div>
             </div>
+          </div>
+          
+          {/* Download Sample Button */}
+          <div className="flex justify-center mt-4">
+            <Button 
+              onClick={downloadSample} 
+              disabled={isGeneratingPdf}
+              className="w-full max-w-xs"
+            >
+              {isGeneratingPdf ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generando muestra...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Descargar Muestra
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
