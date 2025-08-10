@@ -31,9 +31,9 @@ import { Separator } from "~/components/ui/separator";
 import { motion } from "framer-motion";
 import { RoomSelector } from "~/components/crear/pages/elements/room_selector";
 import {
-  createProspect,
-  updateProspect,
-  deleteProspect,
+  createProspectWithAuth,
+  updateProspectWithAuth,
+  deleteProspectWithAuth,
   type CreateProspectInput,
   type UpdateProspectInput,
 } from "~/server/queries/prospect";
@@ -187,12 +187,12 @@ export function ContactInterestForm({
       // Check if this is an existing prospect (ID starts with "prospect-")
       if (localData.id.startsWith("prospect-")) {
         const prospectId = localData.id.replace("prospect-", "");
-        await updateProspect(
+        await updateProspectWithAuth(
           BigInt(prospectId),
           prospectData as UpdateProspectInput,
         );
       } else {
-        await createProspect(prospectData);
+        await createProspectWithAuth(prospectData);
       }
 
       setSaveStatus("saved");
@@ -233,7 +233,7 @@ export function ContactInterestForm({
   const confirmDelete = async () => {
     try {
       const prospectId = localData.id.replace("prospect-", "");
-      await deleteProspect(BigInt(prospectId));
+      await deleteProspectWithAuth(BigInt(prospectId));
       toast.success("Solicitud eliminada exitosamente");
       setShowDeleteDialog(false);
 

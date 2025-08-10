@@ -10,11 +10,7 @@ import {
   DropdownMenuSeparator,
 } from "~/components/ui/dropdown-menu";
 import { Input } from "~/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import {
   Plus,
   Search,
@@ -23,7 +19,6 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  Video,
   Check,
   Filter,
   X,
@@ -45,8 +40,13 @@ import {
 } from "~/components/ui/popover";
 import Image from "next/image"; // Add Image import for optimized images
 import { useWeeklyAppointments } from "~/hooks/use-appointments";
-import CalendarEvent, { ListCalendarEvent, CompactCalendarEvent } from "~/components/appointments/calendar-event";
-import AppointmentModal, { useAppointmentModal } from "~/components/appointments/appointment-modal";
+import CalendarEvent, {
+  ListCalendarEvent,
+  CompactCalendarEvent,
+} from "~/components/appointments/calendar-event";
+import AppointmentModal, {
+  useAppointmentModal,
+} from "~/components/appointments/appointment-modal";
 
 // Appointment types configuration
 const appointmentTypes = {
@@ -102,20 +102,33 @@ export default function AppointmentsPage() {
   const [selectedEvent, setSelectedEvent] = useState<bigint | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  
+
   // Use real appointments data
-  const { appointments: realAppointments, loading, error, refetch } = useWeeklyAppointments(weekStart);
-  
+  const {
+    appointments: realAppointments,
+    loading,
+    error,
+  } = useWeeklyAppointments(weekStart);
+
   // Use appointment modal
-  const { isOpen: isModalOpen, openModal, closeModal, initialData } = useAppointmentModal();
+  const {
+    isOpen: isModalOpen,
+    openModal,
+    closeModal,
+    initialData,
+  } = useAppointmentModal();
 
   // Filter appointments
   const filteredAppointments = realAppointments.filter((appointment) => {
     const matchesSearch =
-      appointment.contactName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (appointment.propertyAddress?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-    const matchesType =
-      typeFilter === "all" || appointment.type === typeFilter;
+      appointment.contactName
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      (appointment.propertyAddress
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()) ??
+        false);
+    const matchesType = typeFilter === "all" || appointment.type === typeFilter;
     const matchesStatus =
       statusFilter === "all" || appointment.status === statusFilter;
     return matchesSearch && matchesType && matchesStatus;
@@ -176,21 +189,22 @@ export default function AppointmentsPage() {
   // Handle click on empty time slot for appointment creation
   const handleTimeSlotClick = (date: Date, hour: number, minute = 0) => {
     const clickedDate = new Date(date);
-    const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-    
+    const startTime = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+
     // Default to 1-hour appointment
     const endHour = hour + 1;
-    const endTime = `${endHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-    
+    const endTime = `${endHour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+
     const dateString = getDateString(clickedDate);
-    
+    if (!dateString) return;
+
     // Navigate with URL parameters to trigger modal
     const params = new URLSearchParams();
-    params.set('new', 'true');
-    params.set('date', dateString);
-    params.set('time', startTime);
-    params.set('endTime', endTime);
-    
+    params.set("new", "true");
+    params.set("date", dateString);
+    params.set("time", startTime);
+    params.set("endTime", endTime);
+
     router.push(`/calendario?${params.toString()}`, { scroll: false });
   };
 
@@ -412,11 +426,9 @@ export default function AppointmentsPage() {
               <span className="ml-2">Cargando citas...</span>
             </div>
           ) : error ? (
-            <div className="text-center py-8 text-red-600">
-              {error}
-            </div>
+            <div className="py-8 text-center text-red-600">{error}</div>
           ) : filteredAppointments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="py-8 text-center text-muted-foreground">
               No se encontraron citas
             </div>
           ) : (
@@ -440,11 +452,11 @@ export default function AppointmentsPage() {
               <span className="ml-2">Cargando citas...</span>
             </div>
           ) : error ? (
-            <div className="col-span-full text-center py-8 text-red-600">
+            <div className="col-span-full py-8 text-center text-red-600">
               {error}
             </div>
           ) : filteredAppointments.length === 0 ? (
-            <div className="col-span-full text-center py-8 text-muted-foreground">
+            <div className="col-span-full py-8 text-center text-muted-foreground">
               No se encontraron citas
             </div>
           ) : (
@@ -534,7 +546,7 @@ export default function AppointmentsPage() {
                       key={hour}
                       className="flex h-[60px] items-start justify-end border-b pr-2 pt-1 text-xs text-muted-foreground"
                     >
-                      {hour.toString().padStart(2, '0')}:00
+                      {hour.toString().padStart(2, "0")}:00
                     </div>
                   ))}
                 </div>
@@ -553,51 +565,64 @@ export default function AppointmentsPage() {
                       <div key={hour} className="relative h-[60px] border-b">
                         {/* First half-hour slot */}
                         <div
-                          className="absolute left-0 right-0 top-0 h-1/2 cursor-pointer hover:bg-blue-50/50 transition-colors"
+                          className="absolute left-0 right-0 top-0 h-1/2 cursor-pointer transition-colors hover:bg-blue-50/50"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleTimeSlotClick(day, hour, 0);
                           }}
-                          title={`Crear cita - ${hour.toString().padStart(2, '0')}:00`}
+                          title={`Crear cita - ${hour.toString().padStart(2, "0")}:00`}
                         />
-                        
+
                         {/* Half-hour divider */}
                         <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-gray-200"></div>
-                        
+
                         {/* Second half-hour slot */}
                         <div
-                          className="absolute left-0 right-0 bottom-0 h-1/2 cursor-pointer hover:bg-blue-50/50 transition-colors"
+                          className="absolute bottom-0 left-0 right-0 h-1/2 cursor-pointer transition-colors hover:bg-blue-50/50"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleTimeSlotClick(day, hour, 30);
                           }}
-                          title={`Crear cita - ${hour.toString().padStart(2, '0')}:30`}
+                          title={`Crear cita - ${hour.toString().padStart(2, "0")}:30`}
                         />
                       </div>
                     ))}
 
                     {/* Appointments for this day */}
-                    {!loading && !error && filteredAppointments
-                      .filter((app) => {
-                        const appDate = new Date(app.startTime).toISOString().split("T")[0];
-                        const dayDate = getDateString(day);
-                        return appDate === dayDate;
-                      })
-                      .map((app) => {
-                        const startTime = new Date(app.startTime).toTimeString().slice(0, 5);
-                        const endTime = new Date(app.endTime).toTimeString().slice(0, 5);
-                        const eventStyle = calculateEventStyle(startTime, endTime);
-                        
-                        return (
-                          <CalendarEvent
-                            key={app.appointmentId.toString()}
-                            event={app}
-                            style={eventStyle}
-                            isSelected={selectedEvent === app.appointmentId}
-                            onClick={() => setSelectedEvent(app.appointmentId)}
-                          />
-                        );
-                      })}
+                    {!loading &&
+                      !error &&
+                      filteredAppointments
+                        .filter((app) => {
+                          const appDate = new Date(app.startTime)
+                            .toISOString()
+                            .split("T")[0];
+                          const dayDate = getDateString(day);
+                          return appDate === dayDate;
+                        })
+                        .map((app) => {
+                          const startTime = new Date(app.startTime)
+                            .toTimeString()
+                            .slice(0, 5);
+                          const endTime = new Date(app.endTime)
+                            .toTimeString()
+                            .slice(0, 5);
+                          const eventStyle = calculateEventStyle(
+                            startTime,
+                            endTime,
+                          );
+
+                          return (
+                            <CalendarEvent
+                              key={app.appointmentId.toString()}
+                              event={app}
+                              style={eventStyle}
+                              isSelected={selectedEvent === app.appointmentId}
+                              onClick={() =>
+                                setSelectedEvent(app.appointmentId)
+                              }
+                            />
+                          );
+                        })}
                   </div>
                 ))}
               </div>
@@ -621,7 +646,9 @@ export default function AppointmentsPage() {
           </div>
 
           {(() => {
-            const event = realAppointments.find((a) => a.appointmentId === selectedEvent);
+            const event = realAppointments.find(
+              (a) => a.appointmentId === selectedEvent,
+            );
             if (!event) return null;
 
             const formatDate = (date: Date) => {
@@ -639,21 +666,21 @@ export default function AppointmentsPage() {
               }).format(date);
             };
 
-            const typeConfig = appointmentTypes[event.type as keyof typeof appointmentTypes] || {
+            const typeConfig = appointmentTypes[
+              event.type as keyof typeof appointmentTypes
+            ] || {
               color: "bg-gray-100 text-gray-800",
-              icon: "📅"
+              icon: "📅",
             };
 
             return (
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-lg font-medium flex items-center gap-2">
+                  <h4 className="flex items-center gap-2 text-lg font-medium">
                     <span>{typeConfig.icon}</span>
                     {event.contactName}
                   </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {event.type}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{event.type}</p>
                 </div>
 
                 <div className="space-y-2">
@@ -664,7 +691,8 @@ export default function AppointmentsPage() {
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                      {formatTime(event.startTime)} -{" "}
+                      {formatTime(event.endTime)}
                     </span>
                   </div>
                   {event.propertyAddress && (
@@ -692,13 +720,13 @@ export default function AppointmentsPage() {
                     size="sm"
                     variant="outline"
                     asChild
-                    className="flex-1"
+                    className="w-full"
                   >
-                    <Link href={`/calendario/appointments/${event.appointmentId}/edit`}>Editar</Link>
-                  </Button>
-                  <Button size="sm" variant="outline" className="flex-1">
-                    <Video className="mr-1 h-4 w-4" />
-                    Reunión
+                    <Link
+                      href={`/calendario/appointments/${event.appointmentId}/edit`}
+                    >
+                      Editar
+                    </Link>
                   </Button>
                 </div>
               </div>

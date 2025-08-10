@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Users, CheckCircle, Plus, Download, X } from "lucide-react";
+import {
+  ChevronDown,
+  Users,
+  CheckCircle,
+  Plus,
+  Download,
+  X,
+} from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -24,7 +31,7 @@ export default function BulkActions({
   selectedCount,
   operationType,
   selectedItems,
-  onClearSelection
+  onClearSelection,
 }: BulkActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,20 +40,19 @@ export default function BulkActions({
     try {
       // TODO: Implement actual bulk actions when server actions are ready
       console.log(`Bulk action: ${action}`, { operationType, selectedItems });
-      
+
       // Simulate async operation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // For now, just clear selection after action
       onClearSelection();
     } catch (error) {
-      console.error('Bulk action failed:', error);
+      console.error("Bulk action failed:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const entityName = operationType.slice(0, -1); // Remove 's' for singular
 
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-white p-3 shadow-sm">
@@ -76,37 +82,37 @@ export default function BulkActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {/* Assign Actions */}
-          <DropdownMenuItem onClick={() => handleAction('assign')}>
+          <DropdownMenuItem onClick={() => handleAction("assign")}>
             <Users className="mr-2 h-4 w-4" />
             Asignar a Usuario
           </DropdownMenuItem>
-          
+
           {/* Status Update Actions */}
-          <DropdownMenuItem onClick={() => handleAction('updateStatus')}>
+          <DropdownMenuItem onClick={() => handleAction("updateStatus")}>
             <CheckCircle className="mr-2 h-4 w-4" />
             Actualizar Estado
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator />
-          
+
           {/* Task Actions */}
-          <DropdownMenuItem onClick={() => handleAction('createTasks')}>
+          <DropdownMenuItem onClick={() => handleAction("createTasks")}>
             <Plus className="mr-2 h-4 w-4" />
             Crear Tareas
           </DropdownMenuItem>
-          
+
           {/* Export Actions */}
-          <DropdownMenuItem onClick={() => handleAction('export')}>
+          <DropdownMenuItem onClick={() => handleAction("export")}>
             <Download className="mr-2 h-4 w-4" />
             Exportar a CSV
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator />
-          
+
           {/* Danger Zone */}
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="text-red-600 focus:text-red-600"
-            onClick={() => handleAction('delete')}
+            onClick={() => handleAction("delete")}
           >
             Eliminar Seleccionados
           </DropdownMenuItem>
@@ -114,12 +120,12 @@ export default function BulkActions({
       </DropdownMenu>
 
       {/* Quick Status Updates */}
-      {operationType === 'prospects' && (
+      {operationType === "prospects" && (
         <div className="flex gap-1">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleAction('markQualified')}
+            onClick={() => handleAction("markQualified")}
             disabled={isLoading}
           >
             Marcar Calificado
@@ -127,7 +133,7 @@ export default function BulkActions({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleAction('markArchived')}
+            onClick={() => handleAction("markArchived")}
             disabled={isLoading}
           >
             Archivar
@@ -135,12 +141,12 @@ export default function BulkActions({
         </div>
       )}
 
-      {operationType === 'leads' && (
+      {operationType === "leads" && (
         <div className="flex gap-1">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleAction('markConverted')}
+            onClick={() => handleAction("markConverted")}
             disabled={isLoading}
           >
             Marcar Convertido
@@ -148,7 +154,7 @@ export default function BulkActions({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleAction('markDisqualified')}
+            onClick={() => handleAction("markDisqualified")}
             disabled={isLoading}
           >
             Descalificar
@@ -156,12 +162,12 @@ export default function BulkActions({
         </div>
       )}
 
-      {operationType === 'deals' && (
+      {operationType === "deals" && (
         <div className="flex gap-1">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleAction('markClosed')}
+            onClick={() => handleAction("markClosed")}
             disabled={isLoading}
           >
             Marcar Cerrado
@@ -169,7 +175,7 @@ export default function BulkActions({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleAction('markLost')}
+            onClick={() => handleAction("markLost")}
             disabled={isLoading}
           >
             Marcar Perdido

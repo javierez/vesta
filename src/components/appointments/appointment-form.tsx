@@ -16,7 +16,10 @@ import {
   Car,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createAppointmentAction, validateAppointmentForm } from "~/server/actions/appointments";
+import {
+  createAppointmentAction,
+  validateAppointmentForm,
+} from "~/server/actions/appointments";
 import { listContactsWithAuth } from "~/server/queries/contact";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
@@ -35,10 +38,10 @@ interface AppointmentFormData {
   leadId?: bigint;
   dealId?: bigint;
   prospectId?: bigint;
-  startDate: string;      // YYYY-MM-DD format
-  startTime: string;      // HH:mm format
-  endDate: string;        // YYYY-MM-DD format
-  endTime: string;        // HH:mm format
+  startDate: string; // YYYY-MM-DD format
+  startTime: string; // HH:mm format
+  endDate: string; // YYYY-MM-DD format
+  endTime: string; // HH:mm format
   tripTimeMinutes?: number;
   notes?: string;
   appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
@@ -59,7 +62,7 @@ interface AppointmentFormProps {
   onCancel?: () => void;
 }
 
-const initialFormData: Omit<AppointmentFormData, 'contactId'> = {
+const initialFormData: Omit<AppointmentFormData, "contactId"> = {
   startDate: "",
   startTime: "",
   endDate: "",
@@ -95,11 +98,36 @@ const steps: Step[] = [
 ];
 
 const appointmentTypes = [
-  { value: "Visita", label: "Visita", color: "bg-blue-100 text-blue-800", icon: "🏠" },
-  { value: "Reunión", label: "Reunión", color: "bg-purple-100 text-purple-800", icon: "👥" },
-  { value: "Firma", label: "Firma", color: "bg-green-100 text-green-800", icon: "✍️" },
-  { value: "Cierre", label: "Cierre", color: "bg-yellow-100 text-yellow-800", icon: "🤝" },
-  { value: "Viaje", label: "Viaje", color: "bg-emerald-100 text-emerald-800", icon: "🚆" },
+  {
+    value: "Visita",
+    label: "Visita",
+    color: "bg-blue-100 text-blue-800",
+    icon: "🏠",
+  },
+  {
+    value: "Reunión",
+    label: "Reunión",
+    color: "bg-purple-100 text-purple-800",
+    icon: "👥",
+  },
+  {
+    value: "Firma",
+    label: "Firma",
+    color: "bg-green-100 text-green-800",
+    icon: "✍️",
+  },
+  {
+    value: "Cierre",
+    label: "Cierre",
+    color: "bg-yellow-100 text-yellow-800",
+    icon: "🤝",
+  },
+  {
+    value: "Viaje",
+    label: "Viaje",
+    color: "bg-emerald-100 text-emerald-800",
+    icon: "🚆",
+  },
 ];
 
 export default function AppointmentForm({
@@ -138,10 +166,13 @@ export default function AppointmentForm({
   }, []);
 
   // Filter contacts based on search query
-  const filteredContacts = contacts.filter((contact) =>
-    `${contact.firstName} ${contact.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.phone?.includes(searchQuery)
+  const filteredContacts = contacts.filter(
+    (contact) =>
+      `${contact.firstName} ${contact.lastName}`
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      (contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      (contact.phone?.includes(searchQuery) ?? false),
   );
 
   // Generate time options (15-minute intervals)
@@ -149,7 +180,7 @@ export default function AppointmentForm({
     const options = [];
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
         options.push(time);
       }
     }
@@ -157,10 +188,11 @@ export default function AppointmentForm({
   };
 
   // Handle input changes
-  const handleInputChange = (field: keyof AppointmentFormData) => (value: string | number) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setValidationError(null);
-  };
+  const handleInputChange =
+    (field: keyof AppointmentFormData) => (value: string | number) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      setValidationError(null);
+    };
 
   // Handle contact selection
   const handleContactSelect = (contact: Contact) => {
@@ -170,7 +202,7 @@ export default function AppointmentForm({
   };
 
   // Step validation
-  const validateCurrentStep = () => {
+  const validateCurrentStep = async () => {
     switch (currentStep) {
       case 0: // Contact selection
         if (!formData.contactId) {
@@ -179,7 +211,9 @@ export default function AppointmentForm({
         }
         return true;
       case 1: // Details
-        const validation = validateAppointmentForm(formData as AppointmentFormData);
+        const validation = await validateAppointmentForm(
+          formData as AppointmentFormData,
+        );
         if (!validation.valid) {
           setValidationError(validation.errors[0] ?? "Datos incompletos");
           return false;
@@ -193,8 +227,9 @@ export default function AppointmentForm({
   };
 
   // Navigation handlers
-  const nextStep = () => {
-    if (validateCurrentStep() && currentStep < steps.length - 1) {
+  const nextStep = async () => {
+    const isValid = await validateCurrentStep();
+    if (isValid && currentStep < steps.length - 1) {
       setDirection("forward");
       setCurrentStep((prev) => prev + 1);
     }
@@ -209,16 +244,19 @@ export default function AppointmentForm({
 
   // Form submission
   const handleSubmit = async () => {
-    if (!validateCurrentStep()) return;
+    const isValid = await validateCurrentStep();
+    if (!isValid) return;
 
     setIsCreating(true);
     try {
-      const result = await createAppointmentAction(formData as AppointmentFormData);
-      
+      const result = await createAppointmentAction(
+        formData as AppointmentFormData,
+      );
+
       if (result.success) {
         onSubmit?.(result.appointmentId!);
       } else {
-        setValidationError(result.error);
+        setValidationError(result.error ?? "Error desconocido");
       }
     } catch (error) {
       setValidationError("Error al crear la cita");
@@ -233,25 +271,25 @@ export default function AppointmentForm({
     switch (currentStep) {
       case 0: // Contact Selection
         return (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <FloatingLabelInput
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
                 id="contact-search"
                 value={searchQuery}
-                onChange={setSearchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar contactos..."
-                className="pl-10"
+                className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               />
             </div>
-            
-            <ScrollArea className="h-[300px]">
+
+            <ScrollArea className="h-[350px]">
               {isLoadingContacts ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader className="h-6 w-6 animate-spin" />
                 </div>
               ) : filteredContacts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="py-8 text-center text-muted-foreground">
                   No se encontraron contactos
                 </div>
               ) : (
@@ -261,7 +299,8 @@ export default function AppointmentForm({
                       key={contact.contactId.toString()}
                       className={cn(
                         "cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted",
-                        selectedContact?.contactId === contact.contactId && "border-primary bg-primary/5"
+                        selectedContact?.contactId === contact.contactId &&
+                          "border-primary bg-primary/5",
                       )}
                       onClick={() => handleContactSelect(contact)}
                     >
@@ -269,10 +308,14 @@ export default function AppointmentForm({
                         {contact.firstName} {contact.lastName}
                       </div>
                       {contact.email && (
-                        <div className="text-sm text-muted-foreground">{contact.email}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {contact.email}
+                        </div>
                       )}
                       {contact.phone && (
-                        <div className="text-sm text-muted-foreground">{contact.phone}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {contact.phone}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -288,7 +331,7 @@ export default function AppointmentForm({
             <div className="grid grid-cols-2 gap-4">
               <FloatingLabelInput
                 id="startDate"
-                value={formData.startDate}
+                value={formData.startDate ?? ""}
                 onChange={handleInputChange("startDate")}
                 placeholder="Fecha de inicio"
                 type="date"
@@ -296,7 +339,7 @@ export default function AppointmentForm({
               />
               <FloatingLabelInput
                 id="endDate"
-                value={formData.endDate}
+                value={formData.endDate ?? ""}
                 onChange={handleInputChange("endDate")}
                 placeholder="Fecha de fin"
                 type="date"
@@ -307,7 +350,10 @@ export default function AppointmentForm({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Hora de inicio</label>
-                <Select value={formData.startTime} onValueChange={handleInputChange("startTime")}>
+                <Select
+                  value={formData.startTime}
+                  onValueChange={handleInputChange("startTime")}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar hora" />
                   </SelectTrigger>
@@ -322,10 +368,13 @@ export default function AppointmentForm({
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Hora de fin</label>
-                <Select value={formData.endTime} onValueChange={handleInputChange("endTime")}>
+                <Select
+                  value={formData.endTime}
+                  onValueChange={handleInputChange("endTime")}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar hora" />
                   </SelectTrigger>
@@ -344,7 +393,10 @@ export default function AppointmentForm({
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo de cita</label>
-              <Select value={formData.appointmentType} onValueChange={handleInputChange("appointmentType")}>
+              <Select
+                value={formData.appointmentType}
+                onValueChange={handleInputChange("appointmentType")}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -361,18 +413,20 @@ export default function AppointmentForm({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
+            <div className="space-y-1">
+              <label className="flex items-center gap-2 text-sm font-medium">
                 <Car className="h-4 w-4" />
                 Tiempo de viaje (minutos)
               </label>
-              <FloatingLabelInput
+              <input
                 id="tripTimeMinutes"
                 value={formData.tripTimeMinutes?.toString() ?? ""}
-                onChange={(value) => handleInputChange("tripTimeMinutes")(parseInt(value) ?? 0)}
-                placeholder="15"
+                onChange={(e) =>
+                  handleInputChange("tripTimeMinutes")(parseInt(e.target.value) ?? 0)
+                }
+                placeholder="0"
                 type="number"
-                className="w-full"
+                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
@@ -415,10 +469,15 @@ export default function AppointmentForm({
                 <Calendar className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <div className="font-medium">
-                    {formData.startDate} • {formData.startTime} - {formData.endTime}
+                    {formData.startDate} • {formData.startTime} -{" "}
+                    {formData.endTime}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {appointmentTypes.find(t => t.value === formData.appointmentType)?.label}
+                    {
+                      appointmentTypes.find(
+                        (t) => t.value === formData.appointmentType,
+                      )?.label
+                    }
                   </div>
                 </div>
               </div>
@@ -437,7 +496,7 @@ export default function AppointmentForm({
 
               {formData.notes && (
                 <div className="flex items-start gap-3 rounded-lg border p-3">
-                  <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <Clock className="mt-0.5 h-5 w-5 text-muted-foreground" />
                   <div>
                     <div className="font-medium">Notas</div>
                     <div className="text-sm text-muted-foreground">
@@ -456,36 +515,35 @@ export default function AppointmentForm({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="mx-auto flex h-full w-full max-w-2xl flex-col">
       {/* Progress Steps */}
       <div className="mb-8">
         <div className="flex items-center justify-center space-x-8">
           {steps.map((step, index) => {
             const isActive = index === currentStep;
             const isCompleted = index < currentStep;
-            
+
             return (
               <div key={step.id} className="flex items-center space-x-2">
                 <div
                   className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors",
-                    isActive && "border-primary bg-primary text-primary-foreground",
+                    isActive &&
+                      "border-primary bg-primary text-primary-foreground",
                     isCompleted && "border-green-500 bg-green-500 text-white",
-                    !isActive && !isCompleted && "border-muted bg-background"
+                    !isActive && !isCompleted && "border-muted bg-background",
                   )}
                 >
-                  {isCompleted ? (
-                    <Check className="h-5 w-5" />
-                  ) : (
-                    step.icon
-                  )}
+                  {isCompleted ? <Check className="h-5 w-5" /> : step.icon}
                 </div>
-                <div className={cn(
-                  "hidden sm:block text-sm font-medium",
-                  isActive && "text-primary",
-                  isCompleted && "text-green-600",
-                  !isActive && !isCompleted && "text-muted-foreground"
-                )}>
+                <div
+                  className={cn(
+                    "hidden text-sm font-medium sm:block",
+                    isActive && "text-primary",
+                    isCompleted && "text-green-600",
+                    !isActive && !isCompleted && "text-muted-foreground",
+                  )}
+                >
                   {step.title}
                 </div>
               </div>
@@ -495,28 +553,30 @@ export default function AppointmentForm({
       </div>
 
       {/* Form Content */}
-      <div className="space-y-6">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: direction === "forward" ? 20 : -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction === "forward" ? -20 : 20 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-          >
-            {renderStepContent()}
-          </motion.div>
-        </AnimatePresence>
+      <div className="flex flex-1 flex-col space-y-6 overflow-hidden">
+        <div className="flex-1 overflow-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: direction === "forward" ? 20 : -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: direction === "forward" ? -20 : 20 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              {renderStepContent()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         {/* Validation Error */}
         {validationError && (
-          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
             {validationError}
           </div>
         )}
 
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t">
+        {/* Navigation Buttons - Fixed at bottom */}
+        <div className="flex items-center justify-between border-t bg-background pt-6">
           <div>
             {currentStep > 0 ? (
               <Button variant="outline" onClick={prevStep}>
@@ -537,8 +597,8 @@ export default function AppointmentForm({
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={handleSubmit}
                 disabled={isCreating}
                 className="min-w-[120px]"
               >

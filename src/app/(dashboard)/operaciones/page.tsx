@@ -1,6 +1,6 @@
-import OperacionesSummaryCard from "~/components/dashboard/OperacionesSummaryCard";
+import OperacionesSummaryCard from "~/components/dashboard/operations/OperacionesSummaryCard";
 import WorkQueueCard from "~/components/dashboard/WorkQueueCard";
-import OperacionesQuickActionsCard from "~/components/dashboard/OperacionesQuickActionsCard";
+import OperacionesQuickActionsCard from "~/components/dashboard/operations/OperacionesQuickActionsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Suspense } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -61,7 +61,8 @@ async function OperacionesData() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            No se pudieron cargar los datos de operaciones. Por favor, intenta actualizar la página.
+            No se pudieron cargar los datos de operaciones. Por favor, intenta
+            actualizar la página.
           </p>
         </CardContent>
       </Card>
@@ -93,4 +94,3 @@ export default function OperacionesPage() {
     </div>
   );
 }
-      

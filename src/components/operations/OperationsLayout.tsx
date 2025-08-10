@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import type { OperationType, ViewMode, ListingTypeFilter, KanbanData } from "~/types/operations";
+import type {
+  OperationType,
+  ViewMode,
+  ListingTypeFilter,
+  KanbanData,
+} from "~/types/operations";
 import ViewToggle from "./ViewToggle";
 import FilterToggle from "./FilterToggle";
 import KanbanBoard from "./KanbanBoard";
@@ -22,14 +27,14 @@ interface OperationsLayoutProps {
 
 const OPERATION_TITLES = {
   prospects: "Prospectos",
-  leads: "Leads", 
-  deals: "Negocios"
+  leads: "Leads",
+  deals: "Negocios",
 } as const;
 
 const OPERATION_DESCRIPTIONS = {
   prospects: "Gestiona clientes potenciales y sus requisitos de propiedades",
   leads: "Rastrea interés entrante y convierte en oportunidades",
-  deals: "Monitorea transacciones activas y cierra negocios"
+  deals: "Monitorea transacciones activas y cierra negocios",
 } as const;
 
 export default function OperationsLayout({
@@ -39,15 +44,15 @@ export default function OperationsLayout({
   statusFilter,
   currentPage,
   initialData,
-  operationCounts
+  operationCounts,
 }: OperationsLayoutProps) {
   // Selection state for bulk actions
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  
+
   // Get titles and metadata
   const title = OPERATION_TITLES[operationType];
   const description = OPERATION_DESCRIPTIONS[operationType];
-  
+
   // Handle item selection
   const handleItemSelect = (itemId: string, selected: boolean) => {
     const newSelection = new Set(selectedItems);
@@ -88,18 +93,19 @@ export default function OperationsLayout({
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {title}
-              </h1>
-              <p className="mt-2 text-sm text-gray-600">
-                {description}
-              </p>
+              <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+              <p className="mt-2 text-sm text-gray-600">{description}</p>
             </div>
-            
+
             {/* Add New Button */}
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Agregar {operationType === 'prospects' ? 'Prospecto' : operationType === 'leads' ? 'Lead' : 'Negocio'}
+              Agregar{" "}
+              {operationType === "prospects"
+                ? "Prospecto"
+                : operationType === "leads"
+                  ? "Lead"
+                  : "Negocio"}
             </Button>
           </div>
         </div>
@@ -113,7 +119,7 @@ export default function OperationsLayout({
               operationType={operationType}
               onViewChange={handleViewModeChange}
             />
-            
+
             {/* Filter Toggle */}
             <FilterToggle
               currentFilter={listingTypeFilter}
@@ -136,7 +142,7 @@ export default function OperationsLayout({
 
         {/* Main Content */}
         <div className="relative">
-          {viewMode === 'kanban' ? (
+          {viewMode === "kanban" ? (
             <KanbanBoard
               operationType={operationType}
               listingType={listingTypeFilter}
@@ -172,12 +178,23 @@ export default function OperationsLayout({
               No se encontraron {title.toLowerCase()}
             </h3>
             <p className="mt-2 text-sm text-gray-500">
-              Comienza creando tu primer {operationType === 'prospects' ? 'prospecto' : operationType === 'leads' ? 'lead' : 'negocio'}.
+              Comienza creando tu primer{" "}
+              {operationType === "prospects"
+                ? "prospecto"
+                : operationType === "leads"
+                  ? "lead"
+                  : "negocio"}
+              .
             </p>
             <div className="mt-6">
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                Agregar {operationType === 'prospects' ? 'Prospecto' : operationType === 'leads' ? 'Lead' : 'Negocio'}
+                Agregar{" "}
+                {operationType === "prospects"
+                  ? "Prospecto"
+                  : operationType === "leads"
+                    ? "Lead"
+                    : "Negocio"}
               </Button>
             </div>
           </div>

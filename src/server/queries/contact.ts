@@ -953,7 +953,7 @@ export async function getContactByIdWithType(
       ).then((titles) => titles.filter((title) => title.trim() !== ""));
     }
 
-    return {
+    const result = {
       ...contact,
       prospectTitles, // Now an array of all prospect titles
       // Include role counts and flags for UI consistency
@@ -964,6 +964,8 @@ export async function getContactByIdWithType(
       isBuyer: buyerCount > 0,
       isInteresado: prospectCount > 0,
     };
+
+    return result;
   } catch (error) {
     console.error("Error fetching contact with type:", error);
     throw error;
@@ -1008,6 +1010,40 @@ export async function getListingsByContact(
         province: locations.province,
         municipality: locations.municipality,
         neighborhood: locations.neighborhood,
+
+        // Image fields for card display (match ListingOverview/PropertyCard)
+        imageUrl: sql<string | null>`(
+          SELECT image_url 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 1
+          LIMIT 1
+        )`,
+        s3key: sql<string | null>`(
+          SELECT s3key 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 1
+          LIMIT 1
+        )`,
+        imageUrl2: sql<string | null>`(
+          SELECT image_url 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 2
+          LIMIT 1
+        )`,
+        s3key2: sql<string | null>`(
+          SELECT s3key 
+          FROM property_images 
+          WHERE property_id = ${properties.propertyId} 
+          AND is_active = true 
+          AND image_order = 2
+          LIMIT 1
+        )`,
       })
       .from(listingContacts)
       .innerJoin(

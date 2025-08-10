@@ -1,6 +1,6 @@
-import InmueblesPublicadosCard from "~/components/dashboard/InmueblesPublicadosCard";
-import OperacionesEnCursoCard from "~/components/dashboard/OperacionesEnCursoCard";
-import AccionesRapidasCard from "~/components/dashboard/AccionesRapidasCard";
+import PublishedPropertiesCard from "~/components/dashboard/properties/PublishedPropertiesCard";
+import OngoingOperationsCard from "~/components/dashboard/operations/OngoingOperationsCard";
+import QuickActionsCard from "~/components/dashboard/QuickActionsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { TrendingUp } from "lucide-react";
 
@@ -11,9 +11,9 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Quick Stats */}
         <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:grid-rows-2">
-          <OperacionesEnCursoCard className="lg:row-span-2" />
-          <InmueblesPublicadosCard />
-          <AccionesRapidasCard />
+          <OngoingOperationsCard className="lg:row-span-2" />
+          <PublishedPropertiesCard />
+          <QuickActionsCard />
         </div>
 
         {/* Performance Metrics */}

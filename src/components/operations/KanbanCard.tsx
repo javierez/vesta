@@ -2,7 +2,15 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MoreHorizontal, Clock, AlertCircle, User, MapPin, DollarSign, Calendar } from "lucide-react";
+import {
+  MoreHorizontal,
+  Clock,
+  AlertCircle,
+  User,
+  MapPin,
+  DollarSign,
+  Calendar,
+} from "lucide-react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -26,7 +34,7 @@ interface KanbanCardProps {
 const URGENCY_COLORS = {
   1: "bg-green-100 text-green-800 border-green-200",
   2: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  3: "bg-orange-100 text-orange-800 border-orange-200", 
+  3: "bg-orange-100 text-orange-800 border-orange-200",
   4: "bg-red-100 text-red-800 border-red-200",
   5: "bg-red-200 text-red-900 border-red-300",
 } as const;
@@ -36,7 +44,7 @@ export default function KanbanCard({
   operationType,
   isSelected,
   onSelect,
-  isDragOverlay = false
+  isDragOverlay = false,
 }: KanbanCardProps) {
   const {
     attributes,
@@ -57,28 +65,30 @@ export default function KanbanCard({
 
   // Format currency values
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
 
   // Format dates
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-ES', {
-      month: 'short',
-      day: 'numeric',
+    return new Intl.DateTimeFormat("es-ES", {
+      month: "short",
+      day: "numeric",
     }).format(date);
   };
 
   // Format time ago
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffInDays === 0) return 'Today';
-    if (diffInDays === 1) return 'Yesterday';
+    const diffInDays = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (diffInDays === 0) return "Today";
+    if (diffInDays === 1) return "Yesterday";
     if (diffInDays < 7) return `${diffInDays} days ago`;
     return formatDate(date);
   };
@@ -86,20 +96,20 @@ export default function KanbanCard({
   // Render operation-specific content
   const renderOperationContent = () => {
     switch (operationType) {
-      case 'prospects':
+      case "prospects":
         return (
           <>
             {/* Contact Name */}
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-gray-400" />
               <span className="font-medium text-gray-900">
-                {card.contactName ?? 'Unknown Contact'}
+                {card.contactName ?? "Unknown Contact"}
               </span>
             </div>
 
             {/* Need Summary */}
             {card.needSummary && (
-              <div className="text-sm text-gray-600 line-clamp-2">
+              <div className="line-clamp-2 text-sm text-gray-600">
                 {card.needSummary}
               </div>
             )}
@@ -108,9 +118,13 @@ export default function KanbanCard({
             {card.urgencyLevel && (
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-gray-400" />
-                <Badge 
+                <Badge
                   variant="secondary"
-                  className={URGENCY_COLORS[card.urgencyLevel as keyof typeof URGENCY_COLORS] || URGENCY_COLORS[1]}
+                  className={
+                    URGENCY_COLORS[
+                      card.urgencyLevel as keyof typeof URGENCY_COLORS
+                    ] || URGENCY_COLORS[1]
+                  }
                 >
                   Prioridad {card.urgencyLevel}
                 </Badge>
@@ -119,14 +133,14 @@ export default function KanbanCard({
           </>
         );
 
-      case 'leads':
+      case "leads":
         return (
           <>
             {/* Contact Name */}
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-gray-400" />
               <span className="font-medium text-gray-900">
-                {card.contactName ?? 'Unknown Contact'}
+                {card.contactName ?? "Unknown Contact"}
               </span>
             </div>
 
@@ -134,7 +148,7 @@ export default function KanbanCard({
             {card.listingAddress && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-gray-400" />
-                <span className="text-sm text-gray-600 line-clamp-1">
+                <span className="line-clamp-1 text-sm text-gray-600">
                   {card.listingAddress}
                 </span>
               </div>
@@ -149,14 +163,14 @@ export default function KanbanCard({
           </>
         );
 
-      case 'deals':
+      case "deals":
         return (
           <>
             {/* Listing Address */}
             {card.listingAddress && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-gray-400" />
-                <span className="font-medium text-gray-900 line-clamp-1">
+                <span className="line-clamp-1 font-medium text-gray-900">
                   {card.listingAddress}
                 </span>
               </div>
@@ -185,7 +199,8 @@ export default function KanbanCard({
             {/* Participants */}
             {card.participants && card.participants.length > 0 && (
               <div className="text-sm text-gray-600">
-                <span className="font-medium">Participantes:</span> {card.participants.join(', ')}
+                <span className="font-medium">Participantes:</span>{" "}
+                {card.participants.join(", ")}
               </div>
             )}
           </>
@@ -201,13 +216,7 @@ export default function KanbanCard({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className={`
-        relative rounded-lg border bg-white p-4 shadow-sm transition-all duration-200
-        ${isDragging ? 'opacity-50' : 'hover:shadow-md'}
-        ${isSelected ? 'border-blue-400 bg-blue-50/30' : 'border-gray-200'}
-        ${isDragOverlay ? 'shadow-lg' : ''}
-        cursor-grab active:cursor-grabbing
-      `}
+      className={`relative rounded-lg border bg-white p-4 shadow-sm transition-all duration-200 ${isDragging ? "opacity-50" : "hover:shadow-md"} ${isSelected ? "border-blue-400 bg-blue-50/30" : "border-gray-200"} ${isDragOverlay ? "shadow-lg" : ""} cursor-grab active:cursor-grabbing`}
     >
       {/* Selection Checkbox */}
       <div className="absolute left-2 top-2">
@@ -221,12 +230,12 @@ export default function KanbanCard({
 
       {/* Listing Type Badge */}
       <div className="absolute right-2 top-2">
-        <Badge 
-          variant="secondary" 
+        <Badge
+          variant="secondary"
           className={`text-xs ${
-            card.listingType === 'Sale' 
-              ? 'bg-green-100 text-green-700' 
-              : 'bg-blue-100 text-blue-700'
+            card.listingType === "Sale"
+              ? "bg-green-100 text-green-700"
+              : "bg-blue-100 text-blue-700"
           }`}
         >
           {card.listingType}
@@ -257,10 +266,10 @@ export default function KanbanCard({
       <div className="absolute bottom-2 right-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-gray-100"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 opacity-0 transition-opacity hover:bg-gray-100 group-hover:opacity-100"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreHorizontal className="h-3 w-3" />

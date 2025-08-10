@@ -65,7 +65,7 @@ export async function createDeal(
           eq(listings.isActive, true),
         ),
       );
-    
+
     if (!listing) {
       throw new Error("Listing not found or access denied");
     }
@@ -112,7 +112,10 @@ export async function getDealById(dealId: number, accountId: number) {
 }
 
 // Get deals by listing ID
-export async function getDealsByListingId(listingId: number, accountId: number) {
+export async function getDealsByListingId(
+  listingId: number,
+  accountId: number,
+) {
   try {
     // Verify the listing belongs to this account
     const [listing] = await db
@@ -126,7 +129,7 @@ export async function getDealsByListingId(listingId: number, accountId: number) 
           eq(listings.isActive, true),
         ),
       );
-    
+
     if (!listing) {
       throw new Error("Listing not found or access denied");
     }
@@ -150,7 +153,10 @@ export async function getDealsByListingId(listingId: number, accountId: number) 
 }
 
 // Get deals by status
-export async function getDealsByStatus(status: Deal["status"], accountId: number) {
+export async function getDealsByStatus(
+  status: Deal["status"],
+  accountId: number,
+) {
   try {
     const statusDeals = await db
       .select()
@@ -189,7 +195,7 @@ export async function updateDeal(
           eq(properties.accountId, BigInt(accountId)),
         ),
       );
-    
+
     if (!existingDeal) {
       throw new Error("Deal not found or access denied");
     }
@@ -231,7 +237,7 @@ export async function deleteDeal(dealId: number, accountId: number) {
           eq(properties.accountId, BigInt(accountId)),
         ),
       );
-    
+
     if (!existingDeal) {
       throw new Error("Deal not found or access denied");
     }

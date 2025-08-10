@@ -64,7 +64,7 @@ export async function createLead(
           eq(contacts.isActive, true),
         ),
       );
-    
+
     if (!contact) {
       throw new Error("Contact not found or access denied");
     }
@@ -109,7 +109,10 @@ export async function getLeadById(leadId: number, accountId: number) {
 }
 
 // Get leads by contact ID
-export async function getLeadsByContactId(contactId: number, accountId: number) {
+export async function getLeadsByContactId(
+  contactId: number,
+  accountId: number,
+) {
   try {
     // Verify the contact belongs to this account
     const [contact] = await db
@@ -122,7 +125,7 @@ export async function getLeadsByContactId(contactId: number, accountId: number) 
           eq(contacts.isActive, true),
         ),
       );
-    
+
     if (!contact) {
       throw new Error("Contact not found or access denied");
     }
@@ -145,7 +148,10 @@ export async function getLeadsByContactId(contactId: number, accountId: number) 
 }
 
 // Get leads by listing ID
-export async function getLeadsByListingId(listingId: number, accountId: number) {
+export async function getLeadsByListingId(
+  listingId: number,
+  accountId: number,
+) {
   try {
     const listingLeads = await db
       .select()
@@ -182,7 +188,7 @@ export async function updateLead(
           eq(contacts.accountId, BigInt(accountId)),
         ),
       );
-    
+
     if (!existingLead) {
       throw new Error("Lead not found or access denied");
     }
@@ -222,7 +228,7 @@ export async function deleteLead(leadId: number, accountId: number) {
           eq(contacts.accountId, BigInt(accountId)),
         ),
       );
-    
+
     if (!existingLead) {
       throw new Error("Lead not found or access denied");
     }

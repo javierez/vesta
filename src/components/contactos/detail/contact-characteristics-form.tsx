@@ -207,7 +207,9 @@ export function ContactCharacteristicsForm({
         const existingProspects = await getProspectsByContactWithAuth(
           contact.contactId,
         );
-        setProspects(existingProspects.map(item => item.prospects) as ProspectData[]);
+        setProspects(
+          existingProspects.map((item) => item.prospects) as ProspectData[],
+        );
       } catch (error) {
         console.error("Error loading prospects:", error);
       }
@@ -317,7 +319,9 @@ export function ContactCharacteristicsForm({
         const existingProspects = await getProspectsByContactWithAuth(
           contact.contactId,
         );
-        setProspects(existingProspects.map(item => item.prospects) as ProspectData[]);
+        setProspects(
+          existingProspects.map((item) => item.prospects) as ProspectData[],
+        );
       } catch (error) {
         console.error("Error loading prospects:", error);
       }

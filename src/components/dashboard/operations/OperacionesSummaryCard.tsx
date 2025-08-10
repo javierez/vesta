@@ -35,13 +35,13 @@ export default function OperacionesSummaryCard({
     calculateTotal(data.rent.deals);
 
   const activeData = data[activeType];
-  const activeTotal = activeType === "sale" ? saleTotal : rentTotal;
 
   // Definir secciones con iconos y colores de estado
   const sections = [
     {
       key: "prospects",
-      label: "Prospectos",
+      label: "Demanda",
+      labelPlural: "Demandas",
       data: activeData.prospects,
       statusColors: {
         New: "bg-blue-100 text-blue-800",
@@ -52,7 +52,8 @@ export default function OperacionesSummaryCard({
     },
     {
       key: "leads",
-      label: "Clientes Potenciales",
+      label: "Conexión",
+      labelPlural: "Conexiones",
       data: activeData.leads,
       statusColors: {
         New: "bg-blue-100 text-blue-800",
@@ -63,7 +64,8 @@ export default function OperacionesSummaryCard({
     },
     {
       key: "deals",
-      label: "Tratos",
+      label: "Operación",
+      labelPlural: "Operaciones",
       data: activeData.deals,
       statusColors: {
         Offer: "bg-purple-100 text-purple-800",
@@ -78,7 +80,7 @@ export default function OperacionesSummaryCard({
     <Card className={className + " group relative"}>
       <CardContent>
         {/* Alternar entre Venta y Alquiler */}
-        <div className="flex flex-col items-center gap-3 mt-4">
+        <div className="mt-4 flex flex-col items-center gap-3">
           <div className="flex w-full justify-center gap-2">
             {/* Tarjeta de Venta */}
             <motion.button
@@ -156,7 +158,7 @@ export default function OperacionesSummaryCard({
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-700">
-                        {section.label}
+                        {sectionTotal > 1 ? section.labelPlural : section.label}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">

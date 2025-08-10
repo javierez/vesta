@@ -52,10 +52,12 @@ export default function CalendarEvent({
   onClick,
   className = "",
 }: CalendarEventProps) {
-  const typeConfig = appointmentTypes[event.type as keyof typeof appointmentTypes] || {
+  const typeConfig = appointmentTypes[
+    event.type as keyof typeof appointmentTypes
+  ] || {
     color: "bg-gray-500",
     icon: "📅",
-    textColor: "text-white"
+    textColor: "text-white",
   };
 
   const statusConfig = statusColors[event.status] || statusColors.Scheduled;
@@ -72,11 +74,13 @@ export default function CalendarEvent({
     if (minutes < 60) return `${minutes}min`;
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+    return remainingMinutes > 0
+      ? `${hours}h ${remainingMinutes}m`
+      : `${hours}h`;
   };
 
   // Calculate height in pixels to determine what content to show
-  const heightPx = parseInt(style.height.replace('px', '')) || 60;
+  const heightPx = parseInt(style.height.replace("px", "")) || 60;
   const showDetails = heightPx > 50;
   const showExtended = heightPx > 80;
   const showFull = heightPx > 120;
@@ -89,20 +93,20 @@ export default function CalendarEvent({
   return (
     <div
       className={cn(
-        "calendar-event absolute left-0.5 right-0.5 cursor-pointer overflow-hidden rounded-md px-2 py-1 hover:ring-2 hover:ring-black hover:ring-offset-1 transition-all duration-200",
+        "calendar-event absolute left-0.5 right-0.5 cursor-pointer overflow-hidden rounded-md px-2 py-1 transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1",
         typeConfig.color,
         typeConfig.textColor,
         statusConfig,
         isSelected && "ring-2 ring-black ring-offset-1",
-        className
+        className,
       )}
       style={style}
       onClick={handleClick}
     >
-      {/* Always show: Event title/type and contact name */}
+      {/* Always show: Event type and contact name */}
       <div className="truncate text-xs font-medium leading-tight">
         <span className="mr-1">{typeConfig.icon}</span>
-        {event.contactName}
+        {event.type} {event.contactName}
       </div>
 
       {/* Show time if height > 50px */}
@@ -127,20 +131,22 @@ export default function CalendarEvent({
       {showExtended && event.tripTimeMinutes && (
         <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
           <Car className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate">{formatTripTime(event.tripTimeMinutes)}</span>
+          <span className="truncate">
+            {formatTripTime(event.tripTimeMinutes)}
+          </span>
         </div>
       )}
 
       {/* Show notes if height > 120px and notes exist */}
       {showFull && event.notes && (
-        <div className="mt-1 text-xs opacity-75 line-clamp-2">
+        <div className="mt-1 line-clamp-2 text-xs opacity-75">
           {event.notes}
         </div>
       )}
 
       {/* Status indicator for non-scheduled appointments */}
       {event.status !== "Scheduled" && (
-        <div className="absolute top-1 right-1">
+        <div className="absolute right-1 top-1">
           <div className="h-2 w-2 rounded-full bg-white bg-opacity-80" />
         </div>
       )}
@@ -154,11 +160,13 @@ export function CompactCalendarEvent({
   isSelected = false,
   onClick,
   className = "",
-}: Omit<CalendarEventProps, 'style'>) {
-  const typeConfig = appointmentTypes[event.type as keyof typeof appointmentTypes] || {
+}: Omit<CalendarEventProps, "style">) {
+  const typeConfig = appointmentTypes[
+    event.type as keyof typeof appointmentTypes
+  ] || {
     color: "bg-gray-500",
     icon: "📅",
-    textColor: "text-white"
+    textColor: "text-white",
   };
 
   const statusConfig = statusColors[event.status] || statusColors.Scheduled;
@@ -178,24 +186,22 @@ export function CompactCalendarEvent({
   return (
     <div
       className={cn(
-        "calendar-event flex items-center gap-2 cursor-pointer rounded-lg border px-3 py-2 hover:shadow-md transition-all duration-200",
+        "calendar-event flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-all duration-200 hover:shadow-md",
         typeConfig.color,
         typeConfig.textColor,
         statusConfig,
         isSelected && "ring-2 ring-black ring-offset-1",
-        className
+        className,
       )}
       onClick={handleClick}
     >
       <div className="flex-shrink-0">
         <span className="text-lg">{typeConfig.icon}</span>
       </div>
-      
+
       <div className="min-w-0 flex-1">
-        <div className="font-medium text-sm truncate">
-          {event.contactName}
-        </div>
-        <div className="text-xs opacity-90 flex items-center gap-1">
+        <div className="truncate text-sm font-medium">{event.type} {event.contactName}</div>
+        <div className="flex items-center gap-1 text-xs opacity-90">
           <Clock className="h-3 w-3" />
           {formatTime(event.startTime)} - {formatTime(event.endTime)}
         </div>
@@ -203,7 +209,7 @@ export function CompactCalendarEvent({
 
       {event.tripTimeMinutes && (
         <div className="flex-shrink-0 text-xs opacity-75">
-          <Car className="h-3 w-3 inline mr-1" />
+          <Car className="mr-1 inline h-3 w-3" />
           {event.tripTimeMinutes}min
         </div>
       )}
@@ -224,11 +230,13 @@ export function ListCalendarEvent({
   isSelected = false,
   onClick,
   className = "",
-}: Omit<CalendarEventProps, 'style'>) {
-  const typeConfig = appointmentTypes[event.type as keyof typeof appointmentTypes] || {
+}: Omit<CalendarEventProps, "style">) {
+  const typeConfig = appointmentTypes[
+    event.type as keyof typeof appointmentTypes
+  ] || {
     color: "bg-gray-100 text-gray-800",
     icon: "📅",
-    textColor: "text-gray-800"
+    textColor: "text-gray-800",
   };
 
   const formatTime = (date: Date) => {
@@ -250,7 +258,9 @@ export function ListCalendarEvent({
     if (minutes < 60) return `${minutes} min`;
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+    return remainingMinutes > 0
+      ? `${hours}h ${remainingMinutes}m`
+      : `${hours}h`;
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -261,9 +271,9 @@ export function ListCalendarEvent({
   return (
     <div
       className={cn(
-        "calendar-event flex items-center gap-4 cursor-pointer rounded-lg border bg-white p-4 hover:shadow-md transition-all duration-200",
+        "calendar-event flex cursor-pointer items-center gap-4 rounded-lg border bg-white p-4 transition-all duration-200 hover:shadow-md",
         isSelected && "ring-2 ring-blue-500 ring-offset-1",
-        className
+        className,
       )}
       onClick={handleClick}
     >
@@ -279,7 +289,12 @@ export function ListCalendarEvent({
 
       {/* Type badge */}
       <div className="flex-shrink-0">
-        <div className={cn("px-2 py-1 rounded-full text-xs font-medium", typeConfig.color)}>
+        <div
+          className={cn(
+            "rounded-full px-2 py-1 text-xs font-medium",
+            typeConfig.color,
+          )}
+        >
           <span className="mr-1">{typeConfig.icon}</span>
           {event.type}
         </div>
@@ -287,8 +302,8 @@ export function ListCalendarEvent({
 
       {/* Main content */}
       <div className="min-w-0 flex-1">
-        <div className="font-medium text-gray-900">{event.contactName}</div>
-        <div className="text-sm text-muted-foreground flex items-center gap-2">
+        <div className="font-medium text-gray-900">{event.type} {event.contactName}</div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {formatTime(event.startTime)} - {formatTime(event.endTime)}
@@ -323,7 +338,7 @@ export function ListCalendarEvent({
             event.status === "Completed" && "bg-green-100 text-green-800",
             event.status === "Cancelled" && "bg-red-100 text-red-800",
             event.status === "Rescheduled" && "bg-yellow-100 text-yellow-800",
-            event.status === "NoShow" && "bg-gray-100 text-gray-800"
+            event.status === "NoShow" && "bg-gray-100 text-gray-800",
           )}
         >
           {event.status}

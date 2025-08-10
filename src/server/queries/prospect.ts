@@ -21,7 +21,10 @@ export async function getAllProspectsWithAuth() {
   return getAllProspects(accountId);
 }
 
-export async function updateProspectWithAuth(id: bigint, input: UpdateProspectInput) {
+export async function updateProspectWithAuth(
+  id: bigint,
+  input: UpdateProspectInput,
+) {
   const accountId = await getCurrentUserAccountId();
   return updateProspect(id, input, accountId);
 }
@@ -72,7 +75,10 @@ export type UpdateProspectInput = Partial<CreateProspectInput> & {
 };
 
 // Create a new prospect
-export async function createProspect(input: CreateProspectInput, accountId: number) {
+export async function createProspect(
+  input: CreateProspectInput,
+  accountId: number,
+) {
   // Verify the contact belongs to this account
   const [contact] = await db
     .select({ contactId: contacts.contactId })
@@ -84,7 +90,7 @@ export async function createProspect(input: CreateProspectInput, accountId: numb
         eq(contacts.isActive, true),
       ),
     );
-  
+
   if (!contact) {
     throw new Error("Contact not found or access denied");
   }
@@ -115,10 +121,7 @@ export async function getProspect(id: bigint, accountId: number) {
     .from(prospects)
     .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
     .where(
-      and(
-        eq(prospects.id, id),
-        eq(contacts.accountId, BigInt(accountId)),
-      ),
+      and(eq(prospects.id, id), eq(contacts.accountId, BigInt(accountId))),
     );
   return prospect;
 }
@@ -133,7 +136,11 @@ export async function getAllProspects(accountId: number) {
 }
 
 // Update a prospect
-export async function updateProspect(id: bigint, input: UpdateProspectInput, accountId: number) {
+export async function updateProspect(
+  id: bigint,
+  input: UpdateProspectInput,
+  accountId: number,
+) {
   const currentProspect = await getProspect(id, accountId);
   if (!currentProspect) {
     throw new Error("Prospect not found or access denied");
@@ -142,12 +149,12 @@ export async function updateProspect(id: bigint, input: UpdateProspectInput, acc
   // If status is changing, create a history entry
   if (
     input.status &&
-    input.status !== currentProspect.status &&
+    input.status !== currentProspect.prospects.status &&
     input.changedBy
   ) {
     await createProspectHistory({
       prospectId: id,
-      previousStatus: currentProspect.status,
+      previousStatus: currentProspect.prospects.status,
       newStatus: input.status,
       changedBy: input.changedBy,
       changeReason: input.changeReason,
@@ -173,7 +180,7 @@ export async function deleteProspect(id: bigint, accountId: number) {
   if (!prospect) {
     throw new Error("Prospect not found or access denied");
   }
-  
+
   await db.delete(prospects).where(eq(prospects.id, id));
   return prospect;
 }
@@ -193,7 +200,10 @@ export async function getProspectsByStatus(status: string, accountId: number) {
 }
 
 // Get prospects by property type
-export async function getProspectsByPropertyType(propertyType: string, accountId: number) {
+export async function getProspectsByPropertyType(
+  propertyType: string,
+  accountId: number,
+) {
   return await db
     .select()
     .from(prospects)
@@ -207,7 +217,10 @@ export async function getProspectsByPropertyType(propertyType: string, accountId
 }
 
 // Get prospects by contact
-export async function getProspectsByContact(contactId: bigint, accountId: number) {
+export async function getProspectsByContact(
+  contactId: bigint,
+  accountId: number,
+) {
   // Verify the contact belongs to this account
   const [contact] = await db
     .select({ contactId: contacts.contactId })
@@ -219,7 +232,7 @@ export async function getProspectsByContact(contactId: bigint, accountId: number
         eq(contacts.isActive, true),
       ),
     );
-  
+
   if (!contact) {
     throw new Error("Contact not found or access denied");
   }

@@ -11,16 +11,16 @@ export interface KanbanColumn {
 
 export interface OperationCard {
   id: bigint;
-  type: 'prospect' | 'lead' | 'deal';
+  type: "prospect" | "lead" | "deal";
   status: string;
-  listingType: 'Sale' | 'Rent';
+  listingType: "Sale" | "Rent";
   // Prospect-specific fields
   contactName?: string;
   needSummary?: string;
   urgencyLevel?: number;
   lastActivity?: Date;
   nextTask?: string;
-  // Lead-specific fields  
+  // Lead-specific fields
   listingAddress?: string;
   source?: string;
   // Deal-specific fields
@@ -30,60 +30,87 @@ export interface OperationCard {
 }
 
 export interface KanbanViewProps {
-  operationType: 'prospects' | 'leads' | 'deals';
-  listingType: 'sale' | 'rent' | 'all';
+  operationType: "prospects" | "leads" | "deals";
+  listingType: "sale" | "rent" | "all";
   columns: KanbanColumn[];
-  onCardMove: (cardId: bigint, fromColumn: string, toColumn: string) => Promise<void>;
+  onCardMove: (
+    cardId: bigint,
+    fromColumn: string,
+    toColumn: string,
+  ) => Promise<void>;
   onBulkAction: (action: BulkActionType, cardIds: bigint[]) => Promise<void>;
 }
 
 // Operation type definitions
-export type OperationType = 'prospects' | 'leads' | 'deals';
-export type ListingTypeFilter = 'sale' | 'rent' | 'all';
-export type ViewMode = 'list' | 'kanban';
+export type OperationType = "prospects" | "leads" | "deals";
+export type ListingTypeFilter = "sale" | "rent" | "all";
+export type ViewMode = "list" | "kanban";
 
 // Bulk action types
-export type BulkActionType = 'assign' | 'updateStatus' | 'createTasks' | 'export';
+export type BulkActionType =
+  | "assign"
+  | "updateStatus"
+  | "createTasks"
+  | "export";
 
 // Status workflows for different operation types
-export const PROSPECT_STATUSES = ['New', 'Working', 'Qualified', 'Archived'] as const;
-export const LEAD_STATUSES = ['New', 'Working', 'Converted', 'Disqualified'] as const;
-export const DEAL_STATUSES = ['Offer', 'UnderContract', 'Closed', 'Lost'] as const;
+export const PROSPECT_STATUSES = [
+  "New",
+  "Working",
+  "Qualified",
+  "Archived",
+] as const;
+export const LEAD_STATUSES = [
+  "New",
+  "Working",
+  "Converted",
+  "Disqualified",
+] as const;
+export const DEAL_STATUSES = [
+  "Offer",
+  "UnderContract",
+  "Closed",
+  "Lost",
+] as const;
 
-export type ProspectStatus = typeof PROSPECT_STATUSES[number];
-export type LeadStatus = typeof LEAD_STATUSES[number];
-export type DealStatus = typeof DEAL_STATUSES[number];
+export type ProspectStatus = (typeof PROSPECT_STATUSES)[number];
+export type LeadStatus = (typeof LEAD_STATUSES)[number];
+export type DealStatus = (typeof DEAL_STATUSES)[number];
 
 // Spanish translations for statuses
 export const STATUS_TRANSLATIONS = {
   // Prospects
-  'New': 'Nuevo',
-  'Working': 'En Proceso',
-  'Qualified': 'Calificado',
-  'Archived': 'Archivado',
+  New: "Nuevo",
+  Working: "En Proceso",
+  Qualified: "Calificado",
+  Archived: "Archivado",
   // Leads
-  'Converted': 'Convertido',
-  'Disqualified': 'Descalificado',
+  Converted: "Convertido",
+  Disqualified: "Descalificado",
   // Deals
-  'Offer': 'Oferta',
-  'UnderContract': 'Bajo Contrato',
-  'Closed': 'Cerrado',
-  'Lost': 'Perdido'
+  Offer: "Oferta",
+  UnderContract: "Bajo Contrato",
+  Closed: "Cerrado",
+  Lost: "Perdido",
 } as const;
 
 // Get translated status
 export function getTranslatedStatus(status: string): string {
-  return STATUS_TRANSLATIONS[status as keyof typeof STATUS_TRANSLATIONS] ?? status;
+  return (
+    STATUS_TRANSLATIONS[status as keyof typeof STATUS_TRANSLATIONS] ?? status
+  );
 }
 
 // Get status list for operation type
-export function getStatusesForOperationType(operationType: OperationType): readonly string[] {
+export function getStatusesForOperationType(
+  operationType: OperationType,
+): readonly string[] {
   switch (operationType) {
-    case 'prospects':
+    case "prospects":
       return PROSPECT_STATUSES;
-    case 'leads':
+    case "leads":
       return LEAD_STATUSES;
-    case 'deals':
+    case "deals":
       return DEAL_STATUSES;
     default:
       return [];
@@ -92,9 +119,9 @@ export function getStatusesForOperationType(operationType: OperationType): reado
 
 // Validate status transitions
 export function isValidStatusTransition(
-  operationType: OperationType, 
-  fromStatus: string, 
-  toStatus: string
+  operationType: OperationType,
+  fromStatus: string,
+  toStatus: string,
 ): boolean {
   const validStatuses = getStatusesForOperationType(operationType);
   return validStatuses.includes(fromStatus) && validStatuses.includes(toStatus);
@@ -102,19 +129,19 @@ export function isValidStatusTransition(
 
 // Zod schemas for server action validation
 export const StatusUpdateSchema = z.object({
-  operationId: z.string().transform(val => BigInt(val)),
-  operationType: z.enum(['prospects', 'leads', 'deals']),
+  operationId: z.string().transform((val) => BigInt(val)),
+  operationType: z.enum(["prospects", "leads", "deals"]),
   fromStatus: z.string(),
   toStatus: z.string(),
-  accountId: z.string().transform(val => BigInt(val)),
+  accountId: z.string().transform((val) => BigInt(val)),
 });
 
 export const BulkActionSchema = z.object({
-  action: z.enum(['assign', 'updateStatus', 'createTasks', 'export']),
-  operationIds: z.array(z.string().transform(val => BigInt(val))),
-  operationType: z.enum(['prospects', 'leads', 'deals']),
+  action: z.enum(["assign", "updateStatus", "createTasks", "export"]),
+  operationIds: z.array(z.string().transform((val) => BigInt(val))),
+  operationType: z.enum(["prospects", "leads", "deals"]),
   targetValue: z.string().optional(), // For assign user ID or new status
-  accountId: z.string().transform(val => BigInt(val)),
+  accountId: z.string().transform((val) => BigInt(val)),
 });
 
 // Table column definitions for each operation type
@@ -127,47 +154,64 @@ export interface TableColumn {
 }
 
 export const PROSPECT_TABLE_COLUMNS: TableColumn[] = [
-  { key: 'select', title: '', width: 'w-12' },
-  { key: 'contactName', title: 'Contact', sortable: true },
-  { key: 'needSummary', title: 'Need Summary', width: 'w-64' },
-  { key: 'status', title: 'Status', sortable: true, width: 'w-24' },
-  { key: 'urgencyLevel', title: 'Urgency', sortable: true, width: 'w-20' },
-  { key: 'lastActivity', title: 'Last Activity', sortable: true, width: 'w-32' },
-  { key: 'nextTask', title: 'Next Task', width: 'w-48' },
-  { key: 'actions', title: '', width: 'w-16' },
+  { key: "select", title: "", width: "w-12" },
+  { key: "contactName", title: "Contact", sortable: true },
+  { key: "needSummary", title: "Need Summary", width: "w-64" },
+  { key: "status", title: "Status", sortable: true, width: "w-24" },
+  { key: "urgencyLevel", title: "Urgency", sortable: true, width: "w-20" },
+  {
+    key: "lastActivity",
+    title: "Last Activity",
+    sortable: true,
+    width: "w-32",
+  },
+  { key: "nextTask", title: "Next Task", width: "w-48" },
+  { key: "actions", title: "", width: "w-16" },
 ];
 
 export const LEAD_TABLE_COLUMNS: TableColumn[] = [
-  { key: 'select', title: '', width: 'w-12' },
-  { key: 'contactName', title: 'Contact', sortable: true },
-  { key: 'listingAddress', title: 'Listing', sortable: true, width: 'w-64' },
-  { key: 'source', title: 'Source', sortable: true, width: 'w-24' },
-  { key: 'status', title: 'Status', sortable: true, width: 'w-24' },
-  { key: 'lastActivity', title: 'Last Activity', sortable: true, width: 'w-32' },
-  { key: 'nextTask', title: 'Next Task', width: 'w-48' },
-  { key: 'actions', title: '', width: 'w-16' },
+  { key: "select", title: "", width: "w-12" },
+  { key: "contactName", title: "Contact", sortable: true },
+  { key: "listingAddress", title: "Listing", sortable: true, width: "w-64" },
+  { key: "source", title: "Source", sortable: true, width: "w-24" },
+  { key: "status", title: "Status", sortable: true, width: "w-24" },
+  {
+    key: "lastActivity",
+    title: "Last Activity",
+    sortable: true,
+    width: "w-32",
+  },
+  { key: "nextTask", title: "Next Task", width: "w-48" },
+  { key: "actions", title: "", width: "w-16" },
 ];
 
 export const DEAL_TABLE_COLUMNS: TableColumn[] = [
-  { key: 'select', title: '', width: 'w-12' },
-  { key: 'listingAddress', title: 'Listing', sortable: true },
-  { key: 'status', title: 'Stage', sortable: true, width: 'w-24' },
-  { key: 'amount', title: 'Amount', sortable: true, width: 'w-32' },
-  { key: 'closeDate', title: 'Close Date', sortable: true, width: 'w-32' },
-  { key: 'participants', title: 'Participants', width: 'w-48' },
-  { key: 'lastActivity', title: 'Last Activity', sortable: true, width: 'w-32' },
-  { key: 'nextTask', title: 'Next Task', width: 'w-48' },
-  { key: 'actions', title: '', width: 'w-16' },
+  { key: "select", title: "", width: "w-12" },
+  { key: "listingAddress", title: "Listing", sortable: true },
+  { key: "status", title: "Stage", sortable: true, width: "w-24" },
+  { key: "amount", title: "Amount", sortable: true, width: "w-32" },
+  { key: "closeDate", title: "Close Date", sortable: true, width: "w-32" },
+  { key: "participants", title: "Participants", width: "w-48" },
+  {
+    key: "lastActivity",
+    title: "Last Activity",
+    sortable: true,
+    width: "w-32",
+  },
+  { key: "nextTask", title: "Next Task", width: "w-48" },
+  { key: "actions", title: "", width: "w-16" },
 ];
 
 // Get table columns for operation type
-export function getTableColumnsForOperationType(operationType: OperationType): TableColumn[] {
+export function getTableColumnsForOperationType(
+  operationType: OperationType,
+): TableColumn[] {
   switch (operationType) {
-    case 'prospects':
+    case "prospects":
       return PROSPECT_TABLE_COLUMNS;
-    case 'leads':
+    case "leads":
       return LEAD_TABLE_COLUMNS;
-    case 'deals':
+    case "deals":
       return DEAL_TABLE_COLUMNS;
     default:
       return [];

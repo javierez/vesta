@@ -20,14 +20,14 @@ interface KanbanColumnProps {
 const STATUS_COLORS = {
   // Prospects
   New: "bg-blue-100 text-blue-800 border-blue-200",
-  Working: "bg-yellow-100 text-yellow-800 border-yellow-200", 
+  Working: "bg-yellow-100 text-yellow-800 border-yellow-200",
   Qualified: "bg-green-100 text-green-800 border-green-200",
   Archived: "bg-gray-100 text-gray-800 border-gray-200",
-  
+
   // Leads
   Converted: "bg-emerald-100 text-emerald-800 border-emerald-200",
   Disqualified: "bg-red-100 text-red-800 border-red-200",
-  
+
   // Deals
   Offer: "bg-purple-100 text-purple-800 border-purple-200",
   UnderContract: "bg-blue-100 text-blue-800 border-blue-200",
@@ -39,29 +39,28 @@ export default function KanbanColumnComponent({
   column,
   operationType,
   selectedItems,
-  onItemSelect
+  onItemSelect,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
   });
 
-  const statusColorClass = STATUS_COLORS[column.status as keyof typeof STATUS_COLORS] 
-    || "bg-gray-100 text-gray-800 border-gray-200";
+  const statusColorClass =
+    STATUS_COLORS[column.status as keyof typeof STATUS_COLORS] ||
+    "bg-gray-100 text-gray-800 border-gray-200";
 
   return (
     <div
       ref={setNodeRef}
       className={`flex h-fit min-h-[500px] flex-col rounded-lg border-2 bg-gray-50 p-4 transition-colors duration-200 ${
-        isOver 
-          ? "border-blue-400 bg-blue-50/50" 
-          : "border-gray-200"
+        isOver ? "border-blue-400 bg-blue-50/50" : "border-gray-200"
       }`}
     >
       {/* Column Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Badge 
-            variant="secondary" 
+          <Badge
+            variant="secondary"
             className={`${statusColorClass} font-medium`}
           >
             {getTranslatedStatus(column.title)}
@@ -70,15 +69,17 @@ export default function KanbanColumnComponent({
             {column.itemCount}
           </span>
         </div>
-        
+
         {/* Add New Button */}
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="sm"
           className="h-8 w-8 p-0 hover:bg-white"
           onClick={() => {
             // TODO: Handle adding new item to this column
-            console.log(`Add new ${operationType.slice(0, -1)} to ${column.status}`);
+            console.log(
+              `Add new ${operationType.slice(0, -1)} to ${column.status}`,
+            );
           }}
         >
           <Plus className="h-4 w-4" />
@@ -89,8 +90,8 @@ export default function KanbanColumnComponent({
       {/* Cards Container */}
       <div className="flex-1 space-y-3">
         {column.items.length > 0 ? (
-          <SortableContext 
-            items={column.items.map(item => item.id.toString())}
+          <SortableContext
+            items={column.items.map((item) => item.id.toString())}
             strategy={rectSortingStrategy}
           >
             {column.items.map((card) => (
@@ -99,7 +100,9 @@ export default function KanbanColumnComponent({
                 card={card}
                 operationType={operationType}
                 isSelected={selectedItems.has(card.id.toString())}
-                onSelect={(selected) => onItemSelect(card.id.toString(), selected)}
+                onSelect={(selected) =>
+                  onItemSelect(card.id.toString(), selected)
+                }
               />
             ))}
           </SortableContext>
@@ -110,7 +113,8 @@ export default function KanbanColumnComponent({
               <Plus className="h-4 w-4 text-gray-400" />
             </div>
             <p className="text-sm text-gray-500">
-              No {operationType.slice(0, -1).toLowerCase()}s in {column.title.toLowerCase()}
+              No {operationType.slice(0, -1).toLowerCase()}s in{" "}
+              {column.title.toLowerCase()}
             </p>
             <Button
               variant="ghost"
@@ -118,7 +122,9 @@ export default function KanbanColumnComponent({
               className="mt-2 text-xs"
               onClick={() => {
                 // TODO: Handle adding new item to this column
-                console.log(`Add new ${operationType.slice(0, -1)} to ${column.status}`);
+                console.log(
+                  `Add new ${operationType.slice(0, -1)} to ${column.status}`,
+                );
               }}
             >
               Add {operationType.slice(0, -1).toLowerCase()}

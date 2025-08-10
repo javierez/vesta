@@ -1110,6 +1110,7 @@ export type Task = {
   leadId?: bigint;
   dealId?: bigint;
   appointmentId?: bigint;
+  prospectId?: bigint;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

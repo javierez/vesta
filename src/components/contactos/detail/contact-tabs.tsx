@@ -104,13 +104,21 @@ interface ContactTabsProps {
     lastName: string;
     email?: string;
     phone?: string;
-    contactType:
+    // contactType can be missing; we will derive from flags/counts if so
+    contactType?:
       | "demandante"
       | "propietario"
       | "banco"
       | "agencia"
       | "interesado";
     isActive: boolean;
+    // Flags and counts provided by the server helper; optional for safety
+    isOwner?: boolean;
+    isBuyer?: boolean;
+    isInteresado?: boolean;
+    ownerCount?: number;
+    buyerCount?: number;
+    prospectCount?: number;
     additionalInfo?: {
       demandType?: string;
       propertyTypes?: string[];
@@ -130,13 +138,26 @@ interface ContactTabsProps {
 }
 
 export function ContactTabs({ contact }: ContactTabsProps) {
-  // Determine which tabs to show based on contact type
-  const showSolicitudes = ["demandante", "interesado", "propietario"].includes(
-    contact.contactType,
-  );
-  const showPropiedades = ["propietario", "demandante"].includes(
-    contact.contactType,
-  );
+  // Derive role flags using actual data (flags/counts) and fall back to contactType if present
+  const isOwner =
+    contact.isOwner === true ||
+    (contact.ownerCount ?? 0) > 0 ||
+    contact.contactType === "propietario";
+  const isBuyer =
+    contact.isBuyer === true ||
+    (contact.buyerCount ?? 0) > 0 ||
+    contact.contactType === "demandante";
+  const isInteresado =
+    contact.isInteresado === true ||
+    (contact.prospectCount ?? 0) > 0 ||
+    contact.contactType === "interesado";
+
+  // Determine which tabs to show based on derived flags
+  const showSolicitudes = isBuyer || isInteresado || isOwner;
+  const showPropiedades = isOwner || isBuyer;
+
+  // Debug logs to see what's happening
+  // logs removed
 
   // Active tab state
   const [activeTab, setActiveTab] = useState("informacion");
@@ -151,6 +172,8 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       ? [{ value: "propiedades", label: "Propiedades" }]
       : []),
   ];
+
+  // logs removed
 
   // Module states
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>(
@@ -184,32 +207,28 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   const [contactListings, setContactListings] = useState<PropertyListing[]>([]);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
 
-  // Load contact listings if propietario or demandante
+  // Load contact listings if owner or buyer
   useEffect(() => {
-    if (
-      contact.contactType === "propietario" ||
-      contact.contactType === "demandante"
-    ) {
+    if (isOwner || isBuyer) {
       const loadContactListings = async () => {
         setIsLoadingListings(true);
         try {
-          let allListings;
-          if (contact.contactType === "propietario") {
+          let allListings: unknown[];
+          if (isOwner) {
             allListings = await getListingsByContactWithAuth(
               Number(contact.contactId),
             );
-          } else {
-            // For demandante, get listings where they are the buyer
+          } else if (isBuyer) {
+            // For buyer (demandante), get listings where they are the buyer
             allListings = await getListingsByContactAsBuyerWithAuth(
               Number(contact.contactId),
             );
+          } else {
+            allListings = [];
           }
 
-          // Only show active listings
-          const activeListings = allListings.filter(
-            (listing) => listing.status === "Active",
-          );
-          setContactListings(activeListings as unknown as PropertyListing[]);
+          // Show all listings; server already filters by isActive
+          setContactListings(allListings as unknown as PropertyListing[]);
         } catch (error) {
           console.error("Error loading contact listings:", error);
           toast.error("Error al cargar las propiedades del contacto");
@@ -219,7 +238,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       };
       void loadContactListings();
     }
-  }, [contact.contactId, contact.contactType]);
+  }, [contact.contactId, isBuyer, isOwner]);
 
   // Load existing prospects for this contact
   useEffect(() => {
@@ -228,7 +247,9 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         const existingProspects = await getProspectsByContactWithAuth(
           contact.contactId,
         );
-        setProspects(existingProspects as ProspectData[]);
+        setProspects(
+          existingProspects.map((item) => item.prospects) as ProspectData[],
+        );
       } catch (error) {
         console.error("Error loading prospects:", error);
       }
@@ -338,7 +359,9 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         const existingProspects = await getProspectsByContactWithAuth(
           contact.contactId,
         );
-        setProspects(existingProspects as ProspectData[]);
+        setProspects(
+          existingProspects.map((item) => item.prospects) as ProspectData[],
+        );
       } catch (error) {
         console.error("Error loading prospects:", error);
       }
@@ -770,9 +793,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
             <Card className="relative p-4 transition-all duration-500 ease-out">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-sm font-semibold tracking-wide">
-                  {contact.contactType === "propietario"
-                    ? "PROPIEDADES ASOCIADAS"
-                    : "PROPIEDADES DE INTERÉS"}
+                  {isOwner ? "PROPIEDADES ASOCIADAS" : "PROPIEDADES DE INTERÉS"}
                 </h3>
               </div>
 

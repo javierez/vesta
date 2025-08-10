@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { 
-  getUserAppointmentsAction, 
-  getAppointmentsByDateRangeAction 
+import {
+  getUserAppointmentsAction,
+  getAppointmentsByDateRangeAction,
 } from "~/server/actions/appointments";
 
 // Calendar Event Display Type from PRP
@@ -31,9 +31,9 @@ interface RawAppointment {
   datetimeStart: Date;
   datetimeEnd: Date;
   tripTimeMinutes: number | null;
-  status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow";
+  status: string;
   notes: string | null;
-  isActive: boolean;
+  isActive: boolean | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,14 +49,24 @@ interface UseAppointmentsReturn {
 
 // Transform raw appointment to calendar event
 // Note: This is a simplified version. In a real app, you'd join with contacts/properties tables
-function transformToCalendarEvent(rawAppointment: RawAppointment): CalendarEvent {
+function transformToCalendarEvent(
+  rawAppointment: RawAppointment,
+): CalendarEvent {
   return {
     appointmentId: rawAppointment.appointmentId,
     contactName: `Contact ${rawAppointment.contactId}`, // TODO: Join with contacts table
-    propertyAddress: rawAppointment.listingId ? `Property ${rawAppointment.listingId}` : undefined, // TODO: Join with properties table
+    propertyAddress: rawAppointment.listingId
+      ? `Property ${rawAppointment.listingId}`
+      : undefined, // TODO: Join with properties table
     startTime: rawAppointment.datetimeStart,
     endTime: rawAppointment.datetimeEnd,
-    status: rawAppointment.status,
+    status:
+      (rawAppointment.status as
+        | "Scheduled"
+        | "Completed"
+        | "Cancelled"
+        | "Rescheduled"
+        | "NoShow") || "Scheduled",
     type: "Visita", // TODO: Add appointment type to database schema or derive from notes
     tripTimeMinutes: rawAppointment.tripTimeMinutes ?? undefined,
     notes: rawAppointment.notes ?? undefined,
@@ -73,15 +83,17 @@ export function useAppointments(): UseAppointmentsReturn {
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const result = await getUserAppointmentsAction();
-      
+
       if (result.success) {
-        const calendarEvents = result.appointments.map(transformToCalendarEvent);
+        const calendarEvents = result.appointments.map(
+          transformToCalendarEvent,
+        );
         setAppointments(calendarEvents);
       } else {
-        setError(result.error);
+        setError(result.error ?? "Error desconocido");
         setAppointments([]);
       }
     } catch (err) {
@@ -94,28 +106,36 @@ export function useAppointments(): UseAppointmentsReturn {
   }, []);
 
   // Fetch appointments by date range
-  const fetchByDateRange = useCallback(async (startDate: Date, endDate: Date) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const result = await getAppointmentsByDateRangeAction(startDate, endDate);
-      
-      if (result.success) {
-        const calendarEvents = result.appointments.map(transformToCalendarEvent);
-        setAppointments(calendarEvents);
-      } else {
-        setError(result.error);
+  const fetchByDateRange = useCallback(
+    async (startDate: Date, endDate: Date) => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await getAppointmentsByDateRangeAction(
+          startDate,
+          endDate,
+        );
+
+        if (result.success) {
+          const calendarEvents = result.appointments.map(
+            transformToCalendarEvent,
+          );
+          setAppointments(calendarEvents);
+        } else {
+          setError(result.error ?? "Error desconocido");
+          setAppointments([]);
+        }
+      } catch (err) {
+        setError("Error al cargar las citas por rango de fechas");
         setAppointments([]);
+        console.error("Error fetching appointments by date range:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError("Error al cargar las citas por rango de fechas");
-      setAppointments([]);
-      console.error("Error fetching appointments by date range:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   // Initial fetch on mount
   useEffect(() => {
@@ -140,20 +160,22 @@ export function useWeeklyAppointments(weekStart: Date): UseAppointmentsReturn {
   const fetchWeeklyAppointments = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Calculate week end (7 days after week start)
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 7);
       weekEnd.setHours(23, 59, 59, 999);
-      
+
       const result = await getAppointmentsByDateRangeAction(weekStart, weekEnd);
-      
+
       if (result.success) {
-        const calendarEvents = result.appointments.map(transformToCalendarEvent);
+        const calendarEvents = result.appointments.map(
+          transformToCalendarEvent,
+        );
         setAppointments(calendarEvents);
       } else {
-        setError(result.error);
+        setError(result.error ?? "Error desconocido");
         setAppointments([]);
       }
     } catch (err) {
@@ -178,15 +200,20 @@ export function useWeeklyAppointments(weekStart: Date): UseAppointmentsReturn {
     fetchByDateRange: async (startDate: Date, endDate: Date) => {
       setLoading(true);
       setError(null);
-      
+
       try {
-        const result = await getAppointmentsByDateRangeAction(startDate, endDate);
-        
+        const result = await getAppointmentsByDateRangeAction(
+          startDate,
+          endDate,
+        );
+
         if (result.success) {
-          const calendarEvents = result.appointments.map(transformToCalendarEvent);
+          const calendarEvents = result.appointments.map(
+            transformToCalendarEvent,
+          );
           setAppointments(calendarEvents);
         } else {
-          setError(result.error);
+          setError(result.error ?? "Error desconocido");
           setAppointments([]);
         }
       } catch (err) {
@@ -209,23 +236,25 @@ export function useTodayAppointments(): UseAppointmentsReturn {
   const fetchTodayAppointments = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Get today's date range
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       const tomorrow = new Date(today);
       tomorrow.setDate(today.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
-      
+
       const result = await getAppointmentsByDateRangeAction(today, tomorrow);
-      
+
       if (result.success) {
-        const calendarEvents = result.appointments.map(transformToCalendarEvent);
+        const calendarEvents = result.appointments.map(
+          transformToCalendarEvent,
+        );
         setAppointments(calendarEvents);
       } else {
-        setError(result.error);
+        setError(result.error ?? "Error desconocido");
         setAppointments([]);
       }
     } catch (err) {
@@ -250,15 +279,20 @@ export function useTodayAppointments(): UseAppointmentsReturn {
     fetchByDateRange: async (startDate: Date, endDate: Date) => {
       setLoading(true);
       setError(null);
-      
+
       try {
-        const result = await getAppointmentsByDateRangeAction(startDate, endDate);
-        
+        const result = await getAppointmentsByDateRangeAction(
+          startDate,
+          endDate,
+        );
+
         if (result.success) {
-          const calendarEvents = result.appointments.map(transformToCalendarEvent);
+          const calendarEvents = result.appointments.map(
+            transformToCalendarEvent,
+          );
           setAppointments(calendarEvents);
         } else {
-          setError(result.error);
+          setError(result.error ?? "Error desconocido");
           setAppointments([]);
         }
       } catch (err) {
@@ -273,13 +307,16 @@ export function useTodayAppointments(): UseAppointmentsReturn {
 }
 
 // Utility function to filter appointments by date
-export function filterAppointmentsByDate(appointments: CalendarEvent[], date: Date): CalendarEvent[] {
+export function filterAppointmentsByDate(
+  appointments: CalendarEvent[],
+  date: Date,
+): CalendarEvent[] {
   const targetDate = new Date(date);
   targetDate.setHours(0, 0, 0, 0);
-  
+
   const nextDay = new Date(targetDate);
   nextDay.setDate(targetDate.getDate() + 1);
-  
+
   return appointments.filter((appointment) => {
     const appointmentDate = new Date(appointment.startTime);
     return appointmentDate >= targetDate && appointmentDate < nextDay;
@@ -287,17 +324,22 @@ export function filterAppointmentsByDate(appointments: CalendarEvent[], date: Da
 }
 
 // Utility function to group appointments by date
-export function groupAppointmentsByDate(appointments: CalendarEvent[]): Record<string, CalendarEvent[]> {
-  return appointments.reduce((groups, appointment) => {
-    const dateKey = new Date(appointment.startTime).toISOString().split('T')[0];
-    if (!dateKey) return groups;
-    
-    if (!groups[dateKey]) {
-      groups[dateKey] = [];
-    }
-    groups[dateKey]?.push(appointment);
-    return groups;
-  }, {} as Record<string, CalendarEvent[]>);
+export function groupAppointmentsByDate(
+  appointments: CalendarEvent[],
+): Record<string, CalendarEvent[]> {
+  return appointments.reduce(
+    (groups, appointment) => {
+      const dateKey = new Date(appointment.startTime)
+        .toISOString()
+        .split("T")[0];
+      if (!dateKey) return groups;
+
+      groups[dateKey] ??= [];
+      groups[dateKey]?.push(appointment);
+      return groups;
+    },
+    {} as Record<string, CalendarEvent[]>,
+  );
 }
 
 // Utility function to format appointment for display
@@ -306,12 +348,12 @@ export function formatAppointmentTime(appointment: CalendarEvent): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(appointment.startTime);
-  
+
   const endTime = new Intl.DateTimeFormat("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
   }).format(appointment.endTime);
-  
+
   return `${startTime} - ${endTime}`;
 }
 
@@ -319,7 +361,7 @@ export function formatAppointmentTime(appointment: CalendarEvent): string {
 export function isAppointmentToday(appointment: CalendarEvent): boolean {
   const today = new Date();
   const appointmentDate = new Date(appointment.startTime);
-  
+
   return (
     today.getDate() === appointmentDate.getDate() &&
     today.getMonth() === appointmentDate.getMonth() &&

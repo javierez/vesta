@@ -199,10 +199,7 @@ export async function getUrgentTasks(
       // Join for lead contact names
       .leftJoin(leads, eq(tasks.leadId, leads.leadId))
       // Join for property addresses (through listings or deals)
-      .leftJoin(
-        listings,
-        eq(tasks.listingId, listings.listingId)
-      )
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(deals, eq(tasks.dealId, deals.dealId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -321,7 +318,7 @@ export async function getTodayAppointments(
       propertyAddress: appt.propertyAddress || undefined,
       startTime: appt.startTime,
       endTime: appt.endTime,
-      tripTimeMinutes: appt.tripTimeMinutes || undefined,
+      tripTimeMinutes: appt.tripTimeMinutes ?? undefined,
       status: appt.status as TodayAppointment["status"],
       appointmentType: "viewing", // Default type - could be enhanced with more data
     }));

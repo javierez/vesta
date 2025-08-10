@@ -1,7 +1,14 @@
 "use server";
 
 import { db } from "../db";
-import { tasks, contacts, prospects, leads, listings, properties } from "../db/schema";
+import {
+  tasks,
+  contacts,
+  prospects,
+  leads,
+  listings,
+  properties,
+} from "../db/schema";
 import { eq, and, or } from "drizzle-orm";
 import type { Task } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
@@ -96,7 +103,7 @@ export async function createTask(
         );
       if (!prospect) throw new Error("Prospect not found or access denied");
     }
-    
+
     if (data.leadId) {
       const [lead] = await db
         .select({ leadId: leads.leadId })
@@ -110,7 +117,7 @@ export async function createTask(
         );
       if (!lead) throw new Error("Lead not found or access denied");
     }
-    
+
     if (data.listingId) {
       const [listing] = await db
         .select({ listingId: listings.listingId })
@@ -250,7 +257,7 @@ export async function getLeadTasks(leadId: number, accountId: number) {
 }
 
 // Get tasks by deal ID
-export async function getDealTasks(dealId: number, accountId: number) {
+export async function getDealTasks(dealId: number, _accountId: number) {
   try {
     // Note: deals don't have direct account relationship, need to go through listing->property
     const dealTasks = await db
@@ -258,7 +265,13 @@ export async function getDealTasks(dealId: number, accountId: number) {
       .from(tasks)
       // This would need the deals table to be imported and joined properly
       // For now, returning empty array to prevent unauthorized access
-      .where(and(eq(tasks.dealId, BigInt(dealId)), eq(tasks.isActive, true), eq(tasks.taskId, BigInt(-1))));
+      .where(
+        and(
+          eq(tasks.dealId, BigInt(dealId)),
+          eq(tasks.isActive, true),
+          eq(tasks.taskId, BigInt(-1)),
+        ),
+      );
     return dealTasks;
   } catch (error) {
     console.error("Error fetching deal tasks:", error);
@@ -267,7 +280,10 @@ export async function getDealTasks(dealId: number, accountId: number) {
 }
 
 // Get tasks by appointment ID
-export async function getAppointmentTasks(appointmentId: number, accountId: number) {
+export async function getAppointmentTasks(
+  appointmentId: number,
+  _accountId: number,
+) {
   try {
     // Note: appointments don't have direct account relationship, need proper schema
     // For now, returning empty array to prevent unauthorized access
@@ -314,7 +330,7 @@ export async function updateTask(
           ),
         ),
       );
-    
+
     if (!existingTask) {
       throw new Error("Task not found or access denied");
     }
@@ -356,7 +372,7 @@ export async function completeTask(taskId: number, accountId: number) {
           ),
         ),
       );
-    
+
     if (!existingTask) {
       throw new Error("Task not found or access denied");
     }
@@ -397,7 +413,7 @@ export async function softDeleteTask(taskId: number, accountId: number) {
           ),
         ),
       );
-    
+
     if (!existingTask) {
       throw new Error("Task not found or access denied");
     }
@@ -434,7 +450,7 @@ export async function deleteTask(taskId: number, accountId: number) {
           ),
         ),
       );
-    
+
     if (!existingTask) {
       throw new Error("Task not found or access denied");
     }

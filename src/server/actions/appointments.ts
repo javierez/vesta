@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentUserAccountId, getCurrentUser } from "~/lib/dal";
-import { createAppointment, getUserAppointments, getAppointmentsByDateRange } from "~/server/queries/appointment";
+import {
+  createAppointment,
+  getUserAppointments,
+  getAppointmentsByDateRange,
+} from "~/server/queries/appointment";
 
 // Form data structure from PRP
 interface AppointmentFormData {
@@ -11,10 +15,10 @@ interface AppointmentFormData {
   leadId?: bigint;
   dealId?: bigint;
   prospectId?: bigint;
-  startDate: string;      // YYYY-MM-DD format
-  startTime: string;      // HH:mm format
-  endDate: string;        // YYYY-MM-DD format
-  endTime: string;        // HH:mm format
+  startDate: string; // YYYY-MM-DD format
+  startTime: string; // HH:mm format
+  endDate: string; // YYYY-MM-DD format
+  endTime: string; // HH:mm format
   tripTimeMinutes?: number;
   notes?: string;
   appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
@@ -24,7 +28,7 @@ interface AppointmentFormData {
 export async function createAppointmentAction(formData: AppointmentFormData) {
   try {
     // PATTERN: Always get account ID for security
-    const accountId = await getCurrentUserAccountId();
+    const _accountId = await getCurrentUserAccountId();
     const currentUser = await getCurrentUser();
 
     // CRITICAL: Convert form data to database format
@@ -40,32 +44,42 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       tripTimeMinutes: formData.tripTimeMinutes,
       status: "Scheduled" as const,
       notes: formData.notes,
-      isActive: true
+      isActive: true,
     };
 
     // Validate appointment times
     if (appointmentData.datetimeStart >= appointmentData.datetimeEnd) {
-      return { 
-        success: false, 
-        error: "La hora de fin debe ser posterior a la hora de inicio" 
+      return {
+        success: false,
+        error: "La hora de fin debe ser posterior a la hora de inicio",
       };
     }
 
     // PATTERN: Use existing query function
     const result = await createAppointment(appointmentData);
-    
+
+    if (!result) {
+      return {
+        success: false,
+        error: "Error al crear la cita",
+      };
+    }
+
     // Refresh calendar data
     revalidatePath("/calendario");
-    
-    return { 
-      success: true, 
-      appointmentId: result.appointmentId 
+
+    return {
+      success: true,
+      appointmentId: result.appointmentId,
     };
   } catch (error) {
     console.error("Failed to create appointment:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Error desconocido al crear la cita" 
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al crear la cita",
     };
   }
 }
@@ -74,52 +88,57 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
 export async function getUserAppointmentsAction() {
   try {
     // PATTERN: Always get account ID for security
-    const accountId = await getCurrentUserAccountId();
+    const _accountId = await getCurrentUserAccountId();
     const currentUser = await getCurrentUser();
 
     const appointments = await getUserAppointments(currentUser.id);
-    
-    return { 
-      success: true, 
-      appointments 
+
+    return {
+      success: true,
+      appointments,
     };
   } catch (error) {
     console.error("Failed to fetch user appointments:", error);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: "Error al obtener las citas",
-      appointments: []
+      appointments: [],
     };
   }
 }
 
 // Server action to get appointments by date range
-export async function getAppointmentsByDateRangeAction(startDate: Date, endDate: Date) {
+export async function getAppointmentsByDateRangeAction(
+  startDate: Date,
+  endDate: Date,
+) {
   try {
     // PATTERN: Always get account ID for security
-    const accountId = await getCurrentUserAccountId();
+    const _accountId = await getCurrentUserAccountId();
 
     const appointments = await getAppointmentsByDateRange(startDate, endDate);
-    
-    return { 
-      success: true, 
-      appointments 
+
+    return {
+      success: true,
+      appointments,
     };
   } catch (error) {
     console.error("Failed to fetch appointments by date range:", error);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: "Error al obtener las citas por rango de fechas",
-      appointments: []
+      appointments: [],
     };
   }
 }
 
 // Validate appointment form data
-export function validateAppointmentForm(formData: Partial<AppointmentFormData>): { 
-  valid: boolean; 
-  errors: string[] 
-} {
+export async function validateAppointmentForm(
+  formData: Partial<AppointmentFormData>,
+): Promise<{
+  valid: boolean;
+  errors: string[];
+}> {
   const errors: string[] = [];
 
   if (!formData.contactId) {
@@ -143,8 +162,15 @@ export function validateAppointmentForm(formData: Partial<AppointmentFormData>):
   }
 
   // Validate time logic
-  if (formData.startDate && formData.endDate && formData.startTime && formData.endTime) {
-    const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
+  if (
+    formData.startDate &&
+    formData.endDate &&
+    formData.startTime &&
+    formData.endTime
+  ) {
+    const startDateTime = new Date(
+      `${formData.startDate}T${formData.startTime}`,
+    );
     const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
 
     if (startDateTime >= endDateTime) {
@@ -154,6 +180,6 @@ export function validateAppointmentForm(formData: Partial<AppointmentFormData>):
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }

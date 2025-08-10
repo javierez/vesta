@@ -116,7 +116,7 @@ export async function getPropertyById(propertyId: number) {
 export async function getPropertiesByFormPosition(formPosition: number) {
   try {
     const { db: secureDb, withAccountFilter } = await getSecureDb();
-    
+
     const propertiesList = await secureDb
       .select()
       .from(properties)
@@ -142,8 +142,8 @@ export async function updateProperty(
   >,
 ) {
   try {
-    const { db: secureDb, withAccountFilter, accountId } = await getSecureDb();
-    
+    const { db: secureDb, withAccountFilter, accountId: _accountId } = await getSecureDb();
+
     // Verify the property belongs to this account before updating
     const [existingProperty] = await secureDb
       .select({ propertyId: properties.propertyId })
@@ -154,7 +154,7 @@ export async function updateProperty(
           eq(properties.propertyId, BigInt(propertyId)),
         ),
       );
-    
+
     if (!existingProperty) {
       throw new Error("Property not found or access denied");
     }
@@ -243,10 +243,10 @@ export async function listProperties(
 
     // Build the where conditions array
     const whereConditions = [];
-    
+
     // Always filter by account
     whereConditions.push(eq(properties.accountId, BigInt(accountId)));
-    
+
     if (filters) {
       if (filters.propertyType) {
         whereConditions.push(eq(properties.propertyType, filters.propertyType));

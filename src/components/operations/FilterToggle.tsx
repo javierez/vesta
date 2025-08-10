@@ -15,7 +15,7 @@ export default function FilterToggle({
   currentFilter,
   operationType,
   operationCounts,
-  onFilterChange
+  onFilterChange,
 }: FilterToggleProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -24,15 +24,15 @@ export default function FilterToggle({
   const handleFilterChange = (newFilter: ListingTypeFilter) => {
     // Create new search params with updated filter
     const params = new URLSearchParams(searchParams.toString());
-    
-    if (newFilter === 'all') {
-      params.delete('filter'); // Remove filter param for 'all'
+
+    if (newFilter === "all") {
+      params.delete("filter"); // Remove filter param for 'all'
     } else {
-      params.set('filter', newFilter);
+      params.set("filter", newFilter);
     }
 
     // Reset to page 1 when changing filters
-    params.delete('page');
+    params.delete("page");
 
     // Navigate to new URL with updated filter parameter
     router.push(`${pathname}?${params.toString()}`);
@@ -47,30 +47,30 @@ export default function FilterToggle({
   const allCount = operationCounts?.all ?? saleCount + rentCount;
 
   const operationNames = {
-    prospects: 'prospectos',
-    leads: 'leads',
-    deals: 'negocios'
+    prospects: "prospectos",
+    leads: "leads",
+    deals: "negocios",
   };
 
   const filters = [
     {
-      value: 'all' as const,
-      label: 'Todos',
+      value: "all" as const,
+      label: "Todos",
       count: allCount,
-      ariaLabel: `Ver todos los ${operationNames[operationType]}`
+      ariaLabel: `Ver todos los ${operationNames[operationType]}`,
     },
     {
-      value: 'sale' as const,
-      label: 'Venta',
+      value: "sale" as const,
+      label: "Venta",
       count: saleCount,
-      ariaLabel: `Ver ${operationNames[operationType]} de venta`
+      ariaLabel: `Ver ${operationNames[operationType]} de venta`,
     },
     {
-      value: 'rent' as const,  
-      label: 'Alquiler',
+      value: "rent" as const,
+      label: "Alquiler",
       count: rentCount,
-      ariaLabel: `Ver ${operationNames[operationType]} de alquiler`
-    }
+      ariaLabel: `Ver ${operationNames[operationType]} de alquiler`,
+    },
   ];
 
   return (
