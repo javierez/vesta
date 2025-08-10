@@ -1,15 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "~/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,12 +13,9 @@ import { Input } from "~/components/ui/input";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "~/components/ui/card";
 import {
-  MoreHorizontal,
   Plus,
   Search,
   CalendarIcon,
@@ -34,7 +23,6 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  Users,
   Video,
   Check,
   Filter,
@@ -43,122 +31,24 @@ import {
   Link as LinkIcon,
   CheckCircle2,
   XCircle,
+  Loader,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
+import { useRouter } from "next/navigation";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
 import Image from "next/image"; // Add Image import for optimized images
+import { useWeeklyAppointments } from "~/hooks/use-appointments";
+import CalendarEvent, { ListCalendarEvent, CompactCalendarEvent } from "~/components/appointments/calendar-event";
+import AppointmentModal, { useAppointmentModal } from "~/components/appointments/appointment-modal";
 
-// Mock data - replace with actual data from your database
-const appointments = [
-  {
-    id: 1,
-    title: "Visita de Propiedad",
-    client: "Juan Pérez",
-    property: "Apartamento Moderno en el Centro",
-    date: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() - d.getDay() + 1);
-      return d.toISOString().split("T")[0] ?? "";
-    })(), // Monday
-    time: "10:00",
-    endTime: "11:00",
-    duration: "1 hora",
-    status: "Programado",
-    type: "Visita",
-    location: "Calle Principal 123",
-    description: "Visita para mostrar el apartamento al cliente potencial",
-    attendees: ["Juan Pérez", "Ana Agente"],
-    color: "#D32F2F",
-  },
-  {
-    id: 2,
-    title: "Reunión de Negociación",
-    client: "María García",
-    property: "Villa de Lujo con Piscina",
-    date: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() - d.getDay() + 3);
-      return d.toISOString().split("T")[0] ?? "";
-    })(), // Wednesday
-    time: "15:00",
-    endTime: "17:00",
-    duration: "2 horas",
-    status: "Programado",
-    type: "Reunión",
-    location: "Oficina Central",
-    description: "Negociación final del precio de venta",
-    attendees: ["María García", "Carlos Vendedor", "Ana Agente"],
-    color: "#7B1FA2",
-  },
-  {
-    id: 3,
-    title: "Firma de Contrato",
-    client: "Carlos López",
-    property: "Chalet en las Afueras",
-    date: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() - d.getDay() + 5);
-      return d.toISOString().split("T")[0] ?? "";
-    })(), // Friday
-    time: "12:00",
-    endTime: "13:00",
-    duration: "1 hora",
-    status: "Programado",
-    type: "Firma",
-    location: "Notaría Central",
-    description: "Firma del contrato de compraventa",
-    attendees: ["Carlos López", "Ana Agente", "Notario García"],
-    color: "#388E3C",
-  },
-  {
-    id: 4,
-    title: "Cierre de Venta",
-    client: "Ana Torres",
-    property: "Ático con Terraza",
-    date: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() - d.getDay() + 6);
-      return d.toISOString().split("T")[0] ?? "";
-    })(), // Saturday
-    time: "09:00",
-    endTime: "10:00",
-    duration: "1 hora",
-    status: "Completado",
-    type: "Cierre",
-    location: "Oficina Central",
-    description: "Entrega de llaves y documentación final",
-    attendees: ["Ana Torres", "Carlos Vendedor"],
-    color: "#F57C00",
-  },
-  {
-    id: 5,
-    title: "Train to Madrid-Cham",
-    client: "León",
-    property: "Estación de tren",
-    date: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() - d.getDay() + 1);
-      return d.toISOString().split("T")[0] ?? "";
-    })(), // Monday
-    time: "17:51",
-    endTime: "19:30",
-    duration: "1 hora 39 min",
-    status: "Programado",
-    type: "Viaje",
-    location: "Estación León",
-    description: "Viaje en tren a Madrid",
-    attendees: ["Ana Agente"],
-    color: "#689F38",
-  },
-];
-
+// Appointment types configuration
 const appointmentTypes = {
   Visita: { color: "bg-blue-100 text-blue-800", icon: "🏠" },
   Reunión: { color: "bg-purple-100 text-purple-800", icon: "👥" },
@@ -185,8 +75,8 @@ const calculateEventStyle = (startTime: string, endTime: string) => {
   const startMinutes = start.hours * 60 + start.minutes;
   const endMinutes = end.hours * 60 + end.minutes;
 
-  // Start time relative to 7:00 (first hour in our grid)
-  const topPosition = ((startMinutes - 7 * 60) / 60) * 60;
+  // Start time relative to 00:00 (first hour in our 24-hour grid)
+  const topPosition = (startMinutes / 60) * 60;
 
   // Height based on duration
   const durationMinutes = endMinutes - startMinutes;
@@ -209,9 +99,35 @@ export default function AppointmentsPage() {
     const diff = now.getDate() - day + (day === 0 ? -6 : 1);
     return new Date(now.setDate(diff));
   });
-  const [filteredAppointments, setFilteredAppointments] =
-    useState(appointments);
-  const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<bigint | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  
+  // Use real appointments data
+  const { appointments: realAppointments, loading, error, refetch } = useWeeklyAppointments(weekStart);
+  
+  // Use appointment modal
+  const { isOpen: isModalOpen, openModal, closeModal, initialData } = useAppointmentModal();
+
+  // Filter appointments
+  const filteredAppointments = realAppointments.filter((appointment) => {
+    const matchesSearch =
+      appointment.contactName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (appointment.propertyAddress?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+    const matchesType =
+      typeFilter === "all" || appointment.type === typeFilter;
+    const matchesStatus =
+      statusFilter === "all" || appointment.status === statusFilter;
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  // Scroll to 9:00 AM on mount for weekly view
+  useEffect(() => {
+    if (view === "weekly" && scrollAreaRef.current) {
+      const scrollPosition = 9 * 60; // 9:00 AM = 540px (9 hours * 60px per hour)
+      scrollAreaRef.current.scrollTop = scrollPosition;
+    }
+  }, [view, weekStart]);
 
   const getWeekDays = () => {
     const days = [];
@@ -252,31 +168,30 @@ export default function AppointmentsPage() {
     setWeekStart(newWeekStart);
   };
 
-  const handleFilterChange = (filters: {
-    searchQuery: string;
-    status: string[];
-    type: string[];
-    client: string[];
-  }) => {
-    const filtered = appointments.filter((appointment) => {
-      const matchesSearch =
-        appointment.title
-          .toLowerCase()
-          .includes(filters.searchQuery.toLowerCase()) ||
-        appointment.client
-          .toLowerCase()
-          .includes(filters.searchQuery.toLowerCase());
-      const matchesType =
-        filters.type.length === 0 || filters.type.includes(appointment.type);
-      const matchesStatus =
-        filters.status.length === 0 ||
-        filters.status.includes(appointment.status);
-      const matchesClient =
-        filters.client.length === 0 ||
-        filters.client.includes(appointment.client);
-      return matchesSearch && matchesType && matchesStatus && matchesClient;
-    });
-    setFilteredAppointments(filtered);
+  // Handle modal for appointment creation
+  const handleCreateAppointment = () => {
+    openModal({});
+  };
+
+  // Handle click on empty time slot for appointment creation
+  const handleTimeSlotClick = (date: Date, hour: number, minute = 0) => {
+    const clickedDate = new Date(date);
+    const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    
+    // Default to 1-hour appointment
+    const endHour = hour + 1;
+    const endTime = `${endHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    
+    const dateString = getDateString(clickedDate);
+    
+    // Navigate with URL parameters to trigger modal
+    const params = new URLSearchParams();
+    params.set('new', 'true');
+    params.set('date', dateString);
+    params.set('time', startTime);
+    params.set('endTime', endTime);
+    
+    router.push(`/calendario?${params.toString()}`, { scroll: false });
   };
 
   const isToday = (date: Date) => {
@@ -293,11 +208,9 @@ export default function AppointmentsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Citas</h1>
         <div className="flex items-center gap-2">
-          <Button asChild>
-            <Link href="/appointments/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Cita
-            </Link>
+          <Button onClick={handleCreateAppointment}>
+            <Plus className="mr-2 h-4 w-4" />
+            Crear Evento
           </Button>
         </div>
       </div>
@@ -310,15 +223,7 @@ export default function AppointmentsPage() {
             placeholder="Buscar citas..."
             className="pl-8"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              handleFilterChange({
-                searchQuery: e.target.value,
-                status: statusFilter === "all" ? [] : [statusFilter],
-                type: typeFilter === "all" ? [] : [typeFilter],
-                client: [],
-              });
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="ml-auto flex items-center space-x-2">
@@ -431,13 +336,6 @@ export default function AppointmentsPage() {
                             className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
                             onClick={() => {
                               setTypeFilter(typeFilter === type ? "all" : type);
-                              handleFilterChange({
-                                searchQuery,
-                                status:
-                                  statusFilter === "all" ? [] : [statusFilter],
-                                type: typeFilter === type ? [] : [type],
-                                client: [],
-                              });
                             }}
                           >
                             <div
@@ -467,14 +365,6 @@ export default function AppointmentsPage() {
                                 setStatusFilter(
                                   statusFilter === status ? "all" : status,
                                 );
-                                handleFilterChange({
-                                  searchQuery,
-                                  status:
-                                    statusFilter === status ? [] : [status],
-                                  type:
-                                    typeFilter === "all" ? [] : [typeFilter],
-                                  client: [],
-                                });
                               }}
                             >
                               <div
@@ -500,12 +390,6 @@ export default function AppointmentsPage() {
                       onClick={() => {
                         setTypeFilter("all");
                         setStatusFilter("all");
-                        handleFilterChange({
-                          searchQuery,
-                          status: [],
-                          type: [],
-                          client: [],
-                        });
                       }}
                       className="h-7 w-full text-xs"
                     >
@@ -521,156 +405,58 @@ export default function AppointmentsPage() {
       </div>
 
       {view === "list" && (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Propiedad</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Hora</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAppointments.map((appointment) => (
-                <TableRow key={appointment.id}>
-                  <TableCell className="font-medium">
-                    {appointment.title}
-                  </TableCell>
-                  <TableCell>{appointment.client}</TableCell>
-                  <TableCell>{appointment.property}</TableCell>
-                  <TableCell>{appointment.date}</TableCell>
-                  <TableCell>{appointment.time}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={
-                        appointmentTypes[
-                          appointment.type as keyof typeof appointmentTypes
-                        ]?.color
-                      }
-                    >
-                      {
-                        appointmentTypes[
-                          appointment.type as keyof typeof appointmentTypes
-                        ]?.icon
-                      }{" "}
-                      {appointment.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        appointment.status === "Programado"
-                          ? "bg-blue-100 text-blue-800"
-                          : appointment.status === "Completado"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {appointment.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/appointments/${appointment.id}`}>
-                            Ver Detalles
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/appointments/${appointment.id}/edit`}>
-                            Editar
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          Cancelar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Cargando citas...</span>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-600">
+              {error}
+            </div>
+          ) : filteredAppointments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No se encontraron citas
+            </div>
+          ) : (
+            filteredAppointments.map((appointment) => (
+              <ListCalendarEvent
+                key={appointment.appointmentId.toString()}
+                event={appointment}
+                isSelected={selectedEvent === appointment.appointmentId}
+                onClick={() => setSelectedEvent(appointment.appointmentId)}
+              />
+            ))
+          )}
         </div>
       )}
 
       {view === "calendar" && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredAppointments.map((appointment) => (
-            <Card key={appointment.id}>
-              <CardHeader>
-                <CardTitle>{appointment.title}</CardTitle>
-                <CardDescription>{appointment.client}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center text-sm">
-                    <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                    {appointment.date}
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                    {appointment.time} ({appointment.duration})
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
-                    {appointment.location}
-                  </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <Badge
-                      variant="secondary"
-                      className={
-                        appointmentTypes[
-                          appointment.type as keyof typeof appointmentTypes
-                        ]?.color
-                      }
-                    >
-                      {
-                        appointmentTypes[
-                          appointment.type as keyof typeof appointmentTypes
-                        ]?.icon
-                      }{" "}
-                      {appointment.type}
-                    </Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/appointments/${appointment.id}`}>
-                            Ver Detalles
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/appointments/${appointment.id}/edit`}>
-                            Editar
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          Cancelar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {loading ? (
+            <div className="col-span-full flex items-center justify-center py-8">
+              <Loader className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Cargando citas...</span>
+            </div>
+          ) : error ? (
+            <div className="col-span-full text-center py-8 text-red-600">
+              {error}
+            </div>
+          ) : filteredAppointments.length === 0 ? (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              No se encontraron citas
+            </div>
+          ) : (
+            filteredAppointments.map((appointment) => (
+              <CompactCalendarEvent
+                key={appointment.appointmentId.toString()}
+                event={appointment}
+                isSelected={selectedEvent === appointment.appointmentId}
+                onClick={() => setSelectedEvent(appointment.appointmentId)}
+              />
+            ))
+          )}
         </div>
       )}
 
@@ -739,16 +525,16 @@ export default function AppointmentsPage() {
           </CardHeader>
 
           <CardContent className="p-0">
-            <ScrollArea className="h-[600px]">
+            <ScrollArea className="h-[600px]" ref={scrollAreaRef}>
               <div className="grid grid-cols-8">
                 {/* Hours column */}
                 <div className="flex flex-col border-r">
-                  {Array.from({ length: 14 }, (_, i) => 7 + i).map((hour) => (
+                  {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                     <div
                       key={hour}
                       className="flex h-[60px] items-start justify-end border-b pr-2 pt-1 text-xs text-muted-foreground"
                     >
-                      {hour}:00
+                      {hour.toString().padStart(2, '0')}:00
                     </div>
                   ))}
                 </div>
@@ -763,66 +549,53 @@ export default function AppointmentsPage() {
                     )}
                   >
                     {/* Hour slots */}
-                    {Array.from({ length: 14 }, (_, i) => 7 + i).map((hour) => (
+                    {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                       <div key={hour} className="relative h-[60px] border-b">
+                        {/* First half-hour slot */}
+                        <div
+                          className="absolute left-0 right-0 top-0 h-1/2 cursor-pointer hover:bg-blue-50/50 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTimeSlotClick(day, hour, 0);
+                          }}
+                          title={`Crear cita - ${hour.toString().padStart(2, '0')}:00`}
+                        />
+                        
                         {/* Half-hour divider */}
                         <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-gray-200"></div>
+                        
+                        {/* Second half-hour slot */}
+                        <div
+                          className="absolute left-0 right-0 bottom-0 h-1/2 cursor-pointer hover:bg-blue-50/50 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTimeSlotClick(day, hour, 30);
+                          }}
+                          title={`Crear cita - ${hour.toString().padStart(2, '0')}:30`}
+                        />
                       </div>
                     ))}
 
                     {/* Appointments for this day */}
-                    {filteredAppointments
-                      .filter((app) => app.date === getDateString(day))
+                    {!loading && !error && filteredAppointments
+                      .filter((app) => {
+                        const appDate = new Date(app.startTime).toISOString().split("T")[0];
+                        const dayDate = getDateString(day);
+                        return appDate === dayDate;
+                      })
                       .map((app) => {
-                        const eventStyle = calculateEventStyle(
-                          app.time,
-                          app.endTime,
-                        );
+                        const startTime = new Date(app.startTime).toTimeString().slice(0, 5);
+                        const endTime = new Date(app.endTime).toTimeString().slice(0, 5);
+                        const eventStyle = calculateEventStyle(startTime, endTime);
+                        
                         return (
-                          <div
-                            key={app.id}
-                            className={cn(
-                              "absolute left-0.5 right-0.5 cursor-pointer overflow-hidden rounded-md px-2 py-1 hover:ring-2 hover:ring-black hover:ring-offset-2",
-                              selectedEvent === app.id
-                                ? "ring-2 ring-black ring-offset-2"
-                                : "",
-                            )}
-                            style={{
-                              top: eventStyle.top,
-                              height: eventStyle.height,
-                              backgroundColor: app.color || "#1976D2",
-                              color: "white",
-                            }}
-                            onClick={() => setSelectedEvent(app.id)}
-                          >
-                            <div className="truncate text-xs font-medium">
-                              {app.title}
-                            </div>
-                            <div className="flex items-center gap-1 truncate text-xs opacity-90">
-                              <Clock className="h-3 w-3" />
-                              {app.time} - {app.endTime}
-                            </div>
-                            {eventStyle.height.replace("px", "") > "50" && (
-                              <>
-                                <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
-                                  <MapPin className="h-3 w-3" />
-                                  {app.location}
-                                </div>
-                                {app.attendees &&
-                                  app.attendees.length > 0 &&
-                                  eventStyle.height.replace("px", "") >
-                                    "80" && (
-                                    <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
-                                      <Users className="h-3 w-3" />
-                                      {app.attendees.length}{" "}
-                                      {app.attendees.length === 1
-                                        ? "asistente"
-                                        : "asistentes"}
-                                    </div>
-                                  )}
-                              </>
-                            )}
-                          </div>
+                          <CalendarEvent
+                            key={app.appointmentId.toString()}
+                            event={app}
+                            style={eventStyle}
+                            isSelected={selectedEvent === app.appointmentId}
+                            onClick={() => setSelectedEvent(app.appointmentId)}
+                          />
                         );
                       })}
                   </div>
@@ -848,58 +621,71 @@ export default function AppointmentsPage() {
           </div>
 
           {(() => {
-            const event = appointments.find((a) => a.id === selectedEvent);
+            const event = realAppointments.find((a) => a.appointmentId === selectedEvent);
             if (!event) return null;
+
+            const formatDate = (date: Date) => {
+              return new Intl.DateTimeFormat("es-ES", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }).format(date);
+            };
+
+            const formatTime = (date: Date) => {
+              return new Intl.DateTimeFormat("es-ES", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }).format(date);
+            };
+
+            const typeConfig = appointmentTypes[event.type as keyof typeof appointmentTypes] || {
+              color: "bg-gray-100 text-gray-800",
+              icon: "📅"
+            };
 
             return (
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-lg font-medium">{event.title}</h4>
+                  <h4 className="text-lg font-medium flex items-center gap-2">
+                    <span>{typeConfig.icon}</span>
+                    {event.contactName}
+                  </h4>
                   <p className="text-sm text-muted-foreground">
-                    {event.client}
+                    {event.type}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{event.date}</span>
+                    <span>{formatDate(event.startTime)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      {event.time} - {event.endTime} ({event.duration})
+                      {formatTime(event.startTime)} - {formatTime(event.endTime)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{event.location}</span>
-                  </div>
-                  {event.description && (
+                  {event.propertyAddress && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span>{event.propertyAddress}</span>
+                    </div>
+                  )}
+                  {event.tripTimeMinutes && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>Tiempo de viaje: {event.tripTimeMinutes} min</span>
+                    </div>
+                  )}
+                  {event.notes && (
                     <div className="pt-2 text-sm">
-                      <p>{event.description}</p>
+                      <h5 className="mb-1 text-sm font-medium">Notas</h5>
+                      <p>{event.notes}</p>
                     </div>
                   )}
                 </div>
-
-                {event.attendees && event.attendees.length > 0 && (
-                  <div>
-                    <h5 className="mb-1 text-sm font-medium">Asistentes</h5>
-                    <div className="space-y-1">
-                      {event.attendees.map((attendee, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200">
-                            {attendee.charAt(0)}
-                          </div>
-                          <span>{attendee}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 <div className="flex gap-2 pt-2">
                   <Button
@@ -908,7 +694,7 @@ export default function AppointmentsPage() {
                     asChild
                     className="flex-1"
                   >
-                    <Link href={`/appointments/${event.id}/edit`}>Editar</Link>
+                    <Link href={`/calendario/appointments/${event.appointmentId}/edit`}>Editar</Link>
                   </Button>
                   <Button size="sm" variant="outline" className="flex-1">
                     <Video className="mr-1 h-4 w-4" />
@@ -920,6 +706,13 @@ export default function AppointmentsPage() {
           })()}
         </div>
       )}
+
+      {/* Appointment Modal */}
+      <AppointmentModal
+        open={isModalOpen}
+        onOpenChange={closeModal}
+        initialData={initialData}
+      />
     </div>
   );
 }

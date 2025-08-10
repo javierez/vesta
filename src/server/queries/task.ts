@@ -1,13 +1,130 @@
+"use server";
+
 import { db } from "../db";
-import { tasks } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { tasks, contacts, prospects, leads, listings, properties } from "../db/schema";
+import { eq, and, or } from "drizzle-orm";
 import type { Task } from "../../lib/data";
+import { getCurrentUserAccountId } from "../../lib/dal";
+
+// Wrapper functions that automatically get accountId from current session
+export async function createTaskWithAuth(
+  data: Omit<Task, "taskId" | "createdAt" | "updatedAt">,
+) {
+  const accountId = await getCurrentUserAccountId();
+  return createTask(data, accountId);
+}
+
+export async function getTaskByIdWithAuth(taskId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getTaskById(taskId, accountId);
+}
+
+export async function getUserTasksWithAuth(userId: string) {
+  const accountId = await getCurrentUserAccountId();
+  return getUserTasks(userId, accountId);
+}
+
+export async function getListingTasksWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getListingTasks(listingId, accountId);
+}
+
+export async function getLeadTasksWithAuth(leadId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getLeadTasks(leadId, accountId);
+}
+
+export async function getDealTasksWithAuth(dealId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getDealTasks(dealId, accountId);
+}
+
+export async function getAppointmentTasksWithAuth(appointmentId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getAppointmentTasks(appointmentId, accountId);
+}
+
+export async function updateTaskWithAuth(
+  taskId: number,
+  data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
+) {
+  const accountId = await getCurrentUserAccountId();
+  return updateTask(taskId, data, accountId);
+}
+
+export async function completeTaskWithAuth(taskId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return completeTask(taskId, accountId);
+}
+
+export async function softDeleteTaskWithAuth(taskId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return softDeleteTask(taskId, accountId);
+}
+
+export async function deleteTaskWithAuth(taskId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return deleteTask(taskId, accountId);
+}
+
+export async function listTasksWithAuth(
+  page = 1,
+  limit = 10,
+  filters?: Parameters<typeof listTasks>[3],
+) {
+  const accountId = await getCurrentUserAccountId();
+  return listTasks(page, limit, accountId, filters);
+}
 
 // Create a new task
 export async function createTask(
   data: Omit<Task, "taskId" | "createdAt" | "updatedAt">,
+  accountId: number,
 ) {
   try {
+    // Verify access based on the task's entity relationships
+    if (data.prospectId) {
+      const [prospect] = await db
+        .select({ id: prospects.id })
+        .from(prospects)
+        .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+        .where(
+          and(
+            eq(prospects.id, data.prospectId),
+            eq(contacts.accountId, BigInt(accountId)),
+          ),
+        );
+      if (!prospect) throw new Error("Prospect not found or access denied");
+    }
+    
+    if (data.leadId) {
+      const [lead] = await db
+        .select({ leadId: leads.leadId })
+        .from(leads)
+        .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+        .where(
+          and(
+            eq(leads.leadId, data.leadId),
+            eq(contacts.accountId, BigInt(accountId)),
+          ),
+        );
+      if (!lead) throw new Error("Lead not found or access denied");
+    }
+    
+    if (data.listingId) {
+      const [listing] = await db
+        .select({ listingId: listings.listingId })
+        .from(listings)
+        .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+        .where(
+          and(
+            eq(listings.listingId, data.listingId),
+            eq(properties.accountId, BigInt(accountId)),
+          ),
+        );
+      if (!listing) throw new Error("Listing not found or access denied");
+    }
+
     const [result] = await db
       .insert(tasks)
       .values({
@@ -28,12 +145,29 @@ export async function createTask(
 }
 
 // Get task by ID
-export async function getTaskById(taskId: number) {
+export async function getTaskById(taskId: number, accountId: number) {
   try {
+    // Complex query to verify account access through various relationships
     const [task] = await db
       .select()
       .from(tasks)
-      .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
+      .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(tasks.taskId, BigInt(taskId)),
+          eq(tasks.isActive, true),
+          or(
+            // Task belongs to account through prospect->contact
+            eq(contacts.accountId, BigInt(accountId)),
+            // Task belongs to account through listing->property
+            eq(properties.accountId, BigInt(accountId)),
+          ),
+        ),
+      );
     return task;
   } catch (error) {
     console.error("Error fetching task:", error);
@@ -42,12 +176,28 @@ export async function getTaskById(taskId: number) {
 }
 
 // Get tasks by user ID
-export async function getUserTasks(userId: string) {
+export async function getUserTasks(userId: string, accountId: number) {
   try {
     const userTasks = await db
       .select()
       .from(tasks)
-      .where(and(eq(tasks.userId, userId), eq(tasks.isActive, true))); // userId is now string
+      .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(tasks.userId, userId),
+          eq(tasks.isActive, true),
+          or(
+            // Task belongs to account through prospect->contact
+            eq(contacts.accountId, BigInt(accountId)),
+            // Task belongs to account through listing->property
+            eq(properties.accountId, BigInt(accountId)),
+          ),
+        ),
+      );
     return userTasks;
   } catch (error) {
     console.error("Error fetching user tasks:", error);
@@ -56,13 +206,19 @@ export async function getUserTasks(userId: string) {
 }
 
 // Get tasks by listing ID
-export async function getListingTasks(listingId: number) {
+export async function getListingTasks(listingId: number, accountId: number) {
   try {
     const listingTasks = await db
       .select()
       .from(tasks)
+      .innerJoin(listings, eq(tasks.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
-        and(eq(tasks.listingId, BigInt(listingId)), eq(tasks.isActive, true)),
+        and(
+          eq(tasks.listingId, BigInt(listingId)),
+          eq(tasks.isActive, true),
+          eq(properties.accountId, BigInt(accountId)),
+        ),
       );
     return listingTasks;
   } catch (error) {
@@ -72,12 +228,20 @@ export async function getListingTasks(listingId: number) {
 }
 
 // Get tasks by lead ID
-export async function getLeadTasks(leadId: number) {
+export async function getLeadTasks(leadId: number, accountId: number) {
   try {
     const leadTasks = await db
       .select()
       .from(tasks)
-      .where(and(eq(tasks.leadId, BigInt(leadId)), eq(tasks.isActive, true)));
+      .innerJoin(leads, eq(tasks.leadId, leads.leadId))
+      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(tasks.leadId, BigInt(leadId)),
+          eq(tasks.isActive, true),
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
+      );
     return leadTasks;
   } catch (error) {
     console.error("Error fetching lead tasks:", error);
@@ -86,12 +250,15 @@ export async function getLeadTasks(leadId: number) {
 }
 
 // Get tasks by deal ID
-export async function getDealTasks(dealId: number) {
+export async function getDealTasks(dealId: number, accountId: number) {
   try {
+    // Note: deals don't have direct account relationship, need to go through listing->property
     const dealTasks = await db
       .select()
       .from(tasks)
-      .where(and(eq(tasks.dealId, BigInt(dealId)), eq(tasks.isActive, true)));
+      // This would need the deals table to be imported and joined properly
+      // For now, returning empty array to prevent unauthorized access
+      .where(and(eq(tasks.dealId, BigInt(dealId)), eq(tasks.isActive, true), eq(tasks.taskId, BigInt(-1))));
     return dealTasks;
   } catch (error) {
     console.error("Error fetching deal tasks:", error);
@@ -100,8 +267,10 @@ export async function getDealTasks(dealId: number) {
 }
 
 // Get tasks by appointment ID
-export async function getAppointmentTasks(appointmentId: number) {
+export async function getAppointmentTasks(appointmentId: number, accountId: number) {
   try {
+    // Note: appointments don't have direct account relationship, need proper schema
+    // For now, returning empty array to prevent unauthorized access
     const appointmentTasks = await db
       .select()
       .from(tasks)
@@ -109,6 +278,7 @@ export async function getAppointmentTasks(appointmentId: number) {
         and(
           eq(tasks.appointmentId, BigInt(appointmentId)),
           eq(tasks.isActive, true),
+          eq(tasks.taskId, BigInt(-1)), // This will never match, preventing access
         ),
       );
     return appointmentTasks;
@@ -122,8 +292,33 @@ export async function getAppointmentTasks(appointmentId: number) {
 export async function updateTask(
   taskId: number,
   data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
+  accountId: number,
 ) {
   try {
+    // First verify the task belongs to this account
+    const [existingTask] = await db
+      .select({ taskId: tasks.taskId })
+      .from(tasks)
+      .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(tasks.taskId, BigInt(taskId)),
+          eq(tasks.isActive, true),
+          or(
+            eq(contacts.accountId, BigInt(accountId)),
+            eq(properties.accountId, BigInt(accountId)),
+          ),
+        ),
+      );
+    
+    if (!existingTask) {
+      throw new Error("Task not found or access denied");
+    }
+
     await db
       .update(tasks)
       .set(data)
@@ -140,8 +335,32 @@ export async function updateTask(
 }
 
 // Mark task as completed
-export async function completeTask(taskId: number) {
+export async function completeTask(taskId: number, accountId: number) {
   try {
+    // First verify the task belongs to this account
+    const [existingTask] = await db
+      .select({ taskId: tasks.taskId })
+      .from(tasks)
+      .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(tasks.taskId, BigInt(taskId)),
+          eq(tasks.isActive, true),
+          or(
+            eq(contacts.accountId, BigInt(accountId)),
+            eq(properties.accountId, BigInt(accountId)),
+          ),
+        ),
+      );
+    
+    if (!existingTask) {
+      throw new Error("Task not found or access denied");
+    }
+
     await db
       .update(tasks)
       .set({ completed: true })
@@ -158,8 +377,31 @@ export async function completeTask(taskId: number) {
 }
 
 // Soft delete task (set isActive to false)
-export async function softDeleteTask(taskId: number) {
+export async function softDeleteTask(taskId: number, accountId: number) {
   try {
+    // First verify the task belongs to this account
+    const [existingTask] = await db
+      .select({ taskId: tasks.taskId })
+      .from(tasks)
+      .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(tasks.taskId, BigInt(taskId)),
+          or(
+            eq(contacts.accountId, BigInt(accountId)),
+            eq(properties.accountId, BigInt(accountId)),
+          ),
+        ),
+      );
+    
+    if (!existingTask) {
+      throw new Error("Task not found or access denied");
+    }
+
     await db
       .update(tasks)
       .set({ isActive: false })
@@ -172,8 +414,31 @@ export async function softDeleteTask(taskId: number) {
 }
 
 // Hard delete task (remove from database)
-export async function deleteTask(taskId: number) {
+export async function deleteTask(taskId: number, accountId: number) {
   try {
+    // First verify the task belongs to this account
+    const [existingTask] = await db
+      .select({ taskId: tasks.taskId })
+      .from(tasks)
+      .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(tasks.taskId, BigInt(taskId)),
+          or(
+            eq(contacts.accountId, BigInt(accountId)),
+            eq(properties.accountId, BigInt(accountId)),
+          ),
+        ),
+      );
+    
+    if (!existingTask) {
+      throw new Error("Task not found or access denied");
+    }
+
     await db.delete(tasks).where(eq(tasks.taskId, BigInt(taskId)));
     return { success: true };
   } catch (error) {
@@ -186,6 +451,7 @@ export async function deleteTask(taskId: number) {
 export async function listTasks(
   page = 1,
   limit = 10,
+  accountId: number,
   filters?: {
     userId?: string; // Changed to string for BetterAuth compatibility
     completed?: boolean;
@@ -212,15 +478,26 @@ export async function listTasks(
       whereConditions.push(eq(tasks.isActive, true));
     }
 
-    // Create the base query
-    const query = db.select().from(tasks);
+    // Always filter by account through relationships
+    whereConditions.push(
+      or(
+        eq(contacts.accountId, BigInt(accountId)),
+        eq(properties.accountId, BigInt(accountId)),
+      ),
+    );
 
-    // Apply all where conditions at once
-    const filteredQuery =
-      whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
-
-    // Apply pagination
-    const allTasks = await filteredQuery.limit(limit).offset(offset);
+    // Create the query with proper joins for account filtering
+    const allTasks = await db
+      .select()
+      .from(tasks)
+      .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .limit(limit)
+      .offset(offset);
 
     return allTasks;
   } catch (error) {

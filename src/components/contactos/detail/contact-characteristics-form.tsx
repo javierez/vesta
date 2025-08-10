@@ -21,9 +21,9 @@ import {
   type InterestFormData,
 } from "./forms/contact-interest-form";
 import {
-  createProspect,
-  updateProspect,
-  getProspectsByContact,
+  createProspectWithAuth,
+  updateProspectWithAuth,
+  getProspectsByContactWithAuth,
   type CreateProspectInput,
   type UpdateProspectInput,
 } from "~/server/queries/prospect";
@@ -204,10 +204,10 @@ export function ContactCharacteristicsForm({
   useEffect(() => {
     const loadProspects = async () => {
       try {
-        const existingProspects = await getProspectsByContact(
+        const existingProspects = await getProspectsByContactWithAuth(
           contact.contactId,
         );
-        setProspects(existingProspects as ProspectData[]);
+        setProspects(existingProspects.map(item => item.prospects) as ProspectData[]);
       } catch (error) {
         console.error("Error loading prospects:", error);
       }
@@ -314,10 +314,10 @@ export function ContactCharacteristicsForm({
     // Reload prospects
     const loadProspects = async () => {
       try {
-        const existingProspects = await getProspectsByContact(
+        const existingProspects = await getProspectsByContactWithAuth(
           contact.contactId,
         );
-        setProspects(existingProspects as ProspectData[]);
+        setProspects(existingProspects.map(item => item.prospects) as ProspectData[]);
       } catch (error) {
         console.error("Error loading prospects:", error);
       }
@@ -416,13 +416,13 @@ export function ContactCharacteristicsForm({
 
             if (existingProspect) {
               // Update existing prospect
-              await updateProspect(
+              await updateProspectWithAuth(
                 BigInt(existingProspect.id),
                 prospectData as UpdateProspectInput,
               );
             } else {
               // Create new prospect
-              await createProspect(prospectData);
+              await createProspectWithAuth(prospectData);
             }
           }
 

@@ -1,8 +1,50 @@
 "use server";
 import { db } from "~/server/db";
-import { eq } from "drizzle-orm";
-import { prospects } from "~/server/db/schema";
+import { eq, and } from "drizzle-orm";
+import { prospects, contacts } from "~/server/db/schema";
 import { createProspectHistory } from "~/server/queries/prospect-history";
+import { getCurrentUserAccountId } from "~/lib/dal";
+
+// Wrapper functions that automatically get accountId from current session
+export async function createProspectWithAuth(input: CreateProspectInput) {
+  const accountId = await getCurrentUserAccountId();
+  return createProspect(input, accountId);
+}
+
+export async function getProspectWithAuth(id: bigint) {
+  const accountId = await getCurrentUserAccountId();
+  return getProspect(id, accountId);
+}
+
+export async function getAllProspectsWithAuth() {
+  const accountId = await getCurrentUserAccountId();
+  return getAllProspects(accountId);
+}
+
+export async function updateProspectWithAuth(id: bigint, input: UpdateProspectInput) {
+  const accountId = await getCurrentUserAccountId();
+  return updateProspect(id, input, accountId);
+}
+
+export async function deleteProspectWithAuth(id: bigint) {
+  const accountId = await getCurrentUserAccountId();
+  return deleteProspect(id, accountId);
+}
+
+export async function getProspectsByStatusWithAuth(status: string) {
+  const accountId = await getCurrentUserAccountId();
+  return getProspectsByStatus(status, accountId);
+}
+
+export async function getProspectsByPropertyTypeWithAuth(propertyType: string) {
+  const accountId = await getCurrentUserAccountId();
+  return getProspectsByPropertyType(propertyType, accountId);
+}
+
+export async function getProspectsByContactWithAuth(contactId: bigint) {
+  const accountId = await getCurrentUserAccountId();
+  return getProspectsByContact(contactId, accountId);
+}
 
 export type CreateProspectInput = {
   contactId: bigint;
@@ -30,14 +72,36 @@ export type UpdateProspectInput = Partial<CreateProspectInput> & {
 };
 
 // Create a new prospect
-export async function createProspect(input: CreateProspectInput) {
+export async function createProspect(input: CreateProspectInput, accountId: number) {
+  // Verify the contact belongs to this account
+  const [contact] = await db
+    .select({ contactId: contacts.contactId })
+    .from(contacts)
+    .where(
+      and(
+        eq(contacts.contactId, input.contactId),
+        eq(contacts.accountId, BigInt(accountId)),
+        eq(contacts.isActive, true),
+      ),
+    );
+  
+  if (!contact) {
+    throw new Error("Contact not found or access denied");
+  }
+
   await db.insert(prospects).values(input);
 
   // Get the created prospect
   const [created] = await db
     .select()
     .from(prospects)
-    .where(eq(prospects.contactId, input.contactId))
+    .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+    .where(
+      and(
+        eq(prospects.contactId, input.contactId),
+        eq(contacts.accountId, BigInt(accountId)),
+      ),
+    )
     .orderBy(prospects.createdAt)
     .limit(1);
 
@@ -45,24 +109,34 @@ export async function createProspect(input: CreateProspectInput) {
 }
 
 // Get a prospect by ID
-export async function getProspect(id: bigint) {
+export async function getProspect(id: bigint, accountId: number) {
   const [prospect] = await db
     .select()
     .from(prospects)
-    .where(eq(prospects.id, id));
+    .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+    .where(
+      and(
+        eq(prospects.id, id),
+        eq(contacts.accountId, BigInt(accountId)),
+      ),
+    );
   return prospect;
 }
 
 // Get all prospects
-export async function getAllProspects() {
-  return await db.select().from(prospects);
+export async function getAllProspects(accountId: number) {
+  return await db
+    .select()
+    .from(prospects)
+    .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+    .where(eq(contacts.accountId, BigInt(accountId)));
 }
 
 // Update a prospect
-export async function updateProspect(id: bigint, input: UpdateProspectInput) {
-  const currentProspect = await getProspect(id);
+export async function updateProspect(id: bigint, input: UpdateProspectInput, accountId: number) {
+  const currentProspect = await getProspect(id, accountId);
   if (!currentProspect) {
-    throw new Error("Prospect not found");
+    throw new Error("Prospect not found or access denied");
   }
 
   // If status is changing, create a history entry
@@ -89,33 +163,75 @@ export async function updateProspect(id: bigint, input: UpdateProspectInput) {
     .where(eq(prospects.id, id));
 
   // Get the updated prospect
-  return await getProspect(id);
+  return await getProspect(id, accountId);
 }
 
 // Delete a prospect
-export async function deleteProspect(id: bigint) {
-  const prospect = await getProspect(id);
+export async function deleteProspect(id: bigint, accountId: number) {
+  // Verify the prospect belongs to this account
+  const prospect = await getProspect(id, accountId);
+  if (!prospect) {
+    throw new Error("Prospect not found or access denied");
+  }
+  
   await db.delete(prospects).where(eq(prospects.id, id));
   return prospect;
 }
 
 // Get prospects by status
-export async function getProspectsByStatus(status: string) {
-  return await db.select().from(prospects).where(eq(prospects.status, status));
+export async function getProspectsByStatus(status: string, accountId: number) {
+  return await db
+    .select()
+    .from(prospects)
+    .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+    .where(
+      and(
+        eq(prospects.status, status),
+        eq(contacts.accountId, BigInt(accountId)),
+      ),
+    );
 }
 
 // Get prospects by property type
-export async function getProspectsByPropertyType(propertyType: string) {
+export async function getProspectsByPropertyType(propertyType: string, accountId: number) {
   return await db
     .select()
     .from(prospects)
-    .where(eq(prospects.propertyType, propertyType));
+    .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+    .where(
+      and(
+        eq(prospects.propertyType, propertyType),
+        eq(contacts.accountId, BigInt(accountId)),
+      ),
+    );
 }
 
 // Get prospects by contact
-export async function getProspectsByContact(contactId: bigint) {
+export async function getProspectsByContact(contactId: bigint, accountId: number) {
+  // Verify the contact belongs to this account
+  const [contact] = await db
+    .select({ contactId: contacts.contactId })
+    .from(contacts)
+    .where(
+      and(
+        eq(contacts.contactId, contactId),
+        eq(contacts.accountId, BigInt(accountId)),
+        eq(contacts.isActive, true),
+      ),
+    );
+  
+  if (!contact) {
+    throw new Error("Contact not found or access denied");
+  }
+
   return await db
     .select()
     .from(prospects)
-    .where(eq(prospects.contactId, contactId));
+    .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+    .where(
+      and(
+        eq(prospects.contactId, contactId),
+        eq(contacts.accountId, BigInt(accountId)),
+      ),
+    );
 }

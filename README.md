@@ -143,32 +143,34 @@ The application is configured for deployment on Vercel with the included `vercel
 pnpm build
 ```
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
 
 ---
 
 # TODOs: 
 
 ## High Priority
-- Watermark:
-   - Determine whether we want to include it or not. 
-   - Investigate a way to upload them without saving the image with watermark
 
 - Cartelería (ongoing)
-   - Create another poster (Amaya's basic one)
-   - Change color or current poster
+   - Create another poster (Amaya's basic one and horizontal)
+      - Amaya's basic: horizontal and vertical
+      - Fix current vertical
+      - Create current horizontal
+
+   - Change color on current poster
+   - Create comment section to add to the poster
+
+
 
 - Operations page
 
+
+
 - Calendar integration
 
+
 - Webpage
+
+- Webscraping
 
 
 
@@ -184,6 +186,8 @@ pnpm build
 - Rent: add deposit information
 - Separators (tabs on top) in Property and Contact detail pages -> improve UI 
 - Short name for barrios
+- Integración Idealista
+
 
 
 ## To Validate
@@ -192,9 +196,9 @@ pnpm build
 - Authentication: check if we really have separation of data per request and user.
 - Make sure forms are 'similar' to the casa/piso one (!)
 
-
-
-
+- Watermark:
+   - Determine whether we want to include it or not.
+   - Investigate a way to upload them without saving the image with watermark
 
 
 ## To improve
@@ -205,12 +209,6 @@ pnpm build
 
 
      
-
-
-
-    
-
-
 
 
 ### Operations Page?
@@ -229,27 +227,18 @@ With and without tasks to do. Each of it with its process and its documents
 
 
 
-
-
-Changes 
-
-
-
 FIXES
 - Cliked state in Finalizar -- change the clicked state.
 - Armarios empotrados -- apparently fixed (to be checked)
 - Código de invitación (non-mock) -- apparently fixed (to be checked)
 - Change design of 'Redirigiendo al dashboard' -- change cliked state
-
-
+- When changing data in propiedades and coming back and forward from tabs, the data is not propertly updated -- to be fixed
+- Deleting State for Image Gallery, multiple images -- to be fixed
 - Redirecting me to pages if I want to go quick: from first to second, to third, and so on. (changed but to be tested)
-- 
 - After I click on @property-identification-form on siguiente (once is ready). It has like a clicked state where it says cargando or something like that. But between that and before the property-form is reached, there is some time where I don't have anything and I would be able to click on finish again.
 - Authentication with Google 
 - Authentication in general
-- 
 - Reduce barrios lenght (admin task)
--
 
 OPTIMIZATIONS
 - Concurrent data fethcing: contacts, listings, etc.

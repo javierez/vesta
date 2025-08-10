@@ -115,10 +115,17 @@ export async function getPropertyById(propertyId: number) {
 // Get properties by form position (useful for finding incomplete forms)
 export async function getPropertiesByFormPosition(formPosition: number) {
   try {
-    const propertiesList = await db
+    const { db: secureDb, withAccountFilter } = await getSecureDb();
+    
+    const propertiesList = await secureDb
       .select()
       .from(properties)
-      .where(eq(properties.formPosition, formPosition));
+      .where(
+        withAccountFilter(
+          properties,
+          eq(properties.formPosition, formPosition),
+        ),
+      );
     return propertiesList;
   } catch (error) {
     console.error("Error fetching properties by form position:", error);
@@ -135,14 +142,36 @@ export async function updateProperty(
   >,
 ) {
   try {
-    await db
+    const { db: secureDb, withAccountFilter, accountId } = await getSecureDb();
+    
+    // Verify the property belongs to this account before updating
+    const [existingProperty] = await secureDb
+      .select({ propertyId: properties.propertyId })
+      .from(properties)
+      .where(
+        withAccountFilter(
+          properties,
+          eq(properties.propertyId, BigInt(propertyId)),
+        ),
+      );
+    
+    if (!existingProperty) {
+      throw new Error("Property not found or access denied");
+    }
+
+    await secureDb
       .update(properties)
       .set(data)
       .where(eq(properties.propertyId, BigInt(propertyId)));
-    const [updatedProperty] = await db
+    const [updatedProperty] = await secureDb
       .select()
       .from(properties)
-      .where(eq(properties.propertyId, BigInt(propertyId)));
+      .where(
+        withAccountFilter(
+          properties,
+          eq(properties.propertyId, BigInt(propertyId)),
+        ),
+      );
     return updatedProperty;
   } catch (error) {
     console.error("Error updating property:", error);
@@ -209,10 +238,15 @@ export async function listProperties(
   },
 ) {
   try {
+    const { db: secureDb, accountId } = await getSecureDb();
     const offset = (page - 1) * limit;
 
     // Build the where conditions array
     const whereConditions = [];
+    
+    // Always filter by account
+    whereConditions.push(eq(properties.accountId, BigInt(accountId)));
+    
     if (filters) {
       if (filters.propertyType) {
         whereConditions.push(eq(properties.propertyType, filters.propertyType));
@@ -248,8 +282,8 @@ export async function listProperties(
       whereConditions.push(eq(properties.isActive, true));
     }
 
-    // Create the base query
-    const query = db.select().from(properties);
+    // Create the base query with account filtering
+    const query = secureDb.select().from(properties);
 
     // Apply all where conditions at once
     const filteredQuery =

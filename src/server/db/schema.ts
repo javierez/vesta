@@ -411,6 +411,7 @@ export const leads = singlestoreTable("leads", {
   leadId: bigint("lead_id", { mode: "bigint" }).primaryKey().autoincrement(),
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
+  prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.id (nullable) - for lineage tracking
   source: varchar("source", { length: 50 }).notNull(), // e.g. "Website", "Walk-In"
   status: varchar("status", { length: 20 }).notNull(), // e.g. "New", "Working", "Converted", "Disqualified"
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -421,6 +422,7 @@ export const leads = singlestoreTable("leads", {
 export const deals = singlestoreTable("deals", {
   dealId: bigint("deal_id", { mode: "bigint" }).primaryKey().autoincrement(),
   listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
+  leadId: bigint("lead_id", { mode: "bigint" }), // FK → leads.lead_id (nullable) - for lineage tracking
   status: varchar("stage", { length: 20 }).notNull(), // e.g. "Offer", "UnderContract", "Closed", "Lost"
   closeDate: timestamp("close_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -447,6 +449,7 @@ export const appointments = singlestoreTable("appointments", {
   prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.prospect_id (nullable)
   datetimeStart: timestamp("datetime_start").notNull(),
   datetimeEnd: timestamp("datetime_end").notNull(),
+  tripTimeMinutes: smallint("trip_time_minutes"), // Travel time in minutes
   status: varchar("status", { length: 20 }).notNull().default("Scheduled"),
   notes: text("notes"),
   isActive: boolean("is_active").default(true),

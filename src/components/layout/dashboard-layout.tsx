@@ -18,11 +18,13 @@ import {
   LogOut,
   User,
   Shield,
+  Briefcase,
 } from "lucide-react";
 import type { FC, ReactNode } from "react";
 
 const baseNavigation = [
   { name: "Resumen", href: "/dashboard", icon: BarChart3 },
+  { name: "Operaciones", href: "/operaciones", icon: Briefcase },
   { name: "Propiedades", href: "/propiedades", icon: Building2 },
   { name: "Contactos", href: "/contactos", icon: Users },
   { name: "Calendario", href: "/calendario", icon: Calendar },
