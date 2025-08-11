@@ -452,6 +452,7 @@ export const appointments = singlestoreTable("appointments", {
   tripTimeMinutes: smallint("trip_time_minutes"), // Travel time in minutes
   status: varchar("status", { length: 20 }).notNull().default("Scheduled"),
   notes: text("notes"),
+  type: varchar("type", { length: 50 }),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

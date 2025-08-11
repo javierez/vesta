@@ -8,7 +8,7 @@ import { PortalSelection } from "./portal-selection";
 import { EnergyCertificate } from "./energy-certificate";
 import { DocumentsManager } from "./documents-manager";
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form";
-import { ImageGallerySkeleton, CharacteristicsSkeleton, PortalsSkeleton, EnergyCertificateSkeleton } from "./skeletons";
+import { ImageGallerySkeleton, CharacteristicsSkeleton, EnergyCertificateSkeleton } from "./skeletons";
 import { useSession } from "~/lib/auth-client";
 import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
@@ -57,7 +57,6 @@ export function PropertyTabs({
   energyCertificate,
 }: PropertyTabsProps) {
   const { data: session } = useSession();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState("general");
   const [tabData, setTabData] = useState<{
     images: PropertyImage[] | null;
@@ -86,12 +85,12 @@ export function PropertyTabs({
         try {
           const response = await fetch(`/api/properties/${listing.propertyId}/images`);
           if (response.ok) {
-            const imageData = await response.json();
+            const imageData = await response.json() as PropertyImage[];
             setTabData(prev => ({ ...prev, images: imageData }));
           } else {
             setTabData(prev => ({ ...prev, images: images }));
           }
-        } catch (error) {
+        } catch (_error) {
           setTabData(prev => ({ ...prev, images: images }));
         } finally {
           setLoading(prev => ({ ...prev, general: false }));
@@ -104,12 +103,12 @@ export function PropertyTabs({
         try {
           const response = await fetch(`/api/properties/${listing.listingId}/characteristics`);
           if (response.ok) {
-            const characteristicsData = await response.json();
+            const characteristicsData = await response.json() as PropertyListing;
             setTabData(prev => ({ ...prev, convertedListing: characteristicsData }));
           } else {
             setTabData(prev => ({ ...prev, convertedListing }));
           }
-        } catch (error) {
+        } catch (_error) {
           setTabData(prev => ({ ...prev, convertedListing }));
         } finally {
           setLoading(prev => ({ ...prev, caracteristicas: false }));
@@ -122,13 +121,13 @@ export function PropertyTabs({
         try {
           const response = await fetch(`/api/properties/${listing.propertyId}/energy-certificate`);
           if (response.ok) {
-            const certData = await response.json();
+            const certData = await response.json() as { docId: bigint; documentKey: string; fileUrl: string } | null;
             setTabData(prev => ({ ...prev, energyCertificate: certData }));
           } else {
-            setTabData(prev => ({ ...prev, energyCertificate: energyCertificate || null }));
+            setTabData(prev => ({ ...prev, energyCertificate: energyCertificate ?? null }));
           }
-        } catch (error) {
-          setTabData(prev => ({ ...prev, energyCertificate: energyCertificate || null }));
+        } catch (_error) {
+          setTabData(prev => ({ ...prev, energyCertificate: energyCertificate ?? null }));
         } finally {
           setLoading(prev => ({ ...prev, certificado: false }));
         }
@@ -138,12 +137,12 @@ export function PropertyTabs({
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    fetchTabData(value);
+    void fetchTabData(value);
   };
 
   useEffect(() => {
-    fetchTabData("general");
-  }, []);
+    void fetchTabData("general");
+  }, [fetchTabData]);
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
@@ -161,7 +160,7 @@ export function PropertyTabs({
             <ImageGallerySkeleton />
           ) : (
             <ImageGallery
-              images={tabData.images || images}
+              images={tabData.images ?? images}
               title={listing.title ?? ""}
               propertyId={BigInt(listing.propertyId)}
               referenceNumber={listing.referenceNumber ?? ""}
@@ -175,7 +174,7 @@ export function PropertyTabs({
           {loading.caracteristicas ? (
             <CharacteristicsSkeleton />
           ) : (
-            <PropertyCharacteristicsForm listing={tabData.convertedListing || convertedListing} />
+            <PropertyCharacteristicsForm listing={tabData.convertedListing ?? convertedListing} />
           )}
         </div>
       </TabsContent>
@@ -199,7 +198,7 @@ export function PropertyTabs({
           ) : (
             <EnergyCertificate
               energyRating={listing.energyCertification ?? null}
-              uploadedDocument={tabData.energyCertificate || energyCertificate}
+              uploadedDocument={tabData.energyCertificate ?? energyCertificate}
               propertyId={listing.propertyId}
               userId={session?.user?.id ?? "1"}
               listingId={listing.listingId}

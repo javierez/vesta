@@ -1095,6 +1095,7 @@ export type Appointment = {
   datetimeEnd: Date;
   status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow";
   notes?: string;
+  type?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

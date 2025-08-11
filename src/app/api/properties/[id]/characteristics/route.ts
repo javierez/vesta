@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { getListingDetailsWithAuth } from "~/server/queries/listing";
 import { convertDbListingToPropertyListing } from "~/types/property-listing";
 

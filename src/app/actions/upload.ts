@@ -139,7 +139,7 @@ export async function uploadDocument(
 ): Promise<Document> {
   try {
     // 1. Upload to S3
-    const { fileUrl, s3key, documentKey, filename, fileType, folderType: uploadedFolderType } =
+    const { fileUrl, s3key, documentKey, filename, fileType } =
       await uploadDocumentToS3(
         file,
         referenceNumber,

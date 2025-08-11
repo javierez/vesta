@@ -27,6 +27,11 @@ import {
   CheckCircle2,
   XCircle,
   Loader,
+  Home,
+  Users,
+  PenTool,
+  Handshake,
+  Train,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
@@ -47,14 +52,22 @@ import CalendarEvent, {
 import AppointmentModal, {
   useAppointmentModal,
 } from "~/components/appointments/appointment-modal";
+import { getAgentsForFilterAction } from "~/server/actions/appointments";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 // Appointment types configuration
 const appointmentTypes = {
-  Visita: { color: "bg-blue-100 text-blue-800", icon: "🏠" },
-  Reunión: { color: "bg-purple-100 text-purple-800", icon: "👥" },
-  Firma: { color: "bg-green-100 text-green-800", icon: "✍️" },
-  Cierre: { color: "bg-yellow-100 text-yellow-800", icon: "🤝" },
-  Viaje: { color: "bg-emerald-100 text-emerald-800", icon: "🚆" },
+  Visita: { color: "bg-blue-100 text-blue-800", icon: <Home className="h-4 w-4" /> },
+  Reunión: { color: "bg-purple-100 text-purple-800", icon: <Users className="h-4 w-4" /> },
+  Firma: { color: "bg-green-100 text-green-800", icon: <PenTool className="h-4 w-4" /> },
+  Cierre: { color: "bg-yellow-100 text-yellow-800", icon: <Handshake className="h-4 w-4" /> },
+  Viaje: { color: "bg-emerald-100 text-emerald-800", icon: <Train className="h-4 w-4" /> },
 };
 
 // Helper to get date string in YYYY-MM-DD
@@ -75,15 +88,25 @@ const calculateEventStyle = (startTime: string, endTime: string) => {
   const startMinutes = start.hours * 60 + start.minutes;
   const endMinutes = end.hours * 60 + end.minutes;
 
-  // Start time relative to 00:00 (first hour in our 24-hour grid)
-  const topPosition = (startMinutes / 60) * 60;
+  // Calendar starts at 6:00 AM (360 minutes), so subtract that from position
+  const calendarStartMinutes = 6 * 60; // 6:00 AM = 360 minutes
+  const topPosition = ((startMinutes - calendarStartMinutes) / 60) * 60;
 
   // Height based on duration
   const durationMinutes = endMinutes - startMinutes;
   const height = (durationMinutes / 60) * 60;
 
+  // Only show events that start at 6:00 AM or later
+  if (startMinutes < calendarStartMinutes) {
+    return {
+      top: "0px",
+      height: "0px",
+      display: "none",
+    };
+  }
+
   return {
-    top: `${topPosition}px`,
+    top: `${Math.max(0, topPosition)}px`,
     height: `${height}px`,
   };
 };
@@ -92,6 +115,8 @@ export default function AppointmentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [agentFilter, setAgentFilter] = useState("all");
+  const [agents, setAgents] = useState<Array<{id: string; name: string; firstName: string; lastName: string}>>([]);
   const [view, setView] = useState<"list" | "calendar" | "weekly">("weekly");
   const [weekStart, setWeekStart] = useState(() => {
     const now = new Date();
@@ -100,6 +125,8 @@ export default function AppointmentsPage() {
     return new Date(now.setDate(diff));
   });
   const [selectedEvent, setSelectedEvent] = useState<bigint | null>(null);
+  const [editMode, setEditMode] = useState<"create" | "edit">("create");
+  const [editingAppointmentId, setEditingAppointmentId] = useState<bigint | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -108,6 +135,7 @@ export default function AppointmentsPage() {
     appointments: realAppointments,
     loading,
     error,
+    refetch,
   } = useWeeklyAppointments(weekStart);
 
   // Use appointment modal
@@ -117,6 +145,22 @@ export default function AppointmentsPage() {
     closeModal,
     initialData,
   } = useAppointmentModal();
+
+  // Fetch agents for filter on component mount
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const result = await getAgentsForFilterAction();
+        if (result.success) {
+          setAgents(result.agents);
+        }
+      } catch (error) {
+        console.error("Error fetching agents:", error);
+      }
+    };
+
+    void fetchAgents();
+  }, []);
 
   // Filter appointments
   const filteredAppointments = realAppointments.filter((appointment) => {
@@ -131,13 +175,17 @@ export default function AppointmentsPage() {
     const matchesType = typeFilter === "all" || appointment.type === typeFilter;
     const matchesStatus =
       statusFilter === "all" || appointment.status === statusFilter;
-    return matchesSearch && matchesType && matchesStatus;
+    const matchesAgent = 
+      agentFilter === "all" || 
+      (appointment.agentName && agents.find(agent => agent.id === agentFilter)?.name === appointment.agentName);
+    return matchesSearch && matchesType && matchesStatus && matchesAgent;
   });
 
-  // Scroll to 9:00 AM on mount for weekly view
+  // Scroll to 10:00 AM on mount for weekly view
   useEffect(() => {
     if (view === "weekly" && scrollAreaRef.current) {
-      const scrollPosition = 9 * 60; // 9:00 AM = 540px (9 hours * 60px per hour)
+      // Calendar starts at 6:00 AM, so 10:00 AM is 4 hours down
+      const scrollPosition = 4 * 60; // 4 hours from 6:00 AM = 240px (4 hours * 60px per hour)
       scrollAreaRef.current.scrollTop = scrollPosition;
     }
   }, [view, weekStart]);
@@ -183,7 +231,19 @@ export default function AppointmentsPage() {
 
   // Handle modal for appointment creation
   const handleCreateAppointment = () => {
+    setEditMode("create");
+    setEditingAppointmentId(null);
     openModal({});
+  };
+
+  // Handle opening modal for editing
+  const openModalWithEdit = ({ appointmentId, initialData }: {
+    appointmentId: bigint;
+    initialData: Partial<any>;
+  }) => {
+    setEditMode("edit");
+    setEditingAppointmentId(appointmentId);
+    openModal(initialData);
   };
 
   // Handle click on empty time slot for appointment creation
@@ -198,7 +258,10 @@ export default function AppointmentsPage() {
     const dateString = getDateString(clickedDate);
     if (!dateString) return;
 
-    // Navigate with URL parameters to trigger modal
+    // Set create mode and navigate with URL parameters to trigger modal
+    setEditMode("create");
+    setEditingAppointmentId(null);
+    
     const params = new URLSearchParams();
     params.set("new", "true");
     params.set("date", dateString);
@@ -241,6 +304,21 @@ export default function AppointmentsPage() {
           />
         </div>
         <div className="ml-auto flex items-center space-x-2">
+          {/* Agent Filter - displayed prominently */}
+          <Select value={agentFilter} onValueChange={setAgentFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Todos los agentes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los agentes</SelectItem>
+              {agents.map((agent) => (
+                <SelectItem key={agent.id} value={agent.id}>
+                  {agent.name || `${agent.firstName} ${agent.lastName}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Button
             variant="outline"
             size="icon"
@@ -541,7 +619,7 @@ export default function AppointmentsPage() {
               <div className="grid grid-cols-8">
                 {/* Hours column */}
                 <div className="flex flex-col border-r">
-                  {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
+                  {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
                     <div
                       key={hour}
                       className="flex h-[60px] items-start justify-end border-b pr-2 pt-1 text-xs text-muted-foreground"
@@ -561,7 +639,7 @@ export default function AppointmentsPage() {
                     )}
                   >
                     {/* Hour slots */}
-                    {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
+                    {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
                       <div key={hour} className="relative h-[60px] border-b">
                         {/* First half-hour slot */}
                         <div
@@ -634,17 +712,6 @@ export default function AppointmentsPage() {
       {/* Event Detail Panel (shows when an event is selected) */}
       {selectedEvent !== null && (
         <div className="fixed right-4 top-20 z-50 w-80 rounded-lg border bg-white p-4 shadow-lg">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold">Detalles del Evento</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelectedEvent(null)}
-            >
-              ×
-            </Button>
-          </div>
-
           {(() => {
             const event = realAppointments.find(
               (a) => a.appointmentId === selectedEvent,
@@ -670,16 +737,25 @@ export default function AppointmentsPage() {
               event.type as keyof typeof appointmentTypes
             ] || {
               color: "bg-gray-100 text-gray-800",
-              icon: "📅",
+              icon: <CalendarIcon className="h-4 w-4" />,
             };
 
             return (
-              <div className="space-y-4">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="flex items-center gap-2 text-lg font-semibold">
+                    {typeConfig.icon}
+                    {event.type} - {event.contactName}
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedEvent(null)}
+                  >
+                    ×
+                  </Button>
+                </div>
                 <div>
-                  <h4 className="flex items-center gap-2 text-lg font-medium">
-                    <span>{typeConfig.icon}</span>
-                    {event.contactName}
-                  </h4>
                   <p className="text-sm text-muted-foreground">{event.type}</p>
                 </div>
 
@@ -719,14 +795,41 @@ export default function AppointmentsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    asChild
-                    className="w-full"
+                    onClick={() => {
+                      // Open the appointment modal with the event data for editing
+                      openModalWithEdit({
+                        appointmentId: event.appointmentId,
+                        initialData: {
+                          contactId: event.contactId,
+                          listingId: event.listingId || undefined,
+                          leadId: event.leadId || undefined,
+                          dealId: event.dealId || undefined,
+                          prospectId: event.prospectId || undefined,
+                          startDate: event.startTime.toISOString().split('T')[0],
+                          startTime: event.startTime.toTimeString().slice(0, 5),
+                          endDate: event.endTime.toISOString().split('T')[0],
+                          endTime: event.endTime.toTimeString().slice(0, 5),
+                          tripTimeMinutes: event.tripTimeMinutes,
+                          notes: event.notes,
+                          appointmentType: event.type as "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje",
+                        },
+                      });
+                      setSelectedEvent(null); // Close the detail panel
+                    }}
+                    className="flex-1"
                   >
-                    <Link
-                      href={`/calendario/appointments/${event.appointmentId}/edit`}
-                    >
-                      Editar
-                    </Link>
+                    Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => {
+                      router.push(`/calendario/visita/${event.appointmentId}`);
+                      setSelectedEvent(null); // Close the detail panel
+                    }}
+                    className="flex-1"
+                  >
+                    Visita
                   </Button>
                 </div>
               </div>
@@ -740,6 +843,12 @@ export default function AppointmentsPage() {
         open={isModalOpen}
         onOpenChange={closeModal}
         initialData={initialData}
+        mode={editMode}
+        appointmentId={editingAppointmentId || undefined}
+        onSuccess={() => {
+          // Refresh appointments after successful creation/edit
+          refetch();
+        }}
       />
     </div>
   );

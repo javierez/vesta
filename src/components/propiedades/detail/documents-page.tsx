@@ -7,7 +7,6 @@ import {
   FileText, 
   Download, 
   Upload, 
-  ArrowLeft,
   Calendar,
   MoreVertical,
   FolderIcon,
@@ -86,7 +85,6 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     }
   };
 
-  const currentFolder = folders[folderType];
   const apiFolderType = folderTypeMap[folderType];
 
   // Fetch documents on component mount
@@ -96,7 +94,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
         setIsLoading(true);
         const response = await fetch(`/api/properties/${listing.listingId}/documents?folderType=${apiFolderType}`);
         if (response.ok) {
-          const docs = await response.json();
+          const docs = await response.json() as Document[];
           setDocuments(docs);
         }
       } catch (error) {
@@ -106,12 +104,9 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
       }
     };
 
-    fetchDocuments();
+    void fetchDocuments();
   }, [listing.listingId, apiFolderType]);
 
-  const handleBackToProperty = () => {
-    router.push(`/propiedades/${listing.listingId}`);
-  };
 
   const handleFiles = async (files: FileList) => {
     if (!files || files.length === 0) return;
@@ -134,7 +129,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
           throw new Error(`Failed to upload ${file.name}`);
         }
 
-        return response.json();
+        return response.json() as Promise<Document>;
       });
 
       const uploadedDocuments = await Promise.all(uploadPromises);
@@ -153,7 +148,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      handleFiles(files);
+      void handleFiles(files);
     }
   };
 
@@ -173,7 +168,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     
     const files = e.dataTransfer.files;
     if (files) {
-      handleFiles(files);
+      void handleFiles(files);
     }
   };
 
@@ -203,12 +198,6 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     }
   };
 
-  const getFileSize = (bytes?: number) => {
-    if (!bytes) return "Desconocido";
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-  };
 
   return (
     <div 
@@ -308,7 +297,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
                 <FolderIcon className="mx-auto h-12 w-12 text-gray-400 fill-current mb-4" />
                 <p className="text-gray-500">No hay documentos en esta carpeta</p>
                 <p className="text-sm text-gray-400 mt-1">
-                  Sube el primer documento usando el botón "Subir" o arrastrando archivos a la pantalla
+                  Sube el primer documento usando el botón &quot;Subir&quot; o arrastrando archivos a la pantalla
                 </p>
               </div>
             )}

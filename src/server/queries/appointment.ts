@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { appointments } from "../db/schema";
+import { appointments, contacts, listings, properties, users } from "../db/schema";
 import { eq, and, or, between } from "drizzle-orm";
 import type { Appointment } from "../../lib/data";
 
@@ -46,12 +46,42 @@ export async function getAppointmentById(appointmentId: number) {
   }
 }
 
-// Get appointments by user ID
+// Get appointments by user ID with contact names and property address
 export async function getUserAppointments(userId: string) {
   try {
     const userAppointments = await db
-      .select()
+      .select({
+        appointmentId: appointments.appointmentId,
+        userId: appointments.userId,
+        contactId: appointments.contactId,
+        listingId: appointments.listingId,
+        leadId: appointments.leadId,
+        dealId: appointments.dealId,
+        prospectId: appointments.prospectId,
+        datetimeStart: appointments.datetimeStart,
+        datetimeEnd: appointments.datetimeEnd,
+        tripTimeMinutes: appointments.tripTimeMinutes,
+        status: appointments.status,
+        notes: appointments.notes,
+        type: appointments.type,
+        isActive: appointments.isActive,
+        createdAt: appointments.createdAt,
+        updatedAt: appointments.updatedAt,
+        // Add contact name from joined table
+        contactFirstName: contacts.firstName,
+        contactLastName: contacts.lastName,
+        // Add property address from joined listings/properties tables
+        propertyStreet: properties.street,
+        // Add agent/user information
+        agentName: users.name,
+        agentFirstName: users.firstName,
+        agentLastName: users.lastName,
+      })
       .from(appointments)
+      .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
+      .leftJoin(listings, eq(appointments.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(users, eq(appointments.userId, users.id))
       .where(
         and(
           eq(appointments.userId, userId), // userId is now string
@@ -103,15 +133,45 @@ export async function getListingAppointments(listingId: number) {
   }
 }
 
-// Get appointments by date range
+// Get appointments by date range with contact names and property address
 export async function getAppointmentsByDateRange(
   startDate: Date,
   endDate: Date,
 ) {
   try {
     const dateRangeAppointments = await db
-      .select()
+      .select({
+        appointmentId: appointments.appointmentId,
+        userId: appointments.userId,
+        contactId: appointments.contactId,
+        listingId: appointments.listingId,
+        leadId: appointments.leadId,
+        dealId: appointments.dealId,
+        prospectId: appointments.prospectId,
+        datetimeStart: appointments.datetimeStart,
+        datetimeEnd: appointments.datetimeEnd,
+        tripTimeMinutes: appointments.tripTimeMinutes,
+        status: appointments.status,
+        notes: appointments.notes,
+        type: appointments.type,
+        isActive: appointments.isActive,
+        createdAt: appointments.createdAt,
+        updatedAt: appointments.updatedAt,
+        // Add contact name from joined table
+        contactFirstName: contacts.firstName,
+        contactLastName: contacts.lastName,
+        // Add property address from joined listings/properties tables
+        propertyStreet: properties.street,
+        // Add agent/user information
+        agentName: users.name,
+        agentFirstName: users.firstName,
+        agentLastName: users.lastName,
+      })
       .from(appointments)
+      .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
+      .leftJoin(listings, eq(appointments.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(users, eq(appointments.userId, users.id))
       .where(
         and(
           or(
@@ -215,6 +275,26 @@ export async function listAppointments(
     return allAppointments;
   } catch (error) {
     console.error("Error listing appointments:", error);
+    throw error;
+  }
+}
+
+// Get all agents (users) for filtering  
+export async function getAgentsForFilter() {
+  try {
+    const agents = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        firstName: users.firstName,
+        lastName: users.lastName,
+      })
+      .from(users)
+      .orderBy(users.name);
+
+    return agents;
+  } catch (error) {
+    console.error("Error fetching agents for filter:", error);
     throw error;
   }
 }

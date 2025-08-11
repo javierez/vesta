@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUserAccountId, getCurrentUser } from "~/lib/dal";
 import {
   createAppointment,
+  updateAppointment,
   getUserAppointments,
   getAppointmentsByDateRange,
+  getAgentsForFilter,
 } from "~/server/queries/appointment";
 
 // Form data structure from PRP
@@ -22,6 +24,72 @@ interface AppointmentFormData {
   tripTimeMinutes?: number;
   notes?: string;
   appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
+}
+
+// Server action for appointment update
+export async function updateAppointmentAction(
+  appointmentId: bigint,
+  formData: AppointmentFormData,
+) {
+  try {
+    // PATTERN: Always get account ID for security
+    const _accountId = await getCurrentUserAccountId();
+    const currentUser = await getCurrentUser();
+
+    // CRITICAL: Convert form data to database format
+    const appointmentData = {
+      userId: currentUser.id, // String for BetterAuth
+      contactId: BigInt(formData.contactId),
+      listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
+      leadId: formData.leadId ? BigInt(formData.leadId) : undefined,
+      dealId: formData.dealId ? BigInt(formData.dealId) : undefined,
+      prospectId: formData.prospectId ? BigInt(formData.prospectId) : undefined,
+      datetimeStart: new Date(`${formData.startDate}T${formData.startTime}`),
+      datetimeEnd: new Date(`${formData.endDate}T${formData.endTime}`),
+      tripTimeMinutes: formData.tripTimeMinutes,
+      status: "Scheduled" as const,
+      notes: formData.notes,
+      type: formData.appointmentType,
+      isActive: true,
+    };
+
+    // Validate appointment times
+    if (appointmentData.datetimeStart >= appointmentData.datetimeEnd) {
+      return {
+        success: false,
+        error: "La hora de fin debe ser posterior a la hora de inicio",
+      };
+    }
+
+    // PATTERN: Use existing query function
+    console.log("Updating appointment with ID:", appointmentId, "and data:", appointmentData);
+    const result = await updateAppointment(Number(appointmentId), appointmentData);
+    console.log("Update result:", result);
+
+    if (!result) {
+      return {
+        success: false,
+        error: "Error al actualizar la cita",
+      };
+    }
+
+    // Refresh calendar data
+    revalidatePath("/calendario");
+
+    return {
+      success: true,
+      appointmentId: result.appointmentId,
+    };
+  } catch (error) {
+    console.error("Failed to update appointment:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al actualizar la cita",
+    };
+  }
 }
 
 // Server action for appointment creation
@@ -44,6 +112,7 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       tripTimeMinutes: formData.tripTimeMinutes,
       status: "Scheduled" as const,
       notes: formData.notes,
+      type: formData.appointmentType,
       isActive: true,
     };
 
@@ -182,4 +251,26 @@ export async function validateAppointmentForm(
     valid: errors.length === 0,
     errors,
   };
+}
+
+// Server action to get agents for filtering
+export async function getAgentsForFilterAction() {
+  try {
+    // PATTERN: Always get account ID for security
+    const _accountId = await getCurrentUserAccountId();
+
+    const agents = await getAgentsForFilter();
+
+    return {
+      success: true,
+      agents,
+    };
+  } catch (error) {
+    console.error("Failed to fetch agents for filter:", error);
+    return {
+      success: false,
+      error: "Error al obtener los agentes",
+      agents: [],
+    };
+  }
 }

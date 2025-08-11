@@ -33,15 +33,29 @@ interface AppointmentModalProps {
   initialData?: Partial<AppointmentFormData>;
   title?: string;
   description?: string;
+  onSuccess?: () => void; // Callback to refresh data after successful creation/edit
+  mode?: "create" | "edit"; // New prop to distinguish between create and edit modes
+  appointmentId?: bigint; // Required for edit mode
 }
 
 export default function AppointmentModal({
   open,
   onOpenChange,
   initialData = {},
-  title = "Crear Nueva Cita",
-  description = "Complete los detalles para programar una nueva cita.",
+  title,
+  description,
+  onSuccess,
+  mode = "create",
+  appointmentId,
 }: AppointmentModalProps) {
+  // Set default title and description based on mode
+  const defaultTitle = mode === "edit" ? "Editar Cita" : "Crear Nueva Cita";
+  const defaultDescription = mode === "edit" 
+    ? "Modifique los detalles de la cita existente."
+    : "Complete los detalles para programar una nueva cita.";
+
+  const modalTitle = title || defaultTitle;
+  const modalDescription = description || defaultDescription;
   // Handle successful appointment creation
   const handleSubmit = (appointmentId: bigint) => {
     console.log("Appointment created with ID:", appointmentId);
@@ -49,8 +63,10 @@ export default function AppointmentModal({
     // Close modal
     handleClose();
 
-    // Could navigate to appointment detail or show success message
-    // router.push(`/appointments/${appointmentId}`);
+    // Trigger refresh callback
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   // Handle modal close with navigation cleanup
@@ -67,8 +83,8 @@ export default function AppointmentModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[90vh] max-h-[90vh] max-w-4xl flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>{modalTitle}</DialogTitle>
+          <DialogDescription>{modalDescription}</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden py-4">
@@ -76,6 +92,8 @@ export default function AppointmentModal({
             initialData={initialData}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
+            mode={mode}
+            appointmentId={appointmentId}
           />
         </div>
       </DialogContent>

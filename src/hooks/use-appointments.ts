@@ -17,9 +17,17 @@ interface CalendarEvent {
   type: string;
   tripTimeMinutes?: number;
   notes?: string;
+  // Additional fields needed for editing
+  contactId: bigint;
+  listingId?: bigint | null;
+  leadId?: bigint | null;
+  dealId?: bigint | null;
+  prospectId?: bigint | null;
+  // Agent information
+  agentName?: string | null;
 }
 
-// Raw appointment data from database
+// Raw appointment data from database with joined contact and property data
 interface RawAppointment {
   appointmentId: bigint;
   userId: string;
@@ -33,9 +41,19 @@ interface RawAppointment {
   tripTimeMinutes: number | null;
   status: string;
   notes: string | null;
+  type: string | null;
   isActive: boolean | null;
   createdAt: Date;
   updatedAt: Date;
+  // Joined contact data
+  contactFirstName: string | null;
+  contactLastName: string | null;
+  // Joined property data
+  propertyStreet: string | null;
+  // Joined agent/user data
+  agentName: string | null;
+  agentFirstName: string | null;
+  agentLastName: string | null;
 }
 
 // Hook return type
@@ -48,16 +66,18 @@ interface UseAppointmentsReturn {
 }
 
 // Transform raw appointment to calendar event
-// Note: This is a simplified version. In a real app, you'd join with contacts/properties tables
 function transformToCalendarEvent(
   rawAppointment: RawAppointment,
 ): CalendarEvent {
+  // Build contact name from firstName and lastName if available
+  const contactName = rawAppointment.contactFirstName && rawAppointment.contactLastName 
+    ? `${rawAppointment.contactFirstName} ${rawAppointment.contactLastName}`
+    : `Contact ${rawAppointment.contactId}`;
+
   return {
     appointmentId: rawAppointment.appointmentId,
-    contactName: `Contact ${rawAppointment.contactId}`, // TODO: Join with contacts table
-    propertyAddress: rawAppointment.listingId
-      ? `Property ${rawAppointment.listingId}`
-      : undefined, // TODO: Join with properties table
+    contactName,
+    propertyAddress: rawAppointment.propertyStreet || undefined,
     startTime: rawAppointment.datetimeStart,
     endTime: rawAppointment.datetimeEnd,
     status:
@@ -67,9 +87,17 @@ function transformToCalendarEvent(
         | "Cancelled"
         | "Rescheduled"
         | "NoShow") || "Scheduled",
-    type: "Visita", // TODO: Add appointment type to database schema or derive from notes
+    type: rawAppointment.type || "Visita", // Use actual type from database
     tripTimeMinutes: rawAppointment.tripTimeMinutes ?? undefined,
     notes: rawAppointment.notes ?? undefined,
+    // Additional fields needed for editing
+    contactId: rawAppointment.contactId,
+    listingId: rawAppointment.listingId,
+    leadId: rawAppointment.leadId,
+    dealId: rawAppointment.dealId,
+    prospectId: rawAppointment.prospectId,
+    // Agent information
+    agentName: rawAppointment.agentName,
   };
 }
 

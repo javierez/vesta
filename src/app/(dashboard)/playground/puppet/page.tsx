@@ -541,6 +541,7 @@ export default function PuppeteerPlayground() {
 
                     {/* Image preview with positioning */}
                     <div className="relative h-20 w-full overflow-hidden rounded-md border bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={imageUrl}
                         alt={`Preview ${index + 1}`}

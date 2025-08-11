@@ -14,13 +14,21 @@ import {
   Search,
   Clock,
   Car,
+  Home,
+  Users,
+  PenTool,
+  Handshake,
+  Train,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   createAppointmentAction,
+  updateAppointmentAction,
   validateAppointmentForm,
 } from "~/server/actions/appointments";
-import { listContactsWithAuth } from "~/server/queries/contact";
+import { searchContactsWithAuth } from "~/server/queries/contact";
+import { listListingsCompactWithAuth } from "~/server/queries/listing";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
 import {
@@ -55,11 +63,28 @@ interface Contact {
   phone: string | null;
 }
 
+interface Listing {
+  listingId: bigint;
+  title: string | null;
+  referenceNumber: string | null;
+  price: string;
+  listingType: string;
+  propertyType: string | null;
+  bedrooms: number | null;
+  bathrooms: string | null;
+  squareMeter: number | null;
+  city: string | null;
+  agentName: string | null;
+  imageUrl: string | null;
+}
+
 // Props interface
 interface AppointmentFormProps {
   initialData?: Partial<AppointmentFormData>;
   onSubmit?: (appointmentId: bigint) => void;
   onCancel?: () => void;
+  mode?: "create" | "edit"; // New prop to distinguish between create and edit modes
+  appointmentId?: bigint; // Required for edit mode
 }
 
 const initialFormData: Omit<AppointmentFormData, "contactId"> = {
@@ -102,31 +127,31 @@ const appointmentTypes = [
     value: "Visita",
     label: "Visita",
     color: "bg-blue-100 text-blue-800",
-    icon: "🏠",
+    icon: <Home className="h-4 w-4" />,
   },
   {
     value: "Reunión",
     label: "Reunión",
     color: "bg-purple-100 text-purple-800",
-    icon: "👥",
+    icon: <Users className="h-4 w-4" />,
   },
   {
     value: "Firma",
     label: "Firma",
     color: "bg-green-100 text-green-800",
-    icon: "✍️",
+    icon: <PenTool className="h-4 w-4" />,
   },
   {
     value: "Cierre",
     label: "Cierre",
     color: "bg-yellow-100 text-yellow-800",
-    icon: "🤝",
+    icon: <Handshake className="h-4 w-4" />,
   },
   {
     value: "Viaje",
     label: "Viaje",
     color: "bg-emerald-100 text-emerald-800",
-    icon: "🚆",
+    icon: <Train className="h-4 w-4" />,
   },
 ];
 
@@ -134,6 +159,8 @@ export default function AppointmentForm({
   initialData = {},
   onSubmit,
   onCancel,
+  mode = "create",
+  appointmentId,
 }: AppointmentFormProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Partial<AppointmentFormData>>({
@@ -147,33 +174,164 @@ export default function AppointmentForm({
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [isLoadingListings, setIsLoadingListings] = useState(false);
+  const [listingSearchQuery, setListingSearchQuery] = useState("");
 
-  // Fetch contacts on component mount
+  // Fetch contacts when user starts typing (debounced) or when initial data has contactId
   useEffect(() => {
+    // For initial data with contactId, we need to fetch all contacts to find the match (only once)
+    const needsAllContacts = initialData.contactId && !selectedContact && contacts.length === 0;
+    // For search, we only fetch if there's a query
+    const hasSearchQuery = searchQuery.length > 0;
+    
+    if (!needsAllContacts && !hasSearchQuery) {
+      setContacts([]);
+      return;
+    }
+
     const fetchContacts = async () => {
       setIsLoadingContacts(true);
       try {
-        const contactsData = await listContactsWithAuth();
+        let contactsData;
+        
+        if (needsAllContacts) {
+          // For initial data, we need all contacts to find the match
+          const { listContactsWithAuth } = await import("~/server/queries/contact");
+          contactsData = await listContactsWithAuth();
+        } else {
+          // For search, use the optimized search function
+          contactsData = await searchContactsWithAuth(searchQuery.trim());
+        }
+        
         setContacts(contactsData);
+        
+        // Set selected contact from initial data if provided and not already set
+        if (initialData.contactId && !selectedContact) {
+          const matchedContact = contactsData.find(
+            (contact) => contact.contactId === initialData.contactId
+          );
+          if (matchedContact) {
+            setSelectedContact(matchedContact);
+            // Don't set search query - let user search freely
+          }
+        }
       } catch (error) {
         console.error("Error fetching contacts:", error);
+        setContacts([]);
       } finally {
         setIsLoadingContacts(false);
       }
     };
 
-    void fetchContacts();
-  }, []);
+    // Debounce the search to avoid too many requests (but not for initial load)
+    if (needsAllContacts) {
+      void fetchContacts();
+    } else {
+      const debounceTimer = setTimeout(() => {
+        void fetchContacts();
+      }, 300);
 
-  // Filter contacts based on search query
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [searchQuery, initialData.contactId]);
+
+  // Fetch listings when user starts typing (debounced) or when initial data has listingId
+  useEffect(() => {
+    // For initial data with listingId, we need to fetch all listings to find the match (only once)
+    const needsAllListings = initialData.listingId && !selectedListing && listings.length === 0;
+    // For search, we only fetch if there's a query
+    const hasSearchQuery = listingSearchQuery.length > 0;
+    
+    if (!needsAllListings && !hasSearchQuery) {
+      setListings([]);
+      return;
+    }
+
+    const fetchListings = async () => {
+      setIsLoadingListings(true);
+      try {
+        let listingsData;
+        
+        if (needsAllListings) {
+          // For initial data, we need all listings to find the match
+          listingsData = await listListingsCompactWithAuth({
+            status: "Active",
+          });
+        } else {
+          // For search, use optimized search with query
+          listingsData = await listListingsCompactWithAuth({
+            status: "Active",
+            searchQuery: listingSearchQuery.trim(),
+          });
+        }
+        
+        setListings(listingsData);
+        
+        // Set selected listing from initial data if provided and not already set
+        if (initialData.listingId && !selectedListing) {
+          const matchedListing = listingsData.find(
+            (listing) => listing.listingId === initialData.listingId
+          );
+          if (matchedListing) {
+            setSelectedListing(matchedListing);
+            // Don't set search query - let user search freely
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching listings:", error);
+        setListings([]);
+      } finally {
+        setIsLoadingListings(false);
+      }
+    };
+
+    // Debounce the search to avoid too many requests (but not for initial load)
+    if (needsAllListings) {
+      void fetchListings();
+    } else {
+      const debounceTimer = setTimeout(() => {
+        void fetchListings();
+      }, 300);
+
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [listingSearchQuery, initialData.listingId]);
+
+  // Filter contacts based on search query and exclude selected contact
   const filteredContacts = contacts.filter(
-    (contact) =>
-      `${contact.firstName} ${contact.lastName}`
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      (contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ??
-        false) ||
-      (contact.phone?.includes(searchQuery) ?? false),
+    (contact) => {
+      // Exclude selected contact from search results
+      if (selectedContact && contact.contactId === selectedContact.contactId) {
+        return false;
+      }
+      
+      return (
+        `${contact.firstName} ${contact.lastName}`
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        (contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ??
+          false) ||
+        (contact.phone?.includes(searchQuery) ?? false)
+      );
+    },
+  );
+
+  // Filter listings based on search query and exclude selected listing
+  const filteredListings = listings.filter(
+    (listing) => {
+      // Exclude selected listing from search results
+      if (selectedListing && listing.listingId === selectedListing.listingId) {
+        return false;
+      }
+      
+      return (
+        listing.title?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ||
+        listing.referenceNumber?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ||
+        listing.city?.toLowerCase().includes(listingSearchQuery.toLowerCase())
+      );
+    },
   );
 
   // Generate time options (15-minute intervals)
@@ -193,12 +351,43 @@ export default function AppointmentForm({
     (field: keyof AppointmentFormData) => (value: string | number) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       setValidationError(null);
+      
+      // Clear listing selection if appointment type changes from "Visita"
+      if (field === "appointmentType" && value !== "Visita") {
+        handleClearListing();
+      }
     };
 
   // Handle contact selection
   const handleContactSelect = (contact: Contact) => {
     setSelectedContact(contact);
     setFormData((prev) => ({ ...prev, contactId: contact.contactId }));
+    // Don't modify search query - keep it as is for future searches
+    setValidationError(null);
+  };
+
+  // Handle clearing contact selection
+  const handleClearContact = () => {
+    setSelectedContact(null);
+    setFormData((prev) => ({ ...prev, contactId: undefined }));
+    setSearchQuery("");
+    setContacts([]);
+    setValidationError(null);
+  };
+
+  // Handle listing selection
+  const handleListingSelect = (listing: Listing) => {
+    setSelectedListing(listing);
+    setFormData((prev) => ({ ...prev, listingId: listing.listingId }));
+    // Don't modify search query - keep it as is for future searches
+    setValidationError(null);
+  };
+
+  // Handle clearing listing selection
+  const handleClearListing = () => {
+    setSelectedListing(null);
+    setFormData((prev) => ({ ...prev, listingId: undefined }));
+    setListingSearchQuery("");
     setValidationError(null);
   };
 
@@ -212,6 +401,12 @@ export default function AppointmentForm({
         }
         return true;
       case 1: // Details
+        // Check if listing is required for "Visita" appointments
+        if (formData.appointmentType === "Visita" && !formData.listingId) {
+          setValidationError("Debe seleccionar una propiedad para las visitas");
+          return false;
+        }
+        
         const validation = await validateAppointmentForm(
           formData as AppointmentFormData,
         );
@@ -250,9 +445,22 @@ export default function AppointmentForm({
 
     setIsCreating(true);
     try {
-      const result = await createAppointmentAction(
-        formData as AppointmentFormData,
-      );
+      let result;
+      
+      if (mode === "edit" && appointmentId) {
+        // Update existing appointment
+        console.log("Updating appointment in edit mode with ID:", appointmentId);
+        result = await updateAppointmentAction(
+          appointmentId,
+          formData as AppointmentFormData,
+        );
+      } else {
+        // Create new appointment
+        console.log("Creating new appointment in create mode");
+        result = await createAppointmentAction(
+          formData as AppointmentFormData,
+        );
+      }
 
       if (result.success) {
         onSubmit?.(result.appointmentId!);
@@ -260,8 +468,11 @@ export default function AppointmentForm({
         setValidationError(result.error ?? "Error desconocido");
       }
     } catch (error) {
-      setValidationError("Error al crear la cita");
-      console.error("Error creating appointment:", error);
+      const errorMessage = mode === "edit" 
+        ? "Error al actualizar la cita"
+        : "Error al crear la cita";
+      setValidationError(errorMessage);
+      console.error(`Error ${mode === "edit" ? "updating" : "creating"} appointment:`, error);
     } finally {
       setIsCreating(false);
     }
@@ -284,12 +495,51 @@ export default function AppointmentForm({
               />
             </div>
 
-            <ScrollArea className="h-[350px]">
+            {selectedContact && (
+              // Show selected contact
+              <div className="rounded-lg border border-primary bg-primary/5 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <User className="h-5 w-5 text-primary" />
+                    <div>
+                      <div className="font-medium">
+                        {selectedContact.firstName} {selectedContact.lastName}
+                      </div>
+                      {selectedContact.email && (
+                        <div className="text-sm text-muted-foreground">
+                          {selectedContact.email}
+                        </div>
+                      )}
+                      {selectedContact.phone && (
+                        <div className="text-sm text-muted-foreground">
+                          {selectedContact.phone}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearContact}
+                    className="h-8 w-8 p-0"
+                    title="Cambiar contacto"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <ScrollArea className="h-[300px]">
               {isLoadingContacts ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader className="h-6 w-6 animate-spin" />
                 </div>
-              ) : filteredContacts.length === 0 ? (
+              ) : searchQuery.length === 0 && !selectedContact ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  Escribe el nombre de un contacto para buscar
+                </div>
+              ) : filteredContacts.length === 0 && searchQuery.length > 0 ? (
                 <div className="py-8 text-center text-muted-foreground">
                   No se encontraron contactos
                 </div>
@@ -298,11 +548,7 @@ export default function AppointmentForm({
                   {filteredContacts.map((contact) => (
                     <div
                       key={contact.contactId.toString()}
-                      className={cn(
-                        "cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted",
-                        selectedContact?.contactId === contact.contactId &&
-                          "border-primary bg-primary/5",
-                      )}
+                      className="cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted"
                       onClick={() => handleContactSelect(contact)}
                     >
                       <div className="font-medium">
@@ -405,7 +651,7 @@ export default function AppointmentForm({
                   {appointmentTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       <div className="flex items-center gap-2">
-                        <span>{type.icon}</span>
+                        {type.icon}
                         <span>{type.label}</span>
                       </div>
                     </SelectItem>
@@ -413,6 +659,104 @@ export default function AppointmentForm({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Listing selection - only show for "Visita" appointments */}
+            {formData.appointmentType === "Visita" && (
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Home className="h-4 w-4" />
+                  Seleccionar Propiedad
+                </label>
+{!selectedListing && (
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={listingSearchQuery}
+                      onChange={(e) => setListingSearchQuery(e.target.value)}
+                      placeholder="Buscar propiedades..."
+                      className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                  </div>
+                )}
+
+                {selectedListing && (
+                  // Show selected listing
+                  <div className="rounded-lg border border-primary bg-primary/5 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Home className="h-5 w-5 text-primary" />
+                        <div>
+                          <div className="font-medium">
+                            {selectedListing.title || `${selectedListing.propertyType} en ${selectedListing.city}`}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Ref: {selectedListing.referenceNumber} • {selectedListing.city} • €{selectedListing.price}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {selectedListing.bedrooms && `${selectedListing.bedrooms} hab`}
+                            {selectedListing.bathrooms && ` • ${selectedListing.bathrooms} baños`}
+                            {selectedListing.squareMeter && ` • ${selectedListing.squareMeter}m²`}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearListing}
+                        className="h-8 w-8 p-0"
+                        title="Cambiar propiedad"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+{!selectedListing && (
+                  <ScrollArea className="h-[180px]">
+                    {isLoadingListings ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader className="h-6 w-6 animate-spin" />
+                      </div>
+                    ) : listingSearchQuery.length === 0 ? (
+                      <div className="py-8 text-center text-muted-foreground">
+                        Escribe para buscar propiedades
+                      </div>
+                    ) : filteredListings.length === 0 && listingSearchQuery.length > 0 ? (
+                      <div className="py-8 text-center text-muted-foreground">
+                        No se encontraron propiedades
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredListings.map((listing) => (
+                          <div
+                            key={listing.listingId.toString()}
+                            className="cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted"
+                            onClick={() => handleListingSelect(listing)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <div className="font-medium">
+                                  {listing.title || `${listing.propertyType} en ${listing.city}`}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  Ref: {listing.referenceNumber} • {listing.city} • €{listing.price}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {listing.bedrooms && `${listing.bedrooms} hab`}
+                                  {listing.bathrooms && ` • ${listing.bathrooms} baños`}
+                                  {listing.squareMeter && ` • ${listing.squareMeter}m²`}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                )}
+              </div>
+            )}
 
             <div className="space-y-1">
               <label className="flex items-center gap-2 text-sm font-medium">
@@ -484,6 +828,20 @@ export default function AppointmentForm({
                   </div>
                 </div>
               </div>
+
+              {selectedListing && formData.appointmentType === "Visita" && (
+                <div className="flex items-center gap-3 rounded-lg border p-3">
+                  <Home className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">
+                      {selectedListing.title || `${selectedListing.propertyType} en ${selectedListing.city}`}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Ref: {selectedListing.referenceNumber} • €{selectedListing.price}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {formData.tripTimeMinutes && (
                 <div className="flex items-center gap-3 rounded-lg border p-3">
@@ -607,6 +965,8 @@ export default function AppointmentForm({
               >
                 {isCreating ? (
                   <Loader className="h-4 w-4 animate-spin" />
+                ) : mode === "edit" ? (
+                  "Actualizar"
                 ) : (
                   "Crear Cita"
                 )}

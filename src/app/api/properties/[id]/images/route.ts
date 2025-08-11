@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { getPropertyImages } from "~/server/queries/property_images";
-import type { PropertyImage } from "~/lib/data";
 
 export async function GET(
   request: NextRequest,

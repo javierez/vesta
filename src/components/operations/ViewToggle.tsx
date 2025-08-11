@@ -42,7 +42,7 @@ export default function ViewToggle({
           <TableIcon className="h-4 w-4" />
           <span className="hidden sm:inline">Lista</span>
         </TabsTrigger>
-        <TabsTrigger value="kanban" className="flex items-center gap-2">
+        <TabsTrigger value="kanban" className="flex items-center gap-2" disabled>
           <KanbanSquareIcon className="h-4 w-4" />
           <span className="hidden sm:inline">Kanban</span>
         </TabsTrigger>

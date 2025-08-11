@@ -210,8 +210,9 @@ export function ProspectFilter({ view, onViewChange }: ProspectFilterProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={onViewChange}
-          title={view === "kanban" ? "Ver como lista" : "Ver como kanban"}
+          onClick={view === "kanban" ? onViewChange : undefined}
+          disabled={view === "list"}
+          title={view === "kanban" ? "Ver como lista" : "Kanban no disponible"}
         >
           {view === "kanban" ? (
             <>

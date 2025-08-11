@@ -6,11 +6,17 @@ import { useRouter } from "next/navigation";
 import { FolderIcon } from "lucide-react";
 import { cn } from "~/lib/utils";
 
+interface Document {
+  id: string;
+  name: string;
+  url: string;
+}
+
 interface Folder {
   id: string;
   name: string;
   description?: string;
-  documents: any[];
+  documents: Document[];
 }
 
 interface DocumentsManagerProps {
@@ -21,9 +27,9 @@ interface DocumentsManagerProps {
 }
 
 export function DocumentsManager({
-  propertyId,
+  propertyId: _propertyId,
   listingId,
-  referenceNumber,
+  referenceNumber: _referenceNumber,
   className = "",
 }: DocumentsManagerProps) {
   const router = useRouter();

@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, MapPin, Car } from "lucide-react";
+import { Clock, MapPin, Car, Home, Users, PenTool, Handshake, Train, CalendarIcon } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 // Calendar Event Display Type from PRP
@@ -29,11 +29,11 @@ interface CalendarEventProps {
 
 // Appointment type colors and icons from PRP
 const appointmentTypes = {
-  Visita: { color: "bg-blue-500", icon: "🏠", textColor: "text-white" },
-  Reunión: { color: "bg-purple-500", icon: "👥", textColor: "text-white" },
-  Firma: { color: "bg-green-500", icon: "✍️", textColor: "text-white" },
-  Cierre: { color: "bg-yellow-500", icon: "🤝", textColor: "text-white" },
-  Viaje: { color: "bg-emerald-500", icon: "🚆", textColor: "text-white" },
+  Visita: { color: "bg-blue-500", icon: <Home className="h-3 w-3" />, textColor: "text-white" },
+  Reunión: { color: "bg-purple-500", icon: <Users className="h-3 w-3" />, textColor: "text-white" },
+  Firma: { color: "bg-green-500", icon: <PenTool className="h-3 w-3" />, textColor: "text-white" },
+  Cierre: { color: "bg-yellow-500", icon: <Handshake className="h-3 w-3" />, textColor: "text-white" },
+  Viaje: { color: "bg-emerald-500", icon: <Train className="h-3 w-3" />, textColor: "text-white" },
 };
 
 // Status colors
@@ -56,7 +56,7 @@ export default function CalendarEvent({
     event.type as keyof typeof appointmentTypes
   ] || {
     color: "bg-gray-500",
-    icon: "📅",
+    icon: <CalendarIcon className="h-3 w-3" />,
     textColor: "text-white",
   };
 
@@ -104,9 +104,9 @@ export default function CalendarEvent({
       onClick={handleClick}
     >
       {/* Always show: Event type and contact name */}
-      <div className="truncate text-xs font-medium leading-tight">
-        <span className="mr-1">{typeConfig.icon}</span>
-        {event.type} {event.contactName}
+      <div className="flex items-center gap-1 truncate text-xs font-medium leading-tight">
+        {typeConfig.icon}
+        <span>{event.type} {event.contactName}</span>
       </div>
 
       {/* Show time if height > 50px */}
@@ -165,7 +165,7 @@ export function CompactCalendarEvent({
     event.type as keyof typeof appointmentTypes
   ] || {
     color: "bg-gray-500",
-    icon: "📅",
+    icon: <CalendarIcon className="h-4 w-4" />,
     textColor: "text-white",
   };
 
@@ -196,7 +196,7 @@ export function CompactCalendarEvent({
       onClick={handleClick}
     >
       <div className="flex-shrink-0">
-        <span className="text-lg">{typeConfig.icon}</span>
+        <div className="text-lg">{typeConfig.icon}</div>
       </div>
 
       <div className="min-w-0 flex-1">
@@ -237,7 +237,7 @@ export function ListCalendarEvent({
     event.type as keyof typeof appointmentTypes
   ] || {
     color: "bg-gray-100 text-gray-800",
-    icon: "📅",
+    icon: <CalendarIcon className="h-4 w-4" />,
     textColor: "text-gray-800",
   };
 
@@ -293,12 +293,12 @@ export function ListCalendarEvent({
       <div className="flex-shrink-0">
         <div
           className={cn(
-            "rounded-full px-2 py-1 text-xs font-medium",
+            "flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium",
             typeConfig.color,
           )}
         >
-          <span className="mr-1">{typeConfig.icon}</span>
-          {event.type}
+          {typeConfig.icon}
+          <span>{event.type}</span>
         </div>
       </div>
 
