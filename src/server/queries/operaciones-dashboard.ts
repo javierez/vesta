@@ -11,7 +11,7 @@ import {
   listings,
   properties,
 } from "~/server/db/schema";
-import { eq, and, lte, gte, sql, isNotNull } from "drizzle-orm";
+import { eq, and, lte, gte, sql, isNotNull, ne } from "drizzle-orm";
 import { getCurrentUserAccountId } from "~/lib/dal";
 
 // Dashboard-specific data types
@@ -85,6 +85,23 @@ export async function getOperacionesSummary(
       .where(eq(contacts.accountId, accountId))
       .groupBy(prospects.status, prospects.listingType);
 
+    // Get active listings summary by status and listing type (to include in prospects/demanda count)
+    const listingsData = await db
+      .select({
+        status: listings.status,
+        listingType: listings.listingType,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.accountId, accountId),
+          eq(listings.isActive, true),
+          ne(listings.status, "Draft"),
+        ),
+      )
+      .groupBy(listings.status, listings.listingType);
+
     // Get leads summary by status and listing type (through listings)
     const leadsData = await db
       .select({
@@ -128,7 +145,15 @@ export async function getOperacionesSummary(
     // Process prospects data
     prospectsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
-      summary[type].prospects[row.status] = row.count;
+      summary[type].prospects[row.status] =
+        (summary[type].prospects[row.status] || 0) + row.count;
+    });
+
+    // Process listings data (include in prospects/demanda count)
+    listingsData.forEach((row) => {
+      const type = row.listingType === "Sale" ? "sale" : "rent";
+      summary[type].prospects[row.status] =
+        (summary[type].prospects[row.status] || 0) + row.count;
     });
 
     // Process leads data

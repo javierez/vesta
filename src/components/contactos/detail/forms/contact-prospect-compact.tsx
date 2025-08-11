@@ -47,7 +47,6 @@ export function ContactProspectCompact({
   onDelete: _onDelete,
 }: ContactProspectCompactProps) {
   const [locationData, setLocationData] = useState<LocationData[]>([]);
-  const [titleText, setTitleText] = useState("");
 
   const generateTitle = useCallback(
     (locations: LocationData[]) => {
@@ -56,7 +55,7 @@ export function ContactProspectCompact({
         prospect.propertyType,
         locations,
       );
-      setTitleText(title);
+      return title;
     },
     [prospect.listingType, prospect.propertyType],
   );
@@ -104,22 +103,6 @@ export function ContactProspectCompact({
             {getPropertyTypeIcon(prospect.propertyType)}
           </span>
           <div>
-            <div className="flex items-center space-x-2">
-              <h4 className="text-base font-semibold text-gray-900">
-                {titleText}
-              </h4>
-              {prospect.urgencyLevel && (
-                <span className="font-bold text-red-500">
-                  {prospect.urgencyLevel === 3
-                    ? "(!)"
-                    : prospect.urgencyLevel === 4
-                      ? "(!!)"
-                      : prospect.urgencyLevel === 5
-                        ? "(!!!)"
-                        : ""}
-                </span>
-              )}
-            </div>
             <p className="mt-0.5 text-xs text-gray-500">
               Creado {prospect.createdAt.toLocaleDateString("es-ES")}
             </p>
@@ -167,12 +150,10 @@ export function ContactProspectCompact({
                 </div>
               )}
 
-              {prospect.minBathrooms && (
-                <div className="flex items-center space-x-1">
-                  <Bath className="h-4 w-4" />
-                  <span>{prospect.minBathrooms}+</span>
-                </div>
-              )}
+              <div className="flex items-center space-x-1">
+                <Bath className="h-4 w-4" />
+                <span>{prospect.minBathrooms ?? 1}+</span>
+              </div>
             </div>
           </div>
 

@@ -9,7 +9,7 @@ import {
   users,
   listingContacts,
 } from "../db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, ne, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
@@ -416,8 +416,8 @@ export async function listListings(
       whereConditions.push(eq(listings.isActive, true));
     }
 
-    // Always filter for Active status listings and account
-    whereConditions.push(eq(listings.status, "Active"));
+    // Always filter for non-Draft status listings and account
+    whereConditions.push(ne(listings.status, "Draft"));
     whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
     // Create optimized query with only essential fields for list views
@@ -612,7 +612,7 @@ export async function listListingsCompact(
 
     // Always show active listings only for this account
     whereConditions.push(eq(listings.isActive, true));
-    whereConditions.push(eq(listings.status, "Active"));
+    whereConditions.push(ne(listings.status, "Draft"));
     whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
     // Create the compact query with only essential fields

@@ -176,6 +176,7 @@ pnpm build
 
 
 ## Med Priority
+- MatchSeeker --> change params
 - Generación de Nota de encargo: P000460
 - Pasarela de pagos 
 - Upscaller images

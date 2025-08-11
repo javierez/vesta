@@ -99,7 +99,42 @@ export async function createProspect(
 
   // Get the created prospect
   const [created] = await db
-    .select()
+    .select({
+      prospects: {
+        id: prospects.id,
+        contactId: prospects.contactId,
+        status: prospects.status,
+        listingType: prospects.listingType,
+        propertyType: prospects.propertyType,
+        minPrice: prospects.minPrice,
+        maxPrice: prospects.maxPrice,
+        preferredAreas: prospects.preferredAreas,
+        minBedrooms: prospects.minBedrooms,
+        minBathrooms: prospects.minBathrooms,
+        minSquareMeters: prospects.minSquareMeters,
+        maxSquareMeters: prospects.maxSquareMeters,
+        moveInBy: prospects.moveInBy,
+        extras: prospects.extras,
+        urgencyLevel: prospects.urgencyLevel,
+        fundingReady: prospects.fundingReady,
+        notesInternal: prospects.notesInternal,
+        createdAt: prospects.createdAt,
+        updatedAt: prospects.updatedAt,
+      },
+      contacts: {
+        contactId: contacts.contactId,
+        accountId: contacts.accountId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        orgId: contacts.orgId,
+        isActive: contacts.isActive,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+      },
+    })
     .from(prospects)
     .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
     .where(
@@ -117,7 +152,42 @@ export async function createProspect(
 // Get a prospect by ID
 export async function getProspect(id: bigint, accountId: number) {
   const [prospect] = await db
-    .select()
+    .select({
+      prospects: {
+        id: prospects.id,
+        contactId: prospects.contactId,
+        status: prospects.status,
+        listingType: prospects.listingType,
+        propertyType: prospects.propertyType,
+        minPrice: prospects.minPrice,
+        maxPrice: prospects.maxPrice,
+        preferredAreas: prospects.preferredAreas,
+        minBedrooms: prospects.minBedrooms,
+        minBathrooms: prospects.minBathrooms,
+        minSquareMeters: prospects.minSquareMeters,
+        maxSquareMeters: prospects.maxSquareMeters,
+        moveInBy: prospects.moveInBy,
+        extras: prospects.extras,
+        urgencyLevel: prospects.urgencyLevel,
+        fundingReady: prospects.fundingReady,
+        notesInternal: prospects.notesInternal,
+        createdAt: prospects.createdAt,
+        updatedAt: prospects.updatedAt,
+      },
+      contacts: {
+        contactId: contacts.contactId,
+        accountId: contacts.accountId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        orgId: contacts.orgId,
+        isActive: contacts.isActive,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+      },
+    })
     .from(prospects)
     .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
     .where(
@@ -129,7 +199,42 @@ export async function getProspect(id: bigint, accountId: number) {
 // Get all prospects
 export async function getAllProspects(accountId: number) {
   return await db
-    .select()
+    .select({
+      prospects: {
+        id: prospects.id,
+        contactId: prospects.contactId,
+        status: prospects.status,
+        listingType: prospects.listingType,
+        propertyType: prospects.propertyType,
+        minPrice: prospects.minPrice,
+        maxPrice: prospects.maxPrice,
+        preferredAreas: prospects.preferredAreas,
+        minBedrooms: prospects.minBedrooms,
+        minBathrooms: prospects.minBathrooms,
+        minSquareMeters: prospects.minSquareMeters,
+        maxSquareMeters: prospects.maxSquareMeters,
+        moveInBy: prospects.moveInBy,
+        extras: prospects.extras,
+        urgencyLevel: prospects.urgencyLevel,
+        fundingReady: prospects.fundingReady,
+        notesInternal: prospects.notesInternal,
+        createdAt: prospects.createdAt,
+        updatedAt: prospects.updatedAt,
+      },
+      contacts: {
+        contactId: contacts.contactId,
+        accountId: contacts.accountId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        orgId: contacts.orgId,
+        isActive: contacts.isActive,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+      },
+    })
     .from(prospects)
     .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
     .where(eq(contacts.accountId, BigInt(accountId)));
@@ -188,7 +293,42 @@ export async function deleteProspect(id: bigint, accountId: number) {
 // Get prospects by status
 export async function getProspectsByStatus(status: string, accountId: number) {
   return await db
-    .select()
+    .select({
+      prospects: {
+        id: prospects.id,
+        contactId: prospects.contactId,
+        status: prospects.status,
+        listingType: prospects.listingType,
+        propertyType: prospects.propertyType,
+        minPrice: prospects.minPrice,
+        maxPrice: prospects.maxPrice,
+        preferredAreas: prospects.preferredAreas,
+        minBedrooms: prospects.minBedrooms,
+        minBathrooms: prospects.minBathrooms,
+        minSquareMeters: prospects.minSquareMeters,
+        maxSquareMeters: prospects.maxSquareMeters,
+        moveInBy: prospects.moveInBy,
+        extras: prospects.extras,
+        urgencyLevel: prospects.urgencyLevel,
+        fundingReady: prospects.fundingReady,
+        notesInternal: prospects.notesInternal,
+        createdAt: prospects.createdAt,
+        updatedAt: prospects.updatedAt,
+      },
+      contacts: {
+        contactId: contacts.contactId,
+        accountId: contacts.accountId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        orgId: contacts.orgId,
+        isActive: contacts.isActive,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+      },
+    })
     .from(prospects)
     .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
     .where(
@@ -205,7 +345,42 @@ export async function getProspectsByPropertyType(
   accountId: number,
 ) {
   return await db
-    .select()
+    .select({
+      prospects: {
+        id: prospects.id,
+        contactId: prospects.contactId,
+        status: prospects.status,
+        listingType: prospects.listingType,
+        propertyType: prospects.propertyType,
+        minPrice: prospects.minPrice,
+        maxPrice: prospects.maxPrice,
+        preferredAreas: prospects.preferredAreas,
+        minBedrooms: prospects.minBedrooms,
+        minBathrooms: prospects.minBathrooms,
+        minSquareMeters: prospects.minSquareMeters,
+        maxSquareMeters: prospects.maxSquareMeters,
+        moveInBy: prospects.moveInBy,
+        extras: prospects.extras,
+        urgencyLevel: prospects.urgencyLevel,
+        fundingReady: prospects.fundingReady,
+        notesInternal: prospects.notesInternal,
+        createdAt: prospects.createdAt,
+        updatedAt: prospects.updatedAt,
+      },
+      contacts: {
+        contactId: contacts.contactId,
+        accountId: contacts.accountId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        orgId: contacts.orgId,
+        isActive: contacts.isActive,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+      },
+    })
     .from(prospects)
     .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
     .where(
@@ -238,7 +413,42 @@ export async function getProspectsByContact(
   }
 
   return await db
-    .select()
+    .select({
+      prospects: {
+        id: prospects.id,
+        contactId: prospects.contactId,
+        status: prospects.status,
+        listingType: prospects.listingType,
+        propertyType: prospects.propertyType,
+        minPrice: prospects.minPrice,
+        maxPrice: prospects.maxPrice,
+        preferredAreas: prospects.preferredAreas,
+        minBedrooms: prospects.minBedrooms,
+        minBathrooms: prospects.minBathrooms,
+        minSquareMeters: prospects.minSquareMeters,
+        maxSquareMeters: prospects.maxSquareMeters,
+        moveInBy: prospects.moveInBy,
+        extras: prospects.extras,
+        urgencyLevel: prospects.urgencyLevel,
+        fundingReady: prospects.fundingReady,
+        notesInternal: prospects.notesInternal,
+        createdAt: prospects.createdAt,
+        updatedAt: prospects.updatedAt,
+      },
+      contacts: {
+        contactId: contacts.contactId,
+        accountId: contacts.accountId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        orgId: contacts.orgId,
+        isActive: contacts.isActive,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+      },
+    })
     .from(prospects)
     .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
     .where(

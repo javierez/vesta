@@ -12,10 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import type {
-  OperationType,
-  ListingTypeFilter,
-} from "~/types/operations";
+import type { OperationType, ListingTypeFilter } from "~/types/operations";
 import { getTableColumnsForOperationType } from "~/types/operations";
 
 interface OperationsTableProps {
@@ -87,9 +84,7 @@ export default function OperationsTable({
                         checked={allSelected}
                         ref={(el) => {
                           if (el) {
-                            const input = el.querySelector(
-                              "input",
-                            )!
+                            const input = el.querySelector("input")!;
                             if (input) input.indeterminate = someSelected;
                           }
                         }}
@@ -134,7 +129,10 @@ export default function OperationsTable({
           <TableBody>
             {data.length > 0 ? (
               data.map((item, index) => (
-                <TableRow key={String(item.id) || `item-${index}`} className="hover:bg-gray-50">
+                <TableRow
+                  key={String(item.id) || `item-${index}`}
+                  className="hover:bg-gray-50"
+                >
                   {columns.map((column) => (
                     <TableCell key={column.key} className={column.width}>
                       {/* TODO: Render actual data when data structure is implemented */}

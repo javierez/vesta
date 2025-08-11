@@ -504,12 +504,19 @@ export const documents = singlestoreTable("documents", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
-// Prospects table
+// Prospects table (Enhanced for dual-type prospect system)
 export const prospects = singlestoreTable("prospects", {
   id: bigint("prospect_id", { mode: "bigint" }).primaryKey().autoincrement(),
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.id
   status: varchar("status", { length: 50 }).notNull(), // ENUM equivalent - index this
   listingType: varchar("listing_type", { length: 20 }), // ENUM('Sale', 'Rent') - type of listing they're looking for
+
+  // Dual-type discriminator field
+  prospectType: varchar("prospect_type", { length: 20 })
+    .notNull()
+    .default("search"), // 'search' | 'listing'
+
+  // Search prospect fields (existing - for people looking FOR properties)
   propertyType: varchar("property_type", { length: 20 }), // ENUM('piso','casa','garaje','local','terreno')
   minPrice: decimal("min_price", { precision: 12, scale: 2 }),
   maxPrice: decimal("max_price", { precision: 12, scale: 2 }),
@@ -522,6 +529,13 @@ export const prospects = singlestoreTable("prospects", {
   extras: json("extras"), // { "ascensor": true, "terraza": true, "garaje": false }
   urgencyLevel: smallint("urgency_level"), // 1-5 - homemade lead-scoring
   fundingReady: boolean("funding_ready"), // Has mortgage/pre-approval?
+
+  // Listing prospect fields (new - for people wanting to LIST properties)
+  propertyToList: json("property_to_list"), // { address, propertyType, estimatedValue, condition, readyToList }
+  valuationStatus: varchar("valuation_status", { length: 50 }), // 'pending' | 'scheduled' | 'completed'
+  listingAgreementStatus: varchar("listing_agreement_status", { length: 50 }), // 'not_started' | 'in_progress' | 'signed'
+
+  // Common fields
   notesInternal: text("notes_internal"), // Everything the client shouldn't see
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

@@ -171,7 +171,8 @@ export default function AppointmentForm({
       `${contact.firstName} ${contact.lastName}`
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
-      (contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      (contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ??
+        false) ||
       (contact.phone?.includes(searchQuery) ?? false),
   );
 
@@ -422,7 +423,9 @@ export default function AppointmentForm({
                 id="tripTimeMinutes"
                 value={formData.tripTimeMinutes?.toString() ?? ""}
                 onChange={(e) =>
-                  handleInputChange("tripTimeMinutes")(parseInt(e.target.value) ?? 0)
+                  handleInputChange("tripTimeMinutes")(
+                    parseInt(e.target.value) ?? 0,
+                  )
                 }
                 placeholder="0"
                 type="number"

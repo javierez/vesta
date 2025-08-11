@@ -42,7 +42,6 @@ export default function AppointmentModal({
   title = "Crear Nueva Cita",
   description = "Complete los detalles para programar una nueva cita.",
 }: AppointmentModalProps) {
-
   // Handle successful appointment creation
   const handleSubmit = (appointmentId: bigint) => {
     console.log("Appointment created with ID:", appointmentId);

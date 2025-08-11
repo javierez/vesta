@@ -42,7 +42,7 @@ export interface KanbanViewProps {
 }
 
 // Operation type definitions
-export type OperationType = "prospects" | "leads" | "deals";
+export type OperationType = "leads" | "deals";
 export type ListingTypeFilter = "sale" | "rent" | "all";
 export type ViewMode = "list" | "kanban";
 
@@ -53,12 +53,25 @@ export type BulkActionType =
   | "createTasks"
   | "export";
 
-// Status workflows for different operation types
+// Status workflows for different operation types (4 final statuses)
 export const PROSPECT_STATUSES = [
-  "New",
-  "Working",
-  "Qualified",
-  "Archived",
+  "En búsqueda",
+  "En preparación",
+  "Archivado",
+  "Finalizado",
+] as const;
+
+// Dual-type prospect status workflows (Spanish)
+export const LISTING_PROSPECT_STATUSES = [
+  "Información básica",
+  "Valoración",
+  "Hoja de encargo",
+  "En búsqueda",
+] as const;
+
+export const SEARCH_PROSPECT_STATUSES = [
+  "Información básica",
+  "En búsqueda",
 ] as const;
 export const LEAD_STATUSES = [
   "New",
@@ -79,11 +92,21 @@ export type DealStatus = (typeof DEAL_STATUSES)[number];
 
 // Spanish translations for statuses
 export const STATUS_TRANSLATIONS = {
-  // Prospects
-  New: "Nuevo",
-  Working: "En Proceso",
-  Qualified: "Calificado",
+  // Legacy Prospects (English to Spanish)
+  New: "En búsqueda",
+  Working: "En preparación",
+  Qualified: "Finalizado",
   Archived: "Archivado",
+  // Spanish statuses (already translated)
+  "En búsqueda": "En búsqueda",
+  "En preparación": "En preparación",
+  Archivado: "Archivado",
+  Finalizado: "Finalizado",
+  // Dual-Type Prospects (Spanish - these are already in Spanish)
+  "Información básica": "Información básica",
+  Valoración: "Valoración",
+  "Hoja de encargo": "Hoja de encargo",
+  "En búsqueda": "En búsqueda",
   // Leads
   Converted: "Convertido",
   Disqualified: "Descalificado",
@@ -104,9 +127,17 @@ export function getTranslatedStatus(status: string): string {
 // Get status list for operation type
 export function getStatusesForOperationType(
   operationType: OperationType,
+  prospectType?: "search" | "listing",
 ): readonly string[] {
   switch (operationType) {
     case "prospects":
+      // For dual-type prospects, return the appropriate Spanish workflow
+      if (prospectType === "listing") {
+        return LISTING_PROSPECT_STATUSES;
+      } else if (prospectType === "search") {
+        return SEARCH_PROSPECT_STATUSES;
+      }
+      // Fallback to legacy statuses
       return PROSPECT_STATUSES;
     case "leads":
       return LEAD_STATUSES;
@@ -122,9 +153,47 @@ export function isValidStatusTransition(
   operationType: OperationType,
   fromStatus: string,
   toStatus: string,
+  prospectType?: "search" | "listing",
 ): boolean {
-  const validStatuses = getStatusesForOperationType(operationType);
+  const validStatuses = getStatusesForOperationType(
+    operationType,
+    prospectType,
+  );
   return validStatuses.includes(fromStatus) && validStatuses.includes(toStatus);
+}
+
+// Enhanced validation for dual-type prospects with workflow rules
+export function isValidDualProspectStatusTransition(
+  prospectType: "search" | "listing",
+  fromStatus: string,
+  toStatus: string,
+): { valid: boolean; error?: string } {
+  const workflows = {
+    listing: LISTING_PROSPECT_STATUSES,
+    search: SEARCH_PROSPECT_STATUSES,
+  };
+
+  const validStatuses = workflows[prospectType];
+  const fromIndex = validStatuses.indexOf(fromStatus as any);
+  const toIndex = validStatuses.indexOf(toStatus as any);
+
+  // Check if statuses exist in the workflow
+  if (fromIndex === -1 || toIndex === -1) {
+    return {
+      valid: false,
+      error: `Estado no válido para prospecto de tipo ${prospectType}`,
+    };
+  }
+
+  // Allow backward movement for corrections or forward movement by one step
+  if (toIndex < fromIndex - 1 || toIndex > fromIndex + 1) {
+    return {
+      valid: false,
+      error: "Solo se permite avanzar un estado o retroceder un estado",
+    };
+  }
+
+  return { valid: true };
 }
 
 // Zod schemas for server action validation

@@ -200,7 +200,9 @@ export function CompactCalendarEvent({
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">{event.type} {event.contactName}</div>
+        <div className="truncate text-sm font-medium">
+          {event.type} {event.contactName}
+        </div>
         <div className="flex items-center gap-1 text-xs opacity-90">
           <Clock className="h-3 w-3" />
           {formatTime(event.startTime)} - {formatTime(event.endTime)}
@@ -302,7 +304,9 @@ export function ListCalendarEvent({
 
       {/* Main content */}
       <div className="min-w-0 flex-1">
-        <div className="font-medium text-gray-900">{event.type} {event.contactName}</div>
+        <div className="font-medium text-gray-900">
+          {event.type} {event.contactName}
+        </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />

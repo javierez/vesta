@@ -1,8 +1,5 @@
 import type { FC } from "react";
 import { useState, useEffect, useRef } from "react";
-import { Button } from "~/components/ui/button";
-import { Download, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { DisplayOptions } from "./controls/display-options";
 import { ModernTemplate } from "./templates/modern/modern-template";
 import { ClassicTemplate } from "./templates/classic/classic-vertical-template";
@@ -20,7 +17,6 @@ export const Personalization: FC<PersonalizationProps> = ({
 }) => {
   const [preferences, setPreferences] =
     useState<PosterPreferences>(initialPreferences);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const templateRef = useRef<HTMLDivElement>(null);
 
   // Template property data for preview (like Playground)
@@ -90,71 +86,18 @@ export const Personalization: FC<PersonalizationProps> = ({
     onUpdate({ displayOptions: newPrefs });
   };
 
-  // Generate PDF sample using current configuration
-  const downloadSample = async () => {
-    setIsGeneratingPdf(true);
-    try {
-      console.log("🔽 Starting PDF sample generation...");
-
-      const response = await fetch("/api/puppet/generate-pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          templateConfig: config,
-          propertyData: propertyData,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = (await response.json()) as { error?: string };
-        throw new Error(errorData.error ?? "PDF generation failed");
-      }
-
-      // Get the PDF blob
-      const pdfBlob = await response.blob();
-
-      // Create download link
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-
-      // Automatically download the PDF
-      const link = document.createElement("a");
-      link.href = pdfUrl;
-      link.download = `muestra-plantilla-${config.templateStyle}-${Date.now()}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up
-      URL.revokeObjectURL(pdfUrl);
-
-      toast.success("¡Muestra PDF generada exitosamente!");
-      console.log("✅ PDF sample generated and downloaded");
-    } catch (error) {
-      console.error("❌ PDF sample generation error:", error);
-      toast.error(
-        `Error generando muestra: ${error instanceof Error ? error.message : "Error desconocido"}`,
-      );
-    } finally {
-      setIsGeneratingPdf(false);
-    }
-  };
-
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-0">
+    <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2 text-center">
-        <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
-          Personalización
-        </h2>
-        <p className="text-sm text-gray-600 sm:text-base">
+        <h2 className="text-2xl font-bold text-gray-900">Personalización</h2>
+        <p className="text-gray-600">
           Personaliza las opciones de visualización para tus carteles
         </p>
       </div>
 
       {/* Two-column layout - Controls and Preview */}
-      <div className="grid grid-cols-1 gap-6 lg:gap-8 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Controls Panel */}
         <div className="space-y-6">
           <DisplayOptions
@@ -169,34 +112,27 @@ export const Personalization: FC<PersonalizationProps> = ({
         </div>
 
         {/* Vista Previa de Plantilla */}
-        <div className="rounded-2xl bg-white p-4 shadow-md sm:p-6">
+        <div className="rounded-2xl bg-white p-6 shadow-md">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold sm:text-xl">
-              Vista Previa de Plantilla
-            </h2>
+            <h2 className="text-xl font-semibold">Vista Previa de Plantilla</h2>
           </div>
-          <div className="flex justify-center overflow-hidden">
+          <div className="flex justify-center">
             <div
               ref={templateRef}
-              className="relative max-w-full overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg"
+              className="relative overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg"
               style={{
-                width: config.orientation === "vertical" ? "300px" : "420px", // Responsive sizes for mobile/desktop
-                height: config.orientation === "vertical" ? "424px" : "300px", // Maintain aspect ratio
-                maxWidth: "100%",
+                width: config.orientation === "vertical" ? "278px" : "393px", // 794*0.35 and 1123*0.35
+                height: config.orientation === "vertical" ? "393px" : "278px", // 1123*0.35 and 794*0.35
               }}
             >
               <div
                 style={{
-                  transform:
-                    config.orientation === "vertical"
-                      ? "scale(0.378)" // 300/794 ≈ 0.378 for mobile-friendly size
-                      : "scale(0.374)", // 420/1123 ≈ 0.374
+                  transform: "scale(0.35)",
                   transformOrigin: "top left",
                   width: config.orientation === "vertical" ? "794px" : "1123px",
                   height:
                     config.orientation === "vertical" ? "1123px" : "794px",
                 }}
-                className="origin-top-left"
               >
                 {config.templateStyle === "classic" ? (
                   <ClassicTemplate
@@ -213,28 +149,6 @@ export const Personalization: FC<PersonalizationProps> = ({
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Download Sample Button */}
-          <div className="mt-4 flex justify-center">
-            <Button
-              onClick={downloadSample}
-              disabled={isGeneratingPdf}
-              className="w-full max-w-xs sm:max-w-sm"
-              size="sm"
-            >
-              {isGeneratingPdf ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando muestra...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Descargar Muestra
-                </>
-              )}
-            </Button>
           </div>
         </div>
       </div>
