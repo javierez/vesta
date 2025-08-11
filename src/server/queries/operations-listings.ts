@@ -97,7 +97,10 @@ export async function getAllListingsWithAuth(): Promise<ListingWithDetails[]> {
       .orderBy(listings.createdAt);
 
     // Transform the flat result into the expected nested structure
-    return listingsWithDetails.map((item) => ({
+    // Filter out listings without property data
+    return listingsWithDetails
+      .filter((item) => item.propertyId !== null)
+      .map((item) => ({
       listings: {
         id: item.listingId,
         listingType: item.listingType,
@@ -107,20 +110,20 @@ export async function getAllListingsWithAuth(): Promise<ListingWithDetails[]> {
         updatedAt: item.listingUpdatedAt,
       },
       properties: {
-        id: item.propertyId,
+        id: item.propertyId!,
         propertyType: item.propertyType,
         bedrooms: item.bedrooms,
-        bathrooms: item.bathrooms,
+        bathrooms: item.bathrooms ? Number(item.bathrooms) : null,
         squareMeter: item.squareMeter,
       },
       locations: {
-        neighborhood: item.neighborhood || "Sin especificar",
+        neighborhood: item.neighborhood ?? "Sin especificar",
       },
       ownerContact: item.ownerContactId
         ? {
             contactId: item.ownerContactId,
-            firstName: item.ownerFirstName,
-            lastName: item.ownerLastName,
+            firstName: item.ownerFirstName!,
+            lastName: item.ownerLastName!,
             email: item.ownerEmail,
             phone: item.ownerPhone,
           }

@@ -42,7 +42,7 @@ export interface KanbanViewProps {
 }
 
 // Operation type definitions
-export type OperationType = "leads" | "deals";
+export type OperationType = "prospects" | "leads" | "deals";
 export type ListingTypeFilter = "sale" | "rent" | "all";
 export type ViewMode = "list" | "kanban";
 
@@ -106,7 +106,6 @@ export const STATUS_TRANSLATIONS = {
   "Información básica": "Información básica",
   Valoración: "Valoración",
   "Hoja de encargo": "Hoja de encargo",
-  "En búsqueda": "En búsqueda",
   // Leads
   Converted: "Convertido",
   Disqualified: "Descalificado",
@@ -174,7 +173,9 @@ export function isValidDualProspectStatusTransition(
   };
 
   const validStatuses = workflows[prospectType];
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
   const fromIndex = validStatuses.indexOf(fromStatus as any);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
   const toIndex = validStatuses.indexOf(toStatus as any);
 
   // Check if statuses exist in the workflow

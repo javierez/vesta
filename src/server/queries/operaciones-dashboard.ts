@@ -146,14 +146,14 @@ export async function getOperacionesSummary(
     prospectsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
       summary[type].prospects[row.status] =
-        (summary[type].prospects[row.status] || 0) + row.count;
+        (summary[type].prospects[row.status] ?? 0) + row.count;
     });
 
     // Process listings data (include in prospects/demanda count)
     listingsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
       summary[type].prospects[row.status] =
-        (summary[type].prospects[row.status] || 0) + row.count;
+        (summary[type].prospects[row.status] ?? 0) + row.count;
     });
 
     // Process leads data

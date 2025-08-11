@@ -67,6 +67,7 @@ export function ProspectKanbanCard({ prospect }: ProspectKanbanCardProps) {
             <SearchProspectCard
               card={{
                 ...prospect,
+                type: "prospect" as const,
                 contactName: prospect.contactName,
                 needSummary: buildNeedSummary(prospect),
                 budgetRange: buildBudgetRange(prospect),
@@ -80,6 +81,7 @@ export function ProspectKanbanCard({ prospect }: ProspectKanbanCardProps) {
             <ListingProspectCard
               card={{
                 ...prospect,
+                type: "prospect" as const,
                 contactName: prospect.contactName,
                 propertyAddress: getPropertyAddress(prospect),
                 estimatedValue: getEstimatedValue(prospect),

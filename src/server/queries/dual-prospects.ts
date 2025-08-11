@@ -129,47 +129,47 @@ export async function getDualProspectsForKanban(
     .execute();
 
   // Transform raw data to DualProspect objects
-  const dualProspects: DualProspect[] = results.map((row: any) => {
+  const dualProspects: DualProspect[] = results.map((row) => {
     const baseProspect = {
       id: row.id,
       contactId: row.contactId,
       status: row.status,
       listingType: row.listingType as "Sale" | "Rent",
       prospectType: row.prospectType as "search" | "listing",
-      urgencyLevel: row.urgencyLevel || undefined,
-      notesInternal: row.notesInternal || undefined,
+      urgencyLevel: row.urgencyLevel ?? undefined,
+      notesInternal: row.notesInternal ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       contactName: `${row.contactFirstName} ${row.contactLastName}`,
-      contactEmail: row.contactEmail || undefined,
-      contactPhone: row.contactPhone || undefined,
+      contactEmail: row.contactEmail ?? undefined,
+      contactPhone: row.contactPhone ?? undefined,
     };
 
     if (row.prospectType === "search") {
       return {
         ...baseProspect,
         prospectType: "search" as const,
-        propertyType: row.propertyType || undefined,
+        propertyType: row.propertyType ?? undefined,
         minPrice: row.minPrice ? Number(row.minPrice) : undefined,
         maxPrice: row.maxPrice ? Number(row.maxPrice) : undefined,
         preferredAreas:
           (row.preferredAreas as Array<{
             neighborhoodId: bigint;
             name: string;
-          }>) || undefined,
-        minBedrooms: row.minBedrooms || undefined,
-        minBathrooms: row.minBathrooms || undefined,
-        minSquareMeters: row.minSquareMeters || undefined,
-        maxSquareMeters: row.maxSquareMeters || undefined,
-        moveInBy: row.moveInBy || undefined,
-        extras: (row.extras as Record<string, boolean>) || undefined,
-        fundingReady: row.fundingReady || undefined,
+          }>) ?? undefined,
+        minBedrooms: row.minBedrooms ?? undefined,
+        minBathrooms: row.minBathrooms ?? undefined,
+        minSquareMeters: row.minSquareMeters ?? undefined,
+        maxSquareMeters: row.maxSquareMeters ?? undefined,
+        moveInBy: row.moveInBy ?? undefined,
+        extras: (row.extras as Record<string, boolean>) ?? undefined,
+        fundingReady: row.fundingReady ?? undefined,
       } as SearchProspect;
     } else {
       return {
         ...baseProspect,
         prospectType: "listing" as const,
-        propertyToList: row.propertyToList || undefined,
+        propertyToList: row.propertyToList ?? undefined,
         valuationStatus: row.valuationStatus as
           | "pending"
           | "scheduled"
@@ -193,9 +193,7 @@ export async function getDualProspectsForKanban(
   const statusGroups = operationCards.reduce(
     (groups, card) => {
       const status = card.status;
-      if (!groups[status]) {
-        groups[status] = [];
-      }
+      groups[status] ??= [];
       groups[status].push(card);
       return groups;
     },
@@ -295,41 +293,51 @@ export async function getDualProspect(
     status: result.status,
     listingType: result.listingType as "Sale" | "Rent",
     prospectType: result.prospectType as "search" | "listing",
-    urgencyLevel: result.urgencyLevel || undefined,
-    notesInternal: result.notesInternal || undefined,
+    urgencyLevel: result.urgencyLevel ?? undefined,
+    notesInternal: result.notesInternal ?? undefined,
     createdAt: result.createdAt,
     updatedAt: result.updatedAt,
     contactName: `${result.contactFirstName} ${result.contactLastName}`,
-    contactEmail: result.contactEmail || undefined,
-    contactPhone: result.contactPhone || undefined,
+    contactEmail: result.contactEmail ?? undefined,
+    contactPhone: result.contactPhone ?? undefined,
   };
 
   if (result.prospectType === "search") {
     return {
       ...baseProspect,
       prospectType: "search" as const,
-      propertyType: result.propertyType || undefined,
+      propertyType: result.propertyType ?? undefined,
       minPrice: result.minPrice ? Number(result.minPrice) : undefined,
       maxPrice: result.maxPrice ? Number(result.maxPrice) : undefined,
       preferredAreas:
         (result.preferredAreas as Array<{
           neighborhoodId: bigint;
           name: string;
-        }>) || undefined,
-      minBedrooms: result.minBedrooms || undefined,
-      minBathrooms: result.minBathrooms || undefined,
-      minSquareMeters: result.minSquareMeters || undefined,
-      maxSquareMeters: result.maxSquareMeters || undefined,
-      moveInBy: result.moveInBy || undefined,
-      extras: (result.extras as Record<string, boolean>) || undefined,
-      fundingReady: result.fundingReady || undefined,
+        }>) ?? undefined,
+      minBedrooms: result.minBedrooms ?? undefined,
+      minBathrooms: result.minBathrooms ?? undefined,
+      minSquareMeters: result.minSquareMeters ?? undefined,
+      maxSquareMeters: result.maxSquareMeters ?? undefined,
+      moveInBy: result.moveInBy ?? undefined,
+      extras: (result.extras as Record<string, boolean>) ?? undefined,
+      fundingReady: result.fundingReady ?? undefined,
     } as SearchProspect;
   }
 
   return {
     ...baseProspect,
     prospectType: "listing" as const,
-    propertyToList: (result.propertyToList as any) || undefined,
+    propertyToList: result.propertyToList as {
+      address: string;
+      propertyType: string;
+      estimatedValue: number;
+      condition: string;
+      readyToList: boolean;
+      bedrooms?: number;
+      bathrooms?: number;
+      squareMeters?: number;
+      description?: string;
+    } | undefined,
     valuationStatus: result.valuationStatus as
       | "pending"
       | "scheduled"
@@ -431,48 +439,48 @@ export async function getAllDualProspects(
   }
 
   // Transform results to DualProspect objects
-  return results.map((row: any) => {
+  return results.map((row) => {
     const baseProspect = {
       id: row.id,
       contactId: row.contactId,
       status: row.status,
       listingType: row.listingType as "Sale" | "Rent",
       prospectType: row.prospectType as "search" | "listing",
-      urgencyLevel: row.urgencyLevel || undefined,
-      notesInternal: row.notesInternal || undefined,
+      urgencyLevel: row.urgencyLevel ?? undefined,
+      notesInternal: row.notesInternal ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       contactName: `${row.contactFirstName} ${row.contactLastName}`,
-      contactEmail: row.contactEmail || undefined,
-      contactPhone: row.contactPhone || undefined,
+      contactEmail: row.contactEmail ?? undefined,
+      contactPhone: row.contactPhone ?? undefined,
     };
 
     if (row.prospectType === "search") {
       return {
         ...baseProspect,
         prospectType: "search" as const,
-        propertyType: row.propertyType || undefined,
+        propertyType: row.propertyType ?? undefined,
         minPrice: row.minPrice ? Number(row.minPrice) : undefined,
         maxPrice: row.maxPrice ? Number(row.maxPrice) : undefined,
         preferredAreas:
           (row.preferredAreas as Array<{
             neighborhoodId: bigint;
             name: string;
-          }>) || undefined,
-        minBedrooms: row.minBedrooms || undefined,
-        minBathrooms: row.minBathrooms || undefined,
-        minSquareMeters: row.minSquareMeters || undefined,
-        maxSquareMeters: row.maxSquareMeters || undefined,
-        moveInBy: row.moveInBy || undefined,
-        extras: (row.extras as Record<string, boolean>) || undefined,
-        fundingReady: row.fundingReady || undefined,
+          }>) ?? undefined,
+        minBedrooms: row.minBedrooms ?? undefined,
+        minBathrooms: row.minBathrooms ?? undefined,
+        minSquareMeters: row.minSquareMeters ?? undefined,
+        maxSquareMeters: row.maxSquareMeters ?? undefined,
+        moveInBy: row.moveInBy ?? undefined,
+        extras: (row.extras as Record<string, boolean>) ?? undefined,
+        fundingReady: row.fundingReady ?? undefined,
       } as SearchProspect;
     }
 
     return {
       ...baseProspect,
       prospectType: "listing" as const,
-      propertyToList: row.propertyToList || undefined,
+      propertyToList: row.propertyToList ?? undefined,
       valuationStatus: row.valuationStatus as
         | "pending"
         | "scheduled"
@@ -555,11 +563,11 @@ export async function getDualProspectStatistics(
   );
 
   return {
-    totalCount: totalResult?.totalCount || 0,
-    searchCount: totalResult?.searchCount || 0,
-    listingCount: totalResult?.listingCount || 0,
+    totalCount: totalResult?.totalCount ?? 0,
+    searchCount: totalResult?.searchCount ?? 0,
+    listingCount: totalResult?.listingCount ?? 0,
     byStatus,
     byListingType,
-    averageUrgency: totalResult?.averageUrgency || 0,
+    averageUrgency: totalResult?.averageUrgency ?? 0,
   };
 }

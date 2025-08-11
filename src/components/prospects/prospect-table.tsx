@@ -140,18 +140,18 @@ export function ProspectTable({
     try {
       // Handle if it's already an array
       if (Array.isArray(preferredAreas)) {
-        return preferredAreas
-          .filter((area): area is { name: string } => area && typeof area === "object" && "name" in area)
-          .map((area) => area.name);
+        return (preferredAreas as Array<{ name: string }>)
+          .filter(area => area && typeof area === "object" && "name" in area)
+          .map(area => area.name);
       }
 
       // Handle if it's a string that needs parsing
       if (typeof preferredAreas === "string") {
         const parsed = JSON.parse(preferredAreas) as unknown;
         if (Array.isArray(parsed)) {
-          return parsed
-            .filter((area): area is { name: string } => area && typeof area === "object" && "name" in area)
-            .map((area) => area.name);
+          return (parsed as Array<{ name: string }>)
+            .filter(area => area && typeof area === "object" && "name" in area)
+            .map(area => area.name);
         }
       }
     } catch (error) {

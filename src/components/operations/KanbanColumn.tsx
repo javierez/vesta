@@ -7,7 +7,9 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import type { KanbanColumn, OperationType } from "~/types/operations";
 import { getTranslatedStatus } from "~/types/operations";
-import KanbanCard from "./KanbanCard";
+import { Card } from "~/components/ui/card";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Calendar, MapPin, User } from "lucide-react";
 
 interface KanbanColumnProps {
   column: KanbanColumn;
@@ -95,15 +97,49 @@ export default function KanbanColumnComponent({
             strategy={rectSortingStrategy}
           >
             {column.items.map((card) => (
-              <KanbanCard
+              <Card
                 key={card.id.toString()}
-                card={card}
-                operationType={operationType}
-                isSelected={selectedItems.has(card.id.toString())}
-                onSelect={(selected) =>
-                  onItemSelect(card.id.toString(), selected)
-                }
-              />
+                className="cursor-pointer p-3 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    checked={selectedItems.has(card.id.toString())}
+                    onCheckedChange={(checked) =>
+                      onItemSelect(card.id.toString(), checked as boolean)
+                    }
+                  />
+                  <div className="flex-1 space-y-2">
+                    <div className="font-medium text-sm">
+                      {card.contactName ?? card.listingAddress ?? "Sin nombre"}
+                    </div>
+                    {card.needSummary && (
+                      <p className="text-xs text-gray-600 line-clamp-2">
+                        {card.needSummary}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      {card.lastActivity && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(card.lastActivity).toLocaleDateString()}
+                        </div>
+                      )}
+                      {card.source && (
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          {card.source}
+                        </div>
+                      )}
+                      {card.listingAddress && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {card.listingAddress}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
             ))}
           </SortableContext>
         ) : (

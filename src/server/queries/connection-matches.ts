@@ -85,8 +85,8 @@ function parsePreferredAreas(
 
   try {
     if (Array.isArray(preferredAreas)) {
-      return preferredAreas.filter(
-        (area): area is { neighborhoodId: number; name: string } =>
+      return (preferredAreas as Array<{ neighborhoodId: number; name: string }>).filter(
+        (area) =>
           area &&
           typeof area === "object" &&
           "neighborhoodId" in area &&
@@ -95,10 +95,10 @@ function parsePreferredAreas(
     }
 
     if (typeof preferredAreas === "string") {
-      const parsed = JSON.parse(preferredAreas);
+      const parsed = JSON.parse(preferredAreas) as unknown;
       if (Array.isArray(parsed)) {
-        return parsed.filter(
-          (area): area is { neighborhoodId: number; name: string } =>
+        return (parsed as Array<{ neighborhoodId: number; name: string }>).filter(
+          (area) =>
             area &&
             typeof area === "object" &&
             "neighborhoodId" in area &&
@@ -129,17 +129,19 @@ function checkFeatureRequirements(
   try {
     const extras =
       typeof prospectExtras === "string"
-        ? JSON.parse(prospectExtras)
+        ? JSON.parse(prospectExtras) as unknown
         : prospectExtras;
 
     if (!extras || typeof extras !== "object") return true;
 
+    const extrasTyped = extras as Record<string, unknown>;
+    
     // Only check if prospect REQUIRES a feature - if listing has MORE features, that's GOOD!
     // Only reject if prospect specifically REQUIRES something and listing doesn't have it
-    if (extras.elevator === true && listingFeatures.hasElevator === false) return false;
-    if (extras.garage === true && listingFeatures.hasGarage === false) return false;
-    if (extras.storage === true && listingFeatures.hasStorageRoom === false) return false;
-    if (extras.terrace === true && listingFeatures.terrace === false) return false;
+    if (extrasTyped.elevator === true && listingFeatures.hasElevator === false) return false;
+    if (extrasTyped.garage === true && listingFeatures.hasGarage === false) return false;
+    if (extrasTyped.storage === true && listingFeatures.hasStorageRoom === false) return false;
+    if (extrasTyped.terrace === true && listingFeatures.terrace === false) return false;
 
     // If listing has extra features that prospect didn't ask for, that's a BONUS!
     return true;
@@ -342,7 +344,7 @@ export async function getMatchesForProspects(
     const rawResults = await baseQuery;
     
     console.log('📊 Raw SQL results count:', rawResults.length);
-    console.log('🔍 First raw result sample:', rawResults[0] ? JSON.stringify(rawResults[0], (key, value) => typeof value === 'bigint' ? value.toString() : value, 2) : 'No results');
+    console.log('🔍 First raw result sample:', rawResults[0] ? JSON.stringify(rawResults[0] as Record<string, unknown>, (key, value) => typeof value === 'bigint' ? value.toString() : value as string, 2) : 'No results');
 
     // CRITICAL: Post-process for location and feature matching, tolerance classification
     const processedMatches: ProspectMatch[] = [];
@@ -484,13 +486,13 @@ export async function getMatchesForProspects(
             squareMeter: result.propertySquareMeters,
           },
           locations: {
-            neighborhood: result.neighborhoodName || "Sin especificar",
+            neighborhood: result.neighborhoodName ?? "Sin especificar",
           },
           ownerContact: result.ownerContactId
             ? {
                 contactId: result.ownerContactId,
-                firstName: result.ownerFirstName || '',
-                lastName: result.ownerLastName || '',
+                firstName: result.ownerFirstName ?? '',
+                lastName: result.ownerLastName ?? '',
                 email: result.ownerEmail,
                 phone: result.ownerPhone,
               }
