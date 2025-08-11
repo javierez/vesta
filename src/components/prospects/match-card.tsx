@@ -19,6 +19,8 @@ import {
   Eye,
   CheckCircle,
   AlertCircle,
+  ArrowLeftRight,
+  KeyRound,
 } from "lucide-react";
 import type { ProspectMatch, MatchAction } from "~/types/connection-matches";
 import { formatPrice } from "~/lib/utils";
@@ -34,7 +36,7 @@ export const MatchCard = React.memo(function MatchCard({
   onAction,
   showActions = true,
 }: MatchCardProps) {
-  // const [isHovered, setIsHovered] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState<MatchAction | null>(
     null,
@@ -106,8 +108,8 @@ export const MatchCard = React.memo(function MatchCard({
   const renderContent = () => (
     <Card
       className="overflow-hidden transition-all hover:shadow-lg"
-      // onMouseEnter={() => setIsHovered(true)}
-      // onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Image Section */}
       <div className="relative aspect-[4/3] overflow-hidden">
@@ -116,11 +118,66 @@ export const MatchCard = React.memo(function MatchCard({
           alt={listing.properties.propertyType ?? "Property image"}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover transition-opacity duration-300"
+          className={`object-cover transition-all duration-300 ${isHovered ? 'blur-sm scale-105' : ''}`}
           loading="lazy"
           onLoad={() => setImageLoaded(true)}
           quality={85}
         />
+        
+        {/* Hover Action Buttons - Center of image */}
+        {showActions && isHovered && (
+          <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20 backdrop-blur-[1px]">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleAction("contact");
+                }}
+                disabled={isActionLoading !== null}
+                title="Enviar mensaje"
+              >
+                <Mail
+                  className={`h-5 w-5 text-gray-700 ${isActionLoading === "contact" ? "animate-pulse" : ""}`}
+                />
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleAction("contact");
+                }}
+                disabled={isActionLoading !== null}
+                title="Llamar"
+              >
+                <Phone
+                  className={`h-5 w-5 text-gray-700 ${isActionLoading === "contact" ? "animate-pulse" : ""}`}
+                />
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleAction("dismiss");
+                }}
+                disabled={isActionLoading !== null}
+                title="Descartar"
+              >
+                <X
+                  className={`h-5 w-5 text-gray-700 ${isActionLoading === "dismiss" ? "animate-pulse" : ""}`}
+                />
+              </Button>
+            </div>
+          </div>
+        )}
         {!imageLoaded && (
           <div className="absolute inset-0 animate-pulse bg-muted" />
         )}
@@ -223,100 +280,40 @@ export const MatchCard = React.memo(function MatchCard({
         )}
       </CardContent>
 
-      {/* Footer with Contact and Actions */}
+      {/* Footer with Contact Connection */}
       <CardFooter className="border-t border-border/40 p-3 pt-2">
         <div className="flex w-full items-center justify-between">
-          {/* Contact Info */}
-          <div className="flex items-center gap-1.5">
-            <User className="h-3 w-3 text-muted-foreground/80" />
-            <p className="text-xs text-muted-foreground/80">
+          {/* Left - Property Owner Contact */}
+          <div className="flex items-center gap-1">
+            <KeyRound className="h-3 w-3 text-muted-foreground/80" />
+            <span className="text-xs text-muted-foreground/80">
               {isCrossAccount && !canContact
                 ? "Contacto disponible tras solicitud"
                 : listing.ownerContact
                   ? `${listing.ownerContact.firstName} ${listing.ownerContact.lastName}`
                   : "Sin contacto"}
-            </p>
+            </span>
           </div>
 
-          {/* Action Buttons */}
-          {showActions && (
-            <div className="flex items-center space-x-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={(e) => {
-                  e.preventDefault();
-                  void handleAction("save");
-                }}
-                disabled={isActionLoading !== null}
-                title="Guardar match"
-              >
-                <Heart
-                  className={`h-3.5 w-3.5 ${isActionLoading === "save" ? "animate-pulse" : ""}`}
-                />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={(e) => {
-                  e.preventDefault();
-                  void handleAction("dismiss");
-                }}
-                disabled={isActionLoading !== null}
-                title="Descartar match"
-              >
-                <X
-                  className={`h-3.5 w-3.5 ${isActionLoading === "dismiss" ? "animate-pulse" : ""}`}
-                />
-              </Button>
-
-              {canContact ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    void handleAction("contact");
-                  }}
-                  disabled={isActionLoading !== null}
-                  title="Contactar"
-                >
-                  <Phone
-                    className={`h-3.5 w-3.5 ${isActionLoading === "contact" ? "animate-pulse" : ""}`}
-                  />
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    void handleAction("request-contact");
-                  }}
-                  disabled={isActionLoading !== null}
-                  title="Solicitar contacto"
-                >
-                  <Mail
-                    className={`h-3.5 w-3.5 ${isActionLoading === "request-contact" ? "animate-pulse" : ""}`}
-                  />
-                </Button>
-              )}
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                title="Ver detalles"
-              >
-                <Eye className="h-3.5 w-3.5" />
-              </Button>
+          {/* Center - Connection Arrow */}
+          <div className="flex items-center">
+            <div className="relative flex items-center">
+              {/* Arrow line */}
+              <div className="w-6 h-0.5 bg-gray-400 animate-pulse"></div>
+              {/* Left arrowhead */}
+              <div className="absolute -left-1 w-0 h-0 border-t-[3px] border-b-[3px] border-r-[4px] border-t-transparent border-b-transparent border-r-gray-400"></div>
+              {/* Right arrowhead */}
+              <div className="absolute -right-1 w-0 h-0 border-t-[3px] border-b-[3px] border-l-[4px] border-t-transparent border-b-transparent border-l-gray-400"></div>
             </div>
-          )}
+          </div>
+
+          {/* Right - Prospect Contact */}
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground/80">
+              {match.prospect.contacts.firstName} {match.prospect.contacts.lastName}
+            </span>
+            <User className="h-3 w-3 text-muted-foreground/80" />
+          </div>
         </div>
       </CardFooter>
     </Card>

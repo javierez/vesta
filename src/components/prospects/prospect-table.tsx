@@ -498,24 +498,79 @@ export function ProspectTable({
   // Get combined operations
   const allOperations = transformToOperations(prospects, listings);
 
-  // Filter operations based on prospectType filter from URL
+  // Filter operations based on URL filters
   const searchParams = useSearchParams();
   const prospectTypeFilter = searchParams.get("prospectType");
+  const listingTypeFilter = searchParams.get("listingType");
+  const statusFilter = searchParams.get("status");
+  const urgencyLevelFilter = searchParams.get("urgencyLevel");
 
   const filteredOperations = allOperations.filter((operation) => {
-    if (!prospectTypeFilter) return true; // Show all if no filter
+    // Filter by prospectType (search/listing)
+    if (prospectTypeFilter && prospectTypeFilter !== "all") {
+      const filterValues = prospectTypeFilter.split(",");
+      const showProspects = filterValues.includes("search");
+      const showListings = filterValues.includes("listing");
 
-    const filterValues = prospectTypeFilter.split(",");
+      if (operation.type === "prospect" && !showProspects) return false;
+      if (operation.type === "listing" && !showListings) return false;
+    }
 
-    // If filter includes "search", show prospects
-    const showProspects = filterValues.includes("search");
-    // If filter includes "listing", show listings
-    const showListings = filterValues.includes("listing");
+    // Filter by listingType (Sale/Rent)
+    if (listingTypeFilter && listingTypeFilter !== "all") {
+      const filterValues = listingTypeFilter.split(",");
+      
+      if (operation.type === "prospect") {
+        const prospect = operation.rawData as ProspectWithContact;
+        if (!filterValues.includes(prospect.prospects.listingType ?? "")) return false;
+      } else {
+        const listing = operation.rawData as ListingWithDetails;
+        if (!filterValues.includes(listing.listings.listingType)) return false;
+      }
+    }
 
-    if (operation.type === "prospect" && showProspects) return true;
-    if (operation.type === "listing" && showListings) return true;
+    // Filter by status
+    if (statusFilter && statusFilter !== "all") {
+      const filterValues = statusFilter.split(",");
+      
+      if (operation.type === "prospect") {
+        const prospect = operation.rawData as ProspectWithContact;
+        // Map the filter status values to database status values
+        const mappedStatuses = filterValues.map(status => {
+          switch (status) {
+            case "En búsqueda": return "new";
+            case "En preparación": return "working";
+            case "Finalizado": return "qualified";
+            case "Archivado": return "archived";
+            default: return status.toLowerCase();
+          }
+        });
+        if (!mappedStatuses.includes(prospect.prospects.status.toLowerCase())) return false;
+      } else {
+        const listing = operation.rawData as ListingWithDetails;
+        // Map display statuses to database statuses
+        const mappedStatuses = filterValues.map(status => {
+          switch (status) {
+            case "En preparación": return "Preparation";
+            case "En valoración": return "Valuation";
+            case "Listo para firma": return "Presign";
+            case "En búsqueda": return "Active";
+            default: return status;
+          }
+        });
+        if (!mappedStatuses.includes(listing.listings.status)) return false;
+      }
+    }
 
-    return false;
+    // Filter by urgency level (prospects only)
+    if (urgencyLevelFilter && urgencyLevelFilter !== "all" && operation.type === "prospect") {
+      const filterValues = urgencyLevelFilter.split(",").map(v => parseInt(v, 10));
+      const prospect = operation.rawData as ProspectWithContact;
+      if (prospect.prospects.urgencyLevel === null) return false;
+      if (!filterValues.includes(prospect.prospects.urgencyLevel)) return false;
+    }
+
+    return true;
   });
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
   const formatDate = (date: Date) => {

@@ -337,6 +337,43 @@ export async function getMatchesForProspects(
               sql`${prospects.maxSquareMeters} * 1.05`,
             ),
           ),
+
+          // PROSPECT-SPECIFIC FILTERS from URL parameters
+          // Filter by prospect types (if specified)
+          ...(filters.prospectTypes && filters.prospectTypes.length > 0 
+            ? [or(...filters.prospectTypes.map(type => 
+                type === 'search' 
+                  ? eq(prospects.listingType, 'Rent')
+                  : type === 'listing' 
+                  ? eq(prospects.listingType, 'Sale') 
+                  : sql`1=0` // Invalid type
+              ))]
+            : []
+          ),
+
+          // Filter by listing types (if specified)
+          ...(filters.listingTypes && filters.listingTypes.length > 0 
+            ? [or(...filters.listingTypes.map(type => 
+                eq(prospects.listingType, type)
+              ))]
+            : []
+          ),
+
+          // Filter by prospect status (if specified)
+          ...(filters.statuses && filters.statuses.length > 0 
+            ? [or(...filters.statuses.map(status => 
+                eq(prospects.status, status)
+              ))]
+            : []
+          ),
+
+          // Filter by urgency level (if specified)
+          ...(filters.urgencyLevels && filters.urgencyLevels.length > 0 
+            ? [or(...filters.urgencyLevels.map(level => 
+                eq(prospects.urgencyLevel, parseInt(level, 10))
+              ))]
+            : []
+          ),
         ),
       );
 
@@ -431,6 +468,7 @@ export async function getMatchesForProspects(
       const prospectMatch: ProspectMatch = {
         prospectId: result.prospectId,
         listingId: result.listingId,
+        listingAccountId: result.listingAccountId,
         matchType,
         toleranceReasons,
         prospect: {

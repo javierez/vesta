@@ -1,0 +1,39 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getPropertyImages } from "~/server/queries/property_images";
+import type { PropertyImage } from "~/lib/data";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const propertyId = BigInt(id);
+
+    const propertyImages = await getPropertyImages(propertyId);
+    const defaultPlaceholder = "/properties/suburban-dream.png";
+
+    // Process images to ensure they have valid URLs and match PropertyImage type
+    const processedImages: PropertyImage[] = propertyImages.map((img) => ({
+      propertyImageId: img.propertyImageId,
+      propertyId: img.propertyId,
+      referenceNumber: img.referenceNumber,
+      imageUrl: img.imageUrl ?? defaultPlaceholder,
+      isActive: img.isActive ?? true,
+      createdAt: img.createdAt,
+      updatedAt: img.updatedAt,
+      imageKey: img.imageKey,
+      imageTag: img.imageTag ?? undefined,
+      s3key: img.s3key,
+      imageOrder: img.imageOrder,
+    }));
+
+    return NextResponse.json(processedImages);
+  } catch (error) {
+    console.error("Error fetching property images:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch property images" },
+      { status: 500 }
+    );
+  }
+}

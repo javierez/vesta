@@ -44,6 +44,7 @@ export type ProspectWithContact = {
 export interface ProspectMatch {
   prospectId: bigint;
   listingId: bigint;
+  listingAccountId: bigint;
   matchType: "strict" | "near-strict";
   toleranceReasons: string[]; // e.g., ["Price +3.2%", "Area -4.1%"]
 
@@ -68,6 +69,11 @@ export interface MatchFilters {
   locationIds: bigint[];
   minPrice?: number;
   maxPrice?: number;
+  // Prospect-specific filters from prospect-filter.tsx
+  prospectTypes?: string[];
+  listingTypes?: string[];
+  statuses?: string[];
+  urgencyLevels?: string[];
 }
 
 // Paginated results

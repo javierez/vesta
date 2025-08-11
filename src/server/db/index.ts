@@ -16,7 +16,7 @@ const globalForDb = globalThis as unknown as {
 const host =
   env.SINGLESTORE_HOST ===
   "svc-554a48e0-adba-44d4-80e9-f368c0f377c3-dml.aws-oregon-4.svc.singlestore.com"
-    ? "100.21.229.252"
+    ? "54.203.181.61"
     : env.SINGLESTORE_HOST;
 
 const conn =

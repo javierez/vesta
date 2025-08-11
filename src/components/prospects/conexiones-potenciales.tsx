@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -16,7 +17,7 @@ import {
   Filter,
 } from "lucide-react";
 import { MatchCard } from "./match-card";
-import { MatchFilters } from "./match-filters";
+import { ExternalAccountCard } from "./external-account-card";
 import {
   getMatchesForProspectsWithAuth,
   saveMatchWithAuth,
@@ -40,9 +41,13 @@ const ITEMS_PER_PAGE = 12;
 export function ConexionesPotenciales({
   className,
 }: ConexionesPotencialesProps) {
+  const searchParams = useSearchParams();
+  
   // State management
   const [matches, setMatches] = useState<MatchResults | null>(null);
+  const [externalMatches, setExternalMatches] = useState<MatchResults | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExternalLoading, setIsExternalLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<MatchFiltersType>({
@@ -50,71 +55,112 @@ export function ConexionesPotenciales({
     includeNearStrict: true,
     propertyTypes: [],
     locationIds: [],
+    prospectTypes: [],
+    listingTypes: [],
+    statuses: [],
+    urgencyLevels: [],
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedView, setSelectedView] = useState<"internal" | "external" | null>("internal");
 
   // Statistics state
   const [stats, setStats] = useState({
-    totalMatches: 0,
-    strictMatches: 0,
-    nearStrictMatches: 0,
-    crossAccountMatches: 0,
+    internalMatches: 0,
+    externalMatches: 0,
   });
 
-  // Fetch matches data
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const prospectType = searchParams.get("prospectType");
+    const listingType = searchParams.get("listingType");
+    const status = searchParams.get("status");
+    const urgencyLevel = searchParams.get("urgencyLevel");
+    const page = searchParams.get("page");
+
+    setFilters(prev => ({
+      ...prev,
+      prospectTypes: prospectType && prospectType !== "all" ? prospectType.split(",") : [],
+      listingTypes: listingType && listingType !== "all" ? listingType.split(",") : [],
+      statuses: status ? status.split(",") : [],
+      urgencyLevels: urgencyLevel ? urgencyLevel.split(",") : [],
+    }));
+
+    if (page) {
+      setCurrentPage(parseInt(page, 10) || 1);
+    }
+  }, [searchParams]);
+
+  // Fetch internal matches data
   const fetchMatches = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
       const result = await getMatchesForProspectsWithAuth({
-        filters,
+        filters: { ...filters, accountScope: "current" },
         pagination: {
           offset: (currentPage - 1) * ITEMS_PER_PAGE,
           limit: ITEMS_PER_PAGE,
         },
       });
 
-      console.log('🔍 Connection matches result:', result);
-      console.log('📊 Matches count:', result.matches.length);
-      console.log('🎯 Total count:', result.totalCount);
-      console.log('🔧 Applied filters:', result.filters);
+      console.log('🔍 Internal matches result:', result);
+      console.log('📊 Internal matches count:', result.matches.length);
+      console.log('🎯 Internal total count:', result.totalCount);
 
       setMatches(result);
-
-      // Calculate statistics
-      const totalMatches = result.totalCount;
-      const strictMatches = result.matches.filter(
-        (m) => m.matchType === "strict",
-      ).length;
-      const nearStrictMatches = result.matches.filter(
-        (m) => m.matchType === "near-strict",
-      ).length;
-      const crossAccountMatches = result.matches.filter(
-        (m) => m.isCrossAccount,
-      ).length;
-
-      setStats({
-        totalMatches,
-        strictMatches,
-        nearStrictMatches,
-        crossAccountMatches,
-      });
     } catch (err) {
-      console.error("Error fetching matches:", err);
+      console.error("Error fetching internal matches:", err);
       setError(
-        "Error al cargar las conexiones potenciales. Inténtalo de nuevo.",
+        "Error al cargar las conexiones internas. Inténtalo de nuevo.",
       );
     } finally {
       setIsLoading(false);
     }
   }, [filters, currentPage]);
 
+  // Fetch external matches data
+  const fetchExternalMatches = useCallback(async () => {
+    setIsExternalLoading(true);
+
+    try {
+      const result = await getMatchesForProspectsWithAuth({
+        filters: { ...filters, accountScope: "cross-account" },
+        pagination: {
+          offset: (currentPage - 1) * ITEMS_PER_PAGE,
+          limit: ITEMS_PER_PAGE,
+        },
+      });
+
+      console.log('🌐 External matches result:', result);
+      console.log('📊 External matches count:', result.matches.length);
+      console.log('🎯 External total count:', result.totalCount);
+
+      setExternalMatches(result);
+    } catch (err) {
+      console.error("Error fetching external matches:", err);
+      // Don't set error for external matches, just log it
+    } finally {
+      setIsExternalLoading(false);
+    }
+  }, [filters, currentPage]);
+
   // Effect to fetch data when filters or page change
   useEffect(() => {
     void fetchMatches();
-  }, [fetchMatches]);
+    void fetchExternalMatches();
+  }, [fetchMatches, fetchExternalMatches]);
+
+  // Update stats when matches change
+  useEffect(() => {
+    const internalMatches = matches?.totalCount || 0;
+    const externalMatchesCount = externalMatches?.totalCount || 0;
+
+    setStats({
+      internalMatches,
+      externalMatches: externalMatchesCount,
+    });
+  }, [matches, externalMatches]);
 
   // Handle filter changes
   const handleFiltersChange = (newFilters: MatchFiltersType) => {
@@ -184,9 +230,30 @@ export function ConexionesPotenciales({
     }
   };
 
+  // Group external matches by account
+  const groupMatchesByAccount = (matches: ProspectMatch[]) => {
+    const grouped = matches.reduce((acc, match) => {
+      const accountId = match.listingAccountId?.toString() || 'unknown';
+      if (!acc[accountId]) {
+        acc[accountId] = [];
+      }
+      acc[accountId].push(match);
+      return acc;
+    }, {} as Record<string, ProspectMatch[]>);
+    return grouped;
+  };
+
+  // Handle external account contact request
+  const handleExternalContactRequest = async (accountId: string, matches: ProspectMatch[]) => {
+    console.log(`📞 Contact request for account ${accountId} with ${matches.length} matches`);
+    // TODO: Implement external contact request logic
+    setError(`Funcionalidad de contacto externo próximamente disponible para la cuenta ${accountId}`);
+  };
+
   // Handle refresh
   const handleRefresh = () => {
     void fetchMatches();
+    void fetchExternalMatches();
   };
 
   // Render loading skeleton
@@ -211,52 +278,42 @@ export function ConexionesPotenciales({
 
   // Render statistics
   const renderStats = () => (
-    <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-      <Card>
-        <CardContent className="p-4 text-center">
-          <div className="mb-2 flex items-center justify-center">
-            <Search className="h-5 w-5 text-blue-600" />
+    <div className="mb-4 grid grid-cols-2 gap-3">
+      <Card 
+        className={`border-0 shadow-sm cursor-pointer transition-all hover:shadow-md ${
+          selectedView === "internal" ? "ring-2 ring-gray-800 bg-gray-100" : ""
+        }`}
+        onClick={() => setSelectedView("internal")}
+      >
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-semibold text-gray-900">
+                {stats.internalMatches}
+              </p>
+              <p className="text-xs text-muted-foreground">Internas</p>
+            </div>
+            <Search className="h-4 w-4 text-gray-400" />
           </div>
-          <p className="text-2xl font-bold text-blue-600">
-            {stats.totalMatches}
-          </p>
-          <p className="text-xs text-muted-foreground">Total</p>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-4 text-center">
-          <div className="mb-2 flex items-center justify-center">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
+      <Card 
+        className={`border-0 shadow-sm cursor-pointer transition-all hover:shadow-md ${
+          selectedView === "external" ? "ring-2 ring-gray-800 bg-gray-100" : ""
+        }`}
+        onClick={() => setSelectedView("external")}
+      >
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-semibold text-gray-900">
+                {stats.externalMatches}
+              </p>
+              <p className="text-xs text-muted-foreground">Externas</p>
+            </div>
+            <Users className="h-4 w-4 text-gray-400" />
           </div>
-          <p className="text-2xl font-bold text-green-600">
-            {stats.strictMatches}
-          </p>
-          <p className="text-xs text-muted-foreground">Exactas</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4 text-center">
-          <div className="mb-2 flex items-center justify-center">
-            <TrendingUp className="h-5 w-5 text-orange-600" />
-          </div>
-          <p className="text-2xl font-bold text-orange-600">
-            {stats.nearStrictMatches}
-          </p>
-          <p className="text-xs text-muted-foreground">Aproximadas</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4 text-center">
-          <div className="mb-2 flex items-center justify-center">
-            <Users className="h-5 w-5 text-purple-600" />
-          </div>
-          <p className="text-2xl font-bold text-purple-600">
-            {stats.crossAccountMatches}
-          </p>
-          <p className="text-xs text-muted-foreground">Externas</p>
         </CardContent>
       </Card>
     </div>
@@ -270,30 +327,9 @@ export function ConexionesPotenciales({
         <h3 className="mb-2 text-lg font-semibold">
           No se encontraron coincidencias
         </h3>
-        <p className="mb-4 text-muted-foreground">
-          Intenta{" "}
-          {filters.includeNearStrict
-            ? "ampliar los criterios de búsqueda"
-            : "habilitar las coincidencias aproximadas"}{" "}
-          para ver más resultados.
+        <p className="text-muted-foreground">
+          No hay propiedades que coincidan con los criterios actuales.
         </p>
-        <div className="flex justify-center space-x-2">
-          {!filters.includeNearStrict && (
-            <Button
-              variant="outline"
-              onClick={() =>
-                handleFiltersChange({ ...filters, includeNearStrict: true })
-              }
-            >
-              <TrendingUp className="mr-2 h-4 w-4" />
-              Incluir aproximadas
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => setShowFilters(true)}>
-            <Filter className="mr-2 h-4 w-4" />
-            Ajustar filtros
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );
@@ -318,16 +354,6 @@ export function ConexionesPotenciales({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className={showFilters ? "bg-muted" : ""}
-          >
-            <Filter className="mr-1 h-4 w-4" />
-            Filtros
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
             onClick={handleRefresh}
             disabled={isLoading}
           >
@@ -339,15 +365,6 @@ export function ConexionesPotenciales({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Filters */}
-        {showFilters && (
-          <div className="rounded-lg border bg-muted/20 p-4">
-            <MatchFilters
-              onFiltersChange={handleFiltersChange}
-              className="mb-0"
-            />
-          </div>
-        )}
 
         {/* Error State */}
         {error && (
@@ -360,13 +377,11 @@ export function ConexionesPotenciales({
         {/* Loading State */}
         {isLoading ? (
           <>
-            {!showFilters && (
-              <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <Skeleton key={index} className="h-20" />
-                ))}
-              </div>
-            )}
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <Skeleton key={index} className="h-16" />
+              ))}
+            </div>
             {renderLoadingSkeleton()}
           </>
         ) : (
@@ -375,17 +390,19 @@ export function ConexionesPotenciales({
             {matches && matches.matches.length > 0 && renderStats()}
 
             {/* Matches Grid */}
-            {matches && matches.matches.length > 0 ? (
+            {selectedView === "internal" && matches && matches.matches.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {matches.matches.map((match) => (
-                    <MatchCard
-                      key={`${match.prospectId}-${match.listingId}`}
-                      match={match}
-                      onAction={handleMatchAction}
-                      showActions={true}
-                    />
-                  ))}
+                  {matches.matches
+                    .filter((match) => !match.isCrossAccount)
+                    .map((match) => (
+                      <MatchCard
+                        key={`${match.prospectId}-${match.listingId}`}
+                        match={match}
+                        onAction={handleMatchAction}
+                        showActions={true}
+                      />
+                    ))}
                 </div>
 
                 {/* Pagination */}
@@ -399,10 +416,48 @@ export function ConexionesPotenciales({
                   </div>
                 )}
               </>
-            ) : (
-              /* Empty State */
+            ) : selectedView === "external" ? (
+              isExternalLoading ? (
+                renderLoadingSkeleton()
+              ) : externalMatches && externalMatches.matches.length > 0 ? (
+                <>
+                  <div className="space-y-4">
+                    {Object.entries(groupMatchesByAccount(externalMatches.matches)).map(([accountId, matches]) => (
+                      <ExternalAccountCard
+                        key={accountId}
+                        accountId={accountId}
+                        matches={matches}
+                        onRequestContact={handleExternalContactRequest}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Pagination for external matches */}
+                  {Math.ceil((externalMatches.totalCount || 0) / ITEMS_PER_PAGE) > 1 && (
+                    <div className="flex justify-center">
+                      <PaginationControls
+                        currentPage={currentPage}
+                        totalPages={Math.ceil((externalMatches.totalCount || 0) / ITEMS_PER_PAGE)}
+                        onPageChange={handlePageChange}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="py-12 text-center">
+                  <Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+                  <h3 className="mb-2 text-lg font-semibold">
+                    Sin coincidencias externas
+                  </h3>
+                  <p className="text-muted-foreground">
+                    No se encontraron propiedades de otras cuentas que coincidan con los criterios
+                  </p>
+                </div>
+              )
+            ) : selectedView === "internal" && matches && matches.matches.filter((m) => !m.isCrossAccount).length === 0 ? (
+              /* Empty State for internal matches */
               renderEmptyState()
-            )}
+            ) : null}
           </>
         )}
 
