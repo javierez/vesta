@@ -92,6 +92,7 @@ export async function uploadDocumentToS3(
   referenceNumber: string,
   documentOrder: number,
   documentTag?: string,
+  folderType?: "initial-docs" | "visitas" | "others",
 ): Promise<{
   fileUrl: string;
   s3key: string;
@@ -100,6 +101,7 @@ export async function uploadDocumentToS3(
   fileType: string;
   documentTag?: string;
   documentOrder: number;
+  folderType?: string;
 }> {
   try {
     if (!file) {
@@ -115,12 +117,15 @@ export async function uploadDocumentToS3(
       throw new Error("Could not determine file extension");
     }
 
-    // Create the S3 key with descriptive naming based on document tag
+    // Create the S3 key with descriptive naming based on document tag and folder type
     let documentKey: string;
     if (documentTag === "energy_certificate") {
       documentKey = `${referenceNumber}/documents/certificado_energetico_${nanoid(6)}.${fileExtension}`;
     } else if (documentTag === "ficha_propiedad") {
       documentKey = `${referenceNumber}/documents/ficha_propiedad_${nanoid(6)}.${fileExtension}`;
+    } else if (folderType) {
+      // New folder structure for property documents
+      documentKey = `${referenceNumber}/documents/${folderType}/${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}_${nanoid(6)}.${fileExtension}`;
     } else {
       documentKey = `${referenceNumber}/documents/document_${documentOrder}_${nanoid(6)}.${fileExtension}`;
     }
@@ -151,6 +156,7 @@ export async function uploadDocumentToS3(
       fileType: file.type,
       documentTag,
       documentOrder,
+      folderType,
     };
   } catch (error) {
     console.error("Error uploading document to S3:", error);

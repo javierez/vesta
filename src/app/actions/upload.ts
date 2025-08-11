@@ -135,15 +135,17 @@ export async function uploadDocument(
   dealId?: bigint,
   appointmentId?: bigint,
   propertyId?: bigint,
+  folderType?: "initial-docs" | "visitas" | "others",
 ): Promise<Document> {
   try {
     // 1. Upload to S3
-    const { fileUrl, s3key, documentKey, filename, fileType } =
+    const { fileUrl, s3key, documentKey, filename, fileType, folderType: uploadedFolderType } =
       await uploadDocumentToS3(
         file,
         referenceNumber,
         documentOrder,
         documentTag,
+        folderType,
       );
 
     // 2. Create record in database

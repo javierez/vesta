@@ -14,9 +14,9 @@ export async function GET(
     const defaultPlaceholder = "/properties/suburban-dream.png";
 
     // Process images to ensure they have valid URLs and match PropertyImage type
-    const processedImages: PropertyImage[] = propertyImages.map((img) => ({
-      propertyImageId: img.propertyImageId,
-      propertyId: img.propertyId,
+    const processedImages = propertyImages.map((img) => ({
+      propertyImageId: img.propertyImageId.toString(),
+      propertyId: img.propertyId.toString(),
       referenceNumber: img.referenceNumber,
       imageUrl: img.imageUrl ?? defaultPlaceholder,
       isActive: img.isActive ?? true,

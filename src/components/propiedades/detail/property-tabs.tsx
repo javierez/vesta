@@ -1,10 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { ImageGallery } from "./image-gallery";
 import { PortalSelection } from "./portal-selection";
 import { EnergyCertificate } from "./energy-certificate";
+import { DocumentsManager } from "./documents-manager";
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form";
+import { ImageGallerySkeleton, CharacteristicsSkeleton, PortalsSkeleton, EnergyCertificateSkeleton } from "./skeletons";
 import { useSession } from "~/lib/auth-client";
 import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
@@ -53,30 +57,126 @@ export function PropertyTabs({
   energyCertificate,
 }: PropertyTabsProps) {
   const { data: session } = useSession();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("general");
+  const [tabData, setTabData] = useState<{
+    images: PropertyImage[] | null;
+    convertedListing: PropertyListing | null;
+    energyCertificate: { docId: bigint; documentKey: string; fileUrl: string } | null;
+  }>({
+    images: null,
+    convertedListing: null,
+    energyCertificate: null,
+  });
+  const [loading, setLoading] = useState<{
+    general: boolean;
+    caracteristicas: boolean;
+    certificado: boolean;
+  }>({
+    general: false,
+    caracteristicas: false,
+    certificado: false,
+  });
+
+  const fetchTabData = async (tabValue: string) => {
+    switch (tabValue) {
+      case "general":
+        if (tabData.images) return;
+        setLoading(prev => ({ ...prev, general: true }));
+        try {
+          const response = await fetch(`/api/properties/${listing.propertyId}/images`);
+          if (response.ok) {
+            const imageData = await response.json();
+            setTabData(prev => ({ ...prev, images: imageData }));
+          } else {
+            setTabData(prev => ({ ...prev, images: images }));
+          }
+        } catch (error) {
+          setTabData(prev => ({ ...prev, images: images }));
+        } finally {
+          setLoading(prev => ({ ...prev, general: false }));
+        }
+        break;
+
+      case "caracteristicas":
+        if (tabData.convertedListing) return;
+        setLoading(prev => ({ ...prev, caracteristicas: true }));
+        try {
+          const response = await fetch(`/api/properties/${listing.listingId}/characteristics`);
+          if (response.ok) {
+            const characteristicsData = await response.json();
+            setTabData(prev => ({ ...prev, convertedListing: characteristicsData }));
+          } else {
+            setTabData(prev => ({ ...prev, convertedListing }));
+          }
+        } catch (error) {
+          setTabData(prev => ({ ...prev, convertedListing }));
+        } finally {
+          setLoading(prev => ({ ...prev, caracteristicas: false }));
+        }
+        break;
+
+      case "certificado":
+        if (tabData.energyCertificate) return;
+        setLoading(prev => ({ ...prev, certificado: true }));
+        try {
+          const response = await fetch(`/api/properties/${listing.propertyId}/energy-certificate`);
+          if (response.ok) {
+            const certData = await response.json();
+            setTabData(prev => ({ ...prev, energyCertificate: certData }));
+          } else {
+            setTabData(prev => ({ ...prev, energyCertificate: energyCertificate || null }));
+          }
+        } catch (error) {
+          setTabData(prev => ({ ...prev, energyCertificate: energyCertificate || null }));
+        } finally {
+          setLoading(prev => ({ ...prev, certificado: false }));
+        }
+        break;
+    }
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    fetchTabData(value);
+  };
+
+  useEffect(() => {
+    fetchTabData("general");
+  }, []);
 
   return (
-    <Tabs defaultValue="general" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+      <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
         <TabsTrigger value="general">General</TabsTrigger>
         <TabsTrigger value="caracteristicas">Características</TabsTrigger>
         <TabsTrigger value="portales">Portales</TabsTrigger>
-        <TabsTrigger value="certificado">Certificado Energético</TabsTrigger>
+        <TabsTrigger value="certificado">Certificado</TabsTrigger>
+        <TabsTrigger value="documentos">Documentos</TabsTrigger>
       </TabsList>
 
       <TabsContent value="general" className="mt-6">
         <div className="mx-auto max-w-3xl">
-          <ImageGallery
-            images={images}
-            title={listing.title ?? ""}
-            propertyId={BigInt(listing.propertyId)}
-            referenceNumber={listing.referenceNumber ?? ""}
-          />
+          {loading.general ? (
+            <ImageGallerySkeleton />
+          ) : (
+            <ImageGallery
+              images={tabData.images || images}
+              title={listing.title ?? ""}
+              propertyId={BigInt(listing.propertyId)}
+              referenceNumber={listing.referenceNumber ?? ""}
+            />
+          )}
         </div>
       </TabsContent>
 
       <TabsContent value="caracteristicas" className="mt-6">
         <div className="mx-auto max-w-4xl">
-          <PropertyCharacteristicsForm listing={convertedListing} />
+          {loading.caracteristicas ? (
+            <CharacteristicsSkeleton />
+          ) : (
+            <PropertyCharacteristicsForm listing={tabData.convertedListing || convertedListing} />
+          )}
         </div>
       </TabsContent>
 
@@ -94,36 +194,42 @@ export function PropertyTabs({
 
       <TabsContent value="certificado" className="mt-6">
         <div className="mx-auto max-w-4xl">
-          <EnergyCertificate
-            energyRating={listing.energyCertification ?? null}
-            uploadedDocument={
-              energyCertificate
-                ? {
-                    docId: energyCertificate.docId,
-                    documentKey: energyCertificate.documentKey,
-                    fileUrl: energyCertificate.fileUrl,
-                  }
-                : null
-            }
+          {loading.certificado ? (
+            <EnergyCertificateSkeleton />
+          ) : (
+            <EnergyCertificate
+              energyRating={listing.energyCertification ?? null}
+              uploadedDocument={tabData.energyCertificate || energyCertificate}
+              propertyId={listing.propertyId}
+              userId={session?.user?.id ?? "1"}
+              listingId={listing.listingId}
+              referenceNumber={listing.referenceNumber ?? ""}
+              energyCertificateStatus={listing.energyCertificateStatus ?? null}
+              energyConsumptionScale={listing.energyConsumptionScale ?? null}
+              energyConsumptionValue={
+                listing.energyConsumptionValue !== null &&
+                listing.energyConsumptionValue !== undefined
+                  ? parseFloat(listing.energyConsumptionValue)
+                  : null
+              }
+              emissionsScale={listing.emissionsScale ?? null}
+              emissionsValue={
+                listing.emissionsValue !== null &&
+                listing.emissionsValue !== undefined
+                  ? parseFloat(listing.emissionsValue)
+                  : null
+              }
+            />
+          )}
+        </div>
+      </TabsContent>
+
+      <TabsContent value="documentos" className="mt-6">
+        <div className="mx-auto max-w-6xl">
+          <DocumentsManager
             propertyId={listing.propertyId}
-            userId={session?.user?.id ?? "1"} // Use authenticated user ID
             listingId={listing.listingId}
             referenceNumber={listing.referenceNumber ?? ""}
-            energyCertificateStatus={listing.energyCertificateStatus ?? null}
-            energyConsumptionScale={listing.energyConsumptionScale ?? null}
-            energyConsumptionValue={
-              listing.energyConsumptionValue !== null &&
-              listing.energyConsumptionValue !== undefined
-                ? parseFloat(listing.energyConsumptionValue)
-                : null
-            }
-            emissionsScale={listing.emissionsScale ?? null}
-            emissionsValue={
-              listing.emissionsValue !== null &&
-              listing.emissionsValue !== undefined
-                ? parseFloat(listing.emissionsValue)
-                : null
-            }
           />
         </div>
       </TabsContent>

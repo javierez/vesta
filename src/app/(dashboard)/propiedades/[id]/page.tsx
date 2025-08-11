@@ -47,39 +47,37 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   }));
 
   return (
-    <>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <PropertyBreadcrumb
-          propertyType={listing.propertyType ?? ""}
-          street={listing.street ?? ""}
-          referenceNumber={listing.referenceNumber ?? ""}
-        />
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <PropertyBreadcrumb
+        propertyType={listing.propertyType ?? ""}
+        street={listing.street ?? ""}
+        referenceNumber={listing.referenceNumber ?? ""}
+      />
 
-        {/* Property Title - Always Visible */}
-        <PropertyHeader
-          propertyType={listing.propertyType ?? ""}
-          street={listing.street ?? ""}
-          city={listing.city ?? ""}
-          province={listing.province ?? ""}
-          postalCode={listing.postalCode ?? ""}
-          referenceNumber={listing.referenceNumber ?? ""}
-          price={listing.price}
-          listingType={listing.listingType as "Sale" | "Rent" | "Sold"}
-          isBankOwned={listing.isBankOwned ?? false}
-          isFeatured={listing.isFeatured ?? false}
-          neighborhood={listing.neighborhood ?? ""}
-        />
+      {/* Property Title - Always Visible */}
+      <PropertyHeader
+        propertyType={listing.propertyType ?? ""}
+        street={listing.street ?? ""}
+        city={listing.city ?? ""}
+        province={listing.province ?? ""}
+        postalCode={listing.postalCode ?? ""}
+        referenceNumber={listing.referenceNumber ?? ""}
+        price={listing.price}
+        listingType={listing.listingType as "Sale" | "Rent" | "Sold"}
+        isBankOwned={listing.isBankOwned ?? false}
+        isFeatured={listing.isFeatured ?? false}
+        neighborhood={listing.neighborhood ?? ""}
+      />
 
-        {/* Property Tabs - Under Title */}
-        <div className="pb-16">
-          <PropertyTabs
-            listing={listing}
-            convertedListing={convertDbListingToPropertyListing(listing)}
-            images={processedImages}
-            energyCertificate={energyCertificate}
-          />
-        </div>
+      {/* Property Tabs - Under Title */}
+      <div className="pb-16">
+        <PropertyTabs
+          listing={listing}
+          convertedListing={convertDbListingToPropertyListing(listing)}
+          images={processedImages}
+          energyCertificate={energyCertificate}
+        />
       </div>
-    </>
+    </div>
   );
 }

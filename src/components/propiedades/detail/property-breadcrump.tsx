@@ -7,12 +7,17 @@ interface PropertyBreadcrumbProps {
   propertyType: string;
   street: string;
   referenceNumber?: string;
+  documentFolder?: {
+    name: string;
+    propertyId: string;
+  };
 }
 
 export function PropertyBreadcrumb({
   propertyType,
   street,
   referenceNumber,
+  documentFolder,
 }: PropertyBreadcrumbProps) {
   const title = generatePropertyTitle(propertyType, street);
 
@@ -28,12 +33,34 @@ export function PropertyBreadcrumb({
           </Link>
         </li>
         <li className="mx-2">/</li>
-        <li className="font-medium" aria-current="page">
-          {title}
-          {referenceNumber && (
-            <span className="ml-1 tracking-wide">({referenceNumber})</span>
+        <li className={documentFolder ? "text-muted-foreground" : "font-medium"}>
+          {documentFolder ? (
+            <Link
+              href={`/propiedades/${documentFolder.propertyId}`}
+              className="hover:text-primary"
+            >
+              {title}
+              {referenceNumber && (
+                <span className="ml-1 tracking-wide">({referenceNumber})</span>
+              )}
+            </Link>
+          ) : (
+            <>
+              {title}
+              {referenceNumber && (
+                <span className="ml-1 tracking-wide">({referenceNumber})</span>
+              )}
+            </>
           )}
         </li>
+        {documentFolder && (
+          <>
+            <li className="mx-2">/</li>
+            <li className="font-medium" aria-current="page">
+              {documentFolder.name}
+            </li>
+          </>
+        )}
       </ol>
     </nav>
   );

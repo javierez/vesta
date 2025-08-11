@@ -370,3 +370,30 @@ export async function getEnergyCertificate(propertyId: number) {
     throw error;
   }
 }
+
+// Get documents by property ID and folder type (document tag)
+export async function getDocumentsByFolderType(
+  propertyId: bigint,
+  documentTag: string,
+  isActive = true,
+) {
+  try {
+    const conditions = [
+      eq(documents.propertyId, propertyId),
+      eq(documents.documentTag, documentTag),
+    ];
+    
+    if (isActive !== undefined) {
+      conditions.push(eq(documents.isActive, isActive));
+    }
+
+    return await db
+      .select()
+      .from(documents)
+      .where(and(...conditions))
+      .orderBy(desc(documents.uploadedAt));
+  } catch (error) {
+    console.error("Error fetching documents by folder type:", error);
+    throw error;
+  }
+}
