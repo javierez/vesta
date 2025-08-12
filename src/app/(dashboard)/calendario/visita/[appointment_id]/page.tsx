@@ -58,7 +58,7 @@ export default async function VisitPage({ params }: VisitPageProps) {
                 <CardTitle className="text-red-900">Error</CardTitle>
               </div>
               <CardDescription>
-                {result.error || "No se pudo cargar la información de la cita"}
+                {result.error ?? "No se pudo cargar la información de la cita"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -108,7 +108,7 @@ export default async function VisitPage({ params }: VisitPageProps) {
               <div className="space-y-4">
                 <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
                   <p><strong>Contacto:</strong> {result.appointment.contactFirstName} {result.appointment.contactLastName}</p>
-                  <p><strong>Propiedad:</strong> {result.appointment.propertyStreet || 'No especificada'}</p>
+                  <p><strong>Propiedad:</strong> {result.appointment.propertyStreet ?? 'No especificada'}</p>
                   <p><strong>Fecha:</strong> {new Intl.DateTimeFormat('es-ES', {
                     day: '2-digit',
                     month: '2-digit',

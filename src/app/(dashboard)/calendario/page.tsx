@@ -239,7 +239,7 @@ export default function AppointmentsPage() {
   // Handle opening modal for editing
   const openModalWithEdit = ({ appointmentId, initialData }: {
     appointmentId: bigint;
-    initialData: Partial<any>;
+    initialData: Partial<Record<string, unknown>>;
   }) => {
     setEditMode("edit");
     setEditingAppointmentId(appointmentId);
@@ -801,10 +801,10 @@ export default function AppointmentsPage() {
                         appointmentId: event.appointmentId,
                         initialData: {
                           contactId: event.contactId,
-                          listingId: event.listingId || undefined,
-                          leadId: event.leadId || undefined,
-                          dealId: event.dealId || undefined,
-                          prospectId: event.prospectId || undefined,
+                          listingId: event.listingId ?? undefined,
+                          leadId: event.leadId ?? undefined,
+                          dealId: event.dealId ?? undefined,
+                          prospectId: event.prospectId ?? undefined,
                           startDate: event.startTime.toISOString().split('T')[0],
                           startTime: event.startTime.toTimeString().slice(0, 5),
                           endDate: event.endTime.toISOString().split('T')[0],
@@ -846,10 +846,10 @@ export default function AppointmentsPage() {
         onOpenChange={closeModal}
         initialData={initialData}
         mode={editMode}
-        appointmentId={editingAppointmentId || undefined}
+        appointmentId={editingAppointmentId ?? undefined}
         onSuccess={() => {
           // Refresh appointments after successful creation/edit
-          refetch();
+          void refetch();
         }}
       />
     </div>

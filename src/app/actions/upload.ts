@@ -194,7 +194,7 @@ export async function uploadDocument(
     
     console.log(`💾 Document record created:`, {
       docId: result.docId?.toString(),
-      filename: result.filename
+      filename: filename
     });
 
     // 3. Fetch the complete document record

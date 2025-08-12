@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getVisitSignaturesAction, getAppointmentForVisitAction } from "~/server/actions/visits";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { getVisitSignaturesAction } from "~/server/actions/visits";
 import { auth } from "~/lib/auth";
 import { headers } from "next/headers";
 
@@ -29,7 +30,7 @@ export async function GET(
     const result = await getVisitSignaturesAction(BigInt(appointmentId));
     
     if (result.success) {
-      return NextResponse.json(result.signatures || []);
+      return NextResponse.json(result.signatures ?? []);
     } else {
       return NextResponse.json(
         { error: result.error },

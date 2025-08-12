@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { createVisitAction, getUserCompletedVisitsAction } from "~/server/actions/visits";
 import { auth } from "~/lib/auth";
 import { headers } from "next/headers";
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
-    const formData = await request.json();
+    const formData = await request.json() as Record<string, unknown>;
     const result = await createVisitAction(formData);
     
     if (result.success) {
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/visits - Get all visits for current user
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
     const result = await getUserCompletedVisitsAction();
     
     if (result.success) {
-      return NextResponse.json(result.visits || []);
+      return NextResponse.json(result.visits ?? []);
     } else {
       return NextResponse.json(
         { error: result.error },
