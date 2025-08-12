@@ -281,32 +281,33 @@ export default function AppointmentsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Citas</h1>
+    <div className="space-y-4 p-4 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold sm:text-2xl">Citas</h1>
         <div className="flex items-center gap-2">
-          <Button onClick={handleCreateAppointment}>
+          <Button onClick={handleCreateAppointment} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
-            Crear Evento
+            <span className="hidden sm:inline">Crear Evento</span>
+            <span className="sm:hidden">Crear</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative max-w-sm flex-1">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+        <div className="relative flex-1 lg:max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Buscar citas..."
-            className="pl-8"
+            className="pl-8 w-full"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="ml-auto flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
           {/* Agent Filter - displayed prominently */}
           <Select value={agentFilter} onValueChange={setAgentFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Todos los agentes" />
             </SelectTrigger>
             <SelectContent>
@@ -413,9 +414,9 @@ export default function AppointmentsPage() {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
+            <PopoverContent className="w-72 p-0 sm:w-80" align="end">
               <div className="flex flex-col">
-                <ScrollArea className="h-[400px]">
+                <ScrollArea className="h-[300px] sm:h-[400px]">
                   <div className="space-y-6 p-4">
                     <div className="space-y-2">
                       <h5 className="text-sm font-medium text-muted-foreground">
@@ -523,7 +524,7 @@ export default function AppointmentsPage() {
       )}
 
       {view === "calendar" && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {loading ? (
             <div className="col-span-full flex items-center justify-center py-8">
               <Loader className="h-6 w-6 animate-spin" />
@@ -553,7 +554,7 @@ export default function AppointmentsPage() {
       {view === "weekly" && (
         <Card className="border-none shadow-none">
           <CardHeader className="px-0 pt-0">
-            <div className="mb-4 mt-4 flex items-center justify-between px-4 sm:px-6">
+            <div className="mb-4 mt-4 flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -569,60 +570,61 @@ export default function AppointmentsPage() {
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <h3 className="text-lg font-semibold">
+                <h3 className="text-base font-semibold sm:text-lg">
                   {formatMonthYear(weekStart)}
                 </h3>
               </div>
               <Button
                 variant="outline"
                 onClick={() => setWeekStart(new Date())}
-                className="ml-4"
+                className="w-full sm:ml-4 sm:w-auto"
               >
                 Hoy
               </Button>
             </div>
-
-            {/* Day headers */}
-            <div className="grid grid-cols-8 overflow-x-auto border-b">
-              {/* Time column header */}
-              <div className="flex h-14 min-w-[60px] items-center justify-center border-r text-muted-foreground">
-                GMT+02
-              </div>
-
-              {/* Day columns headers */}
-              {getWeekDays().map((day, dayIdx) => (
-                <div
-                  key={dayIdx}
-                  className={cn(
-                    "relative flex h-14 min-w-[100px] flex-col items-center justify-center",
-                    isToday(day) && "bg-blue-50",
-                  )}
-                >
-                  <div className="text-xs text-muted-foreground">
-                    {formatWeekday(day)}
-                  </div>
-                  <div
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full text-xl font-medium",
-                      isToday(day) && "bg-blue-600 text-white",
-                    )}
-                  >
-                    {formatShortDate(day)}
-                  </div>
-                </div>
-              ))}
-            </div>
           </CardHeader>
 
-          <CardContent className="p-0">
-            <ScrollArea className="h-[600px]" ref={scrollAreaRef}>
-              <div className="grid grid-cols-8">
-                {/* Hours column */}
-                <div className="flex flex-col border-r">
+          <CardContent className="p-0 overflow-x-auto">
+            <div className="min-w-[640px]">
+              {/* Day headers */}
+              <div className="grid grid-cols-8 border-b sticky top-0 bg-white z-10">
+                {/* Time column header */}
+                <div className="flex h-14 min-w-[60px] items-center justify-center border-r text-xs text-muted-foreground sm:text-sm">
+                  GMT+02
+                </div>
+
+                {/* Day columns headers */}
+                {getWeekDays().map((day, dayIdx) => (
+                  <div
+                    key={dayIdx}
+                    className={cn(
+                      "relative flex h-14 min-w-[80px] flex-col items-center justify-center sm:min-w-[100px]",
+                      isToday(day) && "bg-blue-50",
+                    )}
+                  >
+                    <div className="text-xs text-muted-foreground">
+                      {formatWeekday(day)}
+                    </div>
+                    <div
+                      className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium sm:h-10 sm:w-10 sm:text-xl",
+                        isToday(day) && "bg-blue-600 text-white",
+                      )}
+                    >
+                      {formatShortDate(day)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <ScrollArea className="h-[400px] sm:h-[500px] lg:h-[600px]" ref={scrollAreaRef}>
+                <div className="grid grid-cols-8">
+                  {/* Hours column */}
+                  <div className="flex flex-col border-r">
                   {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
                     <div
                       key={hour}
-                      className="flex h-[60px] items-start justify-end border-b pr-2 pt-1 text-xs text-muted-foreground"
+                      className="flex h-[60px] items-start justify-end border-b pr-1 pt-1 text-xs text-muted-foreground sm:pr-2"
                     >
                       {hour.toString().padStart(2, "0")}:00
                     </div>
@@ -634,7 +636,7 @@ export default function AppointmentsPage() {
                   <div
                     key={dayIdx}
                     className={cn(
-                      "relative flex flex-col border-r",
+                      "relative flex min-w-[80px] flex-col border-r sm:min-w-[100px]",
                       isToday(day) && "bg-blue-50/30",
                     )}
                   >
@@ -703,15 +705,16 @@ export default function AppointmentsPage() {
                         })}
                   </div>
                 ))}
-              </div>
-            </ScrollArea>
+                </div>
+              </ScrollArea>
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Event Detail Panel (shows when an event is selected) */}
       {selectedEvent !== null && (
-        <div className="fixed right-4 top-20 z-50 w-80 rounded-lg border bg-white p-4 shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[60vh] overflow-y-auto rounded-t-lg border bg-white p-4 shadow-lg sm:bottom-auto sm:left-auto sm:right-4 sm:top-20 sm:max-h-none sm:w-80 sm:rounded-lg">
           {(() => {
             const event = realAppointments.find(
               (a) => a.appointmentId === selectedEvent,
