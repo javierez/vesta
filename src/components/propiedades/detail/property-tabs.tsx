@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { ImageGallery } from "./image-gallery";
 import { PortalSelection } from "./portal-selection";
@@ -90,7 +89,7 @@ export function PropertyTabs({
           } else {
             setTabData(prev => ({ ...prev, images: images }));
           }
-        } catch (_error) {
+        } catch {
           setTabData(prev => ({ ...prev, images: images }));
         } finally {
           setLoading(prev => ({ ...prev, general: false }));
@@ -108,7 +107,7 @@ export function PropertyTabs({
           } else {
             setTabData(prev => ({ ...prev, convertedListing }));
           }
-        } catch (_error) {
+        } catch {
           setTabData(prev => ({ ...prev, convertedListing }));
         } finally {
           setLoading(prev => ({ ...prev, caracteristicas: false }));
@@ -126,7 +125,7 @@ export function PropertyTabs({
           } else {
             setTabData(prev => ({ ...prev, energyCertificate: energyCertificate ?? null }));
           }
-        } catch (_error) {
+        } catch {
           setTabData(prev => ({ ...prev, energyCertificate: energyCertificate ?? null }));
         } finally {
           setLoading(prev => ({ ...prev, certificado: false }));

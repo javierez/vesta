@@ -3,7 +3,7 @@
 import { db } from "~/server/db";
 import { eq, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { prospects, contacts, prospectHistory } from "~/server/db/schema";
+import { prospects, contacts } from "~/server/db/schema";
 import { getCurrentUser, getCurrentUserAccountId } from "~/lib/dal";
 import { createProspectHistory } from "~/server/queries/prospect-history";
 import {
@@ -428,7 +428,7 @@ export async function updateListingProspectValuation(
   valuationStatus: "pending" | "scheduled" | "completed",
 ): Promise<ActionResult<void>> {
   try {
-    const accountId = await getCurrentUserAccountId();
+    await getCurrentUserAccountId();
 
     // Verify prospect belongs to user's account and is a listing prospect
     const currentProspect = await getDualProspectWithAuth(BigInt(prospectId));
@@ -489,7 +489,7 @@ export async function updateListingProspectAgreement(
   listingAgreementStatus: "not_started" | "in_progress" | "signed",
 ): Promise<ActionResult<void>> {
   try {
-    const accountId = await getCurrentUserAccountId();
+    await getCurrentUserAccountId();
 
     // Verify prospect belongs to user's account and is a listing prospect
     const currentProspect = await getDualProspectWithAuth(BigInt(prospectId));

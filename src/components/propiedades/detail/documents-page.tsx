@@ -13,7 +13,6 @@ import {
   X
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,12 +30,6 @@ interface Document {
   documentKey: string;
 }
 
-interface Folder {
-  id: string;
-  name: string;
-  description?: string;
-  documents: Document[];
-}
 
 interface DocumentsPageProps {
   listing: {
@@ -50,7 +43,6 @@ interface DocumentsPageProps {
 }
 
 export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
-  const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -62,28 +54,6 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     "visitas": "visitas", 
     "otros": "others"
   } as const;
-
-  // Folder configurations
-  const folders: Record<string, Folder> = {
-    "documentacion-inicial": {
-      id: "documentacion-inicial",
-      name: "Documentación Inicial",
-      description: "Hoja de encargo, valoración, etc.",
-      documents: documents
-    },
-    "visitas": {
-      id: "visitas",
-      name: "Visitas",
-      description: "Reportes de visitas.",
-      documents: documents
-    },
-    "otros": {
-      id: "otros",
-      name: "Otros",
-      description: "Otros documentos",
-      documents: documents
-    }
-  };
 
   const apiFolderType = folderTypeMap[folderType];
 

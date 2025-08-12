@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { Button } from "~/components/ui/button";
 import { RotateCcw, Check } from "lucide-react";

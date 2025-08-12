@@ -33,7 +33,7 @@ export async function updateAppointmentAction(
 ) {
   try {
     // PATTERN: Always get account ID for security
-    const _accountId = await getCurrentUserAccountId();
+    await getCurrentUserAccountId();
     const currentUser = await getCurrentUser();
 
     // CRITICAL: Convert form data to database format
@@ -96,7 +96,7 @@ export async function updateAppointmentAction(
 export async function createAppointmentAction(formData: AppointmentFormData) {
   try {
     // PATTERN: Always get account ID for security
-    const _accountId = await getCurrentUserAccountId();
+    await getCurrentUserAccountId();
     const currentUser = await getCurrentUser();
 
     // CRITICAL: Convert form data to database format
@@ -170,7 +170,7 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
 export async function getUserAppointmentsAction() {
   try {
     // PATTERN: Always get account ID for security
-    const _accountId = await getCurrentUserAccountId();
+    await getCurrentUserAccountId();
     const currentUser = await getCurrentUser();
 
     const appointments = await getUserAppointments(currentUser.id);
@@ -196,7 +196,7 @@ export async function getAppointmentsByDateRangeAction(
 ) {
   try {
     // PATTERN: Always get account ID for security
-    const _accountId = await getCurrentUserAccountId();
+    await getCurrentUserAccountId();
 
     const appointments = await getAppointmentsByDateRange(startDate, endDate);
 
@@ -270,7 +270,7 @@ export async function validateAppointmentForm(
 export async function getAgentsForFilterAction() {
   try {
     // PATTERN: Always get account ID for security
-    const _accountId = await getCurrentUserAccountId();
+    await getCurrentUserAccountId();
 
     const agents = await getAgentsForFilter();
 

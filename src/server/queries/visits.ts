@@ -73,7 +73,7 @@ export async function markAppointmentAsCompleted(appointmentId: bigint, notes?: 
     // Use the existing updateAppointment function for consistency
     await updateAppointment(Number(appointmentId), { 
       status: "Completed",
-      notes: notes ?? appointment.notes,
+      notes: notes ?? appointment.notes ?? undefined,
     });
     
     return true;

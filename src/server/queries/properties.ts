@@ -145,7 +145,6 @@ export async function updateProperty(
     const {
       db: secureDb,
       withAccountFilter,
-      accountId: _accountId,
     } = await getSecureDb();
 
     // Verify the property belongs to this account before updating

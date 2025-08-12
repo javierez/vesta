@@ -20,7 +20,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<VisitFormData>({
     appointmentId: appointment.appointmentId,
-    notes: appointment.notes || "",
+    notes: appointment.notes ?? "",
   });
   const [agentSignature, setAgentSignature] = useState<string | null>(null);
   const [visitorSignature, setVisitorSignature] = useState<string | null>(null);
@@ -65,7 +65,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
         router.push("/calendario");
       } else {
         console.log("❌ Visit creation failed:", result.error);
-        toast.error(result.error || "Error al registrar la visita");
+        toast.error(result.error ?? "Error al registrar la visita");
       }
     } catch (error) {
       console.error("💥 Error submitting visit:", error);
@@ -101,7 +101,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
             Registro de Visita
           </h1>
           <p className="mt-1 text-sm sm:text-base text-gray-600">
-            {appointment.propertyStreet || "Propiedad"}
+            {appointment.propertyStreet ?? "Propiedad"}
           </p>
         </div>
 
@@ -127,7 +127,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
                 Agente
               </label>
               <p className="mt-1 text-gray-700 p-3 bg-gray-50 rounded-md">
-                {appointment.agentName || 
+                {appointment.agentName ?? 
                  `${appointment.agentFirstName} ${appointment.agentLastName}`}
               </p>
             </div>
@@ -137,7 +137,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
                 Propiedad
               </label>
               <p className="mt-1 text-gray-700 p-3 bg-gray-50 rounded-md">
-                {appointment.propertyStreet || "Propiedad no especificada"}
+                {appointment.propertyStreet ?? "Propiedad no especificada"}
               </p>
             </div>
             
@@ -156,7 +156,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
               Notas de la Visita
             </label>
             <Textarea
-              value={formData.notes || ""}
+              value={formData.notes ?? ""}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               placeholder="Observaciones, comentarios del cliente, detalles relevantes..."
               className="mt-1"

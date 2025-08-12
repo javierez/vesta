@@ -8,7 +8,7 @@ import {
   listingContacts,
   contacts,
 } from "../db/schema";
-import { eq, and, ne, sql } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
 // Type for listing with all related data for operations page

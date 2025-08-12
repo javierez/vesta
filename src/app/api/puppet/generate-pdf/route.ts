@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     // Wait for template to be fully rendered
     try {
       await page.waitForSelector(".template-container", { timeout: 10000 });
-    } catch (_error) {
+    } catch {
       console.error(
         "Template container not found. Page content:",
         await page.content(),
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
           timeout: 15000,
         },
       );
-    } catch (_error) {
+    } catch {
       console.warn("Template ready signal timeout, proceeding anyway...");
     }
 

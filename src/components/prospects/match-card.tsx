@@ -12,14 +12,11 @@ import {
   Square as SquareIcon,
   MapPin,
   User,
-  Heart,
   X,
   Phone,
   Mail,
-  Eye,
   CheckCircle,
   AlertCircle,
-  ArrowLeftRight,
   KeyRound,
 } from "lucide-react";
 import type { ProspectMatch, MatchAction } from "~/types/connection-matches";

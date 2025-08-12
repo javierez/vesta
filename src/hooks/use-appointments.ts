@@ -77,7 +77,7 @@ function transformToCalendarEvent(
   return {
     appointmentId: rawAppointment.appointmentId,
     contactName,
-    propertyAddress: rawAppointment.propertyStreet || undefined,
+    propertyAddress: rawAppointment.propertyStreet ?? undefined,
     startTime: rawAppointment.datetimeStart,
     endTime: rawAppointment.datetimeEnd,
     status:
@@ -86,8 +86,8 @@ function transformToCalendarEvent(
         | "Completed"
         | "Cancelled"
         | "Rescheduled"
-        | "NoShow") || "Scheduled",
-    type: rawAppointment.type || "Visita", // Use actual type from database
+        | "NoShow") ?? "Scheduled",
+    type: rawAppointment.type ?? "Visita", // Use actual type from database
     tripTimeMinutes: rawAppointment.tripTimeMinutes ?? undefined,
     notes: rawAppointment.notes ?? undefined,
     // Additional fields needed for editing

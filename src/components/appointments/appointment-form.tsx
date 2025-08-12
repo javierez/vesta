@@ -327,8 +327,8 @@ export default function AppointmentForm({
       }
       
       return (
-        listing.title?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ||
-        listing.referenceNumber?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ||
+        listing.title?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ??
+        listing.referenceNumber?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ??
         listing.city?.toLowerCase().includes(listingSearchQuery.toLowerCase())
       );
     },
@@ -687,7 +687,7 @@ export default function AppointmentForm({
                         <Home className="h-5 w-5 text-primary" />
                         <div>
                           <div className="font-medium">
-                            {selectedListing.title || `${selectedListing.propertyType} en ${selectedListing.city}`}
+                            {selectedListing.title ?? `${selectedListing.propertyType} en ${selectedListing.city}`}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             Ref: {selectedListing.referenceNumber} • {selectedListing.city} • €{selectedListing.price}
@@ -737,7 +737,7 @@ export default function AppointmentForm({
                             <div className="flex items-center gap-3">
                               <div className="flex-1">
                                 <div className="font-medium">
-                                  {listing.title || `${listing.propertyType} en ${listing.city}`}
+                                  {listing.title ?? `${listing.propertyType} en ${listing.city}`}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                   Ref: {listing.referenceNumber} • {listing.city} • €{listing.price}
@@ -834,7 +834,7 @@ export default function AppointmentForm({
                   <Home className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <div className="font-medium">
-                      {selectedListing.title || `${selectedListing.propertyType} en ${selectedListing.city}`}
+                      {selectedListing.title ?? `${selectedListing.propertyType} en ${selectedListing.city}`}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Ref: {selectedListing.referenceNumber} • €{selectedListing.price}

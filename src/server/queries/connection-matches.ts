@@ -15,12 +15,9 @@ import type {
   MatchQueryParams,
   MatchResults,
   ProspectMatch,
-  RawMatchResult,
-  ProspectWithContact,
   ToleranceResult,
   MatchFilters,
 } from "~/types/connection-matches";
-import type { ListingWithDetails } from "~/server/queries/operations-listings";
 
 // Auth wrapper functions following the established pattern
 export async function getMatchesForProspectsWithAuth(
@@ -598,15 +595,15 @@ export async function getMatchesForSingleProspectWithAuth(
 }
 
 // Action functions for save/dismiss/contact
-export async function saveMatchWithAuth(prospectId: bigint, listingId: bigint) {
+export async function saveMatchWithAuth(_prospectId: bigint, _listingId: bigint) {
   // TODO: Implement saving match logic
   // This would create a saved match record in a new table
   return { success: true, message: "Match saved successfully" };
 }
 
 export async function dismissMatchWithAuth(
-  prospectId: bigint,
-  listingId: bigint,
+  _prospectId: bigint,
+  _listingId: bigint,
 ) {
   // TODO: Implement dismissing match logic
   // This would create a dismissed match record to exclude from future results
@@ -614,8 +611,8 @@ export async function dismissMatchWithAuth(
 }
 
 export async function contactMatchWithAuth(
-  prospectId: bigint,
-  listingId: bigint,
+  _prospectId: bigint,
+  _listingId: bigint,
 ) {
   // TODO: Implement contact logic
   // This would create a contact request or initiate contact

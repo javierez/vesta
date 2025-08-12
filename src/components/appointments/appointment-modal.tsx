@@ -54,8 +54,8 @@ export default function AppointmentModal({
     ? "Modifique los detalles de la cita existente."
     : "Complete los detalles para programar una nueva cita.";
 
-  const modalTitle = title || defaultTitle;
-  const modalDescription = description || defaultDescription;
+  const modalTitle = title ?? defaultTitle;
+  const modalDescription = description ?? defaultDescription;
   // Handle successful appointment creation
   const handleSubmit = (appointmentId: bigint) => {
     console.log("Appointment created with ID:", appointmentId);

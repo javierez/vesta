@@ -66,7 +66,7 @@ export default function OperacionesSummaryCard({
     const transformed: Record<string, number> = {};
     Object.entries(prospectsData).forEach(([dbStatus, count]) => {
       const displayStatus = mapProspectStatusToDisplay(dbStatus);
-      transformed[displayStatus] = (transformed[displayStatus] || 0) + count;
+      transformed[displayStatus] = (transformed[displayStatus] ?? 0) + count;
     });
     return transformed;
   };

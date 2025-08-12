@@ -11,10 +11,7 @@ import {
   RefreshCw,
   Search,
   AlertCircle,
-  CheckCircle2,
   Users,
-  TrendingUp,
-  Filter,
 } from "lucide-react";
 import { MatchCard } from "./match-card";
 import { ExternalAccountCard } from "./external-account-card";
@@ -153,8 +150,8 @@ export function ConexionesPotenciales({
 
   // Update stats when matches change
   useEffect(() => {
-    const internalMatches = matches?.totalCount || 0;
-    const externalMatchesCount = externalMatches?.totalCount || 0;
+    const internalMatches = matches?.totalCount ?? 0;
+    const externalMatchesCount = externalMatches?.totalCount ?? 0;
 
     setStats({
       internalMatches,
@@ -162,11 +159,6 @@ export function ConexionesPotenciales({
     });
   }, [matches, externalMatches]);
 
-  // Handle filter changes
-  const handleFiltersChange = (newFilters: MatchFiltersType) => {
-    setFilters(newFilters);
-    setCurrentPage(1); // Reset to first page when filters change
-  };
 
   // Handle page changes
   const handlePageChange = (page: number) => {
@@ -234,9 +226,7 @@ export function ConexionesPotenciales({
   const groupMatchesByAccount = (matches: ProspectMatch[]) => {
     const grouped = matches.reduce((acc, match) => {
       const accountId = match.listingAccountId?.toString() || 'unknown';
-      if (!acc[accountId]) {
-        acc[accountId] = [];
-      }
+      acc[accountId] ??= [];
       acc[accountId].push(match);
       return acc;
     }, {} as Record<string, ProspectMatch[]>);

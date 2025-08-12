@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "~/server/db";
-import { eq, and, or, inArray, desc, asc, count, sql } from "drizzle-orm";
+import { eq, and, desc, count, sql } from "drizzle-orm";
 import { prospects, contacts } from "~/server/db/schema";
 import { getCurrentUserAccountId } from "~/lib/dal";
 import type {

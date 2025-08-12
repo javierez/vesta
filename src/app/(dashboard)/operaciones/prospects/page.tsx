@@ -71,7 +71,6 @@ export default function ProspectsPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const _page = Number(searchParams.get("page") ?? 1);
 
         // Get all filter parameters from URL
         const filters: Record<string, unknown> = {};

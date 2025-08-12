@@ -64,7 +64,7 @@ export function ProspectKanban({
 }: ProspectKanbanProps) {
   const [activeProspect, setActiveProspect] =
     useState<ProspectWithContact | null>(null);
-  const [_isDragging, setIsDragging] = useState(false);
+  const [, setIsDragging] = useState(false);
 
   // Helper function to get display status (same logic as table)
   const getStatusDisplay = useCallback((status: string) => {

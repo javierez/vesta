@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createVisitAction, getUserCompletedVisitsAction } from "~/server/actions/visits";
 import { auth } from "~/lib/auth";
 import { headers } from "next/headers";
+import type { VisitFormData } from "~/types/visits";
 
 /**
  * POST /api/visits - Create a new visit
@@ -17,7 +18,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
-    const formData = await request.json() as Record<string, unknown>;
+    const data = await request.json() as {
+      appointmentId: string | number;
+      notes?: string;
+      agentSignature?: string;
+      visitorSignature?: string;
+    };
+    const formData: VisitFormData = {
+      appointmentId: BigInt(data.appointmentId),
+      notes: data.notes,
+      agentSignature: data.agentSignature,
+      visitorSignature: data.visitorSignature,
+    };
     const result = await createVisitAction(formData);
     
     if (result.success) {

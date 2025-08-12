@@ -23,7 +23,7 @@ export async function createVisitAction(formData: VisitFormData) {
     if (!currentUser) {
       throw new Error("Authentication required");
     }
-    const { accountId } = await getSecureDb();
+    await getSecureDb();
     
     // Verify appointment exists and belongs to current account
     const appointment = await getAppointmentWithDetails(formData.appointmentId);

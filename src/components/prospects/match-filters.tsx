@@ -20,7 +20,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import type { MatchFilters } from "~/types/connection-matches";
 
 interface MatchFiltersProps {
@@ -32,7 +32,6 @@ export function MatchFilters({
   onFiltersChange,
   className,
 }: MatchFiltersProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -81,46 +80,6 @@ export function MatchFilters({
     setSearchQuery(q ?? "");
   }, [searchParams]);
 
-  const updateUrlParams = (
-    newFilters: MatchFilters,
-    newSearchQuery: string,
-  ) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    // Update search query
-    if (newSearchQuery) {
-      params.set("q", newSearchQuery);
-    } else {
-      params.delete("q");
-    }
-
-    // Update filters
-    params.set("accountScope", newFilters.accountScope);
-    params.set("includeNearStrict", newFilters.includeNearStrict.toString());
-
-    if (newFilters.propertyTypes.length > 0) {
-      params.set("propertyTypes", newFilters.propertyTypes.join(","));
-    } else {
-      params.delete("propertyTypes");
-    }
-
-    if (newFilters.minPrice) {
-      params.set("minPrice", newFilters.minPrice.toString());
-    } else {
-      params.delete("minPrice");
-    }
-
-    if (newFilters.maxPrice) {
-      params.set("maxPrice", newFilters.maxPrice.toString());
-    } else {
-      params.delete("maxPrice");
-    }
-
-    // Reset to first page when filters change
-    params.set("page", "1");
-
-    router.push(`/operaciones/prospects?${params.toString()}`);
-  };
 
   const handleFiltersChange = (newFilters: MatchFilters) => {
     console.log('🎛️ Filter change:', newFilters);
