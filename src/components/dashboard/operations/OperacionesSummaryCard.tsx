@@ -36,18 +36,55 @@ export default function OperacionesSummaryCard({
 
   const activeData = data[activeType];
 
+  // Helper function to map database status to display status for prospects
+  const mapProspectStatusToDisplay = (dbStatus: string): string => {
+    switch (dbStatus.toLowerCase()) {
+      case "new":
+        return "En búsqueda";
+      case "working":
+        return "En preparación";
+      case "qualified":
+        return "Finalizado";
+      case "archived":
+        return "Archivado";
+      // Listing statuses that get mixed into prospects data
+      case "preparation":
+        return "En preparación";
+      case "valuation":
+        return "En valoración";
+      case "presign":
+        return "Listo para firma";
+      case "active":
+        return "En búsqueda";
+      default:
+        return dbStatus;
+    }
+  };
+
+  // Transform prospects data to use display status names
+  const transformProspectsData = (prospectsData: Record<string, number>) => {
+    const transformed: Record<string, number> = {};
+    Object.entries(prospectsData).forEach(([dbStatus, count]) => {
+      const displayStatus = mapProspectStatusToDisplay(dbStatus);
+      transformed[displayStatus] = (transformed[displayStatus] || 0) + count;
+    });
+    return transformed;
+  };
+
   // Definir secciones con iconos y colores de estado
   const sections = [
     {
       key: "prospects",
       label: "Demanda",
       labelPlural: "Demandas",
-      data: activeData.prospects,
+      data: transformProspectsData(activeData.prospects),
       statusColors: {
-        New: "bg-blue-100 text-blue-800",
-        Working: "bg-yellow-100 text-yellow-800",
-        Qualified: "bg-green-100 text-green-800",
-        Archived: "bg-gray-100 text-gray-800",
+        "En búsqueda": "bg-blue-100 text-blue-800",
+        "En preparación": "bg-yellow-100 text-yellow-800", 
+        "En valoración": "bg-orange-100 text-orange-800",
+        "Listo para firma": "bg-purple-100 text-purple-800",
+        "Finalizado": "bg-green-100 text-green-800",
+        "Archivado": "bg-gray-100 text-gray-800",
       },
     },
     {

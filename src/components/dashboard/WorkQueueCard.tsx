@@ -9,7 +9,6 @@ import {
   User,
   MapPin,
   CheckSquare,
-  Car,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type {
@@ -100,15 +99,6 @@ export default function WorkQueueCard({
     }).format(appointmentDate);
   };
 
-  const formatTripTime = (minutes?: number) => {
-    if (!minutes) return null;
-    if (minutes < 60) return `${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0
-      ? `${hours}h ${remainingMinutes}m`
-      : `${hours}h`;
-  };
 
   const getAppointmentColor = (appointmentType: string) => {
     switch (appointmentType.toLowerCase()) {
@@ -281,9 +271,6 @@ export default function WorkQueueCard({
                         {/* Appointments for this date */}
                         <div className="space-y-2">
                           {dayAppointments.map((appointment, index) => {
-                            const tripTime = formatTripTime(
-                              appointment.tripTimeMinutes,
-                            );
                             const colors = getAppointmentColor(
                               appointment.appointmentType,
                             );
@@ -311,22 +298,8 @@ export default function WorkQueueCard({
                                   </div>
                                 </div>
 
-                                {/* Left side: Trip time indicator */}
-                                <div className="mr-3 flex flex-col items-center">
-                                  {tripTime ? (
-                                    <>
-                                      <Car
-                                        className={`h-4 w-4 ${colors.icon} mb-1`}
-                                      />
-                                      <span className="text-xs font-medium text-gray-600">
-                                        {tripTime}
-                                      </span>
-                                    </>
-                                  ) : null}
-                                </div>
-
                                 {/* Main content */}
-                                <div className="min-w-0 flex-1 pr-16">
+                                <div className="min-w-0 flex-1 pr-16 pl-3">
                                   <div className="flex items-baseline justify-between">
                                     <h4 className="truncate text-sm font-semibold text-gray-900">
                                       {appointment.contactName}
