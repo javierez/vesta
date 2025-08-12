@@ -23,6 +23,15 @@ export default async function VisitPage({ params }: VisitPageProps) {
   
   const result = await getAppointmentForVisitAction(BigInt(appointmentId));
   
+  console.log("🔍 Appointment data for visit:", {
+    appointmentId,
+    success: result.success,
+    appointment: result.appointment,
+    listingId: result.appointment?.listingId,
+    propertyStreet: result.appointment?.propertyStreet,
+    hasExistingVisit: result.hasExistingVisit
+  });
+  
   if (!result.success || !result.appointment) {
     return (
       <div className="min-h-screen bg-gray-50">

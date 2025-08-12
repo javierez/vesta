@@ -125,7 +125,20 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
     }
 
     // PATTERN: Use existing query function
+    console.log("📝 Creating appointment with data:", {
+      ...appointmentData,
+      listingId: appointmentData.listingId?.toString(),
+      contactId: appointmentData.contactId?.toString(),
+      formDataListingId: formData.listingId?.toString(),
+    });
+    
     const result = await createAppointment(appointmentData);
+    
+    console.log("📋 Created appointment result:", {
+      success: !!result,
+      appointmentId: result?.appointmentId?.toString(),
+      listingId: result?.listingId?.toString(),
+    });
 
     if (!result) {
       return {

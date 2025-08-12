@@ -36,10 +36,14 @@ export function SignaturePad({
       const isEmpty = sigCanvas.current.isEmpty();
       setIsEmpty(isEmpty);
       
+      console.log(`📝 ${label} signature capture:`, { isEmpty, canvasSize: `${canvas.width}x${canvas.height}` });
+      
       if (!isEmpty) {
         const dataURL = canvas.toDataURL('image/png');
+        console.log(`✅ ${label} signature captured:`, { dataURL: dataURL.substring(0, 50) + '...' });
         onSignatureChange(dataURL);
       } else {
+        console.log(`❌ ${label} signature is empty`);
         onSignatureChange(null);
       }
     }

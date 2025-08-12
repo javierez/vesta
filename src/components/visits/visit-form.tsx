@@ -28,12 +28,16 @@ export function VisitForm({ appointment }: VisitFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log("🚀 Form submission started", { formData, agentSignature: !!agentSignature, visitorSignature: !!visitorSignature });
+    
     if (!agentSignature || !visitorSignature) {
+      console.log("❌ Missing signatures", { agentSignature: !!agentSignature, visitorSignature: !!visitorSignature });
       toast.error("Ambas firmas son requeridas");
       return;
     }
     
     if (!appointment.listingId) {
+      console.log("❌ Missing listingId", { appointment });
       toast.error("La propiedad es requerida para esta cita");
       return;
     }
@@ -41,20 +45,30 @@ export function VisitForm({ appointment }: VisitFormProps) {
     setIsLoading(true);
     
     try {
+      console.log("📤 Calling createVisitAction with:", {
+        ...formData,
+        agentSignature: agentSignature ? "present" : "missing",
+        visitorSignature: visitorSignature ? "present" : "missing",
+      });
+      
       const result = await createVisitAction({
         ...formData,
         agentSignature,
         visitorSignature,
       });
       
+      console.log("📥 createVisitAction result:", result);
+      
       if (result.success) {
+        console.log("✅ Visit created successfully");
         toast.success("Visita registrada correctamente");
         router.push("/calendario");
       } else {
+        console.log("❌ Visit creation failed:", result.error);
         toast.error(result.error || "Error al registrar la visita");
       }
     } catch (error) {
-      console.error("Error submitting visit:", error);
+      console.error("💥 Error submitting visit:", error);
       toast.error("Error al registrar la visita");
     } finally {
       setIsLoading(false);

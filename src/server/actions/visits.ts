@@ -49,6 +49,12 @@ export async function createVisitAction(formData: VisitFormData) {
     // Convert signatures to files and upload as documents
     try {
       console.log(`🔄 Starting signature upload for appointment ${formData.appointmentId}`);
+      console.log(`📊 Signature data lengths:`, {
+        agentLength: formData.agentSignature?.length,
+        visitorLength: formData.visitorSignature?.length,
+        agentPrefix: formData.agentSignature?.substring(0, 30),
+        visitorPrefix: formData.visitorSignature?.substring(0, 30)
+      });
       
       // Upload agent signature
       const agentSignatureFile = await convertSignatureToFile(

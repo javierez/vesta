@@ -27,6 +27,9 @@ export async function getAppointmentWithDetails(appointmentId: bigint): Promise<
       agentName: users.name,
       agentFirstName: users.firstName,
       agentLastName: users.lastName,
+      // Debug fields to see what we're getting
+      listingPropertyId: listings.propertyId,
+      propertyId: properties.propertyId,
     })
     .from(appointments)
     .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
@@ -40,6 +43,18 @@ export async function getAppointmentWithDetails(appointmentId: bigint): Promise<
         eq(appointments.isActive, true)
       )
     );
+  
+  console.log("📋 Raw appointment query result:", {
+    appointmentId: appointmentId.toString(),
+    found: !!appointment,
+    listingId: appointment?.listingId?.toString(),
+    listingPropertyId: appointment?.listingPropertyId?.toString(),
+    propertyId: appointment?.propertyId?.toString(),
+    propertyStreet: appointment?.propertyStreet,
+    contactFirstName: appointment?.contactFirstName,
+    contactLastName: appointment?.contactLastName,
+    fullAppointment: appointment
+  });
     
   return appointment || null;
 }

@@ -820,17 +820,19 @@ export default function AppointmentsPage() {
                   >
                     Editar
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={() => {
-                      router.push(`/calendario/visita/${event.appointmentId}`);
-                      setSelectedEvent(null); // Close the detail panel
-                    }}
-                    className="flex-1"
-                  >
-                    Visita
-                  </Button>
+                  {!(event.status === "Completed" && event.type === "Visita") && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => {
+                        router.push(`/calendario/visita/${event.appointmentId}`);
+                        setSelectedEvent(null); // Close the detail panel
+                      }}
+                      className="flex-1"
+                    >
+                      Visita
+                    </Button>
+                  )}
                 </div>
               </div>
             );
