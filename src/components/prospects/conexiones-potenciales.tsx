@@ -7,12 +7,7 @@ import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { PaginationControls } from "~/components/ui/pagination-controls";
 import { Skeleton } from "~/components/ui/skeleton";
-import {
-  RefreshCw,
-  Search,
-  AlertCircle,
-  Users,
-} from "lucide-react";
+import { RefreshCw, Search, AlertCircle, Users } from "lucide-react";
 import { MatchCard } from "./match-card";
 import { ExternalAccountCard } from "./external-account-card";
 import {
@@ -39,10 +34,12 @@ export function ConexionesPotenciales({
   className,
 }: ConexionesPotencialesProps) {
   const searchParams = useSearchParams();
-  
+
   // State management
   const [matches, setMatches] = useState<MatchResults | null>(null);
-  const [externalMatches, setExternalMatches] = useState<MatchResults | null>(null);
+  const [externalMatches, setExternalMatches] = useState<MatchResults | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isExternalLoading, setIsExternalLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +55,9 @@ export function ConexionesPotenciales({
     urgencyLevels: [],
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [selectedView, setSelectedView] = useState<"internal" | "external" | null>("internal");
+  const [selectedView, setSelectedView] = useState<
+    "internal" | "external" | null
+  >("internal");
 
   // Statistics state
   const [stats, setStats] = useState({
@@ -74,10 +73,12 @@ export function ConexionesPotenciales({
     const urgencyLevel = searchParams.get("urgencyLevel");
     const page = searchParams.get("page");
 
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      prospectTypes: prospectType && prospectType !== "all" ? prospectType.split(",") : [],
-      listingTypes: listingType && listingType !== "all" ? listingType.split(",") : [],
+      prospectTypes:
+        prospectType && prospectType !== "all" ? prospectType.split(",") : [],
+      listingTypes:
+        listingType && listingType !== "all" ? listingType.split(",") : [],
       statuses: status ? status.split(",") : [],
       urgencyLevels: urgencyLevel ? urgencyLevel.split(",") : [],
     }));
@@ -101,16 +102,14 @@ export function ConexionesPotenciales({
         },
       });
 
-      console.log('🔍 Internal matches result:', result);
-      console.log('📊 Internal matches count:', result.matches.length);
-      console.log('🎯 Internal total count:', result.totalCount);
+      console.log("🔍 Internal matches result:", result);
+      console.log("📊 Internal matches count:", result.matches.length);
+      console.log("🎯 Internal total count:", result.totalCount);
 
       setMatches(result);
     } catch (err) {
       console.error("Error fetching internal matches:", err);
-      setError(
-        "Error al cargar las conexiones internas. Inténtalo de nuevo.",
-      );
+      setError("Error al cargar las conexiones internas. Inténtalo de nuevo.");
     } finally {
       setIsLoading(false);
     }
@@ -129,9 +128,9 @@ export function ConexionesPotenciales({
         },
       });
 
-      console.log('🌐 External matches result:', result);
-      console.log('📊 External matches count:', result.matches.length);
-      console.log('🎯 External total count:', result.totalCount);
+      console.log("🌐 External matches result:", result);
+      console.log("📊 External matches count:", result.matches.length);
+      console.log("🎯 External total count:", result.totalCount);
 
       setExternalMatches(result);
     } catch (err) {
@@ -158,7 +157,6 @@ export function ConexionesPotenciales({
       externalMatches: externalMatchesCount,
     });
   }, [matches, externalMatches]);
-
 
   // Handle page changes
   const handlePageChange = (page: number) => {
@@ -224,20 +222,30 @@ export function ConexionesPotenciales({
 
   // Group external matches by account
   const groupMatchesByAccount = (matches: ProspectMatch[]) => {
-    const grouped = matches.reduce((acc, match) => {
-      const accountId = match.listingAccountId?.toString() || 'unknown';
-      acc[accountId] ??= [];
-      acc[accountId].push(match);
-      return acc;
-    }, {} as Record<string, ProspectMatch[]>);
+    const grouped = matches.reduce(
+      (acc, match) => {
+        const accountId = match.listingAccountId?.toString() || "unknown";
+        acc[accountId] ??= [];
+        acc[accountId].push(match);
+        return acc;
+      },
+      {} as Record<string, ProspectMatch[]>,
+    );
     return grouped;
   };
 
   // Handle external account contact request
-  const handleExternalContactRequest = async (accountId: string, matches: ProspectMatch[]) => {
-    console.log(`📞 Contact request for account ${accountId} with ${matches.length} matches`);
+  const handleExternalContactRequest = async (
+    accountId: string,
+    matches: ProspectMatch[],
+  ) => {
+    console.log(
+      `📞 Contact request for account ${accountId} with ${matches.length} matches`,
+    );
     // TODO: Implement external contact request logic
-    setError(`Funcionalidad de contacto externo próximamente disponible para la cuenta ${accountId}`);
+    setError(
+      `Funcionalidad de contacto externo próximamente disponible para la cuenta ${accountId}`,
+    );
   };
 
   // Handle refresh
@@ -269,9 +277,9 @@ export function ConexionesPotenciales({
   // Render statistics
   const renderStats = () => (
     <div className="mb-4 grid grid-cols-2 gap-3">
-      <Card 
-        className={`border-0 shadow-sm cursor-pointer transition-all hover:shadow-md ${
-          selectedView === "internal" ? "ring-2 ring-gray-800 bg-gray-100" : ""
+      <Card
+        className={`cursor-pointer border-0 shadow-sm transition-all hover:shadow-md ${
+          selectedView === "internal" ? "bg-gray-100 ring-2 ring-gray-800" : ""
         }`}
         onClick={() => setSelectedView("internal")}
       >
@@ -288,9 +296,9 @@ export function ConexionesPotenciales({
         </CardContent>
       </Card>
 
-      <Card 
-        className={`border-0 shadow-sm cursor-pointer transition-all hover:shadow-md ${
-          selectedView === "external" ? "ring-2 ring-gray-800 bg-gray-100" : ""
+      <Card
+        className={`cursor-pointer border-0 shadow-sm transition-all hover:shadow-md ${
+          selectedView === "external" ? "bg-gray-100 ring-2 ring-gray-800" : ""
         }`}
         onClick={() => setSelectedView("external")}
       >
@@ -355,7 +363,6 @@ export function ConexionesPotenciales({
       </CardHeader>
 
       <CardContent className="space-y-6">
-
         {/* Error State */}
         {error && (
           <Alert variant="destructive">
@@ -380,7 +387,9 @@ export function ConexionesPotenciales({
             {matches && matches.matches.length > 0 && renderStats()}
 
             {/* Matches Grid */}
-            {selectedView === "internal" && matches && matches.matches.length > 0 ? (
+            {selectedView === "internal" &&
+            matches &&
+            matches.matches.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {matches.matches
@@ -412,7 +421,9 @@ export function ConexionesPotenciales({
               ) : externalMatches && externalMatches.matches.length > 0 ? (
                 <>
                   <div className="space-y-4">
-                    {Object.entries(groupMatchesByAccount(externalMatches.matches)).map(([accountId, matches]) => (
+                    {Object.entries(
+                      groupMatchesByAccount(externalMatches.matches),
+                    ).map(([accountId, matches]) => (
                       <ExternalAccountCard
                         key={accountId}
                         accountId={accountId}
@@ -423,11 +434,15 @@ export function ConexionesPotenciales({
                   </div>
 
                   {/* Pagination for external matches */}
-                  {Math.ceil((externalMatches.totalCount || 0) / ITEMS_PER_PAGE) > 1 && (
+                  {Math.ceil(
+                    (externalMatches.totalCount || 0) / ITEMS_PER_PAGE,
+                  ) > 1 && (
                     <div className="flex justify-center">
                       <PaginationControls
                         currentPage={currentPage}
-                        totalPages={Math.ceil((externalMatches.totalCount || 0) / ITEMS_PER_PAGE)}
+                        totalPages={Math.ceil(
+                          (externalMatches.totalCount || 0) / ITEMS_PER_PAGE,
+                        )}
                         onPageChange={handlePageChange}
                       />
                     </div>
@@ -440,11 +455,14 @@ export function ConexionesPotenciales({
                     Sin coincidencias externas
                   </h3>
                   <p className="text-muted-foreground">
-                    No se encontraron propiedades de otras cuentas que coincidan con los criterios
+                    No se encontraron propiedades de otras cuentas que coincidan
+                    con los criterios
                   </p>
                 </div>
               )
-            ) : selectedView === "internal" && matches && matches.matches.filter((m) => !m.isCrossAccount).length === 0 ? (
+            ) : selectedView === "internal" &&
+              matches &&
+              matches.matches.filter((m) => !m.isCrossAccount).length === 0 ? (
               /* Empty State for internal matches */
               renderEmptyState()
             ) : null}

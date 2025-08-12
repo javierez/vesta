@@ -7,7 +7,11 @@ import { PortalSelection } from "./portal-selection";
 import { EnergyCertificate } from "./energy-certificate";
 import { DocumentsManager } from "./documents-manager";
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form";
-import { ImageGallerySkeleton, CharacteristicsSkeleton, EnergyCertificateSkeleton } from "./skeletons";
+import {
+  ImageGallerySkeleton,
+  CharacteristicsSkeleton,
+  EnergyCertificateSkeleton,
+} from "./skeletons";
 import { useSession } from "~/lib/auth-client";
 import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
@@ -60,7 +64,11 @@ export function PropertyTabs({
   const [tabData, setTabData] = useState<{
     images: PropertyImage[] | null;
     convertedListing: PropertyListing | null;
-    energyCertificate: { docId: bigint; documentKey: string; fileUrl: string } | null;
+    energyCertificate: {
+      docId: bigint;
+      documentKey: string;
+      fileUrl: string;
+    } | null;
   }>({
     images: null,
     convertedListing: null,
@@ -80,55 +88,75 @@ export function PropertyTabs({
     switch (tabValue) {
       case "general":
         if (tabData.images) return;
-        setLoading(prev => ({ ...prev, general: true }));
+        setLoading((prev) => ({ ...prev, general: true }));
         try {
-          const response = await fetch(`/api/properties/${listing.propertyId}/images`);
+          const response = await fetch(
+            `/api/properties/${listing.propertyId}/images`,
+          );
           if (response.ok) {
-            const imageData = await response.json() as PropertyImage[];
-            setTabData(prev => ({ ...prev, images: imageData }));
+            const imageData = (await response.json()) as PropertyImage[];
+            setTabData((prev) => ({ ...prev, images: imageData }));
           } else {
-            setTabData(prev => ({ ...prev, images: images }));
+            setTabData((prev) => ({ ...prev, images: images }));
           }
         } catch {
-          setTabData(prev => ({ ...prev, images: images }));
+          setTabData((prev) => ({ ...prev, images: images }));
         } finally {
-          setLoading(prev => ({ ...prev, general: false }));
+          setLoading((prev) => ({ ...prev, general: false }));
         }
         break;
 
       case "caracteristicas":
         if (tabData.convertedListing) return;
-        setLoading(prev => ({ ...prev, caracteristicas: true }));
+        setLoading((prev) => ({ ...prev, caracteristicas: true }));
         try {
-          const response = await fetch(`/api/properties/${listing.listingId}/characteristics`);
+          const response = await fetch(
+            `/api/properties/${listing.listingId}/characteristics`,
+          );
           if (response.ok) {
-            const characteristicsData = await response.json() as PropertyListing;
-            setTabData(prev => ({ ...prev, convertedListing: characteristicsData }));
+            const characteristicsData =
+              (await response.json()) as PropertyListing;
+            setTabData((prev) => ({
+              ...prev,
+              convertedListing: characteristicsData,
+            }));
           } else {
-            setTabData(prev => ({ ...prev, convertedListing }));
+            setTabData((prev) => ({ ...prev, convertedListing }));
           }
         } catch {
-          setTabData(prev => ({ ...prev, convertedListing }));
+          setTabData((prev) => ({ ...prev, convertedListing }));
         } finally {
-          setLoading(prev => ({ ...prev, caracteristicas: false }));
+          setLoading((prev) => ({ ...prev, caracteristicas: false }));
         }
         break;
 
       case "certificado":
         if (tabData.energyCertificate) return;
-        setLoading(prev => ({ ...prev, certificado: true }));
+        setLoading((prev) => ({ ...prev, certificado: true }));
         try {
-          const response = await fetch(`/api/properties/${listing.propertyId}/energy-certificate`);
+          const response = await fetch(
+            `/api/properties/${listing.propertyId}/energy-certificate`,
+          );
           if (response.ok) {
-            const certData = await response.json() as { docId: bigint; documentKey: string; fileUrl: string } | null;
-            setTabData(prev => ({ ...prev, energyCertificate: certData }));
+            const certData = (await response.json()) as {
+              docId: bigint;
+              documentKey: string;
+              fileUrl: string;
+            } | null;
+            setTabData((prev) => ({ ...prev, energyCertificate: certData }));
           } else {
-            setTabData(prev => ({ ...prev, energyCertificate: energyCertificate ?? null }));
+            setTabData((prev) => ({
+              ...prev,
+              energyCertificate: energyCertificate ?? null,
+            }));
           }
         } catch {
-          setTabData(prev => ({ ...prev, energyCertificate: energyCertificate ?? null }));
+          setTabData((prev) => ({
+            ...prev,
+            energyCertificate: energyCertificate ?? null,
+          }));
         } finally {
-          setLoading(prev => ({ ...prev, certificado: false }));
+          setLoading((prev) => ({ ...prev, certificado: false }));
         }
         break;
     }
@@ -173,7 +201,9 @@ export function PropertyTabs({
           {loading.caracteristicas ? (
             <CharacteristicsSkeleton />
           ) : (
-            <PropertyCharacteristicsForm listing={tabData.convertedListing ?? convertedListing} />
+            <PropertyCharacteristicsForm
+              listing={tabData.convertedListing ?? convertedListing}
+            />
           )}
         </div>
       </TabsContent>

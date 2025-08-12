@@ -5,7 +5,7 @@ import { convertDbListingToPropertyListing } from "~/types/property-listing";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -16,7 +16,7 @@ export async function GET(
     if (!listing) {
       return NextResponse.json(
         { error: "Property not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function GET(
     console.error("Error fetching property characteristics:", error);
     return NextResponse.json(
       { error: "Failed to fetch property characteristics" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

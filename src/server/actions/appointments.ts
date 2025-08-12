@@ -9,6 +9,10 @@ import {
   getAppointmentsByDateRange,
   getAgentsForFilter,
 } from "~/server/queries/appointment";
+import {
+  findOrCreateLeadForAppointment,
+  syncLeadStatusFromAppointment,
+} from "~/server/queries/lead-status-sync";
 
 // Form data structure from PRP
 interface AppointmentFormData {
@@ -62,8 +66,16 @@ export async function updateAppointmentAction(
     }
 
     // PATTERN: Use existing query function
-    console.log("Updating appointment with ID:", appointmentId, "and data:", appointmentData);
-    const result = await updateAppointment(Number(appointmentId), appointmentData);
+    console.log(
+      "Updating appointment with ID:",
+      appointmentId,
+      "and data:",
+      appointmentData,
+    );
+    const result = await updateAppointment(
+      Number(appointmentId),
+      appointmentData,
+    );
     console.log("Update result:", result);
 
     if (!result) {
@@ -124,6 +136,30 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       };
     }
 
+    // NEW: Auto-create lead if missing and we have required data
+    if (!appointmentData.leadId && appointmentData.contactId) {
+      try {
+        const { leadId: autoCreatedLeadId, created } =
+          await findOrCreateLeadForAppointment(
+            appointmentData.contactId,
+            appointmentData.listingId,
+            appointmentData.prospectId,
+          );
+        appointmentData.leadId = autoCreatedLeadId;
+
+        console.log("🎯 Lead auto-creation result:", {
+          leadId: autoCreatedLeadId.toString(),
+          created,
+          contactId: appointmentData.contactId.toString(),
+          listingId: appointmentData.listingId?.toString(),
+        });
+      } catch (error) {
+        console.error("Failed to auto-create lead for appointment:", error);
+        // Don't fail the appointment creation if lead creation fails
+        // This ensures appointment creation is resilient
+      }
+    }
+
     // PATTERN: Use existing query function
     console.log("📝 Creating appointment with data:", {
       ...appointmentData,
@@ -131,9 +167,9 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       contactId: appointmentData.contactId?.toString(),
       formDataListingId: formData.listingId?.toString(),
     });
-    
+
     const result = await createAppointment(appointmentData);
-    
+
     console.log("📋 Created appointment result:", {
       success: !!result,
       appointmentId: result?.appointmentId?.toString(),
@@ -145,6 +181,19 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
         success: false,
         error: "Error al crear la cita",
       };
+    }
+
+    // NEW: Sync lead status to "Visita Pendiente" after successful appointment creation
+    if (result.leadId) {
+      try {
+        await syncLeadStatusFromAppointment(result.leadId, "Scheduled");
+      } catch (error) {
+        console.error(
+          "Failed to sync lead status after appointment creation:",
+          error,
+        );
+        // Don't fail the appointment creation if lead status sync fails
+      }
     }
 
     // Refresh calendar data

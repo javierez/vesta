@@ -9,6 +9,7 @@ import {
   type StatusUpdateResult,
   type BulkActionResult,
 } from "~/types/operations";
+import { type LeadStatus } from "~/lib/constants/lead-statuses";
 import {
   updateProspectWithAuth,
   getProspectWithAuth,
@@ -69,11 +70,7 @@ export async function updateOperationStatus(
         }
 
         await updateLeadWithAuth(Number(data.operationId), {
-          status: data.toStatus as
-            | "New"
-            | "Working"
-            | "Converted"
-            | "Disqualified",
+          status: data.toStatus as LeadStatus,
         });
         break;
 

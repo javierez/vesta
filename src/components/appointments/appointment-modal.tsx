@@ -50,9 +50,10 @@ export default function AppointmentModal({
 }: AppointmentModalProps) {
   // Set default title and description based on mode
   const defaultTitle = mode === "edit" ? "Editar Cita" : "Crear Nueva Cita";
-  const defaultDescription = mode === "edit" 
-    ? "Modifique los detalles de la cita existente."
-    : "Complete los detalles para programar una nueva cita.";
+  const defaultDescription =
+    mode === "edit"
+      ? "Modifique los detalles de la cita existente."
+      : "Complete los detalles para programar una nueva cita.";
 
   const modalTitle = title ?? defaultTitle;
   const modalDescription = description ?? defaultDescription;

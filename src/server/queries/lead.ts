@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "../db";
-import { leads, contacts } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { leads, contacts, listings, properties, listingContacts } from "../db/schema";
+import { eq, and, like, or, count, aliasedTable } from "drizzle-orm";
 import type { Lead } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
@@ -42,9 +42,23 @@ export async function deleteLeadWithAuth(leadId: number) {
   return deleteLead(leadId, accountId);
 }
 
-export async function listLeadsWithAuth(page = 1, limit = 10) {
+export async function listLeadsWithAuth(
+  page = 1,
+  limit = 10,
+  search?: string,
+  statusFilters?: string[],
+  sourceFilters?: string[],
+) {
   const accountId = await getCurrentUserAccountId();
-  return listLeads(page, limit, accountId);
+  // Always use the detailed query to include listing and owner information
+  return listLeadsWithDetails(
+    page,
+    limit,
+    accountId,
+    search,
+    statusFilters,
+    sourceFilters,
+  );
 }
 
 // Create a new lead
@@ -255,6 +269,154 @@ export async function listLeads(page = 1, limit = 10, accountId: number) {
     return allLeads;
   } catch (error) {
     console.error("Error listing leads:", error);
+    throw error;
+  }
+}
+
+// Enhanced function with complete joins and filtering
+export async function listLeadsWithDetails(
+  page = 1,
+  limit = 10,
+  accountId: number,
+  search?: string,
+  statusFilters?: string[],
+  sourceFilters?: string[],
+) {
+  try {
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const whereConditions = [eq(contacts.accountId, BigInt(accountId))];
+
+    // Add search condition
+    if (search) {
+      const searchCondition = or(
+        like(contacts.firstName, `%${search}%`),
+        like(contacts.lastName, `%${search}%`),
+        like(contacts.email, `%${search}%`),
+      );
+      if (searchCondition) {
+        whereConditions.push(searchCondition);
+      }
+    }
+
+    // Add status filters
+    if (statusFilters && statusFilters.length > 0) {
+      const statusConditions = statusFilters.map((status) =>
+        eq(leads.status, status),
+      );
+      if (statusConditions.length > 0) {
+        const statusCondition =
+          statusConditions.length === 1
+            ? statusConditions[0]!
+            : or(...statusConditions);
+        if (statusCondition) {
+          whereConditions.push(statusCondition);
+        }
+      }
+    }
+
+    // Add source filters
+    if (sourceFilters && sourceFilters.length > 0) {
+      const sourceConditions = sourceFilters.map((source) =>
+        eq(leads.source, source),
+      );
+      if (sourceConditions.length > 0) {
+        const sourceCondition =
+          sourceConditions.length === 1
+            ? sourceConditions[0]!
+            : or(...sourceConditions);
+        if (sourceCondition) {
+          whereConditions.push(sourceCondition);
+        }
+      }
+    }
+
+    // Create alias for owner contacts to avoid naming conflicts
+    const ownerContacts = aliasedTable(contacts, 'ownerContacts');
+
+    // Main query with all joins
+    const allLeads = await db
+      .select({
+        // Lead data
+        leadId: leads.leadId,
+        contactId: leads.contactId,
+        listingId: leads.listingId,
+        prospectId: leads.prospectId,
+        source: leads.source,
+        status: leads.status,
+        createdAt: leads.createdAt,
+        updatedAt: leads.updatedAt,
+
+        // Contact data (lead contact)
+        contact: {
+          contactId: contacts.contactId,
+          firstName: contacts.firstName,
+          lastName: contacts.lastName,
+          email: contacts.email,
+          phone: contacts.phone,
+        },
+
+        // Listing data (optional)
+        listing: {
+          listingId: listings.listingId,
+          referenceNumber: properties.referenceNumber,
+          street: properties.street,
+          price: listings.price,
+          listingType: listings.listingType,
+          propertyType: properties.propertyType,
+          bedrooms: properties.bedrooms,
+          squareMeter: properties.squareMeter,
+        },
+
+        // Owner data (optional, from junction table)
+        owner: {
+          contactId: ownerContacts.contactId,
+          firstName: ownerContacts.firstName,
+          lastName: ownerContacts.lastName,
+          email: ownerContacts.email,
+          phone: ownerContacts.phone,
+        },
+      })
+      .from(leads)
+      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .leftJoin(listings, eq(leads.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(listingContacts, and(
+        eq(listings.listingId, listingContacts.listingId),
+        eq(listingContacts.contactType, "owner"),
+        eq(listingContacts.isActive, true)
+      ))
+      .leftJoin(ownerContacts, eq(listingContacts.contactId, ownerContacts.contactId))
+      .where(and(...whereConditions))
+      .orderBy(leads.createdAt)
+      .limit(limit)
+      .offset(offset);
+
+    // Get total count for pagination
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(leads)
+      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .leftJoin(listings, eq(leads.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(listingContacts, and(
+        eq(listings.listingId, listingContacts.listingId),
+        eq(listingContacts.contactType, "owner"),
+        eq(listingContacts.isActive, true)
+      ))
+      .leftJoin(ownerContacts, eq(listingContacts.contactId, ownerContacts.contactId))
+      .where(and(...whereConditions));
+
+    
+    return {
+      leads: allLeads,
+      total: totalResult?.count ?? 0,
+      page,
+      totalPages: Math.ceil((totalResult?.count ?? 0) / limit),
+    };
+  } catch (error) {
+    console.error("Error listing leads with details:", error);
     throw error;
   }
 }

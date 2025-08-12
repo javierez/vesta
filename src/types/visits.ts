@@ -8,11 +8,13 @@ export interface VisitFormData {
   notes?: string;
   agentSignature?: string; // base64 data URL
   visitorSignature?: string; // base64 data URL
+  visitOutcome?: "offer_made" | "info_needed"; // Visit outcome for lead status progression
 }
 
 export interface AppointmentWithDetails {
   appointmentId: bigint;
   listingId?: bigint | null;
+  leadId?: bigint | null; // Added for lead status progression
   contactId: bigint;
   userId: string;
   datetimeStart: Date;
@@ -32,6 +34,6 @@ export interface VisitSignatureDocument {
   docId: bigint;
   filename: string;
   fileUrl: string;
-  signatureType: 'agent' | 'visitor';
+  signatureType: "agent" | "visitor";
   appointmentId: bigint;
 }

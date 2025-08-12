@@ -9,14 +9,7 @@ import {
 } from "~/components/ui/popover";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import {
-  Filter,
-  X,
-  Check,
-  ChevronDown,
-  Search,
-  Building,
-} from "lucide-react";
+import { Filter, X, Check, ChevronDown, Search, Building } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
@@ -80,9 +73,8 @@ export function MatchFilters({
     setSearchQuery(q ?? "");
   }, [searchParams]);
 
-
   const handleFiltersChange = (newFilters: MatchFilters) => {
-    console.log('🎛️ Filter change:', newFilters);
+    console.log("🎛️ Filter change:", newFilters);
     setFilters(newFilters);
     // Don't update URL params immediately to avoid page re-renders
     // updateUrlParams(newFilters, searchQuery);

@@ -99,7 +99,7 @@ export default function KanbanColumnComponent({
             {column.items.map((card) => (
               <Card
                 key={card.id.toString()}
-                className="cursor-pointer p-3 hover:shadow-md transition-shadow"
+                className="cursor-pointer p-3 transition-shadow hover:shadow-md"
               >
                 <div className="flex items-start gap-2">
                   <Checkbox
@@ -109,11 +109,11 @@ export default function KanbanColumnComponent({
                     }
                   />
                   <div className="flex-1 space-y-2">
-                    <div className="font-medium text-sm">
+                    <div className="text-sm font-medium">
                       {card.contactName ?? card.listingAddress ?? "Sin nombre"}
                     </div>
                     {card.needSummary && (
-                      <p className="text-xs text-gray-600 line-clamp-2">
+                      <p className="line-clamp-2 text-xs text-gray-600">
                         {card.needSummary}
                       </p>
                     )}

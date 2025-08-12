@@ -413,7 +413,7 @@ export const leads = singlestoreTable("leads", {
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
   prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.id (nullable) - for lineage tracking
   source: varchar("source", { length: 50 }).notNull(), // e.g. "Website", "Walk-In"
-  status: varchar("status", { length: 20 }).notNull(), // e.g. "New", "Working", "Converted", "Disqualified"
+  status: varchar("status", { length: 50 }).notNull(), // Support Spanish status workflow
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

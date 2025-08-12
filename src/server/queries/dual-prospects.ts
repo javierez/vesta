@@ -327,17 +327,19 @@ export async function getDualProspect(
   return {
     ...baseProspect,
     prospectType: "listing" as const,
-    propertyToList: result.propertyToList as {
-      address: string;
-      propertyType: string;
-      estimatedValue: number;
-      condition: string;
-      readyToList: boolean;
-      bedrooms?: number;
-      bathrooms?: number;
-      squareMeters?: number;
-      description?: string;
-    } | undefined,
+    propertyToList: result.propertyToList as
+      | {
+          address: string;
+          propertyType: string;
+          estimatedValue: number;
+          condition: string;
+          readyToList: boolean;
+          bedrooms?: number;
+          bathrooms?: number;
+          squareMeters?: number;
+          description?: string;
+        }
+      | undefined,
     valuationStatus: result.valuationStatus as
       | "pending"
       | "scheduled"

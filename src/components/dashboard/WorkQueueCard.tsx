@@ -99,7 +99,6 @@ export default function WorkQueueCard({
     }).format(appointmentDate);
   };
 
-
   const getAppointmentColor = (appointmentType: string) => {
     switch (appointmentType.toLowerCase()) {
       case "visit":
@@ -299,7 +298,7 @@ export default function WorkQueueCard({
                                 </div>
 
                                 {/* Main content */}
-                                <div className="min-w-0 flex-1 pr-16 pl-3">
+                                <div className="min-w-0 flex-1 pl-3 pr-16">
                                   <div className="flex items-baseline justify-between">
                                     <h4 className="truncate text-sm font-semibold text-gray-900">
                                       {appointment.contactName}

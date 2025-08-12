@@ -142,10 +142,7 @@ export async function updateProperty(
   >,
 ) {
   try {
-    const {
-      db: secureDb,
-      withAccountFilter,
-    } = await getSecureDb();
+    const { db: secureDb, withAccountFilter } = await getSecureDb();
 
     // Verify the property belongs to this account before updating
     const [existingProperty] = await secureDb

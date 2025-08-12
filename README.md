@@ -155,17 +155,16 @@ pnpm build
       - Amaya's basic: horizontal and vertical
       - Fix current vertical
       - Create current horizontal
-
    - Change color on current poster
    - Create comment section to add to the poster
 
-
-
 - Operations page
+   - Leads page
+   - Prospects page
+   - Deals page
 
+- Calendar Integration
 
-
-- Calendar integration
 
 
 - Webpage
@@ -247,3 +246,6 @@ OPTIMIZATIONS
 - Middleware caching: 2 minute cache for auth session validation
 - Data Caching: when needed 
 
+
+
+M

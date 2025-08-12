@@ -1,36 +1,69 @@
-So let's define what's a prospect. A prospect, there are two types of prospects, right? So first prospect is when a client comes and he wants to publish some listing. That is a prospect indeed, but it doesn't go into the prospect table because we have a listing and that's enough. Right? Because we have like the apartment or whatever with all the characteristics and so on and we know indeed that he wants to sell or rent something, right? The other type of prospect is a demand. When someone, and this goes in the prospect table, when someone wants something, but they know what they want, but they don't have like anything specific. They don't have a property they like. Okay? 
+## FEATURE:
 
+- **Lead Auto-Creation**: Automatically create/assign leads when appointments are scheduled
+- **Status Synchronization**: Sync appointment and lead statuses throughout the visit lifecycle
+- **Visit-to-Lead Pipeline**: Convert visits into qualified leads with proper status progression
 
-So let's try to define what will happen when we click on the prospects operations in our operations tab. 
-When we click on operations, we have operations/[type], right? But maybe we should create an element or a component or a file or render differently, not at the same time when we have prospects, when we have listings or when we have deals. So what I will try to do in this page is tell you what will be shown when showing the prospects.
+## IMPLEMENTATION LOGIC:
 
+### 1. Lead Creation (When Appointment is Created)
+```typescript
+// Check if lead exists for (contactId, listingId)
+const existingLead = await findLead(contactId, listingId);
 
+if (!existingLead) {
+  // Create new lead with initial status
+  const newLead = await createLead({
+    contactId,
+    listingId,
+    prospectId: appointment.prospectId,
+    status: "Fase 0: Información Incompleta",
+    source: "Appointment"
+  });
+  appointment.leadId = newLead.leadId;
+} else {
+  // Use existing lead
+  appointment.leadId = existingLead.leadId;
+}
+```
 
-So the prospects, it is okay to have a kanban and then a list view, but one important thing to take into consideration is that the kanban view and the list view will be rendered just when asked for it. We don't render both pages at the same time, we render one which is the one which will be shown by default and then the other one.
+### 2. Lead Status Workflow
+```typescript
+const LEAD_STATUSES = [
+  "Fase 0: Información Incompleta",    // Missing listing/property/contact/owner info
+  "Información Solicitada",            // Info requested from either party
+  "Respuesta Pendiente",               // Waiting for response
+  "Visita Pendiente",   -- after we schedule the visita from calendar               // Visit scheduled 
+  "Visita Realizada",    -- after we use calendar/visit/appoinment_id and click on Registrar Visita              // Visit completed
+  "Oferta Presentada",                 // Offer made
+  "Oferta Pendiente Aprobación",       // Offer under review
+  "Oferta Aceptada",                   // Offer accepted
+  "Oferta Rechazada",                  // Offer rejected
+  "Cerrado"                            // Deal closed or lost
+] as const;
+```
 
-In this prospect page we will show whether the prospect is a selling or renting prospect or a searching prospect. 
-So when it is a selling or renting, we will show the listing characteristics and if it is a demand, we will show the equivalent fields from the prospects table.
-- listing.ts + property.ts files
-- prospect.ts file
+### 3. Status Synchronization
+```typescript
+// When appointment status changes, update lead status
+const APPOINTMENT_TO_LEAD_STATUS = {
+  "Scheduled": "Visita Pendiente",
+  "Completed": "Visita Realizada",
+  "Cancelled": "Información Solicitada" // Back to info gathering
+} as const;
 
-The different statuses that a prospect can have:
-Selling Renting Prospect: So a selling or renting prospect can have the following, 
-- basic information retrieved & created (info in listing, property and contact tables)
-- valoración (aceptar, visita, valor)
-- hoja de encargo (firmar)
-- En búsqueda (último paso)
+// When visit is recorded, advance lead status
+const VISIT_TO_LEAD_STATUS = {
+  "visit_done": "Oferta Presentada",     // If offer made during visit
+  "visit_done": "Información Solicitada" // If more info needed
+} as const;
+```
 
-do you think we should add more?
+## WHY THIS APPROACH IS BETTER:
 
+1. **Proactive Lead Creation**: Creates leads immediately when interest is shown (appointment), not when action happens (visit)
+2. **Clear Status Progression**: Linear workflow that's easy to track and report on
+3. **Status Consistency**: Appointment and lead statuses stay in sync
+4. **Audit Trail**: Every status change is tracked with timestamps and reasons
 
-Búsqueda Prospect, for searching:
-- basic info retrieved & created (info in cotnact and prospect tables)
-- En búsqueda
-
-
-do you think we should add more?
-
-so depending on which type of demanda, we will have more steps  or less . how do we do that in the kanban?
-
-
-
+  

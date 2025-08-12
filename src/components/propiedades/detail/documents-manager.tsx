@@ -34,26 +34,26 @@ export function DocumentsManager({
 }: DocumentsManagerProps) {
   const router = useRouter();
 
-  // Folder configurations - these would be fetched from API in a real implementation  
+  // Folder configurations - these would be fetched from API in a real implementation
   const folders: Folder[] = [
     {
       id: "documentacion-inicial",
       name: "Documentación Inicial",
       description: "Hoja de encargo, valoración, etc.",
-      documents: []
+      documents: [],
     },
     {
       id: "visitas",
       name: "Visitas",
       description: "Reportes de visitas.",
-      documents: []
+      documents: [],
     },
     {
       id: "otros",
       name: "Otros",
       description: "Otros documentos",
-      documents: []
-    }
+      documents: [],
+    },
   ];
 
   const handleFolderClick = (folderId: string) => {
@@ -73,21 +73,21 @@ export function DocumentsManager({
       {/* Folders grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {folders.map((folder) => (
-          <Card 
-            key={folder.id} 
-            className="cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.02]"
+          <Card
+            key={folder.id}
+            className="cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md"
             onClick={() => handleFolderClick(folder.id)}
           >
             <CardContent className="p-6">
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
-                  <FolderIcon className="h-8 w-8 text-gray-600 fill-current" />
+                  <FolderIcon className="h-8 w-8 fill-current text-gray-600" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-gray-900 truncate">
+                <div className="min-w-0 flex-1">
+                  <h4 className="truncate font-medium text-gray-900">
                     {folder.name}
                   </h4>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="mt-1 text-sm text-gray-500">
                     {folder.description}
                   </p>
                 </div>

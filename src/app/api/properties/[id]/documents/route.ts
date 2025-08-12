@@ -8,7 +8,7 @@ import { headers } from "next/headers";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -20,31 +20,37 @@ export async function POST(
 
     const { id } = await params;
     const listing = await getListingDetailsWithAuth(parseInt(id));
-    
+
     if (!listing) {
-      return NextResponse.json({ error: "Property not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Property not found" },
+        { status: 404 },
+      );
     }
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const folderType = formData.get("folderType") as "initial-docs" | "visitas" | "others";
+    const folderType = formData.get("folderType") as
+      | "initial-docs"
+      | "visitas"
+      | "others";
 
     if (!file || !folderType) {
       return NextResponse.json(
         { error: "File and folder type are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Map folder types to document tags for database storage
     const documentTagMap = {
       "initial-docs": "documentacion-inicial",
-      "visitas": "visitas",
-      "others": "otros"
+      visitas: "visitas",
+      others: "otros",
     };
 
     const documentTag = documentTagMap[folderType];
-    
+
     const document = await uploadDocument(
       file,
       session.user.id,
@@ -57,7 +63,7 @@ export async function POST(
       undefined, // dealId
       undefined, // appointmentId
       listing.propertyId, // propertyId
-      folderType
+      folderType,
     );
 
     // Convert BigInt values to strings for JSON serialization
@@ -77,45 +83,55 @@ export async function POST(
     console.error("Error uploading document:", error);
     return NextResponse.json(
       { error: "Failed to upload document" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
     const listing = await getListingDetailsWithAuth(parseInt(id));
-    
+
     if (!listing) {
-      return NextResponse.json({ error: "Property not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Property not found" },
+        { status: 404 },
+      );
     }
 
     const { searchParams } = new URL(request.url);
-    const folderType = searchParams.get("folderType") as "initial-docs" | "visitas" | "others" | null;
+    const folderType = searchParams.get("folderType") as
+      | "initial-docs"
+      | "visitas"
+      | "others"
+      | null;
 
     if (!folderType) {
       return NextResponse.json(
         { error: "Folder type is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Map folder types to document tags for database query
     const documentTagMap = {
       "initial-docs": "documentacion-inicial",
-      "visitas": "visitas", 
-      "others": "otros"
+      visitas: "visitas",
+      others: "otros",
     };
 
     const documentTag = documentTagMap[folderType];
-    const documents = await getDocumentsByFolderType(listing.propertyId, documentTag);
+    const documents = await getDocumentsByFolderType(
+      listing.propertyId,
+      documentTag,
+    );
 
     // Convert BigInt values to strings for JSON serialization
-    const serializedDocuments = documents.map(doc => ({
+    const serializedDocuments = documents.map((doc) => ({
       ...doc,
       docId: doc.docId.toString(),
       propertyId: doc.propertyId?.toString(),
@@ -131,7 +147,7 @@ export async function GET(
     console.error("Error fetching documents:", error);
     return NextResponse.json(
       { error: "Failed to fetch documents" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

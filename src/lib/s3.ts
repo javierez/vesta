@@ -125,7 +125,7 @@ export async function uploadDocumentToS3(
       documentKey = `${referenceNumber}/documents/ficha_propiedad_${nanoid(6)}.${fileExtension}`;
     } else if (folderType) {
       // New folder structure for property documents
-      documentKey = `${referenceNumber}/documents/${folderType}/${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}_${nanoid(6)}.${fileExtension}`;
+      documentKey = `${referenceNumber}/documents/${folderType}/${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}_${nanoid(6)}.${fileExtension}`;
     } else {
       documentKey = `${referenceNumber}/documents/document_${documentOrder}_${nanoid(6)}.${fileExtension}`;
     }

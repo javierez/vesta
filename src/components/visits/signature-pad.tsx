@@ -13,11 +13,11 @@ interface SignaturePadProps {
   className?: string;
 }
 
-export function SignaturePad({ 
-  label, 
-  onSignatureChange, 
+export function SignaturePad({
+  label,
+  onSignatureChange,
   required = false,
-  className 
+  className,
 }: SignaturePadProps) {
   const sigCanvas = useRef<SignatureCanvas>(null);
   const [isEmpty, setIsEmpty] = useState(true);
@@ -35,12 +35,17 @@ export function SignaturePad({
       const canvas = sigCanvas.current.getCanvas();
       const isEmpty = sigCanvas.current.isEmpty();
       setIsEmpty(isEmpty);
-      
-      console.log(`📝 ${label} signature capture:`, { isEmpty, canvasSize: `${canvas.width}x${canvas.height}` });
-      
+
+      console.log(`📝 ${label} signature capture:`, {
+        isEmpty,
+        canvasSize: `${canvas.width}x${canvas.height}`,
+      });
+
       if (!isEmpty) {
-        const dataURL = canvas.toDataURL('image/png');
-        console.log(`✅ ${label} signature captured:`, { dataURL: dataURL.substring(0, 50) + '...' });
+        const dataURL = canvas.toDataURL("image/png");
+        console.log(`✅ ${label} signature captured:`, {
+          dataURL: dataURL.substring(0, 50) + "...",
+        });
         onSignatureChange(dataURL);
       } else {
         console.log(`❌ ${label} signature is empty`);
@@ -53,28 +58,29 @@ export function SignaturePad({
     <div className={cn("space-y-2", className)}>
       <label className="text-sm font-medium text-gray-900">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="ml-1 text-red-500">*</span>}
       </label>
-      
-      <div className="border-2 border-gray-300 rounded-lg bg-white relative overflow-hidden">
+
+      <div className="relative overflow-hidden rounded-lg border-2 border-gray-300 bg-white">
         <SignatureCanvas
           ref={sigCanvas}
           canvasProps={{
             width: 400,
             height: 200,
-            className: 'signature-canvas w-full h-32 sm:h-40 lg:h-48 touch-none',
-            style: { minHeight: '128px' }
+            className:
+              "signature-canvas w-full h-32 sm:h-40 lg:h-48 touch-none",
+            style: { minHeight: "128px" },
           }}
           backgroundColor="rgba(255,255,255,1)"
           penColor="black"
           onEnd={handleEnd}
         />
-        <div className="absolute bottom-2 right-2 text-xs text-gray-400 pointer-events-none">
-          {isEmpty ? 'Toque para firmar' : ''}
+        <div className="pointer-events-none absolute bottom-2 right-2 text-xs text-gray-400">
+          {isEmpty ? "Toque para firmar" : ""}
         </div>
       </div>
-      
-      <div className="flex justify-between items-center">
+
+      <div className="flex items-center justify-between">
         <Button
           type="button"
           variant="outline"
@@ -86,15 +92,15 @@ export function SignaturePad({
           <span className="hidden sm:inline">Limpiar</span>
           <span className="sm:hidden">Borrar</span>
         </Button>
-        
+
         {!isEmpty && (
-          <div className="flex items-center gap-1 text-green-600 text-xs sm:text-sm">
+          <div className="flex items-center gap-1 text-xs text-green-600 sm:text-sm">
             <Check className="h-3 w-3 sm:h-4 sm:w-4" />
             Firmado
           </div>
         )}
       </div>
-      
+
       {required && isEmpty && (
         <p className="text-sm text-red-500">Este campo es obligatorio</p>
       )}

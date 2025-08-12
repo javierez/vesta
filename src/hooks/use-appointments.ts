@@ -70,9 +70,10 @@ function transformToCalendarEvent(
   rawAppointment: RawAppointment,
 ): CalendarEvent {
   // Build contact name from firstName and lastName if available
-  const contactName = rawAppointment.contactFirstName && rawAppointment.contactLastName 
-    ? `${rawAppointment.contactFirstName} ${rawAppointment.contactLastName}`
-    : `Contact ${rawAppointment.contactId}`;
+  const contactName =
+    rawAppointment.contactFirstName && rawAppointment.contactLastName
+      ? `${rawAppointment.contactFirstName} ${rawAppointment.contactLastName}`
+      : `Contact ${rawAppointment.contactId}`;
 
   return {
     appointmentId: rawAppointment.appointmentId,

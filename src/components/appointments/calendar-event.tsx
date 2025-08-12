@@ -1,6 +1,16 @@
 "use client";
 
-import { Clock, MapPin, Car, Home, Users, PenTool, Handshake, Train, CalendarIcon } from "lucide-react";
+import {
+  Clock,
+  MapPin,
+  Car,
+  Home,
+  Users,
+  PenTool,
+  Handshake,
+  Train,
+  CalendarIcon,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 
 // Calendar Event Display Type from PRP
@@ -29,11 +39,31 @@ interface CalendarEventProps {
 
 // Appointment type colors and icons from PRP
 const appointmentTypes = {
-  Visita: { color: "bg-blue-500", icon: <Home className="h-3 w-3" />, textColor: "text-white" },
-  Reunión: { color: "bg-purple-500", icon: <Users className="h-3 w-3" />, textColor: "text-white" },
-  Firma: { color: "bg-green-500", icon: <PenTool className="h-3 w-3" />, textColor: "text-white" },
-  Cierre: { color: "bg-yellow-500", icon: <Handshake className="h-3 w-3" />, textColor: "text-white" },
-  Viaje: { color: "bg-emerald-500", icon: <Train className="h-3 w-3" />, textColor: "text-white" },
+  Visita: {
+    color: "bg-blue-500",
+    icon: <Home className="h-3 w-3" />,
+    textColor: "text-white",
+  },
+  Reunión: {
+    color: "bg-purple-500",
+    icon: <Users className="h-3 w-3" />,
+    textColor: "text-white",
+  },
+  Firma: {
+    color: "bg-green-500",
+    icon: <PenTool className="h-3 w-3" />,
+    textColor: "text-white",
+  },
+  Cierre: {
+    color: "bg-yellow-500",
+    icon: <Handshake className="h-3 w-3" />,
+    textColor: "text-white",
+  },
+  Viaje: {
+    color: "bg-emerald-500",
+    icon: <Train className="h-3 w-3" />,
+    textColor: "text-white",
+  },
 };
 
 // Status colors
@@ -106,7 +136,9 @@ export default function CalendarEvent({
       {/* Always show: Event type and contact name */}
       <div className="flex items-center gap-1 truncate text-xs font-medium leading-tight">
         {typeConfig.icon}
-        <span>{event.type} {event.contactName}</span>
+        <span>
+          {event.type} {event.contactName}
+        </span>
       </div>
 
       {/* Show time if height > 50px */}
@@ -147,7 +179,12 @@ export default function CalendarEvent({
       {/* Status indicator for non-scheduled appointments */}
       {event.status !== "Scheduled" && (
         <div className="absolute right-1 top-1">
-          <div className="h-2 w-2 rounded-full bg-white bg-opacity-80" />
+          <div
+            className={cn(
+              "h-2 w-2 rounded-full bg-white",
+              event.status === "Completed" ? "bg-opacity-0" : "bg-opacity-80",
+            )}
+          />
         </div>
       )}
     </div>
@@ -219,7 +256,12 @@ export function CompactCalendarEvent({
       {/* Status indicator */}
       {event.status !== "Scheduled" && (
         <div className="flex-shrink-0">
-          <div className="h-2 w-2 rounded-full bg-white bg-opacity-80" />
+          <div
+            className={cn(
+              "h-2 w-2 rounded-full bg-white",
+              event.status === "Completed" ? "bg-opacity-0" : "bg-opacity-80",
+            )}
+          />
         </div>
       )}
     </div>

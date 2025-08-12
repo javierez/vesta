@@ -26,7 +26,7 @@ export default async function OtrosPage({ params }: DocumentPageProps) {
         referenceNumber={listing.referenceNumber ?? ""}
         documentFolder={{
           name: "Otros",
-          propertyId: listing.listingId.toString()
+          propertyId: listing.listingId.toString(),
         }}
       />
 
@@ -45,10 +45,7 @@ export default async function OtrosPage({ params }: DocumentPageProps) {
         neighborhood={listing.neighborhood ?? ""}
       />
 
-      <DocumentsPage
-        listing={listing}
-        folderType="otros"
-      />
+      <DocumentsPage listing={listing} folderType="otros" />
     </div>
   );
 }

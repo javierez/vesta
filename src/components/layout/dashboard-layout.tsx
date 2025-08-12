@@ -59,7 +59,7 @@ const operacionesItems: NavigationItem[] = [
     name: "Leads",
     href: "/operaciones/leads",
     icon: TrendingUp,
-    disabled: true,
+    disabled: false,
   },
   {
     name: "Deals",
@@ -218,22 +218,22 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                   <style>{lineDrawingStyles}</style>
                   <div className="relative ml-8 space-y-0.5">
                     {/* Vertical line with draw animation */}
-                    <div 
+                    <div
                       className="absolute bottom-0 left-0 top-0 -ml-4 w-px bg-gray-300"
                       style={{
-                        height: '0%',
-                        animation: 'drawLine 0.8s ease-out 0.6s forwards'
+                        height: "0%",
+                        animation: "drawLine 0.8s ease-out 0.6s forwards",
                       }}
                     />
                     {operacionesItems.map((subItem, index) => {
                       const isActive = pathname === subItem.href;
                       const animationDelay = `${index * 200}ms`;
-                      
+
                       if (subItem.disabled) {
                         return (
                           <div
                             key={subItem.name}
-                            className="group flex cursor-not-allowed items-center rounded-md px-2 py-1.5 text-xs font-normal text-gray-400 opacity-50 animate-in slide-in-from-left-2 fade-in duration-300"
+                            className="animate-in slide-in-from-left-2 fade-in group flex cursor-not-allowed items-center rounded-md px-2 py-1.5 text-xs font-normal text-gray-400 opacity-50 duration-300"
                             style={{ animationDelay }}
                           >
                             <subItem.icon className="mr-2.5 h-3.5 w-3.5 flex-shrink-0" />
@@ -249,7 +249,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                           key={subItem.name}
                           href={subItem.href}
                           className={cn(
-                            "group flex items-center rounded-md px-2 py-1.5 text-xs font-normal animate-in slide-in-from-left-2 fade-in duration-300",
+                            "animate-in slide-in-from-left-2 fade-in group flex items-center rounded-md px-2 py-1.5 text-xs font-normal duration-300",
                             isActive
                               ? "bg-gray-100 text-gray-900"
                               : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
@@ -388,22 +388,22 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
               {operacionesExpanded && (
                 <div className="relative ml-8 space-y-0.5">
                   {/* Vertical line with draw animation */}
-                  <div 
+                  <div
                     className="absolute bottom-0 left-0 top-0 -ml-4 w-px bg-gray-300"
                     style={{
-                      height: '0%',
-                      animation: 'drawLine 0.8s ease-out 0.6s forwards'
+                      height: "0%",
+                      animation: "drawLine 0.8s ease-out 0.6s forwards",
                     }}
                   />
                   {operacionesItems.map((subItem, index) => {
                     const isActive = pathname === subItem.href;
                     const animationDelay = `${index * 200}ms`;
-                    
+
                     if (subItem.disabled) {
                       return (
                         <div
                           key={subItem.name}
-                          className="group flex cursor-not-allowed items-center rounded-md px-2 py-1.5 text-xs font-normal text-gray-400 opacity-50 animate-in slide-in-from-left-2 fade-in duration-300"
+                          className="animate-in slide-in-from-left-2 fade-in group flex cursor-not-allowed items-center rounded-md px-2 py-1.5 text-xs font-normal text-gray-400 opacity-50 duration-300"
                           style={{ animationDelay }}
                         >
                           <subItem.icon className="mr-2.5 h-3.5 w-3.5 flex-shrink-0" />
@@ -419,7 +419,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                         key={subItem.name}
                         href={subItem.href}
                         className={cn(
-                          "group flex items-center rounded-md px-2 py-1.5 text-xs font-normal animate-in slide-in-from-left-2 fade-in duration-300",
+                          "animate-in slide-in-from-left-2 fade-in group flex items-center rounded-md px-2 py-1.5 text-xs font-normal duration-300",
                           isActive
                             ? "bg-gray-100 text-gray-900"
                             : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",

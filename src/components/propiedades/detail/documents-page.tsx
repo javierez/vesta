@@ -3,14 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { 
-  FileText, 
-  Download, 
-  Upload, 
+import {
+  FileText,
+  Download,
+  Upload,
   Calendar,
   MoreVertical,
   FolderIcon,
-  X
+  X,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
@@ -29,7 +29,6 @@ interface Document {
   uploadedAt: Date;
   documentKey: string;
 }
-
 
 interface DocumentsPageProps {
   listing: {
@@ -51,8 +50,8 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
   // Map folder types for API calls
   const folderTypeMap = {
     "documentacion-inicial": "initial-docs",
-    "visitas": "visitas", 
-    "otros": "others"
+    visitas: "visitas",
+    otros: "others",
   } as const;
 
   const apiFolderType = folderTypeMap[folderType];
@@ -62,9 +61,11 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     const fetchDocuments = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/properties/${listing.listingId}/documents?folderType=${apiFolderType}`);
+        const response = await fetch(
+          `/api/properties/${listing.listingId}/documents?folderType=${apiFolderType}`,
+        );
         if (response.ok) {
-          const docs = await response.json() as Document[];
+          const docs = (await response.json()) as Document[];
           setDocuments(docs);
         }
       } catch (error) {
@@ -77,12 +78,11 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     void fetchDocuments();
   }, [listing.listingId, apiFolderType]);
 
-
   const handleFiles = async (files: FileList) => {
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
-    
+
     try {
       // Upload all files
       const uploadPromises = Array.from(files).map(async (file) => {
@@ -90,10 +90,13 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
         formData.append("file", file);
         formData.append("folderType", apiFolderType);
 
-        const response = await fetch(`/api/properties/${listing.listingId}/documents`, {
-          method: "POST",
-          body: formData,
-        });
+        const response = await fetch(
+          `/api/properties/${listing.listingId}/documents`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
 
         if (!response.ok) {
           throw new Error(`Failed to upload ${file.name}`);
@@ -103,10 +106,9 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
       });
 
       const uploadedDocuments = await Promise.all(uploadPromises);
-      
+
       // Add new documents to the state
-      setDocuments(prev => [...uploadedDocuments, ...prev]);
-      
+      setDocuments((prev) => [...uploadedDocuments, ...prev]);
     } catch (error) {
       console.error("Error uploading files:", error);
       // You might want to show a toast notification here
@@ -135,7 +137,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     const files = e.dataTransfer.files;
     if (files) {
       void handleFiles(files);
@@ -144,14 +146,14 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
 
   const handleDownload = (document: Document) => {
     // Open the document URL in a new tab for download
-    window.open(document.fileUrl, '_blank');
+    window.open(document.fileUrl, "_blank");
   };
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString("es-ES", {
       day: "2-digit",
       month: "2-digit",
-      year: "numeric"
+      year: "numeric",
     });
   };
 
@@ -159,7 +161,11 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     const lowerType = type.toLowerCase();
     if (lowerType.includes("pdf")) {
       return <FileText className="h-8 w-8 text-red-500" />;
-    } else if (lowerType.includes("excel") || lowerType.includes("xlsx") || lowerType.includes("sheet")) {
+    } else if (
+      lowerType.includes("excel") ||
+      lowerType.includes("xlsx") ||
+      lowerType.includes("sheet")
+    ) {
       return <FileText className="h-8 w-8 text-green-500" />;
     } else if (lowerType.includes("word") || lowerType.includes("doc")) {
       return <FileText className="h-8 w-8 text-blue-500" />;
@@ -168,23 +174,21 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     }
   };
 
-
   return (
-    <div 
-      className={cn(
-        "pb-16 relative",
-        isDragOver && "bg-blue-50/50"
-      )}
+    <div
+      className={cn("relative pb-16", isDragOver && "bg-blue-50/50")}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Drag overlay */}
       {isDragOver && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-blue-50/80 border-2 border-dashed border-blue-300 rounded-lg">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/80">
           <div className="text-center">
-            <Upload className="mx-auto h-12 w-12 text-blue-500 mb-2" />
-            <p className="text-lg font-medium text-blue-900">Suelta los archivos aquí</p>
+            <Upload className="mx-auto mb-2 h-12 w-12 text-blue-500" />
+            <p className="text-lg font-medium text-blue-900">
+              Suelta los archivos aquí
+            </p>
             <p className="text-sm text-blue-700">Se subirán automáticamente</p>
           </div>
         </div>
@@ -203,7 +207,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
         <label htmlFor="file-upload" className="cursor-pointer">
           <Button
             disabled={isUploading}
-            className="bg-gray-900 hover:bg-gray-800 text-white"
+            className="bg-gray-900 text-white hover:bg-gray-800"
             asChild
           >
             <span>
@@ -221,13 +225,18 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
         ) : (
           <>
             {documents.map((document) => (
-              <Card key={document.docId.toString()} className="hover:shadow-sm transition-shadow">
+              <Card
+                key={document.docId.toString()}
+                className="transition-shadow hover:shadow-sm"
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       {getFileIcon(document.fileType)}
                       <div>
-                        <h4 className="font-medium text-gray-900">{document.filename}</h4>
+                        <h4 className="font-medium text-gray-900">
+                          {document.filename}
+                        </h4>
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
                           <span>{document.fileType.toUpperCase()}</span>
                           <div className="flex items-center space-x-1">
@@ -237,16 +246,22 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-800">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-gray-600 hover:text-gray-800"
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleDownload(document)}>
+                          <DropdownMenuItem
+                            onClick={() => handleDownload(document)}
+                          >
                             <Download className="mr-2 h-4 w-4" />
                             Descargar
                           </DropdownMenuItem>
@@ -261,13 +276,16 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
                 </CardContent>
               </Card>
             ))}
-            
+
             {documents.length === 0 && !isLoading && (
-              <div className="text-center py-12">
-                <FolderIcon className="mx-auto h-12 w-12 text-gray-400 fill-current mb-4" />
-                <p className="text-gray-500">No hay documentos en esta carpeta</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Sube el primer documento usando el botón &quot;Subir&quot; o arrastrando archivos a la pantalla
+              <div className="py-12 text-center">
+                <FolderIcon className="mx-auto mb-4 h-12 w-12 fill-current text-gray-400" />
+                <p className="text-gray-500">
+                  No hay documentos en esta carpeta
+                </p>
+                <p className="mt-1 text-sm text-gray-400">
+                  Sube el primer documento usando el botón &quot;Subir&quot; o
+                  arrastrando archivos a la pantalla
                 </p>
               </div>
             )}

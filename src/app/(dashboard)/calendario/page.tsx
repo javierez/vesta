@@ -63,11 +63,26 @@ import {
 
 // Appointment types configuration
 const appointmentTypes = {
-  Visita: { color: "bg-blue-100 text-blue-800", icon: <Home className="h-4 w-4" /> },
-  Reunión: { color: "bg-purple-100 text-purple-800", icon: <Users className="h-4 w-4" /> },
-  Firma: { color: "bg-green-100 text-green-800", icon: <PenTool className="h-4 w-4" /> },
-  Cierre: { color: "bg-yellow-100 text-yellow-800", icon: <Handshake className="h-4 w-4" /> },
-  Viaje: { color: "bg-emerald-100 text-emerald-800", icon: <Train className="h-4 w-4" /> },
+  Visita: {
+    color: "bg-blue-100 text-blue-800",
+    icon: <Home className="h-4 w-4" />,
+  },
+  Reunión: {
+    color: "bg-purple-100 text-purple-800",
+    icon: <Users className="h-4 w-4" />,
+  },
+  Firma: {
+    color: "bg-green-100 text-green-800",
+    icon: <PenTool className="h-4 w-4" />,
+  },
+  Cierre: {
+    color: "bg-yellow-100 text-yellow-800",
+    icon: <Handshake className="h-4 w-4" />,
+  },
+  Viaje: {
+    color: "bg-emerald-100 text-emerald-800",
+    icon: <Train className="h-4 w-4" />,
+  },
 };
 
 // Helper to get date string in YYYY-MM-DD
@@ -116,7 +131,9 @@ export default function AppointmentsPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [agentFilter, setAgentFilter] = useState("all");
-  const [agents, setAgents] = useState<Array<{id: string; name: string; firstName: string; lastName: string}>>([]);
+  const [agents, setAgents] = useState<
+    Array<{ id: string; name: string; firstName: string; lastName: string }>
+  >([]);
   const [view, setView] = useState<"list" | "calendar" | "weekly">("weekly");
   const [weekStart, setWeekStart] = useState(() => {
     const now = new Date();
@@ -126,7 +143,9 @@ export default function AppointmentsPage() {
   });
   const [selectedEvent, setSelectedEvent] = useState<bigint | null>(null);
   const [editMode, setEditMode] = useState<"create" | "edit">("create");
-  const [editingAppointmentId, setEditingAppointmentId] = useState<bigint | null>(null);
+  const [editingAppointmentId, setEditingAppointmentId] = useState<
+    bigint | null
+  >(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -175,9 +194,11 @@ export default function AppointmentsPage() {
     const matchesType = typeFilter === "all" || appointment.type === typeFilter;
     const matchesStatus =
       statusFilter === "all" || appointment.status === statusFilter;
-    const matchesAgent = 
-      agentFilter === "all" || 
-      (appointment.agentName && agents.find(agent => agent.id === agentFilter)?.name === appointment.agentName);
+    const matchesAgent =
+      agentFilter === "all" ||
+      (appointment.agentName &&
+        agents.find((agent) => agent.id === agentFilter)?.name ===
+          appointment.agentName);
     return matchesSearch && matchesType && matchesStatus && matchesAgent;
   });
 
@@ -237,7 +258,10 @@ export default function AppointmentsPage() {
   };
 
   // Handle opening modal for editing
-  const openModalWithEdit = ({ appointmentId, initialData }: {
+  const openModalWithEdit = ({
+    appointmentId,
+    initialData,
+  }: {
     appointmentId: bigint;
     initialData: Partial<Record<string, unknown>>;
   }) => {
@@ -261,7 +285,7 @@ export default function AppointmentsPage() {
     // Set create mode and navigate with URL parameters to trigger modal
     setEditMode("create");
     setEditingAppointmentId(null);
-    
+
     const params = new URLSearchParams();
     params.set("new", "true");
     params.set("date", dateString);
@@ -285,7 +309,10 @@ export default function AppointmentsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-bold sm:text-2xl">Citas</h1>
         <div className="flex items-center gap-2">
-          <Button onClick={handleCreateAppointment} className="w-full sm:w-auto">
+          <Button
+            onClick={handleCreateAppointment}
+            className="w-full sm:w-auto"
+          >
             <Plus className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Crear Evento</span>
             <span className="sm:hidden">Crear</span>
@@ -299,7 +326,7 @@ export default function AppointmentsPage() {
           <Input
             type="search"
             placeholder="Buscar citas..."
-            className="pl-8 w-full"
+            className="w-full pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -584,10 +611,10 @@ export default function AppointmentsPage() {
             </div>
           </CardHeader>
 
-          <CardContent className="p-0 overflow-x-auto">
+          <CardContent className="overflow-x-auto p-0">
             <div className="min-w-[640px]">
               {/* Day headers */}
-              <div className="grid grid-cols-8 border-b sticky top-0 bg-white z-10">
+              <div className="sticky top-0 z-10 grid grid-cols-8 border-b bg-white">
                 {/* Time column header */}
                 <div className="flex h-14 min-w-[60px] items-center justify-center border-r text-xs text-muted-foreground sm:text-sm">
                   GMT+02
@@ -617,94 +644,102 @@ export default function AppointmentsPage() {
                 ))}
               </div>
 
-              <ScrollArea className="h-[400px] sm:h-[500px] lg:h-[600px]" ref={scrollAreaRef}>
+              <ScrollArea
+                className="h-[400px] sm:h-[500px] lg:h-[600px]"
+                ref={scrollAreaRef}
+              >
                 <div className="grid grid-cols-8">
                   {/* Hours column */}
                   <div className="flex flex-col border-r">
-                  {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
-                    <div
-                      key={hour}
-                      className="flex h-[60px] items-start justify-end border-b pr-1 pt-1 text-xs text-muted-foreground sm:pr-2"
-                    >
-                      {hour.toString().padStart(2, "0")}:00
-                    </div>
-                  ))}
-                </div>
-
-                {/* Days columns */}
-                {getWeekDays().map((day, dayIdx) => (
-                  <div
-                    key={dayIdx}
-                    className={cn(
-                      "relative flex min-w-[80px] flex-col border-r sm:min-w-[100px]",
-                      isToday(day) && "bg-blue-50/30",
-                    )}
-                  >
-                    {/* Hour slots */}
                     {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
-                      <div key={hour} className="relative h-[60px] border-b">
-                        {/* First half-hour slot */}
-                        <div
-                          className="absolute left-0 right-0 top-0 h-1/2 cursor-pointer transition-colors hover:bg-blue-50/50"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTimeSlotClick(day, hour, 0);
-                          }}
-                          title={`Crear cita - ${hour.toString().padStart(2, "0")}:00`}
-                        />
-
-                        {/* Half-hour divider */}
-                        <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-gray-200"></div>
-
-                        {/* Second half-hour slot */}
-                        <div
-                          className="absolute bottom-0 left-0 right-0 h-1/2 cursor-pointer transition-colors hover:bg-blue-50/50"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTimeSlotClick(day, hour, 30);
-                          }}
-                          title={`Crear cita - ${hour.toString().padStart(2, "0")}:30`}
-                        />
+                      <div
+                        key={hour}
+                        className="flex h-[60px] items-start justify-end border-b pr-1 pt-1 text-xs text-muted-foreground sm:pr-2"
+                      >
+                        {hour.toString().padStart(2, "0")}:00
                       </div>
                     ))}
-
-                    {/* Appointments for this day */}
-                    {!loading &&
-                      !error &&
-                      filteredAppointments
-                        .filter((app) => {
-                          const appDate = new Date(app.startTime)
-                            .toISOString()
-                            .split("T")[0];
-                          const dayDate = getDateString(day);
-                          return appDate === dayDate;
-                        })
-                        .map((app) => {
-                          const startTime = new Date(app.startTime)
-                            .toTimeString()
-                            .slice(0, 5);
-                          const endTime = new Date(app.endTime)
-                            .toTimeString()
-                            .slice(0, 5);
-                          const eventStyle = calculateEventStyle(
-                            startTime,
-                            endTime,
-                          );
-
-                          return (
-                            <CalendarEvent
-                              key={app.appointmentId.toString()}
-                              event={app}
-                              style={eventStyle}
-                              isSelected={selectedEvent === app.appointmentId}
-                              onClick={() =>
-                                setSelectedEvent(app.appointmentId)
-                              }
-                            />
-                          );
-                        })}
                   </div>
-                ))}
+
+                  {/* Days columns */}
+                  {getWeekDays().map((day, dayIdx) => (
+                    <div
+                      key={dayIdx}
+                      className={cn(
+                        "relative flex min-w-[80px] flex-col border-r sm:min-w-[100px]",
+                        isToday(day) && "bg-blue-50/30",
+                      )}
+                    >
+                      {/* Hour slots */}
+                      {Array.from({ length: 18 }, (_, i) => i + 6).map(
+                        (hour) => (
+                          <div
+                            key={hour}
+                            className="relative h-[60px] border-b"
+                          >
+                            {/* First half-hour slot */}
+                            <div
+                              className="absolute left-0 right-0 top-0 h-1/2 cursor-pointer transition-colors hover:bg-blue-50/50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTimeSlotClick(day, hour, 0);
+                              }}
+                              title={`Crear cita - ${hour.toString().padStart(2, "0")}:00`}
+                            />
+
+                            {/* Half-hour divider */}
+                            <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-gray-200"></div>
+
+                            {/* Second half-hour slot */}
+                            <div
+                              className="absolute bottom-0 left-0 right-0 h-1/2 cursor-pointer transition-colors hover:bg-blue-50/50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTimeSlotClick(day, hour, 30);
+                              }}
+                              title={`Crear cita - ${hour.toString().padStart(2, "0")}:30`}
+                            />
+                          </div>
+                        ),
+                      )}
+
+                      {/* Appointments for this day */}
+                      {!loading &&
+                        !error &&
+                        filteredAppointments
+                          .filter((app) => {
+                            const appDate = new Date(app.startTime)
+                              .toISOString()
+                              .split("T")[0];
+                            const dayDate = getDateString(day);
+                            return appDate === dayDate;
+                          })
+                          .map((app) => {
+                            const startTime = new Date(app.startTime)
+                              .toTimeString()
+                              .slice(0, 5);
+                            const endTime = new Date(app.endTime)
+                              .toTimeString()
+                              .slice(0, 5);
+                            const eventStyle = calculateEventStyle(
+                              startTime,
+                              endTime,
+                            );
+
+                            return (
+                              <CalendarEvent
+                                key={app.appointmentId.toString()}
+                                event={app}
+                                style={eventStyle}
+                                isSelected={selectedEvent === app.appointmentId}
+                                onClick={() =>
+                                  setSelectedEvent(app.appointmentId)
+                                }
+                              />
+                            );
+                          })}
+                    </div>
+                  ))}
                 </div>
               </ScrollArea>
             </div>
@@ -808,13 +843,20 @@ export default function AppointmentsPage() {
                           leadId: event.leadId ?? undefined,
                           dealId: event.dealId ?? undefined,
                           prospectId: event.prospectId ?? undefined,
-                          startDate: event.startTime.toISOString().split('T')[0],
+                          startDate: event.startTime
+                            .toISOString()
+                            .split("T")[0],
                           startTime: event.startTime.toTimeString().slice(0, 5),
-                          endDate: event.endTime.toISOString().split('T')[0],
+                          endDate: event.endTime.toISOString().split("T")[0],
                           endTime: event.endTime.toTimeString().slice(0, 5),
                           tripTimeMinutes: event.tripTimeMinutes,
                           notes: event.notes,
-                          appointmentType: event.type as "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje",
+                          appointmentType: event.type as
+                            | "Visita"
+                            | "Reunión"
+                            | "Firma"
+                            | "Cierre"
+                            | "Viaje",
                         },
                       });
                       setSelectedEvent(null); // Close the detail panel
@@ -823,12 +865,16 @@ export default function AppointmentsPage() {
                   >
                     Editar
                   </Button>
-                  {!(event.status === "Completed" && event.type === "Visita") && (
+                  {!(
+                    event.status === "Completed" && event.type === "Visita"
+                  ) && (
                     <Button
                       size="sm"
                       variant="default"
                       onClick={() => {
-                        router.push(`/calendario/visita/${event.appointmentId}`);
+                        router.push(
+                          `/calendario/visita/${event.appointmentId}`,
+                        );
                         setSelectedEvent(null); // Close the detail panel
                       }}
                       className="flex-1"

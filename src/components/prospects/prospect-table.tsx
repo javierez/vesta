@@ -141,8 +141,8 @@ export function ProspectTable({
       // Handle if it's already an array
       if (Array.isArray(preferredAreas)) {
         return (preferredAreas as Array<{ name: string }>)
-          .filter(area => area && typeof area === "object" && "name" in area)
-          .map(area => area.name);
+          .filter((area) => area && typeof area === "object" && "name" in area)
+          .map((area) => area.name);
       }
 
       // Handle if it's a string that needs parsing
@@ -150,8 +150,10 @@ export function ProspectTable({
         const parsed = JSON.parse(preferredAreas) as unknown;
         if (Array.isArray(parsed)) {
           return (parsed as Array<{ name: string }>)
-            .filter(area => area && typeof area === "object" && "name" in area)
-            .map(area => area.name);
+            .filter(
+              (area) => area && typeof area === "object" && "name" in area,
+            )
+            .map((area) => area.name);
         }
       }
     } catch (error) {
@@ -519,10 +521,11 @@ export function ProspectTable({
     // Filter by listingType (Sale/Rent)
     if (listingTypeFilter && listingTypeFilter !== "all") {
       const filterValues = listingTypeFilter.split(",");
-      
+
       if (operation.type === "prospect") {
         const prospect = operation.rawData as ProspectWithContact;
-        if (!filterValues.includes(prospect.prospects.listingType ?? "")) return false;
+        if (!filterValues.includes(prospect.prospects.listingType ?? ""))
+          return false;
       } else {
         const listing = operation.rawData as ListingWithDetails;
         if (!filterValues.includes(listing.listings.listingType)) return false;
@@ -532,30 +535,41 @@ export function ProspectTable({
     // Filter by status
     if (statusFilter && statusFilter !== "all") {
       const filterValues = statusFilter.split(",");
-      
+
       if (operation.type === "prospect") {
         const prospect = operation.rawData as ProspectWithContact;
         // Map the filter status values to database status values
-        const mappedStatuses = filterValues.map(status => {
+        const mappedStatuses = filterValues.map((status) => {
           switch (status) {
-            case "En búsqueda": return "new";
-            case "En preparación": return "working";
-            case "Finalizado": return "qualified";
-            case "Archivado": return "archived";
-            default: return status.toLowerCase();
+            case "En búsqueda":
+              return "new";
+            case "En preparación":
+              return "working";
+            case "Finalizado":
+              return "qualified";
+            case "Archivado":
+              return "archived";
+            default:
+              return status.toLowerCase();
           }
         });
-        if (!mappedStatuses.includes(prospect.prospects.status.toLowerCase())) return false;
+        if (!mappedStatuses.includes(prospect.prospects.status.toLowerCase()))
+          return false;
       } else {
         const listing = operation.rawData as ListingWithDetails;
         // Map display statuses to database statuses
-        const mappedStatuses = filterValues.map(status => {
+        const mappedStatuses = filterValues.map((status) => {
           switch (status) {
-            case "En preparación": return "Preparation";
-            case "En valoración": return "Valuation";
-            case "Listo para firma": return "Presign";
-            case "En búsqueda": return "Active";
-            default: return status;
+            case "En preparación":
+              return "Preparation";
+            case "En valoración":
+              return "Valuation";
+            case "Listo para firma":
+              return "Presign";
+            case "En búsqueda":
+              return "Active";
+            default:
+              return status;
           }
         });
         if (!mappedStatuses.includes(listing.listings.status)) return false;
@@ -563,8 +577,14 @@ export function ProspectTable({
     }
 
     // Filter by urgency level (prospects only)
-    if (urgencyLevelFilter && urgencyLevelFilter !== "all" && operation.type === "prospect") {
-      const filterValues = urgencyLevelFilter.split(",").map(v => parseInt(v, 10));
+    if (
+      urgencyLevelFilter &&
+      urgencyLevelFilter !== "all" &&
+      operation.type === "prospect"
+    ) {
+      const filterValues = urgencyLevelFilter
+        .split(",")
+        .map((v) => parseInt(v, 10));
       const prospect = operation.rawData as ProspectWithContact;
       if (prospect.prospects.urgencyLevel === null) return false;
       if (!filterValues.includes(prospect.prospects.urgencyLevel)) return false;

@@ -4,7 +4,7 @@ import { getPropertyImages } from "~/server/queries/property_images";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -33,7 +33,7 @@ export async function GET(
     console.error("Error fetching property images:", error);
     return NextResponse.json(
       { error: "Failed to fetch property images" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

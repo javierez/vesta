@@ -382,7 +382,7 @@ export async function getDocumentsByFolderType(
       eq(documents.propertyId, propertyId),
       eq(documents.documentTag, documentTag),
     ];
-    
+
     if (isActive !== undefined) {
       conditions.push(eq(documents.isActive, isActive));
     }

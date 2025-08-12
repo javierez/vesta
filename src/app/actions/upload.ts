@@ -150,7 +150,7 @@ export async function uploadDocument(
       appointmentId: appointmentId?.toString(),
       listingId: listingId?.toString(),
     });
-    
+
     // 1. Upload to S3
     const { fileUrl, s3key, documentKey, filename, fileType } =
       await uploadDocumentToS3(
@@ -160,13 +160,13 @@ export async function uploadDocument(
         documentTag,
         folderType,
       );
-    
+
     console.log(`☁️ S3 upload completed:`, {
       fileUrl,
       s3key,
       documentKey,
       filename,
-      fileType
+      fileType,
     });
 
     // 2. Create record in database
@@ -191,10 +191,10 @@ export async function uploadDocument(
     if (!result) {
       throw new Error("Failed to create document record");
     }
-    
+
     console.log(`💾 Document record created:`, {
       docId: result.docId?.toString(),
-      filename: filename
+      filename: filename,
     });
 
     // 3. Fetch the complete document record
@@ -202,11 +202,11 @@ export async function uploadDocument(
     if (!document) {
       throw new Error("Failed to fetch created document");
     }
-    
+
     console.log(`✅ Document upload complete:`, {
       docId: document.docId?.toString(),
       documentKey: document.documentKey,
-      fileUrl: document.fileUrl
+      fileUrl: document.fileUrl,
     });
 
     // Convert to Document type, ensuring all required fields are present

@@ -33,7 +33,9 @@ export function PropertyBreadcrumb({
           </Link>
         </li>
         <li className="mx-2">/</li>
-        <li className={documentFolder ? "text-muted-foreground" : "font-medium"}>
+        <li
+          className={documentFolder ? "text-muted-foreground" : "font-medium"}
+        >
           {documentFolder ? (
             <Link
               href={`/propiedades/${documentFolder.propertyId}`}

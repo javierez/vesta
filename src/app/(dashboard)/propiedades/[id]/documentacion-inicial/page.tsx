@@ -10,7 +10,9 @@ interface DocumentPageProps {
   }>;
 }
 
-export default async function DocumentacionInicialPage({ params }: DocumentPageProps) {
+export default async function DocumentacionInicialPage({
+  params,
+}: DocumentPageProps) {
   const unwrappedParams = await params;
   const listing = await getListingDetailsWithAuth(parseInt(unwrappedParams.id));
 
@@ -26,7 +28,7 @@ export default async function DocumentacionInicialPage({ params }: DocumentPageP
         referenceNumber={listing.referenceNumber ?? ""}
         documentFolder={{
           name: "Documentación Inicial",
-          propertyId: listing.listingId.toString()
+          propertyId: listing.listingId.toString(),
         }}
       />
 
@@ -45,10 +47,7 @@ export default async function DocumentacionInicialPage({ params }: DocumentPageP
         neighborhood={listing.neighborhood ?? ""}
       />
 
-      <DocumentsPage
-        listing={listing}
-        folderType="documentacion-inicial"
-      />
+      <DocumentsPage listing={listing} folderType="documentacion-inicial" />
     </div>
   );
 }

@@ -101,34 +101,34 @@ export async function getAllListingsWithAuth(): Promise<ListingWithDetails[]> {
     return listingsWithDetails
       .filter((item) => item.propertyId !== null)
       .map((item) => ({
-      listings: {
-        id: item.listingId,
-        listingType: item.listingType,
-        price: item.price,
-        status: item.status,
-        createdAt: item.listingCreatedAt,
-        updatedAt: item.listingUpdatedAt,
-      },
-      properties: {
-        id: item.propertyId!,
-        propertyType: item.propertyType,
-        bedrooms: item.bedrooms,
-        bathrooms: item.bathrooms ? Number(item.bathrooms) : null,
-        squareMeter: item.squareMeter,
-      },
-      locations: {
-        neighborhood: item.neighborhood ?? "Sin especificar",
-      },
-      ownerContact: item.ownerContactId
-        ? {
-            contactId: item.ownerContactId,
-            firstName: item.ownerFirstName!,
-            lastName: item.ownerLastName!,
-            email: item.ownerEmail,
-            phone: item.ownerPhone,
-          }
-        : null,
-    }));
+        listings: {
+          id: item.listingId,
+          listingType: item.listingType,
+          price: item.price,
+          status: item.status,
+          createdAt: item.listingCreatedAt,
+          updatedAt: item.listingUpdatedAt,
+        },
+        properties: {
+          id: item.propertyId!,
+          propertyType: item.propertyType,
+          bedrooms: item.bedrooms,
+          bathrooms: item.bathrooms ? Number(item.bathrooms) : null,
+          squareMeter: item.squareMeter,
+        },
+        locations: {
+          neighborhood: item.neighborhood ?? "Sin especificar",
+        },
+        ownerContact: item.ownerContactId
+          ? {
+              contactId: item.ownerContactId,
+              firstName: item.ownerFirstName!,
+              lastName: item.ownerLastName!,
+              email: item.ownerEmail,
+              phone: item.ownerPhone,
+            }
+          : null,
+      }));
   } catch (error) {
     console.error("Error fetching listings with details:", error);
     throw error;

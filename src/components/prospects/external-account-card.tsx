@@ -18,7 +18,7 @@ export const ExternalAccountCard = React.memo(function ExternalAccountCard({
   onRequestContact,
 }: ExternalAccountCardProps) {
   const listingsCount = matches.length;
-  
+
   const handleRequestContact = () => {
     if (onRequestContact) {
       onRequestContact(accountId, matches);
@@ -26,7 +26,7 @@ export const ExternalAccountCard = React.memo(function ExternalAccountCard({
   };
 
   return (
-    <Card className="border-0 shadow-sm hover:shadow-md transition-all">
+    <Card className="border-0 shadow-sm transition-all hover:shadow-md">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -34,15 +34,14 @@ export const ExternalAccountCard = React.memo(function ExternalAccountCard({
               <Lock className="h-5 w-5 text-gray-500" />
             </div>
             <div>
-              <p className="font-medium text-gray-900">
-                Agencia Colaboradora
-              </p>
+              <p className="font-medium text-gray-900">Agencia Colaboradora</p>
               <p className="text-sm text-gray-600">
-                {listingsCount} propiedad{listingsCount !== 1 ? 'es' : ''} que coincide{listingsCount === 1 ? '' : 'n'} con tu búsqueda
+                {listingsCount} propiedad{listingsCount !== 1 ? "es" : ""} que
+                coincide{listingsCount === 1 ? "" : "n"} con tu búsqueda
               </p>
             </div>
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -53,20 +52,29 @@ export const ExternalAccountCard = React.memo(function ExternalAccountCard({
             <span>Solicitar contacto</span>
           </Button>
         </div>
-        
+
         {matches.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="mt-3 border-t border-gray-100 pt-3">
             <div className="flex flex-wrap gap-2">
               {matches.slice(0, 3).map((match, index) => (
-                <div key={index} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                  €{new Intl.NumberFormat('es-ES').format(parseFloat(match.listing.listings.price))}
-                  {match.listing.properties.bedrooms && ` • ${match.listing.properties.bedrooms} hab`}
-                  {match.listing.properties.bathrooms && ` • ${match.listing.properties.bathrooms} baños`}
-                  {match.listing.properties.squareMeter && ` • ${match.listing.properties.squareMeter}m²`}
+                <div
+                  key={index}
+                  className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700"
+                >
+                  €
+                  {new Intl.NumberFormat("es-ES").format(
+                    parseFloat(match.listing.listings.price),
+                  )}
+                  {match.listing.properties.bedrooms &&
+                    ` • ${match.listing.properties.bedrooms} hab`}
+                  {match.listing.properties.bathrooms &&
+                    ` • ${match.listing.properties.bathrooms} baños`}
+                  {match.listing.properties.squareMeter &&
+                    ` • ${match.listing.properties.squareMeter}m²`}
                 </div>
               ))}
               {matches.length > 3 && (
-                <div className="text-xs text-gray-500 px-2 py-1">
+                <div className="px-2 py-1 text-xs text-gray-500">
                   +{matches.length - 3} más
                 </div>
               )}

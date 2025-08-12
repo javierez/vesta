@@ -9,7 +9,15 @@ import {
 } from "~/components/ui/popover";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { Filter, X, Check, ChevronDown, Search, LayoutGrid, Kanban } from "lucide-react";
+import {
+  Filter,
+  X,
+  Check,
+  ChevronDown,
+  Search,
+  LayoutGrid,
+  Kanban,
+} from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { useRouter, useSearchParams } from "next/navigation";
 

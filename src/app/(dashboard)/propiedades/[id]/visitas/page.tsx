@@ -26,7 +26,7 @@ export default async function VisitasPage({ params }: DocumentPageProps) {
         referenceNumber={listing.referenceNumber ?? ""}
         documentFolder={{
           name: "Visitas",
-          propertyId: listing.listingId.toString()
+          propertyId: listing.listingId.toString(),
         }}
       />
 
@@ -45,10 +45,7 @@ export default async function VisitasPage({ params }: DocumentPageProps) {
         neighborhood={listing.neighborhood ?? ""}
       />
 
-      <DocumentsPage
-        listing={listing}
-        folderType="visitas"
-      />
+      <DocumentsPage listing={listing} folderType="visitas" />
     </div>
   );
 }

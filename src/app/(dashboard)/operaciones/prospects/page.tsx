@@ -71,7 +71,6 @@ export default function ProspectsPage() {
       setIsLoading(true);
       setError(null);
       try {
-
         // Get all filter parameters from URL
         const filters: Record<string, unknown> = {};
         for (const [key, value] of searchParams.entries()) {

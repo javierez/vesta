@@ -182,10 +182,11 @@ export default function AppointmentForm({
   // Fetch contacts when user starts typing (debounced) or when initial data has contactId
   useEffect(() => {
     // For initial data with contactId, we need to fetch all contacts to find the match (only once)
-    const needsAllContacts = initialData.contactId && !selectedContact && contacts.length === 0;
+    const needsAllContacts =
+      initialData.contactId && !selectedContact && contacts.length === 0;
     // For search, we only fetch if there's a query
     const hasSearchQuery = searchQuery.length > 0;
-    
+
     if (!needsAllContacts && !hasSearchQuery) {
       setContacts([]);
       return;
@@ -195,22 +196,24 @@ export default function AppointmentForm({
       setIsLoadingContacts(true);
       try {
         let contactsData;
-        
+
         if (needsAllContacts) {
           // For initial data, we need all contacts to find the match
-          const { listContactsWithAuth } = await import("~/server/queries/contact");
+          const { listContactsWithAuth } = await import(
+            "~/server/queries/contact"
+          );
           contactsData = await listContactsWithAuth();
         } else {
           // For search, use the optimized search function
           contactsData = await searchContactsWithAuth(searchQuery.trim());
         }
-        
+
         setContacts(contactsData);
-        
+
         // Set selected contact from initial data if provided and not already set
         if (initialData.contactId && !selectedContact) {
           const matchedContact = contactsData.find(
-            (contact) => contact.contactId === initialData.contactId
+            (contact) => contact.contactId === initialData.contactId,
           );
           if (matchedContact) {
             setSelectedContact(matchedContact);
@@ -240,10 +243,11 @@ export default function AppointmentForm({
   // Fetch listings when user starts typing (debounced) or when initial data has listingId
   useEffect(() => {
     // For initial data with listingId, we need to fetch all listings to find the match (only once)
-    const needsAllListings = initialData.listingId && !selectedListing && listings.length === 0;
+    const needsAllListings =
+      initialData.listingId && !selectedListing && listings.length === 0;
     // For search, we only fetch if there's a query
     const hasSearchQuery = listingSearchQuery.length > 0;
-    
+
     if (!needsAllListings && !hasSearchQuery) {
       setListings([]);
       return;
@@ -253,7 +257,7 @@ export default function AppointmentForm({
       setIsLoadingListings(true);
       try {
         let listingsData;
-        
+
         if (needsAllListings) {
           // For initial data, we need all listings to find the match
           listingsData = await listListingsCompactWithAuth({
@@ -266,13 +270,13 @@ export default function AppointmentForm({
             searchQuery: listingSearchQuery.trim(),
           });
         }
-        
+
         setListings(listingsData);
-        
+
         // Set selected listing from initial data if provided and not already set
         if (initialData.listingId && !selectedListing) {
           const matchedListing = listingsData.find(
-            (listing) => listing.listingId === initialData.listingId
+            (listing) => listing.listingId === initialData.listingId,
           );
           if (matchedListing) {
             setSelectedListing(matchedListing);
@@ -300,39 +304,37 @@ export default function AppointmentForm({
   }, [listingSearchQuery, initialData.listingId]);
 
   // Filter contacts based on search query and exclude selected contact
-  const filteredContacts = contacts.filter(
-    (contact) => {
-      // Exclude selected contact from search results
-      if (selectedContact && contact.contactId === selectedContact.contactId) {
-        return false;
-      }
-      
-      return (
-        `${contact.firstName} ${contact.lastName}`
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        (contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ??
-          false) ||
-        (contact.phone?.includes(searchQuery) ?? false)
-      );
-    },
-  );
+  const filteredContacts = contacts.filter((contact) => {
+    // Exclude selected contact from search results
+    if (selectedContact && contact.contactId === selectedContact.contactId) {
+      return false;
+    }
+
+    return (
+      `${contact.firstName} ${contact.lastName}`
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      (contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ??
+        false) ||
+      (contact.phone?.includes(searchQuery) ?? false)
+    );
+  });
 
   // Filter listings based on search query and exclude selected listing
-  const filteredListings = listings.filter(
-    (listing) => {
-      // Exclude selected listing from search results
-      if (selectedListing && listing.listingId === selectedListing.listingId) {
-        return false;
-      }
-      
-      return (
-        listing.title?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ??
-        listing.referenceNumber?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ??
-        listing.city?.toLowerCase().includes(listingSearchQuery.toLowerCase())
-      );
-    },
-  );
+  const filteredListings = listings.filter((listing) => {
+    // Exclude selected listing from search results
+    if (selectedListing && listing.listingId === selectedListing.listingId) {
+      return false;
+    }
+
+    return (
+      listing.title?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ??
+      listing.referenceNumber
+        ?.toLowerCase()
+        .includes(listingSearchQuery.toLowerCase()) ??
+      listing.city?.toLowerCase().includes(listingSearchQuery.toLowerCase())
+    );
+  });
 
   // Generate time options (15-minute intervals)
   const generateTimeOptions = () => {
@@ -351,7 +353,7 @@ export default function AppointmentForm({
     (field: keyof AppointmentFormData) => (value: string | number) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       setValidationError(null);
-      
+
       // Clear listing selection if appointment type changes from "Visita"
       if (field === "appointmentType" && value !== "Visita") {
         handleClearListing();
@@ -406,7 +408,7 @@ export default function AppointmentForm({
           setValidationError("Debe seleccionar una propiedad para las visitas");
           return false;
         }
-        
+
         const validation = await validateAppointmentForm(
           formData as AppointmentFormData,
         );
@@ -446,10 +448,13 @@ export default function AppointmentForm({
     setIsCreating(true);
     try {
       let result;
-      
+
       if (mode === "edit" && appointmentId) {
         // Update existing appointment
-        console.log("Updating appointment in edit mode with ID:", appointmentId);
+        console.log(
+          "Updating appointment in edit mode with ID:",
+          appointmentId,
+        );
         result = await updateAppointmentAction(
           appointmentId,
           formData as AppointmentFormData,
@@ -457,9 +462,7 @@ export default function AppointmentForm({
       } else {
         // Create new appointment
         console.log("Creating new appointment in create mode");
-        result = await createAppointmentAction(
-          formData as AppointmentFormData,
-        );
+        result = await createAppointmentAction(formData as AppointmentFormData);
       }
 
       if (result.success) {
@@ -468,11 +471,15 @@ export default function AppointmentForm({
         setValidationError(result.error ?? "Error desconocido");
       }
     } catch (error) {
-      const errorMessage = mode === "edit" 
-        ? "Error al actualizar la cita"
-        : "Error al crear la cita";
+      const errorMessage =
+        mode === "edit"
+          ? "Error al actualizar la cita"
+          : "Error al crear la cita";
       setValidationError(errorMessage);
-      console.error(`Error ${mode === "edit" ? "updating" : "creating"} appointment:`, error);
+      console.error(
+        `Error ${mode === "edit" ? "updating" : "creating"} appointment:`,
+        error,
+      );
     } finally {
       setIsCreating(false);
     }
@@ -667,7 +674,7 @@ export default function AppointmentForm({
                   <Home className="h-4 w-4" />
                   Seleccionar Propiedad
                 </label>
-{!selectedListing && (
+                {!selectedListing && (
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
@@ -687,15 +694,20 @@ export default function AppointmentForm({
                         <Home className="h-5 w-5 text-primary" />
                         <div>
                           <div className="font-medium">
-                            {selectedListing.title ?? `${selectedListing.propertyType} en ${selectedListing.city}`}
+                            {selectedListing.title ??
+                              `${selectedListing.propertyType} en ${selectedListing.city}`}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            Ref: {selectedListing.referenceNumber} • {selectedListing.city} • €{selectedListing.price}
+                            Ref: {selectedListing.referenceNumber} •{" "}
+                            {selectedListing.city} • €{selectedListing.price}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {selectedListing.bedrooms && `${selectedListing.bedrooms} hab`}
-                            {selectedListing.bathrooms && ` • ${selectedListing.bathrooms} baños`}
-                            {selectedListing.squareMeter && ` • ${selectedListing.squareMeter}m²`}
+                            {selectedListing.bedrooms &&
+                              `${selectedListing.bedrooms} hab`}
+                            {selectedListing.bathrooms &&
+                              ` • ${selectedListing.bathrooms} baños`}
+                            {selectedListing.squareMeter &&
+                              ` • ${selectedListing.squareMeter}m²`}
                           </div>
                         </div>
                       </div>
@@ -712,7 +724,7 @@ export default function AppointmentForm({
                   </div>
                 )}
 
-{!selectedListing && (
+                {!selectedListing && (
                   <ScrollArea className="h-[180px]">
                     {isLoadingListings ? (
                       <div className="flex items-center justify-center py-8">
@@ -722,7 +734,8 @@ export default function AppointmentForm({
                       <div className="py-8 text-center text-muted-foreground">
                         Escribe para buscar propiedades
                       </div>
-                    ) : filteredListings.length === 0 && listingSearchQuery.length > 0 ? (
+                    ) : filteredListings.length === 0 &&
+                      listingSearchQuery.length > 0 ? (
                       <div className="py-8 text-center text-muted-foreground">
                         No se encontraron propiedades
                       </div>
@@ -737,15 +750,20 @@ export default function AppointmentForm({
                             <div className="flex items-center gap-3">
                               <div className="flex-1">
                                 <div className="font-medium">
-                                  {listing.title ?? `${listing.propertyType} en ${listing.city}`}
+                                  {listing.title ??
+                                    `${listing.propertyType} en ${listing.city}`}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  Ref: {listing.referenceNumber} • {listing.city} • €{listing.price}
+                                  Ref: {listing.referenceNumber} •{" "}
+                                  {listing.city} • €{listing.price}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  {listing.bedrooms && `${listing.bedrooms} hab`}
-                                  {listing.bathrooms && ` • ${listing.bathrooms} baños`}
-                                  {listing.squareMeter && ` • ${listing.squareMeter}m²`}
+                                  {listing.bedrooms &&
+                                    `${listing.bedrooms} hab`}
+                                  {listing.bathrooms &&
+                                    ` • ${listing.bathrooms} baños`}
+                                  {listing.squareMeter &&
+                                    ` • ${listing.squareMeter}m²`}
                                 </div>
                               </div>
                             </div>
@@ -834,10 +852,12 @@ export default function AppointmentForm({
                   <Home className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <div className="font-medium">
-                      {selectedListing.title ?? `${selectedListing.propertyType} en ${selectedListing.city}`}
+                      {selectedListing.title ??
+                        `${selectedListing.propertyType} en ${selectedListing.city}`}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Ref: {selectedListing.referenceNumber} • €{selectedListing.price}
+                      Ref: {selectedListing.referenceNumber} • €
+                      {selectedListing.price}
                     </div>
                   </div>
                 </div>

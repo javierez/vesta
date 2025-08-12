@@ -1,3 +1,5 @@
+import { type LeadStatus } from "~/lib/constants/lead-statuses";
+
 export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje";
 
 export type PropertyImage = {
@@ -1063,8 +1065,9 @@ export type Lead = {
   leadId: bigint;
   contactId: bigint;
   listingId?: bigint;
+  prospectId?: bigint;
   source: string;
-  status: "New" | "Working" | "Converted" | "Disqualified";
+  status: LeadStatus;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -1543,8 +1546,9 @@ export const leads: Lead[] = [
     leadId: BigInt(1),
     contactId: BigInt(1),
     listingId: BigInt(1),
+    prospectId: undefined,
     source: "Website",
-    status: "Working",
+    status: "Info Solicitada",
     createdAt: new Date("2024-03-01"),
     updatedAt: new Date("2024-03-15"),
   },
@@ -1552,8 +1556,9 @@ export const leads: Lead[] = [
     leadId: BigInt(2),
     contactId: BigInt(2),
     listingId: BigInt(2),
+    prospectId: undefined,
     source: "Referral",
-    status: "New",
+    status: "Info Incompleta",
     createdAt: new Date("2024-03-10"),
     updatedAt: new Date("2024-03-10"),
   },

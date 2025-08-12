@@ -1,5 +1,11 @@
 import { db } from "../db";
-import { appointments, contacts, listings, properties, users } from "../db/schema";
+import {
+  appointments,
+  contacts,
+  listings,
+  properties,
+  users,
+} from "../db/schema";
 import { eq, and, or, between } from "drizzle-orm";
 import type { Appointment } from "../../lib/data";
 
@@ -279,7 +285,7 @@ export async function listAppointments(
   }
 }
 
-// Get all agents (users) for filtering  
+// Get all agents (users) for filtering
 export async function getAgentsForFilter() {
   try {
     const agents = await db

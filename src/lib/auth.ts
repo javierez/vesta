@@ -87,7 +87,7 @@ export const auth = betterAuth({
           clientId: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           accessType: "offline",
-          prompt: "select_account",
+          prompt: "select_account+consent",
         },
       }),
     ...(process.env.APPLE_CLIENT_ID &&

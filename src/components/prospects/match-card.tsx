@@ -115,20 +115,20 @@ export const MatchCard = React.memo(function MatchCard({
           alt={listing.properties.propertyType ?? "Property image"}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className={`object-cover transition-all duration-300 ${isHovered ? 'blur-sm scale-105' : ''}`}
+          className={`object-cover transition-all duration-300 ${isHovered ? "scale-105 blur-sm" : ""}`}
           loading="lazy"
           onLoad={() => setImageLoaded(true)}
           quality={85}
         />
-        
+
         {/* Hover Action Buttons - Center of image */}
         {showActions && isHovered && (
-          <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20 backdrop-blur-[1px]">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
             <div className="flex items-center space-x-4">
               <Button
                 variant="secondary"
                 size="icon"
-                className="h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110"
+                className="h-12 w-12 rounded-full bg-white/90 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-white"
                 onClick={(e) => {
                   e.preventDefault();
                   void handleAction("contact");
@@ -144,7 +144,7 @@ export const MatchCard = React.memo(function MatchCard({
               <Button
                 variant="secondary"
                 size="icon"
-                className="h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110"
+                className="h-12 w-12 rounded-full bg-white/90 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-white"
                 onClick={(e) => {
                   e.preventDefault();
                   void handleAction("contact");
@@ -160,7 +160,7 @@ export const MatchCard = React.memo(function MatchCard({
               <Button
                 variant="secondary"
                 size="icon"
-                className="h-12 w-12 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110"
+                className="h-12 w-12 rounded-full bg-white/90 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-white"
                 onClick={(e) => {
                   e.preventDefault();
                   void handleAction("dismiss");
@@ -296,18 +296,19 @@ export const MatchCard = React.memo(function MatchCard({
           <div className="flex items-center">
             <div className="relative flex items-center">
               {/* Arrow line */}
-              <div className="w-6 h-0.5 bg-gray-400 animate-pulse"></div>
+              <div className="h-0.5 w-6 animate-pulse bg-gray-400"></div>
               {/* Left arrowhead */}
-              <div className="absolute -left-1 w-0 h-0 border-t-[3px] border-b-[3px] border-r-[4px] border-t-transparent border-b-transparent border-r-gray-400"></div>
+              <div className="absolute -left-1 h-0 w-0 border-b-[3px] border-r-[4px] border-t-[3px] border-b-transparent border-r-gray-400 border-t-transparent"></div>
               {/* Right arrowhead */}
-              <div className="absolute -right-1 w-0 h-0 border-t-[3px] border-b-[3px] border-l-[4px] border-t-transparent border-b-transparent border-l-gray-400"></div>
+              <div className="absolute -right-1 h-0 w-0 border-b-[3px] border-l-[4px] border-t-[3px] border-b-transparent border-l-gray-400 border-t-transparent"></div>
             </div>
           </div>
 
           {/* Right - Prospect Contact */}
           <div className="flex items-center gap-1">
             <span className="text-xs text-muted-foreground/80">
-              {match.prospect.contacts.firstName} {match.prospect.contacts.lastName}
+              {match.prospect.contacts.firstName}{" "}
+              {match.prospect.contacts.lastName}
             </span>
             <User className="h-3 w-3 text-muted-foreground/80" />
           </div>

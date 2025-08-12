@@ -23,9 +23,9 @@ import type {
 export async function getMatchesForProspectsWithAuth(
   params: Omit<MatchQueryParams, "accountId">,
 ) {
-  console.log('🔐 Auth wrapper called with params:', params);
+  console.log("🔐 Auth wrapper called with params:", params);
   const accountId = await getCurrentUserAccountId();
-  console.log('👤 Current account ID:', accountId);
+  console.log("👤 Current account ID:", accountId);
   return getMatchesForProspects({ ...params, accountId: BigInt(accountId) });
 }
 
@@ -82,7 +82,9 @@ function parsePreferredAreas(
 
   try {
     if (Array.isArray(preferredAreas)) {
-      return (preferredAreas as Array<{ neighborhoodId: number; name: string }>).filter(
+      return (
+        preferredAreas as Array<{ neighborhoodId: number; name: string }>
+      ).filter(
         (area) =>
           area &&
           typeof area === "object" &&
@@ -94,7 +96,9 @@ function parsePreferredAreas(
     if (typeof preferredAreas === "string") {
       const parsed = JSON.parse(preferredAreas) as unknown;
       if (Array.isArray(parsed)) {
-        return (parsed as Array<{ neighborhoodId: number; name: string }>).filter(
+        return (
+          parsed as Array<{ neighborhoodId: number; name: string }>
+        ).filter(
           (area) =>
             area &&
             typeof area === "object" &&
@@ -126,19 +130,26 @@ function checkFeatureRequirements(
   try {
     const extras =
       typeof prospectExtras === "string"
-        ? JSON.parse(prospectExtras) as unknown
+        ? (JSON.parse(prospectExtras) as unknown)
         : prospectExtras;
 
     if (!extras || typeof extras !== "object") return true;
 
     const extrasTyped = extras as Record<string, unknown>;
-    
+
     // Only check if prospect REQUIRES a feature - if listing has MORE features, that's GOOD!
     // Only reject if prospect specifically REQUIRES something and listing doesn't have it
-    if (extrasTyped.elevator === true && listingFeatures.hasElevator === false) return false;
-    if (extrasTyped.garage === true && listingFeatures.hasGarage === false) return false;
-    if (extrasTyped.storage === true && listingFeatures.hasStorageRoom === false) return false;
-    if (extrasTyped.terrace === true && listingFeatures.terrace === false) return false;
+    if (extrasTyped.elevator === true && listingFeatures.hasElevator === false)
+      return false;
+    if (extrasTyped.garage === true && listingFeatures.hasGarage === false)
+      return false;
+    if (
+      extrasTyped.storage === true &&
+      listingFeatures.hasStorageRoom === false
+    )
+      return false;
+    if (extrasTyped.terrace === true && listingFeatures.terrace === false)
+      return false;
 
     // If listing has extra features that prospect didn't ask for, that's a BONUS!
     return true;
@@ -153,8 +164,12 @@ export async function getMatchesForProspects(
   params: MatchQueryParams & { accountId: bigint },
 ): Promise<MatchResults> {
   const { filters, pagination, accountId } = params;
-  
-  console.log('🎯 getMatchesForProspects called:', { filters, pagination, accountId: accountId.toString() });
+
+  console.log("🎯 getMatchesForProspects called:", {
+    filters,
+    pagination,
+    accountId: accountId.toString(),
+  });
 
   try {
     // CRITICAL: Build dynamic WHERE clauses for exact matching
@@ -242,9 +257,9 @@ export async function getMatchesForProspects(
             eq(prospects.listingType, listings.listingType),
             // Rent seekers can get RentWithOption (upgrade)
             and(
-              eq(prospects.listingType, 'Rent'),
-              eq(listings.listingType, 'RentWithOption')
-            )
+              eq(prospects.listingType, "Rent"),
+              eq(listings.listingType, "RentWithOption"),
+            ),
           ),
 
           // ACCOUNT SCOPE: Current account or cross-account based on filters
@@ -284,9 +299,9 @@ export async function getMatchesForProspects(
             eq(prospects.propertyType, properties.propertyType),
             // piso seekers can get casa (upgrade)
             and(
-              eq(prospects.propertyType, 'piso'),
-              eq(properties.propertyType, 'casa')
-            )
+              eq(prospects.propertyType, "piso"),
+              eq(properties.propertyType, "casa"),
+            ),
           ),
 
           // MINIMUM REQUIREMENTS: Listings can have MORE bedrooms/bathrooms than requested (that's better!)
@@ -337,48 +352,71 @@ export async function getMatchesForProspects(
 
           // PROSPECT-SPECIFIC FILTERS from URL parameters
           // Filter by prospect types (if specified)
-          ...(filters.prospectTypes && filters.prospectTypes.length > 0 
-            ? [or(...filters.prospectTypes.map(type => 
-                type === 'search' 
-                  ? eq(prospects.listingType, 'Rent')
-                  : type === 'listing' 
-                  ? eq(prospects.listingType, 'Sale') 
-                  : sql`1=0` // Invalid type
-              ))]
-            : []
-          ),
+          ...(filters.prospectTypes && filters.prospectTypes.length > 0
+            ? [
+                or(
+                  ...filters.prospectTypes.map(
+                    (type) =>
+                      type === "search"
+                        ? eq(prospects.listingType, "Rent")
+                        : type === "listing"
+                          ? eq(prospects.listingType, "Sale")
+                          : sql`1=0`, // Invalid type
+                  ),
+                ),
+              ]
+            : []),
 
           // Filter by listing types (if specified)
-          ...(filters.listingTypes && filters.listingTypes.length > 0 
-            ? [or(...filters.listingTypes.map(type => 
-                eq(prospects.listingType, type)
-              ))]
-            : []
-          ),
+          ...(filters.listingTypes && filters.listingTypes.length > 0
+            ? [
+                or(
+                  ...filters.listingTypes.map((type) =>
+                    eq(prospects.listingType, type),
+                  ),
+                ),
+              ]
+            : []),
 
           // Filter by prospect status (if specified)
-          ...(filters.statuses && filters.statuses.length > 0 
-            ? [or(...filters.statuses.map(status => 
-                eq(prospects.status, status)
-              ))]
-            : []
-          ),
+          ...(filters.statuses && filters.statuses.length > 0
+            ? [
+                or(
+                  ...filters.statuses.map((status) =>
+                    eq(prospects.status, status),
+                  ),
+                ),
+              ]
+            : []),
 
           // Filter by urgency level (if specified)
-          ...(filters.urgencyLevels && filters.urgencyLevels.length > 0 
-            ? [or(...filters.urgencyLevels.map(level => 
-                eq(prospects.urgencyLevel, parseInt(level, 10))
-              ))]
-            : []
-          ),
+          ...(filters.urgencyLevels && filters.urgencyLevels.length > 0
+            ? [
+                or(
+                  ...filters.urgencyLevels.map((level) =>
+                    eq(prospects.urgencyLevel, parseInt(level, 10)),
+                  ),
+                ),
+              ]
+            : []),
         ),
       );
 
     // EXECUTE the base query
     const rawResults = await baseQuery;
-    
-    console.log('📊 Raw SQL results count:', rawResults.length);
-    console.log('🔍 First raw result sample:', rawResults[0] ? JSON.stringify(rawResults[0] as Record<string, unknown>, (key, value) => typeof value === 'bigint' ? value.toString() : value as string, 2) : 'No results');
+
+    console.log("📊 Raw SQL results count:", rawResults.length);
+    console.log(
+      "🔍 First raw result sample:",
+      rawResults[0]
+        ? JSON.stringify(
+            rawResults[0] as Record<string, unknown>,
+            (key, value) =>
+              typeof value === "bigint" ? value.toString() : (value as string),
+            2,
+          )
+        : "No results",
+    );
 
     // CRITICAL: Post-process for location and feature matching, tolerance classification
     const processedMatches: ProspectMatch[] = [];
@@ -517,7 +555,9 @@ export async function getMatchesForProspects(
             id: result.propertyId,
             propertyType: result.propertyType,
             bedrooms: result.propertyBedrooms,
-            bathrooms: result.propertyBathrooms ? parseFloat(result.propertyBathrooms) : null,
+            bathrooms: result.propertyBathrooms
+              ? parseFloat(result.propertyBathrooms)
+              : null,
             squareMeter: result.propertySquareMeters,
           },
           locations: {
@@ -526,8 +566,8 @@ export async function getMatchesForProspects(
           ownerContact: result.ownerContactId
             ? {
                 contactId: result.ownerContactId,
-                firstName: result.ownerFirstName ?? '',
-                lastName: result.ownerLastName ?? '',
+                firstName: result.ownerFirstName ?? "",
+                lastName: result.ownerLastName ?? "",
                 email: result.ownerEmail,
                 phone: result.ownerPhone,
               }
@@ -553,12 +593,13 @@ export async function getMatchesForProspects(
       pagination.offset + pagination.limit,
     );
 
-    console.log('✅ Final processed matches:', processedMatches.length);
-    console.log('📄 Paginated matches:', paginatedMatches.length);
-    console.log('🎯 Returning result:', { 
-      matchesCount: paginatedMatches.length, 
-      totalCount: processedMatches.length, 
-      hasNextPage: processedMatches.length > pagination.offset + pagination.limit 
+    console.log("✅ Final processed matches:", processedMatches.length);
+    console.log("📄 Paginated matches:", paginatedMatches.length);
+    console.log("🎯 Returning result:", {
+      matchesCount: paginatedMatches.length,
+      totalCount: processedMatches.length,
+      hasNextPage:
+        processedMatches.length > pagination.offset + pagination.limit,
     });
 
     return {
@@ -595,7 +636,10 @@ export async function getMatchesForSingleProspectWithAuth(
 }
 
 // Action functions for save/dismiss/contact
-export async function saveMatchWithAuth(_prospectId: bigint, _listingId: bigint) {
+export async function saveMatchWithAuth(
+  _prospectId: bigint,
+  _listingId: bigint,
+) {
   // TODO: Implement saving match logic
   // This would create a saved match record in a new table
   return { success: true, message: "Match saved successfully" };
