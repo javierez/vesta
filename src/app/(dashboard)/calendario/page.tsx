@@ -32,8 +32,9 @@ import {
   PenTool,
   Handshake,
   Train,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
-import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
@@ -53,6 +54,7 @@ import AppointmentModal, {
   useAppointmentModal,
 } from "~/components/appointments/appointment-modal";
 import { getAgentsForFilterAction } from "~/server/actions/appointments";
+import { useGoogleCalendarIntegration } from "~/hooks/use-google-calendar-integration";
 import {
   Select,
   SelectContent,
@@ -164,6 +166,9 @@ export default function AppointmentsPage() {
     closeModal,
     initialData,
   } = useAppointmentModal();
+
+  // Use Google Calendar integration
+  const { integration, connect, disconnect, syncNow } = useGoogleCalendarIntegration();
 
   // Fetch agents for filter on component mount
   useEffect(() => {
@@ -381,16 +386,16 @@ export default function AppointmentsPage() {
                 <LinkIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem asChild>
-                <Link
-                  href="https://calendar.google.com"
-                  target="_blank"
+            <DropdownMenuContent align="end" className="w-64">
+              {!integration.connected ? (
+                <DropdownMenuItem 
+                  onClick={connect}
+                  disabled={integration.loading}
                   className="flex items-center justify-between"
                 >
                   <div className="flex items-center">
                     <Image
-                      src="/logos/google-calendar.png"
+                      src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/Google_Calendar_icon_(2020).svg.png"
                       alt="Google Calendar"
                       width={16}
                       height={16}
@@ -398,27 +403,88 @@ export default function AppointmentsPage() {
                     />
                     <span>Google Calendar</span>
                   </div>
-                  <div className="flex items-center text-green-600">
-                    <CheckCircle2 className="mr-1 h-4 w-4" />
-                    <span className="text-xs">Integrado</span>
+                  <div className="flex items-center text-muted-foreground">
+                    {integration.loading ? (
+                      <Loader className="mr-1 h-4 w-4 animate-spin" />
+                    ) : (
+                      <XCircle className="mr-1 h-4 w-4" />
+                    )}
+                    <span className="text-xs">
+                      {integration.loading ? "Conectando..." : "Conectar"}
+                    </span>
                   </div>
-                </Link>
-              </DropdownMenuItem>
+                </DropdownMenuItem>
+              ) : (
+                <>
+                  <DropdownMenuItem 
+                    onClick={() => window.open("https://calendar.google.com", "_blank")}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center">
+                      <Image
+                        src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/Google_Calendar_icon_(2020).svg.png"
+                        alt="Google Calendar"
+                        width={24}
+                        height={24}
+                        className="mr-3 h-6 w-6"
+                      />
+                      {integration.lastSync && (
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <RefreshCw className="mr-1 h-3 w-3" />
+                          <span>{integration.lastSync.toLocaleDateString()} {integration.lastSync.toLocaleTimeString()}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <RefreshCw className={cn("h-4 w-4 text-muted-foreground hover:text-blue-600 cursor-pointer transition-colors", integration.loading && "animate-spin")} 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void syncNow().then(result => {
+                            if (result.success) void refetch();
+                          }).catch(console.error);
+                        }}
+                      />
+                      <XCircle className="h-4 w-4 text-muted-foreground hover:text-red-600 cursor-pointer transition-colors" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void disconnect().then(result => {
+                            if (result.success) void refetch();
+                          }).catch(console.error);
+                        }}
+                      />
+                    </div>
+                  </DropdownMenuItem>
+                </>
+              )}
+              {integration.error && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled className="flex items-center text-red-600">
+                    <AlertCircle className="mr-2 h-4 w-4" />
+                    <span className="text-xs">{integration.error}</span>
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Image
-                    src="/logos/outlook.png"
-                    alt="Outlook"
-                    width={16}
-                    height={16}
-                    className="mr-2 h-4 w-4"
+                    src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/outlook-calendar.png"
+                    alt="Outlook Calendar"
+                    width={24}
+                    height={24}
+                    className="mr-3 h-6 w-6"
                   />
-                  <span>Outlook Calendar</span>
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <Clock className="mr-1 h-3 w-3" />
+                    <span>Próximamente</span>
+                  </div>
                 </div>
-                <div className="flex items-center text-muted-foreground">
-                  <XCircle className="mr-1 h-4 w-4" />
-                  <span className="text-xs">No integrado</span>
+                <div className="flex items-center space-x-1">
+                  <XCircle className="h-4 w-4 text-muted-foreground opacity-50" />
+                  <RefreshCw className="h-4 w-4 text-muted-foreground opacity-50" />
+                  <XCircle className="h-4 w-4 text-muted-foreground opacity-50" />
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>

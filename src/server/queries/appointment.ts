@@ -6,8 +6,9 @@ import {
   properties,
   users,
 } from "../db/schema";
-import { eq, and, or, between } from "drizzle-orm";
+import { eq, and, or, between, inArray } from "drizzle-orm";
 import type { Appointment } from "../../lib/data";
+import { getCurrentUserAccountId } from "../../lib/dal";
 
 // Create a new appointment
 export async function createAppointment(
@@ -301,6 +302,148 @@ export async function getAgentsForFilter() {
     return agents;
   } catch (error) {
     console.error("Error fetching agents for filter:", error);
+    throw error;
+  }
+}
+
+// SECURE VERSIONS WITH ACCOUNT FILTERING
+
+/**
+ * Get appointments by date range filtered by account
+ * This ensures users only see appointments from their organization
+ */
+export async function getAppointmentsByDateRangeSecure(
+  startDate: Date,
+  endDate: Date,
+) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    // First get all user IDs that belong to this account
+    const accountUsers = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.accountId, BigInt(accountId)));
+
+    const userIds = accountUsers.map(u => u.id);
+
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    const dateRangeAppointments = await db
+      .select({
+        appointmentId: appointments.appointmentId,
+        userId: appointments.userId,
+        contactId: appointments.contactId,
+        listingId: appointments.listingId,
+        leadId: appointments.leadId,
+        dealId: appointments.dealId,
+        prospectId: appointments.prospectId,
+        datetimeStart: appointments.datetimeStart,
+        datetimeEnd: appointments.datetimeEnd,
+        tripTimeMinutes: appointments.tripTimeMinutes,
+        status: appointments.status,
+        notes: appointments.notes,
+        type: appointments.type,
+        isActive: appointments.isActive,
+        createdAt: appointments.createdAt,
+        updatedAt: appointments.updatedAt,
+        // Add contact name from joined table
+        contactFirstName: contacts.firstName,
+        contactLastName: contacts.lastName,
+        // Add property address from joined listings/properties tables
+        propertyStreet: properties.street,
+        // Add agent/user information
+        agentName: users.name,
+        agentFirstName: users.firstName,
+        agentLastName: users.lastName,
+      })
+      .from(appointments)
+      .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
+      .leftJoin(listings, eq(appointments.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(users, eq(appointments.userId, users.id))
+      .where(
+        and(
+          inArray(appointments.userId, userIds), // Only appointments from users in this account
+          or(
+            between(appointments.datetimeStart, startDate, endDate),
+            between(appointments.datetimeEnd, startDate, endDate),
+          ),
+          eq(appointments.isActive, true),
+        ),
+      );
+    return dateRangeAppointments;
+  } catch (error) {
+    console.error("Error fetching appointments by date range:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get appointments for current user's account
+ */
+export async function getUserAppointmentsSecure(userId: string) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    // Verify the user belongs to the current account
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.id, userId),
+        eq(users.accountId, BigInt(accountId))
+      ));
+
+    if (!user) {
+      throw new Error("User not found or access denied");
+    }
+
+    // Now get appointments
+    const userAppointments = await db
+      .select({
+        appointmentId: appointments.appointmentId,
+        userId: appointments.userId,
+        contactId: appointments.contactId,
+        listingId: appointments.listingId,
+        leadId: appointments.leadId,
+        dealId: appointments.dealId,
+        prospectId: appointments.prospectId,
+        datetimeStart: appointments.datetimeStart,
+        datetimeEnd: appointments.datetimeEnd,
+        tripTimeMinutes: appointments.tripTimeMinutes,
+        status: appointments.status,
+        notes: appointments.notes,
+        type: appointments.type,
+        isActive: appointments.isActive,
+        createdAt: appointments.createdAt,
+        updatedAt: appointments.updatedAt,
+        // Add contact name from joined table
+        contactFirstName: contacts.firstName,
+        contactLastName: contacts.lastName,
+        // Add property address from joined listings/properties tables
+        propertyStreet: properties.street,
+        // Add agent/user information
+        agentName: users.name,
+        agentFirstName: users.firstName,
+        agentLastName: users.lastName,
+      })
+      .from(appointments)
+      .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
+      .leftJoin(listings, eq(appointments.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(users, eq(appointments.userId, users.id))
+      .where(
+        and(
+          eq(appointments.userId, userId),
+          eq(appointments.isActive, true),
+        ),
+      );
+    return userAppointments;
+  } catch (error) {
+    console.error("Error fetching user appointments:", error);
     throw error;
   }
 }

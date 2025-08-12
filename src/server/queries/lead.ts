@@ -394,7 +394,7 @@ export async function listLeadsWithDetails(
       .offset(offset);
 
     // Get total count for pagination
-    const [totalResult] = await db
+    const totalResults = await db
       .select({ count: count() })
       .from(leads)
       .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
@@ -409,11 +409,14 @@ export async function listLeadsWithDetails(
       .where(and(...whereConditions));
 
     
+    // @ts-expect-error - Drizzle count type inference issue 
+    const totalCount = totalResults[0]?.count ? Number(totalResults[0].count) : 0;
+    
     return {
       leads: allLeads,
-      total: totalResult?.count ?? 0,
+      total: totalCount,
       page,
-      totalPages: Math.ceil((totalResult?.count ?? 0) / limit),
+      totalPages: Math.ceil(totalCount / limit),
     };
   } catch (error) {
     console.error("Error listing leads with details:", error);

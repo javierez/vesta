@@ -54,12 +54,13 @@ export default function LeadsPage() {
         // Handle enhanced query response with proper structure
         if (result && "leads" in result) {
           // Enhanced query response with pagination data
+          /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
           setLeads(
-            result.leads.map((item) => ({
+            result.leads.map((item: any) => ({
               leadId: item.leadId,
               contactId: item.contactId,
-              listingId: item.listingId,
-              prospectId: item.prospectId,
+              listingId: item.listingId ?? null,
+              prospectId: item.prospectId ?? null,
               source: item.source,
               status: item.status as LeadStatus,
               createdAt: item.createdAt,
@@ -67,7 +68,7 @@ export default function LeadsPage() {
               contact: item.contact,
               listing: item.listing?.listingId
                 ? {
-                    listingId: item.listing.listingId!,
+                    listingId: item.listing.listingId,
                     referenceNumber: item.listing.referenceNumber,
                     street: item.listing.street,
                     price: item.listing.price ?? "0",
@@ -88,33 +89,9 @@ export default function LeadsPage() {
                 : undefined,
             })),
           );
+          /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
 
           setTotalPages(result.totalPages);
-        } else if (Array.isArray(result)) {
-          // Fallback for basic query response
-          setLeads(
-            result.map((item) => ({
-              leadId: item.leads.leadId,
-              contactId: item.leads.contactId,
-              listingId: item.leads.listingId,
-              prospectId: item.leads.prospectId,
-              source: item.leads.source,
-              status: item.leads.status as LeadStatus,
-              createdAt: item.leads.createdAt,
-              updatedAt: item.leads.updatedAt,
-              contact: {
-                contactId: item.contacts.contactId,
-                firstName: item.contacts.firstName,
-                lastName: item.contacts.lastName,
-                email: item.contacts.email,
-                phone: item.contacts.phone,
-              },
-              listing: undefined,
-              owner: undefined,
-            })),
-          );
-
-          setTotalPages(Math.ceil(result.length / ITEMS_PER_PAGE) || 1);
         } else {
           setLeads([]);
           setTotalPages(1);

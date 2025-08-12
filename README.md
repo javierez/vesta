@@ -161,10 +161,12 @@ pnpm build
 - Operations page
    - Leads page
    - Prospects page
-   - Deals page
+   - Deals page #missings
 
 - Calendar Integration
+   - Accomplished except for Google -> Vesta Sync (which could be possible using AI)
 
+- Account Admin can see all the data for the account and can allow users to see more data 
 
 
 - Webpage

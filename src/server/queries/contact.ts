@@ -740,8 +740,11 @@ export async function listContacts(
     const filteredQuery =
       whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
 
-    // Apply pagination
-    const allContacts = await filteredQuery.limit(limit).offset(offset);
+    // Apply pagination and order by most recent first
+    const allContacts = await filteredQuery
+      .orderBy(sql`${contacts.createdAt} DESC`)
+      .limit(limit)
+      .offset(offset);
 
     return allContacts;
   } catch (error) {

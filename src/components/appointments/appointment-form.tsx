@@ -179,16 +179,17 @@ export default function AppointmentForm({
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [listingSearchQuery, setListingSearchQuery] = useState("");
 
-  // Fetch contacts when user starts typing (debounced) or when initial data has contactId
+  // Fetch last 10 contacts on mount, then fetch when user searches
   useEffect(() => {
     // For initial data with contactId, we need to fetch all contacts to find the match (only once)
     const needsAllContacts =
       initialData.contactId && !selectedContact && contacts.length === 0;
-    // For search, we only fetch if there's a query
+    // For initial load, fetch last 10 contacts
+    const isInitialLoad = contacts.length === 0 && searchQuery.length === 0;
+    // For search, we fetch based on query
     const hasSearchQuery = searchQuery.length > 0;
 
-    if (!needsAllContacts && !hasSearchQuery) {
-      setContacts([]);
+    if (!needsAllContacts && !isInitialLoad && !hasSearchQuery) {
       return;
     }
 
@@ -203,6 +204,12 @@ export default function AppointmentForm({
             "~/server/queries/contact"
           );
           contactsData = await listContactsWithAuth();
+        } else if (isInitialLoad) {
+          // For initial load, get last 10 contacts
+          const { listContactsWithAuth } = await import(
+            "~/server/queries/contact"
+          );
+          contactsData = await listContactsWithAuth(1, 10); // page 1, limit 10
         } else {
           // For search, use the optimized search function
           contactsData = await searchContactsWithAuth(searchQuery.trim());
@@ -228,8 +235,8 @@ export default function AppointmentForm({
       }
     };
 
-    // Debounce the search to avoid too many requests (but not for initial load)
-    if (needsAllContacts) {
+    // Debounce the search to avoid too many requests (but not for initial loads)
+    if (needsAllContacts || isInitialLoad) {
       void fetchContacts();
     } else {
       const debounceTimer = setTimeout(() => {
@@ -238,18 +245,19 @@ export default function AppointmentForm({
 
       return () => clearTimeout(debounceTimer);
     }
-  }, [searchQuery, initialData.contactId]);
+  }, [searchQuery, initialData.contactId, selectedContact, contacts.length]);
 
-  // Fetch listings when user starts typing (debounced) or when initial data has listingId
+  // Fetch last 10 listings on mount when on step 2, then fetch when user searches
   useEffect(() => {
     // For initial data with listingId, we need to fetch all listings to find the match (only once)
     const needsAllListings =
       initialData.listingId && !selectedListing && listings.length === 0;
-    // For search, we only fetch if there's a query
+    // For initial load on step 2, fetch last 10 listings
+    const isInitialLoad = currentStep === 1 && listings.length === 0 && listingSearchQuery.length === 0;
+    // For search, we fetch based on query
     const hasSearchQuery = listingSearchQuery.length > 0;
 
-    if (!needsAllListings && !hasSearchQuery) {
-      setListings([]);
+    if (!needsAllListings && !isInitialLoad && !hasSearchQuery) {
       return;
     }
 
@@ -263,6 +271,14 @@ export default function AppointmentForm({
           listingsData = await listListingsCompactWithAuth({
             status: "Active",
           });
+        } else if (isInitialLoad) {
+          // For initial load on step 2, get last 10 listings
+          listingsData = await listListingsCompactWithAuth({
+            status: "Active",
+            page: 1,
+            limit: 10,
+          });
+          console.log("Initial load listings:", listingsData);
         } else {
           // For search, use optimized search with query
           listingsData = await listListingsCompactWithAuth({
@@ -291,8 +307,8 @@ export default function AppointmentForm({
       }
     };
 
-    // Debounce the search to avoid too many requests (but not for initial load)
-    if (needsAllListings) {
+    // Debounce the search to avoid too many requests (but not for initial loads)
+    if (needsAllListings || isInitialLoad) {
       void fetchListings();
     } else {
       const debounceTimer = setTimeout(() => {
@@ -301,13 +317,18 @@ export default function AppointmentForm({
 
       return () => clearTimeout(debounceTimer);
     }
-  }, [listingSearchQuery, initialData.listingId]);
+  }, [listingSearchQuery, initialData.listingId, currentStep, selectedListing, listings.length]);
 
   // Filter contacts based on search query and exclude selected contact
   const filteredContacts = contacts.filter((contact) => {
     // Exclude selected contact from search results
     if (selectedContact && contact.contactId === selectedContact.contactId) {
       return false;
+    }
+
+    // If no search query, show all contacts
+    if (searchQuery.length === 0) {
+      return true;
     }
 
     return (
@@ -325,6 +346,11 @@ export default function AppointmentForm({
     // Exclude selected listing from search results
     if (selectedListing && listing.listingId === selectedListing.listingId) {
       return false;
+    }
+
+    // If no search query, show all listings
+    if (listingSearchQuery.length === 0) {
+      return true;
     }
 
     return (
@@ -542,10 +568,6 @@ export default function AppointmentForm({
                 <div className="flex items-center justify-center py-8">
                   <Loader className="h-6 w-6 animate-spin" />
                 </div>
-              ) : searchQuery.length === 0 && !selectedContact ? (
-                <div className="py-8 text-center text-muted-foreground">
-                  Escribe el nombre de un contacto para buscar
-                </div>
               ) : filteredContacts.length === 0 && searchQuery.length > 0 ? (
                 <div className="py-8 text-center text-muted-foreground">
                   No se encontraron contactos
@@ -729,10 +751,6 @@ export default function AppointmentForm({
                     {isLoadingListings ? (
                       <div className="flex items-center justify-center py-8">
                         <Loader className="h-6 w-6 animate-spin" />
-                      </div>
-                    ) : listingSearchQuery.length === 0 ? (
-                      <div className="py-8 text-center text-muted-foreground">
-                        Escribe para buscar propiedades
                       </div>
                     ) : filteredListings.length === 0 &&
                       listingSearchQuery.length > 0 ? (

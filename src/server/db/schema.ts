@@ -453,6 +453,30 @@ export const appointments = singlestoreTable("appointments", {
   status: varchar("status", { length: 20 }).notNull().default("Scheduled"),
   notes: text("notes"),
   type: varchar("type", { length: 50 }),
+  // Google Calendar integration fields
+  googleEventId: varchar("google_event_id", { length: 255 }), // Google Calendar event ID
+  googleEtag: varchar("google_etag", { length: 255 }), // For conflict resolution
+  lastSyncedAt: timestamp("last_synced_at"), // Track sync status
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+// User Integrations table (for OAuth tokens and sync metadata)
+export const userIntegrations = singlestoreTable("user_integrations", {
+  integrationId: bigint("integration_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
+  provider: varchar("provider", { length: 50 }).notNull(), // "google_calendar"
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  expiryDate: timestamp("expiry_date"),
+  calendarId: varchar("calendar_id", { length: 255 }).default("primary"),
+  syncToken: text("sync_token"), // For incremental sync
+  channelId: varchar("channel_id", { length: 64 }), // Webhook channel ID
+  resourceId: varchar("resource_id", { length: 255 }), // Webhook resource ID
+  channelExpiration: timestamp("channel_expiration"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

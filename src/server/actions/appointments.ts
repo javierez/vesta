@@ -5,14 +5,17 @@ import { getCurrentUserAccountId, getCurrentUser } from "~/lib/dal";
 import {
   createAppointment,
   updateAppointment,
-  getUserAppointments,
-  getAppointmentsByDateRange,
+  // getUserAppointments, // Unused - keeping for future use
+  // getAppointmentsByDateRange, // Unused - keeping for future use
   getAgentsForFilter,
+  getUserAppointmentsSecure,
+  getAppointmentsByDateRangeSecure,
 } from "~/server/queries/appointment";
 import {
   findOrCreateLeadForAppointment,
   syncLeadStatusFromAppointment,
 } from "~/server/queries/lead-status-sync";
+import { syncToGoogle } from "~/lib/google-calendar-sync";
 
 // Form data structure from PRP
 interface AppointmentFormData {
@@ -83,6 +86,17 @@ export async function updateAppointmentAction(
         success: false,
         error: "Error al actualizar la cita",
       };
+    }
+
+    // NEW: Sync to Google Calendar after successful appointment update
+    try {
+      await syncToGoogle(currentUser.id, appointmentId, "update");
+    } catch (error) {
+      console.error(
+        "Failed to sync appointment update to Google Calendar:",
+        error,
+      );
+      // Don't fail the appointment update if Google Calendar sync fails
     }
 
     // Refresh calendar data
@@ -196,6 +210,17 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       }
     }
 
+    // NEW: Sync to Google Calendar after successful appointment creation
+    try {
+      await syncToGoogle(currentUser.id, result.appointmentId, "create");
+    } catch (error) {
+      console.error(
+        "Failed to sync appointment to Google Calendar:",
+        error,
+      );
+      // Don't fail the appointment creation if Google Calendar sync fails
+    }
+
     // Refresh calendar data
     revalidatePath("/calendario");
 
@@ -222,7 +247,7 @@ export async function getUserAppointmentsAction() {
     await getCurrentUserAccountId();
     const currentUser = await getCurrentUser();
 
-    const appointments = await getUserAppointments(currentUser.id);
+    const appointments = await getUserAppointmentsSecure(currentUser.id);
 
     return {
       success: true,
@@ -247,7 +272,7 @@ export async function getAppointmentsByDateRangeAction(
     // PATTERN: Always get account ID for security
     await getCurrentUserAccountId();
 
-    const appointments = await getAppointmentsByDateRange(startDate, endDate);
+    const appointments = await getAppointmentsByDateRangeSecure(startDate, endDate);
 
     return {
       success: true,

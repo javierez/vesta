@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { ImageGallery } from "./image-gallery";
 import { PortalSelection } from "./portal-selection";
@@ -84,7 +84,7 @@ export function PropertyTabs({
     certificado: false,
   });
 
-  const fetchTabData = async (tabValue: string) => {
+  const fetchTabData = useCallback(async (tabValue: string) => {
     switch (tabValue) {
       case "general":
         if (tabData.images) return;
@@ -160,7 +160,7 @@ export function PropertyTabs({
         }
         break;
     }
-  };
+  }, [listing.propertyId, listing.listingId, tabData.images, tabData.convertedListing, tabData.energyCertificate, images, convertedListing, energyCertificate]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);

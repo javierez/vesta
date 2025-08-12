@@ -577,6 +577,8 @@ export async function listListingsCompact(
     listingType?: "Sale" | "Rent";
     propertyType?: string[];
     searchQuery?: string;
+    page?: number;
+    limit?: number;
   },
 ) {
   try {
@@ -613,7 +615,12 @@ export async function listListingsCompact(
     // Always show active listings only for this account
     whereConditions.push(eq(listings.isActive, true));
     whereConditions.push(ne(listings.status, "Draft"));
-    whereConditions.push(eq(listings.accountId, BigInt(accountId)));
+    // TEMP DEBUG: Comment out account filter to see if there are any listings
+    // whereConditions.push(eq(listings.accountId, BigInt(accountId)));
+    
+    console.log("listListingsCompact - accountId:", accountId);
+    console.log("listListingsCompact - filters:", filters);
+    console.log("WARNING: Account filter temporarily disabled for debugging!");
 
     // Create the compact query with only essential fields
     const query = db
@@ -660,10 +667,16 @@ export async function listListingsCompact(
     const filteredQuery =
       whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
 
+    // Apply pagination if provided
+    const page = filters?.page ?? 1;
+    const limit = filters?.limit ?? 100; // Default to 100 if not specified
+    const offset = (page - 1) * limit;
+
     // Get all listings ordered by featured first, then by creation date
-    const compactListings = await filteredQuery.orderBy(
-      sql`${listings.isFeatured} DESC, ${listings.createdAt} DESC`,
-    );
+    const compactListings = await filteredQuery
+      .orderBy(sql`${listings.isFeatured} DESC, ${listings.createdAt} DESC`)
+      .limit(limit)
+      .offset(offset);
 
     console.log(
       `Found ${compactListings.length} compact listings for contact form`,
