@@ -55,13 +55,6 @@ import AppointmentModal, {
 } from "~/components/appointments/appointment-modal";
 import { getAgentsForFilterAction } from "~/server/actions/appointments";
 import { useGoogleCalendarIntegration } from "~/hooks/use-google-calendar-integration";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 
 // Appointment types configuration
 const appointmentTypes = {
@@ -132,7 +125,7 @@ export default function AppointmentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [agentFilter, setAgentFilter] = useState("all");
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [agents, setAgents] = useState<
     Array<{ id: string; name: string; firstName: string; lastName: string }>
   >([]);
@@ -200,10 +193,11 @@ export default function AppointmentsPage() {
     const matchesStatus =
       statusFilter === "all" || appointment.status === statusFilter;
     const matchesAgent =
-      agentFilter === "all" ||
+      selectedAgents.length === 0 ||
       (appointment.agentName &&
-        agents.find((agent) => agent.id === agentFilter)?.name ===
-          appointment.agentName);
+        selectedAgents.some(agentId => 
+          agents.find((agent) => agent.id === agentId)?.name === appointment.agentName
+        ));
     return matchesSearch && matchesType && matchesStatus && matchesAgent;
   });
 
@@ -312,7 +306,7 @@ export default function AppointmentsPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold sm:text-2xl">Citas</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Calendario</h1>
         <div className="flex items-center gap-2">
           <Button
             onClick={handleCreateAppointment}
@@ -337,20 +331,74 @@ export default function AppointmentsPage() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
-          {/* Agent Filter - displayed prominently */}
-          <Select value={agentFilter} onValueChange={setAgentFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Todos los agentes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los agentes</SelectItem>
-              {agents.map((agent) => (
-                <SelectItem key={agent.id} value={agent.id}>
-                  {agent.name || `${agent.firstName} ${agent.lastName}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Agent Filter - Multi-select */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-[180px] justify-between">
+                {selectedAgents.length === 0 ? (
+                  "Todos los agentes"
+                ) : selectedAgents.length === 1 ? (
+                  (() => {
+                    const agent = agents.find(agent => agent.id === selectedAgents[0]);
+                    return agent?.name ?? `${agent?.firstName} ${agent?.lastName}`;
+                  })()
+                ) : (
+                  `${selectedAgents.length} agentes`
+                )}
+                <Filter className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-0" align="start">
+              <div className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">Agentes</h4>
+                    {selectedAgents.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedAgents([])}
+                        className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Limpiar
+                      </Button>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {agents.map((agent) => {
+                      const isSelected = selectedAgents.includes(agent.id);
+                      return (
+                        <div
+                          key={agent.id}
+                          className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedAgents(prev => prev.filter(id => id !== agent.id));
+                            } else {
+                              setSelectedAgents(prev => [...prev, agent.id]);
+                            }
+                          }}
+                        >
+                          <div
+                            className={`flex h-4 w-4 items-center justify-center rounded border ${
+                              isSelected ? "border-primary bg-primary" : "border-input"
+                            }`}
+                          >
+                            {isSelected && (
+                              <Check className="h-3 w-3 text-primary-foreground" />
+                            )}
+                          </div>
+                          <span className="text-sm">
+                            {agent.name ?? `${agent.firstName} ${agent.lastName}`}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Button
             variant="outline"
@@ -494,14 +542,14 @@ export default function AppointmentsPage() {
               <Button variant="outline" className="relative">
                 <Filter className="mr-2 h-4 w-4" />
                 Filtros
-                {(typeFilter !== "all" || statusFilter !== "all") && (
+                {(typeFilter !== "all" || statusFilter !== "all" || selectedAgents.length > 0) && (
                   <Badge
                     variant="secondary"
                     className="ml-2 rounded-sm px-1 font-normal"
                   >
                     {
                       [typeFilter, statusFilter].filter((f) => f !== "all")
-                        .length
+                        .length + (selectedAgents.length > 0 ? 1 : 0)
                     }
                   </Badge>
                 )}
@@ -568,7 +616,7 @@ export default function AppointmentsPage() {
                     </div>
                   </div>
                 </ScrollArea>
-                {(typeFilter !== "all" || statusFilter !== "all") && (
+                {(typeFilter !== "all" || statusFilter !== "all" || selectedAgents.length > 0) && (
                   <div className="border-t p-2">
                     <Button
                       variant="ghost"
@@ -576,6 +624,7 @@ export default function AppointmentsPage() {
                       onClick={() => {
                         setTypeFilter("all");
                         setStatusFilter("all");
+                        setSelectedAgents([]);
                       }}
                       className="h-7 w-full text-xs"
                     >
