@@ -68,6 +68,8 @@ export const MatchCard = React.memo(function MatchCard({
         return "Venta";
       case "Rent":
         return "Alquiler";
+      case "RentWithOption":
+        return "Alquiler";
       default:
         return type;
     }

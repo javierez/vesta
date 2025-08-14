@@ -150,7 +150,9 @@ pnpm build
 
 ## High Priority
 
-- Cartelería (ongoing)
+- Remove all the harcoded things about Acropolis.
+
+- Cartelería (ongoing) -- Laura's notes
    - Create another poster (Amaya's basic one and horizontal)
       - Amaya's basic: horizontal and vertical
       - Fix current vertical
@@ -161,12 +163,12 @@ pnpm build
 - Operations page
    - Leads page
    - Prospects page
-   - Deals page #missings
+   - Deals page #missing
 
 - Calendar Integration
    - Accomplished except for Google -> Vesta Sync (which could be possible using AI)
 
-- Account Admin can see all the data for the account and can allow users to see more data 
+- Account Admin can see all the data for the agents and allow agents to see more data 
 
 
 - Webpage

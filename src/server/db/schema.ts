@@ -17,6 +17,8 @@ export const accounts = singlestoreTable("accounts", {
     .primaryKey()
     .autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
+  shortName: varchar("short_name", { length: 50 }), // Abbreviated company names
+  legalName: varchar("legal_name", { length: 255 }), // Full legal company name
   logo: varchar("logo", { length: 2048 }), // S3 URL for organization logo
   address: varchar("address", { length: 500 }),
   phone: varchar("phone", { length: 20 }),
@@ -28,10 +30,32 @@ export const accounts = singlestoreTable("accounts", {
   preferences: json("preferences").default({}), // General account preferences
   // Subscription/billing info
   plan: varchar("plan", { length: 50 }).default("basic"), // basic, pro, enterprise
+  subscriptionType: varchar("subscription_type", { length: 100 }), // More detailed subscription type
   subscriptionStatus: varchar("subscription_status", { length: 20 }).default(
     "active",
   ),
+  subscriptionStartDate: timestamp("subscription_start_date"), // Subscription start date
+  subscriptionEndDate: timestamp("subscription_end_date"), // Subscription end date
+  status: varchar("status", { length: 20 }).default("active"), // active/inactive/suspended
   // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  isActive: boolean("is_active").default(true),
+});
+
+// Offices table (for accounts with multiple offices)
+export const offices = singlestoreTable("offices", {
+  officeId: bigint("office_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  name: varchar("name", { length: 100 }).notNull(),
+  address: varchar("address", { length: 255 }).notNull(),
+  city: varchar("city", { length: 100 }).notNull(),
+  state: varchar("state", { length: 100 }).notNull(),
+  postalCode: varchar("postal_code", { length: 20 }).notNull(),
+  phone: varchar("phone", { length: 20 }),
+  email: varchar("email", { length: 255 }),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
@@ -577,4 +601,24 @@ export const prospectHistory = singlestoreTable("prospect_history", {
   changedBy: varchar("changed_by", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
   changeReason: text("change_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Website configuration table
+export const websiteProperties = singlestoreTable("website_config", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  socialLinks: text("social_links").notNull(), // JSON containing social media links
+  seoProps: text("seo_props").notNull(), // JSON containing SEO properties
+  logo: varchar("logo", { length: 1024 }).notNull(), // URL to logo file
+  favicon: varchar("favicon", { length: 1024 }).notNull(), // URL to favicon file
+  heroProps: text("hero_props").notNull(), // JSON containing hero section properties
+  featuredProps: text("featured_props").notNull(), // JSON containing featured section properties
+  aboutProps: text("about_props").notNull(), // JSON containing about section properties
+  propertiesProps: text("properties_props").notNull(), // JSON containing properties section configuration
+  testimonialProps: text("testimonial_props").notNull(), // JSON containing testimonial section properties
+  contactProps: text("contact_props"), // JSON containing contact section properties
+  footerProps: text("footer_props").notNull(), // JSON containing footer configuration
+  headProps: text("head_props").notNull(), // JSON containing head section properties
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

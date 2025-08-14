@@ -1100,7 +1100,7 @@ export async function getListingsByContactAsBuyer(
         agentName: sql<string | null>`(
           SELECT CONCAT(u.first_name, ' ', u.last_name)
           FROM users u
-          WHERE u.user_id = ${listings.agentId}
+          WHERE u.id = ${listings.agentId}
         )`,
 
         // Property fields

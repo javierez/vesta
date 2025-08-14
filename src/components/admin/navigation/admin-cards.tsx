@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Users, Building2, Settings, BarChart3 } from "lucide-react";
+import { Users, Building2, Settings, BarChart3, Globe } from "lucide-react";
 
 interface AdminCard {
   title: string;
@@ -48,6 +48,13 @@ const adminSections: AdminCard[] = [
     icon: BarChart3,
     href: "/admin/analytics",
     available: false,
+  },
+  {
+    title: "Configuración de Página Web",
+    description: "Administra la configuración de tu página web",
+    icon: Globe,
+    href: "/admin/webpage",
+    available: true,
   },
 ];
 
