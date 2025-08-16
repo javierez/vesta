@@ -4,7 +4,7 @@ import { nanoid } from "nanoid";
 import { s3Client } from "~/server/s3";
 import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "~/server/db";
-import { accounts } from "~/server/db/schema";
+import { accounts, websiteProperties } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import type { BrandAsset } from "~/types/brand";
 
@@ -110,11 +110,8 @@ export async function uploadBrandAsset(
       .update(accounts)
       .set({
         logo: originalUpload.imageUrl,
-        // Store additional brand data in preferences JSON field
+        // Keep color palette in preferences for now
         preferences: {
-          logoTransparent: transparentUpload.imageUrl,
-          logoTransparentS3Key: transparentUpload.s3key,
-          logoTransparentImageKey: transparentUpload.imageKey,
           colorPalette: colorPalette,
           brandingUpdatedAt: now.toISOString(),
         },
@@ -122,7 +119,41 @@ export async function uploadBrandAsset(
       })
       .where(eq(accounts.accountId, BigInt(accountId)));
 
-    // 4. Fetch updated account to verify
+    // 4. Update or create website config record
+    const [existingConfig] = await db
+      .select()
+      .from(websiteProperties)
+      .where(eq(websiteProperties.accountId, BigInt(accountId)));
+
+    if (existingConfig) {
+      await db
+        .update(websiteProperties)
+        .set({
+          logo: transparentUpload.imageUrl,
+          updatedAt: now,
+        })
+        .where(eq(websiteProperties.accountId, BigInt(accountId)));
+    } else {
+      // Create new website config with logo
+      await db.insert(websiteProperties).values({
+        accountId: BigInt(accountId),
+        logo: transparentUpload.imageUrl,
+        logotype: "",
+        favicon: "",
+        socialLinks: JSON.stringify({}),
+        seoProps: JSON.stringify({}),
+        heroProps: JSON.stringify({}),
+        featuredProps: JSON.stringify({}),
+        aboutProps: JSON.stringify({}),
+        propertiesProps: JSON.stringify({}),
+        testimonialProps: JSON.stringify({}),
+        contactProps: JSON.stringify({}),
+        footerProps: JSON.stringify({}),
+        headProps: JSON.stringify({}),
+      });
+    }
+
+    // 5. Fetch updated account to verify
     const [updatedAccount] = await db
       .select()
       .from(accounts)
@@ -132,7 +163,7 @@ export async function uploadBrandAsset(
       throw new Error("Failed to fetch updated account");
     }
 
-    // 5. Return the brand asset information
+    // 6. Return the brand asset information
     const brandAsset: BrandAsset = {
       id: nanoid(),
       accountId: accountId,
@@ -246,13 +277,19 @@ export async function getBrandAsset(
       return null;
     }
 
+    // Get logo transparent from website_config table
+    const [websiteConfig] = await db
+      .select()
+      .from(websiteProperties)
+      .where(eq(websiteProperties.accountId, BigInt(accountId)));
+
     const preferences = account.preferences as AccountPreferences;
 
     return {
       id: nanoid(),
       accountId: accountId,
       logoOriginalUrl: account.logo,
-      logoTransparentUrl: preferences?.logoTransparent ?? "",
+      logoTransparentUrl: websiteConfig?.logo ?? "",
       colorPalette: preferences?.colorPalette ?? [],
       fileName: "logo", // We don't store original filename, so use generic
       fileSize: 0, // Not stored in current schema

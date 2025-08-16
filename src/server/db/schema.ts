@@ -606,10 +606,11 @@ export const prospectHistory = singlestoreTable("prospect_history", {
 // Website configuration table
 export const websiteProperties = singlestoreTable("website_config", {
   id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
-  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  accountId: bigint("account_id", { mode: "bigint" }).notNull().unique(), // FK → accounts.account_id
   socialLinks: text("social_links").notNull(), // JSON containing social media links
   seoProps: text("seo_props").notNull(), // JSON containing SEO properties
   logo: varchar("logo", { length: 1024 }).notNull(), // URL to logo file
+  logotype: varchar("logotype", { length: 1024 }).notNull(), // URL to logotype file
   favicon: varchar("favicon", { length: 1024 }).notNull(), // URL to favicon file
   heroProps: text("hero_props").notNull(), // JSON containing hero section properties
   featuredProps: text("featured_props").notNull(), // JSON containing featured section properties

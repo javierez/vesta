@@ -3,21 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const routeNames: Record<string, string> = {
   "/account-admin": "Administración de Cuenta",
   "/account-admin/reports": "Reportes",
-  "/account-admin/configuration": "Configuración",
+  "/account-admin/privacy": "Privacidad y Permisos",
   "/account-admin/portales": "Portales",
   "/account-admin/branding": "Marca y Logo",
   "/account-admin/carteleria": "Cartelería",
+  "/account-admin/website": "Sitio Web",
   "/account-admin/other": "Otras Opciones",
 };
 
 export const AccountAdminBreadcrumb = () => {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
-  if (pathname === "/account-admin") return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || pathname === "/account-admin") return null;
 
   const segments = pathname.split("/").filter(Boolean);
 

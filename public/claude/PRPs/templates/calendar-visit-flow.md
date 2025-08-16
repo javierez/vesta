@@ -6,7 +6,7 @@
   - Listing (property) associated to the visit
   - Agent who performed the visit
   - Contact who attended the visit
-  - Date and time of the visit
+  - Da  te and time of the visit
   - Two signatures: one from the agent and one from the contact/visitor
 - Out of scope for v1: PDF generation of the visit document (to be implemented later). v1 focuses on the form + persistence.
 

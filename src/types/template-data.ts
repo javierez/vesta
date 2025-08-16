@@ -173,6 +173,7 @@ export interface ExtendedTemplatePropertyData extends TemplatePropertyData {
   heatingType?: string;
   shortDescription?: string;
   listingType?: "venta" | "alquiler";
+  logoUrl?: string; // URL to the transparent logo for watermark
   // Image positioning for drag-and-drop cropping (indexed by image URL or position)
   imagePositions?: Record<string, ImagePosition>;
 }

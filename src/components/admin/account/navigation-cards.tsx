@@ -16,6 +16,7 @@ import {
   Palette,
   FileImage,
   Globe,
+  Monitor,
 } from "lucide-react";
 
 interface AccountAdminCard {
@@ -32,13 +33,13 @@ const accountAdminSections: AccountAdminCard[] = [
     description: "Revisa estadísticas y métricas de tu cuenta",
     icon: BarChart3,
     href: "/account-admin/reports",
-    available: true,
+    available: false,
   },
   {
-    title: "Configuración",
-    description: "Personaliza y configura los ajustes de tu cuenta",
+    title: "Privacidad y Permisos",
+    description: "Gestiona permisos de usuarios y configuración de privacidad",
     icon: Settings,
-    href: "/account-admin/configuration",
+    href: "/account-admin/privacy",
     available: true,
   },
   {
@@ -64,11 +65,18 @@ const accountAdminSections: AccountAdminCard[] = [
     available: true,
   },
   {
+    title: "Sitio Web",
+    description: "Personaliza tu página web: diseño, contenido y SEO",
+    icon: Monitor,
+    href: "/account-admin/website",
+    available: true,
+  },
+  {
     title: "Otras Opciones",
     description: "Funcionalidades adicionales y herramientas avanzadas",
     icon: Users,
     href: "/account-admin/other",
-    available: true,
+    available: false,
   },
 ];
 
