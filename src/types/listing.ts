@@ -10,43 +10,40 @@ export type ListingType =
   | "Transfer"; // Transferencia
 
 export type ListingOverview = {
-  // Listing fields
+  // Essential fields (always present)
   listingId: bigint;
-  propertyId: bigint;
-  agentId: string; // Changed from bigint to match users.id type
   agentName: string | null;
-  ownerName: string | null;
   price: string;
-  status: string;
   listingType: ListingType;
-  isActive: boolean | null;
-  isFeatured: boolean | null;
-  isBankOwned: boolean | null;
-  viewCount: number | null;
-  inquiryCount: number | null;
-
-  // Property fields
-  referenceNumber: string | null;
-  title: string | null;
   propertyType: string | null;
   bedrooms: number | null;
   bathrooms: string | null;
   squareMeter: number | null;
-  street: string | null;
-  addressDetails: string | null;
-  postalCode: string | null;
-  latitude: string | null;
-  longitude: string | null;
-
-  // Location fields
   city: string | null;
-  province: string | null;
-  municipality: string | null;
-  neighborhood: string | null;
-
-  // Image fields
   imageUrl: string | null;
-  s3key: string | null;
-  imageUrl2: string | null;
-  s3key2: string | null;
+  referenceNumber: string | null;
+
+  // View-specific fields (conditional presence)
+  ownerId?: bigint | null;
+  ownerName?: string | null;
+  title?: string | null;
+  propertyId?: bigint;
+  agentId?: string;
+  status?: string;
+  isActive?: boolean | null;
+  isFeatured?: boolean | null;
+  isBankOwned?: boolean | null;
+  viewCount?: number | null;
+  inquiryCount?: number | null;
+  street?: string | null;
+  addressDetails?: string | null;
+  postalCode?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  province?: string | null;
+  municipality?: string | null;
+  neighborhood?: string | null;
+  s3key?: string | null;
+  imageUrl2?: string | null;
+  s3key2?: string | null;
 };

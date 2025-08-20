@@ -14,7 +14,17 @@ export const seoPropsSchema = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
   keywords: z.string().optional(),
+  name: z.string().optional(),
+  email: z.string().email("Debe ser un email válido").or(z.literal("")).optional(),
+  telephone: z.string().optional(),
+  url: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
+  ogTitle: z.string().optional(),
+  ogDescription: z.string().optional(),
   ogImage: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
+  ogType: z.string().optional(),
+  ogUrl: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
+  ogLocale: z.string().optional(),
+  ogSiteName: z.string().optional(),
 });
 
 // Hero Section Schema
@@ -72,11 +82,18 @@ export const propertiesPropsSchema = z.object({
 
 // Testimonials Schema
 export const testimonialSchema = z.object({
-  id: z.string(),
+  testimonial_id: z.string(),
+  account_id: z.string().optional(),
   name: z.string(),
-  text: z.string(),
-  rating: z.number().min(1).max(5),
-  image: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
+  role: z.string(),
+  content: z.string(),
+  avatar: z.string().optional(),
+  rating: z.number().min(1).max(5).default(5),
+  is_verified: z.boolean().default(true),
+  sort_order: z.number().default(1),
+  is_active: z.boolean().default(true),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
 });
 
 export const testimonialPropsSchema = z.object({
@@ -183,6 +200,7 @@ export const websiteConfigurationSchema = z.object({
   seoProps: seoPropsSchema,
   logo: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
   favicon: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
+  logotype: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
   heroProps: heroPropsSchema,
   featuredProps: featuredPropsSchema,
   aboutProps: aboutPropsSchema,
@@ -200,6 +218,7 @@ export type HeroProps = z.infer<typeof heroPropsSchema>;
 export type FeaturedProps = z.infer<typeof featuredPropsSchema>;
 export type AboutProps = z.infer<typeof aboutPropsSchema>;
 export type PropertiesProps = z.infer<typeof propertiesPropsSchema>;
+export type Testimonial = z.infer<typeof testimonialSchema>;
 export type TestimonialProps = z.infer<typeof testimonialPropsSchema>;
 export type Office = z.infer<typeof officeSchema>;
 export type ContactProps = z.infer<typeof contactPropsSchema>;

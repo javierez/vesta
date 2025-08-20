@@ -15,6 +15,8 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
+import { Skeleton } from "~/components/ui/skeleton";
 import type { ListingOverview } from "~/types/listing";
 import { formatListingType } from "../contactos/contact-config";
 
@@ -53,6 +55,7 @@ export const PropertyTable = React.memo(function PropertyTable({
 }: PropertyTableProps) {
   const router = useRouter();
   const defaultPlaceholder = "/properties/suburban-dream.png";
+  const [loadedImages, setLoadedImages] = React.useState<Set<string>>(new Set());
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -110,6 +113,10 @@ export const PropertyTable = React.memo(function PropertyTable({
     minWidth: `${columnWidths[column]}px`,
     maxWidth: `${columnWidths[column]}px`,
   });
+
+  const handleImageLoad = React.useCallback((listingId: string) => {
+    setLoadedImages(prev => new Set(prev).add(listingId));
+  }, []);
 
   const ResizeHandle = ({ column }: { column: string }) => (
     <div
@@ -175,14 +182,22 @@ export const PropertyTable = React.memo(function PropertyTable({
                 >
                   <div className="truncate">
                     <div className="relative h-[48px] w-[72px] overflow-hidden rounded-md">
+                      {!loadedImages.has(listing.listingId.toString()) && (
+                        <Skeleton className="absolute inset-0 z-10" />
+                      )}
                       <Image
                         src={listing.imageUrl ?? defaultPlaceholder}
                         alt={listing.title ?? "Property image"}
                         fill
-                        className="object-cover"
+                        className={cn(
+                          "object-cover transition-opacity duration-200",
+                          loadedImages.has(listing.listingId.toString()) ? "opacity-100" : "opacity-0"
+                        )}
+                        onLoad={() => handleImageLoad(listing.listingId.toString())}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = defaultPlaceholder;
+                          handleImageLoad(listing.listingId.toString());
                         }}
                       />
                     </div>
@@ -222,7 +237,19 @@ export const PropertyTable = React.memo(function PropertyTable({
                 >
                   <div className="truncate">
                     <div className="flex flex-col gap-1.5">
-                      {listing.ownerName && (
+                      {listing.ownerName && listing.ownerId && (
+                        <Link
+                          href={`/contactos/${listing.ownerId}`}
+                          className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <User className="h-3.5 w-3.5 flex-shrink-0" />
+                          <span className="truncate text-xs hover:underline">
+                            {listing.ownerName}
+                          </span>
+                        </Link>
+                      )}
+                      {listing.ownerName && !listing.ownerId && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <User className="h-3.5 w-3.5 flex-shrink-0" />
                           <span className="truncate text-xs">
@@ -231,12 +258,16 @@ export const PropertyTable = React.memo(function PropertyTable({
                         </div>
                       )}
                       {listing.agentName && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
+                        <Link
+                          href="/operaciones"
+                          className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
-                          <span className="truncate text-xs">
+                          <span className="truncate text-xs hover:underline">
                             {listing.agentName}
                           </span>
-                        </div>
+                        </Link>
                       )}
                     </div>
                   </div>

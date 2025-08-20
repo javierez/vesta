@@ -17,6 +17,7 @@ import {
   FileImage,
   Globe,
   Monitor,
+  Building,
 } from "lucide-react";
 
 interface AccountAdminCard {
@@ -28,6 +29,13 @@ interface AccountAdminCard {
 }
 
 const accountAdminSections: AccountAdminCard[] = [
+  {
+    title: "Detalles de Cuenta",
+    description: "Información completa de tu cuenta y configuración",
+    icon: Building,
+    href: "/account-admin/account",
+    available: true,
+  },
   {
     title: "Reportes",
     description: "Revisa estadísticas y métricas de tu cuenta",

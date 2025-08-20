@@ -24,6 +24,13 @@ export const accounts = singlestoreTable("accounts", {
   phone: varchar("phone", { length: 20 }),
   email: varchar("email", { length: 255 }),
   website: varchar("website", { length: 255 }),
+  // Legal information fields
+  taxId: varchar("tax_id", { length: 50 }), // Tax identification number (CIF/NIF)
+  registryDetails: text("registry_details"), // Commercial registry information
+  legalEmail: varchar("legal_email", { length: 255 }), // Legal contact email address
+  jurisdiction: varchar("jurisdiction", { length: 255 }), // Legal jurisdiction and applicable courts
+  privacyEmail: varchar("privacy_email", { length: 255 }), // Privacy/GDPR contact email address
+  dpoEmail: varchar("dpo_email", { length: 255 }), // Data Protection Officer email address
   // Settings JSON fields for flexible configuration
   portalSettings: json("portal_settings").default({}), // Fotocasa, Idealista, etc.
   paymentSettings: json("payment_settings").default({}), // Stripe, PayPal, etc.
@@ -601,6 +608,22 @@ export const prospectHistory = singlestoreTable("prospect_history", {
   changedBy: varchar("changed_by", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
   changeReason: text("change_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Testimonials table
+export const testimonials = singlestoreTable("testimonials", {
+  testimonialId: bigint("testimonial_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  name: varchar("name", { length: 255 }).notNull(),
+  role: varchar("role", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  avatar: varchar("avatar", { length: 1024 }),
+  rating: smallint("rating").notNull().default(5),
+  isVerified: boolean("is_verified").default(true),
+  sortOrder: int("sort_order").default(1),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Website configuration table

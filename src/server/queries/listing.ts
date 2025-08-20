@@ -25,9 +25,10 @@ export async function listListingsWithAuth(
   page = 1,
   limit = 10,
   filters?: Parameters<typeof listListings>[3],
+  view?: "grid" | "table",
 ) {
   const accountId = await getCurrentUserAccountId();
-  return listListings(accountId, page, limit, filters);
+  return listListings(accountId, page, limit, filters, view);
 }
 
 export async function listListingsCompactWithAuth(
@@ -294,6 +295,7 @@ export async function listListings(
     needsRenovation?: boolean;
     searchQuery?: string;
   },
+  view?: "grid" | "table",
 ) {
   try {
     const offset = (page - 1) * limit;
@@ -420,94 +422,85 @@ export async function listListings(
     whereConditions.push(ne(listings.status, "Draft"));
     whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
-    // Create optimized query with only essential fields for list views
-    const query = db
-      .select({
-        // Essential listing fields
-        listingId: listings.listingId,
-        propertyId: listings.propertyId,
-        agentId: listings.agentId,
-        agentName: users.name,
-        price: listings.price,
-        status: listings.status,
-        listingType: listings.listingType,
-        isActive: listings.isActive,
-        isFeatured: listings.isFeatured,
-        isBankOwned: listings.isBankOwned,
-        viewCount: listings.viewCount,
-        inquiryCount: listings.inquiryCount,
+    // Optimized query based on view type
+    const query = view === "table"
+      ? db.select({
+          // Table view: optimized fields
+          listingId: listings.listingId,
+          agentName: users.name,
+          price: listings.price,
+          listingType: listings.listingType,
+          referenceNumber: properties.referenceNumber,
+          title: properties.title,
+          propertyType: properties.propertyType,
+          bedrooms: properties.bedrooms,
+          bathrooms: properties.bathrooms,
+          squareMeter: properties.squareMeter,
+          city: locations.city,
+          imageUrl: sql<string>`(
+            SELECT image_url 
+            FROM property_images 
+            WHERE property_id = ${properties.propertyId} 
+            AND is_active = true 
+            AND image_order = 1
+            LIMIT 1
+          )`,
+          ownerId: sql<bigint | null>`(
+            SELECT c.contact_id
+            FROM listing_contacts lc
+            JOIN contacts c ON lc.contact_id = c.contact_id
+            WHERE lc.listing_id = ${listings.listingId}
+            AND lc.contact_type = 'owner'
+            AND lc.is_active = true
+            AND c.is_active = true
+            LIMIT 1
+          )`,
+          ownerName: sql<string>`(
+            SELECT CONCAT(c.first_name, ' ', c.last_name)
+            FROM listing_contacts lc
+            JOIN contacts c ON lc.contact_id = c.contact_id
+            WHERE lc.listing_id = ${listings.listingId}
+            AND lc.contact_type = 'owner'
+            AND lc.is_active = true
+            AND c.is_active = true
+            LIMIT 1
+          )`,
+        })
+      : db.select({
+          // Grid view: optimized fields
+          listingId: listings.listingId,
+          propertyId: listings.propertyId,
+          agentName: users.name,
+          price: listings.price,
+          listingType: listings.listingType,
+          isBankOwned: listings.isBankOwned,
+          referenceNumber: properties.referenceNumber,
+          propertyType: properties.propertyType,
+          bedrooms: properties.bedrooms,
+          bathrooms: properties.bathrooms,
+          squareMeter: properties.squareMeter,
+          street: properties.street,
+          city: locations.city,
+          province: locations.province,
+          imageUrl: sql<string>`(
+            SELECT image_url 
+            FROM property_images 
+            WHERE property_id = ${properties.propertyId} 
+            AND is_active = true 
+            AND image_order = 1
+            LIMIT 1
+          )`,
+          imageUrl2: sql<string>`(
+            SELECT image_url 
+            FROM property_images 
+            WHERE property_id = ${properties.propertyId} 
+            AND is_active = true 
+            AND image_order = 2
+            LIMIT 1
+          )`,
+        });
 
-        // Essential property fields for display
-        referenceNumber: properties.referenceNumber,
-        title: properties.title,
-        propertyType: properties.propertyType,
-        bedrooms: properties.bedrooms,
-        bathrooms: properties.bathrooms,
-        squareMeter: properties.squareMeter,
-        street: properties.street,
-        addressDetails: properties.addressDetails,
-        postalCode: properties.postalCode,
-        latitude: properties.latitude,
-        longitude: properties.longitude,
-
-        // Basic amenities for card display
-        hasGarage: properties.hasGarage,
-        hasElevator: properties.hasElevator,
-        hasStorageRoom: properties.hasStorageRoom,
-
-        // Location fields
-        city: locations.city,
-        province: locations.province,
-        municipality: locations.municipality,
-        neighborhood: locations.neighborhood,
-
-        // Image fields (first image only)
-        imageUrl: sql<string>`(
-          SELECT image_url 
-          FROM property_images 
-          WHERE property_id = ${properties.propertyId} 
-          AND is_active = true 
-          AND image_order = 1
-          LIMIT 1
-        )`,
-        s3key: sql<string>`(
-          SELECT s3key 
-          FROM property_images 
-          WHERE property_id = ${properties.propertyId} 
-          AND is_active = true 
-          AND image_order = 1
-          LIMIT 1
-        )`,
-        // Second image for hover effect
-        imageUrl2: sql<string>`(
-          SELECT image_url 
-          FROM property_images 
-          WHERE property_id = ${properties.propertyId} 
-          AND is_active = true 
-          AND image_order = 2
-          LIMIT 1
-        )`,
-        s3key2: sql<string>`(
-          SELECT s3key 
-          FROM property_images 
-          WHERE property_id = ${properties.propertyId} 
-          AND is_active = true 
-          AND image_order = 2
-          LIMIT 1
-        )`,
-
-        // Owner information (just full name)
-        ownerName: sql<string>`(
-          SELECT CONCAT(c.first_name, ' ', c.last_name)
-          FROM listing_contacts lc
-          JOIN contacts c ON lc.contact_id = c.contact_id
-          WHERE lc.listing_id = ${listings.listingId}
-          AND lc.contact_type = 'owner'
-          AND lc.is_active = true
-          AND c.is_active = true
-          LIMIT 1
-        )`,
-      })
+    const baseQuery = query
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .leftJoin(
@@ -543,7 +536,7 @@ export async function listListings(
 
     // Apply all where conditions at once
     const filteredQuery =
-      whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
+      whereConditions.length > 0 ? baseQuery.where(and(...whereConditions)) : baseQuery;
 
     // Apply pagination and sorting
     const allListings = await filteredQuery

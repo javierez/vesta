@@ -5,6 +5,7 @@ import { Button } from "~/components/ui/button";
 import { Plus, FileText } from "lucide-react";
 import Link from "next/link";
 import { PropertyCardSkeleton } from "~/components/property-card-skeleton";
+import { PropertyTableSkeleton } from "~/components/property-table-skeleton";
 import { PropertyFilter } from "~/components/propiedades/property-filter";
 import { PropertyTable } from "~/components/propiedades/property-table";
 import { PropertyGrid } from "~/components/propiedades/property-grid";
@@ -29,7 +30,7 @@ export default function PropertiesPage() {
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const view = (searchParams.get("view") ?? "grid") as "grid" | "table";
+  const view = (searchParams.get("view") ?? "table") as "grid" | "table";
 
   // Fetch agents independently
   useEffect(() => {
@@ -102,6 +103,7 @@ export default function PropertiesPage() {
           page,
           ITEMS_PER_PAGE,
           filters,
+          view,
         );
 
         console.log("Raw result from listListingsWithAuth:", result);
@@ -163,11 +165,15 @@ export default function PropertiesPage() {
       <PropertyFilter view={view} agents={agents} />
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <PropertyCardSkeleton key={index} />
-          ))}
-        </div>
+        view === "grid" ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <PropertyCardSkeleton key={index} />
+            ))}
+          </div>
+        ) : (
+          <PropertyTableSkeleton />
+        )
       ) : error ? (
         <NoResults message={error} />
       ) : view === "grid" ? (

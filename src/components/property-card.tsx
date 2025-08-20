@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
+import { Skeleton } from "~/components/ui/skeleton";
+import { cn } from "~/lib/utils";
 import {
   Bed,
   Bath,
@@ -66,6 +68,7 @@ export const PropertyCard = React.memo(function PropertyCard({
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [image2Loaded, setImage2Loaded] = useState(false);
+  const [showContent, setShowContent] = useState(true); // Show content immediately
 
   const getPropertyTypeLabel = (type: string | null) => {
     switch (type) {
@@ -101,6 +104,21 @@ export const PropertyCard = React.memo(function PropertyCard({
     setImageSrc2(defaultPlaceholder);
   };
 
+  const handleWhatsAppClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Get account website and create property URL
+    const propertyUrl = `${window.location.origin}/propiedades/${listing.propertyId}`;
+    const message = `Échale un vistazo: ${propertyUrl}`;
+    
+    // Create WhatsApp link with pre-filled message
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    
+    // Open WhatsApp
+    window.open(whatsappUrl, '_blank');
+  };
+
   return (
     <Link
       href={`/propiedades/${listing.propertyId.toString()}`}
@@ -113,37 +131,44 @@ export const PropertyCard = React.memo(function PropertyCard({
       >
         <div className="relative aspect-[4/3] overflow-hidden">
           <div className="relative h-full w-full">
+            {/* Skeleton overlay while images load */}
+            {(!imageLoaded || !image2Loaded) && (
+              <Skeleton className="absolute inset-0 z-10" />
+            )}
+            
             {/* First Image */}
             <Image
               src={imageSrc}
               alt={listing.title ?? "Property image"}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className={`object-cover transition-opacity duration-300 ${
-                isHovered ? "opacity-0" : "opacity-100"
-              } ${imageSrc === defaultPlaceholder || listing.status === "Sold" || listing.status === "Vendido" ? "grayscale" : ""}`}
+              className={cn(
+                "object-cover transition-opacity duration-300",
+                isHovered && image2Loaded ? "opacity-0" : "opacity-100",
+                imageSrc === defaultPlaceholder || listing.status === "Sold" || listing.status === "Vendido" ? "grayscale" : ""
+              )}
               loading="lazy"
               onLoad={() => setImageLoaded(true)}
               onError={onImageError}
               quality={85}
             />
+            
             {/* Second Image */}
             <Image
               src={imageSrc2}
               alt={listing.title ?? "Property image"}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className={`object-cover transition-opacity duration-300 ${
-                isHovered ? "opacity-100" : "opacity-0"
-              } ${imageSrc2 === defaultPlaceholder || listing.status === "Sold" || listing.status === "Vendido" ? "grayscale" : ""}`}
+              className={cn(
+                "object-cover transition-opacity duration-300",
+                isHovered && image2Loaded ? "opacity-100" : "opacity-0",
+                imageSrc2 === defaultPlaceholder || listing.status === "Sold" || listing.status === "Vendido" ? "grayscale" : ""
+              )}
               loading="lazy"
               onLoad={() => setImage2Loaded(true)}
               onError={onImage2Error}
               quality={85}
             />
-            {(!imageLoaded || !image2Loaded) && (
-              <div className="absolute inset-0 animate-pulse bg-muted" />
-            )}
           </div>
           {/* Top Left - Property Type */}
           <Badge
@@ -240,6 +265,7 @@ export const PropertyCard = React.memo(function PropertyCard({
             variant="ghost"
             size="icon"
             className="group absolute bottom-1 right-1 mr-2 h-8 w-8 text-muted-foreground/80 hover:bg-transparent"
+            onClick={handleWhatsAppClick}
           >
             <Image
               src="https://vesta-configuration-files.s3.amazonaws.com/logos/whatsapp.png"

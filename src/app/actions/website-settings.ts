@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "~/server/db";
-import { websiteProperties, users } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
+import { websiteProperties, users, testimonials } from "~/server/db/schema";
+import { eq, and } from "drizzle-orm";
 import type { 
   WebsiteConfigurationInput,
   HeroProps,
@@ -76,21 +76,75 @@ export async function getWebsiteConfigurationAction(accountId: bigint): Promise<
           featuredProps: {
             title: "Propiedades Destacadas",
             subtitle: "",
+            maxItems: 6,
           },
           aboutProps: {
             title: "Sobre Nosotros",
-            description: "",
+            subtitle: "",
+            content: "",
+            content2: "",
             image: "",
-            features: [],
+            services: [],
+            maxServicesDisplayed: 6,
+            servicesSectionTitle: "Nuestros Servicios",
+            aboutSectionTitle: "Nuestra Misión",
+            buttonName: "Contacta a Nuestro Equipo",
+            showKPI: true,
+            kpi1Name: "",
+            kpi1Data: "",
+            kpi2Name: "",
+            kpi2Data: "",
+            kpi3Name: "",
+            kpi3Data: "",
+            kpi4Name: "",
+            kpi4Data: "",
           },
           propertiesProps: {
             title: "Nuestras Propiedades",
             subtitle: "",
             itemsPerPage: 12,
+            defaultSort: "price-desc",
+            buttonText: "Ver Todas las Propiedades",
           },
           testimonialProps: {
             title: "Lo que dicen nuestros clientes",
-            testimonials: [],
+            subtitle: "",
+            itemsPerPage: 3,
+            testimonials: [
+              {
+                testimonial_id: "1125899906842625",
+                name: "Sara Jiménez",
+                role: "Propietaria",
+                content: "Trabajar con Acropolis Bienes Raíces fue un sueño. Entendieron exactamente lo que estábamos buscando y nos encontraron nuestra casa familiar perfecta dentro de nuestro presupuesto. Todo el proceso fue fluido y sin estrés.",
+                avatar: "/properties/confident-leader.png",
+                rating: 5,
+                is_verified: true,
+                sort_order: 1,
+                is_active: true,
+              },
+              {
+                testimonial_id: "1125899906842626",
+                name: "Miguel Chen",
+                role: "Inversionista Inmobiliario",
+                content: "Como inversionista, aprecio el conocimiento del mercado y la atención al detalle de Acropolis. Me han ayudado a adquirir múltiples propiedades con excelente potencial de retorno de inversión. Su experiencia es realmente invaluable.",
+                avatar: "/properties/confident-leader.png",
+                rating: 5,
+                is_verified: true,
+                sort_order: 2,
+                is_active: true,
+              },
+              {
+                testimonial_id: "1125899906842627",
+                name: "Emilia Rodríguez",
+                role: "Compradora por Primera Vez",
+                content: "Ser compradora de vivienda por primera vez fue intimidante, pero el equipo de Acropolis me guió en cada paso. Fueron pacientes, informativos y me encontraron un maravilloso condominio que se ajustaba a todas mis necesidades.",
+                avatar: "/properties/serene-gaze.png",
+                rating: 5,
+                is_verified: true,
+                sort_order: 3,
+                is_active: true,
+              },
+            ],
           },
           contactProps: {
             title: "Contáctanos",
@@ -104,6 +158,32 @@ export async function getWebsiteConfigurationAction(accountId: bigint): Promise<
             offices: [],
           },
           footerProps: {
+            companyName: "",
+            description: "",
+            socialLinks: {
+              facebook: "",
+              instagram: "",
+              twitter: "",
+              linkedin: "",
+            },
+            officeLocations: [],
+            quickLinksVisibility: {
+              inicio: true,
+              propiedades: true,
+              nosotros: true,
+              reseñas: true,
+              contacto: true,
+              comprar: false,
+              alquilar: false,
+              vender: false,
+            },
+            propertyTypesVisibility: {
+              pisos: true,
+              casas: true,
+              locales: true,
+              solares: true,
+              garajes: true,
+            },
             copyright: "",
             links: [],
           },
@@ -333,5 +413,293 @@ export async function updateWebsiteConfigurationAction(
       dataKeys: Object.keys(data)
     });
     return { success: false, error: "Error al guardar la configuración del sitio web" };
+  }
+}
+
+/**
+ * Seed testimonials for an account (creates sample data if none exist)
+ */
+export async function seedTestimonialsAction(accountId: bigint): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log("🌱 SEED: Starting testimonials seeding for accountId:", accountId);
+    
+    // Check if testimonials already exist
+    console.log("🔍 SEED: Checking for existing testimonials...");
+    const existing = await db
+      .select()
+      .from(testimonials)
+      .where(eq(testimonials.accountId, accountId));
+
+    console.log("📊 SEED: Found", existing.length, "existing testimonials");
+
+    if (existing.length > 0) {
+      console.log("✅ SEED: Testimonials already exist, skipping seed");
+      return { success: true }; // Already have testimonials
+    }
+
+    console.log("🌱 SEED: Creating sample testimonials...");
+    // Create sample testimonials
+    const sampleTestimonials = [
+      {
+        accountId,
+        name: "Sara Jiménez",
+        role: "Propietaria",
+        content: "Trabajar con Acropolis Bienes Raíces fue un sueño. Entendieron exactamente lo que estábamos buscando y nos encontraron nuestra casa familiar perfecta dentro de nuestro presupuesto. Todo el proceso fue fluido y sin estrés.",
+        avatar: "/properties/confident-leader.png",
+        rating: 5,
+        isVerified: true,
+        sortOrder: 1,
+        isActive: true,
+      },
+      {
+        accountId,
+        name: "Miguel Chen",
+        role: "Inversionista Inmobiliario",
+        content: "Como inversionista, aprecio el conocimiento del mercado y la atención al detalle de Acropolis. Me han ayudado a adquirir múltiples propiedades con excelente potencial de retorno de inversión. Su experiencia es realmente invaluable.",
+        avatar: "/properties/confident-leader.png",
+        rating: 5,
+        isVerified: true,
+        sortOrder: 2,
+        isActive: true,
+      },
+      {
+        accountId,
+        name: "Emilia Rodríguez",
+        role: "Compradora por Primera Vez",
+        content: "Ser compradora de vivienda por primera vez fue intimidante, pero el equipo de Acropolis me guió en cada paso. Fueron pacientes, informativos y me encontraron un maravilloso condominio que se ajustaba a todas mis necesidades.",
+        avatar: "/properties/serene-gaze.png",
+        rating: 5,
+        isVerified: true,
+        sortOrder: 3,
+        isActive: true,
+      },
+    ];
+
+    console.log("💾 SEED: Inserting", sampleTestimonials.length, "sample testimonials");
+    const insertResult = await db.insert(testimonials).values(sampleTestimonials);
+    console.log("✅ SEED: Insert result:", insertResult);
+    
+    return { success: true };
+  } catch (error) {
+    console.error("❌ SEED: Error seeding testimonials:", error);
+    console.error("📋 SEED: Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      accountId
+    });
+    return { success: false, error: "Error al crear testimonios de ejemplo" };
+  }
+}
+
+/**
+ * Get testimonials for an account
+ */
+export async function getTestimonialsAction(accountId: bigint): Promise<{
+  success: boolean;
+  data?: Array<{
+    testimonial_id: string;
+    account_id: string;
+    name: string;
+    role: string;
+    content: string;
+    avatar: string | null;
+    rating: number;
+    is_verified: boolean;
+    sort_order: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+  }>;
+  error?: string;
+}> {
+  try {
+    console.log("📖 GET: Loading testimonials for accountId:", accountId);
+    
+    const testimonialsData = await db
+      .select()
+      .from(testimonials)
+      .where(eq(testimonials.accountId, accountId))
+      .orderBy(testimonials.sortOrder);
+
+    console.log("📊 GET: Found", testimonialsData.length, "testimonials in database");
+    console.log("🔍 GET: Raw testimonials data:", JSON.stringify(testimonialsData, (key, value) =>
+      typeof value === 'bigint' ? value.toString() : value, 2));
+
+    const formattedTestimonials = testimonialsData.map(t => ({
+      testimonial_id: t.testimonialId.toString(),
+      account_id: t.accountId.toString(),
+      name: t.name,
+      role: t.role,
+      content: t.content,
+      avatar: t.avatar,
+      rating: t.rating,
+      is_verified: t.isVerified,
+      sort_order: t.sortOrder,
+      is_active: t.isActive,
+      created_at: t.createdAt.toISOString(),
+      updated_at: t.updatedAt.toISOString(),
+    }));
+
+    console.log("✅ GET: Formatted testimonials:", JSON.stringify(formattedTestimonials, null, 2));
+    return { success: true, data: formattedTestimonials };
+  } catch (error) {
+    console.error("❌ GET: Error getting testimonials:", error);
+    console.error("📋 GET: Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      accountId
+    });
+    return { success: false, error: "Error al obtener los testimonios" };
+  }
+}
+
+/**
+ * Create a new testimonial
+ */
+export async function createTestimonialAction(
+  accountId: bigint,
+  testimonialData: {
+    name: string;
+    role: string;
+    content: string;
+    avatar?: string;
+    rating: number;
+    is_verified: boolean;
+    sort_order: number;
+    is_active: boolean;
+  }
+): Promise<{ success: boolean; error?: string; data?: { testimonial_id: string } }> {
+  try {
+    console.log("➕ CREATE: Creating testimonial for accountId:", accountId);
+    console.log("📝 CREATE: Testimonial data:", JSON.stringify(testimonialData, null, 2));
+    
+    const insertValues = {
+      accountId,
+      name: testimonialData.name,
+      role: testimonialData.role,
+      content: testimonialData.content,
+      avatar: testimonialData.avatar || null,
+      rating: testimonialData.rating,
+      isVerified: testimonialData.is_verified,
+      sortOrder: testimonialData.sort_order,
+      isActive: testimonialData.is_active,
+    };
+    
+    console.log("💾 CREATE: Insert values:", JSON.stringify(insertValues, (key, value) =>
+      typeof value === 'bigint' ? value.toString() : value, 2));
+    
+    const [result] = await db
+      .insert(testimonials)
+      .values(insertValues);
+
+    console.log("✅ CREATE: Insert result:", result);
+    
+    return { 
+      success: true, 
+      data: { testimonial_id: result.insertId.toString() }
+    };
+  } catch (error) {
+    console.error("❌ CREATE: Error creating testimonial:", error);
+    console.error("📋 CREATE: Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      accountId,
+      testimonialData
+    });
+    return { success: false, error: "Error al crear el testimonio" };
+  }
+}
+
+/**
+ * Update a testimonial
+ */
+export async function updateTestimonialAction(
+  accountId: bigint,
+  testimonialId: string,
+  testimonialData: {
+    name: string;
+    role: string;
+    content: string;
+    avatar?: string;
+    rating: number;
+    is_verified: boolean;
+    sort_order: number;
+    is_active: boolean;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log("✏️ UPDATE: Updating testimonial", testimonialId, "for accountId:", accountId);
+    console.log("📝 UPDATE: Testimonial data:", JSON.stringify(testimonialData, null, 2));
+    
+    const updateValues = {
+      name: testimonialData.name,
+      role: testimonialData.role,
+      content: testimonialData.content,
+      avatar: testimonialData.avatar || null,
+      rating: testimonialData.rating,
+      isVerified: testimonialData.is_verified,
+      sortOrder: testimonialData.sort_order,
+      isActive: testimonialData.is_active,
+      updatedAt: new Date(),
+    };
+    
+    console.log("💾 UPDATE: Update values:", JSON.stringify(updateValues, (key, value) =>
+      typeof value === 'bigint' ? value.toString() : value, 2));
+    
+    const result = await db
+      .update(testimonials)
+      .set(updateValues)
+      .where(
+        and(
+          eq(testimonials.testimonialId, BigInt(testimonialId)),
+          eq(testimonials.accountId, accountId)
+        )
+      );
+
+    console.log("✅ UPDATE: Update result:", result);
+    return { success: true };
+  } catch (error) {
+    console.error("❌ UPDATE: Error updating testimonial:", error);
+    console.error("📋 UPDATE: Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      accountId,
+      testimonialId,
+      testimonialData
+    });
+    return { success: false, error: "Error al actualizar el testimonio" };
+  }
+}
+
+/**
+ * Delete a testimonial
+ */
+export async function deleteTestimonialAction(
+  accountId: bigint,
+  testimonialId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log("🗑️ DELETE: Deleting testimonial", testimonialId, "for accountId:", accountId);
+    
+    const result = await db
+      .delete(testimonials)
+      .where(
+        and(
+          eq(testimonials.testimonialId, BigInt(testimonialId)),
+          eq(testimonials.accountId, accountId)
+        )
+      );
+
+    console.log("✅ DELETE: Delete result:", result);
+    return { success: true };
+  } catch (error) {
+    console.error("❌ DELETE: Error deleting testimonial:", error);
+    console.error("📋 DELETE: Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      accountId,
+      testimonialId
+    });
+    return { success: false, error: "Error al eliminar el testimonio" };
   }
 }

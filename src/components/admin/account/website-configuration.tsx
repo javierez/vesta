@@ -48,12 +48,18 @@ import {
   getWebsiteConfigurationAction,
   updateWebsiteSectionAction,
   getCurrentUserAccountId,
+  getTestimonialsAction,
+  createTestimonialAction,
+  updateTestimonialAction,
+  deleteTestimonialAction,
+  seedTestimonialsAction,
 } from "~/app/actions/website-settings";
 import {
   websiteConfigurationSchema,
   type WebsiteConfigurationInput,
   type WebsiteTab,
   type Office,
+  type Testimonial,
 } from "~/types/website-settings";
 
 const navigationItems: (WebsiteTab & { color?: string })[] = [
@@ -145,6 +151,11 @@ export function WebsiteConfiguration() {
   });
   const [editingOffice, setEditingOffice] = useState<string | null>(null);
   const [showAddOffice, setShowAddOffice] = useState(false);
+  const [editingTestimonial, setEditingTestimonial] = useState<string | null>(null);
+  const [showAddTestimonial, setShowAddTestimonial] = useState(false);
+  const [showAvatarInput, setShowAvatarInput] = useState<string | null>(null);
+  const [dbTestimonials, setDbTestimonials] = useState<Testimonial[]>([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(false);
 
   const form = useForm<WebsiteConfigurationInput>({
     resolver: zodResolver(websiteConfigurationSchema),
@@ -160,7 +171,17 @@ export function WebsiteConfiguration() {
         title: "",
         description: "",
         keywords: "",
+        name: "",
+        email: "",
+        telephone: "",
+        url: "",
+        ogTitle: "",
+        ogDescription: "",
         ogImage: "",
+        ogType: "website",
+        ogUrl: "",
+        ogLocale: "es_ES",
+        ogSiteName: "",
       },
       logo: "",
       favicon: "",
@@ -254,6 +275,39 @@ export function WebsiteConfiguration() {
     },
   });
 
+  const loadTestimonials = async (userAccountId: bigint) => {
+    try {
+      console.log("🔄 CLIENT: Starting loadTestimonials for accountId:", userAccountId);
+      setLoadingTestimonials(true);
+      
+      // Seed testimonials if none exist
+      console.log("🌱 CLIENT: Calling seedTestimonialsAction...");
+      const seedResult = await seedTestimonialsAction(userAccountId);
+      console.log("🌱 CLIENT: Seed result:", seedResult);
+      
+      console.log("📖 CLIENT: Calling getTestimonialsAction...");
+      const testimonialsResult = await getTestimonialsAction(userAccountId);
+      console.log("📖 CLIENT: Get testimonials result:", testimonialsResult);
+      
+      if (testimonialsResult.success && testimonialsResult.data) {
+        console.log("✅ CLIENT: Setting", testimonialsResult.data.length, "testimonials to state");
+        // Convert null avatars to undefined to match the schema
+        const testimonials = testimonialsResult.data.map(t => ({
+          ...t,
+          avatar: t.avatar || undefined
+        }));
+        setDbTestimonials(testimonials);
+      } else {
+        console.log("❌ CLIENT: No testimonials data or failed request");
+      }
+    } catch (error) {
+      console.error("❌ CLIENT: Error loading testimonials:", error);
+    } finally {
+      console.log("🏁 CLIENT: Finished loading testimonials");
+      setLoadingTestimonials(false);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!session?.user?.id) return;
@@ -273,6 +327,9 @@ export function WebsiteConfiguration() {
         if (result.success && result.data) {
           form.reset(result.data);
         }
+
+        // Load testimonials
+        await loadTestimonials(userAccountId);
       } catch (error) {
         console.error("Error loading website configuration:", error);
         setError("Error al cargar la configuración");
@@ -309,6 +366,9 @@ export function WebsiteConfiguration() {
     });
     setEditingOffice(null);
     setShowAddOffice(false);
+    setEditingTestimonial(null);
+    setShowAddTestimonial(false);
+    setShowAvatarInput(null);
   }, [activeSection]);
 
   const addOffice = () => {
@@ -382,6 +442,106 @@ export function WebsiteConfiguration() {
     form.setValue("contactProps.offices", updatedOffices);
   };
 
+  const addTestimonial = async () => {
+    if (!accountId) {
+      console.log("❌ CLIENT: No accountId available for creating testimonial");
+      return;
+    }
+
+    const newTestimonialData = {
+      name: "Nuevo Testimonio",
+      role: "Cliente",
+      content: "Escribe aquí el testimonio...",
+      avatar: "/properties/confident-leader.png",
+      rating: 5,
+      is_verified: true,
+      sort_order: dbTestimonials.length + 1,
+      is_active: true,
+    };
+
+    console.log("➕ CLIENT: Creating new testimonial with data:", newTestimonialData);
+
+    try {
+      const result = await createTestimonialAction(accountId, newTestimonialData);
+      console.log("➕ CLIENT: Create testimonial result:", result);
+      
+      if (result.success && result.data) {
+        console.log("✅ CLIENT: Testimonial created successfully, reloading...");
+        await loadTestimonials(accountId);
+        setEditingTestimonial(result.data.testimonial_id);
+        setShowAddTestimonial(false);
+        toast.success("Testimonio creado correctamente");
+      } else {
+        console.log("❌ CLIENT: Failed to create testimonial:", result.error);
+        toast.error(result.error || "Error al crear el testimonio");
+      }
+    } catch (error) {
+      console.error("❌ CLIENT: Error creating testimonial:", error);
+      toast.error("Error al crear el testimonio");
+    }
+  };
+
+  const removeTestimonial = async (testimonialId: string) => {
+    if (!accountId) return;
+
+    try {
+      const result = await deleteTestimonialAction(accountId, testimonialId);
+      if (result.success) {
+        await loadTestimonials(accountId);
+        if (editingTestimonial === testimonialId) {
+          setEditingTestimonial(null);
+        }
+        toast.success("Testimonio eliminado correctamente");
+      } else {
+        toast.error(result.error || "Error al eliminar el testimonio");
+      }
+    } catch (error) {
+      console.error("Error deleting testimonial:", error);
+      toast.error("Error al eliminar el testimonio");
+    }
+  };
+
+  const updateTestimonialField = async (testimonialId: string, field: keyof Testimonial, value: string | number | boolean) => {
+    if (!accountId) return;
+
+    // Update local state immediately
+    setDbTestimonials(prev => prev.map(testimonial => {
+      if (testimonial.testimonial_id === testimonialId) {
+        return { ...testimonial, [field]: value };
+      }
+      return testimonial;
+    }));
+
+    // Find the testimonial and update in database
+    const testimonial = dbTestimonials.find(t => t.testimonial_id === testimonialId);
+    if (!testimonial) return;
+
+    const updatedTestimonial = { ...testimonial, [field]: value };
+
+    try {
+      const result = await updateTestimonialAction(accountId, testimonialId, {
+        name: updatedTestimonial.name,
+        role: updatedTestimonial.role,
+        content: updatedTestimonial.content,
+        avatar: updatedTestimonial.avatar || undefined,
+        rating: updatedTestimonial.rating,
+        is_verified: updatedTestimonial.is_verified,
+        sort_order: updatedTestimonial.sort_order,
+        is_active: updatedTestimonial.is_active,
+      });
+
+      if (!result.success) {
+        // Revert local state on error
+        await loadTestimonials(accountId);
+        toast.error(result.error || "Error al actualizar el testimonio");
+      }
+    } catch (error) {
+      console.error("Error updating testimonial:", error);
+      await loadTestimonials(accountId);
+      toast.error("Error al actualizar el testimonio");
+    }
+  };
+
   const onSubmitSection = () => {
     const formData = form.getValues();
     console.log("🎯 onSubmitSection called for section:", activeSection);
@@ -403,6 +563,7 @@ export function WebsiteConfiguration() {
       case 'branding':
         sectionData.logo = formData.logo;
         sectionData.favicon = formData.favicon;
+        sectionData.logotype = formData.logotype;
         break;
       case 'hero':
         sectionData.heroProps = formData.heroProps;
@@ -667,9 +828,10 @@ export function WebsiteConfiguration() {
                     <h3 className="text-sm font-medium text-gray-700 mb-3">Logo</h3>
                     {form.watch("logo") ? (
                       <div className="relative inline-block group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
                           src={form.watch("logo")} 
-                          alt="Logo" 
+                          alt="Logo preview" 
                           className="max-h-24 object-contain"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
@@ -702,9 +864,10 @@ export function WebsiteConfiguration() {
                     <h3 className="text-sm font-medium text-gray-700 mb-3">Favicon</h3>
                     {form.watch("favicon") ? (
                       <div className="relative inline-block group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
                           src={form.watch("favicon")} 
-                          alt="Favicon" 
+                          alt="Favicon preview" 
                           className="max-h-24 object-contain"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
@@ -783,9 +946,10 @@ export function WebsiteConfiguration() {
                     <FormLabel>Imagen de Fondo</FormLabel>
                     {form.watch("heroProps.backgroundImage") && !showHeroImageInput ? (
                       <div className="relative inline-block group mt-3 w-full">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
                           src={form.watch("heroProps.backgroundImage")} 
-                          alt="Hero background" 
+                          alt="Hero background preview" 
                           className="w-full max-h-48 rounded object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
@@ -1321,55 +1485,314 @@ export function WebsiteConfiguration() {
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="testimonialProps.title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Título de la Sección</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Lo que dicen nuestros clientes" />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                <div className="space-y-6">
+                  {/* Basic Settings */}
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="testimonialProps.title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Título de la Sección</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Lo que dicen nuestros clientes" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="testimonialProps.subtitle"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subtítulo</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos." />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="testimonialProps.subtitle"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Subtítulo</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos." />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="testimonialProps.itemsPerPage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Testimonios por página</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            type="number" 
-                            placeholder="3"
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 3)}
-                          />
-                        </FormControl>
-                      </FormItem>
+                    <FormField
+                      control={form.control}
+                      name="testimonialProps.itemsPerPage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Testimonios por página</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              type="number" 
+                              placeholder="3"
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 3)}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Testimonials Management */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-medium text-gray-700">
+                        Testimonios
+                        {loadingTestimonials && (
+                          <Loader2 className="ml-2 h-4 w-4 animate-spin inline" />
+                        )}
+                      </h3>
+                      {!showAddTestimonial && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowAddTestimonial(true)}
+                          className="flex items-center gap-2"
+                          disabled={loadingTestimonials}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Agregar Testimonio
+                        </Button>
+                      )}
+                    </div>
+
+                    {showAddTestimonial && (
+                      <div className="mb-4 p-4 border border-dashed border-gray-300 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm text-gray-600">Agregar nuevo testimonio</p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowAddTestimonial(false)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={addTestimonial}
+                          className="w-full"
+                          disabled={loadingTestimonials}
+                        >
+                          Crear Testimonio
+                        </Button>
+                      </div>
                     )}
-                  />
-                  
-                  <div className="rounded-lg bg-gray-50 p-4">
-                    <p className="text-sm text-gray-600">
-                      Los testimonios se pueden agregar desde la sección de administración
-                    </p>
+
+                    {/* Testimonial Cards */}
+                    <div className="space-y-4">
+                      {dbTestimonials.map((testimonial, index) => (
+                        <div key={testimonial.testimonial_id} className="border border-gray-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              {testimonial.avatar && (
+                                <img 
+                                  src={testimonial.avatar} 
+                                  alt={testimonial.name} 
+                                  className="h-8 w-8 rounded-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              )}
+                              <span className="text-sm font-medium">
+                                {testimonial.name || `Testimonio ${index + 1}`}
+                              </span>
+                              {testimonial.is_verified && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  Verificado
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingTestimonial(editingTestimonial === testimonial.testimonial_id ? null : testimonial.testimonial_id)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeTestimonial(testimonial.testimonial_id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {editingTestimonial === testimonial.testimonial_id && (
+                            <div className="space-y-4 pt-4 border-t border-gray-100">
+                              {/* Name and Role */}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Nombre</label>
+                                  <Input
+                                    value={testimonial.name}
+                                    onChange={(e) => updateTestimonialField(testimonial.testimonial_id, 'name', e.target.value)}
+                                    placeholder="María González"
+                                    className="mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Rol/Título</label>
+                                  <Input
+                                    value={testimonial.role}
+                                    onChange={(e) => updateTestimonialField(testimonial.testimonial_id, 'role', e.target.value)}
+                                    placeholder="Compradora"
+                                    className="mt-1"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Content */}
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Testimonio</label>
+                                <Textarea
+                                  value={testimonial.content}
+                                  onChange={(e) => updateTestimonialField(testimonial.testimonial_id, 'content', e.target.value)}
+                                  placeholder="El servicio fue excelente..."
+                                  rows={4}
+                                  className="mt-1"
+                                />
+                              </div>
+
+                              {/* Avatar */}
+                              <div>
+                                <label className="text-sm font-medium text-gray-700 mb-3">Avatar</label>
+                                {testimonial.avatar && showAvatarInput !== testimonial.testimonial_id ? (
+                                  <div className="relative inline-block group mt-3">
+                                    <img 
+                                      src={testimonial.avatar} 
+                                      alt={`Avatar de ${testimonial.name}`} 
+                                      className="h-16 w-16 rounded-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                      }}
+                                    />
+                                    <p className="hidden text-sm text-red-500">Error al cargar la imagen</p>
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowAvatarInput(testimonial.testimonial_id)}
+                                      className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center rounded-full"
+                                    >
+                                      <RefreshCw className="h-4 w-4 text-white" />
+                                    </button>
+                                  </div>
+                                ) : !testimonial.avatar && showAvatarInput !== testimonial.testimonial_id ? (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowAvatarInput(testimonial.testimonial_id)}
+                                    className="mt-3"
+                                  >
+                                    Configurar avatar
+                                  </Button>
+                                ) : (
+                                  <div className="mt-3">
+                                    <Input
+                                      value={testimonial.avatar || ''}
+                                      onChange={(e) => updateTestimonialField(testimonial.testimonial_id, 'avatar', e.target.value)}
+                                      placeholder="/properties/confident-leader.png"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setShowAvatarInput(null)}
+                                      className="mt-2"
+                                    >
+                                      Cancelar
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Rating and Sort Order */}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Calificación</label>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    max="5"
+                                    value={testimonial.rating}
+                                    onChange={(e) => updateTestimonialField(testimonial.testimonial_id, 'rating', parseInt(e.target.value) || 5)}
+                                    className="mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Orden</label>
+                                  <Input
+                                    type="number"
+                                    value={testimonial.sort_order}
+                                    onChange={(e) => updateTestimonialField(testimonial.testimonial_id, 'sort_order', parseInt(e.target.value) || 1)}
+                                    className="mt-1"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Toggles */}
+                              <div className="flex items-center gap-4">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={testimonial.is_verified}
+                                    onChange={(e) => updateTestimonialField(testimonial.testimonial_id, 'is_verified', e.target.checked)}
+                                    className="rounded border-gray-300"
+                                  />
+                                  <label className="text-sm font-medium text-gray-700">
+                                    Verificado
+                                  </label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={testimonial.is_active}
+                                    onChange={(e) => updateTestimonialField(testimonial.testimonial_id, 'is_active', e.target.checked)}
+                                    className="rounded border-gray-300"
+                                  />
+                                  <label className="text-sm font-medium text-gray-700">
+                                    Activo
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {editingTestimonial !== testimonial.testimonial_id && (
+                            <div className="text-sm text-gray-600 space-y-1">
+                              {testimonial.role && (
+                                <p className="font-medium">{testimonial.role}</p>
+                              )}
+                              {testimonial.content && (
+                                <p className="italic">"{testimonial.content}"</p>
+                              )}
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-yellow-500">{"★".repeat(testimonial.rating)}</span>
+                                <span className="text-gray-400">{"★".repeat(5 - testimonial.rating)}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {dbTestimonials.length === 0 && !loadingTestimonials && (
+                      <div className="text-center py-8 text-gray-500">
+                        <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                        <p>No hay testimonios configurados</p>
+                        <p className="text-sm">Agrega tu primer testimonio para comenzar</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
