@@ -56,17 +56,17 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
 
       {/* Property Title - Always Visible */}
       <PropertyHeader
-        propertyType={listing.propertyType ?? ""}
+        title={listing.title ?? ""}
+        propertyId={listing.propertyId}
         street={listing.street ?? ""}
         city={listing.city ?? ""}
         province={listing.province ?? ""}
         postalCode={listing.postalCode ?? ""}
         referenceNumber={listing.referenceNumber ?? ""}
         price={listing.price}
-        listingType={listing.listingType as "Sale" | "Rent" | "Sold"}
+        listingType={listing.listingType}
         isBankOwned={listing.isBankOwned ?? false}
         isFeatured={listing.isFeatured ?? false}
-        neighborhood={listing.neighborhood ?? ""}
       />
 
       {/* Property Tabs - Under Title */}

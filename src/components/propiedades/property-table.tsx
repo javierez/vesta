@@ -10,18 +10,20 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { formatPrice } from "~/lib/utils";
-import { Map, Bath, Bed, Square, User, Building2 } from "lucide-react";
+import { Map, Bath, Bed, Square, User, Building2, Share2, MessageCircle } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Button } from "~/components/ui/button";
 import type { ListingOverview } from "~/types/listing";
 import { formatListingType } from "../contactos/contact-config";
 
 interface PropertyTableProps {
   listings: ListingOverview[];
+  accountWebsite?: string | null;
 }
 
 // Default column widths (in pixels)
@@ -52,6 +54,7 @@ const statusColors: Record<string, string> = {
 
 export const PropertyTable = React.memo(function PropertyTable({
   listings,
+  accountWebsite,
 }: PropertyTableProps) {
   const router = useRouter();
   const defaultPlaceholder = "/properties/suburban-dream.png";
@@ -118,6 +121,52 @@ export const PropertyTable = React.memo(function PropertyTable({
     setLoadedImages(prev => new Set(prev).add(listingId));
   }, []);
 
+  const handleWhatsAppClick = React.useCallback((listing: ListingOverview, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const baseUrl = accountWebsite || window.location.origin;
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
+    const message = `Échale un vistazo: ${propertyUrl}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    
+    window.open(whatsappUrl, '_blank');
+  }, [accountWebsite]);
+
+  const handleShareClick = React.useCallback(async (listing: ListingOverview, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const baseUrl = accountWebsite || window.location.origin;
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
+    const message = `Échale un vistazo: ${propertyUrl}`;
+    const shareData = {
+      text: message,
+      // Only share our consistent message format
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(message);
+        alert('Enlace copiado al portapapeles');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(message);
+        alert('Enlace copiado al portapapeles');
+      } catch (clipboardError) {
+        console.error('Clipboard fallback failed:', clipboardError);
+      }
+    }
+  }, [accountWebsite]);
+
   const ResizeHandle = ({ column }: { column: string }) => (
     <div
       className={cn(
@@ -181,7 +230,7 @@ export const PropertyTable = React.memo(function PropertyTable({
                   style={getColumnStyle("imagen")}
                 >
                   <div className="truncate">
-                    <div className="relative h-[48px] w-[72px] overflow-hidden rounded-md">
+                    <div className="group relative h-[48px] w-[72px] overflow-hidden rounded-md">
                       {!loadedImages.has(listing.listingId.toString()) && (
                         <Skeleton className="absolute inset-0 z-10" />
                       )}
@@ -200,6 +249,28 @@ export const PropertyTable = React.memo(function PropertyTable({
                           handleImageLoad(listing.listingId.toString());
                         }}
                       />
+                      
+                      {/* Hover overlay with icons */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100 flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
+                          onClick={(e) => handleWhatsAppClick(listing, e)}
+                          title="Compartir por WhatsApp"
+                        >
+                          <MessageCircle className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
+                          onClick={(e) => handleShareClick(listing, e)}
+                          title="Compartir enlace"
+                        >
+                          <Share2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </TableCell>

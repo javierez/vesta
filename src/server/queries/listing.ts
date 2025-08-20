@@ -8,6 +8,7 @@ import {
   propertyImages,
   users,
   listingContacts,
+  accounts,
 } from "../db/schema";
 import { eq, and, ne, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
@@ -41,6 +42,11 @@ export async function listListingsCompactWithAuth(
 export async function getAllAgentsWithAuth() {
   const accountId = await getCurrentUserAccountId();
   return getAllAgents(accountId);
+}
+
+export async function getAccountWebsiteWithAuth() {
+  const accountId = await getCurrentUserAccountId();
+  return getAccountWebsite(accountId);
 }
 
 export async function updateListingWithAuth(
@@ -699,6 +705,23 @@ export async function getAllAgents(accountId: number) {
     return agents;
   } catch (error) {
     console.error("Error fetching agents:", error);
+    throw error;
+  }
+}
+
+export async function getAccountWebsite(accountId: number) {
+  try {
+    const account = await db
+      .select({
+        website: accounts.website,
+      })
+      .from(accounts)
+      .where(eq(accounts.accountId, BigInt(accountId)))
+      .limit(1);
+
+    return account[0]?.website ?? null;
+  } catch (error) {
+    console.error("Error fetching account website:", error);
     throw error;
   }
 }

@@ -164,6 +164,7 @@ export const locations = singlestoreTable("locations", {
   province: varchar("province", { length: 100 }).notNull(),
   municipality: varchar("municipality", { length: 100 }).notNull(),
   neighborhood: varchar("neighborhood", { length: 100 }).notNull(),
+  neighborhoodClean: varchar("neighborhood_clean", { length: 100 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),

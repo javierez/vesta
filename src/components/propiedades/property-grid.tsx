@@ -8,6 +8,7 @@ interface PropertyGridProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  accountWebsite?: string | null;
 }
 
 export const PropertyGrid = React.memo(function PropertyGrid({
@@ -15,12 +16,17 @@ export const PropertyGrid = React.memo(function PropertyGrid({
   currentPage,
   totalPages,
   onPageChange,
+  accountWebsite,
 }: PropertyGridProps) {
   return (
     <>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {listings.map((listing) => (
-          <PropertyCard key={listing.listingId.toString()} listing={listing} />
+          <PropertyCard 
+            key={listing.listingId.toString()} 
+            listing={listing} 
+            accountWebsite={accountWebsite}
+          />
         ))}
       </div>
       <PaginationControls

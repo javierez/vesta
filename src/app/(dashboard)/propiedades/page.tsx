@@ -13,6 +13,7 @@ import { NoResults } from "~/components/propiedades/no-results";
 import {
   listListingsWithAuth,
   getAllAgentsWithAuth,
+  getAccountWebsiteWithAuth,
 } from "~/server/queries/listing";
 import type { ListingOverview } from "~/types/listing";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -28,22 +29,27 @@ export default function PropertiesPage() {
   const [totalPages, setTotalPages] = useState(1);
   // Removed unused variable: totalCount
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
+  const [accountWebsite, setAccountWebsite] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const view = (searchParams.get("view") ?? "table") as "grid" | "table";
 
-  // Fetch agents independently
+  // Fetch agents and account website independently
   useEffect(() => {
-    const fetchAgents = async () => {
+    const fetchAgentsAndWebsite = async () => {
       try {
-        const allAgents = await getAllAgentsWithAuth();
+        const [allAgents, website] = await Promise.all([
+          getAllAgentsWithAuth(),
+          getAccountWebsiteWithAuth(),
+        ]);
         setAgents(allAgents);
+        setAccountWebsite(website);
       } catch (error) {
-        console.error("Error fetching agents:", error);
-        setError("Error al cargar los agentes");
+        console.error("Error fetching agents and website:", error);
+        setError("Error al cargar los datos");
       }
     };
-    void fetchAgents();
+    void fetchAgentsAndWebsite();
   }, []);
 
   useEffect(() => {
@@ -182,9 +188,10 @@ export default function PropertiesPage() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
+          accountWebsite={accountWebsite}
         />
       ) : (
-        <PropertyTable listings={listings} />
+        <PropertyTable listings={listings} accountWebsite={accountWebsite} />
       )}
     </div>
   );

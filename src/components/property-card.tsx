@@ -17,6 +17,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { formatPrice } from "~/lib/utils";
 import { formatListingType } from "./contactos/contact-config";
+import type { ListingOverview } from "~/types/listing";
 
 type Listing = {
   // Listing fields
@@ -59,11 +60,13 @@ type Listing = {
 };
 
 interface PropertyCardProps {
-  listing: Listing;
+  listing: Listing | ListingOverview;
+  accountWebsite?: string | null;
 }
 
 export const PropertyCard = React.memo(function PropertyCard({
   listing,
+  accountWebsite,
 }: PropertyCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -108,8 +111,10 @@ export const PropertyCard = React.memo(function PropertyCard({
     e.preventDefault();
     e.stopPropagation();
     
-    // Get account website and create property URL
-    const propertyUrl = `${window.location.origin}/propiedades/${listing.propertyId}`;
+    // Use account website or fallback to current origin
+    const baseUrl = accountWebsite || window.location.origin;
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
     const message = `Échale un vistazo: ${propertyUrl}`;
     
     // Create WhatsApp link with pre-filled message
@@ -121,7 +126,7 @@ export const PropertyCard = React.memo(function PropertyCard({
 
   return (
     <Link
-      href={`/propiedades/${listing.propertyId.toString()}`}
+      href={`/propiedades/${listing.listingId.toString()}`}
       className="block"
     >
       <Card
