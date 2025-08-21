@@ -534,14 +534,18 @@ export function PropertyCharacteristicsForm({
   const [orientation, setOrientation] = useState(listing.orientation ?? "");
   const [isBright, setIsBright] = useState(listing.bright ?? false);
   const [garageType, setGarageType] = useState(listing.garageType ?? "");
-  const [garageSpaces, setGarageSpaces] = useState(listing.garageSpaces ?? 1);
+  const [garageSpaces, setGarageSpaces] = useState(() => {
+    const spaces = listing.garageSpaces;
+    return spaces && !isNaN(Number(spaces)) ? Number(spaces) : 1;
+  });
   const [garageInBuilding, setGarageInBuilding] = useState(
     listing.garageInBuilding ?? false,
   );
   const [garageNumber, setGarageNumber] = useState(listing.garageNumber ?? "");
-  const [storageRoomSize, setStorageRoomSize] = useState(
-    listing.storageRoomSize ?? 0,
-  );
+  const [storageRoomSize, setStorageRoomSize] = useState(() => {
+    const size = listing.storageRoomSize;
+    return size && !isNaN(Number(size)) ? Number(size) : 0;
+  });
   const [storageRoomNumber, setStorageRoomNumber] = useState(
     listing.storageRoomNumber ?? "",
   );
@@ -639,12 +643,14 @@ export function PropertyCharacteristicsForm({
   const [showPremiumFeatures, setShowPremiumFeatures] = useState(false);
   const [showAdditionalSpaces, setShowAdditionalSpaces] = useState(false);
   const [showMaterials, setShowMaterials] = useState(false);
-  const [optionalGaragePrice, setOptionalGaragePrice] = useState(
-    listing.optionalGaragePrice ?? 0,
-  );
-  const [optionalStorageRoomPrice, setOptionalStorageRoomPrice] = useState(
-    listing.optionalStorageRoomPrice ?? 0,
-  );
+  const [optionalGaragePrice, setOptionalGaragePrice] = useState(() => {
+    const price = listing.optionalGaragePrice;
+    return price && !isNaN(Number(price)) ? Number(price) : 0;
+  });
+  const [optionalStorageRoomPrice, setOptionalStorageRoomPrice] = useState(() => {
+    const price = listing.optionalStorageRoomPrice;
+    return price && !isNaN(Number(price)) ? Number(price) : 0;
+  });
   const [selectedAgentId, setSelectedAgentId] = useState(
     listing.agent?.id?.toString() ?? "",
   );
@@ -1533,7 +1539,8 @@ export function PropertyCharacteristicsForm({
                     type="number"
                     value={garageSpaces}
                     onChange={(e) => {
-                      setGarageSpaces(parseInt(e.target.value));
+                      const value = parseInt(e.target.value) || 1;
+                      setGarageSpaces(value);
                       updateModuleState("features", true);
                     }}
                     className="h-7 text-xs"
@@ -1582,7 +1589,8 @@ export function PropertyCharacteristicsForm({
                   type="number"
                   value={Math.round(optionalGaragePrice)}
                   onChange={(e) => {
-                    setOptionalGaragePrice(Math.round(Number(e.target.value)));
+                    const value = Math.round(Number(e.target.value)) || 0;
+                    setOptionalGaragePrice(value);
                     updateModuleState("features", true);
                   }}
                   className="h-7 text-xs"
@@ -1622,7 +1630,8 @@ export function PropertyCharacteristicsForm({
                     type="number"
                     value={storageRoomSize}
                     onChange={(e) => {
-                      setStorageRoomSize(parseInt(e.target.value));
+                      const value = parseInt(e.target.value) || 0;
+                      setStorageRoomSize(value);
                       updateModuleState("features", true);
                     }}
                     className="h-7 text-xs"
@@ -1655,9 +1664,8 @@ export function PropertyCharacteristicsForm({
                   type="number"
                   value={Math.round(optionalStorageRoomPrice)}
                   onChange={(e) => {
-                    setOptionalStorageRoomPrice(
-                      Math.round(Number(e.target.value)),
-                    );
+                    const value = Math.round(Number(e.target.value)) || 0;
+                    setOptionalStorageRoomPrice(value);
                     updateModuleState("features", true);
                   }}
                   className="h-7 text-xs"

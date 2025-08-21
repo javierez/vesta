@@ -3,7 +3,7 @@ import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-bre
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { PropertyTabs } from "~/components/propiedades/detail/property-tabs";
 import { getPropertyImages } from "~/server/queries/property_images";
-import { getListingDetailsWithAuth } from "~/server/queries/listing";
+import { getListingDetailsWithAuth, getListingBreadcrumbData, getListingHeaderData, getListingTabsData } from "~/server/queries/listing";
 import { getEnergyCertificate } from "~/server/queries/document";
 import type { PropertyImage } from "~/lib/data";
 import { convertDbListingToPropertyListing } from "~/types/property-listing";
@@ -16,19 +16,30 @@ interface PropertyPageProps {
 
 export default async function PropertyPage({ params }: PropertyPageProps) {
   const unwrappedParams = await params;
-  const listing = await getListingDetailsWithAuth(parseInt(unwrappedParams.id));
+  const listingId = parseInt(unwrappedParams.id);
+  
+  // Get data with optimized queries
+  const [breadcrumbData, headerData, tabsData, fullListingDetails] = await Promise.all([
+    getListingBreadcrumbData(listingId),
+    getListingHeaderData(listingId), 
+    getListingTabsData(listingId),
+    getListingDetailsWithAuth(listingId),
+  ]);
 
-  if (!listing) {
+  // Type guard to check if fullListingDetails is a valid record
+  const isValidRecord = (obj: unknown): obj is Record<string, unknown> => {
+    return obj != null && typeof obj === 'object' && Object.keys(obj).length > 0;
+  };
+
+  if (!breadcrumbData || !headerData || !tabsData) {
     notFound();
   }
 
-  // Get energy certificate document
-  const energyCertificate = await getEnergyCertificate(
-    Number(listing.propertyId),
-  );
-
-  // Get all property images with proper fallback
-  const propertyImages = await getPropertyImages(BigInt(listing.propertyId));
+  // Get energy certificate document and images in parallel
+  const [energyCertificate, propertyImages] = await Promise.all([
+    getEnergyCertificate(Number(headerData.propertyId)),
+    getPropertyImages(BigInt(headerData.propertyId)),
+  ]);
   const defaultPlaceholder = "/properties/suburban-dream.png";
 
   // Process images to ensure they have valid URLs and match PropertyImage type
@@ -49,31 +60,29 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <PropertyBreadcrumb
-        propertyType={listing.propertyType ?? ""}
-        street={listing.street ?? ""}
-        referenceNumber={listing.referenceNumber ?? ""}
+        propertyType={breadcrumbData.propertyType ?? ""}
+        street={breadcrumbData.street ?? ""}
+        referenceNumber={breadcrumbData.referenceNumber ?? ""}
       />
 
       {/* Property Title - Always Visible */}
       <PropertyHeader
-        title={listing.title ?? ""}
-        propertyId={listing.propertyId}
-        street={listing.street ?? ""}
-        city={listing.city ?? ""}
-        province={listing.province ?? ""}
-        postalCode={listing.postalCode ?? ""}
-        referenceNumber={listing.referenceNumber ?? ""}
-        price={listing.price}
-        listingType={listing.listingType}
-        isBankOwned={listing.isBankOwned ?? false}
-        isFeatured={listing.isFeatured ?? false}
+        title={headerData.title ?? ""}
+        propertyId={headerData.propertyId}
+        street={headerData.street ?? ""}
+        city={headerData.city ?? ""}
+        province={headerData.province ?? ""}
+        postalCode={headerData.postalCode ?? ""}
+        price={headerData.price}
+        listingType={headerData.listingType}
+        isBankOwned={headerData.isBankOwned ?? false}
       />
 
       {/* Property Tabs - Under Title */}
       <div className="pb-16">
         <PropertyTabs
-          listing={listing}
-          convertedListing={convertDbListingToPropertyListing(listing)}
+          listing={tabsData}
+          convertedListing={isValidRecord(fullListingDetails) ? convertDbListingToPropertyListing(fullListingDetails) : undefined}
           images={processedImages}
           energyCertificate={energyCertificate}
         />

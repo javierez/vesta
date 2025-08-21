@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { uploadDocument } from "~/app/actions/upload";
 import { getDocumentsByFolderType } from "~/server/queries/document";
-import { getListingDetailsWithAuth } from "~/server/queries/listing";
+import { getListingDocumentsData } from "~/server/queries/listing";
 import { auth } from "~/lib/auth";
 import { headers } from "next/headers";
 
@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const { id } = await params;
-    const listing = await getListingDetailsWithAuth(parseInt(id));
+    const listing = await getListingDocumentsData(parseInt(id));
 
     if (!listing) {
       return NextResponse.json(
@@ -94,7 +94,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const listing = await getListingDetailsWithAuth(parseInt(id));
+    const listing = await getListingDocumentsData(parseInt(id));
 
     if (!listing) {
       return NextResponse.json(

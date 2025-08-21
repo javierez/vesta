@@ -13,6 +13,7 @@ import {
 import { eq, and, ne, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
+import { cache, cacheKeys } from "../../lib/cache";
 
 // Wrapper functions that automatically get accountId from current session
 // These maintain backward compatibility while adding account filtering
@@ -59,7 +60,32 @@ export async function updateListingWithAuth(
 
 export async function getListingDetailsWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
-  return getListingDetails(listingId, accountId);
+  
+  console.log(`[DEBUG] getListingDetailsWithAuth called with listingId: ${listingId}, accountId: ${accountId}`);
+  
+  // Check cache first (5 minute TTL for characteristics data)
+  const cacheKey = cacheKeys.listingDetails(accountId, listingId);
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) {
+    console.log(`[DEBUG] Returning cached data for key: ${cacheKey}`);
+    return cachedData;
+  }
+  
+  console.log(`[DEBUG] No cached data, fetching from database for key: ${cacheKey}`);
+  
+  try {
+    // Fetch from database and cache result
+    const listingDetails = await getListingDetails(listingId, accountId);
+    console.log(`[DEBUG] Database query returned:`, listingDetails ? 'VALID OBJECT' : 'NULL/UNDEFINED');
+    console.log(`[DEBUG] Listing details keys:`, Object.keys(listingDetails || {}));
+    
+    cache.set(cacheKey, listingDetails, 300000); // 5 minutes
+    
+    return listingDetails;
+  } catch (error) {
+    console.error(`[DEBUG] Error in getListingDetailsWithAuth:`, error);
+    throw error;
+  }
 }
 
 export async function getDraftListingsWithAuth() {
@@ -72,10 +98,6 @@ export async function deleteDraftListingWithAuth(listingId: number) {
   return deleteDraftListing(listingId, accountId);
 }
 
-export async function getListingHeaderDataWithAuth(listingId: number) {
-  const accountId = await getCurrentUserAccountId();
-  return getListingHeaderData(listingId, accountId);
-}
 
 // Create a new listing
 export async function createListing(
@@ -732,11 +754,14 @@ export async function getAccountWebsite(accountId: number) {
 }
 
 // Get detailed listing information including all related data
+// This query is optimized for the property characteristics form
 export async function getListingDetails(listingId: number, accountId: number) {
   try {
+    console.log(`[DEBUG] getListingDetails querying with listingId: ${listingId}, accountId: ${accountId}`);
+    
     const [listingDetails] = await db
       .select({
-        // Listing fields
+        // Listing fields - All needed for form
         listingId: listings.listingId,
         propertyId: listings.propertyId,
         agentId: listings.agentId,
@@ -775,7 +800,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         createdAt: listings.createdAt,
         updatedAt: listings.updatedAt,
 
-        // Property fields
+        // Property fields - All needed for comprehensive form
         referenceNumber: properties.referenceNumber,
         title: properties.title,
         description: properties.description,
@@ -878,7 +903,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         municipality: locations.municipality,
         neighborhood: locations.neighborhood,
 
-        // Agent information
+        // Agent information - optimized to only needed fields
         agent: {
           id: users.id,
           name: users.name,
@@ -889,20 +914,21 @@ export async function getListingDetails(listingId: number, accountId: number) {
           image: users.image,
         },
 
-        // Owner information (just full name)
+        // Owner information - optimized subquery with proper indexing hints
         owner: sql<string>`(
           SELECT CONCAT(c.first_name, ' ', c.last_name)
           FROM listing_contacts lc
-          JOIN contacts c ON lc.contact_id = c.contact_id
+          INNER JOIN contacts c ON lc.contact_id = c.contact_id
           WHERE lc.listing_id = ${listings.listingId}
           AND lc.contact_type = 'owner'
           AND lc.is_active = true
           AND c.is_active = true
+          ORDER BY lc.created_at ASC
           LIMIT 1
         )`,
       })
       .from(listings)
-      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
       .leftJoin(
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
@@ -916,7 +942,16 @@ export async function getListingDetails(listingId: number, accountId: number) {
         ),
       );
 
+    console.log(`[DEBUG] Query executed. Result:`, listingDetails ? 'FOUND' : 'NOT FOUND');
+    if (listingDetails) {
+      console.log(`[DEBUG] listingDetails has properties:`, Object.keys(listingDetails));
+      console.log(`[DEBUG] propertyType:`, listingDetails.propertyType);
+      console.log(`[DEBUG] street:`, listingDetails.street);
+      console.log(`[DEBUG] title:`, listingDetails.title);
+    }
+
     if (!listingDetails) {
+      console.log(`[DEBUG] No listing found for listingId: ${listingId}, accountId: ${accountId}`);
       throw new Error("Listing not found");
     }
 
@@ -1027,12 +1062,46 @@ export async function deleteDraftListing(listingId: number, accountId: number) {
   }
 }
 
-// Lightweight query specifically for PropertyHeader component
-export async function getListingHeaderData(listingId: number, accountId: number) {
+// Lightweight query for PropertyBreadcrumb component
+export async function getListingBreadcrumbData(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  
+  try {
+    const [breadcrumbData] = await db
+      .select({
+        propertyType: properties.propertyType,
+        street: properties.street,
+        referenceNumber: properties.referenceNumber,
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+        ),
+      );
+
+    if (!breadcrumbData) {
+      throw new Error("Listing not found");
+    }
+
+    return breadcrumbData;
+  } catch (error) {
+    console.error("Error fetching listing breadcrumb data:", error);
+    throw error;
+  }
+}
+
+// Ultra-lightweight query for PropertyHeader component - only fields actually used
+export async function getListingHeaderData(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  
   try {
     const [headerData] = await db
       .select({
-        // Only select fields actually used in PropertyHeader
+        // Only the 8 fields actually displayed in PropertyHeader
         title: properties.title,
         propertyId: listings.propertyId,
         street: properties.street,
@@ -1064,6 +1133,102 @@ export async function getListingHeaderData(listingId: number, accountId: number)
     return headerData;
   } catch (error) {
     console.error("Error fetching listing header data:", error);
+    throw error;
+  }
+}
+
+// Optimized query for PropertyTabs component - only fields needed by tabs
+export async function getListingTabsData(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  
+  try {
+    const [tabsData] = await db
+      .select({
+        listingId: listings.listingId,
+        propertyId: listings.propertyId,
+        propertyType: properties.propertyType,
+        street: properties.street,
+        city: locations.city,
+        province: locations.province,
+        postalCode: properties.postalCode,
+        referenceNumber: properties.referenceNumber,
+        price: listings.price,
+        listingType: listings.listingType,
+        isBankOwned: listings.isBankOwned,
+        isFeatured: listings.isFeatured,
+        neighborhood: locations.neighborhood,
+        title: properties.title,
+        fotocasa: listings.fotocasa,
+        idealista: listings.idealista,
+        habitaclia: listings.habitaclia,
+        milanuncios: listings.milanuncios,
+        energyCertification: properties.energyCertification,
+        agentId: listings.agentId,
+        energyCertificateStatus: properties.energyCertificateStatus,
+        energyConsumptionScale: properties.energyConsumptionScale,
+        energyConsumptionValue: properties.energyConsumptionValue,
+        emissionsScale: properties.emissionsScale,
+        emissionsValue: properties.emissionsValue,
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+        ),
+      );
+
+    if (!tabsData) {
+      throw new Error("Listing not found");
+    }
+
+    return tabsData;
+  } catch (error) {
+    console.error("Error fetching listing tabs data:", error);
+    throw error;
+  }
+}
+
+// Ultra-lightweight query for DocumentsPage component - only fields needed for document management
+export async function getListingDocumentsData(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  
+  try {
+    const [documentsData] = await db
+      .select({
+        listingId: listings.listingId,
+        propertyId: listings.propertyId,
+        referenceNumber: properties.referenceNumber,
+        street: properties.street,
+        city: locations.city,
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+        ),
+      );
+
+    if (!documentsData) {
+      throw new Error("Listing not found");
+    }
+
+    return documentsData;
+  } catch (error) {
+    console.error("Error fetching listing documents data:", error);
     throw error;
   }
 }

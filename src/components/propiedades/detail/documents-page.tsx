@@ -194,30 +194,6 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
         </div>
       )}
 
-      {/* Upload button - more prominent but elegant */}
-      <div className="mb-6 flex justify-end">
-        <input
-          type="file"
-          multiple
-          className="hidden"
-          id="file-upload"
-          onChange={handleFileUpload}
-          disabled={isUploading}
-        />
-        <label htmlFor="file-upload" className="cursor-pointer">
-          <Button
-            disabled={isUploading}
-            className="bg-gray-900 text-white hover:bg-gray-800"
-            asChild
-          >
-            <span>
-              <Upload className="mr-2 h-4 w-4" />
-              {isUploading ? "Subiendo..." : "Subir"}
-            </span>
-          </Button>
-        </label>
-      </div>
-
       {/* Documents list - clean, no titles */}
       <div className="space-y-3">
         {isLoading ? (
@@ -291,6 +267,30 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
             )}
           </>
         )}
+      </div>
+
+      {/* Upload button - positioned at bottom right */}
+      <div className="mt-6 flex justify-end">
+        <input
+          type="file"
+          multiple
+          className="hidden"
+          id="file-upload"
+          onChange={handleFileUpload}
+          disabled={isUploading}
+        />
+        <label htmlFor="file-upload" className="cursor-pointer">
+          <Button
+            disabled={isUploading}
+            className="bg-gray-900 text-white hover:bg-gray-800"
+            asChild
+          >
+            <span>
+              <Upload className="mr-2 h-4 w-4" />
+              {isUploading ? "Subiendo..." : "Subir"}
+            </span>
+          </Button>
+        </label>
       </div>
     </div>
   );

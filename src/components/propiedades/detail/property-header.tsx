@@ -17,7 +17,7 @@ interface PropertyHeaderProps {
   city: string;
   province: string;
   postalCode: string;
-  referenceNumber: string;
+  referenceNumber?: string;
   price: string;
   listingType: string;
   isBankOwned?: boolean;
