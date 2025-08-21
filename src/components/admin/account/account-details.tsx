@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useCallback } from "react";
 import { useSession } from "~/lib/auth-client";
 import { 
   Mail, 
@@ -70,13 +70,7 @@ export function AccountDetails() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      loadAccountDetails();
-    }
-  }, [session?.user?.id]);
-
-  const loadAccountDetails = () => {
+  const loadAccountDetails = useCallback(() => {
     startTransition(async () => {
       try {
         setError(null);
@@ -102,7 +96,13 @@ export function AccountDetails() {
         setLoading(false);
       }
     });
-  };
+  }, [session]);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      loadAccountDetails();
+    }
+  }, [session?.user?.id, loadAccountDetails]);
 
   if (loading || isPending) {
     return <AccountDetailsSkeleton />;
@@ -198,21 +198,21 @@ export function AccountDetails() {
             <p className="text-sm font-medium text-muted-foreground">Dirección</p>
             <p className="flex items-start gap-2">
               <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
-              {accountDetails.address || "No especificada"}
+              {accountDetails.address ?? "No especificada"}
             </p>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Teléfono</p>
             <p className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
-              {accountDetails.phone || "No especificado"}
+              {accountDetails.phone ?? "No especificado"}
             </p>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Email</p>
             <p className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              {accountDetails.email || "No especificado"}
+              {accountDetails.email ?? "No especificado"}
             </p>
           </div>
           <div className="space-y-1">
@@ -242,27 +242,27 @@ export function AccountDetails() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Razón Social</p>
-            <p>{accountDetails.legalName || "No especificada"}</p>
+            <p>{accountDetails.legalName ?? "No especificada"}</p>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">CIF/NIF</p>
-            <p>{accountDetails.taxId || "No especificado"}</p>
+            <p>{accountDetails.taxId ?? "No especificado"}</p>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Email Legal</p>
-            <p>{accountDetails.legalEmail || "No especificado"}</p>
+            <p>{accountDetails.legalEmail ?? "No especificado"}</p>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Jurisdicción</p>
-            <p>{accountDetails.jurisdiction || "No especificada"}</p>
+            <p>{accountDetails.jurisdiction ?? "No especificada"}</p>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Email Privacidad</p>
-            <p>{accountDetails.privacyEmail || "No especificado"}</p>
+            <p>{accountDetails.privacyEmail ?? "No especificado"}</p>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Email DPO</p>
-            <p>{accountDetails.dpoEmail || "No especificado"}</p>
+            <p>{accountDetails.dpoEmail ?? "No especificado"}</p>
           </div>
           {accountDetails.registryDetails && (
             <div className="col-span-2 space-y-1">

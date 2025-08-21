@@ -294,7 +294,7 @@ export function WebsiteConfiguration() {
         // Convert null avatars to undefined to match the schema
         const testimonials = testimonialsResult.data.map(t => ({
           ...t,
-          avatar: t.avatar || undefined
+          avatar: t.avatar ?? undefined
         }));
         setDbTestimonials(testimonials);
       } else {
@@ -473,7 +473,7 @@ export function WebsiteConfiguration() {
         toast.success("Testimonio creado correctamente");
       } else {
         console.log("❌ CLIENT: Failed to create testimonial:", result.error);
-        toast.error(result.error || "Error al crear el testimonio");
+        toast.error(result.error ?? "Error al crear el testimonio");
       }
     } catch (error) {
       console.error("❌ CLIENT: Error creating testimonial:", error);
@@ -493,7 +493,7 @@ export function WebsiteConfiguration() {
         }
         toast.success("Testimonio eliminado correctamente");
       } else {
-        toast.error(result.error || "Error al eliminar el testimonio");
+        toast.error(result.error ?? "Error al eliminar el testimonio");
       }
     } catch (error) {
       console.error("Error deleting testimonial:", error);
@@ -523,7 +523,7 @@ export function WebsiteConfiguration() {
         name: updatedTestimonial.name,
         role: updatedTestimonial.role,
         content: updatedTestimonial.content,
-        avatar: updatedTestimonial.avatar || undefined,
+        avatar: updatedTestimonial.avatar ?? undefined,
         rating: updatedTestimonial.rating,
         is_verified: updatedTestimonial.is_verified,
         sort_order: updatedTestimonial.sort_order,
@@ -533,7 +533,7 @@ export function WebsiteConfiguration() {
       if (!result.success) {
         // Revert local state on error
         await loadTestimonials(accountId);
-        toast.error(result.error || "Error al actualizar el testimonio");
+        toast.error(result.error ?? "Error al actualizar el testimonio");
       }
     } catch (error) {
       console.error("Error updating testimonial:", error);
@@ -1700,7 +1700,7 @@ export function WebsiteConfiguration() {
                                 ) : (
                                   <div className="mt-3">
                                     <Input
-                                      value={testimonial.avatar || ''}
+                                      value={testimonial.avatar ?? ''}
                                       onChange={(e) => updateTestimonialField(testimonial.testimonial_id, 'avatar', e.target.value)}
                                       placeholder="/properties/confident-leader.png"
                                     />
@@ -1775,7 +1775,7 @@ export function WebsiteConfiguration() {
                                 <p className="font-medium">{testimonial.role}</p>
                               )}
                               {testimonial.content && (
-                                <p className="italic">"{testimonial.content}"</p>
+                                <p className="italic">&ldquo;{testimonial.content}&rdquo;</p>
                               )}
                               <div className="flex items-center gap-2 mt-2">
                                 <span className="text-yellow-500">{"★".repeat(testimonial.rating)}</span>

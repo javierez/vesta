@@ -71,7 +71,6 @@ export const PropertyCard = React.memo(function PropertyCard({
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [image2Loaded, setImage2Loaded] = useState(false);
-  const [showContent, setShowContent] = useState(true); // Show content immediately
 
   const getPropertyTypeLabel = (type: string | null) => {
     switch (type) {
@@ -112,7 +111,7 @@ export const PropertyCard = React.memo(function PropertyCard({
     e.stopPropagation();
     
     // Use account website or fallback to current origin
-    const baseUrl = accountWebsite || window.location.origin;
+    const baseUrl = accountWebsite ?? window.location.origin;
     const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
     const message = `Échale un vistazo: ${propertyUrl}`;

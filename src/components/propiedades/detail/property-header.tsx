@@ -57,7 +57,7 @@ export function PropertyHeader({
         setIsEditing(false);
         toast.success("Título actualizado correctamente");
       } else {
-        toast.error(result.error || "Error al actualizar el título");
+        toast.error(result.error ?? "Error al actualizar el título");
         setEditedTitle(currentTitle); // Reset on error
       }
     } catch (error) {
@@ -87,7 +87,7 @@ export function PropertyHeader({
                   className="text-3xl font-bold border border-input px-3 py-2 focus-visible:ring-2 focus-visible:ring-ring h-auto bg-background w-full"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      handleSave();
+                      void handleSave();
                     } else if (e.key === 'Escape') {
                       handleCancel();
                     }

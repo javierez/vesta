@@ -125,7 +125,7 @@ export const PropertyTable = React.memo(function PropertyTable({
     e.preventDefault();
     e.stopPropagation();
     
-    const baseUrl = accountWebsite || window.location.origin;
+    const baseUrl = accountWebsite ?? window.location.origin;
     const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
     const message = `Échale un vistazo: ${propertyUrl}`;
@@ -138,7 +138,7 @@ export const PropertyTable = React.memo(function PropertyTable({
     e.preventDefault();
     e.stopPropagation();
     
-    const baseUrl = accountWebsite || window.location.origin;
+    const baseUrl = accountWebsite ?? window.location.origin;
     const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
     const message = `Échale un vistazo: ${propertyUrl}`;
