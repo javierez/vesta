@@ -87,26 +87,6 @@ export function PropertyTabs({
   const fetchTabData = useCallback(async (tabValue: string) => {
     switch (tabValue) {
       case "general":
-        if (tabData.images) return;
-        setLoading((prev) => ({ ...prev, general: true }));
-        try {
-          const response = await fetch(
-            `/api/properties/${listing.propertyId}/images`,
-          );
-          if (response.ok) {
-            const imageData = (await response.json()) as PropertyImage[];
-            setTabData((prev) => ({ ...prev, images: imageData }));
-          } else {
-            setTabData((prev) => ({ ...prev, images: images }));
-          }
-        } catch {
-          setTabData((prev) => ({ ...prev, images: images }));
-        } finally {
-          setLoading((prev) => ({ ...prev, general: false }));
-        }
-        break;
-
-      case "caracteristicas":
         if (tabData.convertedListing) return;
         setLoading((prev) => ({ ...prev, caracteristicas: true }));
         try {
@@ -127,6 +107,26 @@ export function PropertyTabs({
           setTabData((prev) => ({ ...prev, convertedListing }));
         } finally {
           setLoading((prev) => ({ ...prev, caracteristicas: false }));
+        }
+        break;
+
+      case "imagenes":
+        if (tabData.images) return;
+        setLoading((prev) => ({ ...prev, general: true }));
+        try {
+          const response = await fetch(
+            `/api/properties/${listing.propertyId}/images`,
+          );
+          if (response.ok) {
+            const imageData = (await response.json()) as PropertyImage[];
+            setTabData((prev) => ({ ...prev, images: imageData }));
+          } else {
+            setTabData((prev) => ({ ...prev, images: images }));
+          }
+        } catch {
+          setTabData((prev) => ({ ...prev, images: images }));
+        } finally {
+          setLoading((prev) => ({ ...prev, general: false }));
         }
         break;
 
@@ -175,13 +175,25 @@ export function PropertyTabs({
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
         <TabsTrigger value="general">General</TabsTrigger>
-        <TabsTrigger value="caracteristicas">Características</TabsTrigger>
+        <TabsTrigger value="imagenes">Imágenes</TabsTrigger>
         <TabsTrigger value="portales">Portales</TabsTrigger>
         <TabsTrigger value="certificado">Certificado</TabsTrigger>
         <TabsTrigger value="documentos">Documentos</TabsTrigger>
       </TabsList>
 
       <TabsContent value="general" className="mt-6">
+        <div className="mx-auto max-w-4xl">
+          {loading.caracteristicas ? (
+            <CharacteristicsSkeleton />
+          ) : (
+            <PropertyCharacteristicsForm
+              listing={tabData.convertedListing ?? convertedListing}
+            />
+          )}
+        </div>
+      </TabsContent>
+
+      <TabsContent value="imagenes" className="mt-6">
         <div className="mx-auto max-w-3xl">
           {loading.general ? (
             <ImageGallerySkeleton />
@@ -191,18 +203,6 @@ export function PropertyTabs({
               title={listing.title ?? ""}
               propertyId={BigInt(listing.propertyId)}
               referenceNumber={listing.referenceNumber ?? ""}
-            />
-          )}
-        </div>
-      </TabsContent>
-
-      <TabsContent value="caracteristicas" className="mt-6">
-        <div className="mx-auto max-w-4xl">
-          {loading.caracteristicas ? (
-            <CharacteristicsSkeleton />
-          ) : (
-            <PropertyCharacteristicsForm
-              listing={tabData.convertedListing ?? convertedListing}
             />
           )}
         </div>

@@ -3,7 +3,6 @@
 import { useState, useEffect, useTransition } from "react";
 import { useSession } from "~/lib/auth-client";
 import { 
-  Building, 
   Mail, 
   Phone, 
   Globe, 
@@ -11,14 +10,12 @@ import {
   Calendar,
   CreditCard,
   Settings,
-  FileText,
   Shield,
-  Loader2,
   AlertCircle,
   CheckCircle,
   XCircle
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -52,9 +49,9 @@ interface AccountDetails {
   jurisdiction: string | null;
   privacyEmail: string | null;
   dpoEmail: string | null;
-  portalSettings: Record<string, any>;
-  paymentSettings: Record<string, any>;
-  preferences: Record<string, any>;
+  portalSettings: Record<string, unknown>;
+  paymentSettings: Record<string, unknown>;
+  preferences: Record<string, unknown>;
   plan: string;
   subscriptionType: string | null;
   subscriptionStatus: string;
@@ -331,9 +328,9 @@ export function AccountDetails() {
                 {Object.entries(accountDetails.portalSettings).map(([portal, settings]) => (
                   <div key={portal} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                     <span className="capitalize">{portal}</span>
-                    {typeof settings === 'object' && settings.enabled !== undefined && (
-                      <Badge variant={settings.enabled ? "default" : "secondary"}>
-                        {settings.enabled ? "Activo" : "Inactivo"}
+                    {typeof settings === 'object' && settings !== null && 'enabled' in settings && (
+                      <Badge variant={(settings as { enabled: boolean }).enabled ? "default" : "secondary"}>
+                        {(settings as { enabled: boolean }).enabled ? "Activo" : "Inactivo"}
                       </Badge>
                     )}
                   </div>
@@ -347,11 +344,11 @@ export function AccountDetails() {
             <div>
               <h4 className="font-medium mb-2">Preferencias</h4>
               <div className="space-y-2">
-                {accountDetails.preferences.colorPalette && (
+                {accountDetails.preferences.colorPalette && Array.isArray(accountDetails.preferences.colorPalette) ? (
                   <div>
                     <p className="text-sm text-muted-foreground">Paleta de Colores</p>
                     <div className="flex gap-2 mt-1">
-                      {accountDetails.preferences.colorPalette.map((color: string, index: number) => (
+                      {(accountDetails.preferences.colorPalette as string[]).map((color: string, index: number) => (
                         <div
                           key={index}
                           className="w-8 h-8 rounded border"
@@ -361,7 +358,7 @@ export function AccountDetails() {
                       ))}
                     </div>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           )}

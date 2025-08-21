@@ -20,10 +20,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import {
   Building,
-  Mail,
   Phone,
-  Globe,
-  MapPin,
   Shield,
   Settings,
   Loader2,
@@ -128,20 +125,20 @@ export function AccountConfiguration() {
           const data = result.data;
           form.reset({
             name: data.name,
-            shortName: data.shortName || "",
-            legalName: data.legalName || "",
-            logo: data.logo || "",
-            address: data.address || "",
-            phone: data.phone || "",
-            email: data.email || "",
-            website: data.website || "",
-            taxId: data.taxId || "",
-            registryDetails: data.registryDetails || "",
-            legalEmail: data.legalEmail || "",
-            jurisdiction: data.jurisdiction || "",
-            privacyEmail: data.privacyEmail || "",
-            dpoEmail: data.dpoEmail || "",
-            preferences: data.preferences || {},
+            shortName: data.shortName ?? "",
+            legalName: data.legalName ?? "",
+            logo: data.logo ?? "",
+            address: data.address ?? "",
+            phone: data.phone ?? "",
+            email: data.email ?? "",
+            website: data.website ?? "",
+            taxId: data.taxId ?? "",
+            registryDetails: data.registryDetails ?? "",
+            legalEmail: data.legalEmail ?? "",
+            jurisdiction: data.jurisdiction ?? "",
+            privacyEmail: data.privacyEmail ?? "",
+            dpoEmail: data.dpoEmail ?? "",
+            preferences: data.preferences ?? {},
           });
         }
       } catch (error) {
@@ -370,6 +367,7 @@ export function AccountConfiguration() {
                         size="sm"
                         onClick={() => setShowLogoInput(true)}
                       >
+                        {/* eslint-disable-next-line jsx-a11y/alt-text */}
                         <Image className="h-4 w-4 mr-2" />
                         Configurar logo
                       </Button>

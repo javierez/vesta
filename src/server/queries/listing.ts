@@ -72,6 +72,11 @@ export async function deleteDraftListingWithAuth(listingId: number) {
   return deleteDraftListing(listingId, accountId);
 }
 
+export async function getListingHeaderDataWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getListingHeaderData(listingId, accountId);
+}
+
 // Create a new listing
 export async function createListing(
   data: Omit<Listing, "listingId" | "createdAt" | "updatedAt">,
@@ -1018,6 +1023,47 @@ export async function deleteDraftListing(listingId: number, accountId: number) {
     return { success: true, message: "Borrador eliminado correctamente" };
   } catch (error) {
     console.error("Error deleting draft listing:", error);
+    throw error;
+  }
+}
+
+// Lightweight query specifically for PropertyHeader component
+export async function getListingHeaderData(listingId: number, accountId: number) {
+  try {
+    const [headerData] = await db
+      .select({
+        // Only select fields actually used in PropertyHeader
+        title: properties.title,
+        propertyId: listings.propertyId,
+        street: properties.street,
+        city: locations.city,
+        province: locations.province,
+        postalCode: properties.postalCode,
+        price: listings.price,
+        listingType: listings.listingType,
+        isBankOwned: listings.isBankOwned,
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+        ),
+      );
+
+    if (!headerData) {
+      throw new Error("Listing not found");
+    }
+
+    return headerData;
+  } catch (error) {
+    console.error("Error fetching listing header data:", error);
     throw error;
   }
 }

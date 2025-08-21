@@ -10,8 +10,9 @@ import { updatePropertyTitle } from "~/app/actions/property-settings";
 import { toast } from "sonner";
 import { formatListingType } from "../../contactos/contact-config";
 interface PropertyHeaderProps {
-  title: string;
-  propertyId: bigint;
+  title?: string;
+  propertyId?: bigint;
+  propertyType?: string;
   street: string;
   city: string;
   province: string;
@@ -21,11 +22,13 @@ interface PropertyHeaderProps {
   listingType: string;
   isBankOwned?: boolean;
   isFeatured?: boolean;
+  neighborhood?: string;
 }
 
 export function PropertyHeader({
-  title,
+  title = "",
   propertyId,
+  propertyType: _propertyType,
   street,
   city,
   province,
@@ -35,6 +38,7 @@ export function PropertyHeader({
   listingType,
   isBankOwned = false,
   isFeatured: _isFeatured = false,
+  neighborhood: _neighborhood,
 }: PropertyHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
@@ -42,7 +46,7 @@ export function PropertyHeader({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = async () => {
-    if (!editedTitle.trim()) return;
+    if (!editedTitle.trim() || !propertyId) return;
     
     setIsLoading(true);
     try {
@@ -115,14 +119,16 @@ export function PropertyHeader({
             ) : (
               <>
                 <h1 className="text-3xl font-bold leading-tight">{currentTitle}</h1>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 ml-2 flex-shrink-0 self-start"
-                  onClick={() => setIsEditing(true)}
-                >
-                  <Pencil className="h-4 w-4 text-muted-foreground" />
-                </Button>
+                {propertyId && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 ml-2 flex-shrink-0 self-start"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                )}
               </>
             )}
             {isBankOwned && (

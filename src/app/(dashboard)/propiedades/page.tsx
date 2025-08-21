@@ -141,7 +141,7 @@ export default function PropertiesPage() {
     };
 
     void fetchData();
-  }, [searchParams]);
+  }, [searchParams, view]);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());

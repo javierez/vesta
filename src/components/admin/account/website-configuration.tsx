@@ -814,6 +814,7 @@ export function WebsiteConfiguration() {
               <div className="space-y-6">
                 <div>
                   <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
+                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
                     <Image className="h-5 w-5 text-gray-500" />
                     Marca
                   </h2>

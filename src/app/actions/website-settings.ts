@@ -523,7 +523,7 @@ export async function getTestimonialsAction(accountId: bigint): Promise<{
 
     console.log("📊 GET: Found", testimonialsData.length, "testimonials in database");
     console.log("🔍 GET: Raw testimonials data:", JSON.stringify(testimonialsData, (key, value) =>
-      typeof value === 'bigint' ? value.toString() : value, 2));
+      typeof value === 'bigint' ? value.toString() : value as unknown, 2));
 
     const formattedTestimonials = testimonialsData.map(t => ({
       testimonial_id: t.testimonialId.toString(),
@@ -533,9 +533,9 @@ export async function getTestimonialsAction(accountId: bigint): Promise<{
       content: t.content,
       avatar: t.avatar,
       rating: t.rating,
-      is_verified: t.isVerified,
-      sort_order: t.sortOrder,
-      is_active: t.isActive,
+      is_verified: t.isVerified ?? true,
+      sort_order: t.sortOrder ?? 1,
+      is_active: t.isActive ?? true,
       created_at: t.createdAt.toISOString(),
       updated_at: t.updatedAt.toISOString(),
     }));
@@ -578,7 +578,7 @@ export async function createTestimonialAction(
       name: testimonialData.name,
       role: testimonialData.role,
       content: testimonialData.content,
-      avatar: testimonialData.avatar || null,
+      avatar: testimonialData.avatar ?? null,
       rating: testimonialData.rating,
       isVerified: testimonialData.is_verified,
       sortOrder: testimonialData.sort_order,
@@ -586,7 +586,7 @@ export async function createTestimonialAction(
     };
     
     console.log("💾 CREATE: Insert values:", JSON.stringify(insertValues, (key, value) =>
-      typeof value === 'bigint' ? value.toString() : value, 2));
+      typeof value === 'bigint' ? value.toString() : value as unknown, 2));
     
     const [result] = await db
       .insert(testimonials)
@@ -635,7 +635,7 @@ export async function updateTestimonialAction(
       name: testimonialData.name,
       role: testimonialData.role,
       content: testimonialData.content,
-      avatar: testimonialData.avatar || null,
+      avatar: testimonialData.avatar ?? null,
       rating: testimonialData.rating,
       isVerified: testimonialData.is_verified,
       sortOrder: testimonialData.sort_order,
@@ -644,7 +644,7 @@ export async function updateTestimonialAction(
     };
     
     console.log("💾 UPDATE: Update values:", JSON.stringify(updateValues, (key, value) =>
-      typeof value === 'bigint' ? value.toString() : value, 2));
+      typeof value === 'bigint' ? value.toString() : value as unknown, 2));
     
     const result = await db
       .update(testimonials)

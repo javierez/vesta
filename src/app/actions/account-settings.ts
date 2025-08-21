@@ -44,9 +44,9 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
     jurisdiction: string | null;
     privacyEmail: string | null;
     dpoEmail: string | null;
-    portalSettings: Record<string, any>;
-    paymentSettings: Record<string, any>;
-    preferences: Record<string, any>;
+    portalSettings: Record<string, unknown>;
+    paymentSettings: Record<string, unknown>;
+    preferences: Record<string, unknown>;
     plan: string;
     subscriptionType: string | null;
     subscriptionStatus: string;
@@ -76,16 +76,16 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
 
     // Parse JSON fields safely
     const portalSettings = typeof account.portalSettings === 'string' 
-      ? JSON.parse(account.portalSettings) 
-      : account.portalSettings || {};
+      ? JSON.parse(account.portalSettings) as Record<string, unknown>
+      : (account.portalSettings ?? {}) as Record<string, unknown>;
       
     const paymentSettings = typeof account.paymentSettings === 'string'
-      ? JSON.parse(account.paymentSettings)
-      : account.paymentSettings || {};
+      ? JSON.parse(account.paymentSettings) as Record<string, unknown>
+      : (account.paymentSettings ?? {}) as Record<string, unknown>;
       
     const preferences = typeof account.preferences === 'string'
-      ? JSON.parse(account.preferences)
-      : account.preferences || {};
+      ? JSON.parse(account.preferences) as Record<string, unknown>
+      : (account.preferences ?? {}) as Record<string, unknown>;
 
     const accountData = {
       accountId: account.accountId.toString(),
@@ -106,12 +106,12 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
       portalSettings,
       paymentSettings,
       preferences,
-      plan: account.plan || "basic",
+      plan: account.plan ?? "basic",
       subscriptionType: account.subscriptionType,
-      subscriptionStatus: account.subscriptionStatus || "active",
+      subscriptionStatus: account.subscriptionStatus ?? "active",
       subscriptionStartDate: account.subscriptionStartDate,
       subscriptionEndDate: account.subscriptionEndDate,
-      status: account.status || "active",
+      status: account.status ?? "active",
       createdAt: account.createdAt,
       updatedAt: account.updatedAt,
       isActive: account.isActive ?? true,
@@ -147,20 +147,20 @@ export async function updateAccountConfigurationAction(
     // Prepare the update data
     const updateData: Partial<typeof accounts.$inferInsert> = {
       name: validatedData.name,
-      shortName: validatedData.shortName || null,
-      legalName: validatedData.legalName || null,
-      logo: validatedData.logo || null,
-      address: validatedData.address || null,
-      phone: validatedData.phone || null,
-      email: validatedData.email || null,
-      website: validatedData.website || null,
-      taxId: validatedData.taxId || null,
-      registryDetails: validatedData.registryDetails || null,
-      legalEmail: validatedData.legalEmail || null,
-      jurisdiction: validatedData.jurisdiction || null,
-      privacyEmail: validatedData.privacyEmail || null,
-      dpoEmail: validatedData.dpoEmail || null,
-      preferences: validatedData.preferences || {},
+      shortName: validatedData.shortName ?? null,
+      legalName: validatedData.legalName ?? null,
+      logo: validatedData.logo ?? null,
+      address: validatedData.address ?? null,
+      phone: validatedData.phone ?? null,
+      email: validatedData.email ?? null,
+      website: validatedData.website ?? null,
+      taxId: validatedData.taxId ?? null,
+      registryDetails: validatedData.registryDetails ?? null,
+      legalEmail: validatedData.legalEmail ?? null,
+      jurisdiction: validatedData.jurisdiction ?? null,
+      privacyEmail: validatedData.privacyEmail ?? null,
+      dpoEmail: validatedData.dpoEmail ?? null,
+      preferences: validatedData.preferences ?? {},
       updatedAt: new Date(),
     };
 
