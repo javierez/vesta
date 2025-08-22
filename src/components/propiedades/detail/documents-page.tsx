@@ -157,6 +157,23 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     });
   };
 
+  const getFileTypeDisplay = (mimeType: string) => {
+    const typeMap: { [key: string]: string } = {
+      "application/pdf": "PDF",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+      "application/msword": "DOC",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
+      "application/vnd.ms-excel": "XLS",
+      "image/jpeg": "JPEG",
+      "image/jpg": "JPG",
+      "image/png": "PNG",
+      "text/plain": "TXT",
+      "application/zip": "ZIP",
+    };
+    
+    return typeMap[mimeType.toLowerCase()] || mimeType.split("/").pop()?.toUpperCase() || "FILE";
+  };
+
   const getFileIcon = (type: string) => {
     const lowerType = type.toLowerCase();
     if (lowerType.includes("pdf")) {
@@ -214,7 +231,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
                           {document.filename}
                         </h4>
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>{document.fileType.toUpperCase()}</span>
+                          <span>{getFileTypeDisplay(document.fileType)}</span>
                           <div className="flex items-center space-x-1">
                             <Calendar className="h-3 w-3" />
                             <span>{formatDate(document.uploadedAt)}</span>
