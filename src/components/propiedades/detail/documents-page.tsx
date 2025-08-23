@@ -158,7 +158,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
   };
 
   const getFileTypeDisplay = (mimeType: string) => {
-    const typeMap: { [key: string]: string } = {
+    const typeMap: Record<string, string> = {
       "application/pdf": "PDF",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
       "application/msword": "DOC",
@@ -171,7 +171,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
       "application/zip": "ZIP",
     };
     
-    return typeMap[mimeType.toLowerCase()] || mimeType.split("/").pop()?.toUpperCase() || "FILE";
+    return typeMap[mimeType.toLowerCase()] ?? mimeType.split("/").pop()?.toUpperCase() ?? "FILE";
   };
 
   const getFileIcon = (type: string) => {

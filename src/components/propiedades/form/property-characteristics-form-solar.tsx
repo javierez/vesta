@@ -13,7 +13,7 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Building2, Link } from "lucide-react";
 import { getAllAgentsWithAuth } from "~/server/queries/listing";
 import { Textarea } from "~/components/ui/textarea";
@@ -29,14 +29,14 @@ import {
   updateListingOwnersWithAuth,
 } from "~/server/queries/contact";
 import type { PropertyListing } from "~/types/property-listing";
-
-type SaveState = "idle" | "modified" | "saving" | "saved" | "error";
-
-interface ModuleState {
-  saveState: SaveState;
-  hasChanges: boolean;
-  lastSaved?: Date;
-}
+import {
+  useModuleStates,
+  getCardStyles,
+  setModuleSaving,
+  setModuleSaved,
+  setModuleError,
+  checkPropertyTypeChanged,
+} from "./common/form-state-management";
 
 type ModuleName =
   | "basicInfo"
@@ -57,73 +57,29 @@ export function PropertyCharacteristicsFormSolar({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 3. Fix hasPropertyTypeChanged to always be boolean
-  const hasPropertyTypeChanged = Boolean(
-    listing.propertyType &&
-      searchParams.get("type") &&
-      listing.propertyType !== searchParams.get("type"),
+  // Check if property type has changed using shared utility
+  const hasPropertyTypeChanged = checkPropertyTypeChanged(listing, searchParams);
+
+  // Module names for solar form
+  const moduleNames: ModuleName[] = [
+    "basicInfo",
+    "propertyDetails", 
+    "location",
+    "features",
+    "description",
+    "contactInfo",
+  ];
+
+  // Use shared module states management
+  const { moduleStates, setModuleStates, updateModuleState } = useModuleStates(
+    hasPropertyTypeChanged,
+    moduleNames
   );
 
-  // 4. Fix moduleStates to use Boolean for hasChanges
-  const [moduleStates, setModuleStates] = useState<
-    Record<ModuleName, ModuleState>
-  >(() => {
-    const initialState = {
-      basicInfo: {
-        saveState: "idle" as SaveState,
-        hasChanges: Boolean(hasPropertyTypeChanged),
-      },
-      propertyDetails: { saveState: "idle" as SaveState, hasChanges: false },
-      location: { saveState: "idle" as SaveState, hasChanges: false },
-      features: { saveState: "idle" as SaveState, hasChanges: false },
-      description: { saveState: "idle" as SaveState, hasChanges: false },
-      contactInfo: { saveState: "idle" as SaveState, hasChanges: false },
-    };
-    if (hasPropertyTypeChanged) {
-      initialState.basicInfo.saveState = "modified";
-    }
-    return initialState;
-  });
-
-  // Update module states when property type change is detected
-  useEffect(() => {
-    if (hasPropertyTypeChanged) {
-      setModuleStates((prev) => ({
-        ...prev,
-        basicInfo: {
-          ...prev.basicInfo,
-          saveState: "modified",
-          hasChanges: true,
-        },
-      }));
-    }
-  }, [hasPropertyTypeChanged]);
-
-  // Function to update module state
-  const updateModuleState = useCallback(
-    (moduleName: ModuleName, hasChanges: boolean) => {
-      setModuleStates((prev) => ({
-        ...prev,
-        [moduleName]: {
-          ...prev[moduleName],
-          saveState: hasChanges ? "modified" : "idle",
-          hasChanges,
-        },
-      }));
-    },
-    [],
-  );
 
   // Function to handle save
   const saveModule = async (moduleName: ModuleName) => {
-    setModuleStates((prev) => ({
-      ...prev,
-      [moduleName]: {
-        ...prev[moduleName],
-        saveState: "saving",
-        hasChanges: prev[moduleName].hasChanges,
-      },
-    }));
+    setModuleSaving(setModuleStates, moduleName);
 
     try {
       const propertyId = Number(listing.propertyId);
@@ -364,14 +320,7 @@ export function PropertyCharacteristicsFormSolar({
         await updateListingWithAuth(listingId, listingData);
       }
 
-      setModuleStates((prev) => ({
-        ...prev,
-        [moduleName]: {
-          saveState: "saved",
-          hasChanges: false,
-          lastSaved: new Date(),
-        },
-      }));
+      setModuleSaved(setModuleStates, moduleName);
 
       toast.success("Cambios guardados correctamente");
 
@@ -389,14 +338,7 @@ export function PropertyCharacteristicsFormSolar({
     } catch (error) {
       console.error(`Error saving ${moduleName}:`, error);
 
-      setModuleStates((prev) => ({
-        ...prev,
-        [moduleName]: {
-          ...prev[moduleName],
-          saveState: "error",
-          hasChanges: prev[moduleName].hasChanges,
-        },
-      }));
+      setModuleError(setModuleStates, moduleName);
 
       toast.error("Error al guardar los cambios");
 
@@ -414,22 +356,6 @@ export function PropertyCharacteristicsFormSolar({
     }
   };
 
-  const getCardStyles = (moduleName: ModuleName) => {
-    const state = moduleStates[moduleName].saveState;
-
-    switch (state) {
-      case "modified":
-        return "ring-2 ring-yellow-500/20 shadow-lg shadow-yellow-500/10 border-yellow-500/20";
-      case "saving":
-        return "ring-2 ring-amber-500/20 shadow-lg shadow-amber-500/10 border-amber-500/20";
-      case "saved":
-        return "ring-2 ring-emerald-500/20 shadow-lg shadow-emerald-500/10 border-emerald-500/20";
-      case "error":
-        return "ring-2 ring-red-500/20 shadow-lg shadow-red-500/10 border-red-500/20";
-      default:
-        return "hover:shadow-lg transition-all duration-300";
-    }
-  };
 
   const [listingType, setListingType] = useState<string>(
     listing.listingType ?? "Sale", // Default to 'Sale' if none selected
@@ -520,11 +446,11 @@ export function PropertyCharacteristicsFormSolar({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("basicInfo"),
+          getCardStyles(moduleStates.basicInfo?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.basicInfo.saveState}
+          state={moduleStates.basicInfo?.saveState ?? "idle"}
           onSave={() => saveModule("basicInfo")}
         />
 
@@ -684,7 +610,7 @@ export function PropertyCharacteristicsFormSolar({
               Subtipo de Propiedad
             </Label>
             <Select
-              value={listing.propertySubtype ?? "Residential land"}
+              value={listing.propertySubtype ?? "Suelo residencial"}
               onValueChange={(value) => {
                 // Update the listing object directly for now
                 listing.propertySubtype = value;
@@ -695,11 +621,11 @@ export function PropertyCharacteristicsFormSolar({
                 <SelectValue placeholder="Seleccionar subtipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Residential land">
-                  Residential land
+                <SelectItem value="Suelo residencial">
+                  Suelo residencial
                 </SelectItem>
-                <SelectItem value="Industrial land">Industrial land</SelectItem>
-                <SelectItem value="Rustic land">Rustic land</SelectItem>
+                <SelectItem value="Suelo industrial">Suelo industrial</SelectItem>
+                <SelectItem value="Suelo rústico">Suelo rústico</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -770,11 +696,11 @@ export function PropertyCharacteristicsFormSolar({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("propertyDetails"),
+          getCardStyles(moduleStates.propertyDetails?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.propertyDetails.saveState}
+          state={moduleStates.propertyDetails?.saveState ?? "idle"}
           onSave={() => saveModule("propertyDetails")}
         />
 
@@ -804,11 +730,11 @@ export function PropertyCharacteristicsFormSolar({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("location"),
+          getCardStyles(moduleStates.location?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.location.saveState}
+          state={moduleStates.location?.saveState ?? "idle"}
           onSave={() => saveModule("location")}
         />
 
@@ -917,11 +843,11 @@ export function PropertyCharacteristicsFormSolar({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("features"),
+          getCardStyles(moduleStates.features?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.features.saveState}
+          state={moduleStates.features?.saveState ?? "idle"}
           onSave={() => saveModule("features")}
         />
 
@@ -1030,11 +956,11 @@ export function PropertyCharacteristicsFormSolar({
       <Card
         className={cn(
           "relative col-span-2 p-4 transition-all duration-500 ease-out",
-          getCardStyles("description"),
+          getCardStyles(moduleStates.description?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.description.saveState}
+          state={moduleStates.description?.saveState ?? "idle"}
           onSave={() => saveModule("description")}
         />
 
@@ -1061,11 +987,11 @@ export function PropertyCharacteristicsFormSolar({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("contactInfo"),
+          getCardStyles(moduleStates.contactInfo?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.contactInfo?.saveState || "idle"}
+          state={moduleStates.contactInfo?.saveState ?? "idle"}
           onSave={() => saveModule("contactInfo")}
         />
         <div className="mb-3 flex items-center justify-between">

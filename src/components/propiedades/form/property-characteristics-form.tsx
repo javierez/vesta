@@ -1091,19 +1091,19 @@ export function PropertyCharacteristicsForm({
                 )}
                 {propertyType === "solar" && (
                   <>
-                    <SelectItem value="Residential land">
-                      Residential land
+                    <SelectItem value="Suelo residencial">
+                      Suelo residencial
                     </SelectItem>
-                    <SelectItem value="Industrial land">
-                      Industrial land
+                    <SelectItem value="Suelo industrial">
+                      Suelo industrial
                     </SelectItem>
-                    <SelectItem value="Rustic land">Rustic land</SelectItem>
+                    <SelectItem value="Suelo rústico">Suelo rústico</SelectItem>
                   </>
                 )}
                 {propertyType === "garaje" && (
                   <>
                     <SelectItem value="Moto">Moto</SelectItem>
-                    <SelectItem value="Double">Double</SelectItem>
+                    <SelectItem value="Doble">Doble</SelectItem>
                     <SelectItem value="Individual">Individual</SelectItem>
                   </>
                 )}

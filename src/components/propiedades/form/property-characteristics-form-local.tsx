@@ -30,14 +30,15 @@ import {
   updateListingOwnersWithAuth,
 } from "~/server/queries/contact";
 import type { PropertyListing } from "~/types/property-listing";
-
-type SaveState = "idle" | "modified" | "saving" | "saved" | "error";
-
-interface ModuleState {
-  saveState: SaveState;
-  hasChanges: boolean;
-  lastSaved?: Date;
-}
+import {
+  type SaveState,
+  useModuleStates,
+  getCardStyles,
+  setModuleSaving,
+  setModuleSaved,
+  setModuleError,
+  checkPropertyTypeChanged,
+} from "./common/form-state-management";
 
 type ModuleName =
   | "basicInfo"
@@ -65,96 +66,35 @@ export function PropertyCharacteristicsFormLocal({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 3. Fix hasPropertyTypeChanged to always be boolean
-  const hasPropertyTypeChanged = Boolean(
-    listing.propertyType &&
-      searchParams.get("type") &&
-      listing.propertyType !== searchParams.get("type"),
+  // Check if property type has changed using shared utility
+  const hasPropertyTypeChanged = checkPropertyTypeChanged(listing, searchParams);
+
+  // Module names for local form
+  const moduleNames: ModuleName[] = [
+    "basicInfo",
+    "propertyDetails",
+    "location",
+    "features",
+    "description",
+    "contactInfo",
+    "orientation",
+    "additionalCharacteristics",
+    "premiumFeatures",
+    "additionalSpaces",
+    "materials",
+    "rentalProperties",
+  ];
+
+  // Use shared module states management
+  const { moduleStates, setModuleStates, updateModuleState } = useModuleStates(
+    hasPropertyTypeChanged,
+    moduleNames
   );
 
-  // Module states with new save state
-  const [moduleStates, setModuleStates] = useState<
-    Record<ModuleName, ModuleState>
-  >(() => {
-    // Initialize with property type change detection
-    const initialState = {
-      basicInfo: {
-        saveState: "idle" as SaveState,
-        hasChanges: Boolean(hasPropertyTypeChanged),
-      },
-      propertyDetails: { saveState: "idle" as SaveState, hasChanges: false },
-      location: { saveState: "idle" as SaveState, hasChanges: false },
-      features: { saveState: "idle" as SaveState, hasChanges: false },
-      description: { saveState: "idle" as SaveState, hasChanges: false },
-      contactInfo: { saveState: "idle" as SaveState, hasChanges: false },
-      orientation: { saveState: "idle" as SaveState, hasChanges: false },
-      additionalCharacteristics: {
-        saveState: "idle" as SaveState,
-        hasChanges: false,
-      },
-      premiumFeatures: { saveState: "idle" as SaveState, hasChanges: false },
-      additionalSpaces: { saveState: "idle" as SaveState, hasChanges: false },
-      materials: { saveState: "idle" as SaveState, hasChanges: false },
-      rentalProperties: { saveState: "idle" as SaveState, hasChanges: false },
-    };
-
-    // Set basicInfo to modified if property type changed
-    if (hasPropertyTypeChanged) {
-      initialState.basicInfo.saveState = "modified";
-    }
-
-    return initialState;
-  });
-
-  // Update module states when property type change is detected
-  useEffect(() => {
-    if (hasPropertyTypeChanged) {
-      setModuleStates((prev) => ({
-        ...prev,
-        basicInfo: {
-          ...prev.basicInfo,
-          saveState: "modified",
-          hasChanges: true,
-        },
-      }));
-    }
-  }, [hasPropertyTypeChanged]);
-
-  // Function to update module state
-  const updateModuleState = (moduleName: ModuleName, hasChanges: boolean) => {
-    setModuleStates((prev) => {
-      const currentState = prev[moduleName] || {
-        saveState: "idle" as SaveState,
-        hasChanges: false,
-      };
-      return {
-        ...prev,
-        [moduleName]: {
-          ...currentState,
-          saveState: hasChanges ? "modified" : "idle",
-          hasChanges,
-          lastSaved: currentState.lastSaved,
-        },
-      };
-    });
-  };
 
   // Function to save module data
   const saveModule = async (moduleName: ModuleName) => {
-    setModuleStates((prev) => {
-      const currentState = prev[moduleName] || {
-        saveState: "idle" as SaveState,
-        hasChanges: false,
-      };
-      return {
-        ...prev,
-        [moduleName]: {
-          ...currentState,
-          saveState: "saving",
-          hasChanges: currentState.hasChanges,
-        },
-      };
-    });
+    setModuleSaving(setModuleStates, moduleName);
 
     try {
       const propertyId = Number(listing.propertyId);
@@ -325,21 +265,7 @@ export function PropertyCharacteristicsFormLocal({
         await updateListingWithAuth(listingId, listingData);
       }
 
-      setModuleStates((prev) => {
-        const currentState = prev[moduleName] || {
-          saveState: "idle" as SaveState,
-          hasChanges: false,
-        };
-        return {
-          ...prev,
-          [moduleName]: {
-            ...currentState,
-            saveState: "saved",
-            hasChanges: false,
-            lastSaved: new Date(),
-          },
-        };
-      });
+      setModuleSaved(setModuleStates, moduleName);
 
       toast.success("Cambios guardados correctamente");
 
@@ -363,20 +289,7 @@ export function PropertyCharacteristicsFormLocal({
     } catch (error) {
       console.error(`Error saving ${moduleName}:`, error);
 
-      setModuleStates((prev) => {
-        const currentState = prev[moduleName] || {
-          saveState: "idle" as SaveState,
-          hasChanges: false,
-        };
-        return {
-          ...prev,
-          [moduleName]: {
-            ...currentState,
-            saveState: "error",
-            hasChanges: currentState.hasChanges,
-          },
-        };
-      });
+      setModuleError(setModuleStates, moduleName);
 
       toast.error("Error al guardar los cambios");
 
@@ -400,22 +313,6 @@ export function PropertyCharacteristicsFormLocal({
     }
   };
 
-  const getCardStyles = (moduleName: ModuleName) => {
-    const state = moduleStates[moduleName]?.saveState;
-
-    switch (state) {
-      case "modified":
-        return "ring-2 ring-yellow-500/20 shadow-lg shadow-yellow-500/10 border-yellow-500/20";
-      case "saving":
-        return "ring-2 ring-amber-500/20 shadow-lg shadow-amber-500/10 border-amber-500/20";
-      case "saved":
-        return "ring-2 ring-emerald-500/20 shadow-lg shadow-emerald-500/10 border-emerald-500/20";
-      case "error":
-        return "ring-2 ring-red-500/20 shadow-lg shadow-red-500/10 border-red-500/20";
-      default:
-        return "hover:shadow-lg transition-all duration-300";
-    }
-  };
 
   const [listingType, setListingType] = useState<string>(
     listing.listingType ?? "Sale",
@@ -602,11 +499,11 @@ export function PropertyCharacteristicsFormLocal({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("basicInfo"),
+          getCardStyles(moduleStates.basicInfo?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.basicInfo?.saveState || "idle"}
+          state={moduleStates.basicInfo?.saveState ?? "idle"}
           onSave={() => saveModule("basicInfo")}
         />
         <div className="mb-3 flex items-center justify-between">
@@ -871,11 +768,11 @@ export function PropertyCharacteristicsFormLocal({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("propertyDetails"),
+          getCardStyles(moduleStates.propertyDetails?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.propertyDetails?.saveState || "idle"}
+          state={moduleStates.propertyDetails?.saveState ?? "idle"}
           onSave={() => saveModule("propertyDetails")}
         />
         <div className="mb-3 flex items-center justify-between">
@@ -994,11 +891,11 @@ export function PropertyCharacteristicsFormLocal({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("location"),
+          getCardStyles(moduleStates.location?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.location?.saveState || "idle"}
+          state={moduleStates.location?.saveState ?? "idle"}
           onSave={() => saveModule("location")}
         />
         <div className="mb-3 flex items-center justify-between">
@@ -1105,11 +1002,11 @@ export function PropertyCharacteristicsFormLocal({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("features"),
+          getCardStyles(moduleStates.features?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.features?.saveState || "idle"}
+          state={moduleStates.features?.saveState ?? "idle"}
           onSave={() => saveModule("features")}
         />
         <div className="mb-3 flex items-center justify-between">
@@ -1494,11 +1391,11 @@ export function PropertyCharacteristicsFormLocal({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("contactInfo"),
+          getCardStyles(moduleStates.contactInfo?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.contactInfo?.saveState || "idle"}
+          state={moduleStates.contactInfo?.saveState ?? "idle"}
           onSave={() => saveModule("contactInfo")}
         />
         <div className="mb-3 flex items-center justify-between">
@@ -1597,11 +1494,11 @@ export function PropertyCharacteristicsFormLocal({
       <Card
         className={cn(
           "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("orientation"),
+          getCardStyles(moduleStates.orientation?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.orientation?.saveState || "idle"}
+          state={moduleStates.orientation?.saveState ?? "idle"}
           onSave={() => saveModule("orientation")}
         />
         <div className="mb-3 flex items-center justify-between">
@@ -1673,11 +1570,11 @@ export function PropertyCharacteristicsFormLocal({
         <Card
           className={cn(
             "relative p-4 transition-all duration-500 ease-out",
-            getCardStyles("additionalCharacteristics"),
+            getCardStyles(moduleStates.additionalCharacteristics?.saveState ?? "idle"),
           )}
         >
           <ModernSaveIndicator
-            state={moduleStates.additionalCharacteristics?.saveState || "idle"}
+            state={moduleStates.additionalCharacteristics?.saveState ?? "idle"}
             onSave={() => saveModule("additionalCharacteristics")}
           />
           <div className="flex items-center justify-between">
@@ -1869,7 +1766,7 @@ export function PropertyCharacteristicsFormLocal({
                             Independiente
                           </SelectItem>
                           <SelectItem value="americana">Americana</SelectItem>
-                          <SelectItem value="office">Office</SelectItem>
+                          <SelectItem value="oficina">Oficina</SelectItem>
                           <SelectItem value="isla">Isla</SelectItem>
                         </SelectContent>
                       </Select>
@@ -1962,11 +1859,11 @@ export function PropertyCharacteristicsFormLocal({
         <Card
           className={cn(
             "relative p-4 transition-all duration-500 ease-out",
-            getCardStyles("premiumFeatures"),
+            getCardStyles(moduleStates.premiumFeatures?.saveState ?? "idle"),
           )}
         >
           <ModernSaveIndicator
-            state={moduleStates.premiumFeatures?.saveState || "idle"}
+            state={moduleStates.premiumFeatures?.saveState ?? "idle"}
             onSave={() => saveModule("premiumFeatures")}
           />
           <div className="flex items-center justify-between">
@@ -2202,11 +2099,11 @@ export function PropertyCharacteristicsFormLocal({
       <Card
         className={cn(
           "relative col-span-full p-4 transition-all duration-500 ease-out",
-          getCardStyles("description"),
+          getCardStyles(moduleStates.description?.saveState ?? "idle"),
         )}
       >
         <ModernSaveIndicator
-          state={moduleStates.description?.saveState || "idle"}
+          state={moduleStates.description?.saveState ?? "idle"}
           onSave={() => saveModule("description")}
         />
         <div className="mb-3 flex items-center justify-between">
@@ -2232,11 +2129,11 @@ export function PropertyCharacteristicsFormLocal({
         <Card
           className={cn(
             "relative p-4 transition-all duration-500 ease-out",
-            getCardStyles("rentalProperties"),
+            getCardStyles(moduleStates.rentalProperties?.saveState ?? "idle"),
           )}
         >
           <ModernSaveIndicator
-            state={moduleStates.rentalProperties?.saveState || "idle"}
+            state={moduleStates.rentalProperties?.saveState ?? "idle"}
             onSave={() => saveModule("rentalProperties")}
           />
           <div className="mb-3 flex items-center justify-between">
