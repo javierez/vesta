@@ -192,10 +192,33 @@ export async function getWebsiteConfigurationAction(accountId: bigint): Promise<
             googleAnalytics: "",
             facebookPixel: "",
           },
+          metadata: {
+            id: "",
+            account_id: "",
+            created_at: "",
+            updated_at: "",
+            logotype: "",
+            mainpage: "",
+          },
         },
       };
     }
 
+    console.log('🔍 ACTIONS: Raw config from database:', config);
+    console.log('🔍 ACTIONS: config.metadata field (raw):', config.metadata);
+    console.log('🔍 ACTIONS: config.logotype field:', config.logotype);
+    
+    // Parse metadata JSON if it exists
+    let parsedMetadata = {};
+    if (config.metadata) {
+      try {
+        parsedMetadata = JSON.parse(config.metadata);
+        console.log('✅ ACTIONS: Parsed metadata JSON:', parsedMetadata);
+      } catch (error) {
+        console.error('❌ ACTIONS: Error parsing metadata JSON:', error);
+      }
+    }
+    
     // Parse JSON fields and construct the configuration
     const websiteConfig: WebsiteConfigurationInput = {
       socialLinks: JSON.parse(config.socialLinks ?? "{}") as Record<string, string>,
@@ -210,7 +233,19 @@ export async function getWebsiteConfigurationAction(accountId: bigint): Promise<
       contactProps: JSON.parse(config.contactProps ?? "{}") as ContactProps,
       footerProps: JSON.parse(config.footerProps ?? "{}") as FooterProps,
       headProps: JSON.parse(config.headProps ?? "{}") as HeadProps,
+      metadata: {
+        id: config.id?.toString(),
+        account_id: config.accountId?.toString(),
+        created_at: config.createdAt?.toISOString(),
+        updated_at: config.updatedAt?.toISOString(),
+        logotype: config.logotype ?? "",
+        mainpage: config.metadata ?? "",
+      }
     };
+    
+    console.log('✅ ACTIONS: Constructed websiteConfig:', websiteConfig);
+    console.log('✅ ACTIONS: websiteConfig.metadata:', websiteConfig.metadata);
+    console.log('✅ ACTIONS: websiteConfig.metadata.mainpage:', websiteConfig.metadata.mainpage);
 
     return { success: true, data: websiteConfig };
   } catch (error) {
@@ -278,6 +313,11 @@ export async function updateWebsiteSectionAction(
     if (section === 'social' && data.socialLinks) {
       updateData.socialLinks = JSON.stringify(data.socialLinks);
     }
+    if (section === 'meta' && data.metadata) {
+      console.log('💾 ACTIONS: Handling metadata save:', data.metadata);
+      updateData.metadata = data.metadata.mainpage;
+      console.log('💾 ACTIONS: Setting metadata to:', updateData.metadata);
+    }
 
     console.log("📝 Section update data prepared:", updateData);
 
@@ -305,7 +345,8 @@ export async function updateWebsiteSectionAction(
         testimonialProps: JSON.stringify(data.testimonialProps ?? {}),
         contactProps: JSON.stringify(data.contactProps ?? {}),
         footerProps: JSON.stringify(data.footerProps ?? {}),
-        headProps: JSON.stringify(data.headProps ?? {},)
+        headProps: JSON.stringify(data.headProps ?? {}),
+        metadata: data.metadata?.mainpage,
       };
       
       const result = await db.insert(websiteProperties).values(insertData);
@@ -365,6 +406,7 @@ export async function updateWebsiteConfigurationAction(
         contactProps: JSON.stringify(data.contactProps),
         footerProps: JSON.stringify(data.footerProps),
         headProps: JSON.stringify(data.headProps),
+        metadata: data.metadata?.mainpage,
         updatedAt: now,
       };
       
@@ -393,6 +435,7 @@ export async function updateWebsiteConfigurationAction(
         contactProps: JSON.stringify(data.contactProps || "{}"),
         footerProps: JSON.stringify(data.footerProps),
         headProps: JSON.stringify(data.headProps),
+        metadata: data.metadata?.mainpage,
       };
       
       console.log("📝 Insert data prepared:", insertData);
@@ -522,7 +565,7 @@ export async function getTestimonialsAction(accountId: bigint): Promise<{
       .orderBy(testimonials.sortOrder);
 
     console.log("📊 GET: Found", testimonialsData.length, "testimonials in database");
-    console.log("🔍 GET: Raw testimonials data:", JSON.stringify(testimonialsData, (key, value) =>
+    console.log("🔍 GET: Raw testimonials data:", JSON.stringify(testimonialsData, (_, value) =>
       typeof value === 'bigint' ? value.toString() : value as unknown, 2));
 
     const formattedTestimonials = testimonialsData.map(t => ({
@@ -585,7 +628,7 @@ export async function createTestimonialAction(
       isActive: testimonialData.is_active,
     };
     
-    console.log("💾 CREATE: Insert values:", JSON.stringify(insertValues, (key, value) =>
+    console.log("💾 CREATE: Insert values:", JSON.stringify(insertValues, (_, value) =>
       typeof value === 'bigint' ? value.toString() : value as unknown, 2));
     
     const [result] = await db
@@ -643,7 +686,7 @@ export async function updateTestimonialAction(
       updatedAt: new Date(),
     };
     
-    console.log("💾 UPDATE: Update values:", JSON.stringify(updateValues, (key, value) =>
+    console.log("💾 UPDATE: Update values:", JSON.stringify(updateValues, (_, value) =>
       typeof value === 'bigint' ? value.toString() : value as unknown, 2));
     
     const result = await db

@@ -201,7 +201,7 @@ export const metadataSchema = z.object({
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
   logotype: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
-  mainpage: z.string().optional(), // JSON string
+  mainpage: z.union([z.string(), z.record(z.unknown())]).optional(), // JSON string or parsed object
 });
 
 // Main Website Configuration Schema
