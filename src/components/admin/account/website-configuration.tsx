@@ -49,7 +49,7 @@ export function WebsiteConfiguration() {
   } = useWebsiteSave(form, accountId, () => setHasUnsavedChanges(false));
 
   // Combined error state
-  const error = formError || saveError;
+  const error = formError ?? saveError;
 
   // Handle save action
   const handleSave = async () => {

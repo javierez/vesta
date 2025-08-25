@@ -212,7 +212,7 @@ export async function getWebsiteConfigurationAction(accountId: bigint): Promise<
     let parsedMetadata = {};
     if (config.metadata) {
       try {
-        parsedMetadata = JSON.parse(config.metadata);
+        parsedMetadata = JSON.parse(config.metadata) as Record<string, unknown>;
         console.log('✅ ACTIONS: Parsed metadata JSON:', parsedMetadata);
       } catch (error) {
         console.error('❌ ACTIONS: Error parsing metadata JSON:', error);
@@ -346,7 +346,9 @@ export async function updateWebsiteSectionAction(
         contactProps: JSON.stringify(data.contactProps ?? {}),
         footerProps: JSON.stringify(data.footerProps ?? {}),
         headProps: JSON.stringify(data.headProps ?? {}),
-        metadata: data.metadata?.mainpage,
+        metadata: typeof data.metadata?.mainpage === 'string' 
+          ? data.metadata.mainpage 
+          : JSON.stringify(data.metadata?.mainpage ?? {}),
       };
       
       const result = await db.insert(websiteProperties).values(insertData);
@@ -406,7 +408,9 @@ export async function updateWebsiteConfigurationAction(
         contactProps: JSON.stringify(data.contactProps),
         footerProps: JSON.stringify(data.footerProps),
         headProps: JSON.stringify(data.headProps),
-        metadata: data.metadata?.mainpage,
+        metadata: typeof data.metadata?.mainpage === 'string' 
+          ? data.metadata.mainpage 
+          : JSON.stringify(data.metadata?.mainpage ?? {}),
         updatedAt: now,
       };
       
@@ -435,7 +439,9 @@ export async function updateWebsiteConfigurationAction(
         contactProps: JSON.stringify(data.contactProps || "{}"),
         footerProps: JSON.stringify(data.footerProps),
         headProps: JSON.stringify(data.headProps),
-        metadata: data.metadata?.mainpage,
+        metadata: typeof data.metadata?.mainpage === 'string' 
+          ? data.metadata.mainpage 
+          : JSON.stringify(data.metadata?.mainpage ?? {}),
       };
       
       console.log("📝 Insert data prepared:", insertData);

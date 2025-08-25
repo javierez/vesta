@@ -114,7 +114,7 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
     if (mainpageValue) {
       if (typeof mainpageValue === 'object' && mainpageValue !== null) {
         console.log('✅ META: mainpageValue is already an object');
-        const objectValue = mainpageValue as Record<string, unknown>;
+        const objectValue = mainpageValue;
         
         if (objectValue.mainpage && typeof objectValue.mainpage === 'object') {
           console.log('✅ META: Found mainpage property in object:', objectValue.mainpage);
