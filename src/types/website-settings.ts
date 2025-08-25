@@ -194,6 +194,16 @@ export const headPropsSchema = z.object({
   facebookPixel: z.string().optional(),
 });
 
+// Metadata Schema
+export const metadataSchema = z.object({
+  id: z.string().optional(),
+  account_id: z.string().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+  logotype: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
+  mainpage: z.string().optional(), // JSON string
+});
+
 // Main Website Configuration Schema
 export const websiteConfigurationSchema = z.object({
   socialLinks: socialLinksSchema,
@@ -209,6 +219,7 @@ export const websiteConfigurationSchema = z.object({
   contactProps: contactPropsSchema,
   footerProps: footerPropsSchema,
   headProps: headPropsSchema,
+  metadata: metadataSchema,
 });
 
 // Types
@@ -224,6 +235,7 @@ export type Office = z.infer<typeof officeSchema>;
 export type ContactProps = z.infer<typeof contactPropsSchema>;
 export type FooterProps = z.infer<typeof footerPropsSchema>;
 export type HeadProps = z.infer<typeof headPropsSchema>;
+export type Metadata = z.infer<typeof metadataSchema>;
 export type WebsiteConfigurationInput = z.infer<typeof websiteConfigurationSchema>;
 
 // Navigation Tabs Type

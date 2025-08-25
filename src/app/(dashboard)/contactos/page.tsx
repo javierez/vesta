@@ -30,8 +30,6 @@ interface ExtendedContact extends Omit<Contact, "contactType"> {
     city?: string;
     propertyType?: string;
     listingType?: string;
-    status?: string;
-    createdAt: Date;
   }>;
 }
 
@@ -53,8 +51,6 @@ type DbContact = Omit<Contact, "contactType"> & {
     city?: string;
     propertyType?: string;
     listingType?: string;
-    status?: string;
-    createdAt: Date;
   }>;
 };
 
@@ -71,7 +67,7 @@ export default function ContactsPage() {
     const lastContact = searchParams.get("lastContact");
 
     return {
-      roles: roles ? roles.split(",") : [],
+      roles: roles ? roles.split(",") : ["owner"],
       searchQuery: q ?? "",
       sortOrder: sort ?? "alphabetical",
       lastContactFilter: lastContact ?? "all",

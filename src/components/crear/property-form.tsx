@@ -88,9 +88,18 @@ const STATIC_FORM_OPTIONS = {
 };
 
 // Global form data interface
+interface ListingDetails {
+  formPosition?: number;
+  propertyType?: string;
+  propertyId?: number;
+  listingType?: string;
+  agentId?: number | string;
+  price?: number | string;
+  [key: string]: unknown; // Allow other properties
+}
+
 interface GlobalFormData {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  listingDetails: any;
+  listingDetails?: ListingDetails;
   agents: Array<{ id: string; name: string }>; // Changed from number to string
   contacts: Array<{ id: number; name: string }>;
   currentContacts: string[];
@@ -106,7 +115,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
   // Centralized data state - passed to all child components
   const [globalFormData, setGlobalFormData] = useState<GlobalFormData>({
-    listingDetails: null,
+    listingDetails: undefined,
     agents: [],
     contacts: [],
     currentContacts: [],
@@ -134,17 +143,18 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
           ]);
 
         // Set current step based on form position
-        if (listingDetails?.formPosition) {
+        const typedListingDetails = listingDetails as ListingDetails;
+        if (typedListingDetails?.formPosition) {
           const stepIndex = Math.max(
             0,
-            Math.min(listingDetails.formPosition - 1, steps.length - 1),
+            Math.min(typedListingDetails.formPosition - 1, steps.length - 1),
           );
           setCurrentStep(stepIndex);
         }
 
         // Set global form data
         setGlobalFormData({
-          listingDetails,
+          listingDetails: listingDetails as ListingDetails,
           agents: agents.map((agent) => ({
             id: agent.id, // Keep as string - don't convert to Number
             name: agent.name,
@@ -177,7 +187,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
       setGlobalFormData((prev) => ({
         ...prev,
-        listingDetails: updatedDetails,
+        listingDetails: updatedDetails as ListingDetails,
         currentContacts: currentContacts.map((contact) =>
           contact.id.toString(),
         ),
@@ -215,10 +225,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
   // Memoize skipped steps for current property type
   const skippedSteps = useMemo(() => {
-    const listingDetails = globalFormData.listingDetails as {
-      propertyType?: string;
-    } | null;
-    const propertyType = listingDetails?.propertyType ?? "";
+    const propertyType = globalFormData.listingDetails?.propertyType ?? "";
     return getSkippedSteps(propertyType);
   }, [globalFormData.listingDetails, getSkippedSteps]);
 
@@ -269,10 +276,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
   const goToStep = useCallback(
     (stepIndex: number) => {
-      const listingDetails = globalFormData.listingDetails as {
-        formPosition?: number;
-      } | null;
-      const formPosition = listingDetails?.formPosition ?? 1;
+      const formPosition = globalFormData.listingDetails?.formPosition ?? 1;
       const currentFormStep = formPosition - 1;
 
       // Only allow navigation to the immediate next step
@@ -301,9 +305,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
     // Update formPosition in globalFormData immediately for instant UI updates
     const newFormPosition = nextStepIndex + 1;
     setGlobalFormData((prev) => {
-      const listingDetails = prev.listingDetails as
-        | ({ formPosition?: number } & Record<string, unknown>)
-        | null;
+      const listingDetails = prev.listingDetails;
       return {
         ...prev,
         listingDetails: listingDetails
@@ -314,7 +316,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
                 newFormPosition,
               ),
             }
-          : null,
+          : undefined,
       };
     });
 
@@ -417,13 +419,11 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
               currentStep={currentStep}
               steps={steps}
               formPosition={
-                (globalFormData.listingDetails as { formPosition?: number })
-                  ?.formPosition ?? 1
+                globalFormData.listingDetails?.formPosition ?? 1
               }
               onStepClick={goToStep}
               propertyType={
-                (globalFormData.listingDetails as { propertyType?: string })
-                  ?.propertyType ?? ""
+                globalFormData.listingDetails?.propertyType ?? ""
               }
             />
           </div>

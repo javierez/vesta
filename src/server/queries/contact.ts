@@ -539,8 +539,6 @@ export async function listContactsWithTypes(
         city: locations.city,
         propertyType: properties.propertyType,
         listingType: listings.listingType,
-        status: listings.status,
-        createdAt: listings.createdAt,
       })
       .from(listingContacts)
       .innerJoin(
@@ -563,7 +561,7 @@ export async function listContactsWithTypes(
           eq(listingContacts.isActive, true),
         ),
       )
-      .orderBy(listings.createdAt);
+      .orderBy(listingContacts.listingId);
 
     // Group prospects by contactId for faster lookup
     const prospectsByContact = allProspects.reduce(

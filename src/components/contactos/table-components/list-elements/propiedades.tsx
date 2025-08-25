@@ -21,7 +21,7 @@ interface ContactListing {
   propertyType?: string;
   listingType?: string;
   status?: string;
-  createdAt: Date;
+  createdAt?: Date;
 }
 
 interface PropiedadesProps {

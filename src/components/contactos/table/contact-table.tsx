@@ -65,8 +65,6 @@ interface ExtendedContact {
     city?: string;
     propertyType?: string;
     listingType?: string;
-    status?: string;
-    createdAt: Date;
   }>;
 }
 

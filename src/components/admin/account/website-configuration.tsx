@@ -42,6 +42,7 @@ import {
   Mail,
   X,
   Edit,
+  Database,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -130,6 +131,12 @@ const navigationItems: (WebsiteTab & { color?: string })[] = [
     label: "Head/Scripts",
     description: "Código personalizado",
     icon: Code,
+  },
+  {
+    id: "meta",
+    label: "Meta",
+    description: "Configuración de metadatos",
+    icon: Database,
   },
 ];
 
@@ -271,6 +278,45 @@ export function WebsiteConfiguration() {
         customScripts: "",
         googleAnalytics: "",
         facebookPixel: "",
+      },
+      metadata: {
+        mainpage: {
+          title: "",
+          description: "",
+          keywords: [],
+          robots: {
+            index: true,
+            follow: true,
+            googleBot: {
+              index: true,
+              follow: true,
+              "max-snippet": -1,
+              "max-image-preview": "large"
+            }
+          },
+          openGraph: {
+            title: "",
+            description: "",
+            type: "website",
+            locale: "es_ES",
+            siteName: "",
+            images: [{
+              url: "",
+              width: 1200,
+              height: 630,
+              alt: ""
+            }]
+          },
+          twitter: {
+            card: "summary_large_image",
+            title: "",
+            description: "",
+            images: [""]
+          },
+          alternates: {
+            canonical: "/"
+          }
+        }
       },
     },
   });
@@ -592,6 +638,9 @@ export function WebsiteConfiguration() {
       case 'social':
         sectionData.socialLinks = formData.socialLinks;
         break;
+      case 'meta':
+        sectionData.metadata = formData.metadata;
+        break;
       default:
         console.error("❌ Unknown section:", activeSection);
         setError("Sección desconocida");
@@ -644,7 +693,7 @@ export function WebsiteConfiguration() {
   }
 
   return (
-    <div className="relative flex h-auto flex-col overflow-hidden rounded-2xl bg-white shadow-sm lg:h-[600px] lg:flex-row">
+    <div className="relative flex h-auto flex-col overflow-hidden rounded-2xl bg-white shadow-sm lg:h-[700px] lg:flex-row">
       {/* Sidebar Navigation */}
       <nav className="w-full border-b border-r-0 border-gray-100 bg-gray-50/50 lg:min-h-0 lg:w-64 lg:border-b-0 lg:border-r">
         <div className="p-4">
@@ -2696,6 +2745,121 @@ export function WebsiteConfiguration() {
                             {...field} 
                             placeholder="<!-- Tu código personalizado aquí -->"
                             rows={6}
+                            className="font-mono text-sm"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeSection === "meta" && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
+                    <Database className="h-5 w-5 text-gray-500" />
+                    Configuración de Metadatos
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Información de metadatos para la base de datos
+                  </p>
+                </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="metadata.id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ID</FormLabel>
+                          <FormDescription>
+                            Identificador único del registro
+                          </FormDescription>
+                          <FormControl>
+                            <Input {...field} placeholder="ID del registro" disabled />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="metadata.account_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Account ID</FormLabel>
+                          <FormDescription>
+                            ID de la cuenta asociada
+                          </FormDescription>
+                          <FormControl>
+                            <Input {...field} placeholder="ID de la cuenta" disabled />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="metadata.created_at"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Fecha de Creación</FormLabel>
+                          <FormDescription>
+                            Cuándo se creó el registro
+                          </FormDescription>
+                          <FormControl>
+                            <Input {...field} type="datetime-local" disabled />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="metadata.updated_at"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Última Actualización</FormLabel>
+                          <FormDescription>
+                            Última fecha de modificación
+                          </FormDescription>
+                          <FormControl>
+                            <Input {...field} type="datetime-local" disabled />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="metadata.logotype"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Logotipo</FormLabel>
+                        <FormDescription>
+                          URL del logotipo de la empresa
+                        </FormDescription>
+                        <FormControl>
+                          <Input {...field} placeholder="https://ejemplo.com/logotipo.png" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="metadata.mainpage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Configuración de Página Principal</FormLabel>
+                        <FormDescription>
+                          Configuración JSON para la página principal (metadata.mainpage)
+                        </FormDescription>
+                        <FormControl>
+                          <Textarea 
+                            {...field} 
+                            placeholder='{"title": "Mi sitio web", "description": "Descripción de mi sitio"}'
+                            rows={8}
                             className="font-mono text-sm"
                           />
                         </FormControl>

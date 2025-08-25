@@ -49,16 +49,7 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
         <div className="space-y-1">
           {email && (
             <div className="group flex items-center text-sm">
-              <Mail
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  isActive ? "text-muted-foreground" : "text-gray-300",
-                )}
-              />
-              <span className={cn("truncate", isActive ? "" : "text-gray-400")}>
-                {email}
-              </span>
-              <div className="ml-2 flex items-center gap-1 opacity-0 transition-all duration-200 group-hover:opacity-100">
+              <div className="flex items-center mr-2">
                 <button
                   className={cn(
                     "rounded p-1 transition-colors hover:bg-gray-100",
@@ -72,48 +63,45 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
                 >
                   <Mail
                     className={cn(
-                      "h-3 w-3",
+                      "h-4 w-4",
                       isActive ? "text-muted-foreground" : "text-gray-300",
                     )}
                   />
                 </button>
-                <button
-                  className={cn(
-                    "rounded p-1 transition-colors hover:bg-gray-100",
-                    isActive ? "hover:bg-gray-100" : "hover:bg-gray-200",
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void copyToClipboard(email, `email-${contactId}`);
-                  }}
-                  title="Copiar email"
-                >
-                  {copiedField === `email-${contactId}` ? (
-                    <Check className="h-3 w-3 text-green-900" />
-                  ) : (
-                    <Copy
-                      className={cn(
-                        "h-3 w-3",
-                        isActive ? "text-muted-foreground" : "text-gray-300",
-                      )}
-                    />
-                  )}
-                </button>
+                <div className="flex items-center overflow-hidden transition-all duration-500 ease-out group-hover:w-auto group-hover:opacity-100 w-0 opacity-0">
+                  <button
+                    className={cn(
+                      "ml-1 rounded p-1 transition-all duration-400 hover:bg-gray-100 transform scale-0 group-hover:scale-100",
+                      isActive ? "hover:bg-gray-100" : "hover:bg-gray-200",
+                    )}
+                    style={{ transitionDelay: "200ms" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void copyToClipboard(email, `email-${contactId}`);
+                    }}
+                    title="Copiar email"
+                  >
+                    {copiedField === `email-${contactId}` ? (
+                      <Check className="h-4 w-4 text-green-900" />
+                    ) : (
+                      <Copy
+                        className={cn(
+                          "h-4 w-4",
+                          isActive ? "text-muted-foreground" : "text-gray-300",
+                        )}
+                      />
+                    )}
+                  </button>
+                </div>
               </div>
+              <span className={cn("truncate", isActive ? "" : "text-gray-400")}>
+                {email}
+              </span>
             </div>
           )}
           {phone && (
             <div className="group flex items-center text-sm">
-              <Phone
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  isActive ? "text-muted-foreground" : "text-gray-300",
-                )}
-              />
-              <span className={cn("truncate", isActive ? "" : "text-gray-400")}>
-                {phone}
-              </span>
-              <div className="ml-2 flex items-center gap-1 opacity-0 transition-all duration-200 group-hover:opacity-100">
+              <div className="flex items-center mr-2">
                 <button
                   className={cn(
                     "rounded p-1 transition-colors hover:bg-gray-100",
@@ -127,52 +115,59 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
                 >
                   <Phone
                     className={cn(
-                      "h-3 w-3",
+                      "h-4 w-4",
                       isActive ? "text-muted-foreground" : "text-gray-300",
                     )}
                   />
                 </button>
-                <button
-                  className={cn(
-                    "rounded p-1 transition-colors hover:bg-gray-100",
-                    isActive ? "hover:bg-gray-100" : "hover:bg-gray-200",
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openWhatsApp(phone);
-                  }}
-                  title="Enviar WhatsApp"
-                >
-                  <MessageCircle
+                <div className="flex items-center overflow-hidden transition-all duration-500 ease-out group-hover:w-auto group-hover:opacity-100 w-0 opacity-0">
+                  <button
                     className={cn(
-                      "h-3 w-3",
-                      isActive ? "text-muted-foreground" : "text-gray-300",
+                      "ml-1 rounded p-1 transition-all duration-400 hover:bg-gray-100 transform scale-0 group-hover:scale-100",
+                      isActive ? "hover:bg-gray-100" : "hover:bg-gray-200",
                     )}
-                  />
-                </button>
-                <button
-                  className={cn(
-                    "rounded p-1 transition-colors hover:bg-gray-100",
-                    isActive ? "hover:bg-gray-100" : "hover:bg-gray-200",
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void copyToClipboard(phone, `phone-${contactId}`);
-                  }}
-                  title="Copiar teléfono"
-                >
-                  {copiedField === `phone-${contactId}` ? (
-                    <Check className="h-3 w-3 text-green-900" />
-                  ) : (
-                    <Copy
+                    style={{ transitionDelay: "200ms" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openWhatsApp(phone);
+                    }}
+                    title="Enviar WhatsApp"
+                  >
+                    <MessageCircle
                       className={cn(
-                        "h-3 w-3",
+                        "h-4 w-4",
                         isActive ? "text-muted-foreground" : "text-gray-300",
                       )}
                     />
-                  )}
-                </button>
+                  </button>
+                  <button
+                    className={cn(
+                      "ml-1 rounded p-1 transition-all duration-400 hover:bg-gray-100 transform scale-0 group-hover:scale-100",
+                      isActive ? "hover:bg-gray-100" : "hover:bg-gray-200",
+                    )}
+                    style={{ transitionDelay: "300ms" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void copyToClipboard(phone, `phone-${contactId}`);
+                    }}
+                    title="Copiar teléfono"
+                  >
+                    {copiedField === `phone-${contactId}` ? (
+                      <Check className="h-4 w-4 text-green-900" />
+                    ) : (
+                      <Copy
+                        className={cn(
+                          "h-4 w-4",
+                          isActive ? "text-muted-foreground" : "text-gray-300",
+                        )}
+                      />
+                    )}
+                  </button>
+                </div>
               </div>
+              <span className={cn("truncate", isActive ? "" : "text-gray-400")}>
+                {phone}
+              </span>
             </div>
           )}
         </div>

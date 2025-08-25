@@ -16,6 +16,63 @@ import { env } from "~/env";
 
 const FOTOCASA_API_KEY = env.FOTOCASA_API_KEY;
 
+// Types
+interface ListingDetails {
+  propertyId?: number;
+  referenceNumber?: string;
+  postalCode?: string;
+  addressDetails?: string;
+  longitude?: number;
+  latitude?: number;
+  street?: string;
+  squareMeter?: number;
+  title?: string;
+  description?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  isFurnished?: boolean;
+  hasElevator?: boolean;
+  homeAutomation?: boolean;
+  internet?: boolean;
+  gym?: boolean;
+  sportsArea?: boolean;
+  childrenArea?: boolean;
+  suiteBathroom?: boolean;
+  airConditioning?: boolean;
+  heating?: boolean;
+  oven?: boolean;
+  microwave?: boolean;
+  fridge?: boolean;
+  tv?: boolean;
+  stoneware?: boolean;
+  petsAllowed?: boolean;
+  nearbyPublicTransport?: boolean;
+  securityDoor?: boolean;
+  alarm?: boolean;
+  privatePool?: boolean;
+  communityPool?: boolean;
+  hasGarage?: boolean;
+  jacuzzi?: boolean;
+  tennisCourt?: boolean;
+  laundryRoom?: boolean;
+  builtInWardrobes?: boolean;
+  hasStorageRoom?: boolean;
+  garden?: boolean;
+  furnishedKitchen?: boolean;
+  orientation?: string;
+  conservationStatus?: string;
+  agent?: { email?: string; phone?: string } | null;
+  listingType?: string;
+  price?: number;
+  listingId?: number;
+  propertyType?: string;
+  propertySubtype?: string;
+  appliancesIncluded?: boolean;
+  yearBuilt?: number;
+  washingMachine?: boolean;
+  [key: string]: unknown;
+}
+
 // Fotocasa API Types
 interface FotocasaProperty {
   ExternalId: string;
@@ -150,8 +207,8 @@ export async function buildFotocasaPayload(
 ): Promise<{ payload: FotocasaProperty; watermarkedKeys: string[] }> {
   try {
     // Get listing details and property images
-    const listing = await getListingDetailsWithAuth(listingId);
-    const images = await getPropertyImages(listing.propertyId);
+    const listing = await getListingDetailsWithAuth(listingId) as ListingDetails;
+    const images = await getPropertyImages(BigInt(listing.propertyId!));
 
     // NEW: Get account watermark configuration and process images if needed
     const accountId = await getAccountIdForListing(listingId);
@@ -364,12 +421,12 @@ export async function buildFotocasaPayload(
     const propertyAddress: PropertyAddress[] = [
       {
         ZipCode: listing.postalCode ?? undefined,
-        FloorId: getFloorId(listing.addressDetails),
+        FloorId: getFloorId(listing.addressDetails ?? null),
         x: listing.longitude ? parseFloat(listing.longitude.toString()) : 0,
         y: listing.latitude ? parseFloat(listing.latitude.toString()) : 0,
         VisibilityModeId: visibilityMode, // 1=Exact, 2=Street, 3=Zone
-        Street: getStreetName(listing.street),
-        Number: getStreetNumber(listing.street, listing.addressDetails),
+        Street: getStreetName(listing.street ?? null),
+        Number: getStreetNumber(listing.street ?? null, listing.addressDetails ?? null),
       },
     ];
 
@@ -420,7 +477,7 @@ export async function buildFotocasaPayload(
     if (listing.isFurnished !== null) {
       propertyFeatures.push({
         FeatureId: 30,
-        BoolValue: listing.isFurnished || false,
+        BoolValue: listing.isFurnished ?? false,
       });
     }
 
@@ -428,7 +485,7 @@ export async function buildFotocasaPayload(
     if (listing.hasElevator !== null) {
       propertyFeatures.push({
         FeatureId: 22,
-        BoolValue: listing.hasElevator || false,
+        BoolValue: listing.hasElevator ?? false,
       });
     }
 
@@ -436,7 +493,7 @@ export async function buildFotocasaPayload(
     if (listing.homeAutomation !== null) {
       propertyFeatures.push({
         FeatureId: 142,
-        BoolValue: listing.homeAutomation || false,
+        BoolValue: listing.homeAutomation ?? false,
       });
     }
 
@@ -444,7 +501,7 @@ export async function buildFotocasaPayload(
     if (listing.internet !== null) {
       propertyFeatures.push({
         FeatureId: 286,
-        BoolValue: listing.internet || false,
+        BoolValue: listing.internet ?? false,
       });
     }
 
@@ -452,7 +509,7 @@ export async function buildFotocasaPayload(
     if (listing.gym !== null) {
       propertyFeatures.push({
         FeatureId: 309,
-        BoolValue: listing.gym || false,
+        BoolValue: listing.gym ?? false,
       });
     }
 
@@ -460,7 +517,7 @@ export async function buildFotocasaPayload(
     if (listing.sportsArea !== null) {
       propertyFeatures.push({
         FeatureId: 302,
-        BoolValue: listing.sportsArea || false,
+        BoolValue: listing.sportsArea ?? false,
       });
     }
 
@@ -468,7 +525,7 @@ export async function buildFotocasaPayload(
     if (listing.childrenArea !== null) {
       propertyFeatures.push({
         FeatureId: 303,
-        BoolValue: listing.childrenArea || false,
+        BoolValue: listing.childrenArea ?? false,
       });
     }
 
@@ -476,7 +533,7 @@ export async function buildFotocasaPayload(
     if (listing.suiteBathroom !== null) {
       propertyFeatures.push({
         FeatureId: 260,
-        BoolValue: listing.suiteBathroom || false,
+        BoolValue: listing.suiteBathroom ?? false,
       });
     }
 
@@ -484,7 +541,7 @@ export async function buildFotocasaPayload(
     if (listing.appliancesIncluded !== null) {
       propertyFeatures.push({
         FeatureId: 259,
-        BoolValue: listing.appliancesIncluded || false,
+        BoolValue: listing.appliancesIncluded ?? false,
       });
     }
 
@@ -500,34 +557,34 @@ export async function buildFotocasaPayload(
     if (listing.oven !== null) {
       propertyFeatures.push({
         FeatureId: 288,
-        BoolValue: listing.oven || false,
+        BoolValue: listing.oven ?? false,
       });
     }
     if (listing.washingMachine !== null) {
       propertyFeatures.push({
         FeatureId: 293,
-        BoolValue: listing.washingMachine || false,
+        BoolValue: listing.washingMachine ?? false,
       });
     }
     if (listing.microwave !== null) {
       propertyFeatures.push({
         FeatureId: 287,
-        BoolValue: listing.microwave || false,
+        BoolValue: listing.microwave ?? false,
       });
     }
     if (listing.fridge !== null) {
       propertyFeatures.push({
         FeatureId: 292,
-        BoolValue: listing.fridge || false,
+        BoolValue: listing.fridge ?? false,
       });
     }
     if (listing.tv !== null) {
-      propertyFeatures.push({ FeatureId: 291, BoolValue: listing.tv || false });
+      propertyFeatures.push({ FeatureId: 291, BoolValue: listing.tv ?? false });
     }
     if (listing.stoneware !== null) {
       propertyFeatures.push({
         FeatureId: 295,
-        BoolValue: listing.stoneware || false,
+        BoolValue: listing.stoneware ?? false,
       });
     }
 
@@ -535,7 +592,7 @@ export async function buildFotocasaPayload(
     if (listing.petsAllowed !== null) {
       propertyFeatures.push({
         FeatureId: 313,
-        BoolValue: listing.petsAllowed || false,
+        BoolValue: listing.petsAllowed ?? false,
       });
     }
 
@@ -543,7 +600,7 @@ export async function buildFotocasaPayload(
     if (listing.nearbyPublicTransport !== null) {
       propertyFeatures.push({
         FeatureId: 176,
-        BoolValue: listing.nearbyPublicTransport || false,
+        BoolValue: listing.nearbyPublicTransport ?? false,
       });
     }
 
@@ -551,7 +608,7 @@ export async function buildFotocasaPayload(
     if (listing.securityDoor !== null) {
       propertyFeatures.push({
         FeatureId: 294,
-        BoolValue: listing.securityDoor || false,
+        BoolValue: listing.securityDoor ?? false,
       });
     }
 
@@ -559,7 +616,7 @@ export async function buildFotocasaPayload(
     if (listing.alarm !== null) {
       propertyFeatures.push({
         FeatureId: 235,
-        BoolValue: listing.alarm || false,
+        BoolValue: listing.alarm ?? false,
       });
     }
 
@@ -567,7 +624,7 @@ export async function buildFotocasaPayload(
     if (listing.privatePool !== null) {
       propertyFeatures.push({
         FeatureId: 25,
-        BoolValue: listing.privatePool || false,
+        BoolValue: listing.privatePool ?? false,
       });
     }
 
@@ -575,7 +632,7 @@ export async function buildFotocasaPayload(
     if (listing.communityPool !== null) {
       propertyFeatures.push({
         FeatureId: 300,
-        BoolValue: listing.communityPool || false,
+        BoolValue: listing.communityPool ?? false,
       });
     }
 
@@ -583,7 +640,7 @@ export async function buildFotocasaPayload(
     if (listing.hasGarage !== null) {
       propertyFeatures.push({
         FeatureId: 23,
-        BoolValue: listing.hasGarage || false,
+        BoolValue: listing.hasGarage ?? false,
       });
     }
 
@@ -591,7 +648,7 @@ export async function buildFotocasaPayload(
     if (listing.jacuzzi !== null) {
       propertyFeatures.push({
         FeatureId: 274,
-        BoolValue: listing.jacuzzi || false,
+        BoolValue: listing.jacuzzi ?? false,
       });
     }
 
@@ -599,7 +656,7 @@ export async function buildFotocasaPayload(
     if (listing.tennisCourt !== null) {
       propertyFeatures.push({
         FeatureId: 310,
-        BoolValue: listing.tennisCourt || false,
+        BoolValue: listing.tennisCourt ?? false,
       });
     }
 
@@ -607,7 +664,7 @@ export async function buildFotocasaPayload(
     if (listing.laundryRoom !== null) {
       propertyFeatures.push({
         FeatureId: 257,
-        BoolValue: listing.laundryRoom || false,
+        BoolValue: listing.laundryRoom ?? false,
       });
     }
 
@@ -623,7 +680,7 @@ export async function buildFotocasaPayload(
     if (listing.hasStorageRoom !== null) {
       propertyFeatures.push({
         FeatureId: 24,
-        BoolValue: listing.hasStorageRoom || false,
+        BoolValue: listing.hasStorageRoom ?? false,
       });
     }
 
@@ -631,7 +688,7 @@ export async function buildFotocasaPayload(
     if (listing.garden !== null) {
       propertyFeatures.push({
         FeatureId: 263,
-        BoolValue: listing.garden || false,
+        BoolValue: listing.garden ?? false,
       });
     }
 
@@ -639,7 +696,7 @@ export async function buildFotocasaPayload(
     if (listing.furnishedKitchen !== null) {
       propertyFeatures.push({
         FeatureId: 314,
-        BoolValue: listing.furnishedKitchen || false,
+        BoolValue: listing.furnishedKitchen ?? false,
       });
     }
 
@@ -657,9 +714,17 @@ export async function buildFotocasaPayload(
 
     // Conservation Status (FeatureId: 249)
     if (listing.conservationStatus) {
+      const conservationStatusMap: Record<string, number> = {
+        'excellent': 1,
+        'good': 2,
+        'fair': 3,
+        'poor': 4,
+        'needs_renovation': 5
+      };
+      const statusValue = conservationStatusMap[listing.conservationStatus] ?? 1;
       propertyFeatures.push({
         FeatureId: 249,
-        DecimalValue: listing.conservationStatus,
+        DecimalValue: statusValue,
       });
     }
 
@@ -767,16 +832,16 @@ export async function buildFotocasaPayload(
     // Build PropertyTransaction
     const propertyTransaction: PropertyTransaction[] = [
       {
-        TransactionTypeId: TRANSACTION_TYPE_MAPPING[listing.listingType] ?? 1,
-        Price: parseFloat(listing.price.toString()),
+        TransactionTypeId: TRANSACTION_TYPE_MAPPING[listing.listingType ?? 'Sale'] ?? 1,
+        Price: parseFloat((listing.price ?? 0).toString()),
         ShowPrice: !hidePrice, // ShowPrice is true when hidePrice is false
       },
     ];
 
     // Build the complete payload
     const fotocasaPayload: FotocasaProperty = {
-      ExternalId: listing.listingId.toString(),
-      AgencyReference: listing.referenceNumber ?? listing.listingId.toString(),
+      ExternalId: (listing.listingId ?? 0).toString(),
+      AgencyReference: listing.referenceNumber ?? (listing.listingId ?? 0).toString(),
       TypeId: PROPERTY_TYPE_MAPPING[listing.propertyType ?? "piso"] ?? 1,
       SubTypeId:
         PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype ?? "Piso"] ?? 9, // Default to Flat (9) if no subtype
