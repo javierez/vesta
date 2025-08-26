@@ -591,7 +591,7 @@ export async function listContactsWithTypes(
         const contactId = contact.contactId.toString();
         const contactProspects = prospectsByContact[contactId] ?? [];
         const allContactListings = listingsByContact[contactId] ?? [];
-
+        
         // Filter listings based on the role filter
         let filteredListings = allContactListings;
         if (filters?.roles && filters.roles.length > 0) {

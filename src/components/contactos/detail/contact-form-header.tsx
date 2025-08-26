@@ -3,7 +3,7 @@
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { Mail, Phone, Calendar, User } from "lucide-react";
+import { Mail, Phone, Calendar, User, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { cn } from "~/lib/utils";
 import {
@@ -188,38 +188,58 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
               <div className="mt-4 flex items-center gap-6 text-sm text-gray-600">
                 {contact.email && (
                   <div className="group flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    <span
-                      onClick={() => handleCopy("email", contact.email!)}
-                      className="cursor-pointer transition-colors hover:text-blue-600 hover:underline"
-                      title="Copiar email"
-                    >
-                      {contact.email}
-                    </span>
-                    {copied.field === "email" &&
-                      copied.value === contact.email && (
-                        <span className="ml-1 text-xs text-green-600">
-                          ¡Copiado!
-                        </span>
-                      )}
+                    <span className="transition-all duration-200 group-hover:font-semibold">{contact.email}</span>
+                    <div className="flex items-center overflow-hidden transition-all duration-300 ease-out group-hover:w-auto group-hover:opacity-100 w-0 opacity-0">
+                      <button
+                        onClick={() => handleCopy("email", contact.email!)}
+                        className="p-1 rounded hover:bg-gray-100 transition-all duration-200 transform scale-0 group-hover:scale-100"
+                        title="Copiar email"
+                      >
+                        {copied.field === "email" && copied.value === contact.email ? (
+                          <Check className="h-3.5 w-3.5 text-green-600" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                        )}
+                      </button>
+                      <a
+                        href={`mailto:${contact.email}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-1 p-1 rounded hover:bg-gray-100 transition-all duration-200 transform scale-0 group-hover:scale-100"
+                        style={{ transitionDelay: "100ms" }}
+                        title="Enviar email"
+                      >
+                        <Mail className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                      </a>
+                    </div>
                   </div>
                 )}
                 {contact.phone && (
                   <div className="group flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    <span
-                      onClick={() => handleCopy("phone", contact.phone!)}
-                      className="cursor-pointer transition-colors hover:text-blue-600 hover:underline"
-                      title="Copiar teléfono"
-                    >
-                      {contact.phone}
-                    </span>
-                    {copied.field === "phone" &&
-                      copied.value === contact.phone && (
-                        <span className="ml-1 text-xs text-green-600">
-                          ¡Copiado!
-                        </span>
-                      )}
+                    <span className="transition-all duration-200 group-hover:font-semibold">{contact.phone}</span>
+                    <div className="flex items-center overflow-hidden transition-all duration-300 ease-out group-hover:w-auto group-hover:opacity-100 w-0 opacity-0">
+                      <button
+                        onClick={() => handleCopy("phone", contact.phone!)}
+                        className="p-1 rounded hover:bg-gray-100 transition-all duration-200 transform scale-0 group-hover:scale-100"
+                        title="Copiar teléfono"
+                      >
+                        {copied.field === "phone" && copied.value === contact.phone ? (
+                          <Check className="h-3.5 w-3.5 text-green-600" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                        )}
+                      </button>
+                      <a
+                        href={`tel:${contact.phone}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-1 p-1 rounded hover:bg-gray-100 transition-all duration-200 transform scale-0 group-hover:scale-100"
+                        style={{ transitionDelay: "100ms" }}
+                        title="Llamar"
+                      >
+                        <Phone className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+                      </a>
+                    </div>
                   </div>
                 )}
                 <div className="flex items-center gap-2">

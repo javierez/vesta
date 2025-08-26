@@ -156,9 +156,6 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   const showSolicitudes = isBuyer || isInteresado || isOwner;
   const showPropiedades = isOwner || isBuyer;
 
-  // Debug logs to see what's happening
-  // logs removed
-
   // Active tab state
   const [activeTab, setActiveTab] = useState("informacion");
 
