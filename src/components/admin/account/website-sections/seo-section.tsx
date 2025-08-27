@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Search } from "lucide-react";
 import {
@@ -12,11 +11,15 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import type { SEOSectionProps } from "../types/website-sections";
 
-export function SEOSection({ form, isActive, onUnsavedChanges }: SEOSectionProps) {
+export function SEOSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+}: SEOSectionProps) {
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('seoProps')) {
+      if (name?.startsWith("seoProps")) {
         onUnsavedChanges(true);
       }
     });
@@ -47,10 +50,14 @@ export function SEOSection({ form, isActive, onUnsavedChanges }: SEOSectionProps
             <FormItem>
               <FormLabel>Título del Sitio</FormLabel>
               <FormDescription>
-                Aparece en los resultados de búsqueda y en la pestaña del navegador
+                Aparece en los resultados de búsqueda y en la pestaña del
+                navegador
               </FormDescription>
               <FormControl>
-                <Input {...field} placeholder="Mi Inmobiliaria | Las mejores propiedades" />
+                <Input
+                  {...field}
+                  placeholder="Mi Inmobiliaria | Las mejores propiedades"
+                />
               </FormControl>
             </FormItem>
           )}
@@ -67,8 +74,8 @@ export function SEOSection({ form, isActive, onUnsavedChanges }: SEOSectionProps
                 Descripción breve que aparece en los resultados de búsqueda
               </FormDescription>
               <FormControl>
-                <Textarea 
-                  {...field} 
+                <Textarea
+                  {...field}
                   placeholder="Encuentra las mejores propiedades en venta y alquiler..."
                   rows={3}
                 />
@@ -88,7 +95,10 @@ export function SEOSection({ form, isActive, onUnsavedChanges }: SEOSectionProps
                 Separadas por comas, ayudan a los motores de búsqueda
               </FormDescription>
               <FormControl>
-                <Input {...field} placeholder="inmobiliaria, pisos, casas, alquiler, venta" />
+                <Input
+                  {...field}
+                  placeholder="inmobiliaria, pisos, casas, alquiler, venta"
+                />
               </FormControl>
             </FormItem>
           )}
@@ -105,7 +115,10 @@ export function SEOSection({ form, isActive, onUnsavedChanges }: SEOSectionProps
                 Imagen que aparece al compartir en redes sociales
               </FormDescription>
               <FormControl>
-                <Input {...field} placeholder="https://ejemplo.com/imagen-og.jpg" />
+                <Input
+                  {...field}
+                  placeholder="https://ejemplo.com/imagen-og.jpg"
+                />
               </FormControl>
             </FormItem>
           )}

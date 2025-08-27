@@ -1,14 +1,17 @@
-
 import { useEffect } from "react";
 import { Share2 } from "lucide-react";
 import { SocialLinksInput } from "./components/social-links-input";
 import type { SocialSectionProps } from "../types/website-sections";
 
-export function SocialSection({ form, isActive, onUnsavedChanges }: SocialSectionProps) {
+export function SocialSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+}: SocialSectionProps) {
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('socialLinks')) {
+      if (name?.startsWith("socialLinks")) {
         onUnsavedChanges(true);
       }
     });

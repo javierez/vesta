@@ -12,11 +12,16 @@ import { Input } from "~/components/ui/input";
 import { OfficeManager } from "./components/office-manager";
 import type { ContactSectionProps } from "../types/website-sections";
 
-export function ContactSection({ form, isActive, onUnsavedChanges, accountId }: ContactSectionProps) {
+export function ContactSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+  accountId,
+}: ContactSectionProps) {
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('contactProps')) {
+      if (name?.startsWith("contactProps")) {
         onUnsavedChanges(true);
       }
     });
@@ -61,7 +66,10 @@ export function ContactSection({ form, isActive, onUnsavedChanges, accountId }: 
               <FormItem>
                 <FormLabel>Subtítulo</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Estamos aquí para ayudarte en tu próximo paso inmobiliario" />
+                  <Input
+                    {...field}
+                    placeholder="Estamos aquí para ayudarte en tu próximo paso inmobiliario"
+                  />
                 </FormControl>
               </FormItem>
             )}
@@ -70,7 +78,9 @@ export function ContactSection({ form, isActive, onUnsavedChanges, accountId }: 
 
         {/* Display Options */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Opciones de Visualización</h3>
+          <h3 className="mb-3 text-sm font-medium text-gray-700">
+            Opciones de Visualización
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -85,7 +95,9 @@ export function ContactSection({ form, isActive, onUnsavedChanges, accountId }: 
                       className="rounded border-gray-300"
                     />
                   </FormControl>
-                  <FormLabel className="text-sm">Formulario de mensaje</FormLabel>
+                  <FormLabel className="text-sm">
+                    Formulario de mensaje
+                  </FormLabel>
                 </FormItem>
               )}
             />
@@ -183,12 +195,7 @@ export function ContactSection({ form, isActive, onUnsavedChanges, accountId }: 
         </div>
 
         {/* INTEGRATE OfficeManager for complex CRUD operations */}
-        {accountId && (
-          <OfficeManager 
-            form={form} 
-            accountId={accountId}
-          />
-        )}
+        {accountId && <OfficeManager form={form} accountId={accountId} />}
       </div>
     </div>
   );

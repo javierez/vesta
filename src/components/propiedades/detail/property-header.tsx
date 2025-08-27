@@ -47,11 +47,11 @@ export function PropertyHeader({
 
   const handleSave = async () => {
     if (!editedTitle.trim() || !propertyId) return;
-    
+
     setIsLoading(true);
     try {
       const result = await updatePropertyTitle(propertyId, editedTitle);
-      
+
       if (result.success) {
         setCurrentTitle(result.title!);
         setIsEditing(false);
@@ -80,15 +80,15 @@ export function PropertyHeader({
         <div>
           <div className="group flex items-start gap-2">
             {isEditing ? (
-              <div className="flex flex-col gap-3 w-full max-w-4xl">
+              <div className="flex w-full max-w-4xl flex-col gap-3">
                 <Input
                   value={editedTitle}
                   onChange={(e) => setEditedTitle(e.target.value)}
-                  className="text-3xl font-bold border border-input px-3 py-2 focus-visible:ring-2 focus-visible:ring-ring h-auto bg-background w-full"
+                  className="h-auto w-full border border-input bg-background px-3 py-2 text-3xl font-bold focus-visible:ring-2 focus-visible:ring-ring"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       void handleSave();
-                    } else if (e.key === 'Escape') {
+                    } else if (e.key === "Escape") {
                       handleCancel();
                     }
                   }}
@@ -102,7 +102,7 @@ export function PropertyHeader({
                     onClick={handleSave}
                     disabled={isLoading || !editedTitle.trim()}
                   >
-                    <Check className="h-4 w-4 mr-1" />
+                    <Check className="mr-1 h-4 w-4" />
                     Guardar
                   </Button>
                   <Button
@@ -111,19 +111,21 @@ export function PropertyHeader({
                     onClick={handleCancel}
                     disabled={isLoading}
                   >
-                    <X className="h-4 w-4 mr-1" />
+                    <X className="mr-1 h-4 w-4" />
                     Cancelar
                   </Button>
                 </div>
               </div>
             ) : (
               <>
-                <h1 className="text-3xl font-bold leading-tight">{currentTitle}</h1>
+                <h1 className="text-3xl font-bold leading-tight">
+                  {currentTitle}
+                </h1>
                 {propertyId && (
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 ml-2 flex-shrink-0 self-start"
+                    className="ml-2 flex-shrink-0 self-start p-1 opacity-0 transition-opacity group-hover:opacity-100"
                     onClick={() => setIsEditing(true)}
                   >
                     <Pencil className="h-4 w-4 text-muted-foreground" />
@@ -140,13 +142,13 @@ export function PropertyHeader({
           <div className="mt-2">
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                `${street}, ${city}, ${province} ${postalCode}`
+                `${street}, ${city}, ${province} ${postalCode}`,
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors group"
+              className="group inline-flex items-center text-muted-foreground transition-colors hover:text-primary"
             >
-              <MapPin className="mr-1 h-4 w-4 group-hover:scale-110 transition-transform" />
+              <MapPin className="mr-1 h-4 w-4 transition-transform group-hover:scale-110" />
               <span className="group-hover:underline">
                 {street}, {city}, {province} {postalCode}
               </span>
@@ -160,9 +162,7 @@ export function PropertyHeader({
               ? "/mes"
               : ""}
           </div>
-          <Badge className="mt-1">
-            {formatListingType(listingType)}
-          </Badge>
+          <Badge className="mt-1">{formatListingType(listingType)}</Badge>
         </div>
       </div>
     </div>

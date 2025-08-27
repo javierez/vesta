@@ -188,7 +188,6 @@ export default function LeadsPage() {
       {/* Filter bar */}
       <LeadFilter view={view} onViewChange={handleViewChange} />
 
-
       {/* Content */}
       {view === "list" ? (
         <LeadTable

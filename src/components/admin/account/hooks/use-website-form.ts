@@ -165,7 +165,7 @@ export function useWebsiteForm(userId?: string): UseWebsiteFormReturn {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const userAccountId = await getCurrentUserAccountId(userId);
 
         if (!userAccountId) {
@@ -177,13 +177,19 @@ export function useWebsiteForm(userId?: string): UseWebsiteFormReturn {
         const result = await getWebsiteConfigurationAction(userAccountId);
 
         if (result.success && result.data) {
-          console.log('📋 FORM: Loading website configuration data:', result.data);
-          console.log('📋 FORM: metadata field:', result.data.metadata);
-          console.log('📋 FORM: metadata.mainpage:', result.data.metadata?.mainpage);
+          console.log(
+            "📋 FORM: Loading website configuration data:",
+            result.data,
+          );
+          console.log("📋 FORM: metadata field:", result.data.metadata);
+          console.log(
+            "📋 FORM: metadata.mainpage:",
+            result.data.metadata?.mainpage,
+          );
           form.reset(result.data);
-          console.log('📋 FORM: Form reset completed with data');
+          console.log("📋 FORM: Form reset completed with data");
         } else {
-          console.log('❌ FORM: Failed to load website configuration:', result);
+          console.log("❌ FORM: Failed to load website configuration:", result);
         }
       } catch (error) {
         console.error("Error loading website configuration:", error);

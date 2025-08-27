@@ -6,7 +6,10 @@ import { properties } from "~/server/db/schema";
 import { getSecureSession } from "~/lib/dal";
 import { revalidatePath } from "next/cache";
 
-export async function updatePropertyTitle(propertyId: bigint, newTitle: string) {
+export async function updatePropertyTitle(
+  propertyId: bigint,
+  newTitle: string,
+) {
   try {
     const session = await getSecureSession();
     if (!session) {
@@ -46,13 +49,13 @@ export async function updatePropertyTitle(propertyId: bigint, newTitle: string) 
 
     // Revalidate the property page to show the updated title
     revalidatePath(`/propiedades/${propertyId}`);
-    
+
     return { success: true, title: trimmedTitle };
   } catch (error) {
     console.error("Error updating property title:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Failed to update title" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update title",
     };
   }
 }

@@ -367,10 +367,10 @@ export function ContactInterestForm({
                   const isPisoOrCasa =
                     propertyType === "piso" || propertyType === "casa";
                   const isRent = localData.demandType === "Rent";
-                  
+
                   // Set different limits based on operation type (sale vs rent)
                   let minLimit, maxLimit, step, defaultValue, placeholder;
-                  
+
                   if (isRent) {
                     // Rental properties: much lower price range
                     minLimit = 300;

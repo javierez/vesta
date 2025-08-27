@@ -64,7 +64,10 @@ export function PropertyCharacteristicsFormGarage({
   const searchParams = useSearchParams();
 
   // Check if property type has changed using shared utility
-  const hasPropertyTypeChanged = checkPropertyTypeChanged(listing, searchParams);
+  const hasPropertyTypeChanged = checkPropertyTypeChanged(
+    listing,
+    searchParams,
+  );
 
   // Module names for garage form
   const moduleNames: ModuleName[] = [
@@ -85,9 +88,8 @@ export function PropertyCharacteristicsFormGarage({
   // Use shared module states management
   const { moduleStates, setModuleStates, updateModuleState } = useModuleStates(
     hasPropertyTypeChanged,
-    moduleNames
+    moduleNames,
   );
-
 
   // Function to save module data
   const saveModule = async (moduleName: ModuleName) => {
@@ -237,7 +239,6 @@ export function PropertyCharacteristicsFormGarage({
       }, 3000);
     }
   };
-
 
   const [listingType, setListingType] = useState<string>(
     listing.listingType ?? "Sale", // Default to 'Sale' if none selected

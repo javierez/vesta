@@ -188,14 +188,17 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
               <div className="mt-4 flex items-center gap-6 text-sm text-gray-600">
                 {contact.email && (
                   <div className="group flex items-center gap-2">
-                    <span className="transition-all duration-200 group-hover:font-semibold">{contact.email}</span>
-                    <div className="flex items-center overflow-hidden transition-all duration-300 ease-out group-hover:w-auto group-hover:opacity-100 w-0 opacity-0">
+                    <span className="transition-all duration-200 group-hover:font-semibold">
+                      {contact.email}
+                    </span>
+                    <div className="flex w-0 items-center overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:w-auto group-hover:opacity-100">
                       <button
                         onClick={() => handleCopy("email", contact.email!)}
-                        className="p-1 rounded hover:bg-gray-100 transition-all duration-200 transform scale-0 group-hover:scale-100"
+                        className="scale-0 transform rounded p-1 transition-all duration-200 hover:bg-gray-100 group-hover:scale-100"
                         title="Copiar email"
                       >
-                        {copied.field === "email" && copied.value === contact.email ? (
+                        {copied.field === "email" &&
+                        copied.value === contact.email ? (
                           <Check className="h-3.5 w-3.5 text-green-600" />
                         ) : (
                           <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
@@ -205,7 +208,7 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
                         href={`mailto:${contact.email}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-1 p-1 rounded hover:bg-gray-100 transition-all duration-200 transform scale-0 group-hover:scale-100"
+                        className="ml-1 scale-0 transform rounded p-1 transition-all duration-200 hover:bg-gray-100 group-hover:scale-100"
                         style={{ transitionDelay: "100ms" }}
                         title="Enviar email"
                       >
@@ -216,14 +219,17 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
                 )}
                 {contact.phone && (
                   <div className="group flex items-center gap-2">
-                    <span className="transition-all duration-200 group-hover:font-semibold">{contact.phone}</span>
-                    <div className="flex items-center overflow-hidden transition-all duration-300 ease-out group-hover:w-auto group-hover:opacity-100 w-0 opacity-0">
+                    <span className="transition-all duration-200 group-hover:font-semibold">
+                      {contact.phone}
+                    </span>
+                    <div className="flex w-0 items-center overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:w-auto group-hover:opacity-100">
                       <button
                         onClick={() => handleCopy("phone", contact.phone!)}
-                        className="p-1 rounded hover:bg-gray-100 transition-all duration-200 transform scale-0 group-hover:scale-100"
+                        className="scale-0 transform rounded p-1 transition-all duration-200 hover:bg-gray-100 group-hover:scale-100"
                         title="Copiar teléfono"
                       >
-                        {copied.field === "phone" && copied.value === contact.phone ? (
+                        {copied.field === "phone" &&
+                        copied.value === contact.phone ? (
                           <Check className="h-3.5 w-3.5 text-green-600" />
                         ) : (
                           <Copy className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
@@ -233,7 +239,7 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
                         href={`tel:${contact.phone}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-1 p-1 rounded hover:bg-gray-100 transition-all duration-200 transform scale-0 group-hover:scale-100"
+                        className="ml-1 scale-0 transform rounded p-1 transition-all duration-200 hover:bg-gray-100 group-hover:scale-100"
                         style={{ transitionDelay: "100ms" }}
                         title="Llamar"
                       >

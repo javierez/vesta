@@ -7,6 +7,9 @@ interface ContactPageProps {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    roles?: string;
+  }>;
 }
 
 // Define the type for listings associated with a contact
@@ -48,9 +51,14 @@ interface ExtendedContact {
   allListings?: ContactListing[];
 }
 
-export default async function ContactPage({ params }: ContactPageProps) {
+export default async function ContactPage({
+  params,
+  searchParams,
+}: ContactPageProps) {
   try {
     const unwrappedParams = await params;
+    const unwrappedSearchParams = await searchParams;
+
     const contact = await getContactByIdWithTypeWithAuth(
       parseInt(unwrappedParams.id),
     );
@@ -58,6 +66,32 @@ export default async function ContactPage({ params }: ContactPageProps) {
     if (!contact) {
       notFound();
     }
+
+    // Get URL filter parameter - defaults to "owner" to match table behavior
+    const roleFilter = unwrappedSearchParams.roles ?? "owner";
+    const isOwnerView = roleFilter.includes("owner");
+
+    // Filter listings based on URL role parameter to match table behavior
+    const rawListings =
+      (contact as { allListings?: ContactListing[] }).allListings ?? [];
+    let filteredListings: ContactListing[] = [];
+
+    if (isOwnerView) {
+      // Show only owner listings when in owner view
+      filteredListings = rawListings.filter(
+        (listing) => listing.contactType === "owner",
+      );
+    } else {
+      // Show only buyer listings when in buyer view
+      filteredListings = rawListings.filter(
+        (listing) => listing.contactType === "buyer",
+      );
+    }
+
+    // Filter prospect titles - only show in buyer view to match table behavior
+    const prospectTitles = isOwnerView
+      ? []
+      : ((contact as { prospectTitles?: string[] }).prospectTitles ?? []);
 
     // Use explicit types and nullish coalescing for safety
     const extendedContact: ExtendedContact = {
@@ -69,10 +103,8 @@ export default async function ContactPage({ params }: ContactPageProps) {
       additionalInfo: (
         contact as { additionalInfo?: Contact["additionalInfo"] }
       ).additionalInfo,
-      prospectTitles:
-        (contact as { prospectTitles?: string[] }).prospectTitles ?? [],
-      allListings:
-        (contact as { allListings?: ContactListing[] }).allListings ?? [],
+      prospectTitles, // Use filtered prospect titles based on URL filter
+      allListings: filteredListings, // Use filtered listings based on URL filter
       contactType: (contact as unknown as { contactType: string })
         .contactType as
         | "demandante"

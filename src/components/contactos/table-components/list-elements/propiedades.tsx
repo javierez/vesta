@@ -164,13 +164,15 @@ export function Propiedades({
         <div
           className={cn(
             "mx-2 my-0.5 cursor-pointer rounded-xl p-2 transition-all duration-200 hover:shadow-md active:scale-[0.98]",
-            isDraft 
-              ? "border border-dashed border-orange-300 bg-orange-50/50 opacity-75" 
-              : isActive ? "active:bg-gray-100" : "active:bg-gray-200",
+            isDraft
+              ? "border border-dashed border-orange-300 bg-orange-50/50 opacity-75"
+              : isActive
+                ? "active:bg-gray-100"
+                : "active:bg-gray-200",
           )}
           onClick={(e) => {
             e.stopPropagation();
-            const targetRoute = isDraft 
+            const targetRoute = isDraft
               ? `/propiedades/crear/${listing.listingId}`
               : `/propiedades/${listing.listingId}`;
             router.push(targetRoute);
@@ -181,17 +183,17 @@ export function Propiedades({
               <div
                 className={cn(
                   "flex items-center text-sm",
-                  isDraft 
-                    ? "text-orange-600" 
-                    : isActive ? "" : "text-gray-400",
+                  isDraft ? "text-orange-600" : isActive ? "" : "text-gray-400",
                 )}
               >
                 <MapPin
                   className={cn(
                     "mr-2 h-4 w-4 flex-shrink-0",
-                    isDraft 
-                      ? "text-orange-500" 
-                      : isActive ? "text-muted-foreground" : "text-gray-300",
+                    isDraft
+                      ? "text-orange-500"
+                      : isActive
+                        ? "text-muted-foreground"
+                        : "text-gray-300",
                   )}
                 />
                 <span className="truncate">
@@ -199,9 +201,11 @@ export function Propiedades({
                   {listing.city && (
                     <span
                       className={
-                        isDraft 
-                          ? "text-orange-500" 
-                          : isActive ? "text-muted-foreground" : "text-gray-400"
+                        isDraft
+                          ? "text-orange-500"
+                          : isActive
+                            ? "text-muted-foreground"
+                            : "text-gray-400"
                       }
                     >
                       ({listing.city})
@@ -214,17 +218,17 @@ export function Propiedades({
               <div
                 className={cn(
                   "flex items-center text-sm",
-                  isDraft 
-                    ? "text-orange-600" 
-                    : isActive ? "" : "text-gray-400",
+                  isDraft ? "text-orange-600" : isActive ? "" : "text-gray-400",
                 )}
               >
                 <Building
                   className={cn(
                     "mr-2 h-4 w-4 flex-shrink-0",
-                    isDraft 
-                      ? "text-orange-500" 
-                      : isActive ? "text-muted-foreground" : "text-gray-300",
+                    isDraft
+                      ? "text-orange-500"
+                      : isActive
+                        ? "text-muted-foreground"
+                        : "text-gray-300",
                   )}
                 />
                 <span className="truncate">
@@ -234,9 +238,11 @@ export function Propiedades({
                   {listing.propertyType && listing.listingType && (
                     <span
                       className={
-                        isDraft 
-                          ? "text-orange-500" 
-                          : isActive ? "text-muted-foreground" : "text-gray-400"
+                        isDraft
+                          ? "text-orange-500"
+                          : isActive
+                            ? "text-muted-foreground"
+                            : "text-gray-400"
                       }
                     >
                       {" "}
@@ -267,20 +273,22 @@ export function Propiedades({
   return (
     <div className="my-0.5 space-y-1">
       {/* First listing display */}
-      {firstListing && (
+      {firstListing &&
         (() => {
           const isDraft = firstListing.status === "Draft";
           return (
             <div
               className={cn(
                 "mx-2 my-0.5 cursor-pointer rounded-xl p-2 transition-all duration-200 hover:shadow-md active:scale-[0.98]",
-                isDraft 
-                  ? "border border-dashed border-orange-300 bg-orange-50/50 opacity-75" 
-                  : isActive ? "active:bg-gray-100" : "active:bg-gray-200",
+                isDraft
+                  ? "border border-dashed border-orange-300 bg-orange-50/50 opacity-75"
+                  : isActive
+                    ? "active:bg-gray-100"
+                    : "active:bg-gray-200",
               )}
               onClick={(e) => {
                 e.stopPropagation();
-                const targetRoute = isDraft 
+                const targetRoute = isDraft
                   ? `/propiedades/crear/${firstListing.listingId}`
                   : `/propiedades/${firstListing.listingId}`;
                 router.push(targetRoute);
@@ -291,17 +299,21 @@ export function Propiedades({
                   <div
                     className={cn(
                       "flex items-center text-sm",
-                      isDraft 
-                        ? "text-orange-600" 
-                        : isActive ? "" : "text-gray-400",
+                      isDraft
+                        ? "text-orange-600"
+                        : isActive
+                          ? ""
+                          : "text-gray-400",
                     )}
                   >
                     <MapPin
                       className={cn(
                         "mr-2 h-4 w-4 flex-shrink-0",
-                        isDraft 
-                          ? "text-orange-500" 
-                          : isActive ? "text-muted-foreground" : "text-gray-300",
+                        isDraft
+                          ? "text-orange-500"
+                          : isActive
+                            ? "text-muted-foreground"
+                            : "text-gray-300",
                       )}
                     />
                     <span className="truncate">
@@ -309,9 +321,11 @@ export function Propiedades({
                       {firstListing.city && (
                         <span
                           className={
-                            isDraft 
-                              ? "text-orange-500" 
-                              : isActive ? "text-muted-foreground" : "text-gray-400"
+                            isDraft
+                              ? "text-orange-500"
+                              : isActive
+                                ? "text-muted-foreground"
+                                : "text-gray-400"
                           }
                         >
                           ({firstListing.city})
@@ -324,17 +338,21 @@ export function Propiedades({
                   <div
                     className={cn(
                       "flex items-center text-sm",
-                      isDraft 
-                        ? "text-orange-600" 
-                        : isActive ? "" : "text-gray-400",
+                      isDraft
+                        ? "text-orange-600"
+                        : isActive
+                          ? ""
+                          : "text-gray-400",
                     )}
                   >
                     <Building
                       className={cn(
                         "mr-2 h-4 w-4 flex-shrink-0",
-                        isDraft 
-                          ? "text-orange-500" 
-                          : isActive ? "text-muted-foreground" : "text-gray-300",
+                        isDraft
+                          ? "text-orange-500"
+                          : isActive
+                            ? "text-muted-foreground"
+                            : "text-gray-300",
                       )}
                     />
                     <span className="truncate">
@@ -343,20 +361,25 @@ export function Propiedades({
                           {firstListing.propertyType}
                         </span>
                       )}
-                      {firstListing.propertyType && firstListing.listingType && (
-                        <span
-                          className={
-                            isDraft 
-                              ? "text-orange-500" 
-                              : isActive ? "text-muted-foreground" : "text-gray-400"
-                          }
-                        >
-                          {" "}
-                          •{" "}
-                        </span>
-                      )}
+                      {firstListing.propertyType &&
+                        firstListing.listingType && (
+                          <span
+                            className={
+                              isDraft
+                                ? "text-orange-500"
+                                : isActive
+                                  ? "text-muted-foreground"
+                                  : "text-gray-400"
+                            }
+                          >
+                            {" "}
+                            •{" "}
+                          </span>
+                        )}
                       {firstListing.listingType && (
-                        <span>{formatListingType(firstListing.listingType)}</span>
+                        <span>
+                          {formatListingType(firstListing.listingType)}
+                        </span>
                       )}
                     </span>
                   </div>
@@ -364,8 +387,7 @@ export function Propiedades({
               </div>
             </div>
           );
-        })()
-      )}
+        })()}
 
       {/* Toggle button for additional items (listings + prospects) */}
       {!isExpanded && totalItems > 1 && (
@@ -398,13 +420,15 @@ export function Propiedades({
                     key={listing.listingId.toString()}
                     className={cn(
                       "mx-2 my-0.5 cursor-pointer rounded-xl p-2 transition-all duration-200 hover:shadow-md active:scale-[0.98]",
-                      isDraft 
-                        ? "border border-dashed border-orange-300 bg-orange-50/50 opacity-75" 
-                        : isActive ? "active:bg-gray-100" : "active:bg-gray-200",
+                      isDraft
+                        ? "border border-dashed border-orange-300 bg-orange-50/50 opacity-75"
+                        : isActive
+                          ? "active:bg-gray-100"
+                          : "active:bg-gray-200",
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
-                      const targetRoute = isDraft 
+                      const targetRoute = isDraft
                         ? `/propiedades/crear/${listing.listingId}`
                         : `/propiedades/${listing.listingId}`;
                       router.push(targetRoute);
@@ -415,19 +439,21 @@ export function Propiedades({
                         <div
                           className={cn(
                             "flex items-center text-sm",
-                            isDraft 
-                              ? "text-orange-600" 
-                              : isActive ? "" : "text-gray-400",
+                            isDraft
+                              ? "text-orange-600"
+                              : isActive
+                                ? ""
+                                : "text-gray-400",
                           )}
                         >
                           <MapPin
                             className={cn(
                               "mr-2 h-4 w-4 flex-shrink-0",
-                              isDraft 
-                                ? "text-orange-500" 
+                              isDraft
+                                ? "text-orange-500"
                                 : isActive
-                                ? "text-muted-foreground"
-                                : "text-gray-300",
+                                  ? "text-muted-foreground"
+                                  : "text-gray-300",
                             )}
                           />
                           <span className="truncate">
@@ -435,11 +461,11 @@ export function Propiedades({
                             {listing.city && (
                               <span
                                 className={
-                                  isDraft 
-                                    ? "text-orange-500" 
+                                  isDraft
+                                    ? "text-orange-500"
                                     : isActive
-                                    ? "text-muted-foreground"
-                                    : "text-gray-400"
+                                      ? "text-muted-foreground"
+                                      : "text-gray-400"
                                 }
                               >
                                 ({listing.city})
@@ -452,19 +478,21 @@ export function Propiedades({
                         <div
                           className={cn(
                             "flex items-center text-sm",
-                            isDraft 
-                              ? "text-orange-600" 
-                              : isActive ? "" : "text-gray-400",
+                            isDraft
+                              ? "text-orange-600"
+                              : isActive
+                                ? ""
+                                : "text-gray-400",
                           )}
                         >
                           <Building
                             className={cn(
                               "mr-2 h-4 w-4 flex-shrink-0",
-                              isDraft 
-                                ? "text-orange-500" 
+                              isDraft
+                                ? "text-orange-500"
                                 : isActive
-                                ? "text-muted-foreground"
-                                : "text-gray-300",
+                                  ? "text-muted-foreground"
+                                  : "text-gray-300",
                             )}
                           />
                           <span className="truncate">
@@ -476,11 +504,11 @@ export function Propiedades({
                             {listing.propertyType && listing.listingType && (
                               <span
                                 className={
-                                  isDraft 
-                                    ? "text-orange-500" 
+                                  isDraft
+                                    ? "text-orange-500"
                                     : isActive
-                                    ? "text-muted-foreground"
-                                    : "text-gray-400"
+                                      ? "text-muted-foreground"
+                                      : "text-gray-400"
                                 }
                               >
                                 {" "}

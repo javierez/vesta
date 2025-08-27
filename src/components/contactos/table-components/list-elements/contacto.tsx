@@ -49,7 +49,7 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
         <div className="space-y-1">
           {email && (
             <div className="group flex items-center text-sm">
-              <div className="flex items-center mr-2">
+              <div className="mr-2 flex items-center">
                 <button
                   className={cn(
                     "rounded p-1 transition-colors hover:bg-gray-100",
@@ -68,10 +68,10 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
                     )}
                   />
                 </button>
-                <div className="flex items-center overflow-hidden transition-all duration-500 ease-out group-hover:w-auto group-hover:opacity-100 w-0 opacity-0">
+                <div className="flex w-0 items-center overflow-hidden opacity-0 transition-all duration-500 ease-out group-hover:w-auto group-hover:opacity-100">
                   <button
                     className={cn(
-                      "ml-1 rounded p-1 transition-all duration-400 hover:bg-gray-100 transform scale-0 group-hover:scale-100",
+                      "duration-400 ml-1 scale-0 transform rounded p-1 transition-all hover:bg-gray-100 group-hover:scale-100",
                       isActive ? "hover:bg-gray-100" : "hover:bg-gray-200",
                     )}
                     style={{ transitionDelay: "200ms" }}
@@ -101,7 +101,7 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
           )}
           {phone && (
             <div className="group flex items-center text-sm">
-              <div className="flex items-center mr-2">
+              <div className="mr-2 flex items-center">
                 <button
                   className={cn(
                     "rounded p-1 transition-colors hover:bg-gray-100",
@@ -120,10 +120,10 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
                     )}
                   />
                 </button>
-                <div className="flex items-center overflow-hidden transition-all duration-500 ease-out group-hover:w-auto group-hover:opacity-100 w-0 opacity-0">
+                <div className="flex w-0 items-center overflow-hidden opacity-0 transition-all duration-500 ease-out group-hover:w-auto group-hover:opacity-100">
                   <button
                     className={cn(
-                      "ml-1 rounded p-1 transition-all duration-400 hover:bg-gray-100 transform scale-0 group-hover:scale-100",
+                      "duration-400 ml-1 scale-0 transform rounded p-1 transition-all hover:bg-gray-100 group-hover:scale-100",
                       isActive ? "hover:bg-gray-100" : "hover:bg-gray-200",
                     )}
                     style={{ transitionDelay: "200ms" }}
@@ -142,7 +142,7 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
                   </button>
                   <button
                     className={cn(
-                      "ml-1 rounded p-1 transition-all duration-400 hover:bg-gray-100 transform scale-0 group-hover:scale-100",
+                      "duration-400 ml-1 scale-0 transform rounded p-1 transition-all hover:bg-gray-100 group-hover:scale-100",
                       isActive ? "hover:bg-gray-100" : "hover:bg-gray-200",
                     )}
                     style={{ transitionDelay: "300ms" }}

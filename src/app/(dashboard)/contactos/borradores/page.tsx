@@ -24,7 +24,7 @@ interface DraftContact {
   lastName: string;
   email?: string | null;
   phone?: string | null;
-  additionalInfo?: any;
+  additionalInfo?: Record<string, unknown> | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -48,7 +48,9 @@ export default function ContactDraftsPage() {
     const fetchDraftContacts = async () => {
       try {
         setLoading(true);
-        const { getDraftContactsWithAuth } = await import("~/server/queries/contact");
+        const { getDraftContactsWithAuth } = await import(
+          "~/server/queries/contact"
+        );
         const contacts = await getDraftContactsWithAuth();
         setDraftContacts(contacts);
       } catch (error) {
@@ -64,12 +66,14 @@ export default function ContactDraftsPage() {
     };
 
     void fetchDraftContacts();
-  }, []);
+  }, [toast]);
 
   const handleDelete = async (contactId: bigint) => {
     try {
       setDeletingId(contactId);
-      const { deleteDraftContactWithAuth } = await import("~/server/queries/contact");
+      const { deleteDraftContactWithAuth } = await import(
+        "~/server/queries/contact"
+      );
       await deleteDraftContactWithAuth(Number(contactId));
 
       // Remove the deleted contact from state
@@ -85,7 +89,10 @@ export default function ContactDraftsPage() {
       console.error("Error deleting draft contact:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete draft contact",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete draft contact",
         variant: "destructive",
       });
     } finally {
@@ -129,10 +136,12 @@ export default function ContactDraftsPage() {
 
       <div className="mt-8">
         {draftContacts.length === 0 ? (
-          <div className="text-center py-12">
-            <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No hay contactos borradores</h3>
-            <p className="text-muted-foreground mb-4">
+          <div className="py-12 text-center">
+            <User className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">
+              No hay contactos borradores
+            </h3>
+            <p className="mb-4 text-muted-foreground">
               Los contactos sin clasificación aparecerán aquí
             </p>
             <Button asChild>
@@ -156,14 +165,17 @@ export default function ContactDraftsPage() {
                   <TableRow
                     key={contact.contactId.toString()}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => router.push(`/contactos/${contact.contactId}`)}
+                    onClick={() =>
+                      router.push(`/contactos/${contact.contactId}`)
+                    }
                   >
                     <TableCell className="font-medium">
                       {contact.firstName} {contact.lastName}
                     </TableCell>
                     <TableCell>
                       <div className="text-sm text-muted-foreground">
-                        {formatContactInfo(contact) || "Sin información de contacto"}
+                        {formatContactInfo(contact) ||
+                          "Sin información de contacto"}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -180,10 +192,10 @@ export default function ContactDraftsPage() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDelete(contact.contactId);
+                          void handleDelete(contact.contactId);
                         }}
                         disabled={deletingId === contact.contactId}
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

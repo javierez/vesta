@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
           eq(userIntegrations.channelId, channelId),
           eq(userIntegrations.resourceId, resourceId),
           eq(userIntegrations.provider, "google_calendar"),
-          eq(userIntegrations.isActive, true)
-        )
+          eq(userIntegrations.isActive, true),
+        ),
       )
       .limit(1);
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     if (resourceState === "exists") {
       // Calendar has changes - trigger incremental sync
       console.log("Calendar changed for user:", userId, "- triggering sync");
-      
+
       // Trigger sync asynchronously to respond quickly
       syncFromGoogle(userId).catch((error) => {
         console.error("Async sync failed for user:", userId, error);

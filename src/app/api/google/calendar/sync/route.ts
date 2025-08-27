@@ -13,24 +13,24 @@ export async function POST(_request: NextRequest) {
 
     // Trigger manual sync from Google Calendar
     const result = await syncFromGoogle(user.id);
-    
+
     if (result.success) {
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         message: "Sync completed successfully",
-        syncedEvents: result.syncedEvents
+        syncedEvents: result.syncedEvents,
       });
     } else {
       return NextResponse.json(
         { error: result.error ?? "Sync failed" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   } catch (error) {
     console.error("Error in manual sync:", error);
     return NextResponse.json(
       { error: "Failed to sync calendar" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

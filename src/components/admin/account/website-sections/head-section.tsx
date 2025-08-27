@@ -13,11 +13,15 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import type { HeadSectionProps } from "../types/website-sections";
 
-export function HeadSection({ form, isActive, onUnsavedChanges }: HeadSectionProps) {
+export function HeadSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+}: HeadSectionProps) {
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('headProps')) {
+      if (name?.startsWith("headProps")) {
         onUnsavedChanges(true);
       }
     });
@@ -85,8 +89,8 @@ export function HeadSection({ form, isActive, onUnsavedChanges }: HeadSectionPro
                 Código HTML/JavaScript personalizado para el head
               </FormDescription>
               <FormControl>
-                <Textarea 
-                  {...field} 
+                <Textarea
+                  {...field}
                   placeholder="<!-- Tu código personalizado aquí -->"
                   rows={6}
                   className="font-mono text-sm"

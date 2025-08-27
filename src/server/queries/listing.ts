@@ -60,9 +60,11 @@ export async function updateListingWithAuth(
 
 export async function getListingDetailsWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
-  
-  console.log(`[DEBUG] getListingDetailsWithAuth called with listingId: ${listingId}, accountId: ${accountId}`);
-  
+
+  console.log(
+    `[DEBUG] getListingDetailsWithAuth called with listingId: ${listingId}, accountId: ${accountId}`,
+  );
+
   // Check cache first (5 minute TTL for characteristics data)
   const cacheKey = cacheKeys.listingDetails(accountId, listingId);
   const cachedData = cache.get(cacheKey);
@@ -70,17 +72,25 @@ export async function getListingDetailsWithAuth(listingId: number) {
     console.log(`[DEBUG] Returning cached data for key: ${cacheKey}`);
     return cachedData;
   }
-  
-  console.log(`[DEBUG] No cached data, fetching from database for key: ${cacheKey}`);
-  
+
+  console.log(
+    `[DEBUG] No cached data, fetching from database for key: ${cacheKey}`,
+  );
+
   try {
     // Fetch from database and cache result
     const listingDetails = await getListingDetails(listingId, accountId);
-    console.log(`[DEBUG] Database query returned:`, listingDetails ? 'VALID OBJECT' : 'NULL/UNDEFINED');
-    console.log(`[DEBUG] Listing details keys:`, Object.keys(listingDetails || {}));
-    
+    console.log(
+      `[DEBUG] Database query returned:`,
+      listingDetails ? "VALID OBJECT" : "NULL/UNDEFINED",
+    );
+    console.log(
+      `[DEBUG] Listing details keys:`,
+      Object.keys(listingDetails || {}),
+    );
+
     cache.set(cacheKey, listingDetails, 300000); // 5 minutes
-    
+
     return listingDetails;
   } catch (error) {
     console.error(`[DEBUG] Error in getListingDetailsWithAuth:`, error);
@@ -97,7 +107,6 @@ export async function deleteDraftListingWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
   return deleteDraftListing(listingId, accountId);
 }
-
 
 // Create a new listing
 export async function createListing(
@@ -456,21 +465,22 @@ export async function listListings(
     whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
     // Optimized query based on view type
-    const query = view === "table"
-      ? db.select({
-          // Table view: optimized fields
-          listingId: listings.listingId,
-          agentName: users.name,
-          price: listings.price,
-          listingType: listings.listingType,
-          referenceNumber: properties.referenceNumber,
-          title: properties.title,
-          propertyType: properties.propertyType,
-          bedrooms: properties.bedrooms,
-          bathrooms: properties.bathrooms,
-          squareMeter: properties.squareMeter,
-          city: locations.city,
-          imageUrl: sql<string>`(
+    const query =
+      view === "table"
+        ? db.select({
+            // Table view: optimized fields
+            listingId: listings.listingId,
+            agentName: users.name,
+            price: listings.price,
+            listingType: listings.listingType,
+            referenceNumber: properties.referenceNumber,
+            title: properties.title,
+            propertyType: properties.propertyType,
+            bedrooms: properties.bedrooms,
+            bathrooms: properties.bathrooms,
+            squareMeter: properties.squareMeter,
+            city: locations.city,
+            imageUrl: sql<string>`(
             SELECT image_url 
             FROM property_images 
             WHERE property_id = ${properties.propertyId} 
@@ -478,7 +488,7 @@ export async function listListings(
             AND image_order = 1
             LIMIT 1
           )`,
-          ownerId: sql<bigint | null>`(
+            ownerId: sql<bigint | null>`(
             SELECT c.contact_id
             FROM listing_contacts lc
             JOIN contacts c ON lc.contact_id = c.contact_id
@@ -488,7 +498,7 @@ export async function listListings(
             AND c.is_active = true
             LIMIT 1
           )`,
-          ownerName: sql<string>`(
+            ownerName: sql<string>`(
             SELECT CONCAT(c.first_name, ' ', c.last_name)
             FROM listing_contacts lc
             JOIN contacts c ON lc.contact_id = c.contact_id
@@ -498,24 +508,24 @@ export async function listListings(
             AND c.is_active = true
             LIMIT 1
           )`,
-        })
-      : db.select({
-          // Grid view: optimized fields
-          listingId: listings.listingId,
-          propertyId: listings.propertyId,
-          agentName: users.name,
-          price: listings.price,
-          listingType: listings.listingType,
-          isBankOwned: listings.isBankOwned,
-          referenceNumber: properties.referenceNumber,
-          propertyType: properties.propertyType,
-          bedrooms: properties.bedrooms,
-          bathrooms: properties.bathrooms,
-          squareMeter: properties.squareMeter,
-          street: properties.street,
-          city: locations.city,
-          province: locations.province,
-          imageUrl: sql<string>`(
+          })
+        : db.select({
+            // Grid view: optimized fields
+            listingId: listings.listingId,
+            propertyId: listings.propertyId,
+            agentName: users.name,
+            price: listings.price,
+            listingType: listings.listingType,
+            isBankOwned: listings.isBankOwned,
+            referenceNumber: properties.referenceNumber,
+            propertyType: properties.propertyType,
+            bedrooms: properties.bedrooms,
+            bathrooms: properties.bathrooms,
+            squareMeter: properties.squareMeter,
+            street: properties.street,
+            city: locations.city,
+            province: locations.province,
+            imageUrl: sql<string>`(
             SELECT image_url 
             FROM property_images 
             WHERE property_id = ${properties.propertyId} 
@@ -523,7 +533,7 @@ export async function listListings(
             AND image_order = 1
             LIMIT 1
           )`,
-          imageUrl2: sql<string>`(
+            imageUrl2: sql<string>`(
             SELECT image_url 
             FROM property_images 
             WHERE property_id = ${properties.propertyId} 
@@ -531,7 +541,7 @@ export async function listListings(
             AND image_order = 2
             LIMIT 1
           )`,
-        });
+          });
 
     const baseQuery = query
       .from(listings)
@@ -569,7 +579,9 @@ export async function listListings(
 
     // Apply all where conditions at once
     const filteredQuery =
-      whereConditions.length > 0 ? baseQuery.where(and(...whereConditions)) : baseQuery;
+      whereConditions.length > 0
+        ? baseQuery.where(and(...whereConditions))
+        : baseQuery;
 
     // Apply pagination and sorting
     const allListings = await filteredQuery
@@ -640,7 +652,9 @@ export async function listListingsCompact(
 
     // Always show active listings only for this account, excluding Draft, Sold, and Rented
     whereConditions.push(eq(listings.isActive, true));
-    whereConditions.push(sql`${listings.status} NOT IN ('Draft', 'Sold', 'Rented')`);
+    whereConditions.push(
+      sql`${listings.status} NOT IN ('Draft', 'Sold', 'Rented')`,
+    );
     whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
     // Create the compact query with only essential fields
@@ -699,7 +713,6 @@ export async function listListingsCompact(
       .limit(limit)
       .offset(offset);
 
-
     return compactListings;
   } catch (error) {
     console.error("Error listing compact listings:", error);
@@ -749,8 +762,10 @@ export async function getAccountWebsite(accountId: number) {
 // This query is optimized for the property characteristics form
 export async function getListingDetails(listingId: number, accountId: number) {
   try {
-    console.log(`[DEBUG] getListingDetails querying with listingId: ${listingId}, accountId: ${accountId}`);
-    
+    console.log(
+      `[DEBUG] getListingDetails querying with listingId: ${listingId}, accountId: ${accountId}`,
+    );
+
     const [listingDetails] = await db
       .select({
         // Listing fields - All needed for form
@@ -934,16 +949,24 @@ export async function getListingDetails(listingId: number, accountId: number) {
         ),
       );
 
-    console.log(`[DEBUG] Query executed. Result:`, listingDetails ? 'FOUND' : 'NOT FOUND');
+    console.log(
+      `[DEBUG] Query executed. Result:`,
+      listingDetails ? "FOUND" : "NOT FOUND",
+    );
     if (listingDetails) {
-      console.log(`[DEBUG] listingDetails has properties:`, Object.keys(listingDetails));
+      console.log(
+        `[DEBUG] listingDetails has properties:`,
+        Object.keys(listingDetails),
+      );
       console.log(`[DEBUG] propertyType:`, listingDetails.propertyType);
       console.log(`[DEBUG] street:`, listingDetails.street);
       console.log(`[DEBUG] title:`, listingDetails.title);
     }
 
     if (!listingDetails) {
-      console.log(`[DEBUG] No listing found for listingId: ${listingId}, accountId: ${accountId}`);
+      console.log(
+        `[DEBUG] No listing found for listingId: ${listingId}, accountId: ${accountId}`,
+      );
       throw new Error("Listing not found");
     }
 
@@ -1057,7 +1080,7 @@ export async function deleteDraftListing(listingId: number, accountId: number) {
 // Lightweight query for PropertyBreadcrumb component
 export async function getListingBreadcrumbData(listingId: number) {
   const accountId = await getCurrentUserAccountId();
-  
+
   try {
     const [breadcrumbData] = await db
       .select({
@@ -1089,7 +1112,7 @@ export async function getListingBreadcrumbData(listingId: number) {
 // Ultra-lightweight query for PropertyHeader component - only fields actually used
 export async function getListingHeaderData(listingId: number) {
   const accountId = await getCurrentUserAccountId();
-  
+
   try {
     const [headerData] = await db
       .select({
@@ -1132,7 +1155,7 @@ export async function getListingHeaderData(listingId: number) {
 // Optimized query for PropertyTabs component - only fields needed by tabs
 export async function getListingTabsData(listingId: number) {
   const accountId = await getCurrentUserAccountId();
-  
+
   try {
     const [tabsData] = await db
       .select({
@@ -1190,7 +1213,7 @@ export async function getListingTabsData(listingId: number) {
 // Ultra-lightweight query for DocumentsPage component - only fields needed for document management
 export async function getListingDocumentsData(listingId: number) {
   const accountId = await getCurrentUserAccountId();
-  
+
   try {
     const [documentsData] = await db
       .select({

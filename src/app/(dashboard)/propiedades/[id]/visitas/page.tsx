@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
-import { getListingBreadcrumbData, getListingHeaderData, getListingDocumentsData } from "~/server/queries/listing";
+import {
+  getListingBreadcrumbData,
+  getListingHeaderData,
+  getListingDocumentsData,
+} from "~/server/queries/listing";
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { DocumentsPage } from "~/components/propiedades/detail/documents-page";
@@ -13,7 +17,7 @@ interface DocumentPageProps {
 export default async function VisitasPage({ params }: DocumentPageProps) {
   const unwrappedParams = await params;
   const listingId = parseInt(unwrappedParams.id);
-  
+
   // Get data with optimized queries
   const [breadcrumbData, headerData, documentsData] = await Promise.all([
     getListingBreadcrumbData(listingId),

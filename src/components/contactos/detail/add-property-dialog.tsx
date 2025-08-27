@@ -58,7 +58,7 @@ const statusColors: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   Sale: "En Venta",
-  Rent: "En Alquiler", 
+  Rent: "En Alquiler",
   Sold: "Vendido",
 };
 
@@ -187,12 +187,12 @@ export function AddPropertyDialog({
         await addListingContactRelationshipWithAuth(
           Number(contactId),
           Number(listingId),
-          "buyer"
+          "buyer",
         );
       }
 
       toast.success(
-        `${selectedListings.length} propiedad${selectedListings.length > 1 ? "es" : ""} añadida${selectedListings.length > 1 ? "s" : ""} correctamente`
+        `${selectedListings.length} propiedad${selectedListings.length > 1 ? "es" : ""} añadida${selectedListings.length > 1 ? "s" : ""} correctamente`,
       );
 
       onOpenChange(false);
@@ -207,7 +207,7 @@ export function AddPropertyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
+      <DialogContent className="max-h-[80vh] max-w-4xl">
         <DialogHeader>
           <DialogTitle>Añadir Propiedades de Interés</DialogTitle>
           <DialogDescription>
@@ -215,7 +215,7 @@ export function AddPropertyDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 flex-1 overflow-hidden">
+        <div className="flex-1 space-y-4 overflow-hidden">
           {/* Search and Filters */}
           <div className="flex items-center space-x-2">
             <div className="relative flex-1">
@@ -249,10 +249,7 @@ export function AddPropertyDialog({
                     <div className="space-y-2">
                       <h5 className="text-sm font-medium">Estado</h5>
                       {["Sale", "Rent", "Sold"].map((type) => (
-                        <div
-                          key={type}
-                          className="flex items-center space-x-2"
-                        >
+                        <div key={type} className="flex items-center space-x-2">
                           <Checkbox
                             id={`listing-${type}`}
                             checked={filters.listingType.includes(type)}
@@ -301,17 +298,21 @@ export function AddPropertyDialog({
           </div>
 
           {/* Property List */}
-          <div className="space-y-4 flex-1 overflow-hidden">
+          <div className="flex-1 space-y-4 overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
                 {selectedListings.length > 0 ? (
-                  <span>{selectedListings.length} propiedades seleccionadas</span>
+                  <span>
+                    {selectedListings.length} propiedades seleccionadas
+                  </span>
                 ) : (
-                  <span className="text-gray-500">Selecciona propiedades de interés</span>
+                  <span className="text-gray-500">
+                    Selecciona propiedades de interés
+                  </span>
                 )}
               </div>
             </div>
-            
+
             <ScrollArea className="h-[400px] pr-2">
               <div className="space-y-3">
                 {isLoadingListings ? (
@@ -338,7 +339,7 @@ export function AddPropertyDialog({
                   })
                 ) : (
                   <div className="py-8 text-center text-gray-500">
-                    <Home className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                    <Home className="mx-auto mb-2 h-8 w-8 text-gray-300" />
                     <p>No se encontraron propiedades</p>
                   </div>
                 )}
@@ -351,8 +352,8 @@ export function AddPropertyDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleAddProperties} 
+          <Button
+            onClick={handleAddProperties}
             disabled={selectedListings.length === 0 || isAdding}
           >
             {isAdding ? (

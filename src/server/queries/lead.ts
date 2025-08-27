@@ -1,7 +1,13 @@
 "use server";
 
 import { db } from "../db";
-import { leads, contacts, listings, properties, listingContacts } from "../db/schema";
+import {
+  leads,
+  contacts,
+  listings,
+  properties,
+  listingContacts,
+} from "../db/schema";
 import { eq, and, like, or, count, aliasedTable } from "drizzle-orm";
 import type { Lead } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
@@ -333,7 +339,7 @@ export async function listLeadsWithDetails(
     }
 
     // Create alias for owner contacts to avoid naming conflicts
-    const ownerContacts = aliasedTable(contacts, 'ownerContacts');
+    const ownerContacts = aliasedTable(contacts, "ownerContacts");
 
     // Main query with all joins
     const allLeads = await db
@@ -382,12 +388,18 @@ export async function listLeadsWithDetails(
       .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
       .leftJoin(listings, eq(leads.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(listingContacts, and(
-        eq(listings.listingId, listingContacts.listingId),
-        eq(listingContacts.contactType, "owner"),
-        eq(listingContacts.isActive, true)
-      ))
-      .leftJoin(ownerContacts, eq(listingContacts.contactId, ownerContacts.contactId))
+      .leftJoin(
+        listingContacts,
+        and(
+          eq(listings.listingId, listingContacts.listingId),
+          eq(listingContacts.contactType, "owner"),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .leftJoin(
+        ownerContacts,
+        eq(listingContacts.contactId, ownerContacts.contactId),
+      )
       .where(and(...whereConditions))
       .orderBy(leads.createdAt)
       .limit(limit)
@@ -400,18 +412,25 @@ export async function listLeadsWithDetails(
       .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
       .leftJoin(listings, eq(leads.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(listingContacts, and(
-        eq(listings.listingId, listingContacts.listingId),
-        eq(listingContacts.contactType, "owner"),
-        eq(listingContacts.isActive, true)
-      ))
-      .leftJoin(ownerContacts, eq(listingContacts.contactId, ownerContacts.contactId))
+      .leftJoin(
+        listingContacts,
+        and(
+          eq(listings.listingId, listingContacts.listingId),
+          eq(listingContacts.contactType, "owner"),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .leftJoin(
+        ownerContacts,
+        eq(listingContacts.contactId, ownerContacts.contactId),
+      )
       .where(and(...whereConditions));
 
-    
-    // @ts-expect-error - Drizzle count type inference issue 
-    const totalCount = totalResults[0]?.count ? Number(totalResults[0].count) : 0;
-    
+    // @ts-expect-error - Drizzle count type inference issue
+    const totalCount = totalResults[0]?.count
+      ? Number(totalResults[0].count)
+      : 0;
+
     return {
       leads: allLeads,
       total: totalCount,

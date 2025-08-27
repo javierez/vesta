@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Database, Plus, Trash2, Edit3 } from "lucide-react";
 import {
@@ -53,7 +52,11 @@ interface MainPageConfig {
   };
 }
 
-export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionProps) {
+export function MetaSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+}: MetaSectionProps) {
   const [mainPageConfig, setMainPageConfig] = useState<MainPageConfig>({
     title: "",
     description: "",
@@ -65,8 +68,8 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
         index: 1,
         follow: 1,
         "max-snippet": -1,
-        "max-image-preview": "large"
-      }
+        "max-image-preview": "large",
+      },
     },
     openGraph: {
       title: "",
@@ -74,22 +77,24 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
       type: "website",
       locale: "es_ES",
       siteName: "",
-      images: [{
-        url: "",
-        width: 1200,
-        height: 630,
-        alt: ""
-      }]
+      images: [
+        {
+          url: "",
+          width: 1200,
+          height: 630,
+          alt: "",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: "",
       description: "",
-      images: [""]
+      images: [""],
     },
     alternates: {
-      canonical: "/"
-    }
+      canonical: "/",
+    },
   });
 
   const [newKeyword, setNewKeyword] = useState("");
@@ -97,7 +102,7 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
   // Watch for form changes to detect unsaved changes
   useEffect(() => {
     const subscription = form.watch((_, { name }) => {
-      if (name?.startsWith('metadata')) {
+      if (name?.startsWith("metadata")) {
         onUnsavedChanges(true);
       }
     });
@@ -106,61 +111,72 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
 
   // Load and parse mainpage data
   useEffect(() => {
-    console.log('🔍 META: Loading metadata.mainpage from form...');
-    const mainpageValue = form.getValues('metadata.mainpage');
-    console.log('🔍 META: Raw metadata.mainpage value:', mainpageValue);
-    console.log('🔍 META: Value type:', typeof mainpageValue);
-    
+    console.log("🔍 META: Loading metadata.mainpage from form...");
+    const mainpageValue = form.getValues("metadata.mainpage");
+    console.log("🔍 META: Raw metadata.mainpage value:", mainpageValue);
+    console.log("🔍 META: Value type:", typeof mainpageValue);
+
     if (mainpageValue) {
-      if (typeof mainpageValue === 'object' && mainpageValue !== null) {
-        console.log('✅ META: mainpageValue is already an object');
+      if (typeof mainpageValue === "object" && mainpageValue !== null) {
+        console.log("✅ META: mainpageValue is already an object");
         const objectValue = mainpageValue;
-        
-        if (objectValue.mainpage && typeof objectValue.mainpage === 'object') {
-          console.log('✅ META: Found mainpage property in object:', objectValue.mainpage);
-          console.log('🔍 META: mainpage keys:', Object.keys(objectValue.mainpage));
+
+        if (objectValue.mainpage && typeof objectValue.mainpage === "object") {
+          console.log(
+            "✅ META: Found mainpage property in object:",
+            objectValue.mainpage,
+          );
+          console.log(
+            "🔍 META: mainpage keys:",
+            Object.keys(objectValue.mainpage),
+          );
           setMainPageConfig(objectValue.mainpage as MainPageConfig);
-          console.log('✅ META: Set mainPageConfig state');
+          console.log("✅ META: Set mainPageConfig state");
         } else if (objectValue.title && objectValue.description) {
-          console.log('✅ META: Using object directly as mainpage config');
+          console.log("✅ META: Using object directly as mainpage config");
           setMainPageConfig(objectValue as unknown as MainPageConfig);
-          console.log('✅ META: Set mainPageConfig state directly');
+          console.log("✅ META: Set mainPageConfig state directly");
         } else {
-          console.log('⚠️ META: Object structure not recognized:', Object.keys(objectValue));
+          console.log(
+            "⚠️ META: Object structure not recognized:",
+            Object.keys(objectValue),
+          );
         }
-      } else if (typeof mainpageValue === 'string') {
-        console.log('🔍 META: mainpageValue is string, attempting to parse...');
+      } else if (typeof mainpageValue === "string") {
+        console.log("🔍 META: mainpageValue is string, attempting to parse...");
         try {
           const parsed = JSON.parse(mainpageValue) as Record<string, unknown>;
-          console.log('✅ META: Parsed JSON successfully:', parsed);
-          
-          if (parsed.mainpage && typeof parsed.mainpage === 'object') {
-            console.log('✅ META: Found mainpage object:', parsed.mainpage);
+          console.log("✅ META: Parsed JSON successfully:", parsed);
+
+          if (parsed.mainpage && typeof parsed.mainpage === "object") {
+            console.log("✅ META: Found mainpage object:", parsed.mainpage);
             setMainPageConfig(parsed.mainpage as MainPageConfig);
           } else if (parsed.title && parsed.description) {
-            console.log('✅ META: Using parsed data directly as mainpage config');
+            console.log(
+              "✅ META: Using parsed data directly as mainpage config",
+            );
             setMainPageConfig(parsed as unknown as MainPageConfig);
           }
         } catch (error) {
-          console.error('❌ META: Error parsing mainpage JSON:', error);
+          console.error("❌ META: Error parsing mainpage JSON:", error);
         }
       }
     } else {
-      console.log('⚠️ META: No metadata.mainpage value found in form');
+      console.log("⚠️ META: No metadata.mainpage value found in form");
     }
   }, [form]);
 
   // Save changes back to form
   const updateMainPageConfig = (newConfig: MainPageConfig) => {
-    console.log('💾 META: Updating mainPageConfig:', newConfig);
+    console.log("💾 META: Updating mainPageConfig:", newConfig);
     setMainPageConfig(newConfig);
     const metadataValue = {
-      mainpage: newConfig
+      mainpage: newConfig,
     };
     const jsonString = JSON.stringify(metadataValue);
-    console.log('💾 META: Setting form value to:', jsonString);
-    form.setValue('metadata.mainpage', jsonString);
-    console.log('💾 META: Triggering unsaved changes');
+    console.log("💾 META: Setting form value to:", jsonString);
+    form.setValue("metadata.mainpage", jsonString);
+    console.log("💾 META: Triggering unsaved changes");
     onUnsavedChanges(true);
   };
 
@@ -169,7 +185,7 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
     if (newKeyword.trim()) {
       const updatedConfig = {
         ...mainPageConfig,
-        keywords: [...mainPageConfig.keywords, newKeyword.trim()]
+        keywords: [...mainPageConfig.keywords, newKeyword.trim()],
       };
       updateMainPageConfig(updatedConfig);
       setNewKeyword("");
@@ -179,7 +195,7 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
   const removeKeyword = (index: number) => {
     const updatedConfig = {
       ...mainPageConfig,
-      keywords: mainPageConfig.keywords.filter((_, i) => i !== index)
+      keywords: mainPageConfig.keywords.filter((_, i) => i !== index),
     };
     updateMainPageConfig(updatedConfig);
   };
@@ -192,9 +208,9 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
         ...mainPageConfig.openGraph,
         images: [
           ...mainPageConfig.openGraph.images,
-          { url: "", width: 1200, height: 630, alt: "" }
-        ]
-      }
+          { url: "", width: 1200, height: 630, alt: "" },
+        ],
+      },
     };
     updateMainPageConfig(updatedConfig);
   };
@@ -204,8 +220,8 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
       ...mainPageConfig,
       openGraph: {
         ...mainPageConfig.openGraph,
-        images: mainPageConfig.openGraph.images.filter((_, i) => i !== index)
-      }
+        images: mainPageConfig.openGraph.images.filter((_, i) => i !== index),
+      },
     };
     updateMainPageConfig(updatedConfig);
   };
@@ -216,8 +232,8 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
       ...mainPageConfig,
       twitter: {
         ...mainPageConfig.twitter,
-        images: [...mainPageConfig.twitter.images, ""]
-      }
+        images: [...mainPageConfig.twitter.images, ""],
+      },
     };
     updateMainPageConfig(updatedConfig);
   };
@@ -227,8 +243,8 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
       ...mainPageConfig,
       twitter: {
         ...mainPageConfig.twitter,
-        images: mainPageConfig.twitter.images.filter((_, i) => i !== index)
-      }
+        images: mainPageConfig.twitter.images.filter((_, i) => i !== index),
+      },
     };
     updateMainPageConfig(updatedConfig);
   };
@@ -250,7 +266,9 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
 
       {/* Main Page Configuration */}
       <div className="space-y-6">
-        <h3 className="text-lg font-medium">Configuración de Página Principal</h3>
+        <h3 className="text-lg font-medium">
+          Configuración de Página Principal
+        </h3>
 
         {/* Basic SEO */}
         <div className="space-y-4">
@@ -260,10 +278,12 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
               <label className="text-sm font-medium">Título</label>
               <Input
                 value={mainPageConfig.title}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  title: e.target.value
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    title: e.target.value,
+                  })
+                }
                 placeholder="Título de la página"
               />
             </div>
@@ -271,10 +291,12 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
               <label className="text-sm font-medium">Descripción</label>
               <Textarea
                 value={mainPageConfig.description}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  description: e.target.value
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    description: e.target.value,
+                  })
+                }
                 placeholder="Descripción de la página"
                 rows={3}
               />
@@ -287,7 +309,11 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
           <h4 className="text-md font-medium">Palabras Clave</h4>
           <div className="flex flex-wrap gap-2">
             {mainPageConfig.keywords.map((keyword, index) => (
-              <Badge key={index} variant="secondary" className="flex items-center gap-1">
+              <Badge
+                key={index}
+                variant="secondary"
+                className="flex items-center gap-1"
+              >
                 {keyword}
                 <Button
                   type="button"
@@ -306,7 +332,9 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
               value={newKeyword}
               onChange={(e) => setNewKeyword(e.target.value)}
               placeholder="Nueva palabra clave"
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
+              onKeyDown={(e) =>
+                e.key === "Enter" && (e.preventDefault(), addKeyword())
+              }
             />
             <Button type="button" onClick={addKeyword}>
               <Plus className="h-4 w-4" />
@@ -321,46 +349,66 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
             <div className="flex items-center space-x-2">
               <Switch
                 checked={mainPageConfig.robots.index === 1}
-                onCheckedChange={(checked) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  robots: { ...mainPageConfig.robots, index: checked ? 1 : 0 }
-                })}
+                onCheckedChange={(checked) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    robots: {
+                      ...mainPageConfig.robots,
+                      index: checked ? 1 : 0,
+                    },
+                  })
+                }
               />
               <label className="text-sm">Index</label>
             </div>
             <div className="flex items-center space-x-2">
               <Switch
                 checked={mainPageConfig.robots.follow === 1}
-                onCheckedChange={(checked) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  robots: { ...mainPageConfig.robots, follow: checked ? 1 : 0 }
-                })}
+                onCheckedChange={(checked) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    robots: {
+                      ...mainPageConfig.robots,
+                      follow: checked ? 1 : 0,
+                    },
+                  })
+                }
               />
               <label className="text-sm">Follow</label>
             </div>
             <div className="flex items-center space-x-2">
               <Switch
                 checked={mainPageConfig.robots.googleBot.index === 1}
-                onCheckedChange={(checked) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  robots: { 
-                    ...mainPageConfig.robots, 
-                    googleBot: { ...mainPageConfig.robots.googleBot, index: checked ? 1 : 0 }
-                  }
-                })}
+                onCheckedChange={(checked) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    robots: {
+                      ...mainPageConfig.robots,
+                      googleBot: {
+                        ...mainPageConfig.robots.googleBot,
+                        index: checked ? 1 : 0,
+                      },
+                    },
+                  })
+                }
               />
               <label className="text-sm">GoogleBot Index</label>
             </div>
             <div className="flex items-center space-x-2">
               <Switch
                 checked={mainPageConfig.robots.googleBot.follow === 1}
-                onCheckedChange={(checked) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  robots: { 
-                    ...mainPageConfig.robots, 
-                    googleBot: { ...mainPageConfig.robots.googleBot, follow: checked ? 1 : 0 }
-                  }
-                })}
+                onCheckedChange={(checked) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    robots: {
+                      ...mainPageConfig.robots,
+                      googleBot: {
+                        ...mainPageConfig.robots.googleBot,
+                        follow: checked ? 1 : 0,
+                      },
+                    },
+                  })
+                }
               />
               <label className="text-sm">GoogleBot Follow</label>
             </div>
@@ -371,33 +419,37 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
               <Input
                 type="number"
                 value={mainPageConfig.robots.googleBot["max-snippet"]}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  robots: { 
-                    ...mainPageConfig.robots, 
-                    googleBot: { 
-                      ...mainPageConfig.robots.googleBot, 
-                      "max-snippet": parseInt(e.target.value) || -1
-                    }
-                  }
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    robots: {
+                      ...mainPageConfig.robots,
+                      googleBot: {
+                        ...mainPageConfig.robots.googleBot,
+                        "max-snippet": parseInt(e.target.value) || -1,
+                      },
+                    },
+                  })
+                }
               />
             </div>
             <div>
               <label className="text-sm font-medium">Max Image Preview</label>
               <select
-                className="w-full p-2 border rounded"
+                className="w-full rounded border p-2"
                 value={mainPageConfig.robots.googleBot["max-image-preview"]}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  robots: { 
-                    ...mainPageConfig.robots, 
-                    googleBot: { 
-                      ...mainPageConfig.robots.googleBot, 
-                      "max-image-preview": e.target.value
-                    }
-                  }
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    robots: {
+                      ...mainPageConfig.robots,
+                      googleBot: {
+                        ...mainPageConfig.robots.googleBot,
+                        "max-image-preview": e.target.value,
+                      },
+                    },
+                  })
+                }
               >
                 <option value="none">None</option>
                 <option value="standard">Standard</option>
@@ -415,20 +467,30 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
               <label className="text-sm font-medium">Título OG</label>
               <Input
                 value={mainPageConfig.openGraph.title}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  openGraph: { ...mainPageConfig.openGraph, title: e.target.value }
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    openGraph: {
+                      ...mainPageConfig.openGraph,
+                      title: e.target.value,
+                    },
+                  })
+                }
               />
             </div>
             <div>
               <label className="text-sm font-medium">Sitio Web</label>
               <Input
                 value={mainPageConfig.openGraph.siteName}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  openGraph: { ...mainPageConfig.openGraph, siteName: e.target.value }
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    openGraph: {
+                      ...mainPageConfig.openGraph,
+                      siteName: e.target.value,
+                    },
+                  })
+                }
               />
             </div>
           </div>
@@ -436,10 +498,15 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
             <label className="text-sm font-medium">Descripción OG</label>
             <Textarea
               value={mainPageConfig.openGraph.description}
-              onChange={(e) => updateMainPageConfig({
-                ...mainPageConfig,
-                openGraph: { ...mainPageConfig.openGraph, description: e.target.value }
-              })}
+              onChange={(e) =>
+                updateMainPageConfig({
+                  ...mainPageConfig,
+                  openGraph: {
+                    ...mainPageConfig.openGraph,
+                    description: e.target.value,
+                  },
+                })
+              }
               rows={2}
             />
           </div>
@@ -448,40 +515,52 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
               <label className="text-sm font-medium">Tipo</label>
               <Input
                 value={mainPageConfig.openGraph.type}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  openGraph: { ...mainPageConfig.openGraph, type: e.target.value }
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    openGraph: {
+                      ...mainPageConfig.openGraph,
+                      type: e.target.value,
+                    },
+                  })
+                }
               />
             </div>
             <div>
               <label className="text-sm font-medium">Locale</label>
               <Input
                 value={mainPageConfig.openGraph.locale}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  openGraph: { ...mainPageConfig.openGraph, locale: e.target.value }
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    openGraph: {
+                      ...mainPageConfig.openGraph,
+                      locale: e.target.value,
+                    },
+                  })
+                }
               />
             </div>
           </div>
 
           {/* OpenGraph Images */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
               <label className="text-sm font-medium">Imágenes Open Graph</label>
               <Button type="button" onClick={addOgImage} size="sm">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
             {mainPageConfig.openGraph.images.map((image, index) => (
-              <div key={index} className="border p-4 rounded space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Imagen {index + 1}</span>
+              <div key={index} className="space-y-2 rounded border p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    Imagen {index + 1}
+                  </span>
                   {mainPageConfig.openGraph.images.length > 1 && (
-                    <Button 
-                      type="button" 
-                      variant="destructive" 
+                    <Button
+                      type="button"
+                      variant="destructive"
                       size="sm"
                       onClick={() => removeOgImage(index)}
                     >
@@ -495,11 +574,19 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
                       placeholder="URL de la imagen"
                       value={image.url}
                       onChange={(e) => {
-                        const updatedImages = [...mainPageConfig.openGraph.images];
-                        updatedImages[index] = { ...image, url: e.target.value };
+                        const updatedImages = [
+                          ...mainPageConfig.openGraph.images,
+                        ];
+                        updatedImages[index] = {
+                          ...image,
+                          url: e.target.value,
+                        };
                         updateMainPageConfig({
                           ...mainPageConfig,
-                          openGraph: { ...mainPageConfig.openGraph, images: updatedImages }
+                          openGraph: {
+                            ...mainPageConfig.openGraph,
+                            images: updatedImages,
+                          },
                         });
                       }}
                     />
@@ -509,11 +596,19 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
                     placeholder="Ancho"
                     value={image.width}
                     onChange={(e) => {
-                      const updatedImages = [...mainPageConfig.openGraph.images];
-                      updatedImages[index] = { ...image, width: parseInt(e.target.value) || 1200 };
+                      const updatedImages = [
+                        ...mainPageConfig.openGraph.images,
+                      ];
+                      updatedImages[index] = {
+                        ...image,
+                        width: parseInt(e.target.value) || 1200,
+                      };
                       updateMainPageConfig({
                         ...mainPageConfig,
-                        openGraph: { ...mainPageConfig.openGraph, images: updatedImages }
+                        openGraph: {
+                          ...mainPageConfig.openGraph,
+                          images: updatedImages,
+                        },
                       });
                     }}
                   />
@@ -522,11 +617,19 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
                     placeholder="Alto"
                     value={image.height}
                     onChange={(e) => {
-                      const updatedImages = [...mainPageConfig.openGraph.images];
-                      updatedImages[index] = { ...image, height: parseInt(e.target.value) || 630 };
+                      const updatedImages = [
+                        ...mainPageConfig.openGraph.images,
+                      ];
+                      updatedImages[index] = {
+                        ...image,
+                        height: parseInt(e.target.value) || 630,
+                      };
                       updateMainPageConfig({
                         ...mainPageConfig,
-                        openGraph: { ...mainPageConfig.openGraph, images: updatedImages }
+                        openGraph: {
+                          ...mainPageConfig.openGraph,
+                          images: updatedImages,
+                        },
                       });
                     }}
                   />
@@ -535,11 +638,19 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
                       placeholder="Texto alternativo"
                       value={image.alt}
                       onChange={(e) => {
-                        const updatedImages = [...mainPageConfig.openGraph.images];
-                        updatedImages[index] = { ...image, alt: e.target.value };
+                        const updatedImages = [
+                          ...mainPageConfig.openGraph.images,
+                        ];
+                        updatedImages[index] = {
+                          ...image,
+                          alt: e.target.value,
+                        };
                         updateMainPageConfig({
                           ...mainPageConfig,
-                          openGraph: { ...mainPageConfig.openGraph, images: updatedImages }
+                          openGraph: {
+                            ...mainPageConfig.openGraph,
+                            images: updatedImages,
+                          },
                         });
                       }}
                     />
@@ -557,12 +668,17 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
             <div>
               <label className="text-sm font-medium">Tipo de Card</label>
               <select
-                className="w-full p-2 border rounded"
+                className="w-full rounded border p-2"
                 value={mainPageConfig.twitter.card}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  twitter: { ...mainPageConfig.twitter, card: e.target.value }
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    twitter: {
+                      ...mainPageConfig.twitter,
+                      card: e.target.value,
+                    },
+                  })
+                }
               >
                 <option value="summary">Summary</option>
                 <option value="summary_large_image">Summary Large Image</option>
@@ -574,34 +690,44 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
               <label className="text-sm font-medium">Título Twitter</label>
               <Input
                 value={mainPageConfig.twitter.title}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  twitter: { ...mainPageConfig.twitter, title: e.target.value }
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    twitter: {
+                      ...mainPageConfig.twitter,
+                      title: e.target.value,
+                    },
+                  })
+                }
               />
             </div>
             <div>
               <label className="text-sm font-medium">Descripción Twitter</label>
               <Textarea
                 value={mainPageConfig.twitter.description}
-                onChange={(e) => updateMainPageConfig({
-                  ...mainPageConfig,
-                  twitter: { ...mainPageConfig.twitter, description: e.target.value }
-                })}
+                onChange={(e) =>
+                  updateMainPageConfig({
+                    ...mainPageConfig,
+                    twitter: {
+                      ...mainPageConfig.twitter,
+                      description: e.target.value,
+                    },
+                  })
+                }
                 rows={2}
               />
             </div>
 
             {/* Twitter Images */}
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <label className="text-sm font-medium">Imágenes Twitter</label>
                 <Button type="button" onClick={addTwitterImage} size="sm">
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
               {mainPageConfig.twitter.images.map((image, index) => (
-                <div key={index} className="flex gap-2 mb-2">
+                <div key={index} className="mb-2 flex gap-2">
                   <Input
                     placeholder="URL de la imagen"
                     value={image}
@@ -610,14 +736,17 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
                       updatedImages[index] = e.target.value;
                       updateMainPageConfig({
                         ...mainPageConfig,
-                        twitter: { ...mainPageConfig.twitter, images: updatedImages }
+                        twitter: {
+                          ...mainPageConfig.twitter,
+                          images: updatedImages,
+                        },
                       });
                     }}
                   />
                   {mainPageConfig.twitter.images.length > 1 && (
-                    <Button 
-                      type="button" 
-                      variant="destructive" 
+                    <Button
+                      type="button"
+                      variant="destructive"
                       size="sm"
                       onClick={() => removeTwitterImage(index)}
                     >
@@ -637,10 +766,12 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
             <label className="text-sm font-medium">URL Canónica</label>
             <Input
               value={mainPageConfig.alternates.canonical}
-              onChange={(e) => updateMainPageConfig({
-                ...mainPageConfig,
-                alternates: { canonical: e.target.value }
-              })}
+              onChange={(e) =>
+                updateMainPageConfig({
+                  ...mainPageConfig,
+                  alternates: { canonical: e.target.value },
+                })
+              }
               placeholder="/"
             />
           </div>
@@ -650,7 +781,7 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
       {/* Raw JSON Editor */}
       <Separator />
       <div className="space-y-4">
-        <h4 className="text-md font-medium flex items-center gap-2">
+        <h4 className="text-md flex items-center gap-2 font-medium">
           <Edit3 className="h-4 w-4" />
           Editor JSON Raw (Avanzado)
         </h4>
@@ -660,11 +791,16 @@ export function MetaSection({ form, isActive, onUnsavedChanges }: MetaSectionPro
           render={({ field }) => (
             <FormItem>
               <FormDescription>
-                Configuración completa en formato JSON. Los cambios aquí sobrescribirán la configuración visual anterior.
+                Configuración completa en formato JSON. Los cambios aquí
+                sobrescribirán la configuración visual anterior.
               </FormDescription>
               <FormControl>
-                <Textarea 
-                  value={typeof field.value === 'string' ? field.value : JSON.stringify(field.value, null, 2)}
+                <Textarea
+                  value={
+                    typeof field.value === "string"
+                      ? field.value
+                      : JSON.stringify(field.value, null, 2)
+                  }
                   onChange={(e) => field.onChange(e.target.value)}
                   onBlur={field.onBlur}
                   name={field.name}

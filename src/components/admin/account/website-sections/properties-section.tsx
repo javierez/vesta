@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Building } from "lucide-react";
 import {
@@ -10,11 +9,15 @@ import {
 import { Input } from "~/components/ui/input";
 import type { PropertiesSectionProps } from "../types/website-sections";
 
-export function PropertiesSection({ form, isActive, onUnsavedChanges }: PropertiesSectionProps) {
+export function PropertiesSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+}: PropertiesSectionProps) {
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('propertiesProps')) {
+      if (name?.startsWith("propertiesProps")) {
         onUnsavedChanges(true);
       }
     });
@@ -59,7 +62,10 @@ export function PropertiesSection({ form, isActive, onUnsavedChanges }: Properti
             <FormItem>
               <FormLabel>Subtítulo</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Encuentra la propiedad perfecta para ti" />
+                <Input
+                  {...field}
+                  placeholder="Encuentra la propiedad perfecta para ti"
+                />
               </FormControl>
             </FormItem>
           )}
@@ -73,11 +79,13 @@ export function PropertiesSection({ form, isActive, onUnsavedChanges }: Properti
             <FormItem>
               <FormLabel>Propiedades por Página</FormLabel>
               <FormControl>
-                <Input 
-                  {...field} 
-                  type="number" 
+                <Input
+                  {...field}
+                  type="number"
                   placeholder="12"
-                  onChange={(e) => field.onChange(parseInt(e.target.value) || 12)}
+                  onChange={(e) =>
+                    field.onChange(parseInt(e.target.value) || 12)
+                  }
                 />
               </FormControl>
             </FormItem>
@@ -92,8 +100,8 @@ export function PropertiesSection({ form, isActive, onUnsavedChanges }: Properti
             <FormItem>
               <FormLabel>Ordenamiento por defecto</FormLabel>
               <FormControl>
-                <select 
-                  {...field} 
+                <select
+                  {...field}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                 >
                   <option value="price-desc">Precio: Mayor a menor</option>

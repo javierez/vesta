@@ -8,7 +8,10 @@ import { useSearchParams } from "next/navigation";
 
 import { ContactFilter } from "~/components/contactos/table-components/contact-filter";
 import { ContactSpreadsheetTable } from "~/components/contactos/table/contact-table";
-import { listContactsWithTypesWithAuth } from "~/server/queries/contact";
+import {
+  listContactsOwnerDataWithAuth,
+  listContactsBuyerDataWithAuth,
+} from "~/server/queries/contact";
 import type { Contact } from "~/lib/data";
 
 // Extended Contact type to include contactType for the UI
@@ -34,16 +37,24 @@ interface ExtendedContact extends Omit<Contact, "contactType"> {
   }>;
 }
 
-// Type for a contact returned by listContactsWithTypes
-type DbContact = Omit<Contact, "contactType"> & {
+// Type for a contact returned by optimized queries - only fields we actually fetch and use
+type DbContact = {
+  contactId: bigint;
+  firstName: string;
+  lastName: string;
   email?: string | null;
-  orgId?: bigint | null;
+  phone?: string | null;
+  additionalInfo?: Record<string, unknown> | null;
+  isActive: boolean;
+  updatedAt: Date;
+  // Computed role counts and flags
   ownerCount?: number;
   buyerCount?: number;
   prospectCount?: number;
   isOwner?: boolean;
   isBuyer?: boolean;
   isInteresado?: boolean;
+  // Additional processed data
   prospectTitles?: string[];
   allListings?: Array<{
     listingId: bigint;
@@ -58,8 +69,10 @@ type DbContact = Omit<Contact, "contactType"> & {
 
 export default function ContactsPage() {
   const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(true);
-  const [contactsList, setContactsList] = useState<ExtendedContact[]>([]);
+
+  // Simplified single-state approach since URL changes trigger re-fetch anyway
+  const [contacts, setContacts] = useState<ExtendedContact[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get filter parameters from URL
   const getFiltersFromUrl = useCallback(() => {
@@ -76,82 +89,93 @@ export default function ContactsPage() {
     };
   }, [searchParams]);
 
+  // Helper function to process raw contact data
+  const processContactsData = useCallback(
+    (
+      rawContacts: DbContact[],
+      filters: ReturnType<typeof getFiltersFromUrl>,
+    ): ExtendedContact[] => {
+      // Transform to ExtendedContact format
+      const extendedContacts: ExtendedContact[] = (rawContacts as DbContact[]).map((contact) => ({
+        contactId: contact.contactId,
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        email: contact.email ?? undefined,
+        phone: contact.phone ?? undefined,
+        additionalInfo: contact.additionalInfo ?? undefined,
+        isActive: contact.isActive,
+        createdAt: new Date(), // Default value since not fetched  
+        updatedAt: contact.updatedAt,
+        ownerCount: contact.ownerCount,
+        buyerCount: contact.buyerCount,
+        prospectCount: contact.prospectCount,
+        isOwner: contact.isOwner,
+        isBuyer: contact.isBuyer,
+        isInteresado: contact.isInteresado,
+        prospectTitles: contact.prospectTitles ?? [],
+        allListings: contact.allListings ?? [],
+      }));
+
+      // Apply sorting
+      return extendedContacts.sort((a, b) => {
+        if (filters.sortOrder === "lastContact") {
+          const aDate = a.updatedAt || new Date(0);
+          const bDate = b.updatedAt || new Date(0);
+          return bDate.getTime() - aDate.getTime();
+        } else {
+          const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
+          const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
+          return aName.localeCompare(bName);
+        }
+      });
+    },
+    [],
+  );
+
   useEffect(() => {
-    const fetchContacts = async () => {
+    const filters = getFiltersFromUrl();
+    const isOwnerView = filters.roles.includes("owner");
+
+    // Fetch appropriate data based on current URL filter
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const filters = getFiltersFromUrl();
+        // Use the appropriate optimized query based on view
+        const rawContacts = isOwnerView 
+          ? await listContactsOwnerDataWithAuth(1, 100, {
+              searchQuery: filters.searchQuery,
+              roles: ["owner"],
+              lastContactFilter: filters.lastContactFilter,
+            })
+          : await listContactsBuyerDataWithAuth(1, 100, {
+              searchQuery: filters.searchQuery,
+              roles: ["buyer"],
+              lastContactFilter: filters.lastContactFilter,
+            });
 
-        // Fetch contacts from the database with filters
-        const rawContacts = await listContactsWithTypesWithAuth(1, 100, {
-          searchQuery: filters.searchQuery,
-          roles: filters.roles,
-          lastContactFilter: filters.lastContactFilter,
-        });
-        // Type assertion for safety
-        const dbContacts: DbContact[] = (rawContacts as DbContact[]).map(
-          (c) => ({
-            ...c,
-            email: c.email ?? undefined,
-            orgId: c.orgId ?? undefined,
-          }),
+        // Process and sort contacts
+        const processedContacts = processContactsData(
+          rawContacts as DbContact[],
+          filters,
         );
-
-        // Use the data directly from the query
-        const extendedContacts: ExtendedContact[] = dbContacts.map(
-          (contact) => ({
-            contactId: contact.contactId,
-            firstName: contact.firstName,
-            lastName: contact.lastName,
-            // Ensure email is undefined if null
-            email: contact.email ?? undefined,
-            phone: contact.phone,
-            additionalInfo: contact.additionalInfo,
-            // Ensure orgId is undefined if null
-            orgId: contact.orgId ?? undefined,
-            isActive: contact.isActive,
-            createdAt: contact.createdAt,
-            updatedAt: contact.updatedAt,
-            ownerCount: contact.ownerCount,
-            buyerCount: contact.buyerCount,
-            prospectCount: contact.prospectCount,
-            isOwner: contact.isOwner,
-            isBuyer: contact.isBuyer,
-            isInteresado: contact.isInteresado,
-            prospectTitles: contact.prospectTitles ?? [], // Use nullish coalescing
-            allListings: contact.allListings ?? [], // Use nullish coalescing
-          }),
-        );
-
-        // Apply sorting
-        const sortedContacts = extendedContacts.sort((a, b) => {
-          if (filters.sortOrder === "lastContact") {
-            // Sort by last contact date (most recent first)
-            const aDate = a.updatedAt || new Date(0);
-            const bDate = b.updatedAt || new Date(0);
-            return bDate.getTime() - aDate.getTime();
-          } else {
-            // Default alphabetical sort by full name
-            const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
-            const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
-            return aName.localeCompare(bName);
-          }
-        });
-
-        setContactsList(sortedContacts);
+        setContacts(processedContacts);
       } catch (error) {
         console.error("Error fetching contacts:", error);
-        // Fallback to empty array if there's an error
-        setContactsList([]);
+        setContacts([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    void fetchContacts(); // Mark as intentionally unhandled
-  }, [searchParams, getFiltersFromUrl]); // getFiltersFromUrl is now stable
+    void fetchData();
+  }, [searchParams, getFiltersFromUrl, processContactsData]); // Re-fetch when URL parameters change
 
-  // Removed unused eslint-disable directive
+  // Get current filter for passing to table component
+  const currentFilter = getFiltersFromUrl().roles;
+
+  // Show skeleton only if loading and no data exists
+  const showSkeleton = isLoading && contacts.length === 0;
+
   const handleFilterChange = (_filters: {
     searchQuery: string;
     roles: string[];
@@ -184,7 +208,7 @@ export default function ContactsPage() {
 
       <ContactFilter onFilterChange={handleFilterChange} />
 
-      {isLoading ? (
+      {showSkeleton ? (
         <div className="space-y-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="h-16 animate-pulse rounded bg-muted" />
@@ -193,8 +217,8 @@ export default function ContactsPage() {
       ) : (
         <div className="space-y-6">
           <ContactSpreadsheetTable
-            contacts={contactsList}
-            currentFilter={getFiltersFromUrl().roles}
+            contacts={contacts}
+            currentFilter={currentFilter}
           />
         </div>
       )}

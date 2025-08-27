@@ -31,21 +31,21 @@ import { MetaSection } from "./website-sections/meta-section";
 export function WebsiteConfiguration() {
   const { data: session } = useSession();
   const [activeSection, setActiveSection] = useState("seo");
-  
+
   // Use custom hooks for form and save operations
-  const { 
-    form, 
-    loading, 
-    error: formError, 
-    hasUnsavedChanges, 
-    setHasUnsavedChanges, 
-    accountId 
+  const {
+    form,
+    loading,
+    error: formError,
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
+    accountId,
   } = useWebsiteForm(session?.user?.id);
-  
-  const { 
-    isPending, 
-    error: saveError, 
-    saveAll 
+
+  const {
+    isPending,
+    error: saveError,
+    saveAll,
   } = useWebsiteSave(form, accountId, () => setHasUnsavedChanges(false));
 
   // Combined error state
@@ -85,8 +85,8 @@ export function WebsiteConfiguration() {
   return (
     <div className="relative flex h-auto flex-col overflow-hidden rounded-2xl bg-white shadow-sm lg:h-[700px] lg:flex-row">
       {/* Sidebar Navigation */}
-      <WebsiteSidebar 
-        activeSection={activeSection} 
+      <WebsiteSidebar
+        activeSection={activeSection}
         onSectionChange={setActiveSection}
         hasUnsavedChanges={hasUnsavedChanges}
       />
@@ -106,76 +106,76 @@ export function WebsiteConfiguration() {
         <Form {...form}>
           <form className="p-4 pb-16 lg:p-8 lg:pb-8">
             {/* Section Components */}
-            <SEOSection 
-              form={form} 
+            <SEOSection
+              form={form}
               isActive={activeSection === "seo"}
               onUnsavedChanges={handleUnsavedChanges}
             />
-            
-            <BrandingSection 
-              form={form} 
+
+            <BrandingSection
+              form={form}
               isActive={activeSection === "branding"}
               onUnsavedChanges={handleUnsavedChanges}
             />
-            
-            <SocialSection 
-              form={form} 
+
+            <SocialSection
+              form={form}
               isActive={activeSection === "social"}
               onUnsavedChanges={handleUnsavedChanges}
             />
-            
-            <HeroSection 
-              form={form} 
+
+            <HeroSection
+              form={form}
               isActive={activeSection === "hero"}
               onUnsavedChanges={handleUnsavedChanges}
             />
-            
-            <FeaturedSection 
-              form={form} 
+
+            <FeaturedSection
+              form={form}
               isActive={activeSection === "featured"}
               onUnsavedChanges={handleUnsavedChanges}
             />
-            
-            <AboutSection 
-              form={form} 
+
+            <AboutSection
+              form={form}
               isActive={activeSection === "about"}
               onUnsavedChanges={handleUnsavedChanges}
             />
-            
-            <PropertiesSection 
-              form={form} 
+
+            <PropertiesSection
+              form={form}
               isActive={activeSection === "properties"}
               onUnsavedChanges={handleUnsavedChanges}
             />
-            
-            <TestimonialsSection 
-              form={form} 
+
+            <TestimonialsSection
+              form={form}
               isActive={activeSection === "testimonials"}
               onUnsavedChanges={handleUnsavedChanges}
               accountId={accountId}
             />
-            
-            <ContactSection 
-              form={form} 
+
+            <ContactSection
+              form={form}
               isActive={activeSection === "contact"}
               onUnsavedChanges={handleUnsavedChanges}
               accountId={accountId}
             />
-            
-            <FooterSection 
-              form={form} 
+
+            <FooterSection
+              form={form}
               isActive={activeSection === "footer"}
               onUnsavedChanges={handleUnsavedChanges}
             />
-            
-            <HeadSection 
-              form={form} 
+
+            <HeadSection
+              form={form}
               isActive={activeSection === "head"}
               onUnsavedChanges={handleUnsavedChanges}
             />
-            
-            <MetaSection 
-              form={form} 
+
+            <MetaSection
+              form={form}
               isActive={activeSection === "meta"}
               onUnsavedChanges={handleUnsavedChanges}
             />

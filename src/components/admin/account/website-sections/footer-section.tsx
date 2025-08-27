@@ -12,11 +12,15 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import type { FooterSectionProps } from "../types/website-sections";
 
-export function FooterSection({ form, isActive, onUnsavedChanges }: FooterSectionProps) {
+export function FooterSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+}: FooterSectionProps) {
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('footerProps')) {
+      if (name?.startsWith("footerProps")) {
         onUnsavedChanges(true);
       }
     });
@@ -61,8 +65,8 @@ export function FooterSection({ form, isActive, onUnsavedChanges }: FooterSectio
               <FormItem>
                 <FormLabel>Descripción</FormLabel>
                 <FormControl>
-                  <Textarea 
-                    {...field} 
+                  <Textarea
+                    {...field}
                     placeholder="Tu socio de confianza para encontrar la propiedad perfecta..."
                     rows={3}
                   />
@@ -78,7 +82,10 @@ export function FooterSection({ form, isActive, onUnsavedChanges }: FooterSectio
               <FormItem>
                 <FormLabel>Texto de Copyright</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="© 2024 Mi Inmobiliaria. Todos los derechos reservados." />
+                  <Input
+                    {...field}
+                    placeholder="© 2024 Mi Inmobiliaria. Todos los derechos reservados."
+                  />
                 </FormControl>
               </FormItem>
             )}
@@ -87,7 +94,9 @@ export function FooterSection({ form, isActive, onUnsavedChanges }: FooterSectio
 
         {/* Quick Links Visibility - PRESERVE complex nested object handling */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Enlaces Rápidos</h3>
+          <h3 className="mb-3 text-sm font-medium text-gray-700">
+            Enlaces Rápidos
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -165,7 +174,9 @@ export function FooterSection({ form, isActive, onUnsavedChanges }: FooterSectio
 
         {/* Property Types Visibility - PRESERVE complex nested object handling */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Tipos de Propiedades</h3>
+          <h3 className="mb-3 text-sm font-medium text-gray-700">
+            Tipos de Propiedades
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}

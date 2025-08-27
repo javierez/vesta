@@ -12,7 +12,7 @@ export interface ModuleState {
 }
 
 // Generic module names type - can be extended by specific forms
-export type BaseModuleName = 
+export type BaseModuleName =
   | "basicInfo"
   | "propertyDetails"
   | "location"
@@ -28,38 +28,43 @@ export type BaseModuleName =
  */
 export function useModuleStates<T extends string>(
   hasPropertyTypeChanged: boolean,
-  moduleNames: T[]
+  moduleNames: T[],
 ): {
   moduleStates: Record<T, ModuleState>;
   setModuleStates: React.Dispatch<React.SetStateAction<Record<T, ModuleState>>>;
   updateModuleState: (moduleName: T, hasChanges: boolean) => void;
 } {
-  const [moduleStates, setModuleStates] = useState<Record<T, ModuleState>>(() => {
-    const initialState = {} as Record<T, ModuleState>;
-    
-    // Initialize all modules with idle state
-    moduleNames.forEach(moduleName => {
-      initialState[moduleName] = {
-        saveState: "idle" as SaveState,
-        hasChanges: moduleName === 'basicInfo' ? Boolean(hasPropertyTypeChanged) : false,
-      };
-    });
+  const [moduleStates, setModuleStates] = useState<Record<T, ModuleState>>(
+    () => {
+      const initialState = {} as Record<T, ModuleState>;
 
-    // Set basicInfo to modified if property type changed
-    if (hasPropertyTypeChanged && initialState['basicInfo' as T]) {
-      initialState['basicInfo' as T].saveState = "modified";
-    }
+      // Initialize all modules with idle state
+      moduleNames.forEach((moduleName) => {
+        initialState[moduleName] = {
+          saveState: "idle" as SaveState,
+          hasChanges:
+            moduleName === "basicInfo"
+              ? Boolean(hasPropertyTypeChanged)
+              : false,
+        };
+      });
 
-    return initialState;
-  });
+      // Set basicInfo to modified if property type changed
+      if (hasPropertyTypeChanged && initialState["basicInfo" as T]) {
+        initialState["basicInfo" as T].saveState = "modified";
+      }
+
+      return initialState;
+    },
+  );
 
   // Update module states when property type change is detected
   useEffect(() => {
     if (hasPropertyTypeChanged) {
       setModuleStates((prev) => ({
         ...prev,
-        ['basicInfo' as T]: {
-          ...prev['basicInfo' as T],
+        ["basicInfo" as T]: {
+          ...prev["basicInfo" as T],
           saveState: "modified",
           hasChanges: true,
         },
@@ -116,7 +121,7 @@ export function getCardStyles(state: SaveState): string {
  */
 export function setModuleSaving<T extends string>(
   setModuleStates: React.Dispatch<React.SetStateAction<Record<T, ModuleState>>>,
-  moduleName: T
+  moduleName: T,
 ): void {
   setModuleStates((prev) => {
     const currentState = prev[moduleName] ?? {
@@ -136,12 +141,12 @@ export function setModuleSaving<T extends string>(
 
 /**
  * Update module state to indicate successful save
- * @param setModuleStates - State setter function  
+ * @param setModuleStates - State setter function
  * @param moduleName - Name of the module that was saved
  */
 export function setModuleSaved<T extends string>(
   setModuleStates: React.Dispatch<React.SetStateAction<Record<T, ModuleState>>>,
-  moduleName: T
+  moduleName: T,
 ): void {
   setModuleStates((prev) => ({
     ...prev,
@@ -161,7 +166,7 @@ export function setModuleSaved<T extends string>(
  */
 export function setModuleError<T extends string>(
   setModuleStates: React.Dispatch<React.SetStateAction<Record<T, ModuleState>>>,
-  moduleName: T
+  moduleName: T,
 ): void {
   setModuleStates((prev) => ({
     ...prev,
@@ -180,11 +185,11 @@ export function setModuleError<T extends string>(
  */
 export function checkPropertyTypeChanged(
   listing: { propertyType?: string },
-  searchParams: URLSearchParams | null
+  searchParams: URLSearchParams | null,
 ): boolean {
   return Boolean(
     listing.propertyType &&
-    searchParams?.get("type") &&
-    listing.propertyType !== searchParams.get("type")
+      searchParams?.get("type") &&
+      listing.propertyType !== searchParams.get("type"),
   );
 }

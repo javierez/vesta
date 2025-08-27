@@ -13,11 +13,15 @@ import { Textarea } from "~/components/ui/textarea";
 import { KPIConfiguration } from "./components/kpi-configuration";
 import type { AboutSectionProps } from "../types/website-sections";
 
-export function AboutSection({ form, isActive, onUnsavedChanges }: AboutSectionProps) {
+export function AboutSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+}: AboutSectionProps) {
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('aboutProps')) {
+      if (name?.startsWith("aboutProps")) {
         onUnsavedChanges(true);
       }
     });
@@ -62,7 +66,10 @@ export function AboutSection({ form, isActive, onUnsavedChanges }: AboutSectionP
             <FormItem>
               <FormLabel>Subtítulo</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Tu socio de confianza en el viaje inmobiliario" />
+                <Input
+                  {...field}
+                  placeholder="Tu socio de confianza en el viaje inmobiliario"
+                />
               </FormControl>
             </FormItem>
           )}
@@ -76,8 +83,8 @@ export function AboutSection({ form, isActive, onUnsavedChanges }: AboutSectionP
             <FormItem>
               <FormLabel>Contenido Principal</FormLabel>
               <FormControl>
-                <Textarea 
-                  {...field} 
+                <Textarea
+                  {...field}
                   placeholder="En nuestra inmobiliaria, creemos que encontrar la propiedad perfecta..."
                   rows={4}
                 />
@@ -94,8 +101,8 @@ export function AboutSection({ form, isActive, onUnsavedChanges }: AboutSectionP
             <FormItem>
               <FormLabel>Contenido Secundario</FormLabel>
               <FormControl>
-                <Textarea 
-                  {...field} 
+                <Textarea
+                  {...field}
                   placeholder="Nuestro enfoque personalizado y atención al detalle..."
                   rows={4}
                 />
@@ -112,7 +119,10 @@ export function AboutSection({ form, isActive, onUnsavedChanges }: AboutSectionP
             <FormItem>
               <FormLabel>Imagen</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="https://ejemplo.com/nosotros.jpg" />
+                <Input
+                  {...field}
+                  placeholder="https://ejemplo.com/nosotros.jpg"
+                />
               </FormControl>
             </FormItem>
           )}
@@ -163,17 +173,19 @@ export function AboutSection({ form, isActive, onUnsavedChanges }: AboutSectionP
 
         {/* KPI Configuration - INTEGRATE KpiConfiguration sub-component */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Indicadores Clave (KPIs)</h3>
+          <h3 className="mb-3 text-sm font-medium text-gray-700">
+            Indicadores Clave (KPIs)
+          </h3>
           <KPIConfiguration form={form} />
         </div>
 
         {/* Services Configuration */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Servicios</h3>
-          <p className="text-sm text-gray-600 mb-4">
+          <h3 className="mb-3 text-sm font-medium text-gray-700">Servicios</h3>
+          <p className="mb-4 text-sm text-gray-600">
             Los servicios se pueden configurar desde el panel de administración.
           </p>
-          
+
           <FormField
             control={form.control}
             name="aboutProps.maxServicesDisplayed"
@@ -181,11 +193,13 @@ export function AboutSection({ form, isActive, onUnsavedChanges }: AboutSectionP
               <FormItem>
                 <FormLabel>Máximo de servicios a mostrar</FormLabel>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    type="number" 
+                  <Input
+                    {...field}
+                    type="number"
                     placeholder="6"
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 6)}
+                    onChange={(e) =>
+                      field.onChange(parseInt(e.target.value) || 6)
+                    }
                   />
                 </FormControl>
               </FormItem>

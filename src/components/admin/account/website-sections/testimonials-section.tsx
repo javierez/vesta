@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { MessageSquare } from "lucide-react";
 import {
@@ -11,11 +10,16 @@ import { Input } from "~/components/ui/input";
 import { TestimonialManager } from "./components/testimonial-manager";
 import type { TestimonialsSectionProps } from "../types/website-sections";
 
-export function TestimonialsSection({ form, isActive, onUnsavedChanges, accountId }: TestimonialsSectionProps) {
+export function TestimonialsSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+  accountId,
+}: TestimonialsSectionProps) {
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('testimonialProps')) {
+      if (name?.startsWith("testimonialProps")) {
         onUnsavedChanges(true);
       }
     });
@@ -47,7 +51,10 @@ export function TestimonialsSection({ form, isActive, onUnsavedChanges, accountI
               <FormItem>
                 <FormLabel>Título de la Sección</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Lo que dicen nuestros clientes" />
+                  <Input
+                    {...field}
+                    placeholder="Lo que dicen nuestros clientes"
+                  />
                 </FormControl>
               </FormItem>
             )}
@@ -60,7 +67,10 @@ export function TestimonialsSection({ form, isActive, onUnsavedChanges, accountI
               <FormItem>
                 <FormLabel>Subtítulo</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Experiencias reales de nuestros clientes satisfechos" />
+                  <Input
+                    {...field}
+                    placeholder="Experiencias reales de nuestros clientes satisfechos"
+                  />
                 </FormControl>
               </FormItem>
             )}
@@ -68,12 +78,7 @@ export function TestimonialsSection({ form, isActive, onUnsavedChanges, accountI
         </div>
 
         {/* INTEGRATE TestimonialManager for complex CRUD operations */}
-        {accountId && (
-          <TestimonialManager 
-            form={form} 
-            accountId={accountId}
-          />
-        )}
+        {accountId && <TestimonialManager form={form} accountId={accountId} />}
       </div>
     </div>
   );

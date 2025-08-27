@@ -876,7 +876,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
           </div>
         </TabsContent>
       )}
-      
+
       {/* Add Property Dialog */}
       <AddPropertyDialog
         open={showAddPropertyDialog}

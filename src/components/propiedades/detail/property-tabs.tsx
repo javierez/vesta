@@ -7,9 +7,7 @@ import { PortalSelection } from "./portal-selection";
 import { EnergyCertificate } from "./energy-certificate";
 import { DocumentsManager } from "./documents-manager";
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form";
-import {
-  CharacteristicsSkeleton,
-} from "./skeletons";
+import { CharacteristicsSkeleton } from "./skeletons";
 import { useSession } from "~/lib/auth-client";
 import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
@@ -86,8 +84,7 @@ export function PropertyTabs({
         `/api/properties/${listing.listingId}/characteristics`,
       );
       if (response.ok) {
-        const characteristicsData =
-          (await response.json()) as PropertyListing;
+        const characteristicsData = (await response.json()) as PropertyListing;
         setTabData((prev) => ({
           ...prev,
           convertedListing: characteristicsData,
@@ -175,7 +172,7 @@ export function PropertyTabs({
               listing={tabData.convertedListing ?? convertedListing!}
             />
           ) : (
-            <div className="text-center py-8">
+            <div className="py-8 text-center">
               <p>No se pudo cargar la información de la propiedad</p>
             </div>
           )}

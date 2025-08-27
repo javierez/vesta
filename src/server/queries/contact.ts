@@ -163,7 +163,7 @@ export async function getDraftContacts(accountId: number) {
           // Draft contacts have no buyer relationships
           sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) = 0`,
           // Draft contacts have no prospects
-          sql`(SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId}) = 0`
+          sql`(SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId}) = 0`,
         ),
       )
       .orderBy(contacts.createdAt);
@@ -211,7 +211,11 @@ export async function deleteDraftContact(contactId: number, accountId: number) {
     }
 
     // Only delete if it's truly a draft (no relationships)
-    if (contact.ownerCount > 0 || contact.buyerCount > 0 || contact.prospectCount > 0) {
+    if (
+      contact.ownerCount > 0 ||
+      contact.buyerCount > 0 ||
+      contact.prospectCount > 0
+    ) {
       throw new Error("Cannot delete contact with existing relationships");
     }
 
@@ -738,7 +742,7 @@ export async function listContactsWithTypes(
         const contactId = contact.contactId.toString();
         const contactProspects = prospectsByContact[contactId] ?? [];
         const allContactListings = listingsByContact[contactId] ?? [];
-        
+
         // Filter listings based on the role filter
         let filteredListings = allContactListings;
         if (filters?.roles && filters.roles.length > 0) {
@@ -1121,10 +1125,7 @@ export async function getContactByIdWithType(
 }
 
 // Get listings owned by a specific contact
-export async function getOwnerListings(
-  contactId: number,
-  accountId: number,
-) {
+export async function getOwnerListings(contactId: number, accountId: number) {
   try {
     const contactListings = await db
       .select({
@@ -1224,10 +1225,7 @@ export async function getOwnerListings(
 }
 
 // Get listings where a specific contact is the buyer
-export async function getBuyerListings(
-  contactId: number,
-  accountId: number,
-) {
+export async function getBuyerListings(contactId: number, accountId: number) {
   try {
     const contactListings = await db
       .select({
@@ -1335,11 +1333,11 @@ export async function getBuyerListings(
 export async function addListingContactRelationshipWithAuth(
   contactId: number,
   listingId: number,
-  contactType: "buyer" | "owner" = "buyer"
+  contactType: "buyer" | "owner" = "buyer",
 ) {
   try {
     const accountId = await getCurrentUserAccountId();
-    
+
     // Verify the contact exists and belongs to this account
     const contact = await getContactById(contactId, accountId);
     if (!contact) {
@@ -1354,8 +1352,8 @@ export async function addListingContactRelationshipWithAuth(
         and(
           eq(listings.listingId, BigInt(listingId)),
           eq(listings.accountId, BigInt(accountId)),
-          eq(listings.isActive, true)
-        )
+          eq(listings.isActive, true),
+        ),
       );
 
     if (!listing) {
@@ -1371,8 +1369,8 @@ export async function addListingContactRelationshipWithAuth(
           eq(listingContacts.contactId, BigInt(contactId)),
           eq(listingContacts.listingId, BigInt(listingId)),
           eq(listingContacts.contactType, contactType),
-          eq(listingContacts.isActive, true)
-        )
+          eq(listingContacts.isActive, true),
+        ),
       );
 
     if (existingRelation) {
@@ -1390,6 +1388,518 @@ export async function addListingContactRelationshipWithAuth(
     return { success: true };
   } catch (error) {
     console.error("Error adding listing-contact relationship:", error);
+    throw error;
+  }
+}
+
+// Progressive Loading: Owner Data Query
+export async function listContactsOwnerDataWithAuth(
+  page = 1,
+  limit = 100,
+  filters?: Parameters<typeof listContactsWithTypes>[3],
+) {
+  const accountId = await getCurrentUserAccountId();
+  return listContactsOwnerData(accountId, page, limit, filters);
+}
+
+// Progressive Loading: Buyer Data Query
+export async function listContactsBuyerDataWithAuth(
+  page = 1,
+  limit = 100,
+  filters?: Parameters<typeof listContactsWithTypes>[3],
+) {
+  const accountId = await getCurrentUserAccountId();
+  return listContactsBuyerData(accountId, page, limit, filters);
+}
+
+// Optimized query for owner contacts with only owner listings
+export async function listContactsOwnerData(
+  accountId: number,
+  page = 1,
+  limit = 100,
+  filters?: {
+    orgId?: number;
+    isActive?: boolean;
+    roles?: string[];
+    searchQuery?: string;
+    lastContactFilter?: string;
+  },
+) {
+  try {
+    const offset = (page - 1) * limit;
+
+    // Build the where conditions array
+    const whereConditions = [];
+    if (filters) {
+      if (filters.orgId) {
+        whereConditions.push(eq(contacts.orgId, BigInt(filters.orgId)));
+      }
+      if (filters.isActive !== undefined) {
+        whereConditions.push(eq(contacts.isActive, filters.isActive));
+      }
+      if (filters.searchQuery) {
+        whereConditions.push(
+          or(
+            like(contacts.firstName, `%${filters.searchQuery}%`),
+            like(contacts.lastName, `%${filters.searchQuery}%`),
+            like(contacts.email, `%${filters.searchQuery}%`),
+            like(contacts.phone, `%${filters.searchQuery}%`),
+          ),
+        );
+      }
+    } else {
+      // By default, only show active contacts
+      whereConditions.push(eq(contacts.isActive, true));
+    }
+
+    // Always filter by account
+    whereConditions.push(eq(contacts.accountId, BigInt(accountId)));
+
+    // Get contacts with owner data focus - optimized query
+    const uniqueContacts = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        isActive: contacts.isActive,
+        updatedAt: contacts.updatedAt,
+        // Calculate role counts - optimized for owners
+        ownerCount: sql<number>`
+          COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END)
+        `,
+        buyerCount: sql<number>`
+          COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END)
+        `,
+        prospectCount: sql<number>`
+          (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId})
+        `,
+        isOwner: sql<boolean>`
+          CASE WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0 THEN true ELSE false END
+        `,
+        isBuyer: sql<boolean>`
+          CASE WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0 THEN true ELSE false END
+        `,
+        isInteresado: sql<boolean>`
+          CASE WHEN (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId}) > 0 THEN true ELSE false END
+        `,
+      })
+      .from(contacts)
+      .leftJoin(
+        listingContacts,
+        and(
+          eq(contacts.contactId, listingContacts.contactId),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .leftJoin(
+        listings,
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listings.isActive, true),
+        ),
+      )
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .groupBy(
+        contacts.contactId,
+        contacts.firstName,
+        contacts.lastName,
+        contacts.email,
+        contacts.phone,
+        contacts.additionalInfo,
+        contacts.orgId,
+        contacts.isActive,
+        contacts.createdAt,
+        contacts.updatedAt,
+      )
+      .limit(limit)
+      .offset(offset)
+      .orderBy(contacts.createdAt);
+
+    const contactIds = uniqueContacts.map((c) => c.contactId);
+
+    // Fetch only OWNER listings for these contacts
+    const ownerListings = await db
+      .select({
+        contactId: listingContacts.contactId,
+        listingId: listingContacts.listingId,
+        contactType: listingContacts.contactType,
+        street: properties.street,
+        city: locations.city,
+        propertyType: properties.propertyType,
+        listingType: listings.listingType,
+        status: listings.status,
+      })
+      .from(listingContacts)
+      .innerJoin(
+        listings,
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listings.isActive, true),
+        ),
+      )
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .where(
+        and(
+          contactIds.length > 0
+            ? inArray(listingContacts.contactId, contactIds)
+            : undefined,
+          eq(listingContacts.contactType, "owner"), // ONLY owner listings
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .orderBy(listingContacts.listingId);
+
+    // Group listings by contactId
+    const listingsByContact = ownerListings.reduce(
+      (acc, listing) => {
+        const contactId = listing.contactId.toString();
+        acc[contactId] ??= [];
+        acc[contactId].push(listing);
+        return acc;
+      },
+      {} as Record<string, typeof ownerListings>,
+    );
+
+    // Build final response - owner view doesn't need prospect titles
+    const contactsWithOwnerData = uniqueContacts.map((contact) => {
+      const contactId = contact.contactId.toString();
+      const allContactListings = listingsByContact[contactId] ?? [];
+
+      return {
+        ...contact,
+        prospectTitles: [], // Empty for owner view
+        prospectCount: contact.prospectCount,
+        allListings: allContactListings, // Only owner listings
+        ownerCount: contact.ownerCount,
+        buyerCount: contact.buyerCount,
+        isOwner: contact.isOwner,
+        isBuyer: contact.isBuyer,
+        isInteresado: contact.isInteresado,
+      };
+    });
+
+    // Apply role filtering - show contacts that have owner relationships
+    let filteredContacts = contactsWithOwnerData;
+    if (filters?.roles?.includes("owner")) {
+      filteredContacts = contactsWithOwnerData.filter(
+        (contact) => contact.isOwner,
+      );
+    }
+
+    // Apply last contact date filtering
+    if (filters?.lastContactFilter && filters.lastContactFilter !== "all") {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const quarterAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+      const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+
+      filteredContacts = filteredContacts.filter((contact) => {
+        const lastContactDate = contact.updatedAt;
+
+        switch (filters.lastContactFilter) {
+          case "today":
+            return lastContactDate >= today;
+          case "week":
+            return lastContactDate >= weekAgo;
+          case "month":
+            return lastContactDate >= monthAgo;
+          case "quarter":
+            return lastContactDate >= quarterAgo;
+          case "year":
+            return lastContactDate >= yearAgo;
+          default:
+            return true;
+        }
+      });
+    }
+
+    return filteredContacts;
+  } catch (error) {
+    console.error("Error listing owner contacts:", error);
+    throw error;
+  }
+}
+
+// Optimized query for buyer contacts with buyer listings + prospects
+export async function listContactsBuyerData(
+  accountId: number,
+  page = 1,
+  limit = 100,
+  filters?: {
+    orgId?: number;
+    isActive?: boolean;
+    roles?: string[];
+    searchQuery?: string;
+    lastContactFilter?: string;
+  },
+) {
+  try {
+    const offset = (page - 1) * limit;
+
+    // Build the where conditions array
+    const whereConditions = [];
+    if (filters) {
+      if (filters.orgId) {
+        whereConditions.push(eq(contacts.orgId, BigInt(filters.orgId)));
+      }
+      if (filters.isActive !== undefined) {
+        whereConditions.push(eq(contacts.isActive, filters.isActive));
+      }
+      if (filters.searchQuery) {
+        whereConditions.push(
+          or(
+            like(contacts.firstName, `%${filters.searchQuery}%`),
+            like(contacts.lastName, `%${filters.searchQuery}%`),
+            like(contacts.email, `%${filters.searchQuery}%`),
+            like(contacts.phone, `%${filters.searchQuery}%`),
+          ),
+        );
+      }
+    } else {
+      // By default, only show active contacts
+      whereConditions.push(eq(contacts.isActive, true));
+    }
+
+    // Always filter by account
+    whereConditions.push(eq(contacts.accountId, BigInt(accountId)));
+
+    // Get contacts with buyer data focus
+    const uniqueContacts = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        isActive: contacts.isActive,
+        updatedAt: contacts.updatedAt,
+        // Calculate role counts
+        ownerCount: sql<number>`
+          COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END)
+        `,
+        buyerCount: sql<number>`
+          COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END)
+        `,
+        prospectCount: sql<number>`
+          (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId})
+        `,
+        isOwner: sql<boolean>`
+          CASE WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0 THEN true ELSE false END
+        `,
+        isBuyer: sql<boolean>`
+          CASE WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0 THEN true ELSE false END
+        `,
+        isInteresado: sql<boolean>`
+          CASE WHEN (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId}) > 0 THEN true ELSE false END
+        `,
+      })
+      .from(contacts)
+      .leftJoin(
+        listingContacts,
+        and(
+          eq(contacts.contactId, listingContacts.contactId),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .leftJoin(
+        listings,
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listings.isActive, true),
+        ),
+      )
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .groupBy(
+        contacts.contactId,
+        contacts.firstName,
+        contacts.lastName,
+        contacts.email,
+        contacts.phone,
+        contacts.additionalInfo,
+        contacts.orgId,
+        contacts.isActive,
+        contacts.createdAt,
+        contacts.updatedAt,
+      )
+      .limit(limit)
+      .offset(offset)
+      .orderBy(contacts.createdAt);
+
+    const contactIds = uniqueContacts.map((c) => c.contactId);
+
+    // Fetch prospects for buyer context
+    const allProspects = await db
+      .select({
+        contactId: prospects.contactId,
+        listingType: prospects.listingType,
+        propertyType: prospects.propertyType,
+        preferredAreas: prospects.preferredAreas,
+        createdAt: prospects.createdAt,
+      })
+      .from(prospects)
+      .where(
+        contactIds.length > 0
+          ? inArray(prospects.contactId, contactIds)
+          : undefined,
+      )
+      .orderBy(prospects.createdAt);
+
+    // Fetch only BUYER listings for these contacts
+    const buyerListings = await db
+      .select({
+        contactId: listingContacts.contactId,
+        listingId: listingContacts.listingId,
+        contactType: listingContacts.contactType,
+        street: properties.street,
+        city: locations.city,
+        propertyType: properties.propertyType,
+        listingType: listings.listingType,
+        status: listings.status,
+      })
+      .from(listingContacts)
+      .innerJoin(
+        listings,
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listings.isActive, true),
+        ),
+      )
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .where(
+        and(
+          contactIds.length > 0
+            ? inArray(listingContacts.contactId, contactIds)
+            : undefined,
+          eq(listingContacts.contactType, "buyer"), // ONLY buyer listings
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .orderBy(listingContacts.listingId);
+
+    // Group prospects by contactId
+    const prospectsByContact = allProspects.reduce(
+      (acc, prospect) => {
+        const contactId = prospect.contactId.toString();
+        acc[contactId] ??= [];
+        acc[contactId].push(prospect);
+        return acc;
+      },
+      {} as Record<string, typeof allProspects>,
+    );
+
+    // Group listings by contactId
+    const listingsByContact = buyerListings.reduce(
+      (acc, listing) => {
+        const contactId = listing.contactId.toString();
+        acc[contactId] ??= [];
+        acc[contactId].push(listing);
+        return acc;
+      },
+      {} as Record<string, typeof buyerListings>,
+    );
+
+    // Build final response with prospect titles for buyer view
+    const contactsWithBuyerData = await Promise.all(
+      uniqueContacts.map(async (contact) => {
+        const contactId = contact.contactId.toString();
+        const contactProspects = prospectsByContact[contactId] ?? [];
+        const allContactListings = listingsByContact[contactId] ?? [];
+
+        // Generate prospect titles (limit to 5 for performance)
+        const prospectTitles = await Promise.all(
+          contactProspects.slice(0, 5).map(async (prospect) => {
+            const preferredArea = await getPreferredAreaFromProspect(
+              prospect as ProspectWithPreferredAreas,
+            );
+
+            const title = prospectUtils.generateSimpleProspectTitle(
+              prospect.listingType ?? undefined,
+              prospect.propertyType ?? undefined,
+              preferredArea,
+            );
+
+            return title;
+          }),
+        ).then((titles) => titles.filter((title) => title.trim() !== ""));
+
+        return {
+          ...contact,
+          prospectTitles, // Array of prospect titles for buyer view
+          prospectCount: contact.prospectCount,
+          allListings: allContactListings, // Only buyer listings
+          ownerCount: contact.ownerCount,
+          buyerCount: contact.buyerCount,
+          isOwner: contact.isOwner,
+          isBuyer: contact.isBuyer,
+          isInteresado: contact.isInteresado,
+        };
+      }),
+    );
+
+    // Apply role filtering - show contacts that have buyer relationships or are prospects
+    let filteredContacts = contactsWithBuyerData;
+    if (filters?.roles?.includes("buyer")) {
+      filteredContacts = contactsWithBuyerData.filter(
+        (contact) => contact.isBuyer || contact.isInteresado,
+      );
+    }
+
+    // Apply last contact date filtering
+    if (filters?.lastContactFilter && filters.lastContactFilter !== "all") {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const quarterAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+      const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+
+      filteredContacts = filteredContacts.filter((contact) => {
+        const lastContactDate = contact.updatedAt;
+
+        switch (filters.lastContactFilter) {
+          case "today":
+            return lastContactDate >= today;
+          case "week":
+            return lastContactDate >= weekAgo;
+          case "month":
+            return lastContactDate >= monthAgo;
+          case "quarter":
+            return lastContactDate >= quarterAgo;
+          case "year":
+            return lastContactDate >= yearAgo;
+          default:
+            return true;
+        }
+      });
+    }
+
+    return filteredContacts;
+  } catch (error) {
+    console.error("Error listing buyer contacts:", error);
     throw error;
   }
 }

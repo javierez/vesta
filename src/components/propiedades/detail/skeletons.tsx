@@ -46,7 +46,7 @@ export function CharacteristicsSkeleton() {
         <div className="absolute right-2 top-2 flex items-center gap-2">
           <div className="h-2 w-2 animate-pulse rounded-full bg-gray-200"></div>
         </div>
-        
+
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">
@@ -59,7 +59,7 @@ export function CharacteristicsSkeleton() {
           <div className="space-y-1.5">
             <div className="h-5 w-40 animate-pulse rounded bg-gray-200"></div>
           </div>
-          
+
           {/* Tipo de Anuncio */}
           <div className="space-y-1.5">
             <Label className="text-sm">Tipo de Anuncio</Label>
@@ -68,7 +68,7 @@ export function CharacteristicsSkeleton() {
               <div className="h-8 flex-1 animate-pulse rounded bg-gray-200"></div>
             </div>
           </div>
-          
+
           {/* Tipo de Propiedad */}
           <div className="space-y-1.5">
             <Label htmlFor="propertyType" className="text-sm">
@@ -76,7 +76,7 @@ export function CharacteristicsSkeleton() {
             </Label>
             <div className="h-8 animate-pulse rounded bg-gray-200"></div>
           </div>
-          
+
           {/* Subtipo de Propiedad */}
           <div className="space-y-1.5">
             <Label htmlFor="propertySubtype" className="text-sm">
@@ -84,7 +84,7 @@ export function CharacteristicsSkeleton() {
             </Label>
             <div className="h-8 animate-pulse rounded bg-gray-200"></div>
           </div>
-          
+
           {/* Precio */}
           <div className="space-y-1.5">
             <Label htmlFor="price" className="text-sm">
@@ -92,7 +92,7 @@ export function CharacteristicsSkeleton() {
             </Label>
             <div className="h-8 animate-pulse rounded bg-gray-200"></div>
           </div>
-          
+
           {/* Referencia Catastral */}
           <div className="space-y-1.5">
             <Label htmlFor="cadastralReference" className="text-sm">
@@ -103,15 +103,15 @@ export function CharacteristicsSkeleton() {
               <div className="h-8 w-8 animate-pulse rounded bg-gray-200"></div>
             </div>
           </div>
-          
+
           <div className="my-2 border-t border-border" />
-          
+
           {/* Buttons */}
           <div className="flex items-center gap-2">
             <div className="h-7 w-24 animate-pulse rounded bg-gray-200"></div>
             <div className="h-7 w-24 animate-pulse rounded bg-gray-200"></div>
           </div>
-          
+
           <div className="my-2 border-t border-border" />
         </div>
       </div>
@@ -122,7 +122,7 @@ export function CharacteristicsSkeleton() {
         <div className="absolute right-2 top-2 flex items-center gap-2">
           <div className="h-2 w-2 animate-pulse rounded-full bg-gray-200"></div>
         </div>
-        
+
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">
@@ -190,7 +190,7 @@ export function CharacteristicsSkeleton() {
         <div className="absolute right-2 top-2 flex items-center gap-2">
           <div className="h-2 w-2 animate-pulse rounded-full bg-gray-200"></div>
         </div>
-        
+
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold tracking-wide">
             DIRECCIÓN DEL INMUEBLE
@@ -253,7 +253,7 @@ export function CharacteristicsSkeleton() {
         <div className="absolute right-2 top-2 flex items-center gap-2">
           <div className="h-2 w-2 animate-pulse rounded-full bg-gray-200"></div>
         </div>
-        
+
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">
@@ -329,7 +329,7 @@ export function CharacteristicsSkeleton() {
         <div className="absolute right-2 top-2 flex items-center gap-2">
           <div className="h-2 w-2 animate-pulse rounded-full bg-gray-200"></div>
         </div>
-        
+
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">
@@ -361,7 +361,7 @@ export function CharacteristicsSkeleton() {
         <div className="absolute right-2 top-2 flex items-center gap-2">
           <div className="h-2 w-2 animate-pulse rounded-full bg-gray-200"></div>
         </div>
-        
+
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">
@@ -444,7 +444,7 @@ export function CharacteristicsSkeleton() {
         <div className="absolute right-2 top-2 flex items-center gap-2">
           <div className="h-2 w-2 animate-pulse rounded-full bg-gray-200"></div>
         </div>
-        
+
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">DESCRIPCIÓN</h3>

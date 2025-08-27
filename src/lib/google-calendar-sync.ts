@@ -4,14 +4,14 @@ import type { calendar_v3 } from "googleapis";
 import { db } from "~/server/db";
 import { appointments, contacts, userIntegrations } from "~/server/db/schema";
 import { eq, and, or } from "drizzle-orm";
-import { 
-  getCalendarClient, 
-  getUserIntegration, 
+import {
+  getCalendarClient,
+  getUserIntegration,
   fromGoogleEvent,
   createGoogleEvent,
   updateGoogleEvent,
   deleteGoogleEvent,
-  updateAppointmentGoogleMeta
+  updateAppointmentGoogleMeta,
 } from "~/lib/google-calendar";
 
 interface SyncResult {
@@ -70,7 +70,7 @@ export async function syncFromGoogle(userId: string): Promise<SyncResult> {
       for (const event of events) {
         if (!event.id) continue;
 
-        if (event.status === 'cancelled') {
+        if (event.status === "cancelled") {
           // Handle deleted events
           await handleDeletedGoogleEvent(userId, event.id);
         } else {
@@ -91,17 +91,20 @@ export async function syncFromGoogle(userId: string): Promise<SyncResult> {
           .where(
             and(
               eq(userIntegrations.userId, userId),
-              eq(userIntegrations.provider, "google_calendar")
-            )
+              eq(userIntegrations.provider, "google_calendar"),
+            ),
           );
       }
 
       return { success: true, syncedEvents: syncedCount };
     } catch (apiError: any) {
       // Handle sync token invalidation
-      if (apiError.code === 410 || apiError.message?.includes('Sync token')) {
-        console.log("Sync token invalid, performing full sync for user:", userId);
-        
+      if (apiError.code === 410 || apiError.message?.includes("Sync token")) {
+        console.log(
+          "Sync token invalid, performing full sync for user:",
+          userId,
+        );
+
         // Clear sync token and retry
         await db
           .update(userIntegrations)
@@ -112,8 +115,8 @@ export async function syncFromGoogle(userId: string): Promise<SyncResult> {
           .where(
             and(
               eq(userIntegrations.userId, userId),
-              eq(userIntegrations.provider, "google_calendar")
-            )
+              eq(userIntegrations.provider, "google_calendar"),
+            ),
           );
 
         // Retry without sync token
@@ -123,16 +126,26 @@ export async function syncFromGoogle(userId: string): Promise<SyncResult> {
     }
   } catch (error) {
     console.error("Error syncing from Google Calendar:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
 /**
  * Handle a Google Calendar event update (create or update local appointment)
  */
-async function handleGoogleEventUpdate(userId: string, googleEvent: calendar_v3.Schema$Event): Promise<boolean> {
+async function handleGoogleEventUpdate(
+  userId: string,
+  googleEvent: calendar_v3.Schema$Event,
+): Promise<boolean> {
   try {
-    if (!googleEvent.id || !googleEvent.start?.dateTime || !googleEvent.end?.dateTime) {
+    if (
+      !googleEvent.id ||
+      !googleEvent.start?.dateTime ||
+      !googleEvent.end?.dateTime
+    ) {
       return false; // Skip all-day events or events without proper time
     }
 
@@ -143,17 +156,17 @@ async function handleGoogleEventUpdate(userId: string, googleEvent: calendar_v3.
       .where(
         and(
           eq(appointments.userId, userId),
-          eq(appointments.googleEventId, googleEvent.id)
-        )
+          eq(appointments.googleEventId, googleEvent.id),
+        ),
       )
       .limit(1);
 
     if (existingAppointment.length > 0) {
       // Update existing appointment
       const appointment = existingAppointment[0]!;
-      
+
       const appointmentData = fromGoogleEvent(googleEvent, userId);
-      
+
       await db
         .update(appointments)
         .set({
@@ -171,10 +184,13 @@ async function handleGoogleEventUpdate(userId: string, googleEvent: calendar_v3.
     } else {
       // Create new appointment
       const appointmentData = fromGoogleEvent(googleEvent, userId);
-      
+
       // We need a contact ID - create a default one if needed
-      const defaultContact = await getOrCreateDefaultContact(userId, googleEvent);
-      
+      const defaultContact = await getOrCreateDefaultContact(
+        userId,
+        googleEvent,
+      );
+
       const newAppointment = {
         userId: appointmentData.userId!,
         contactId: defaultContact.contactId,
@@ -201,7 +217,10 @@ async function handleGoogleEventUpdate(userId: string, googleEvent: calendar_v3.
 /**
  * Handle a deleted Google Calendar event
  */
-async function handleDeletedGoogleEvent(userId: string, googleEventId: string): Promise<void> {
+async function handleDeletedGoogleEvent(
+  userId: string,
+  googleEventId: string,
+): Promise<void> {
   try {
     // Soft delete the appointment
     await db
@@ -214,8 +233,8 @@ async function handleDeletedGoogleEvent(userId: string, googleEventId: string): 
       .where(
         and(
           eq(appointments.userId, userId),
-          eq(appointments.googleEventId, googleEventId)
-        )
+          eq(appointments.googleEventId, googleEventId),
+        ),
       );
   } catch (error) {
     console.error("Error handling deleted Google event:", error);
@@ -225,22 +244,23 @@ async function handleDeletedGoogleEvent(userId: string, googleEventId: string): 
 /**
  * Get or create a default contact for Google Calendar events
  */
-async function getOrCreateDefaultContact(userId: string, googleEvent: calendar_v3.Schema$Event): Promise<CreateDefaultContactResult> {
+async function getOrCreateDefaultContact(
+  userId: string,
+  googleEvent: calendar_v3.Schema$Event,
+): Promise<CreateDefaultContactResult> {
   try {
     // Try to extract contact name from event summary
     const summary = googleEvent.summary || "Google Calendar Event";
     const parts = summary.split(" - ");
-    const contactName = parts.length > 1 ? parts[1]!.trim() : "Google Calendar Contact";
-    
+    const contactName =
+      parts.length > 1 ? parts[1]!.trim() : "Google Calendar Contact";
+
     // Check if we have a contact with this name
     const existingContact = await db
       .select()
       .from(contacts)
       .where(
-        and(
-          eq(contacts.firstName, contactName),
-          eq(contacts.lastName, "")
-        )
+        and(eq(contacts.firstName, contactName), eq(contacts.lastName, "")),
       )
       .limit(1);
 
@@ -276,7 +296,7 @@ async function getOrCreateDefaultContact(userId: string, googleEvent: calendar_v
 export async function syncToGoogle(
   userId: string,
   appointmentId: bigint,
-  operation: 'create' | 'update' | 'delete'
+  operation: "create" | "update" | "delete",
 ): Promise<boolean> {
   try {
     const integration = await getUserIntegration(userId);
@@ -313,7 +333,7 @@ export async function syncToGoogle(
     const appointmentData = appointment[0]!;
 
     switch (operation) {
-      case 'create':
+      case "create":
         const createResult = await createGoogleEvent(userId, appointmentData);
         if (createResult) {
           await updateAppointmentGoogleMeta(appointmentId, {
@@ -325,13 +345,13 @@ export async function syncToGoogle(
         }
         break;
 
-      case 'update':
+      case "update":
         if (appointmentData.googleEventId) {
           const updateResult = await updateGoogleEvent(
             userId,
             appointmentData.googleEventId,
             appointmentData,
-            appointmentData.googleEtag || undefined
+            appointmentData.googleEtag || undefined,
           );
           if (updateResult) {
             await updateAppointmentGoogleMeta(appointmentId, {
@@ -343,9 +363,12 @@ export async function syncToGoogle(
         }
         break;
 
-      case 'delete':
+      case "delete":
         if (appointmentData.googleEventId) {
-          const deleteResult = await deleteGoogleEvent(userId, appointmentData.googleEventId);
+          const deleteResult = await deleteGoogleEvent(
+            userId,
+            appointmentData.googleEventId,
+          );
           if (deleteResult) {
             await updateAppointmentGoogleMeta(appointmentId, {
               googleEventId: null,

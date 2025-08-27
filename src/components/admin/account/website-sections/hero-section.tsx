@@ -13,13 +13,17 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import type { HeroSectionProps } from "../types/website-sections";
 
-export function HeroSection({ form, isActive, onUnsavedChanges }: HeroSectionProps) {
+export function HeroSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+}: HeroSectionProps) {
   const [showHeroImageInput, setShowHeroImageInput] = useState(false);
 
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('heroProps')) {
+      if (name?.startsWith("heroProps")) {
         onUnsavedChanges(true);
       }
     });
@@ -64,8 +68,8 @@ export function HeroSection({ form, isActive, onUnsavedChanges }: HeroSectionPro
             <FormItem>
               <FormLabel>Subtítulo</FormLabel>
               <FormControl>
-                <Textarea 
-                  {...field} 
+                <Textarea
+                  {...field}
                   placeholder="Te ayudamos a encontrar la propiedad perfecta"
                   rows={2}
                 />
@@ -78,30 +82,34 @@ export function HeroSection({ form, isActive, onUnsavedChanges }: HeroSectionPro
         <div>
           <FormLabel>Imagen de Fondo</FormLabel>
           {form.watch("heroProps.backgroundImage") && !showHeroImageInput ? (
-            <div className="relative inline-block group mt-3 w-full">
+            <div className="group relative mt-3 inline-block w-full">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
-                src={form.watch("heroProps.backgroundImage")} 
-                alt="Hero background preview" 
-                className="w-full max-h-48 rounded object-cover"
+              <img
+                src={form.watch("heroProps.backgroundImage")}
+                alt="Hero background preview"
+                className="max-h-48 w-full rounded object-cover"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                  e.currentTarget.style.display = "none";
+                  const nextElement = e.currentTarget
+                    .nextElementSibling as HTMLElement;
                   if (nextElement) {
-                    nextElement.classList.remove('hidden');
+                    nextElement.classList.remove("hidden");
                   }
                 }}
               />
-              <p className="hidden text-sm text-red-500">Error al cargar la imagen</p>
+              <p className="hidden text-sm text-red-500">
+                Error al cargar la imagen
+              </p>
               <button
                 type="button"
                 onClick={() => setShowHeroImageInput(true)}
-                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center rounded"
+                className="absolute inset-0 flex items-center justify-center rounded bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
               >
                 <RefreshCw className="h-6 w-6 text-white" />
               </button>
             </div>
-          ) : !form.watch("heroProps.backgroundImage") && !showHeroImageInput ? (
+          ) : !form.watch("heroProps.backgroundImage") &&
+            !showHeroImageInput ? (
             <Button
               type="button"
               variant="outline"
@@ -118,8 +126,8 @@ export function HeroSection({ form, isActive, onUnsavedChanges }: HeroSectionPro
               render={({ field }) => (
                 <FormItem className="mt-3">
                   <FormControl>
-                    <Input 
-                      {...field} 
+                    <Input
+                      {...field}
                       placeholder="https://ejemplo.com/imagen-hero.jpg"
                       onBlur={(e) => {
                         field.onBlur();

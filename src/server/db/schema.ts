@@ -52,7 +52,9 @@ export const accounts = singlestoreTable("accounts", {
 
 // Offices table (for accounts with multiple offices)
 export const offices = singlestoreTable("offices", {
-  officeId: bigint("office_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  officeId: bigint("office_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   name: varchar("name", { length: 100 }).notNull(),
   address: varchar("address", { length: 255 }).notNull(),
@@ -614,7 +616,9 @@ export const prospectHistory = singlestoreTable("prospect_history", {
 
 // Testimonials table
 export const testimonials = singlestoreTable("testimonials", {
-  testimonialId: bigint("testimonial_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  testimonialId: bigint("testimonial_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   name: varchar("name", { length: 255 }).notNull(),
   role: varchar("role", { length: 255 }).notNull(),

@@ -81,7 +81,10 @@ export async function getAppointmentById(appointmentId: number) {
 }
 
 // Get appointment by ID and account (secure version)
-export async function getAppointmentByIdAndAccount(appointmentId: number, accountId: number) {
+export async function getAppointmentByIdAndAccount(
+  appointmentId: number,
+  accountId: number,
+) {
   try {
     const [appointment] = await db
       .select()
@@ -151,7 +154,10 @@ export async function getUserAppointments(userId: string) {
 }
 
 // Get appointments by user ID and account (secure version)
-export async function getUserAppointmentsByAccount(userId: string, accountId: number) {
+export async function getUserAppointmentsByAccount(
+  userId: string,
+  accountId: number,
+) {
   try {
     const userAppointments = await db
       .select({
@@ -345,7 +351,10 @@ export async function getAppointmentsByDateRangeAndAccount(
       );
     return dateRangeAppointments;
   } catch (error) {
-    console.error("Error fetching appointments by date range and account:", error);
+    console.error(
+      "Error fetching appointments by date range and account:",
+      error,
+    );
     throw error;
   }
 }
@@ -411,7 +420,7 @@ export async function updateAppointmentByAccount(
           eq(appointments.isActive, true),
         ),
       );
-    
+
     if (!existingAppointment) {
       throw new Error("Appointment not found or access denied");
     }
@@ -425,12 +434,12 @@ export async function updateAppointmentByAccount(
           eq(appointments.isActive, true),
         ),
       );
-    
+
     const [updatedAppointment] = await db
       .select()
       .from(appointments)
       .where(eq(appointments.appointmentId, BigInt(appointmentId)));
-    
+
     return updatedAppointment;
   } catch (error) {
     console.error("Error updating appointment by account:", error);
@@ -500,10 +509,7 @@ export async function getAgentsForFilter() {
       })
       .from(users)
       .where(
-        and(
-          eq(users.accountId, BigInt(accountId)),
-          eq(users.isActive, true),
-        ),
+        and(eq(users.accountId, BigInt(accountId)), eq(users.isActive, true)),
       )
       .orderBy(users.name);
 
@@ -533,7 +539,7 @@ export async function getAppointmentsByDateRangeSecure(
       .from(users)
       .where(eq(users.accountId, BigInt(accountId)));
 
-    const userIds = accountUsers.map(u => u.id);
+    const userIds = accountUsers.map((u) => u.id);
 
     if (userIds.length === 0) {
       return [];
@@ -600,10 +606,7 @@ export async function getUserAppointmentsSecure(userId: string) {
     const [user] = await db
       .select()
       .from(users)
-      .where(and(
-        eq(users.id, userId),
-        eq(users.accountId, BigInt(accountId))
-      ));
+      .where(and(eq(users.id, userId), eq(users.accountId, BigInt(accountId))));
 
     if (!user) {
       throw new Error("User not found or access denied");
@@ -644,10 +647,7 @@ export async function getUserAppointmentsSecure(userId: string) {
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .leftJoin(users, eq(appointments.userId, users.id))
       .where(
-        and(
-          eq(appointments.userId, userId),
-          eq(appointments.isActive, true),
-        ),
+        and(eq(appointments.userId, userId), eq(appointments.isActive, true)),
       );
     return userAppointments;
   } catch (error) {

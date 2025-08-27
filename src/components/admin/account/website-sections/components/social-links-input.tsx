@@ -29,14 +29,16 @@ export function SocialLinksInput({ form }: SocialLinksInputProps) {
         {/* Facebook */}
         <div>
           {form.watch("socialLinks.facebook") ? (
-            <div className="relative inline-block group">
-              <div className="flex items-center justify-center w-12 h-12 border rounded-lg bg-gray-50 border-gray-200 hover:bg-gray-100 transition-colors">
+            <div className="group relative inline-block">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 transition-colors hover:bg-gray-100">
                 <Facebook className="h-5 w-5 text-gray-600" />
               </div>
               <button
                 type="button"
-                onClick={() => setShowSocialInputs(prev => ({ ...prev, facebook: true }))}
-                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center rounded-lg"
+                onClick={() =>
+                  setShowSocialInputs((prev) => ({ ...prev, facebook: true }))
+                }
+                className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
               >
                 <RefreshCw className="h-4 w-4 text-white" />
               </button>
@@ -46,8 +48,10 @@ export function SocialLinksInput({ form }: SocialLinksInputProps) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setShowSocialInputs(prev => ({ ...prev, facebook: true }))}
-              className="flex items-center justify-center w-12 h-12 p-0"
+              onClick={() =>
+                setShowSocialInputs((prev) => ({ ...prev, facebook: true }))
+              }
+              className="flex h-12 w-12 items-center justify-center p-0"
             >
               <Facebook className="h-5 w-5" />
             </Button>
@@ -57,14 +61,16 @@ export function SocialLinksInput({ form }: SocialLinksInputProps) {
         {/* Instagram */}
         <div>
           {form.watch("socialLinks.instagram") ? (
-            <div className="relative inline-block group">
-              <div className="flex items-center justify-center w-12 h-12 border rounded-lg bg-gray-50 border-gray-200 hover:bg-gray-100 transition-colors">
+            <div className="group relative inline-block">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 transition-colors hover:bg-gray-100">
                 <Instagram className="h-5 w-5 text-gray-600" />
               </div>
               <button
                 type="button"
-                onClick={() => setShowSocialInputs(prev => ({ ...prev, instagram: true }))}
-                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center rounded-lg"
+                onClick={() =>
+                  setShowSocialInputs((prev) => ({ ...prev, instagram: true }))
+                }
+                className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
               >
                 <RefreshCw className="h-4 w-4 text-white" />
               </button>
@@ -74,8 +80,10 @@ export function SocialLinksInput({ form }: SocialLinksInputProps) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setShowSocialInputs(prev => ({ ...prev, instagram: true }))}
-              className="flex items-center justify-center w-12 h-12 p-0"
+              onClick={() =>
+                setShowSocialInputs((prev) => ({ ...prev, instagram: true }))
+              }
+              className="flex h-12 w-12 items-center justify-center p-0"
             >
               <Instagram className="h-5 w-5" />
             </Button>
@@ -85,14 +93,16 @@ export function SocialLinksInput({ form }: SocialLinksInputProps) {
         {/* LinkedIn */}
         <div>
           {form.watch("socialLinks.linkedin") ? (
-            <div className="relative inline-block group">
-              <div className="flex items-center justify-center w-12 h-12 border rounded-lg bg-gray-50 border-gray-200 hover:bg-gray-100 transition-colors">
+            <div className="group relative inline-block">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 transition-colors hover:bg-gray-100">
                 <Linkedin className="h-5 w-5 text-gray-600" />
               </div>
               <button
                 type="button"
-                onClick={() => setShowSocialInputs(prev => ({ ...prev, linkedin: true }))}
-                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center rounded-lg"
+                onClick={() =>
+                  setShowSocialInputs((prev) => ({ ...prev, linkedin: true }))
+                }
+                className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
               >
                 <RefreshCw className="h-4 w-4 text-white" />
               </button>
@@ -102,8 +112,10 @@ export function SocialLinksInput({ form }: SocialLinksInputProps) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setShowSocialInputs(prev => ({ ...prev, linkedin: true }))}
-              className="flex items-center justify-center w-12 h-12 p-0"
+              onClick={() =>
+                setShowSocialInputs((prev) => ({ ...prev, linkedin: true }))
+              }
+              className="flex h-12 w-12 items-center justify-center p-0"
             >
               <Linkedin className="h-5 w-5" />
             </Button>
@@ -112,7 +124,9 @@ export function SocialLinksInput({ form }: SocialLinksInputProps) {
       </div>
 
       {/* Dynamic Input Fields - PRESERVE individual platform visibility toggles */}
-      {(showSocialInputs.facebook || showSocialInputs.instagram || showSocialInputs.linkedin) && (
+      {(showSocialInputs.facebook ||
+        showSocialInputs.instagram ||
+        showSocialInputs.linkedin) && (
         <div className="space-y-4 pt-2">
           {/* Facebook Input */}
           {showSocialInputs.facebook && (
@@ -126,13 +140,21 @@ export function SocialLinksInput({ form }: SocialLinksInputProps) {
                     Facebook
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://facebook.com/miempresa" />
+                    <Input
+                      {...field}
+                      placeholder="https://facebook.com/miempresa"
+                    />
                   </FormControl>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowSocialInputs(prev => ({ ...prev, facebook: false }))}
+                    onClick={() =>
+                      setShowSocialInputs((prev) => ({
+                        ...prev,
+                        facebook: false,
+                      }))
+                    }
                     className="mt-2"
                   >
                     Ocultar
@@ -154,13 +176,21 @@ export function SocialLinksInput({ form }: SocialLinksInputProps) {
                     Instagram
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://instagram.com/miempresa" />
+                    <Input
+                      {...field}
+                      placeholder="https://instagram.com/miempresa"
+                    />
                   </FormControl>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowSocialInputs(prev => ({ ...prev, instagram: false }))}
+                    onClick={() =>
+                      setShowSocialInputs((prev) => ({
+                        ...prev,
+                        instagram: false,
+                      }))
+                    }
                     className="mt-2"
                   >
                     Ocultar
@@ -182,13 +212,21 @@ export function SocialLinksInput({ form }: SocialLinksInputProps) {
                     LinkedIn
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://linkedin.com/company/miempresa" />
+                    <Input
+                      {...field}
+                      placeholder="https://linkedin.com/company/miempresa"
+                    />
                   </FormControl>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowSocialInputs(prev => ({ ...prev, linkedin: false }))}
+                    onClick={() =>
+                      setShowSocialInputs((prev) => ({
+                        ...prev,
+                        linkedin: false,
+                      }))
+                    }
                     className="mt-2"
                   >
                     Ocultar

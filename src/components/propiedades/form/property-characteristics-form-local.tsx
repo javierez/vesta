@@ -67,7 +67,10 @@ export function PropertyCharacteristicsFormLocal({
   const searchParams = useSearchParams();
 
   // Check if property type has changed using shared utility
-  const hasPropertyTypeChanged = checkPropertyTypeChanged(listing, searchParams);
+  const hasPropertyTypeChanged = checkPropertyTypeChanged(
+    listing,
+    searchParams,
+  );
 
   // Module names for local form
   const moduleNames: ModuleName[] = [
@@ -88,9 +91,8 @@ export function PropertyCharacteristicsFormLocal({
   // Use shared module states management
   const { moduleStates, setModuleStates, updateModuleState } = useModuleStates(
     hasPropertyTypeChanged,
-    moduleNames
+    moduleNames,
   );
-
 
   // Function to save module data
   const saveModule = async (moduleName: ModuleName) => {
@@ -312,7 +314,6 @@ export function PropertyCharacteristicsFormLocal({
       }, 3000);
     }
   };
-
 
   const [listingType, setListingType] = useState<string>(
     listing.listingType ?? "Sale",
@@ -1570,7 +1571,9 @@ export function PropertyCharacteristicsFormLocal({
         <Card
           className={cn(
             "relative p-4 transition-all duration-500 ease-out",
-            getCardStyles(moduleStates.additionalCharacteristics?.saveState ?? "idle"),
+            getCardStyles(
+              moduleStates.additionalCharacteristics?.saveState ?? "idle",
+            ),
           )}
         >
           <ModernSaveIndicator

@@ -161,7 +161,8 @@ export default function AppointmentsPage() {
   } = useAppointmentModal();
 
   // Use Google Calendar integration
-  const { integration, connect, disconnect, syncNow } = useGoogleCalendarIntegration();
+  const { integration, connect, disconnect, syncNow } =
+    useGoogleCalendarIntegration();
 
   // Fetch agents for filter on component mount
   useEffect(() => {
@@ -195,8 +196,10 @@ export default function AppointmentsPage() {
     const matchesAgent =
       selectedAgents.length === 0 ||
       (appointment.agentName &&
-        selectedAgents.some(agentId => 
-          agents.find((agent) => agent.id === agentId)?.name === appointment.agentName
+        selectedAgents.some(
+          (agentId) =>
+            agents.find((agent) => agent.id === agentId)?.name ===
+            appointment.agentName,
         ));
     return matchesSearch && matchesType && matchesStatus && matchesAgent;
   });
@@ -334,17 +337,23 @@ export default function AppointmentsPage() {
           {/* Agent Filter - Multi-select */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full sm:w-[180px] justify-between">
-                {selectedAgents.length === 0 ? (
-                  "Todos los agentes"
-                ) : selectedAgents.length === 1 ? (
-                  (() => {
-                    const agent = agents.find(agent => agent.id === selectedAgents[0]);
-                    return agent?.name ?? `${agent?.firstName} ${agent?.lastName}`;
-                  })()
-                ) : (
-                  `${selectedAgents.length} agentes`
-                )}
+              <Button
+                variant="outline"
+                className="w-full justify-between sm:w-[180px]"
+              >
+                {selectedAgents.length === 0
+                  ? "Todos los agentes"
+                  : selectedAgents.length === 1
+                    ? (() => {
+                        const agent = agents.find(
+                          (agent) => agent.id === selectedAgents[0],
+                        );
+                        return (
+                          agent?.name ??
+                          `${agent?.firstName} ${agent?.lastName}`
+                        );
+                      })()
+                    : `${selectedAgents.length} agentes`}
                 <Filter className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -373,15 +382,19 @@ export default function AppointmentsPage() {
                           className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
                           onClick={() => {
                             if (isSelected) {
-                              setSelectedAgents(prev => prev.filter(id => id !== agent.id));
+                              setSelectedAgents((prev) =>
+                                prev.filter((id) => id !== agent.id),
+                              );
                             } else {
-                              setSelectedAgents(prev => [...prev, agent.id]);
+                              setSelectedAgents((prev) => [...prev, agent.id]);
                             }
                           }}
                         >
                           <div
                             className={`flex h-4 w-4 items-center justify-center rounded border ${
-                              isSelected ? "border-primary bg-primary" : "border-input"
+                              isSelected
+                                ? "border-primary bg-primary"
+                                : "border-input"
                             }`}
                           >
                             {isSelected && (
@@ -389,7 +402,8 @@ export default function AppointmentsPage() {
                             )}
                           </div>
                           <span className="text-sm">
-                            {agent.name ?? `${agent.firstName} ${agent.lastName}`}
+                            {agent.name ??
+                              `${agent.firstName} ${agent.lastName}`}
                           </span>
                         </div>
                       );
@@ -436,7 +450,7 @@ export default function AppointmentsPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               {!integration.connected ? (
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={connect}
                   disabled={integration.loading}
                   className="flex items-center justify-between"
@@ -464,8 +478,10 @@ export default function AppointmentsPage() {
                 </DropdownMenuItem>
               ) : (
                 <>
-                  <DropdownMenuItem 
-                    onClick={() => window.open("https://calendar.google.com", "_blank")}
+                  <DropdownMenuItem
+                    onClick={() =>
+                      window.open("https://calendar.google.com", "_blank")
+                    }
                     className="flex items-center justify-between"
                   >
                     <div className="flex items-center">
@@ -479,26 +495,38 @@ export default function AppointmentsPage() {
                       {integration.lastSync && (
                         <div className="flex items-center text-xs text-muted-foreground">
                           <RefreshCw className="mr-1 h-3 w-3" />
-                          <span>{integration.lastSync.toLocaleDateString()} {integration.lastSync.toLocaleTimeString()}</span>
+                          <span>
+                            {integration.lastSync.toLocaleDateString()}{" "}
+                            {integration.lastSync.toLocaleTimeString()}
+                          </span>
                         </div>
                       )}
                     </div>
                     <div className="flex items-center space-x-1">
                       <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      <RefreshCw className={cn("h-4 w-4 text-muted-foreground hover:text-blue-600 cursor-pointer transition-colors", integration.loading && "animate-spin")} 
+                      <RefreshCw
+                        className={cn(
+                          "h-4 w-4 cursor-pointer text-muted-foreground transition-colors hover:text-blue-600",
+                          integration.loading && "animate-spin",
+                        )}
                         onClick={(e) => {
                           e.stopPropagation();
-                          void syncNow().then(result => {
-                            if (result.success) void refetch();
-                          }).catch(console.error);
+                          void syncNow()
+                            .then((result) => {
+                              if (result.success) void refetch();
+                            })
+                            .catch(console.error);
                         }}
                       />
-                      <XCircle className="h-4 w-4 text-muted-foreground hover:text-red-600 cursor-pointer transition-colors" 
+                      <XCircle
+                        className="h-4 w-4 cursor-pointer text-muted-foreground transition-colors hover:text-red-600"
                         onClick={(e) => {
                           e.stopPropagation();
-                          void disconnect().then(result => {
-                            if (result.success) void refetch();
-                          }).catch(console.error);
+                          void disconnect()
+                            .then((result) => {
+                              if (result.success) void refetch();
+                            })
+                            .catch(console.error);
                         }}
                       />
                     </div>
@@ -508,7 +536,10 @@ export default function AppointmentsPage() {
               {integration.error && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled className="flex items-center text-red-600">
+                  <DropdownMenuItem
+                    disabled
+                    className="flex items-center text-red-600"
+                  >
                     <AlertCircle className="mr-2 h-4 w-4" />
                     <span className="text-xs">{integration.error}</span>
                   </DropdownMenuItem>
@@ -542,15 +573,15 @@ export default function AppointmentsPage() {
               <Button variant="outline" className="relative">
                 <Filter className="mr-2 h-4 w-4" />
                 Filtros
-                {(typeFilter !== "all" || statusFilter !== "all" || selectedAgents.length > 0) && (
+                {(typeFilter !== "all" ||
+                  statusFilter !== "all" ||
+                  selectedAgents.length > 0) && (
                   <Badge
                     variant="secondary"
                     className="ml-2 rounded-sm px-1 font-normal"
                   >
-                    {
-                      [typeFilter, statusFilter].filter((f) => f !== "all")
-                        .length + (selectedAgents.length > 0 ? 1 : 0)
-                    }
+                    {[typeFilter, statusFilter].filter((f) => f !== "all")
+                      .length + (selectedAgents.length > 0 ? 1 : 0)}
                   </Badge>
                 )}
               </Button>
@@ -616,7 +647,9 @@ export default function AppointmentsPage() {
                     </div>
                   </div>
                 </ScrollArea>
-                {(typeFilter !== "all" || statusFilter !== "all" || selectedAgents.length > 0) && (
+                {(typeFilter !== "all" ||
+                  statusFilter !== "all" ||
+                  selectedAgents.length > 0) && (
                   <div className="border-t p-2">
                     <Button
                       variant="ghost"

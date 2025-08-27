@@ -160,9 +160,11 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
   const getFileTypeDisplay = (mimeType: string) => {
     const typeMap: Record<string, string> = {
       "application/pdf": "PDF",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        "DOCX",
       "application/msword": "DOC",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        "XLSX",
       "application/vnd.ms-excel": "XLS",
       "image/jpeg": "JPEG",
       "image/jpg": "JPG",
@@ -170,8 +172,12 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
       "text/plain": "TXT",
       "application/zip": "ZIP",
     };
-    
-    return typeMap[mimeType.toLowerCase()] ?? mimeType.split("/").pop()?.toUpperCase() ?? "FILE";
+
+    return (
+      typeMap[mimeType.toLowerCase()] ??
+      mimeType.split("/").pop()?.toUpperCase() ??
+      "FILE"
+    );
   };
 
   const getFileIcon = (type: string) => {

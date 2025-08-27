@@ -58,12 +58,15 @@ export function PropertyCharacteristicsFormSolar({
   const searchParams = useSearchParams();
 
   // Check if property type has changed using shared utility
-  const hasPropertyTypeChanged = checkPropertyTypeChanged(listing, searchParams);
+  const hasPropertyTypeChanged = checkPropertyTypeChanged(
+    listing,
+    searchParams,
+  );
 
   // Module names for solar form
   const moduleNames: ModuleName[] = [
     "basicInfo",
-    "propertyDetails", 
+    "propertyDetails",
     "location",
     "features",
     "description",
@@ -73,9 +76,8 @@ export function PropertyCharacteristicsFormSolar({
   // Use shared module states management
   const { moduleStates, setModuleStates, updateModuleState } = useModuleStates(
     hasPropertyTypeChanged,
-    moduleNames
+    moduleNames,
   );
-
 
   // Function to handle save
   const saveModule = async (moduleName: ModuleName) => {
@@ -356,7 +358,6 @@ export function PropertyCharacteristicsFormSolar({
     }
   };
 
-
   const [listingType, setListingType] = useState<string>(
     listing.listingType ?? "Sale", // Default to 'Sale' if none selected
   );
@@ -624,7 +625,9 @@ export function PropertyCharacteristicsFormSolar({
                 <SelectItem value="Suelo residencial">
                   Suelo residencial
                 </SelectItem>
-                <SelectItem value="Suelo industrial">Suelo industrial</SelectItem>
+                <SelectItem value="Suelo industrial">
+                  Suelo industrial
+                </SelectItem>
                 <SelectItem value="Suelo rústico">Suelo rústico</SelectItem>
               </SelectContent>
             </Select>

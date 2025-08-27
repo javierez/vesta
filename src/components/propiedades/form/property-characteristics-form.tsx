@@ -647,10 +647,12 @@ export function PropertyCharacteristicsForm({
     const price = listing.optionalGaragePrice;
     return price && !isNaN(Number(price)) ? Number(price) : 0;
   });
-  const [optionalStorageRoomPrice, setOptionalStorageRoomPrice] = useState(() => {
-    const price = listing.optionalStorageRoomPrice;
-    return price && !isNaN(Number(price)) ? Number(price) : 0;
-  });
+  const [optionalStorageRoomPrice, setOptionalStorageRoomPrice] = useState(
+    () => {
+      const price = listing.optionalStorageRoomPrice;
+      return price && !isNaN(Number(price)) ? Number(price) : 0;
+    },
+  );
   const [selectedAgentId, setSelectedAgentId] = useState(
     listing.agent?.id?.toString() ?? "",
   );

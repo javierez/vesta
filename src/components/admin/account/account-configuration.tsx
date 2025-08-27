@@ -178,7 +178,10 @@ export function AccountConfiguration() {
       try {
         setError(null);
 
-        const result = await updateAccountConfigurationAction(accountId, formData);
+        const result = await updateAccountConfigurationAction(
+          accountId,
+          formData,
+        );
 
         if (result.success) {
           toast.success("Configuración guardada correctamente");
@@ -259,7 +262,7 @@ export function AccountConfiguration() {
           onClick={onSubmit}
           disabled={isPending || !hasUnsavedChanges}
           size="sm"
-          className="min-w-[120px] shadow-lg bg-primary text-white hover:bg-primary/90 disabled:bg-gray-400 disabled:text-white"
+          className="min-w-[120px] bg-primary text-white shadow-lg hover:bg-primary/90 disabled:bg-gray-400 disabled:text-white"
         >
           {isPending ? (
             <>
@@ -340,22 +343,26 @@ export function AccountConfiguration() {
                       Logo de tu empresa que aparecerá en el sistema
                     </FormDescription>
                     {form.watch("logo") && !showLogoInput ? (
-                      <div className="relative inline-block group">
+                      <div className="group relative inline-block">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={form.watch("logo")} 
-                          alt="Logo preview" 
+                        <img
+                          src={form.watch("logo")}
+                          alt="Logo preview"
                           className="max-h-24 object-contain"
                           onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.nextElementSibling?.classList.remove(
+                              "hidden",
+                            );
                           }}
                         />
-                        <p className="hidden text-sm text-red-500">Error al cargar la imagen</p>
+                        <p className="hidden text-sm text-red-500">
+                          Error al cargar la imagen
+                        </p>
                         <button
                           type="button"
                           onClick={() => setShowLogoInput(true)}
-                          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center rounded"
+                          className="absolute inset-0 flex items-center justify-center rounded bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                         >
                           <RefreshCw className="h-6 w-6 text-white" />
                         </button>
@@ -368,7 +375,7 @@ export function AccountConfiguration() {
                         onClick={() => setShowLogoInput(true)}
                       >
                         {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                        <Image className="h-4 w-4 mr-2" />
+                        <Image className="mr-2 h-4 w-4" />
                         Configurar logo
                       </Button>
                     ) : (
@@ -378,7 +385,10 @@ export function AccountConfiguration() {
                         render={({ field }) => (
                           <FormItem>
                             <FormControl>
-                              <Input {...field} placeholder="https://ejemplo.com/logo.png" />
+                              <Input
+                                {...field}
+                                placeholder="https://ejemplo.com/logo.png"
+                              />
                             </FormControl>
                             <FormMessage />
                             {showLogoInput && (
@@ -422,8 +432,8 @@ export function AccountConfiguration() {
                       <FormItem>
                         <FormLabel>Dirección</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            {...field} 
+                          <Textarea
+                            {...field}
                             placeholder="Calle Principal 123, Ciudad, Provincia, Código Postal"
                             rows={3}
                           />
@@ -453,7 +463,10 @@ export function AccountConfiguration() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="info@miempresa.com" />
+                            <Input
+                              {...field}
+                              placeholder="info@miempresa.com"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -468,7 +481,10 @@ export function AccountConfiguration() {
                       <FormItem>
                         <FormLabel>Sitio Web</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="https://www.miempresa.com" />
+                          <Input
+                            {...field}
+                            placeholder="https://www.miempresa.com"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -499,7 +515,10 @@ export function AccountConfiguration() {
                       <FormItem>
                         <FormLabel>Razón Social</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Mi Inmobiliaria S.L." />
+                          <Input
+                            {...field}
+                            placeholder="Mi Inmobiliaria S.L."
+                          />
                         </FormControl>
                       </FormItem>
                     )}
@@ -538,8 +557,8 @@ export function AccountConfiguration() {
                       <FormItem>
                         <FormLabel>Datos Registrales</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            {...field} 
+                          <Textarea
+                            {...field}
                             placeholder="Inscrita en el Registro Mercantil de..."
                             rows={3}
                           />
@@ -556,7 +575,10 @@ export function AccountConfiguration() {
                         <FormItem>
                           <FormLabel>Email Legal</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="legal@miempresa.com" />
+                            <Input
+                              {...field}
+                              placeholder="legal@miempresa.com"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -570,7 +592,10 @@ export function AccountConfiguration() {
                         <FormItem>
                           <FormLabel>Email Privacidad</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="privacidad@miempresa.com" />
+                            <Input
+                              {...field}
+                              placeholder="privacidad@miempresa.com"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -613,11 +638,12 @@ export function AccountConfiguration() {
 
                 <div className="space-y-4">
                   <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">
+                    <h3 className="mb-2 text-sm font-medium text-gray-900">
                       Configuraciones Avanzadas
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Las preferencias adicionales se pueden configurar contactando con soporte técnico.
+                      Las preferencias adicionales se pueden configurar
+                      contactando con soporte técnico.
                     </p>
                   </div>
                 </div>

@@ -207,7 +207,9 @@ export async function buildFotocasaPayload(
 ): Promise<{ payload: FotocasaProperty; watermarkedKeys: string[] }> {
   try {
     // Get listing details and property images
-    const listing = await getListingDetailsWithAuth(listingId) as ListingDetails;
+    const listing = (await getListingDetailsWithAuth(
+      listingId,
+    )) as ListingDetails;
     const images = await getPropertyImages(BigInt(listing.propertyId!));
 
     // NEW: Get account watermark configuration and process images if needed
@@ -426,7 +428,10 @@ export async function buildFotocasaPayload(
         y: listing.latitude ? parseFloat(listing.latitude.toString()) : 0,
         VisibilityModeId: visibilityMode, // 1=Exact, 2=Street, 3=Zone
         Street: getStreetName(listing.street ?? null),
-        Number: getStreetNumber(listing.street ?? null, listing.addressDetails ?? null),
+        Number: getStreetNumber(
+          listing.street ?? null,
+          listing.addressDetails ?? null,
+        ),
       },
     ];
 
@@ -715,13 +720,14 @@ export async function buildFotocasaPayload(
     // Conservation Status (FeatureId: 249)
     if (listing.conservationStatus) {
       const conservationStatusMap: Record<string, number> = {
-        'excellent': 1,
-        'good': 2,
-        'fair': 3,
-        'poor': 4,
-        'needs_renovation': 5
+        excellent: 1,
+        good: 2,
+        fair: 3,
+        poor: 4,
+        needs_renovation: 5,
       };
-      const statusValue = conservationStatusMap[listing.conservationStatus] ?? 1;
+      const statusValue =
+        conservationStatusMap[listing.conservationStatus] ?? 1;
       propertyFeatures.push({
         FeatureId: 249,
         DecimalValue: statusValue,
@@ -832,7 +838,8 @@ export async function buildFotocasaPayload(
     // Build PropertyTransaction
     const propertyTransaction: PropertyTransaction[] = [
       {
-        TransactionTypeId: TRANSACTION_TYPE_MAPPING[listing.listingType ?? 'Sale'] ?? 1,
+        TransactionTypeId:
+          TRANSACTION_TYPE_MAPPING[listing.listingType ?? "Sale"] ?? 1,
         Price: parseFloat((listing.price ?? 0).toString()),
         ShowPrice: !hidePrice, // ShowPrice is true when hidePrice is false
       },
@@ -841,7 +848,8 @@ export async function buildFotocasaPayload(
     // Build the complete payload
     const fotocasaPayload: FotocasaProperty = {
       ExternalId: (listing.listingId ?? 0).toString(),
-      AgencyReference: listing.referenceNumber ?? (listing.listingId ?? 0).toString(),
+      AgencyReference:
+        listing.referenceNumber ?? (listing.listingId ?? 0).toString(),
       TypeId: PROPERTY_TYPE_MAPPING[listing.propertyType ?? "piso"] ?? 1,
       SubTypeId:
         PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype ?? "Piso"] ?? 9, // Default to Flat (9) if no subtype

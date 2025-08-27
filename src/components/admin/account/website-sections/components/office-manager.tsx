@@ -49,22 +49,29 @@ export function OfficeManager({ form }: OfficeManagerProps) {
   // CRITICAL: Preserve exact office removal logic
   const removeOffice = (officeId: string) => {
     const currentOffices = form.getValues("contactProps.offices") || [];
-    form.setValue("contactProps.offices", currentOffices.filter(office => office.id !== officeId));
+    form.setValue(
+      "contactProps.offices",
+      currentOffices.filter((office) => office.id !== officeId),
+    );
     if (editingOffice === officeId) {
       setEditingOffice(null);
     }
   };
 
   // CRITICAL: Preserve exact field update logic with nested object handling
-  const updateOfficeField = (officeId: string, fieldPath: string, value: string | boolean) => {
+  const updateOfficeField = (
+    officeId: string,
+    fieldPath: string,
+    value: string | boolean,
+  ) => {
     const currentOffices = form.getValues("contactProps.offices") ?? [];
-    const updatedOffices = currentOffices.map(office => {
+    const updatedOffices = currentOffices.map((office) => {
       if (office.id === officeId) {
         const updated = { ...office };
-        const keys = fieldPath.split('.');
+        const keys = fieldPath.split(".");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let current: any = updated;
-        
+
         for (let i = 0; i < keys.length - 1; i++) {
           const key = keys[i];
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -78,7 +85,7 @@ export function OfficeManager({ form }: OfficeManagerProps) {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           current[lastKey] = value;
         }
-        
+
         return updated;
       }
       return office;
@@ -105,8 +112,8 @@ export function OfficeManager({ form }: OfficeManagerProps) {
 
       {/* Create New Office Modal */}
       {showAddOffice && (
-        <div className="border rounded-lg p-4 bg-yellow-50">
-          <div className="flex items-center justify-between mb-3">
+        <div className="rounded-lg border bg-yellow-50 p-4">
+          <div className="mb-3 flex items-center justify-between">
             <h4 className="text-sm font-medium">Crear nueva oficina</h4>
             <Button
               type="button"
@@ -117,7 +124,7 @@ export function OfficeManager({ form }: OfficeManagerProps) {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="mb-4 text-sm text-gray-600">
             Se creará una oficina nueva que podrás configurar después.
           </p>
           <div className="flex gap-2">
@@ -136,15 +143,18 @@ export function OfficeManager({ form }: OfficeManagerProps) {
       {/* Office Cards - PRESERVE all existing office management UI */}
       <div className="space-y-4">
         {form.watch("contactProps.offices")?.map((office, index) => (
-          <div key={office.id} className="border border-gray-200 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
+          <div
+            key={office.id}
+            className="rounded-lg border border-gray-200 p-4"
+          >
+            <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Building className="h-4 w-4 text-gray-500" />
                 <span className="text-sm font-medium">
                   {office.name || `Oficina ${index + 1}`}
                 </span>
                 {office.isDefault && (
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-800">
                     Principal
                   </span>
                 )}
@@ -154,7 +164,11 @@ export function OfficeManager({ form }: OfficeManagerProps) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setEditingOffice(editingOffice === office.id ? null : office.id)}
+                  onClick={() =>
+                    setEditingOffice(
+                      editingOffice === office.id ? null : office.id,
+                    )
+                  }
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -172,23 +186,33 @@ export function OfficeManager({ form }: OfficeManagerProps) {
 
             {/* Editing Mode - PRESERVE complex nested object handling */}
             {editingOffice === office.id && (
-              <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+              <div className="space-y-4 rounded-lg bg-gray-50 p-4">
                 {/* Basic Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Nombre</label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Nombre
+                    </label>
                     <Input
                       value={office.name}
-                      onChange={(e) => updateOfficeField(office.id, 'name', e.target.value)}
+                      onChange={(e) =>
+                        updateOfficeField(office.id, "name", e.target.value)
+                      }
                       placeholder="Oficina Central"
                       className="mt-1"
                     />
                   </div>
-                  <div className="flex items-center space-x-2 mt-6">
+                  <div className="mt-6 flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={office.isDefault}
-                      onChange={(e) => updateOfficeField(office.id, 'isDefault', e.target.checked)}
+                      onChange={(e) =>
+                        updateOfficeField(
+                          office.id,
+                          "isDefault",
+                          e.target.checked,
+                        )
+                      }
                       className="rounded border-gray-300"
                     />
                     <label className="text-sm font-medium text-gray-700">
@@ -199,26 +223,52 @@ export function OfficeManager({ form }: OfficeManagerProps) {
 
                 {/* Address */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Dirección</label>
-                  <div className="grid grid-cols-2 gap-4 mt-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Dirección
+                  </label>
+                  <div className="mt-1 grid grid-cols-2 gap-4">
                     <Input
                       value={office.address.street}
-                      onChange={(e) => updateOfficeField(office.id, 'address.street', e.target.value)}
+                      onChange={(e) =>
+                        updateOfficeField(
+                          office.id,
+                          "address.street",
+                          e.target.value,
+                        )
+                      }
                       placeholder="Calle Principal 123"
                     />
                     <Input
                       value={office.address.city}
-                      onChange={(e) => updateOfficeField(office.id, 'address.city', e.target.value)}
+                      onChange={(e) =>
+                        updateOfficeField(
+                          office.id,
+                          "address.city",
+                          e.target.value,
+                        )
+                      }
                       placeholder="Madrid"
                     />
                     <Input
                       value={office.address.state}
-                      onChange={(e) => updateOfficeField(office.id, 'address.state', e.target.value)}
+                      onChange={(e) =>
+                        updateOfficeField(
+                          office.id,
+                          "address.state",
+                          e.target.value,
+                        )
+                      }
                       placeholder="Comunidad de Madrid"
                     />
                     <Input
                       value={office.address.country}
-                      onChange={(e) => updateOfficeField(office.id, 'address.country', e.target.value)}
+                      onChange={(e) =>
+                        updateOfficeField(
+                          office.id,
+                          "address.country",
+                          e.target.value,
+                        )
+                      }
                       placeholder="España"
                     />
                   </div>
@@ -226,19 +276,33 @@ export function OfficeManager({ form }: OfficeManagerProps) {
 
                 {/* Phone Numbers */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Teléfonos</label>
-                  <div className="grid grid-cols-2 gap-4 mt-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Teléfonos
+                  </label>
+                  <div className="mt-1 grid grid-cols-2 gap-4">
                     <div>
                       <Input
                         value={office.phoneNumbers.main}
-                        onChange={(e) => updateOfficeField(office.id, 'phoneNumbers.main', e.target.value)}
+                        onChange={(e) =>
+                          updateOfficeField(
+                            office.id,
+                            "phoneNumbers.main",
+                            e.target.value,
+                          )
+                        }
                         placeholder="Teléfono principal"
                       />
                     </div>
                     <div>
                       <Input
                         value={office.phoneNumbers.sales ?? ""}
-                        onChange={(e) => updateOfficeField(office.id, 'phoneNumbers.sales', e.target.value)}
+                        onChange={(e) =>
+                          updateOfficeField(
+                            office.id,
+                            "phoneNumbers.sales",
+                            e.target.value,
+                          )
+                        }
                         placeholder="Teléfono ventas (opcional)"
                       />
                     </div>
@@ -247,16 +311,30 @@ export function OfficeManager({ form }: OfficeManagerProps) {
 
                 {/* Email Addresses */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Emails</label>
-                  <div className="grid grid-cols-2 gap-4 mt-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Emails
+                  </label>
+                  <div className="mt-1 grid grid-cols-2 gap-4">
                     <Input
                       value={office.emailAddresses.info}
-                      onChange={(e) => updateOfficeField(office.id, 'emailAddresses.info', e.target.value)}
+                      onChange={(e) =>
+                        updateOfficeField(
+                          office.id,
+                          "emailAddresses.info",
+                          e.target.value,
+                        )
+                      }
                       placeholder="info@empresa.com"
                     />
                     <Input
                       value={office.emailAddresses.sales ?? ""}
-                      onChange={(e) => updateOfficeField(office.id, 'emailAddresses.sales', e.target.value)}
+                      onChange={(e) =>
+                        updateOfficeField(
+                          office.id,
+                          "emailAddresses.sales",
+                          e.target.value,
+                        )
+                      }
                       placeholder="ventas@empresa.com (opcional)"
                     />
                   </div>
@@ -264,21 +342,41 @@ export function OfficeManager({ form }: OfficeManagerProps) {
 
                 {/* Schedule */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Horarios</label>
-                  <div className="space-y-2 mt-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Horarios
+                  </label>
+                  <div className="mt-1 space-y-2">
                     <Input
                       value={office.scheduleInfo.weekdays}
-                      onChange={(e) => updateOfficeField(office.id, 'scheduleInfo.weekdays', e.target.value)}
+                      onChange={(e) =>
+                        updateOfficeField(
+                          office.id,
+                          "scheduleInfo.weekdays",
+                          e.target.value,
+                        )
+                      }
                       placeholder="Lunes a Viernes: 9:00 - 18:00"
                     />
                     <Input
                       value={office.scheduleInfo.saturday}
-                      onChange={(e) => updateOfficeField(office.id, 'scheduleInfo.saturday', e.target.value)}
+                      onChange={(e) =>
+                        updateOfficeField(
+                          office.id,
+                          "scheduleInfo.saturday",
+                          e.target.value,
+                        )
+                      }
                       placeholder="Sábados: 9:00 - 14:00"
                     />
                     <Input
                       value={office.scheduleInfo.sunday}
-                      onChange={(e) => updateOfficeField(office.id, 'scheduleInfo.sunday', e.target.value)}
+                      onChange={(e) =>
+                        updateOfficeField(
+                          office.id,
+                          "scheduleInfo.sunday",
+                          e.target.value,
+                        )
+                      }
                       placeholder="Domingos: Cerrado"
                     />
                   </div>
@@ -286,10 +384,14 @@ export function OfficeManager({ form }: OfficeManagerProps) {
 
                 {/* Map URL */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700">URL del Mapa</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    URL del Mapa
+                  </label>
                   <Input
                     value={office.mapUrl}
-                    onChange={(e) => updateOfficeField(office.id, 'mapUrl', e.target.value)}
+                    onChange={(e) =>
+                      updateOfficeField(office.id, "mapUrl", e.target.value)
+                    }
                     placeholder="https://maps.google.com/..."
                     className="mt-1"
                   />
@@ -299,11 +401,13 @@ export function OfficeManager({ form }: OfficeManagerProps) {
 
             {/* Display Mode - PRESERVE existing display patterns */}
             {editingOffice !== office.id && (
-              <div className="text-sm text-gray-600 space-y-2">
+              <div className="space-y-2 text-sm text-gray-600">
                 {office.address.street && (
                   <div className="flex items-center gap-2">
                     <MapPin className="h-3 w-3" />
-                    <span>{office.address.street}, {office.address.city}</span>
+                    <span>
+                      {office.address.street}, {office.address.city}
+                    </span>
                   </div>
                 )}
                 {office.phoneNumbers.main && (
@@ -326,8 +430,8 @@ export function OfficeManager({ form }: OfficeManagerProps) {
 
       {/* Empty State */}
       {form.watch("contactProps.offices")?.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <Building className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+        <div className="py-8 text-center text-gray-500">
+          <Building className="mx-auto mb-2 h-8 w-8 text-gray-300" />
           <p>No hay oficinas configuradas</p>
           <p className="text-sm">Agrega tu primera oficina para comenzar</p>
         </div>

@@ -261,14 +261,19 @@ export function LeadTable({
                           </div>
                           <div className="ml-2 text-right">
                             <div className="text-xs font-medium text-green-600">
-                              {lead.listing.price ? 
-                                new Intl.NumberFormat('es-ES').format(Number(lead.listing.price)) + '€'
-                                : 'Sin precio'
-                              }
+                              {lead.listing.price
+                                ? new Intl.NumberFormat("es-ES").format(
+                                    Number(lead.listing.price),
+                                  ) + "€"
+                                : "Sin precio"}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {lead.listing.bedrooms ? `${lead.listing.bedrooms}hab` : ''}
-                              {lead.listing.squareMeter ? ` • ${lead.listing.squareMeter}m²` : ''}
+                              {lead.listing.bedrooms
+                                ? `${lead.listing.bedrooms}hab`
+                                : ""}
+                              {lead.listing.squareMeter
+                                ? ` • ${lead.listing.squareMeter}m²`
+                                : ""}
                             </div>
                           </div>
                         </div>

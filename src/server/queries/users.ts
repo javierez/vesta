@@ -135,12 +135,7 @@ export async function updateUserByAccount(
     const [updatedUser] = await db
       .select()
       .from(users)
-      .where(
-        and(
-          eq(users.id, userId),
-          eq(users.accountId, BigInt(accountId)),
-        ),
-      );
+      .where(and(eq(users.id, userId), eq(users.accountId, BigInt(accountId))));
     return updatedUser;
   } catch (error) {
     console.error("Error updating user by account:", error);
@@ -164,12 +159,7 @@ export async function deleteUserByAccount(userId: string, accountId: number) {
   try {
     await db
       .delete(users)
-      .where(
-        and(
-          eq(users.id, userId),
-          eq(users.accountId, BigInt(accountId)),
-        ),
-      );
+      .where(and(eq(users.id, userId), eq(users.accountId, BigInt(accountId))));
     return { success: true };
   } catch (error) {
     console.error("Error deleting user by account:", error);
@@ -185,7 +175,9 @@ export async function listUsers(page = 1, limit = 10) {
     const allUsers = await db
       .select()
       .from(users)
-      .where(and(eq(users.accountId, BigInt(accountId)), eq(users.isActive, true)))
+      .where(
+        and(eq(users.accountId, BigInt(accountId)), eq(users.isActive, true)),
+      )
       .limit(limit)
       .offset(offset);
     return allUsers;
@@ -196,13 +188,19 @@ export async function listUsers(page = 1, limit = 10) {
 }
 
 // List all users for specific account (with pagination)
-export async function listUsersByAccount(accountId: number, page = 1, limit = 10) {
+export async function listUsersByAccount(
+  accountId: number,
+  page = 1,
+  limit = 10,
+) {
   try {
     const offset = (page - 1) * limit;
     const allUsers = await db
       .select()
       .from(users)
-      .where(and(eq(users.accountId, BigInt(accountId)), eq(users.isActive, true)))
+      .where(
+        and(eq(users.accountId, BigInt(accountId)), eq(users.isActive, true)),
+      )
       .limit(limit)
       .offset(offset);
     return allUsers;

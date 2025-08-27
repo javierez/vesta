@@ -214,10 +214,7 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
     try {
       await syncToGoogle(currentUser.id, result.appointmentId, "create");
     } catch (error) {
-      console.error(
-        "Failed to sync appointment to Google Calendar:",
-        error,
-      );
+      console.error("Failed to sync appointment to Google Calendar:", error);
       // Don't fail the appointment creation if Google Calendar sync fails
     }
 
@@ -272,7 +269,10 @@ export async function getAppointmentsByDateRangeAction(
     // PATTERN: Always get account ID for security
     await getCurrentUserAccountId();
 
-    const appointments = await getAppointmentsByDateRangeSecure(startDate, endDate);
+    const appointments = await getAppointmentsByDateRangeSecure(
+      startDate,
+      endDate,
+    );
 
     return {
       success: true,

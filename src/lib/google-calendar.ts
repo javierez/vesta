@@ -27,9 +27,9 @@ export interface GoogleEvent {
   description?: string;
   start: { dateTime: string; timeZone: string };
   end: { dateTime: string; timeZone: string };
-  reminders?: { 
-    useDefault: boolean; 
-    overrides: Array<{ method: string; minutes: number }> 
+  reminders?: {
+    useDefault: boolean;
+    overrides: Array<{ method: string; minutes: number }>;
   };
 }
 
@@ -49,14 +49,15 @@ export interface AppointmentData {
 // OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
-const REDIRECT_URI = process.env.NODE_ENV === 'production' 
-  ? 'https://v0-vesta-eight.vercel.app/api/google/calendar/callback'
-  : 'http://localhost:3000/api/google/calendar/callback';
+const REDIRECT_URI =
+  process.env.NODE_ENV === "production"
+    ? "https://v0-vesta-eight.vercel.app/api/google/calendar/callback"
+    : "http://localhost:3000/api/google/calendar/callback";
 
 // Calendar API scopes
 const SCOPES = [
-  'https://www.googleapis.com/auth/calendar.events',
-  'https://www.googleapis.com/auth/calendar.readonly'
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.readonly",
 ];
 
 /**
@@ -66,7 +67,7 @@ export function getOAuth2Client() {
   return new google.auth.OAuth2(
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
-    REDIRECT_URI
+    REDIRECT_URI,
   );
 }
 
@@ -76,10 +77,10 @@ export function getOAuth2Client() {
 export function generateAuthUrl(state: string): string {
   const oauth2Client = getOAuth2Client();
   return oauth2Client.generateAuthUrl({
-    access_type: 'offline',
+    access_type: "offline",
     scope: SCOPES,
     state: state,
-    prompt: 'consent' // Force consent to get refresh token
+    prompt: "consent", // Force consent to get refresh token
   });
 }
 
@@ -95,7 +96,9 @@ export async function exchangeCodeForTokens(code: string) {
 /**
  * Get user's Google Calendar integration
  */
-export async function getUserIntegration(userId: string): Promise<GoogleCalendarIntegration | null> {
+export async function getUserIntegration(
+  userId: string,
+): Promise<GoogleCalendarIntegration | null> {
   const integration = await db
     .select()
     .from(userIntegrations)
@@ -103,8 +106,8 @@ export async function getUserIntegration(userId: string): Promise<GoogleCalendar
       and(
         eq(userIntegrations.userId, userId),
         eq(userIntegrations.provider, "google_calendar"),
-        eq(userIntegrations.isActive, true)
-      )
+        eq(userIntegrations.isActive, true),
+      ),
     )
     .limit(1);
 
@@ -133,10 +136,10 @@ export async function getUserIntegration(userId: string): Promise<GoogleCalendar
 export async function storeUserIntegration(
   userId: string,
   tokens: any,
-  channelData?: { channelId: string; resourceId: string; expiration: Date }
+  channelData?: { channelId: string; resourceId: string; expiration: Date },
 ): Promise<void> {
   const expiryDate = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
-  
+
   const integrationData = {
     userId,
     provider: "google_calendar",
@@ -153,7 +156,7 @@ export async function storeUserIntegration(
 
   // Check if integration already exists
   const existing = await getUserIntegration(userId);
-  
+
   if (existing) {
     // Update existing integration
     await db
@@ -165,8 +168,8 @@ export async function storeUserIntegration(
       .where(
         and(
           eq(userIntegrations.userId, userId),
-          eq(userIntegrations.provider, "google_calendar")
-        )
+          eq(userIntegrations.provider, "google_calendar"),
+        ),
       );
   } else {
     // Create new integration
@@ -177,7 +180,9 @@ export async function storeUserIntegration(
 /**
  * Get authenticated Calendar API client
  */
-export async function getCalendarClient(userId: string): Promise<calendar_v3.Calendar | null> {
+export async function getCalendarClient(
+  userId: string,
+): Promise<calendar_v3.Calendar | null> {
   const integration = await getUserIntegration(userId);
   if (!integration) return null;
 
@@ -189,56 +194,64 @@ export async function getCalendarClient(userId: string): Promise<calendar_v3.Cal
   });
 
   // Handle token refresh automatically
-  oauth2Client.on('tokens', (tokens) => {
+  oauth2Client.on("tokens", (tokens) => {
     if (tokens.refresh_token) {
       void storeUserIntegration(userId, tokens);
     }
   });
 
-  return google.calendar({ version: 'v3', auth: oauth2Client });
+  return google.calendar({ version: "v3", auth: oauth2Client });
 }
 
 /**
  * Convert local appointment to Google Calendar event
  */
-export function toGoogleEvent(appointment: AppointmentData, userTimezone = 'Europe/Madrid'): GoogleEvent {
-  const contactName = appointment.contactName || 'Contact';
-  const appointmentType = appointment.type || 'Cita';
-  
+export function toGoogleEvent(
+  appointment: AppointmentData,
+  userTimezone = "Europe/Madrid",
+): GoogleEvent {
+  const contactName = appointment.contactName || "Contact";
+  const appointmentType = appointment.type || "Cita";
+
   return {
     summary: `${appointmentType} - ${contactName}`,
-    description: appointment.notes || '',
+    description: appointment.notes || "",
     start: {
       dateTime: appointment.datetimeStart.toISOString(),
-      timeZone: userTimezone
+      timeZone: userTimezone,
     },
     end: {
       dateTime: appointment.datetimeEnd.toISOString(),
-      timeZone: userTimezone
+      timeZone: userTimezone,
     },
     reminders: {
       useDefault: false,
-      overrides: [
-        { method: 'popup', minutes: 15 }
-      ]
-    }
+      overrides: [{ method: "popup", minutes: 15 }],
+    },
   };
 }
 
 /**
  * Convert Google Calendar event to local appointment data
  */
-export function fromGoogleEvent(googleEvent: calendar_v3.Schema$Event, userId: string): Partial<AppointmentData> {
-  const summary = googleEvent.summary || '';
+export function fromGoogleEvent(
+  googleEvent: calendar_v3.Schema$Event,
+  userId: string,
+): Partial<AppointmentData> {
+  const summary = googleEvent.summary || "";
   const appointmentType = extractTypeFromSummary(summary);
-  
+
   return {
     userId,
-    datetimeStart: new Date(googleEvent.start?.dateTime || googleEvent.start?.date || ''),
-    datetimeEnd: new Date(googleEvent.end?.dateTime || googleEvent.end?.date || ''),
-    notes: googleEvent.description || '',
+    datetimeStart: new Date(
+      googleEvent.start?.dateTime || googleEvent.start?.date || "",
+    ),
+    datetimeEnd: new Date(
+      googleEvent.end?.dateTime || googleEvent.end?.date || "",
+    ),
+    notes: googleEvent.description || "",
     type: appointmentType,
-    status: 'Scheduled',
+    status: "Scheduled",
   };
 }
 
@@ -247,26 +260,26 @@ export function fromGoogleEvent(googleEvent: calendar_v3.Schema$Event, userId: s
  */
 function extractTypeFromSummary(summary: string): string {
   const typeMap: Record<string, string> = {
-    'Visita': 'Visita',
-    'Reunión': 'Reunión', 
-    'Firma': 'Firma',
-    'Cierre': 'Cierre',
-    'Viaje': 'Viaje'
+    Visita: "Visita",
+    Reunión: "Reunión",
+    Firma: "Firma",
+    Cierre: "Cierre",
+    Viaje: "Viaje",
   };
-  
+
   for (const [key, value] of Object.entries(typeMap)) {
     if (summary.includes(key)) return value;
   }
-  return 'Reunión'; // Default fallback
+  return "Reunión"; // Default fallback
 }
 
 /**
  * Create event in Google Calendar
  */
 export async function createGoogleEvent(
-  userId: string, 
+  userId: string,
   appointment: AppointmentData,
-  userTimezone?: string
+  userTimezone?: string,
 ): Promise<{ eventId: string; etag: string } | null> {
   const calendar = await getCalendarClient(userId);
   if (!calendar) return null;
@@ -276,7 +289,7 @@ export async function createGoogleEvent(
 
   try {
     const googleEvent = toGoogleEvent(appointment, userTimezone);
-    
+
     const response = await calendar.events.insert({
       calendarId: integration.calendarId,
       requestBody: googleEvent,
@@ -290,7 +303,7 @@ export async function createGoogleEvent(
     }
     return null;
   } catch (error) {
-    console.error('Failed to create Google Calendar event:', error);
+    console.error("Failed to create Google Calendar event:", error);
     return null;
   }
 }
@@ -303,7 +316,7 @@ export async function updateGoogleEvent(
   eventId: string,
   appointment: AppointmentData,
   etag?: string,
-  userTimezone?: string
+  userTimezone?: string,
 ): Promise<{ etag: string } | null> {
   const calendar = await getCalendarClient(userId);
   if (!calendar) return null;
@@ -313,7 +326,7 @@ export async function updateGoogleEvent(
 
   try {
     const googleEvent = toGoogleEvent(appointment, userTimezone);
-    
+
     const requestOptions: calendar_v3.Params$Resource$Events$Update = {
       calendarId: integration.calendarId,
       eventId: eventId,
@@ -330,7 +343,7 @@ export async function updateGoogleEvent(
     }
     return null;
   } catch (error) {
-    console.error('Failed to update Google Calendar event:', error);
+    console.error("Failed to update Google Calendar event:", error);
     return null;
   }
 }
@@ -340,7 +353,7 @@ export async function updateGoogleEvent(
  */
 export async function deleteGoogleEvent(
   userId: string,
-  eventId: string
+  eventId: string,
 ): Promise<boolean> {
   const calendar = await getCalendarClient(userId);
   if (!calendar) return false;
@@ -355,7 +368,7 @@ export async function deleteGoogleEvent(
     });
     return true;
   } catch (error) {
-    console.error('Failed to delete Google Calendar event:', error);
+    console.error("Failed to delete Google Calendar event:", error);
     return false;
   }
 }
@@ -372,13 +385,14 @@ export async function startWatchChannel(userId: string): Promise<boolean> {
 
   try {
     // Skip webhook setup in development since Google requires HTTPS
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Skipping webhook setup in development (requires HTTPS)');
+    if (process.env.NODE_ENV !== "production") {
+      console.log("Skipping webhook setup in development (requires HTTPS)");
       return true;
     }
 
     const channelId = `vesta-${userId}-${nanoid(8)}`;
-    const webhookUrl = 'https://v0-vesta-eight.vercel.app/api/google/calendar/webhook';
+    const webhookUrl =
+      "https://v0-vesta-eight.vercel.app/api/google/calendar/webhook";
 
     const expiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -386,7 +400,7 @@ export async function startWatchChannel(userId: string): Promise<boolean> {
       calendarId: integration.calendarId,
       requestBody: {
         id: channelId,
-        type: 'web_hook',
+        type: "web_hook",
         address: webhookUrl,
         expiration: expiration.getTime().toString(),
       },
@@ -405,15 +419,15 @@ export async function startWatchChannel(userId: string): Promise<boolean> {
         .where(
           and(
             eq(userIntegrations.userId, userId),
-            eq(userIntegrations.provider, "google_calendar")
-          )
+            eq(userIntegrations.provider, "google_calendar"),
+          ),
         );
 
       return true;
     }
     return false;
   } catch (error) {
-    console.error('Failed to start watch channel:', error);
+    console.error("Failed to start watch channel:", error);
     return false;
   }
 }
@@ -448,13 +462,13 @@ export async function stopWatchChannel(userId: string): Promise<boolean> {
       .where(
         and(
           eq(userIntegrations.userId, userId),
-          eq(userIntegrations.provider, "google_calendar")
-        )
+          eq(userIntegrations.provider, "google_calendar"),
+        ),
       );
 
     return true;
   } catch (error) {
-    console.error('Failed to stop watch channel:', error);
+    console.error("Failed to stop watch channel:", error);
     return false;
   }
 }
@@ -477,8 +491,8 @@ export async function disconnectIntegration(userId: string): Promise<boolean> {
       .where(
         and(
           eq(userIntegrations.userId, userId),
-          eq(userIntegrations.provider, "google_calendar")
-        )
+          eq(userIntegrations.provider, "google_calendar"),
+        ),
       );
 
     // Remove Google Calendar metadata from appointments but keep local data
@@ -494,7 +508,7 @@ export async function disconnectIntegration(userId: string): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error('Failed to disconnect Google Calendar integration:', error);
+    console.error("Failed to disconnect Google Calendar integration:", error);
     return false;
   }
 }
@@ -504,7 +518,11 @@ export async function disconnectIntegration(userId: string): Promise<boolean> {
  */
 export async function updateAppointmentGoogleMeta(
   appointmentId: bigint,
-  metadata: { googleEventId?: string | null; googleEtag?: string | null; lastSyncedAt?: Date }
+  metadata: {
+    googleEventId?: string | null;
+    googleEtag?: string | null;
+    lastSyncedAt?: Date;
+  },
 ): Promise<void> {
   await db
     .update(appointments)

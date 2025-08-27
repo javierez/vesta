@@ -10,7 +10,10 @@ import { type WebsiteConfigurationInput } from "~/types/website-settings";
 interface UseWebsiteSaveReturn {
   isPending: boolean;
   error: string | null;
-  saveSection: (section: string, data?: Partial<WebsiteConfigurationInput>) => Promise<void>;
+  saveSection: (
+    section: string,
+    data?: Partial<WebsiteConfigurationInput>,
+  ) => Promise<void>;
   saveAll: (activeSection: string) => Promise<void>;
 }
 
@@ -18,13 +21,16 @@ interface UseWebsiteSaveReturn {
 export function useWebsiteSave(
   form: ReturnType<typeof useForm<WebsiteConfigurationInput>>,
   accountId: bigint | null,
-  onSaveSuccess?: () => void
+  onSaveSuccess?: () => void,
 ): UseWebsiteSaveReturn {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   // Save specific section - PRESERVE existing section-specific data extraction
-  const saveSection = async (section: string, customData?: Partial<WebsiteConfigurationInput>) => {
+  const saveSection = async (
+    section: string,
+    customData?: Partial<WebsiteConfigurationInput>,
+  ) => {
     if (!accountId) {
       setError("No se pudo identificar la cuenta");
       toast.error("No se pudo identificar la cuenta");
@@ -37,45 +43,48 @@ export function useWebsiteSave(
 
     // Get only the data for the current section - PRESERVE existing switch logic
     const sectionData: Partial<WebsiteConfigurationInput> = {};
-    
+
     switch (section) {
-      case 'seo':
+      case "seo":
         sectionData.seoProps = formData.seoProps;
         break;
-      case 'branding':
+      case "branding":
         sectionData.logo = formData.logo;
         sectionData.favicon = formData.favicon;
         sectionData.logotype = formData.logotype;
         break;
-      case 'hero':
+      case "hero":
         sectionData.heroProps = formData.heroProps;
         break;
-      case 'featured':
+      case "featured":
         sectionData.featuredProps = formData.featuredProps;
         break;
-      case 'about':
+      case "about":
         sectionData.aboutProps = formData.aboutProps;
         break;
-      case 'properties':
+      case "properties":
         sectionData.propertiesProps = formData.propertiesProps;
         break;
-      case 'testimonials':
+      case "testimonials":
         sectionData.testimonialProps = formData.testimonialProps;
         break;
-      case 'contact':
+      case "contact":
         sectionData.contactProps = formData.contactProps;
         break;
-      case 'footer':
+      case "footer":
         sectionData.footerProps = formData.footerProps;
         break;
-      case 'head':
+      case "head":
         sectionData.headProps = formData.headProps;
         break;
-      case 'social':
+      case "social":
         sectionData.socialLinks = formData.socialLinks;
         break;
-      case 'meta':
-        console.log('💾 SAVE: Handling meta section with data:', formData.metadata);
+      case "meta":
+        console.log(
+          "💾 SAVE: Handling meta section with data:",
+          formData.metadata,
+        );
         sectionData.metadata = formData.metadata;
         break;
       default:
@@ -92,15 +101,19 @@ export function useWebsiteSave(
 
     console.log("📋 Section data to save:", sectionData);
     console.log("🚀 Starting section submission...");
-    
+
     startTransition(async () => {
       try {
         setError(null);
         console.log("📡 Calling updateWebsiteSectionAction...");
-        
-        const result = await updateWebsiteSectionAction(accountId, section, sectionData);
+
+        const result = await updateWebsiteSectionAction(
+          accountId,
+          section,
+          sectionData,
+        );
         console.log("📥 Server response:", result);
-        
+
         if (result.success) {
           console.log("✅ Section saved successfully");
           toast.success(`Sección ${section} guardada correctamente`);

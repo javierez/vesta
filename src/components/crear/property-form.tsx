@@ -418,13 +418,9 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
             <ProgressBar
               currentStep={currentStep}
               steps={steps}
-              formPosition={
-                globalFormData.listingDetails?.formPosition ?? 1
-              }
+              formPosition={globalFormData.listingDetails?.formPosition ?? 1}
               onStepClick={goToStep}
-              propertyType={
-                globalFormData.listingDetails?.propertyType ?? ""
-              }
+              propertyType={globalFormData.listingDetails?.propertyType ?? ""}
             />
           </div>
 

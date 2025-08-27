@@ -4,12 +4,17 @@ import { db } from "~/server/db";
 import { accounts, users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { accountConfigurationSchema, type AccountConfigurationInput } from "~/types/account-settings";
+import {
+  accountConfigurationSchema,
+  type AccountConfigurationInput,
+} from "~/types/account-settings";
 
 /**
  * Get current user's account ID from their user ID
  */
-export async function getCurrentUserAccountId(userId: string): Promise<bigint | null> {
+export async function getCurrentUserAccountId(
+  userId: string,
+): Promise<bigint | null> {
   try {
     const [user] = await db
       .select({ accountId: users.accountId })
@@ -61,7 +66,7 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
 }> {
   try {
     console.log("🔍 Getting account details for accountId:", accountId);
-    
+
     const [account] = await db
       .select()
       .from(accounts)
@@ -75,17 +80,20 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
     console.log("✅ Account found:", account.name);
 
     // Parse JSON fields safely
-    const portalSettings = typeof account.portalSettings === 'string' 
-      ? JSON.parse(account.portalSettings) as Record<string, unknown>
-      : (account.portalSettings ?? {}) as Record<string, unknown>;
-      
-    const paymentSettings = typeof account.paymentSettings === 'string'
-      ? JSON.parse(account.paymentSettings) as Record<string, unknown>
-      : (account.paymentSettings ?? {}) as Record<string, unknown>;
-      
-    const preferences = typeof account.preferences === 'string'
-      ? JSON.parse(account.preferences) as Record<string, unknown>
-      : (account.preferences ?? {}) as Record<string, unknown>;
+    const portalSettings =
+      typeof account.portalSettings === "string"
+        ? (JSON.parse(account.portalSettings) as Record<string, unknown>)
+        : ((account.portalSettings ?? {}) as Record<string, unknown>);
+
+    const paymentSettings =
+      typeof account.paymentSettings === "string"
+        ? (JSON.parse(account.paymentSettings) as Record<string, unknown>)
+        : ((account.paymentSettings ?? {}) as Record<string, unknown>);
+
+    const preferences =
+      typeof account.preferences === "string"
+        ? (JSON.parse(account.preferences) as Record<string, unknown>)
+        : ((account.preferences ?? {}) as Record<string, unknown>);
 
     const accountData = {
       accountId: account.accountId.toString(),
@@ -120,9 +128,9 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
     return { success: true, data: accountData };
   } catch (error) {
     console.error("❌ Error getting account details:", error);
-    return { 
-      success: false, 
-      error: "Error al obtener los detalles de la cuenta" 
+    return {
+      success: false,
+      error: "Error al obtener los detalles de la cuenta",
     };
   }
 }
@@ -132,7 +140,7 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
  */
 export async function updateAccountConfigurationAction(
   accountId: bigint,
-  data: AccountConfigurationInput
+  data: AccountConfigurationInput,
 ): Promise<{
   success: boolean;
   error?: string;
@@ -140,10 +148,10 @@ export async function updateAccountConfigurationAction(
   try {
     console.log("🔄 Updating account configuration for accountId:", accountId);
     console.log("📝 Data to update:", data);
-    
+
     // Validate the data
     const validatedData = accountConfigurationSchema.parse(data);
-    
+
     // Prepare the update data
     const updateData: Partial<typeof accounts.$inferInsert> = {
       name: validatedData.name,
@@ -171,22 +179,24 @@ export async function updateAccountConfigurationAction(
       .where(eq(accounts.accountId, accountId));
 
     console.log("✅ Account configuration updated successfully");
-    
+
     return { success: true };
   } catch (error) {
     console.error("❌ Error updating account configuration:", error);
-    
+
     if (error instanceof z.ZodError) {
-      const fieldErrors = error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
-      return { 
-        success: false, 
-        error: `Errores de validación: ${fieldErrors.join(', ')}` 
+      const fieldErrors = error.errors.map(
+        (e) => `${e.path.join(".")}: ${e.message}`,
+      );
+      return {
+        success: false,
+        error: `Errores de validación: ${fieldErrors.join(", ")}`,
       };
     }
-    
-    return { 
-      success: false, 
-      error: "Error al actualizar la configuración de la cuenta" 
+
+    return {
+      success: false,
+      error: "Error al actualizar la configuración de la cuenta",
     };
   }
 }

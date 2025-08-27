@@ -15,12 +15,20 @@ export const seoPropsSchema = z.object({
   description: z.string().optional(),
   keywords: z.string().optional(),
   name: z.string().optional(),
-  email: z.string().email("Debe ser un email válido").or(z.literal("")).optional(),
+  email: z
+    .string()
+    .email("Debe ser un email válido")
+    .or(z.literal(""))
+    .optional(),
   telephone: z.string().optional(),
   url: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
   ogTitle: z.string().optional(),
   ogDescription: z.string().optional(),
-  ogImage: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
+  ogImage: z
+    .string()
+    .url("Debe ser una URL válida")
+    .or(z.literal(""))
+    .optional(),
   ogType: z.string().optional(),
   ogUrl: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
   ogLocale: z.string().optional(),
@@ -159,30 +167,36 @@ export const footerOfficeLocationSchema = z.object({
 export const footerPropsSchema = z.object({
   companyName: z.string().optional(),
   description: z.string().optional(),
-  socialLinks: z.object({
-    facebook: z.string().optional(),
-    instagram: z.string().optional(),
-    twitter: z.string().optional(),
-    linkedin: z.string().optional(),
-  }).optional(),
+  socialLinks: z
+    .object({
+      facebook: z.string().optional(),
+      instagram: z.string().optional(),
+      twitter: z.string().optional(),
+      linkedin: z.string().optional(),
+    })
+    .optional(),
   officeLocations: z.array(footerOfficeLocationSchema).default([]),
-  quickLinksVisibility: z.object({
-    inicio: z.boolean().default(true),
-    propiedades: z.boolean().default(true),
-    nosotros: z.boolean().default(true),
-    reseñas: z.boolean().default(true),
-    contacto: z.boolean().default(true),
-    comprar: z.boolean().default(false),
-    alquilar: z.boolean().default(false),
-    vender: z.boolean().default(false),
-  }).optional(),
-  propertyTypesVisibility: z.object({
-    pisos: z.boolean().default(true),
-    casas: z.boolean().default(true),
-    locales: z.boolean().default(true),
-    solares: z.boolean().default(true),
-    garajes: z.boolean().default(true),
-  }).optional(),
+  quickLinksVisibility: z
+    .object({
+      inicio: z.boolean().default(true),
+      propiedades: z.boolean().default(true),
+      nosotros: z.boolean().default(true),
+      reseñas: z.boolean().default(true),
+      contacto: z.boolean().default(true),
+      comprar: z.boolean().default(false),
+      alquilar: z.boolean().default(false),
+      vender: z.boolean().default(false),
+    })
+    .optional(),
+  propertyTypesVisibility: z
+    .object({
+      pisos: z.boolean().default(true),
+      casas: z.boolean().default(true),
+      locales: z.boolean().default(true),
+      solares: z.boolean().default(true),
+      garajes: z.boolean().default(true),
+    })
+    .optional(),
   copyright: z.string().optional(),
   links: z.array(footerLinkSchema).default([]),
 });
@@ -200,7 +214,11 @@ export const metadataSchema = z.object({
   account_id: z.string().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
-  logotype: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
+  logotype: z
+    .string()
+    .url("Debe ser una URL válida")
+    .or(z.literal(""))
+    .optional(),
   mainpage: z.union([z.string(), z.record(z.unknown())]).optional(), // JSON string or parsed object
 });
 
@@ -209,8 +227,16 @@ export const websiteConfigurationSchema = z.object({
   socialLinks: socialLinksSchema,
   seoProps: seoPropsSchema,
   logo: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
-  favicon: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
-  logotype: z.string().url("Debe ser una URL válida").or(z.literal("")).optional(),
+  favicon: z
+    .string()
+    .url("Debe ser una URL válida")
+    .or(z.literal(""))
+    .optional(),
+  logotype: z
+    .string()
+    .url("Debe ser una URL válida")
+    .or(z.literal(""))
+    .optional(),
   heroProps: heroPropsSchema,
   featuredProps: featuredPropsSchema,
   aboutProps: aboutPropsSchema,
@@ -236,7 +262,9 @@ export type ContactProps = z.infer<typeof contactPropsSchema>;
 export type FooterProps = z.infer<typeof footerPropsSchema>;
 export type HeadProps = z.infer<typeof headPropsSchema>;
 export type Metadata = z.infer<typeof metadataSchema>;
-export type WebsiteConfigurationInput = z.infer<typeof websiteConfigurationSchema>;
+export type WebsiteConfigurationInput = z.infer<
+  typeof websiteConfigurationSchema
+>;
 
 // Navigation Tabs Type
 export interface WebsiteTab {

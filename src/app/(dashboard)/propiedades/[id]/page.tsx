@@ -3,7 +3,12 @@ import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-bre
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { PropertyTabs } from "~/components/propiedades/detail/property-tabs";
 import { getPropertyImages } from "~/server/queries/property_images";
-import { getListingDetailsWithAuth, getListingBreadcrumbData, getListingHeaderData, getListingTabsData } from "~/server/queries/listing";
+import {
+  getListingDetailsWithAuth,
+  getListingBreadcrumbData,
+  getListingHeaderData,
+  getListingTabsData,
+} from "~/server/queries/listing";
 import { getEnergyCertificate } from "~/server/queries/document";
 import type { PropertyImage } from "~/lib/data";
 import { convertDbListingToPropertyListing } from "~/types/property-listing";
@@ -17,18 +22,21 @@ interface PropertyPageProps {
 export default async function PropertyPage({ params }: PropertyPageProps) {
   const unwrappedParams = await params;
   const listingId = parseInt(unwrappedParams.id);
-  
+
   // Get data with optimized queries
-  const [breadcrumbData, headerData, tabsData, fullListingDetails] = await Promise.all([
-    getListingBreadcrumbData(listingId),
-    getListingHeaderData(listingId), 
-    getListingTabsData(listingId),
-    getListingDetailsWithAuth(listingId),
-  ]);
+  const [breadcrumbData, headerData, tabsData, fullListingDetails] =
+    await Promise.all([
+      getListingBreadcrumbData(listingId),
+      getListingHeaderData(listingId),
+      getListingTabsData(listingId),
+      getListingDetailsWithAuth(listingId),
+    ]);
 
   // Type guard to check if fullListingDetails is a valid record
   const isValidRecord = (obj: unknown): obj is Record<string, unknown> => {
-    return obj != null && typeof obj === 'object' && Object.keys(obj).length > 0;
+    return (
+      obj != null && typeof obj === "object" && Object.keys(obj).length > 0
+    );
   };
 
   if (!breadcrumbData || !headerData || !tabsData) {
@@ -36,7 +44,10 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   }
 
   // Check if this is a draft listing and redirect to edit page
-  if (isValidRecord(fullListingDetails) && fullListingDetails.status === "Draft") {
+  if (
+    isValidRecord(fullListingDetails) &&
+    fullListingDetails.status === "Draft"
+  ) {
     redirect(`/propiedades/crear/${listingId}`);
   }
 
@@ -87,7 +98,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
       <div className="pb-16">
         <PropertyTabs
           listing={tabsData}
-          convertedListing={isValidRecord(fullListingDetails) ? convertDbListingToPropertyListing(fullListingDetails) : undefined}
+          convertedListing={
+            isValidRecord(fullListingDetails)
+              ? convertDbListingToPropertyListing(fullListingDetails)
+              : undefined
+          }
           images={processedImages}
           energyCertificate={energyCertificate}
         />

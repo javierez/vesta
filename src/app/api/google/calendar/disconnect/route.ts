@@ -13,23 +13,23 @@ export async function POST(_request: NextRequest) {
 
     // Disconnect Google Calendar integration
     const success = await disconnectIntegration(user.id);
-    
+
     if (success) {
-      return NextResponse.json({ 
-        success: true, 
-        message: "Google Calendar disconnected successfully" 
+      return NextResponse.json({
+        success: true,
+        message: "Google Calendar disconnected successfully",
       });
     } else {
       return NextResponse.json(
         { error: "Failed to disconnect Google Calendar" },
-        { status: 500 }
+        { status: 500 },
       );
     }
   } catch (error) {
     console.error("Error disconnecting Google Calendar:", error);
     return NextResponse.json(
       { error: "Failed to disconnect Google Calendar" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

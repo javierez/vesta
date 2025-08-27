@@ -109,18 +109,18 @@ export const PropertyCard = React.memo(function PropertyCard({
   const handleWhatsAppClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Use account website or fallback to current origin
     const baseUrl = accountWebsite ?? window.location.origin;
-    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
     const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
     const message = `Échale un vistazo: ${propertyUrl}`;
-    
+
     // Create WhatsApp link with pre-filled message
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    
+
     // Open WhatsApp
-    window.open(whatsappUrl, '_blank');
+    window.open(whatsappUrl, "_blank");
   };
 
   return (
@@ -139,7 +139,7 @@ export const PropertyCard = React.memo(function PropertyCard({
             {(!imageLoaded || !image2Loaded) && (
               <Skeleton className="absolute inset-0 z-10" />
             )}
-            
+
             {/* First Image */}
             <Image
               src={imageSrc}
@@ -149,14 +149,18 @@ export const PropertyCard = React.memo(function PropertyCard({
               className={cn(
                 "object-cover transition-opacity duration-300",
                 isHovered && image2Loaded ? "opacity-0" : "opacity-100",
-                imageSrc === defaultPlaceholder || listing.status === "Sold" || listing.status === "Vendido" ? "grayscale" : ""
+                imageSrc === defaultPlaceholder ||
+                  listing.status === "Sold" ||
+                  listing.status === "Vendido"
+                  ? "grayscale"
+                  : "",
               )}
               loading="lazy"
               onLoad={() => setImageLoaded(true)}
               onError={onImageError}
               quality={85}
             />
-            
+
             {/* Second Image */}
             <Image
               src={imageSrc2}
@@ -166,7 +170,11 @@ export const PropertyCard = React.memo(function PropertyCard({
               className={cn(
                 "object-cover transition-opacity duration-300",
                 isHovered && image2Loaded ? "opacity-100" : "opacity-0",
-                imageSrc2 === defaultPlaceholder || listing.status === "Sold" || listing.status === "Vendido" ? "grayscale" : ""
+                imageSrc2 === defaultPlaceholder ||
+                  listing.status === "Sold" ||
+                  listing.status === "Vendido"
+                  ? "grayscale"
+                  : "",
               )}
               loading="lazy"
               onLoad={() => setImage2Loaded(true)}

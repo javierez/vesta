@@ -10,7 +10,16 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { formatPrice } from "~/lib/utils";
-import { Map, Bath, Bed, Square, User, Building2, Share2, MessageCircle } from "lucide-react";
+import {
+  Map,
+  Bath,
+  Bed,
+  Square,
+  User,
+  Building2,
+  Share2,
+  MessageCircle,
+} from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
@@ -58,7 +67,9 @@ export const PropertyTable = React.memo(function PropertyTable({
 }: PropertyTableProps) {
   const router = useRouter();
   const defaultPlaceholder = "/properties/suburban-dream.png";
-  const [loadedImages, setLoadedImages] = React.useState<Set<string>>(new Set());
+  const [loadedImages, setLoadedImages] = React.useState<Set<string>>(
+    new Set(),
+  );
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -118,54 +129,64 @@ export const PropertyTable = React.memo(function PropertyTable({
   });
 
   const handleImageLoad = React.useCallback((listingId: string) => {
-    setLoadedImages(prev => new Set(prev).add(listingId));
+    setLoadedImages((prev) => new Set(prev).add(listingId));
   }, []);
 
-  const handleWhatsAppClick = React.useCallback((listing: ListingOverview, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const baseUrl = accountWebsite ?? window.location.origin;
-    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
-    const message = `Échale un vistazo: ${propertyUrl}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    
-    window.open(whatsappUrl, '_blank');
-  }, [accountWebsite]);
+  const handleWhatsAppClick = React.useCallback(
+    (listing: ListingOverview, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-  const handleShareClick = React.useCallback(async (listing: ListingOverview, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const baseUrl = accountWebsite ?? window.location.origin;
-    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
-    const message = `Échale un vistazo: ${propertyUrl}`;
-    const shareData = {
-      text: message,
-      // Only share our consistent message format
-    };
+      const baseUrl = accountWebsite ?? window.location.origin;
+      const cleanBaseUrl = baseUrl.endsWith("/")
+        ? baseUrl.slice(0, -1)
+        : baseUrl;
+      const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
+      const message = `Échale un vistazo: ${propertyUrl}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
 
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback: copy to clipboard
-        await navigator.clipboard.writeText(message);
-        alert('Enlace copiado al portapapeles');
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-      // Fallback: copy to clipboard
+      window.open(whatsappUrl, "_blank");
+    },
+    [accountWebsite],
+  );
+
+  const handleShareClick = React.useCallback(
+    async (listing: ListingOverview, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const baseUrl = accountWebsite ?? window.location.origin;
+      const cleanBaseUrl = baseUrl.endsWith("/")
+        ? baseUrl.slice(0, -1)
+        : baseUrl;
+      const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
+      const message = `Échale un vistazo: ${propertyUrl}`;
+      const shareData = {
+        text: message,
+        // Only share our consistent message format
+      };
+
       try {
-        await navigator.clipboard.writeText(message);
-        alert('Enlace copiado al portapapeles');
-      } catch (clipboardError) {
-        console.error('Clipboard fallback failed:', clipboardError);
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else {
+          // Fallback: copy to clipboard
+          await navigator.clipboard.writeText(message);
+          alert("Enlace copiado al portapapeles");
+        }
+      } catch (error) {
+        console.error("Error sharing:", error);
+        // Fallback: copy to clipboard
+        try {
+          await navigator.clipboard.writeText(message);
+          alert("Enlace copiado al portapapeles");
+        } catch (clipboardError) {
+          console.error("Clipboard fallback failed:", clipboardError);
+        }
       }
-    }
-  }, [accountWebsite]);
+    },
+    [accountWebsite],
+  );
 
   const ResizeHandle = ({ column }: { column: string }) => (
     <div
@@ -240,18 +261,22 @@ export const PropertyTable = React.memo(function PropertyTable({
                         fill
                         className={cn(
                           "object-cover transition-opacity duration-200",
-                          loadedImages.has(listing.listingId.toString()) ? "opacity-100" : "opacity-0"
+                          loadedImages.has(listing.listingId.toString())
+                            ? "opacity-100"
+                            : "opacity-0",
                         )}
-                        onLoad={() => handleImageLoad(listing.listingId.toString())}
+                        onLoad={() =>
+                          handleImageLoad(listing.listingId.toString())
+                        }
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = defaultPlaceholder;
                           handleImageLoad(listing.listingId.toString());
                         }}
                       />
-                      
+
                       {/* Hover overlay with icons */}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100 flex items-center justify-center gap-1">
+                      <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                         <Button
                           variant="ghost"
                           size="icon"

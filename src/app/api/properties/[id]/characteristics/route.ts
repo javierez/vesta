@@ -20,7 +20,9 @@ export async function GET(
       );
     }
 
-    const convertedListing = convertDbListingToPropertyListing(listing as Record<string, unknown>);
+    const convertedListing = convertDbListingToPropertyListing(
+      listing as Record<string, unknown>,
+    );
 
     return NextResponse.json(convertedListing);
   } catch (error) {

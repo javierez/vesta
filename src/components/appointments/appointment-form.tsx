@@ -253,7 +253,10 @@ export default function AppointmentForm({
     const needsAllListings =
       initialData.listingId && !selectedListing && listings.length === 0;
     // For initial load on step 2, fetch last 10 listings
-    const isInitialLoad = currentStep === 1 && listings.length === 0 && listingSearchQuery.length === 0;
+    const isInitialLoad =
+      currentStep === 1 &&
+      listings.length === 0 &&
+      listingSearchQuery.length === 0;
     // For search, we fetch based on query
     const hasSearchQuery = listingSearchQuery.length > 0;
 
@@ -317,7 +320,13 @@ export default function AppointmentForm({
 
       return () => clearTimeout(debounceTimer);
     }
-  }, [listingSearchQuery, initialData.listingId, currentStep, selectedListing, listings.length]);
+  }, [
+    listingSearchQuery,
+    initialData.listingId,
+    currentStep,
+    selectedListing,
+    listings.length,
+  ]);
 
   // Filter contacts based on search query and exclude selected contact
   const filteredContacts = contacts.filter((contact) => {

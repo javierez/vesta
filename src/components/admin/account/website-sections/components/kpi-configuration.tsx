@@ -17,7 +17,7 @@ export function KPIConfiguration({ form }: KPIConfigurationProps) {
         control={form.control}
         name="aboutProps.showKPI"
         render={({ field }) => (
-          <FormItem className="flex items-center space-x-2 mb-4">
+          <FormItem className="mb-4 flex items-center space-x-2">
             <FormControl>
               <input
                 type="checkbox"

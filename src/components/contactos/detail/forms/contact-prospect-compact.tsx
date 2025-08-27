@@ -47,7 +47,7 @@ export function ContactProspectCompact({
   onDelete: _onDelete,
 }: ContactProspectCompactProps) {
   const [locationData, setLocationData] = useState<LocationData[]>([]);
-  const [title, setTitle] = useState<string>('');
+  const [title, setTitle] = useState<string>("");
 
   const generateTitle = useCallback(
     (locations: LocationData[]) => {
@@ -106,9 +106,7 @@ export function ContactProspectCompact({
           </span>
           <div>
             {title && (
-              <h3 className="text-sm font-medium text-gray-900">
-                {title}
-              </h3>
+              <h3 className="text-sm font-medium text-gray-900">{title}</h3>
             )}
             <p className="mt-0.5 text-xs text-gray-500">
               Creado {prospect.createdAt.toLocaleDateString("es-ES")}

@@ -15,22 +15,35 @@ export function PropertyTableSkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead style={{ width: "100px", minWidth: "100px", maxWidth: "100px" }}>
+              <TableHead
+                style={{ width: "100px", minWidth: "100px", maxWidth: "100px" }}
+              >
                 Imagen
               </TableHead>
-              <TableHead style={{ width: "250px", minWidth: "250px", maxWidth: "250px" }}>
+              <TableHead
+                style={{ width: "250px", minWidth: "250px", maxWidth: "250px" }}
+              >
                 Propiedad
               </TableHead>
-              <TableHead style={{ width: "180px", minWidth: "180px", maxWidth: "180px" }}>
+              <TableHead
+                style={{ width: "180px", minWidth: "180px", maxWidth: "180px" }}
+              >
                 Contactos
               </TableHead>
-              <TableHead style={{ width: "120px", minWidth: "120px", maxWidth: "120px" }}>
+              <TableHead
+                style={{ width: "120px", minWidth: "120px", maxWidth: "120px" }}
+              >
                 Estado
               </TableHead>
-              <TableHead style={{ width: "150px", minWidth: "150px", maxWidth: "150px" }} className="text-right">
+              <TableHead
+                style={{ width: "150px", minWidth: "150px", maxWidth: "150px" }}
+                className="text-right"
+              >
                 Precio
               </TableHead>
-              <TableHead style={{ width: "200px", minWidth: "200px", maxWidth: "200px" }}>
+              <TableHead
+                style={{ width: "200px", minWidth: "200px", maxWidth: "200px" }}
+              >
                 Características
               </TableHead>
             </TableRow>
@@ -38,15 +51,25 @@ export function PropertyTableSkeleton() {
           <TableBody>
             {Array.from({ length: 6 }).map((_, index) => (
               <TableRow key={index}>
-                <TableCell 
+                <TableCell
                   className="py-0"
-                  style={{ width: "100px", minWidth: "100px", maxWidth: "100px" }}
+                  style={{
+                    width: "100px",
+                    minWidth: "100px",
+                    maxWidth: "100px",
+                  }}
                 >
                   <div className="relative h-[48px] w-[72px] overflow-hidden rounded-md">
                     <Skeleton className="h-full w-full" />
                   </div>
                 </TableCell>
-                <TableCell style={{ width: "250px", minWidth: "250px", maxWidth: "250px" }}>
+                <TableCell
+                  style={{
+                    width: "250px",
+                    minWidth: "250px",
+                    maxWidth: "250px",
+                  }}
+                >
                   <div className="flex flex-col gap-2">
                     <Skeleton className="h-4 w-3/4" />
                     <div className="flex items-center gap-2">
@@ -56,7 +79,13 @@ export function PropertyTableSkeleton() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell style={{ width: "180px", minWidth: "180px", maxWidth: "180px" }}>
+                <TableCell
+                  style={{
+                    width: "180px",
+                    minWidth: "180px",
+                    maxWidth: "180px",
+                  }}
+                >
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2">
                       <Skeleton className="h-3.5 w-3.5 rounded" />
@@ -68,27 +97,43 @@ export function PropertyTableSkeleton() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell style={{ width: "120px", minWidth: "120px", maxWidth: "120px" }}>
+                <TableCell
+                  style={{
+                    width: "120px",
+                    minWidth: "120px",
+                    maxWidth: "120px",
+                  }}
+                >
                   <Skeleton className="h-6 w-full rounded-full" />
                 </TableCell>
-                <TableCell 
+                <TableCell
                   className="text-right"
-                  style={{ width: "150px", minWidth: "150px", maxWidth: "150px" }}
+                  style={{
+                    width: "150px",
+                    minWidth: "150px",
+                    maxWidth: "150px",
+                  }}
                 >
-                  <Skeleton className="h-4 w-20 ml-auto" />
+                  <Skeleton className="ml-auto h-4 w-20" />
                 </TableCell>
-                <TableCell style={{ width: "200px", minWidth: "200px", maxWidth: "200px" }}>
+                <TableCell
+                  style={{
+                    width: "200px",
+                    minWidth: "200px",
+                    maxWidth: "200px",
+                  }}
+                >
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center">
-                      <Skeleton className="h-4 w-4 mr-1" />
+                      <Skeleton className="mr-1 h-4 w-4" />
                       <Skeleton className="h-4 w-4" />
                     </div>
                     <div className="flex items-center">
-                      <Skeleton className="h-4 w-4 mr-1" />
+                      <Skeleton className="mr-1 h-4 w-4" />
                       <Skeleton className="h-4 w-4" />
                     </div>
                     <div className="flex items-center">
-                      <Skeleton className="h-4 w-4 mr-1" />
+                      <Skeleton className="mr-1 h-4 w-4" />
                       <Skeleton className="h-4 w-6" />
                     </div>
                   </div>

@@ -11,11 +11,15 @@ import {
 import { Input } from "~/components/ui/input";
 import type { FeaturedSectionProps } from "../types/website-sections";
 
-export function FeaturedSection({ form, isActive, onUnsavedChanges }: FeaturedSectionProps) {
+export function FeaturedSection({
+  form,
+  isActive,
+  onUnsavedChanges,
+}: FeaturedSectionProps) {
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('featuredProps')) {
+      if (name?.startsWith("featuredProps")) {
         onUnsavedChanges(true);
       }
     });
@@ -60,7 +64,10 @@ export function FeaturedSection({ form, isActive, onUnsavedChanges }: FeaturedSe
             <FormItem>
               <FormLabel>Subtítulo</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Las mejores oportunidades del mercado" />
+                <Input
+                  {...field}
+                  placeholder="Las mejores oportunidades del mercado"
+                />
               </FormControl>
             </FormItem>
           )}
@@ -74,11 +81,13 @@ export function FeaturedSection({ form, isActive, onUnsavedChanges }: FeaturedSe
             <FormItem>
               <FormLabel>Número máximo de propiedades a mostrar</FormLabel>
               <FormControl>
-                <Input 
-                  {...field} 
-                  type="number" 
+                <Input
+                  {...field}
+                  type="number"
                   placeholder="6"
-                  onChange={(e) => field.onChange(parseInt(e.target.value) || 6)}
+                  onChange={(e) =>
+                    field.onChange(parseInt(e.target.value) || 6)
+                  }
                 />
               </FormControl>
             </FormItem>

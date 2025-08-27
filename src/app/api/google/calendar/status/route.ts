@@ -13,7 +13,7 @@ export async function GET(_request: NextRequest) {
 
     // Check if user has Google Calendar integration
     const integration = await getUserIntegration(user.id);
-    
+
     if (integration?.isActive) {
       return NextResponse.json({
         connected: true,
@@ -30,7 +30,7 @@ export async function GET(_request: NextRequest) {
     console.error("Error checking Google Calendar status:", error);
     return NextResponse.json(
       { error: "Failed to check integration status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

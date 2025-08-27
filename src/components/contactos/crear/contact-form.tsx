@@ -16,7 +16,10 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createContact, createContactWithListings } from "~/server/queries/contact";
+import {
+  createContact,
+  createContactWithListings,
+} from "~/server/queries/contact";
 import { listListingsCompactWithAuth } from "~/server/queries/listing";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
@@ -268,7 +271,7 @@ export default function ContactForm() {
       };
 
       let newContact;
-      
+
       if (formData.selectedListings.length === 0) {
         // Create contact without listing relationships
         newContact = await createContact(contactData);
@@ -583,9 +586,14 @@ export default function ContactForm() {
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
                   {formData.selectedListings.length > 0 ? (
-                    <span>{formData.selectedListings.length} propiedades seleccionadas</span>
+                    <span>
+                      {formData.selectedListings.length} propiedades
+                      seleccionadas
+                    </span>
                   ) : (
-                    <span className="text-gray-500">Selecciona propiedades para asociar al contacto (opcional)</span>
+                    <span className="text-gray-500">
+                      Selecciona propiedades para asociar al contacto (opcional)
+                    </span>
                   )}
                 </div>
                 {validationError && (
@@ -621,7 +629,7 @@ export default function ContactForm() {
                     })
                   ) : (
                     <div className="py-8 text-center text-gray-500">
-                      <Home className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                      <Home className="mx-auto mb-2 h-8 w-8 text-gray-300" />
                       <p>No se encontraron propiedades</p>
                     </div>
                   )}
