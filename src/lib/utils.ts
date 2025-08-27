@@ -156,8 +156,8 @@ export const prospectUtils = {
     let locationText = "";
 
     if (locations.length === 1 && locations[0]) {
-      // Single neighborhood: show neighborhood name
-      locationText = ` en ${locations[0].neighborhood}`;
+      // Single neighborhood: show neighborhood name with city in parentheses
+      locationText = ` en ${locations[0].neighborhood} (${locations[0].city})`;
     } else if (locations.length > 1 && locations[0]) {
       // Multiple neighborhoods: show city name
       locationText = ` en ${locations[0].city}`;

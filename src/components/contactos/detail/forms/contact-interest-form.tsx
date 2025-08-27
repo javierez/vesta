@@ -170,6 +170,7 @@ export function ContactInterestForm({
       const prospectData: CreateProspectInput = {
         contactId: contactId,
         status: "active",
+        prospectType: "search", // Traditional buyer/renter prospect
         listingType: localData.demandType || undefined,
         propertyType: localData.propertyTypes[0] ?? "",
         maxPrice: localData.maxPrice.toString(),
@@ -365,8 +366,26 @@ export function ContactInterestForm({
                   const propertyType = localData.propertyTypes[0] ?? "";
                   const isPisoOrCasa =
                     propertyType === "piso" || propertyType === "casa";
-                  const minLimit = isPisoOrCasa ? 50000 : 0;
-                  const maxLimit = isPisoOrCasa ? 2500000 : 2000000;
+                  const isRent = localData.demandType === "Rent";
+                  
+                  // Set different limits based on operation type (sale vs rent)
+                  let minLimit, maxLimit, step, defaultValue, placeholder;
+                  
+                  if (isRent) {
+                    // Rental properties: much lower price range
+                    minLimit = 300;
+                    maxLimit = 5000;
+                    step = 50;
+                    defaultValue = 1200;
+                    placeholder = "€1.200";
+                  } else {
+                    // Sale properties: original logic
+                    minLimit = isPisoOrCasa ? 50000 : 0;
+                    maxLimit = isPisoOrCasa ? 2500000 : 2000000;
+                    step = 10000;
+                    defaultValue = 200000;
+                    placeholder = "€200.000";
+                  }
 
                   return (
                     <>
@@ -374,12 +393,12 @@ export function ContactInterestForm({
                         <Slider
                           value={[localData.maxPrice]}
                           onValueChange={(value) => {
-                            const newMaxPrice = value[0] ?? 200000;
+                            const newMaxPrice = value[0] ?? defaultValue;
                             updateLocalData({ maxPrice: newMaxPrice });
                           }}
                           max={maxLimit}
                           min={minLimit}
-                          step={10000}
+                          step={step}
                           className="w-full"
                         />
                       </div>
@@ -387,15 +406,15 @@ export function ContactInterestForm({
                         <div className="w-32">
                           <Input
                             type="text"
-                            value={localData.maxPrice.toLocaleString("es-ES")}
+                            value={`${localData.maxPrice.toLocaleString("es-ES")}${isRent ? "/mes" : ""}`}
                             onChange={(e) => {
                               const value =
                                 parseInt(e.target.value.replace(/\D/g, "")) ??
-                                200000;
+                                defaultValue;
                               updateLocalData({ maxPrice: value });
                             }}
                             className="h-8 text-center text-sm"
-                            placeholder="€200.000"
+                            placeholder={`${placeholder}${isRent ? "/mes" : ""}`}
                           />
                         </div>
                       </div>

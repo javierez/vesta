@@ -588,9 +588,10 @@ export const prospects = singlestoreTable("prospects", {
   fundingReady: boolean("funding_ready"), // Has mortgage/pre-approval?
 
   // Listing prospect fields (new - for people wanting to LIST properties)
-  propertyToList: json("property_to_list"), // { address, propertyType, estimatedValue, condition, readyToList }
-  valuationStatus: varchar("valuation_status", { length: 50 }), // 'pending' | 'scheduled' | 'completed'
-  listingAgreementStatus: varchar("listing_agreement_status", { length: 50 }), // 'not_started' | 'in_progress' | 'signed'
+  // NOTE: These fields are commented out because they don't exist in the database yet
+  // propertyToList: json("property_to_list"), // { address, propertyType, estimatedValue, condition, readyToList }
+  // valuationStatus: varchar("valuation_status", { length: 50 }), // 'pending' | 'scheduled' | 'completed'
+  // listingAgreementStatus: varchar("listing_agreement_status", { length: 50 }), // 'not_started' | 'in_progress' | 'signed'
 
   // Common fields
   notesInternal: text("notes_internal"), // Everything the client shouldn't see

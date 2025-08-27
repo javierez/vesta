@@ -31,6 +31,7 @@ import {
 import { ContactProspectCompact } from "./forms/contact-prospect-compact";
 import { getLocationByNeighborhoodId } from "~/server/queries/locations";
 import type { PropertyListing } from "~/types/property-listing";
+import { AddPropertyDialog } from "./add-property-dialog";
 
 // Define ProspectData interface to match database schema
 interface ProspectData {
@@ -204,6 +205,9 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   const [contactListings, setContactListings] = useState<PropertyListing[]>([]);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
 
+  // Add property dialog state
+  const [showAddPropertyDialog, setShowAddPropertyDialog] = useState(false);
+
   // Load contact listings if owner or buyer
   useEffect(() => {
     if (isOwner || isBuyer) {
@@ -254,6 +258,36 @@ export function ContactTabs({ contact }: ContactTabsProps) {
 
     void loadProspects();
   }, [contact.contactId]);
+
+  // Function to reload contact listings after adding properties
+  const reloadContactListings = async () => {
+    if (isOwner || isBuyer) {
+      setIsLoadingListings(true);
+      try {
+        let allListings: unknown[];
+        if (isOwner) {
+          allListings = await getOwnerListingsWithAuth(
+            Number(contact.contactId),
+          );
+        } else if (isBuyer) {
+          // For buyer (demandante), get listings where they are the buyer
+          allListings = await getBuyerListingsWithAuth(
+            Number(contact.contactId),
+          );
+        } else {
+          allListings = [];
+        }
+
+        // Show all listings; server already filters by isActive
+        setContactListings(allListings as unknown as PropertyListing[]);
+      } catch (error) {
+        console.error("Error loading contact listings:", error);
+        toast.error("Error al cargar las propiedades del contacto");
+      } finally {
+        setIsLoadingListings(false);
+      }
+    }
+  };
 
   // Function to update module state
   const updateModuleState = (moduleName: ModuleName, hasChanges: boolean) => {
@@ -437,6 +471,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
             const prospectData: CreateProspectInput = {
               contactId: BigInt(contactId),
               status: "active",
+              prospectType: "search", // Traditional buyer/renter prospect
               listingType: form.demandType || undefined,
               propertyType: form.propertyTypes[0] ?? "",
               maxPrice: form.maxPrice.toString(),
@@ -792,6 +827,17 @@ export function ContactTabs({ contact }: ContactTabsProps) {
                 <h3 className="text-sm font-semibold tracking-wide">
                   {isOwner ? "PROPIEDADES ASOCIADAS" : "PROPIEDADES DE INTERÉS"}
                 </h3>
+                {isBuyer && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => setShowAddPropertyDialog(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Añadir Propiedad
+                  </Button>
+                )}
               </div>
 
               {isLoadingListings ? (
@@ -830,6 +876,14 @@ export function ContactTabs({ contact }: ContactTabsProps) {
           </div>
         </TabsContent>
       )}
+      
+      {/* Add Property Dialog */}
+      <AddPropertyDialog
+        open={showAddPropertyDialog}
+        onOpenChange={setShowAddPropertyDialog}
+        contactId={contact.contactId}
+        onSuccess={reloadContactListings}
+      />
     </Tabs>
   );
 }

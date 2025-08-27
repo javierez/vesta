@@ -52,6 +52,7 @@ export async function getProspectsByContactWithAuth(contactId: bigint) {
 export type CreateProspectInput = {
   contactId: bigint;
   status: string;
+  prospectType?: "search" | "listing"; // Defaults to "search" in database
   listingType?: string;
   propertyType?: string;
   minPrice?: string;
