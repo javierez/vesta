@@ -16,12 +16,12 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createContactWithListings } from "~/server/queries/contact";
+import { createContact, createContactWithListings } from "~/server/queries/contact";
 import { listListingsCompactWithAuth } from "~/server/queries/listing";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Search, Map, Bath, Bed, Square, Filter } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -36,8 +36,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import Image from "next/image";
 import { cn } from "~/lib/utils";
+import { CompactPropertyCard } from "./compact-property-card";
 
 // Contact form data interface
 interface ContactFormData {
@@ -202,18 +202,19 @@ export default function ContactForm() {
   };
 
   const validatePropertyStep = () => {
-    if (formData.selectedListings.length === 0) {
-      setValidationError(
-        "Por favor, selecciona al menos una propiedad para asociar al contacto.",
-      );
-      return false;
-    }
+    // Property selection is now optional
     setValidationError(null);
     return true;
   };
 
   const handleCreateContact = async () => {
     if (!validatePropertyStep()) return;
+
+    // If no properties selected, proceed directly to contact creation
+    if (formData.selectedListings.length === 0) {
+      await createContactProcess();
+      return;
+    }
 
     // Check if any selected listing is owned
     const ownedListings = formData.selectedListings.filter((listingId) => {
@@ -240,14 +241,16 @@ export default function ContactForm() {
 
       // Prepare additional info based on form data
       const additionalInfo: Record<string, unknown> = {};
-      // Store selected listings and contact type for reference
-      additionalInfo.selectedListings = formData.selectedListings.map((id) =>
-        id.toString(),
-      );
-      additionalInfo.contactType = formData.contactType;
-      // Add ownership action if specified
-      if (ownershipAction) {
-        additionalInfo.ownershipAction = ownershipAction;
+      // Store selected listings and contact type for reference if listings are selected
+      if (formData.selectedListings.length > 0) {
+        additionalInfo.selectedListings = formData.selectedListings.map((id) =>
+          id.toString(),
+        );
+        additionalInfo.contactType = formData.contactType;
+        // Add ownership action if specified
+        if (ownershipAction) {
+          additionalInfo.ownershipAction = ownershipAction;
+        }
       }
       // Add notes if provided
       if (formData.notes.trim()) {
@@ -264,15 +267,22 @@ export default function ContactForm() {
         isActive: true,
       };
 
-      // Use the new function that handles both contact creation and listing relationships
-      const newContact = await createContactWithListings(
-        contactData,
-        formData.selectedListings,
-        formData.contactType,
-        ownershipAction ?? undefined,
-      );
-
-      console.log("Contact created with listings:", newContact);
+      let newContact;
+      
+      if (formData.selectedListings.length === 0) {
+        // Create contact without listing relationships
+        newContact = await createContact(contactData);
+        console.log("Contact created without listings:", newContact);
+      } else {
+        // Create contact with listing relationships
+        newContact = await createContactWithListings(
+          contactData,
+          formData.selectedListings,
+          formData.contactType,
+          ownershipAction ?? undefined,
+        );
+        console.log("Contact created with listings:", newContact);
+      }
 
       // Redirect to contact detail page
       if (newContact?.contactId) {
@@ -572,7 +582,11 @@ export default function ContactForm() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
-                  {formData.selectedListings.length} propiedades seleccionadas
+                  {formData.selectedListings.length > 0 ? (
+                    <span>{formData.selectedListings.length} propiedades seleccionadas</span>
+                  ) : (
+                    <span className="text-gray-500">Selecciona propiedades para asociar al contacto (opcional)</span>
+                  )}
                 </div>
                 {validationError && (
                   <div className="flex items-center space-x-2 text-sm text-red-600">
@@ -581,148 +595,34 @@ export default function ContactForm() {
                   </div>
                 )}
               </div>
-              <ScrollArea className="h-[400px]">
-                <div className="space-y-2">
+              <ScrollArea className="h-[400px] pr-2">
+                <div className="space-y-3">
                   {isLoadingListings ? (
                     <div className="flex justify-center py-8">
                       <Loader className="h-6 w-6 animate-spin" />
                     </div>
                   ) : filteredListings.length > 0 ? (
                     filteredListings.map((listing: ListingData) => {
-                      console.log("listing.imageUrl:", listing.imageUrl);
+                      const isSelected = formData.selectedListings.includes(
+                        listing.listingId,
+                      );
                       return (
-                        <div
+                        <CompactPropertyCard
                           key={listing.listingId.toString()}
-                          className={`cursor-pointer rounded-lg p-4 transition-all duration-200 ${
-                            formData.selectedListings.includes(
-                              listing.listingId,
-                            )
-                              ? "shadow-sm"
-                              : ""
-                          }`}
-                          style={
-                            formData.selectedListings.includes(
-                              listing.listingId,
-                            )
-                              ? {
-                                  backgroundColor: "rgba(149,113,79,0.1)",
-                                }
-                              : {
-                                  backgroundColor: "transparent",
-                                }
-                          }
-                          onMouseEnter={(e) => {
-                            if (
-                              !formData.selectedListings.includes(
-                                listing.listingId,
-                              )
-                            ) {
-                              e.currentTarget.style.backgroundColor =
-                                "rgba(149,113,79,0.02)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (
-                              !formData.selectedListings.includes(
-                                listing.listingId,
-                              )
-                            ) {
-                              e.currentTarget.style.backgroundColor =
-                                "transparent";
-                            }
-                          }}
-                          onClick={() =>
-                            handleListingSelection(
-                              listing.listingId,
-                              !formData.selectedListings.includes(
-                                listing.listingId,
-                              ),
-                            )
-                          }
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className="relative h-12 w-16 flex-shrink-0 overflow-hidden rounded">
-                              <Image
-                                src={
-                                  listing.imageUrl ??
-                                  "/properties/suburban-dream.png"
-                                }
-                                alt={listing.title ?? "Property image"}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between">
-                                <h4 className="truncate font-medium">
-                                  {listing.title}
-                                </h4>
-                                <div className="flex flex-col items-end space-y-1">
-                                  <Badge
-                                    variant="secondary"
-                                    className={
-                                      statusColors[listing.listingType]
-                                    }
-                                  >
-                                    {statusLabels[listing.listingType]}
-                                  </Badge>
-                                  {listing.isOwned &&
-                                    formData.contactType === "owner" && (
-                                      <Badge
-                                        variant="outline"
-                                        className="border-green-200 bg-green-50 text-green-700"
-                                      >
-                                        En propiedad
-                                      </Badge>
-                                    )}
-                                </div>
-                              </div>
-                              <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
-                                <span>{listing.referenceNumber}</span>
-                                {listing.city && (
-                                  <div className="flex items-center">
-                                    <Map className="mr-1 h-3 w-3" />
-                                    {listing.city}
-                                  </div>
-                                )}
-                                <span className="font-medium text-gray-900">
-                                  {formatPrice(listing.price)}€
-                                  {listing.listingType === "Rent" ? "/mes" : ""}
-                                </span>
-                              </div>
-                              <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
-                                {listing.propertyType !== "garaje" &&
-                                  listing.propertyType !== "solar" &&
-                                  listing.propertyType !== "local" &&
-                                  listing.bedrooms && (
-                                    <div className="flex items-center">
-                                      <Bed className="mr-1 h-3 w-3" />
-                                      {listing.bedrooms}
-                                    </div>
-                                  )}
-                                {listing.propertyType !== "garaje" &&
-                                  listing.propertyType !== "solar" &&
-                                  listing.bathrooms && (
-                                    <div className="flex items-center">
-                                      <Bath className="mr-1 h-3 w-3" />
-                                      {Math.floor(Number(listing.bathrooms))}
-                                    </div>
-                                  )}
-                                {listing.squareMeter && (
-                                  <div className="flex items-center">
-                                    <Square className="mr-1 h-3 w-3" />
-                                    {listing.squareMeter}m²
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                          listing={listing}
+                          isSelected={isSelected}
+                          onClick={handleListingSelection}
+                          statusColors={statusColors}
+                          statusLabels={statusLabels}
+                          getPropertyTypeLabel={getPropertyTypeLabel}
+                          formatPrice={formatPrice}
+                        />
                       );
                     })
                   ) : (
                     <div className="py-8 text-center text-gray-500">
-                      No se encontraron propiedades
+                      <Home className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                      <p>No se encontraron propiedades</p>
                     </div>
                   )}
                 </div>
@@ -802,10 +702,7 @@ export default function ContactForm() {
 
             <Button
               onClick={nextStep}
-              disabled={
-                isCreating ||
-                (currentStep === 1 && formData.selectedListings.length === 0)
-              }
+              disabled={isCreating}
               className="flex h-10 items-center space-x-2"
             >
               {isCreating ? (

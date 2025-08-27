@@ -638,15 +638,10 @@ export async function listListingsCompact(
       }
     }
 
-    // Always show active listings only for this account
+    // Always show active listings only for this account, excluding Draft, Sold, and Rented
     whereConditions.push(eq(listings.isActive, true));
-    whereConditions.push(ne(listings.status, "Draft"));
-    // TEMP DEBUG: Comment out account filter to see if there are any listings
-    // whereConditions.push(eq(listings.accountId, BigInt(accountId)));
-    
-    console.log("listListingsCompact - accountId:", accountId);
-    console.log("listListingsCompact - filters:", filters);
-    console.log("WARNING: Account filter temporarily disabled for debugging!");
+    whereConditions.push(sql`${listings.status} NOT IN ('Draft', 'Sold', 'Rented')`);
+    whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
     // Create the compact query with only essential fields
     const query = db
@@ -704,9 +699,6 @@ export async function listListingsCompact(
       .limit(limit)
       .offset(offset);
 
-    console.log(
-      `Found ${compactListings.length} compact listings for contact form`,
-    );
 
     return compactListings;
   } catch (error) {

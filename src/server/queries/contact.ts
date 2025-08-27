@@ -91,14 +91,14 @@ export async function getContactByIdWithTypeWithAuth(contactId: number) {
   return getContactByIdWithType(contactId, accountId);
 }
 
-export async function getListingsByContactWithAuth(contactId: number) {
+export async function getOwnerListingsWithAuth(contactId: number) {
   const accountId = await getCurrentUserAccountId();
-  return getListingsByContact(contactId, accountId);
+  return getOwnerListings(contactId, accountId);
 }
 
-export async function getListingsByContactAsBuyerWithAuth(contactId: number) {
+export async function getBuyerListingsWithAuth(contactId: number) {
   const accountId = await getCurrentUserAccountId();
-  return getListingsByContactAsBuyer(contactId, accountId);
+  return getBuyerListings(contactId, accountId);
 }
 
 // Helper function to get preferred area from prospect data
@@ -539,6 +539,7 @@ export async function listContactsWithTypes(
         city: locations.city,
         propertyType: properties.propertyType,
         listingType: listings.listingType,
+        status: listings.status,
       })
       .from(listingContacts)
       .innerJoin(
@@ -973,8 +974,8 @@ export async function getContactByIdWithType(
   }
 }
 
-// Get listings associated with a specific contact (owner)
-export async function getListingsByContact(
+// Get listings owned by a specific contact
+export async function getOwnerListings(
   contactId: number,
   accountId: number,
 ) {
@@ -1071,13 +1072,13 @@ export async function getListingsByContact(
 
     return contactListings;
   } catch (error) {
-    console.error("Error fetching listings by contact:", error);
+    console.error("Error fetching owner listings:", error);
     throw error;
   }
 }
 
-// Get listings associated with a specific contact (buyer)
-export async function getListingsByContactAsBuyer(
+// Get listings where a specific contact is the buyer
+export async function getBuyerListings(
   contactId: number,
   accountId: number,
 ) {
@@ -1179,7 +1180,7 @@ export async function getListingsByContactAsBuyer(
 
     return contactListings;
   } catch (error) {
-    console.error("Error fetching listings by contact as buyer:", error);
+    console.error("Error fetching buyer listings:", error);
     throw error;
   }
 }

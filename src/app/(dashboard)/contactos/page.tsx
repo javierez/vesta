@@ -30,6 +30,7 @@ interface ExtendedContact extends Omit<Contact, "contactType"> {
     city?: string;
     propertyType?: string;
     listingType?: string;
+    status?: string;
   }>;
 }
 
@@ -51,6 +52,7 @@ type DbContact = Omit<Contact, "contactType"> & {
     city?: string;
     propertyType?: string;
     listingType?: string;
+    status?: string;
   }>;
 };
 

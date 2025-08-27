@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { PropertyTabs } from "~/components/propiedades/detail/property-tabs";
@@ -33,6 +33,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
 
   if (!breadcrumbData || !headerData || !tabsData) {
     notFound();
+  }
+
+  // Check if this is a draft listing and redirect to edit page
+  if (isValidRecord(fullListingDetails) && fullListingDetails.status === "Draft") {
+    redirect(`/propiedades/crear/${listingId}`);
   }
 
   // Get energy certificate document and images in parallel

@@ -11,8 +11,8 @@ import { User, Building, Plus } from "lucide-react";
 import { Textarea } from "~/components/ui/textarea";
 import {
   updateContactWithAuth,
-  getListingsByContactWithAuth,
-  getListingsByContactAsBuyerWithAuth,
+  getOwnerListingsWithAuth,
+  getBuyerListingsWithAuth,
 } from "~/server/queries/contact";
 import { toast } from "sonner";
 import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern-save-indicator";
@@ -212,12 +212,12 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         try {
           let allListings: unknown[];
           if (isOwner) {
-            allListings = await getListingsByContactWithAuth(
+            allListings = await getOwnerListingsWithAuth(
               Number(contact.contactId),
             );
           } else if (isBuyer) {
             // For buyer (demandante), get listings where they are the buyer
-            allListings = await getListingsByContactAsBuyerWithAuth(
+            allListings = await getBuyerListingsWithAuth(
               Number(contact.contactId),
             );
           } else {
