@@ -86,6 +86,152 @@ export async function updateListingOwnersWithAuth(
   return updateListingOwners(listingId, ownerIds, accountId);
 }
 
+export async function getDraftContactsWithAuth() {
+  const accountId = await getCurrentUserAccountId();
+  return getDraftContacts(accountId);
+}
+
+export async function deleteDraftContactWithAuth(contactId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return deleteDraftContact(contactId, accountId);
+}
+
+// Get draft contacts (contacts with no classification: not owners, buyers, or prospects)
+export async function getDraftContacts(accountId: number) {
+  try {
+    // Get contacts with their role counts and flags
+    const draftContacts = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        isActive: contacts.isActive,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+        // Calculate role counts and flags
+        ownerCount: sql<number>`
+          COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END)
+        `,
+        buyerCount: sql<number>`
+          COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END)
+        `,
+        prospectCount: sql<number>`
+          (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId})
+        `,
+        isOwner: sql<boolean>`
+          CASE WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0 THEN true ELSE false END
+        `,
+        isBuyer: sql<boolean>`
+          CASE WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0 THEN true ELSE false END
+        `,
+        isInteresado: sql<boolean>`
+          CASE WHEN (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId}) > 0 THEN true ELSE false END
+        `,
+      })
+      .from(contacts)
+      .leftJoin(
+        listingContacts,
+        and(
+          eq(contacts.contactId, listingContacts.contactId),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .where(
+        and(
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true),
+        ),
+      )
+      .groupBy(
+        contacts.contactId,
+        contacts.firstName,
+        contacts.lastName,
+        contacts.email,
+        contacts.phone,
+        contacts.additionalInfo,
+        contacts.isActive,
+        contacts.createdAt,
+        contacts.updatedAt,
+      )
+      .having(
+        and(
+          // Draft contacts have no owner relationships
+          sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) = 0`,
+          // Draft contacts have no buyer relationships
+          sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) = 0`,
+          // Draft contacts have no prospects
+          sql`(SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId}) = 0`
+        ),
+      )
+      .orderBy(contacts.createdAt);
+
+    return draftContacts;
+  } catch (error) {
+    console.error("Error fetching draft contacts:", error);
+    throw error;
+  }
+}
+
+// Delete a draft contact (hard delete since it's unclassified)
+export async function deleteDraftContact(contactId: number, accountId: number) {
+  try {
+    // First verify the contact is indeed a draft (has no relationships)
+    const [contact] = await db
+      .select({
+        contactId: contacts.contactId,
+        ownerCount: sql<number>`
+          (SELECT COUNT(*) FROM listing_contacts 
+           WHERE contact_id = ${contacts.contactId} 
+           AND contact_type = 'owner' 
+           AND is_active = true)
+        `,
+        buyerCount: sql<number>`
+          (SELECT COUNT(*) FROM listing_contacts 
+           WHERE contact_id = ${contacts.contactId} 
+           AND contact_type = 'buyer' 
+           AND is_active = true)
+        `,
+        prospectCount: sql<number>`
+          (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId})
+        `,
+      })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.contactId, BigInt(contactId)),
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!contact) {
+      throw new Error("Contact not found");
+    }
+
+    // Only delete if it's truly a draft (no relationships)
+    if (contact.ownerCount > 0 || contact.buyerCount > 0 || contact.prospectCount > 0) {
+      throw new Error("Cannot delete contact with existing relationships");
+    }
+
+    // Hard delete the contact since it has no relationships
+    await db
+      .delete(contacts)
+      .where(
+        and(
+          eq(contacts.contactId, BigInt(contactId)),
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
+      );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting draft contact:", error);
+    throw error;
+  }
+}
+
 export async function getContactByIdWithTypeWithAuth(contactId: number) {
   const accountId = await getCurrentUserAccountId();
   return getContactByIdWithType(contactId, accountId);

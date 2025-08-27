@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "~/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -167,12 +167,19 @@ export default function ContactsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Contactos</h1>
-        <Button asChild>
-          <Link href="/contactos/crear">
-            <Plus className="mr-2 h-4 w-4" />
-            Agregar Contacto
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link href="/contactos/crear">
+              <Plus className="mr-2 h-4 w-4" />
+              Agregar Contacto
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/contactos/borradores">
+              <FileText className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <ContactFilter onFilterChange={handleFilterChange} />
