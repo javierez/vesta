@@ -8,8 +8,9 @@ import {
   leads,
   listings,
   properties,
+  users,
 } from "../db/schema";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, sql } from "drizzle-orm";
 import type { Task } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
@@ -141,7 +142,22 @@ export async function createTask(
       .$returningId();
     if (!result) throw new Error("Failed to create task");
     const [newTask] = await db
-      .select()
+      .select({
+        taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
+        userId: tasks.userId,
+        title: tasks.title,
+        description: tasks.description,
+        dueDate: tasks.dueDate,
+        completed: tasks.completed,
+        listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
+        leadId: sql<number>`CAST(${tasks.leadId} AS UNSIGNED)`,
+        dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
+        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
+        prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
+        isActive: tasks.isActive,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+      })
       .from(tasks)
       .where(eq(tasks.taskId, BigInt(result.taskId)));
     return newTask;
@@ -216,17 +232,39 @@ export async function getUserTasks(userId: string, accountId: number) {
 export async function getListingTasks(listingId: number, accountId: number) {
   try {
     const listingTasks = await db
-      .select()
+      .select({
+        // Task fields - convert BigInt to number for JSON serialization
+        taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
+        userId: tasks.userId,
+        title: tasks.title,
+        description: tasks.description,
+        dueDate: tasks.dueDate,
+        completed: tasks.completed,
+        listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
+        leadId: sql<number>`CAST(${tasks.leadId} AS UNSIGNED)`,
+        dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
+        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
+        prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
+        isActive: tasks.isActive,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+        // User fields for "Asignado a"
+        userName: users.name,
+        userFirstName: users.firstName,
+        userLastName: users.lastName,
+      })
       .from(tasks)
       .innerJoin(listings, eq(tasks.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .innerJoin(users, eq(tasks.userId, users.id))
       .where(
         and(
           eq(tasks.listingId, BigInt(listingId)),
           eq(tasks.isActive, true),
           eq(properties.accountId, BigInt(accountId)),
         ),
-      );
+      )
+      .orderBy(tasks.createdAt);
     return listingTasks;
   } catch (error) {
     console.error("Error fetching listing tasks:", error);
@@ -340,7 +378,22 @@ export async function updateTask(
       .set(data)
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
     const [updatedTask] = await db
-      .select()
+      .select({
+        taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
+        userId: tasks.userId,
+        title: tasks.title,
+        description: tasks.description,
+        dueDate: tasks.dueDate,
+        completed: tasks.completed,
+        listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
+        leadId: sql<number>`CAST(${tasks.leadId} AS UNSIGNED)`,
+        dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
+        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
+        prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
+        isActive: tasks.isActive,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+      })
       .from(tasks)
       .where(eq(tasks.taskId, BigInt(taskId)));
     return updatedTask;
@@ -382,7 +435,22 @@ export async function completeTask(taskId: number, accountId: number) {
       .set({ completed: true })
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
     const [updatedTask] = await db
-      .select()
+      .select({
+        taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
+        userId: tasks.userId,
+        title: tasks.title,
+        description: tasks.description,
+        dueDate: tasks.dueDate,
+        completed: tasks.completed,
+        listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
+        leadId: sql<number>`CAST(${tasks.leadId} AS UNSIGNED)`,
+        dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
+        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
+        prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
+        isActive: tasks.isActive,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+      })
       .from(tasks)
       .where(eq(tasks.taskId, BigInt(taskId)));
     return updatedTask;

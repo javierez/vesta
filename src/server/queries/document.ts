@@ -3,6 +3,23 @@ import { documents } from "../db/schema";
 import { eq, and, like, desc, asc } from "drizzle-orm";
 import type { Document } from "../../lib/data";
 
+// Helper function to serialize document with BigInt values
+export function serializeDocument(document: any) {
+  if (!document) return null;
+  
+  return {
+    ...document,
+    docId: document.docId?.toString(),
+    propertyId: document.propertyId?.toString(),
+    contactId: document.contactId?.toString(),
+    listingId: document.listingId?.toString(),
+    leadId: document.leadId?.toString(),
+    dealId: document.dealId?.toString(),
+    appointmentId: document.appointmentId?.toString(),
+    prospectId: document.prospectId?.toString(),
+  };
+}
+
 // Create a new document
 export async function createDocument(
   data: Omit<Document, "docId" | "createdAt" | "updatedAt" | "uploadedAt">,

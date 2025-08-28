@@ -1107,6 +1107,7 @@ export type Appointment = {
 export type Task = {
   taskId: bigint;
   userId: string; // Changed to string to match User type
+  title: string;
   description: string;
   dueDate?: Date;
   completed: boolean;

@@ -520,6 +520,7 @@ export const userIntegrations = singlestoreTable("user_integrations", {
 export const tasks = singlestoreTable("tasks", {
   taskId: bigint("task_id", { mode: "bigint" }).primaryKey().autoincrement(),
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
+  title: varchar("title", { length: 255 }).notNull(), // Task title
   description: text("description").notNull(),
   dueDate: timestamp("due_date"),
   completed: boolean("completed").default(false),

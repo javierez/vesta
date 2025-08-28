@@ -6,11 +6,13 @@ import { ImageGallery } from "./image-gallery";
 import { PortalSelection } from "./portal-selection";
 import { EnergyCertificate } from "./energy-certificate";
 import { DocumentsManager } from "./documents-manager";
+import { Tareas } from "./tareas";
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form";
 import { CharacteristicsSkeleton } from "./skeletons";
 import { useSession } from "~/lib/auth-client";
 import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
+import { getListingTasksWithAuth } from "~/server/queries/task";
 
 interface PropertyTabsProps {
   listing: {
@@ -65,15 +67,19 @@ export function PropertyTabs({
       documentKey: string;
       fileUrl: string;
     } | null;
+    tasks: any[] | null;
   }>({
     images: null,
     convertedListing: null,
     energyCertificate: null,
+    tasks: null,
   });
   const [loading, setLoading] = useState<{
     caracteristicas: boolean;
+    tasks: boolean;
   }>({
     caracteristicas: false,
+    tasks: false,
   });
 
   const fetchGeneralData = useCallback(async () => {
@@ -117,31 +123,40 @@ export function PropertyTabs({
   }, [listing.propertyId, tabData.images, images]);
 
   const fetchCertificateData = useCallback(async () => {
-    if (tabData.energyCertificate) return;
-    try {
-      const response = await fetch(
-        `/api/properties/${listing.propertyId}/energy-certificate`,
-      );
-      if (response.ok) {
-        const certData = (await response.json()) as {
-          docId: bigint;
-          documentKey: string;
-          fileUrl: string;
-        } | null;
-        setTabData((prev) => ({ ...prev, energyCertificate: certData }));
-      } else {
-        setTabData((prev) => ({
-          ...prev,
-          energyCertificate: energyCertificate ?? null,
-        }));
-      }
-    } catch {
-      setTabData((prev) => ({
-        ...prev,
-        energyCertificate: energyCertificate ?? null,
-      }));
+    // Energy certificate is now always fetched server-side
+    if (!tabData.energyCertificate && energyCertificate) {
+      setTabData((prev) => ({ ...prev, energyCertificate }));
     }
-  }, [listing.propertyId, tabData.energyCertificate, energyCertificate]);
+  }, [tabData.energyCertificate, energyCertificate]);
+
+  const fetchTasksData = useCallback(async () => {
+    if (tabData.tasks) return;
+    setLoading((prev) => ({ ...prev, tasks: true }));
+    try {
+      const tasksData = await getListingTasksWithAuth(Number(listing.listingId));
+      const tasksWithId = tasksData.map(task => ({
+        ...task,
+        id: task.taskId?.toString() || Date.now().toString(),
+        taskId: task.taskId ? BigInt(task.taskId) : undefined,
+        listingId: task.listingId ? BigInt(task.listingId) : undefined,
+        leadId: task.leadId ? BigInt(task.leadId) : undefined,
+        dealId: task.dealId ? BigInt(task.dealId) : undefined,
+        appointmentId: task.appointmentId ? BigInt(task.appointmentId) : undefined,
+        prospectId: task.prospectId ? BigInt(task.prospectId) : undefined,
+        createdAt: new Date(task.createdAt),
+        updatedAt: task.updatedAt ? new Date(task.updatedAt) : undefined,
+        dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+        completed: task.completed ?? false,
+        isActive: task.isActive ?? true,
+      }));
+      setTabData((prev) => ({ ...prev, tasks: tasksWithId }));
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      setTabData((prev) => ({ ...prev, tasks: [] }));
+    } finally {
+      setLoading((prev) => ({ ...prev, tasks: false }));
+    }
+  }, [listing.listingId, tabData.tasks]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -151,16 +166,18 @@ export function PropertyTabs({
     void fetchGeneralData();
     void fetchImagesData();
     void fetchCertificateData();
-  }, [fetchGeneralData, fetchImagesData, fetchCertificateData]);
+    void fetchTasksData();
+  }, [fetchGeneralData, fetchImagesData, fetchCertificateData, fetchTasksData]);
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
+      <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
         <TabsTrigger value="general">General</TabsTrigger>
         <TabsTrigger value="imagenes">Imágenes</TabsTrigger>
         <TabsTrigger value="portales">Portales</TabsTrigger>
         <TabsTrigger value="certificado">Certificado</TabsTrigger>
         <TabsTrigger value="documentos">Documentos</TabsTrigger>
+        <TabsTrigger value="tareas">Tareas</TabsTrigger>
       </TabsList>
 
       <TabsContent value="general" className="mt-6">
@@ -236,6 +253,18 @@ export function PropertyTabs({
             propertyId={listing.propertyId}
             listingId={listing.listingId}
             referenceNumber={listing.referenceNumber ?? ""}
+          />
+        </div>
+      </TabsContent>
+
+      <TabsContent value="tareas" className="mt-6">
+        <div className="mx-auto max-w-6xl">
+          <Tareas
+            propertyId={listing.propertyId}
+            listingId={listing.listingId}
+            referenceNumber={listing.referenceNumber ?? ""}
+            tasks={tabData.tasks ?? []}
+            loading={loading.tasks}
           />
         </div>
       </TabsContent>
