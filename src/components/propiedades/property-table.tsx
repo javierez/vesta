@@ -227,7 +227,7 @@ export const PropertyTable = React.memo(function PropertyTable({
                 <ResizeHandle column="estado" />
               </TableHead>
               <TableHead className="relative" style={getColumnStyle("precio")}>
-                <div className="truncate text-right">Precio</div>
+                <div className="truncate text-left">Precio</div>
                 <ResizeHandle column="precio" />
               </TableHead>
               <TableHead
@@ -259,6 +259,9 @@ export const PropertyTable = React.memo(function PropertyTable({
                         src={listing.imageUrl ?? defaultPlaceholder}
                         alt={listing.title ?? "Property image"}
                         fill
+                        priority={true}
+                        quality={30}
+                        sizes="72px"
                         className={cn(
                           "object-cover transition-opacity duration-200",
                           loadedImages.has(listing.listingId.toString())
@@ -387,7 +390,7 @@ export const PropertyTable = React.memo(function PropertyTable({
                   </div>
                 </TableCell>
                 <TableCell
-                  className="overflow-hidden text-right"
+                  className="overflow-hidden text-left"
                   style={getColumnStyle("precio")}
                 >
                   <div className="truncate font-medium">

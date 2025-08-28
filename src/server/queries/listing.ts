@@ -464,7 +464,7 @@ export async function listListings(
     whereConditions.push(ne(listings.status, "Draft"));
     whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
-    // Optimized query based on view type
+    // Optimized query based on view type with JOINs instead of subqueries
     const query =
       view === "table"
         ? db.select({
@@ -480,34 +480,9 @@ export async function listListings(
             bathrooms: properties.bathrooms,
             squareMeter: properties.squareMeter,
             city: locations.city,
-            imageUrl: sql<string>`(
-            SELECT image_url 
-            FROM property_images 
-            WHERE property_id = ${properties.propertyId} 
-            AND is_active = true 
-            AND image_order = 1
-            LIMIT 1
-          )`,
-            ownerId: sql<bigint | null>`(
-            SELECT c.contact_id
-            FROM listing_contacts lc
-            JOIN contacts c ON lc.contact_id = c.contact_id
-            WHERE lc.listing_id = ${listings.listingId}
-            AND lc.contact_type = 'owner'
-            AND lc.is_active = true
-            AND c.is_active = true
-            LIMIT 1
-          )`,
-            ownerName: sql<string>`(
-            SELECT CONCAT(c.first_name, ' ', c.last_name)
-            FROM listing_contacts lc
-            JOIN contacts c ON lc.contact_id = c.contact_id
-            WHERE lc.listing_id = ${listings.listingId}
-            AND lc.contact_type = 'owner'
-            AND lc.is_active = true
-            AND c.is_active = true
-            LIMIT 1
-          )`,
+            imageUrl: sql<string>`img1.image_url`,
+            ownerId: sql<bigint | null>`owner_contact.contact_id`,
+            ownerName: sql<string>`CONCAT(owner_contact.first_name, ' ', owner_contact.last_name)`,
           })
         : db.select({
             // Grid view: optimized fields
@@ -525,22 +500,8 @@ export async function listListings(
             street: properties.street,
             city: locations.city,
             province: locations.province,
-            imageUrl: sql<string>`(
-            SELECT image_url 
-            FROM property_images 
-            WHERE property_id = ${properties.propertyId} 
-            AND is_active = true 
-            AND image_order = 1
-            LIMIT 1
-          )`,
-            imageUrl2: sql<string>`(
-            SELECT image_url 
-            FROM property_images 
-            WHERE property_id = ${properties.propertyId} 
-            AND is_active = true 
-            AND image_order = 2
-            LIMIT 1
-          )`,
+            imageUrl: sql<string>`img1.image_url`,
+            imageUrl2: sql<string>`img2.image_url`,
           });
 
     const baseQuery = query
@@ -550,9 +511,45 @@ export async function listListings(
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .leftJoin(users, eq(listings.agentId, users.id));
+      .leftJoin(users, eq(listings.agentId, users.id))
+      .leftJoin(
+        sql`(
+          SELECT 
+            property_id,
+            image_url,
+            ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY image_order ASC) as rn
+          FROM property_images 
+          WHERE is_active = true
+        ) img1`,
+        sql`img1.property_id = ${properties.propertyId} AND img1.rn = 1`
+      )
+      .leftJoin(
+        sql`(
+          SELECT 
+            property_id,
+            image_url,
+            ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY image_order ASC) as rn
+          FROM property_images 
+          WHERE is_active = true
+        ) img2`,
+        sql`img2.property_id = ${properties.propertyId} AND img2.rn = 2`
+      )
+      .leftJoin(
+        sql`(
+          SELECT 
+            lc.listing_id,
+            c.contact_id,
+            c.first_name,
+            c.last_name,
+            ROW_NUMBER() OVER (PARTITION BY lc.listing_id ORDER BY lc.created_at ASC) as rn
+          FROM listing_contacts lc
+          JOIN contacts c ON lc.contact_id = c.contact_id
+          WHERE lc.contact_type = 'owner' AND lc.is_active = true AND c.is_active = true
+        ) owner_contact`,
+        sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`
+      );
 
-    // Get total count for pagination
+    // Get total count for pagination (simplified, no need for image/owner JOINs for count)
     const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(listings)
