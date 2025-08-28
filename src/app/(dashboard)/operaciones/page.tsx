@@ -1,14 +1,17 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import OperacionesSummaryCard from "~/components/dashboard/operations/OperacionesSummaryCard";
 import WorkQueueCard from "~/components/dashboard/WorkQueueCard";
 import OperacionesQuickActionsCard from "~/components/dashboard/operations/OperacionesQuickActionsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Suspense } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   getOperacionesSummaryWithAuth,
   getUrgentTasksWithAuth,
   getTodayAppointmentsWithAuth,
 } from "~/server/queries/operaciones-dashboard";
+import type { OperacionesSummary, UrgentTask, TodayAppointment } from "~/server/queries/operaciones-dashboard";
 
 // Componente esqueleto de carga para las tarjetas del panel
 function DashboardCardSkeleton() {
@@ -29,68 +32,73 @@ function DashboardCardSkeleton() {
   );
 }
 
-// Componente servidor para obtención de datos
-async function OperacionesData() {
-  try {
-    // Obtención de datos en paralelo para mejor rendimiento
-    const [summary, urgentTasks, appointments] = await Promise.all([
-      getOperacionesSummaryWithAuth(),
-      getUrgentTasksWithAuth(5), // 5 días laborables
-      getTodayAppointmentsWithAuth(),
-    ]);
-
-    return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <OperacionesSummaryCard data={summary} className="lg:col-span-2" />
-        <OperacionesQuickActionsCard />
-        <WorkQueueCard
-          tasks={urgentTasks}
-          appointments={appointments}
-          className="md:col-span-2 lg:col-span-3"
-        />
-      </div>
-    );
-  } catch (error) {
-    console.error("Error al cargar datos de operaciones:", error);
-    return (
-      <Card className="col-span-full">
-        <CardHeader>
-          <CardTitle className="text-destructive">
-            Error al Cargar el Panel
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            No se pudieron cargar los datos de operaciones. Por favor, intenta
-            actualizar la página.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-}
-
-// Componente de respaldo para carga
-function LoadingFallback() {
-  return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <DashboardCardSkeleton />
-      <DashboardCardSkeleton />
-      <DashboardCardSkeleton />
-    </div>
-  );
-}
-
 export default function OperacionesPage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<OperacionesSummary | null>(null);
+  const [urgentTasks, setUrgentTasks] = useState<UrgentTask[]>([]);
+  const [appointments, setAppointments] = useState<TodayAppointment[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Obtención de datos en paralelo para mejor rendimiento
+        const [summaryData, tasksData, appointmentsData] = await Promise.all([
+          getOperacionesSummaryWithAuth(),
+          getUrgentTasksWithAuth(5), // 5 días laborables
+          getTodayAppointmentsWithAuth(),
+        ]);
+
+        setSummary(summaryData);
+        setUrgentTasks(tasksData);
+        setAppointments(appointmentsData);
+      } catch (error) {
+        console.error("Error al cargar datos de operaciones:", error);
+        setError("No se pudieron cargar los datos de operaciones. Por favor, intenta actualizar la página.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchData();
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Operaciones</h1>
       </div>
 
-      <Suspense fallback={<LoadingFallback />}>
-        <OperacionesData />
-      </Suspense>
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <DashboardCardSkeleton />
+          <DashboardCardSkeleton />
+          <DashboardCardSkeleton />
+        </div>
+      ) : error ? (
+        <Card className="col-span-full">
+          <CardHeader>
+            <CardTitle className="text-destructive">
+              Error al Cargar el Panel
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">{error}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <OperacionesSummaryCard data={summary!} className="lg:col-span-2" />
+          <OperacionesQuickActionsCard />
+          <WorkQueueCard
+            tasks={urgentTasks}
+            appointments={appointments}
+            className="md:col-span-2 lg:col-span-3"
+          />
+        </div>
+      )}
     </div>
   );
 }
