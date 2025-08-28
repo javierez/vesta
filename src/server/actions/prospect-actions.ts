@@ -231,9 +231,6 @@ export async function createListingProspect(
         status: validated.status,
         listingType: validated.listingType,
         prospectType: "listing",
-        propertyToList: validated.propertyToList,
-        valuationStatus: validated.valuationStatus,
-        listingAgreementStatus: validated.listingAgreementStatus,
         urgencyLevel: validated.urgencyLevel,
         notesInternal: validated.notesInternal,
       })
@@ -447,11 +444,22 @@ export async function updateListingProspectValuation(
       };
     }
 
-    // Update valuation status
+    // Update valuation status - store in notesInternal as a JSON field since valuationStatus column doesn't exist
+    const prospectData = await db
+      .select({ notesInternal: prospects.notesInternal })
+      .from(prospects)
+      .where(eq(prospects.id, BigInt(prospectId)))
+      .limit(1);
+    
+    const currentNotes = prospectData[0]?.notesInternal;
+    const notes = typeof currentNotes === 'string' 
+      ? { text: currentNotes, valuationStatus } 
+      : { ...(typeof currentNotes === 'object' && currentNotes !== null ? currentNotes : {}), valuationStatus };
+    
     await db
       .update(prospects)
       .set({
-        valuationStatus,
+        notesInternal: JSON.stringify(notes),
         updatedAt: new Date(),
       })
       .where(eq(prospects.id, BigInt(prospectId)));
@@ -508,11 +516,22 @@ export async function updateListingProspectAgreement(
       };
     }
 
-    // Update agreement status
+    // Update agreement status - store in notesInternal as a JSON field since listingAgreementStatus column doesn't exist
+    const prospectData = await db
+      .select({ notesInternal: prospects.notesInternal })
+      .from(prospects)
+      .where(eq(prospects.id, BigInt(prospectId)))
+      .limit(1);
+    
+    const currentNotes = prospectData[0]?.notesInternal;
+    const notes = typeof currentNotes === 'string' 
+      ? { text: currentNotes, listingAgreementStatus } 
+      : { ...(typeof currentNotes === 'object' && currentNotes !== null ? currentNotes : {}), listingAgreementStatus };
+    
     await db
       .update(prospects)
       .set({
-        listingAgreementStatus,
+        notesInternal: JSON.stringify(notes),
         updatedAt: new Date(),
       })
       .where(eq(prospects.id, BigInt(prospectId)));

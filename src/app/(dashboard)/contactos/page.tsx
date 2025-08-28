@@ -96,7 +96,7 @@ export default function ContactsPage() {
       filters: ReturnType<typeof getFiltersFromUrl>,
     ): ExtendedContact[] => {
       // Transform to ExtendedContact format
-      const extendedContacts: ExtendedContact[] = (rawContacts as DbContact[]).map((contact) => ({
+      const extendedContacts: ExtendedContact[] = rawContacts.map((contact) => ({
         contactId: contact.contactId,
         firstName: contact.firstName,
         lastName: contact.lastName,

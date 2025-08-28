@@ -426,9 +426,8 @@ export async function listLeadsWithDetails(
       )
       .where(and(...whereConditions));
 
-    // @ts-expect-error - Drizzle count type inference issue
-    const totalCount = totalResults[0]?.count
-      ? Number(totalResults[0].count)
+    const totalCount = totalResults[0] && 'count' in totalResults[0]
+      ? Number((totalResults[0] as {count: unknown}).count)
       : 0;
 
     return {

@@ -105,9 +105,7 @@ export async function getDualProspectsForKanban(
       fundingReady: prospects.fundingReady,
 
       // Listing prospect fields
-      propertyToList: prospects.propertyToList,
-      valuationStatus: prospects.valuationStatus,
-      listingAgreementStatus: prospects.listingAgreementStatus,
+      // Note: propertyToList, valuationStatus, listingAgreementStatus are stored in notesInternal JSON field
 
       // Common fields
       notesInternal: prospects.notesInternal,
@@ -166,16 +164,21 @@ export async function getDualProspectsForKanban(
         fundingReady: row.fundingReady ?? undefined,
       } as SearchProspect;
     } else {
+      // Parse listing fields from notesInternal JSON
+      const notesData = typeof row.notesInternal === 'string' 
+        ? (() => { try { return JSON.parse(row.notesInternal) as Record<string, unknown>; } catch { return null; } })()
+        : row.notesInternal as Record<string, unknown> | null;
+      
       return {
         ...baseProspect,
         prospectType: "listing" as const,
-        propertyToList: row.propertyToList ?? undefined,
-        valuationStatus: row.valuationStatus as
+        propertyToList: notesData?.propertyToList ?? undefined,
+        valuationStatus: notesData?.valuationStatus as
           | "pending"
           | "scheduled"
           | "completed"
           | undefined,
-        listingAgreementStatus: row.listingAgreementStatus as
+        listingAgreementStatus: notesData?.listingAgreementStatus as
           | "not_started"
           | "in_progress"
           | "signed"
@@ -264,9 +267,7 @@ export async function getDualProspect(
       fundingReady: prospects.fundingReady,
 
       // Listing prospect fields
-      propertyToList: prospects.propertyToList,
-      valuationStatus: prospects.valuationStatus,
-      listingAgreementStatus: prospects.listingAgreementStatus,
+      // Note: propertyToList, valuationStatus, listingAgreementStatus are stored in notesInternal JSON field
 
       // Common fields
       notesInternal: prospects.notesInternal,
@@ -324,10 +325,15 @@ export async function getDualProspect(
     } as SearchProspect;
   }
 
+  // Parse listing fields from notesInternal JSON
+  const notesData = typeof result.notesInternal === 'string' 
+    ? (() => { try { return JSON.parse(result.notesInternal) as Record<string, unknown>; } catch { return null; } })()
+    : result.notesInternal as Record<string, unknown> | null;
+  
   return {
     ...baseProspect,
     prospectType: "listing" as const,
-    propertyToList: result.propertyToList as
+    propertyToList: notesData?.propertyToList as
       | {
           address: string;
           propertyType: string;
@@ -340,12 +346,12 @@ export async function getDualProspect(
           description?: string;
         }
       | undefined,
-    valuationStatus: result.valuationStatus as
+    valuationStatus: notesData?.valuationStatus as
       | "pending"
       | "scheduled"
       | "completed"
       | undefined,
-    listingAgreementStatus: result.listingAgreementStatus as
+    listingAgreementStatus: notesData?.listingAgreementStatus as
       | "not_started"
       | "in_progress"
       | "signed"
@@ -408,9 +414,7 @@ export async function getAllDualProspects(
       fundingReady: prospects.fundingReady,
 
       // Listing prospect fields
-      propertyToList: prospects.propertyToList,
-      valuationStatus: prospects.valuationStatus,
-      listingAgreementStatus: prospects.listingAgreementStatus,
+      // Note: propertyToList, valuationStatus, listingAgreementStatus are stored in notesInternal JSON field
 
       // Common fields
       notesInternal: prospects.notesInternal,
@@ -479,16 +483,21 @@ export async function getAllDualProspects(
       } as SearchProspect;
     }
 
+    // Parse listing fields from notesInternal JSON
+    const notesData = typeof row.notesInternal === 'string' 
+      ? (() => { try { return JSON.parse(row.notesInternal) as Record<string, unknown>; } catch { return null; } })()
+      : row.notesInternal as Record<string, unknown> | null;
+    
     return {
       ...baseProspect,
       prospectType: "listing" as const,
-      propertyToList: row.propertyToList ?? undefined,
-      valuationStatus: row.valuationStatus as
+      propertyToList: notesData?.propertyToList ?? undefined,
+      valuationStatus: notesData?.valuationStatus as
         | "pending"
         | "scheduled"
         | "completed"
         | undefined,
-      listingAgreementStatus: row.listingAgreementStatus as
+      listingAgreementStatus: notesData?.listingAgreementStatus as
         | "not_started"
         | "in_progress"
         | "signed"
