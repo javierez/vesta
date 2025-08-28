@@ -918,18 +918,8 @@ export async function getListingDetails(listingId: number, accountId: number) {
           image: users.image,
         },
 
-        // Owner information - optimized subquery with proper indexing hints
-        owner: sql<string>`(
-          SELECT CONCAT(c.first_name, ' ', c.last_name)
-          FROM listing_contacts lc
-          INNER JOIN contacts c ON lc.contact_id = c.contact_id
-          WHERE lc.listing_id = ${listings.listingId}
-          AND lc.contact_type = 'owner'
-          AND lc.is_active = true
-          AND c.is_active = true
-          ORDER BY lc.created_at ASC
-          LIMIT 1
-        )`,
+        // Owner information - optimized with JOIN
+        owner: sql<string>`CONCAT(owner_contact.first_name, ' ', owner_contact.last_name)`,
       })
       .from(listings)
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
@@ -938,6 +928,19 @@ export async function getListingDetails(listingId: number, accountId: number) {
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
       .leftJoin(users, eq(listings.agentId, users.id))
+      .leftJoin(
+        sql`(
+          SELECT 
+            lc.listing_id,
+            c.first_name,
+            c.last_name,
+            ROW_NUMBER() OVER (PARTITION BY lc.listing_id ORDER BY lc.created_at ASC) as rn
+          FROM listing_contacts lc
+          JOIN contacts c ON lc.contact_id = c.contact_id
+          WHERE lc.contact_type = 'owner' AND lc.is_active = true AND c.is_active = true
+        ) owner_contact`,
+        sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`
+      )
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
