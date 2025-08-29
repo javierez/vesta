@@ -13,6 +13,8 @@ import { useSession } from "~/lib/auth-client";
 import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
 import { getListingTasksWithAuth } from "~/server/queries/task";
+import { getCommentsByListingIdWithAuth } from "~/server/queries/comments";
+import type { CommentWithUser } from "~/types/comments";
 
 // Task type that matches what Tareas component expects
 interface TaskWithId {
@@ -91,21 +93,25 @@ export function PropertyTabs({
     } | null;
     tasks: TaskWithId[] | null;
     agents: { id: string; name: string; firstName?: string; lastName?: string; }[] | null;
+    comments: CommentWithUser[] | null;
   }>({
     images: null,
     convertedListing: null,
     energyCertificate: null,
     tasks: null,
     agents: null,
+    comments: null,
   });
   const [loading, setLoading] = useState<{
     caracteristicas: boolean;
     tasks: boolean;
     agents: boolean;
+    comments: boolean;
   }>({
     caracteristicas: false,
     tasks: false,
     agents: false,
+    comments: false,
   });
 
   const fetchGeneralData = useCallback(async () => {
@@ -203,6 +209,20 @@ export function PropertyTabs({
     }
   }, [tabData.agents, session?.user]);
 
+  const fetchCommentsData = useCallback(async () => {
+    if (tabData.comments) return;
+    setLoading((prev) => ({ ...prev, comments: true }));
+    try {
+      const commentsData = await getCommentsByListingIdWithAuth(listing.listingId);
+      setTabData((prev) => ({ ...prev, comments: commentsData }));
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      setTabData((prev) => ({ ...prev, comments: [] }));
+    } finally {
+      setLoading((prev) => ({ ...prev, comments: false }));
+    }
+  }, [listing.listingId, tabData.comments]);
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
@@ -213,7 +233,8 @@ export function PropertyTabs({
     void fetchCertificateData();
     void fetchTasksData();
     void fetchAgentsData();
-  }, [fetchGeneralData, fetchImagesData, fetchCertificateData, fetchTasksData, fetchAgentsData]);
+    void fetchCommentsData();
+  }, [fetchGeneralData, fetchImagesData, fetchCertificateData, fetchTasksData, fetchAgentsData, fetchCommentsData]);
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
@@ -311,6 +332,7 @@ export function PropertyTabs({
             referenceNumber={listing.referenceNumber ?? ""}
             tasks={tabData.tasks ?? []}
             loading={loading.tasks}
+            comments={tabData.comments ?? []}
           />
         </div>
       </TabsContent>

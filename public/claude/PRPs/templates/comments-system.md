@@ -9,7 +9,7 @@ Implement a fully functional comments system for property listings that replaces
 
 1. **Database-First**: Use existing comments table schema from the database
 2. **Type Safety**: Implement proper TypeScript interfaces and validation
-3. **Real-time UX**: Maintain current UI design while adding live data
+3. **Server Components**: Use server-side queries and actions instead of API routes
 4. **Security**: Implement proper user authentication and authorization
 
 ---
@@ -39,12 +39,13 @@ Replace the mock comments system in `src/components/propiedades/detail/comments.
 
 ### Technical Requirements
 
-- Full CRUD operations via API endpoints
+- Full CRUD operations via server actions and queries
 - Database integration using existing comments table
 - User authentication and authorization
 - Proper error handling and loading states
 - TypeScript interfaces matching database schema
 - Maintain existing UI component structure
+- Use server components pattern like `src/server/queries/listing.ts`
 
 ### Success Criteria
 
@@ -68,15 +69,21 @@ Replace the mock comments system in `src/components/propiedades/detail/comments.
 - file: src/components/propiedades/detail/comments.tsx
   why: Current implementation showing UI design and mock data structure
 
+- file: src/server/queries/listing.ts
+  why: Reference for server-side query patterns and database operations
+
+- file: src/server/queries/task.ts
+  why: Example of CRUD operations using server queries pattern
+
+- file: src/server/actions/appointments.ts
+  why: Example of server actions for mutations and data updates
+
 - file: src/types/ (directory)
   why: Need to create comment-related type definitions
 
-- file: src/app/api/ (directory)
-  why: Need to create API endpoints for comment operations
-
 - doc: Next.js App Router documentation
-  section: API Routes
-  critical: API routes go in app/api/ directory with route.ts files
+  section: Server Actions and Server Components
+  critical: Use server actions for mutations, server queries for data fetching
 
 - doc: Drizzle ORM documentation
   section: Database queries and relationships
@@ -88,13 +95,14 @@ Replace the mock comments system in `src/components/propiedades/detail/comments.
 ```bash
 src/
 ├── app/
-│   ├── api/           # API endpoints
 │   └── (dashboard)/   # Dashboard routes
 ├── components/
 │   └── propiedades/
 │       └── detail/
 │           └── comments.tsx  # Current mock implementation
 ├── server/
+│   ├── queries/       # Server-side data queries
+│   ├── actions/       # Server actions for mutations
 │   └── db/
 │       └── schema.ts  # Database schema with comments table
 ├── types/              # TypeScript type definitions
@@ -105,12 +113,11 @@ src/
 
 ```bash
 src/
-├── app/
-│   └── api/
-│       └── comments/
-│           ├── route.ts           # GET (list), POST (create)
-│           └── [commentId]/
-│               └── route.ts       # GET, PUT, DELETE for specific comment
+├── server/
+│   ├── queries/
+│   │   └── comments.ts            # Server-side comment queries
+│   └── actions/
+│       └── comments.ts            # Server actions for comment CRUD
 ├── components/
 │   └── propiedades/
 │       └── detail/
@@ -124,12 +131,57 @@ src/
 ### Known Gotchas & Library Quirks
 
 ```typescript
-// CRITICAL: Next.js requires 'use client' directive for client-side components
+// CRITICAL: Server queries must use "use server" directive at top of file
+// CRITICAL: Server actions must use "use server" directive at top of file
+// CRITICAL: Always use getCurrentUserAccountId() for security in server functions
 // CRITICAL: Drizzle uses bigint for IDs - handle type conversion properly
 // CRITICAL: SingleStore database requires proper connection handling
 // CRITICAL: User authentication uses BetterAuth with string user IDs
 // CRITICAL: Comments table has soft delete (isDeleted flag)
 // CRITICAL: Parent-child relationships use self-referencing parentId
+// CRITICAL: Use revalidatePath() after mutations to update cached data
+```
+
+### Codebase Patterns to Follow
+
+```typescript
+// SERVER QUERY PATTERN (from src/server/queries/listing.ts)
+"use server";
+
+import { db } from "../db";
+import { comments, users } from "../db/schema";
+import { eq, and } from "drizzle-orm";
+import { getCurrentUserAccountId } from "../../lib/dal";
+
+export async function getCommentsByPropertyIdWithAuth(propertyId: bigint) {
+  const accountId = await getCurrentUserAccountId();
+  return getCommentsByPropertyId(propertyId, accountId);
+}
+
+// SERVER ACTION PATTERN (from src/server/actions/appointments.ts)
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { getCurrentUserAccountId, getCurrentUser } from "~/lib/dal";
+
+export async function createCommentAction(formData: CreateCommentFormData) {
+  try {
+    await getCurrentUserAccountId(); // Security check
+    const currentUser = await getCurrentUser();
+    
+    const result = await db.insert(comments).values({
+      listingId: BigInt(formData.listingId),
+      propertyId: BigInt(formData.propertyId),
+      userId: currentUser.id,
+      content: formData.content,
+    });
+    
+    revalidatePath(`/dashboard/propiedades/${formData.propertyId}`);
+    return { success: true, data: result };
+  } catch (error) {
+    return { success: false, error: "Failed to create comment" };
+  }
+}
 ```
 
 ## Implementation Blueprint
@@ -181,39 +233,44 @@ Task 1: Create Type Definitions
 CREATE src/types/comments.ts:
   - Define Comment interface matching database schema
   - Define CommentWithUser interface for UI
-  - Define API request/response types
+  - Define server action request/response types
   - Export all interfaces
 
-Task 2: Create API Endpoints
-CREATE src/app/api/comments/route.ts:
-  - GET: List comments for a property/listing
-  - POST: Create new comment
-  - Handle proper error responses
-  - Implement user authentication
+Task 2: Create Server Queries
+CREATE src/server/queries/comments.ts:
+  - getCommentsByPropertyId(propertyId, accountId) - List comments for property
+  - getCommentById(commentId, accountId) - Get specific comment
+  - Follow pattern from src/server/queries/listing.ts
+  - Include user joins and hierarchical structure
+  - Handle soft delete filtering
 
-CREATE src/app/api/comments/[commentId]/route.ts:
-  - GET: Get specific comment
-  - PUT: Update comment (owner only)
-  - DELETE: Soft delete comment (owner only)
-  - Handle authorization properly
+Task 3: Create Server Actions
+CREATE src/server/actions/comments.ts:
+  - createCommentAction(formData) - Create new comment
+  - updateCommentAction(commentId, formData) - Update comment (owner only)
+  - deleteCommentAction(commentId) - Soft delete comment (owner only)
+  - Follow pattern from src/server/actions/appointments.ts
+  - Use getCurrentUserAccountId() for security
+  - Use revalidatePath() after mutations
 
-Task 3: Update Comments Component
+Task 4: Update Comments Component
 MODIFY src/components/propiedades/detail/comments.tsx:
-  - Replace mock data with real API calls
-  - Implement proper loading states
-  - Add error handling
+  - Replace mock data with server queries
+  - Use server actions for mutations
+  - Implement proper loading states with React transitions
+  - Add error handling with toast notifications
   - Maintain existing UI design
   - Add edit/delete functionality
-  - Implement real-time updates
+  - Use optimistic updates for better UX
 
-Task 4: Create Utility Functions
+Task 5: Create Utility Functions
 CREATE src/lib/comments.ts:
-  - Database query functions
   - Comment formatting utilities
   - Permission checking functions
   - Error handling helpers
+  - Type conversion utilities for bigint
 
-Task 5: Integration and Testing
+Task 6: Integration and Testing
 - Test all CRUD operations
 - Verify user permissions
 - Test reply functionality
@@ -221,25 +278,75 @@ Task 5: Integration and Testing
 - Validate error handling
 ```
 
-### Database Operations
+### Database Operations (Drizzle Patterns)
 
 ```typescript
-// Key database operations needed:
-// 1. Create comment
-INSERT INTO comments (listing_id, property_id, user_id, content, parent_id)
+// Key database operations using Drizzle ORM patterns from codebase:
 
-// 2. Read comments with user data
-SELECT c.*, u.name, u.avatar FROM comments c 
-JOIN users u ON c.user_id = u.id 
-WHERE c.property_id = ? AND c.is_deleted = false
+// 1. Create comment (server action)
+const result = await db.insert(comments).values({
+  listingId: BigInt(formData.listingId),
+  propertyId: BigInt(formData.propertyId),
+  userId: currentUser.id,
+  content: formData.content,
+  parentId: formData.parentId ? BigInt(formData.parentId) : null,
+});
 
-// 3. Update comment
-UPDATE comments SET content = ?, updated_at = NOW() 
-WHERE comment_id = ? AND user_id = ?
+// 2. Read comments with user data (server query)
+const commentsWithUsers = await db
+  .select({
+    commentId: comments.commentId,
+    listingId: comments.listingId,
+    propertyId: comments.propertyId,
+    userId: comments.userId,
+    content: comments.content,
+    parentId: comments.parentId,
+    isDeleted: comments.isDeleted,
+    createdAt: comments.createdAt,
+    updatedAt: comments.updatedAt,
+    user: {
+      id: users.id,
+      name: users.name,
+      avatar: users.avatar,
+    }
+  })
+  .from(comments)
+  .leftJoin(users, eq(comments.userId, users.id))
+  .where(
+    and(
+      eq(comments.propertyId, propertyId),
+      eq(comments.isDeleted, false)
+    )
+  )
+  .orderBy(comments.createdAt);
 
-// 4. Soft delete comment
-UPDATE comments SET is_deleted = true, updated_at = NOW() 
-WHERE comment_id = ? AND user_id = ?
+// 3. Update comment (server action)
+await db
+  .update(comments)
+  .set({ 
+    content: formData.content,
+    updatedAt: new Date()
+  })
+  .where(
+    and(
+      eq(comments.commentId, commentId),
+      eq(comments.userId, currentUser.id)
+    )
+  );
+
+// 4. Soft delete comment (server action)
+await db
+  .update(comments)
+  .set({ 
+    isDeleted: true,
+    updatedAt: new Date()
+  })
+  .where(
+    and(
+      eq(comments.commentId, commentId),
+      eq(comments.userId, currentUser.id)
+    )
+  );
 ```
 
 ### Security Considerations

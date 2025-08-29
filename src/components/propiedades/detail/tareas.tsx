@@ -15,6 +15,7 @@ import { createTaskWithAuth, updateTaskWithAuth, deleteTaskWithAuth } from "~/se
 import { getLeadsByListingIdWithAuth } from "~/server/queries/lead";
 import { getDealsByListingIdWithAuth } from "~/server/queries/deal";
 import { useSession } from "~/lib/auth-client";
+import type { CommentWithUser } from "~/types/comments";
 
 interface Task {
   taskId?: bigint;
@@ -104,9 +105,10 @@ interface TareasProps {
   referenceNumber: string;
   tasks: Task[];
   loading?: boolean;
+  comments?: CommentWithUser[];
 }
 
-export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialTasks, loading: externalLoading }: TareasProps) {
+export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialTasks, loading: externalLoading, comments: initialComments = [] }: TareasProps) {
   const { data: session } = useSession();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isAdding, setIsAdding] = useState(false);
@@ -146,6 +148,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
   useEffect(() => {
     setTasks(initialTasks);
   }, [initialTasks]);
+
 
   // Fetch leads and deals for dropdowns when user starts creating a task
   useEffect(() => {
@@ -932,6 +935,13 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
           propertyId={propertyId}
           listingId={listingId}
           referenceNumber={referenceNumber}
+          initialComments={initialComments}
+          currentUserId={session?.user?.id}
+          currentUser={session?.user ? {
+            id: session.user.id,
+            name: session.user.name ?? undefined,
+            image: session.user.image ?? undefined
+          } : undefined}
         />
       </div>
     </div>
