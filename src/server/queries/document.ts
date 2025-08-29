@@ -139,7 +139,7 @@ export async function getListingDocuments(listingId: number, isActive = true) {
 // Get documents by lead ID
 export async function getLeadDocuments(leadId: number, isActive = true) {
   try {
-    const conditions = [eq(documents.leadId, BigInt(leadId))];
+    const conditions = [eq(documents.listingContactId, BigInt(leadId))];
     if (isActive !== undefined) {
       conditions.push(eq(documents.isActive, isActive));
     }
@@ -318,7 +318,7 @@ export async function listDocuments(
         );
       }
       if (filters.leadId) {
-        whereConditions.push(eq(documents.leadId, BigInt(filters.leadId)));
+        whereConditions.push(eq(documents.listingContactId, BigInt(filters.leadId)));
       }
       if (filters.dealId) {
         whereConditions.push(eq(documents.dealId, BigInt(filters.dealId)));

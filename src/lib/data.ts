@@ -1062,19 +1062,22 @@ export type Organization = {
 };
 
 export type Lead = {
-  leadId: bigint;
+  listingContactId: bigint;
   contactId: bigint;
   listingId?: bigint;
   prospectId?: bigint;
-  source: string;
-  status: LeadStatus;
+  contactType: "buyer";
+  source?: string;
+  status?: LeadStatus;
   createdAt: Date;
   updatedAt: Date;
+  isActive: boolean;
 };
 
 export type Deal = {
   dealId: bigint;
   listingId: bigint;
+  listingContactId?: bigint;
   status: "Offer" | "UnderContract" | "Closed" | "Lost";
   closeDate?: Date;
   createdAt: Date;
@@ -1092,7 +1095,7 @@ export type Appointment = {
   userId: string; // Changed to string to match User type
   contactId: bigint;
   listingId?: bigint;
-  leadId?: bigint;
+  listingContactId?: bigint;
   dealId?: bigint;
   datetimeStart: Date;
   datetimeEnd: Date;
@@ -1112,7 +1115,7 @@ export type Task = {
   dueDate?: Date;
   completed: boolean;
   listingId?: bigint;
-  leadId?: bigint;
+  listingContactId?: bigint;
   dealId?: bigint;
   appointmentId?: bigint;
   prospectId?: bigint;
@@ -1130,7 +1133,7 @@ export type Document = {
   contactId?: bigint;
   uploadedAt: Date;
   listingId?: bigint;
-  leadId?: bigint;
+  listingContactId?: bigint;
   dealId?: bigint;
   appointmentId?: bigint;
   propertyId?: bigint;
@@ -1541,27 +1544,31 @@ export const listings: Listing[] = [
   },
 ];
 
-// Mock data for leads
+// Mock data for leads (now using listing_contacts structure)
 export const leads: Lead[] = [
   {
-    leadId: BigInt(1),
+    listingContactId: BigInt(1),
     contactId: BigInt(1),
     listingId: BigInt(1),
     prospectId: undefined,
+    contactType: "buyer",
     source: "Website",
     status: "Info Solicitada",
     createdAt: new Date("2024-03-01"),
     updatedAt: new Date("2024-03-15"),
+    isActive: true,
   },
   {
-    leadId: BigInt(2),
+    listingContactId: BigInt(2),
     contactId: BigInt(2),
     listingId: BigInt(2),
     prospectId: undefined,
+    contactType: "buyer",
     source: "Referral",
     status: "Info Incompleta",
     createdAt: new Date("2024-03-10"),
     updatedAt: new Date("2024-03-10"),
+    isActive: true,
   },
 ];
 
@@ -1605,7 +1612,7 @@ export const appointments: Appointment[] = [
     userId: "1", // Changed to string
     contactId: BigInt(1),
     listingId: BigInt(1),
-    leadId: BigInt(1),
+    listingContactId: BigInt(1),
     dealId: BigInt(1),
     datetimeStart: new Date("2024-03-20T10:00:00"),
     datetimeEnd: new Date("2024-03-20T11:00:00"),
@@ -1620,7 +1627,7 @@ export const appointments: Appointment[] = [
     userId: "2", // Changed to string
     contactId: BigInt(2),
     listingId: BigInt(2),
-    leadId: BigInt(2),
+    listingContactId: BigInt(2),
     datetimeStart: new Date("2024-03-21T15:00:00"),
     datetimeEnd: new Date("2024-03-21T16:00:00"),
     status: "Scheduled",
@@ -1636,11 +1643,12 @@ export const tasks: Task[] = [
   {
     taskId: BigInt(1),
     userId: "1", // Changed to string
+    title: "Follow up with buyer",
     description: "Follow up with buyer about property viewing",
     dueDate: new Date("2024-03-19"),
     completed: false,
     listingId: BigInt(1),
-    leadId: BigInt(1),
+    listingContactId: BigInt(1),
     dealId: BigInt(1),
     appointmentId: BigInt(1),
     isActive: true,
@@ -1650,11 +1658,12 @@ export const tasks: Task[] = [
   {
     taskId: BigInt(2),
     userId: "2", // Changed to string
+    title: "Prepare rental agreement",
     description: "Prepare rental agreement for new tenant",
     dueDate: new Date("2024-03-22"),
     completed: false,
     listingId: BigInt(2),
-    leadId: BigInt(2),
+    listingContactId: BigInt(2),
     isActive: true,
     createdAt: new Date("2024-03-16"),
     updatedAt: new Date("2024-03-16"),
@@ -1672,6 +1681,7 @@ export const documents: Document[] = [
     contactId: BigInt(1),
     uploadedAt: new Date("2024-03-15"),
     listingId: BigInt(1),
+    listingContactId: BigInt(1),
     dealId: BigInt(1),
     documentKey: "property_deed.pdf",
     s3key: "s3://inmobiliariaacropolis/documents/property_deed.pdf",
@@ -1690,7 +1700,7 @@ export const documents: Document[] = [
     contactId: BigInt(2),
     uploadedAt: new Date("2024-03-16"),
     listingId: BigInt(2),
-    leadId: BigInt(2),
+    listingContactId: BigInt(2),
     documentKey: "rental_agreement.pdf",
     s3key: "s3://inmobiliariaacropolis/documents/rental_agreement.pdf",
     documentTag: "rental agreement",

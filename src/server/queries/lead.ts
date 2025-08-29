@@ -2,11 +2,10 @@
 
 import { db } from "../db";
 import {
-  leads,
+  listingContacts,
   contacts,
   listings,
   properties,
-  listingContacts,
 } from "../db/schema";
 import { eq, and, like, or, count, aliasedTable } from "drizzle-orm";
 import type { Lead } from "../../lib/data";
@@ -14,15 +13,15 @@ import { getCurrentUserAccountId } from "../../lib/dal";
 
 // Wrapper functions that automatically get accountId from current session
 export async function createLeadWithAuth(
-  data: Omit<Lead, "leadId" | "createdAt" | "updatedAt">,
+  data: Omit<Lead, "listingContactId" | "createdAt" | "updatedAt">,
 ) {
   const accountId = await getCurrentUserAccountId();
   return createLead(data, accountId);
 }
 
-export async function getLeadByIdWithAuth(leadId: number) {
+export async function getLeadByIdWithAuth(listingContactId: number) {
   const accountId = await getCurrentUserAccountId();
-  return getLeadById(leadId, accountId);
+  return getLeadById(listingContactId, accountId);
 }
 
 export async function getLeadsByContactIdWithAuth(contactId: number) {
@@ -36,16 +35,16 @@ export async function getLeadsByListingIdWithAuth(listingId: number) {
 }
 
 export async function updateLeadWithAuth(
-  leadId: number,
-  data: Omit<Partial<Lead>, "leadId">,
+  listingContactId: number,
+  data: Omit<Partial<Lead>, "listingContactId">,
 ) {
   const accountId = await getCurrentUserAccountId();
-  return updateLead(leadId, data, accountId);
+  return updateLead(listingContactId, data, accountId);
 }
 
-export async function deleteLeadWithAuth(leadId: number) {
+export async function deleteLeadWithAuth(listingContactId: number) {
   const accountId = await getCurrentUserAccountId();
-  return deleteLead(leadId, accountId);
+  return deleteLead(listingContactId, accountId);
 }
 
 export async function listLeadsWithAuth(
@@ -69,7 +68,7 @@ export async function listLeadsWithAuth(
 
 // Create a new lead
 export async function createLead(
-  data: Omit<Lead, "leadId" | "createdAt" | "updatedAt">,
+  data: Omit<Lead, "listingContactId" | "createdAt" | "updatedAt">,
   accountId: number,
 ) {
   try {
@@ -89,16 +88,27 @@ export async function createLead(
       throw new Error("Contact not found or access denied");
     }
 
-    const [result] = await db.insert(leads).values(data).$returningId();
+    const leadData = {
+      contactId: data.contactId,
+      listingId: data.listingId,
+      contactType: "buyer" as const,
+      prospectId: data.prospectId,
+      source: data.source,
+      status: data.status,
+      isActive: true
+    };
+
+    const [result] = await db.insert(listingContacts).values(leadData).$returningId();
     if (!result) throw new Error("Failed to create lead");
     const [newLead] = await db
       .select()
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(
         and(
-          eq(leads.leadId, BigInt(result.leadId)),
+          eq(listingContacts.listingContactId, BigInt(result.listingContactId)),
           eq(contacts.accountId, BigInt(accountId)),
+          eq(listingContacts.contactType, "buyer"),
         ),
       );
     return newLead;
@@ -109,16 +119,17 @@ export async function createLead(
 }
 
 // Get lead by ID
-export async function getLeadById(leadId: number, accountId: number) {
+export async function getLeadById(listingContactId: number, accountId: number) {
   try {
     const [lead] = await db
       .select()
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(
         and(
-          eq(leads.leadId, BigInt(leadId)),
+          eq(listingContacts.listingContactId, BigInt(listingContactId)),
           eq(contacts.accountId, BigInt(accountId)),
+          eq(listingContacts.contactType, "buyer"),
         ),
       );
     return lead;
@@ -152,12 +163,13 @@ export async function getLeadsByContactId(
 
     const contactLeads = await db
       .select()
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(
         and(
-          eq(leads.contactId, BigInt(contactId)),
+          eq(listingContacts.contactId, BigInt(contactId)),
           eq(contacts.accountId, BigInt(accountId)),
+          eq(listingContacts.contactType, "buyer"),
         ),
       );
     return contactLeads;
@@ -175,12 +187,13 @@ export async function getLeadsByListingId(
   try {
     const listingLeads = await db
       .select()
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(
         and(
-          eq(leads.listingId, BigInt(listingId)),
+          eq(listingContacts.listingId, BigInt(listingId)),
           eq(contacts.accountId, BigInt(accountId)),
+          eq(listingContacts.contactType, "buyer"),
         ),
       );
     return listingLeads;
@@ -192,20 +205,21 @@ export async function getLeadsByListingId(
 
 // Update lead
 export async function updateLead(
-  leadId: number,
-  data: Omit<Partial<Lead>, "leadId">,
+  listingContactId: number,
+  data: Omit<Partial<Lead>, "listingContactId">,
   accountId: number,
 ) {
   try {
     // Verify the lead belongs to this account
     const [existingLead] = await db
-      .select({ leadId: leads.leadId })
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .select({ listingContactId: listingContacts.listingContactId })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(
         and(
-          eq(leads.leadId, BigInt(leadId)),
+          eq(listingContacts.listingContactId, BigInt(listingContactId)),
           eq(contacts.accountId, BigInt(accountId)),
+          eq(listingContacts.contactType, "buyer"),
         ),
       );
 
@@ -214,17 +228,18 @@ export async function updateLead(
     }
 
     await db
-      .update(leads)
+      .update(listingContacts)
       .set(data)
-      .where(eq(leads.leadId, BigInt(leadId)));
+      .where(eq(listingContacts.listingContactId, BigInt(listingContactId)));
     const [updatedLead] = await db
       .select()
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(
         and(
-          eq(leads.leadId, BigInt(leadId)),
+          eq(listingContacts.listingContactId, BigInt(listingContactId)),
           eq(contacts.accountId, BigInt(accountId)),
+          eq(listingContacts.contactType, "buyer"),
         ),
       );
     return updatedLead;
@@ -235,17 +250,18 @@ export async function updateLead(
 }
 
 // Delete lead
-export async function deleteLead(leadId: number, accountId: number) {
+export async function deleteLead(listingContactId: number, accountId: number) {
   try {
     // Verify the lead belongs to this account
     const [existingLead] = await db
-      .select({ leadId: leads.leadId })
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .select({ listingContactId: listingContacts.listingContactId })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(
         and(
-          eq(leads.leadId, BigInt(leadId)),
+          eq(listingContacts.listingContactId, BigInt(listingContactId)),
           eq(contacts.accountId, BigInt(accountId)),
+          eq(listingContacts.contactType, "buyer"),
         ),
       );
 
@@ -253,7 +269,7 @@ export async function deleteLead(leadId: number, accountId: number) {
       throw new Error("Lead not found or access denied");
     }
 
-    await db.delete(leads).where(eq(leads.leadId, BigInt(leadId)));
+    await db.delete(listingContacts).where(eq(listingContacts.listingContactId, BigInt(listingContactId)));
     return { success: true };
   } catch (error) {
     console.error("Error deleting lead:", error);
@@ -267,9 +283,12 @@ export async function listLeads(page = 1, limit = 10, accountId: number) {
     const offset = (page - 1) * limit;
     const allLeads = await db
       .select()
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
-      .where(eq(contacts.accountId, BigInt(accountId)))
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(and(
+        eq(contacts.accountId, BigInt(accountId)),
+        eq(listingContacts.contactType, "buyer")
+      ))
       .limit(limit)
       .offset(offset);
     return allLeads;
@@ -309,7 +328,7 @@ export async function listLeadsWithDetails(
     // Add status filters
     if (statusFilters && statusFilters.length > 0) {
       const statusConditions = statusFilters.map((status) =>
-        eq(leads.status, status),
+        eq(listingContacts.status, status),
       );
       if (statusConditions.length > 0) {
         const statusCondition =
@@ -325,7 +344,7 @@ export async function listLeadsWithDetails(
     // Add source filters
     if (sourceFilters && sourceFilters.length > 0) {
       const sourceConditions = sourceFilters.map((source) =>
-        eq(leads.source, source),
+        eq(listingContacts.source, source),
       );
       if (sourceConditions.length > 0) {
         const sourceCondition =
@@ -345,14 +364,14 @@ export async function listLeadsWithDetails(
     const allLeads = await db
       .select({
         // Lead data
-        leadId: leads.leadId,
-        contactId: leads.contactId,
-        listingId: leads.listingId,
-        prospectId: leads.prospectId,
-        source: leads.source,
-        status: leads.status,
-        createdAt: leads.createdAt,
-        updatedAt: leads.updatedAt,
+        listingContactId: listingContacts.listingContactId,
+        contactId: listingContacts.contactId,
+        listingId: listingContacts.listingId,
+        prospectId: listingContacts.prospectId,
+        source: listingContacts.source,
+        status: listingContacts.status,
+        createdAt: listingContacts.createdAt,
+        updatedAt: listingContacts.updatedAt,
 
         // Contact data (lead contact)
         contact: {
@@ -384,47 +403,30 @@ export async function listLeadsWithDetails(
           phone: ownerContacts.phone,
         },
       })
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
-      .leftJoin(listings, eq(leads.listingId, listings.listingId))
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(
-        listingContacts,
-        and(
-          eq(listings.listingId, listingContacts.listingId),
-          eq(listingContacts.contactType, "owner"),
-          eq(listingContacts.isActive, true),
-        ),
-      )
-      .leftJoin(
-        ownerContacts,
-        eq(listingContacts.contactId, ownerContacts.contactId),
-      )
-      .where(and(...whereConditions))
-      .orderBy(leads.createdAt)
+      // TODO: Implement proper owner lookup via listing_contacts with contactType="owner"
+      .where(and(
+        eq(listingContacts.contactType, "buyer"),
+        ...whereConditions
+      ))
+      .orderBy(listingContacts.createdAt)
       .limit(limit)
       .offset(offset);
 
     // Get total count for pagination
     const totalResults = await db
       .select({ count: count() })
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
-      .leftJoin(listings, eq(leads.listingId, listings.listingId))
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(
-        listingContacts,
-        and(
-          eq(listings.listingId, listingContacts.listingId),
-          eq(listingContacts.contactType, "owner"),
-          eq(listingContacts.isActive, true),
-        ),
-      )
-      .leftJoin(
-        ownerContacts,
-        eq(listingContacts.contactId, ownerContacts.contactId),
-      )
-      .where(and(...whereConditions));
+      .where(and(
+        eq(listingContacts.contactType, "buyer"),
+        ...whereConditions
+      ));
 
     const totalCount = totalResults[0] && 'count' in totalResults[0]
       ? Number((totalResults[0] as {count: unknown}).count)

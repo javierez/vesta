@@ -8,10 +8,10 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Comments } from "./comments";
-import { createTaskWithAuth, updateTaskWithAuth, softDeleteTaskWithAuth } from "~/server/queries/task";
+import { createTaskWithAuth, updateTaskWithAuth, deleteTaskWithAuth } from "~/server/queries/task";
 import { getLeadsByListingIdWithAuth } from "~/server/queries/lead";
 import { getDealsByListingIdWithAuth } from "~/server/queries/deal";
 import { useSession } from "~/lib/auth-client";
@@ -114,10 +114,13 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     title: "",
     description: "",
     dueDate: "",
+    dueTime: "",
     contactId: "",
     appointmentId: "",
+    agentId: "",
   });
   const [taskStates, setTaskStates] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -125,6 +128,14 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
   const [deals, setDeals] = useState<Deal[]>([]);
   const [appointments] = useState<Appointment[]>([]);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
+  const [agents] = useState<{ id: string; name: string; firstName?: string; lastName?: string; }[]>(
+    session?.user ? [{
+      id: session.user.id,
+      name: session.user.name || '',
+      firstName: session.user.name?.split(' ')[0] || undefined,
+      lastName: session.user.name?.split(' ')[1] || undefined
+    }] : []
+  );
   const [loading, setLoading] = useState({
     leads: false,
     deals: false,
@@ -149,26 +160,26 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
         ]);
         
         const formattedLeads = leadsData.map((item: any) => ({
-          leadId: item.leads.leadId,
-          contactId: item.leads.contactId,
-          listingId: item.leads.listingId,
-          status: item.leads.status,
+          leadId: item.listingContacts?.listingContactId || item.listing_contacts?.listing_contact_id,
+          contactId: item.listingContacts?.contactId || item.listing_contacts?.contact_id,
+          listingId: item.listingContacts?.listingId || item.listing_contacts?.listing_id,
+          status: item.listingContacts?.status || item.listing_contacts?.status,
           contact: {
-            contactId: item.contacts.contactId,
-            firstName: item.contacts.firstName,
-            lastName: item.contacts.lastName,
-            email: item.contacts.email,
+            contactId: item.contacts?.contactId || item.contacts?.contact_id,
+            firstName: item.contacts?.firstName || item.contacts?.first_name,
+            lastName: item.contacts?.lastName || item.contacts?.last_name,
+            email: item.contacts?.email,
           }
         }));
         
         const formattedDeals = dealsData.map((item: any) => ({
-          dealId: item.deals.dealId,
-          listingId: item.deals.listingId,
-          status: item.deals.status,
+          dealId: item.deals?.dealId || item.deals?.deal_id,
+          listingId: item.deals?.listingId || item.deals?.listing_id,
+          status: item.deals?.status,
           contact: {
-            contactId: item.contacts?.contactId || BigInt(0),
-            firstName: item.contacts?.firstName || '',
-            lastName: item.contacts?.lastName || '',
+            contactId: item.contacts?.contactId || item.contacts?.contact_id || BigInt(0),
+            firstName: item.contacts?.firstName || item.contacts?.first_name || '',
+            lastName: item.contacts?.lastName || item.contacts?.last_name || '',
             email: item.contacts?.email,
           }
         }));
@@ -184,6 +195,48 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
 
     void fetchDropdownData();
   }, [isAdding, listingId]);
+
+  // Create unified contact list from leads and deals (prioritizing deals)
+  useEffect(() => {
+    const contactMap = new Map<string, ContactOption>();
+    
+    // Add contacts from leads first
+    leads.forEach(lead => {
+      const contactKey = lead.contact.contactId.toString();
+      contactMap.set(contactKey, {
+        contactId: lead.contact.contactId,
+        name: `${lead.contact.firstName} ${lead.contact.lastName}`,
+        email: lead.contact.email,
+        source: 'lead',
+        sourceId: lead.leadId,
+        sourceStatus: lead.status
+      });
+    });
+    
+    // Add contacts from deals (this will overwrite leads if same contact exists)
+    deals.forEach(deal => {
+      const contactKey = deal.contact.contactId.toString();
+      contactMap.set(contactKey, {
+        contactId: deal.contact.contactId,
+        name: `${deal.contact.firstName} ${deal.contact.lastName}`,
+        email: deal.contact.email,
+        source: 'deal',
+        sourceId: deal.dealId,
+        sourceStatus: deal.status
+      });
+    });
+    
+    const uniqueContacts = Array.from(contactMap.values());
+    setContacts(uniqueContacts);
+  }, [leads, deals]);
+
+  // Initialize agent selection with current user when starting to add a task
+  useEffect(() => {
+    if (isAdding && !newTask.agentId && session?.user?.id) {
+      setNewTask(prev => ({ ...prev, agentId: session.user.id }));
+    }
+  }, [isAdding, session?.user?.id, newTask.agentId]);
+
 
   // Auto-save draft functionality
   useEffect(() => {
@@ -292,9 +345,10 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
 
     // Create optimistic task
     const optimisticId = Date.now().toString();
+    const selectedUserId = newTask.agentId || (session?.user?.id || "current-user-id");
     const optimisticTask: Task = {
       id: optimisticId,
-      userId: session?.user?.id ?? "current-user-id",
+      userId: selectedUserId,
       title: newTask.title,
       description: newTask.description,
       completed: false,
@@ -319,21 +373,23 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
       title: "", 
       description: "", 
       dueDate: "", 
+      dueTime: "",
       contactId: "", 
-      appointmentId: "" 
+      appointmentId: "",
+      agentId: ""
     });
     setIsAdding(false);
 
     // SERVER ACTION CALL in background
     try {
       const savedTask = await createTaskWithAuth({
-        userId: session?.user?.id ?? "current-user-id",
+        userId: selectedUserId,
         title: formData.title,
         description: formData.description,
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         completed: false,
         listingId: BigInt(listingId),
-        leadId: leadId ? BigInt(leadId) : undefined,
+        listingContactId: leadId ? BigInt(leadId) : undefined,
         dealId: dealId ? BigInt(dealId) : undefined,
         appointmentId: formData.appointmentId ? BigInt(formData.appointmentId) : undefined,
         isActive: true,
@@ -349,7 +405,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
         id: savedTask.taskId?.toString() || optimisticId,
         taskId: savedTask.taskId ? BigInt(savedTask.taskId) : undefined,
         listingId: savedTask.listingId ? BigInt(savedTask.listingId) : undefined,
-        leadId: savedTask.leadId ? BigInt(savedTask.leadId) : undefined,
+        leadId: savedTask.listingContactId ? BigInt(savedTask.listingContactId) : undefined,
         dealId: savedTask.dealId ? BigInt(savedTask.dealId) : undefined,
         appointmentId: savedTask.appointmentId ? BigInt(savedTask.appointmentId) : undefined,
         prospectId: savedTask.prospectId ? BigInt(savedTask.prospectId) : undefined,
@@ -439,7 +495,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     setTasks(tasks.filter(task => task.id !== id));
 
     try {
-      await softDeleteTaskWithAuth(Number(task.taskId));
+      await deleteTaskWithAuth(Number(task.taskId));
     } catch (error) {
       console.error('Error deleting task:', error);
       // Revert optimistic update on error
@@ -447,25 +503,36 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     }
   };
 
+  const toggleDescriptionExpansion = (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent task toggle
+    setExpandedDescriptions(prev => ({
+      ...prev,
+      [taskId]: !prev[taskId]
+    }));
+  };
+
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
-        <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nueva Tarea
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nueva Tarea
+          </Button>
           {(newTask.title || newTask.description) && !isAdding && (
-            <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
+            <div className="flex items-center gap-2 px-3 py-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-md w-fit">
+              <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
               Borrador guardado
-            </span>
+            </div>
           )}
-        </Button>
+        </div>
       </div>
 
       {isAdding && (
-        <Card>
-          <CardContent className="space-y-4 pt-6" onKeyDown={(e) => {
+        <Card className="w-full">
+          <CardContent className="space-y-4 pt-4 md:pt-6 px-4 md:px-6" onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
               void handleAddTask();
@@ -495,7 +562,30 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                 <Mic className="h-4 w-4" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="agent-select">Asignar a</Label>
+              <Select
+                value={newTask.agentId}
+                onValueChange={(value) => setNewTask({ ...newTask, agentId: value })}
+                disabled={externalLoading}
+              >
+                <SelectTrigger className="h-8 text-gray-500">
+                  <SelectValue placeholder={
+                    externalLoading ? "Cargando agentes..." : 
+                    agents.length === 0 ? "No hay agentes" : "Seleccionar agente"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.name || `${agent.firstName || ''} ${agent.lastName || ''}`.trim() || agent.id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="contact-select">Contacto</Label>
                 <Select
@@ -512,7 +602,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                   <SelectContent>
                     {contacts.map((contact) => (
                       <SelectItem key={contact.contactId.toString()} value={contact.contactId.toString()}>
-                        {contact.name} - {contact.source === 'lead' ? 'Lead' : 'Deal'} ({contact.sourceStatus})
+                        {contact.name} ({contact.sourceStatus})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -523,11 +613,11 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                 <Select
                   value={newTask.appointmentId}
                   onValueChange={(value) => setNewTask({ ...newTask, appointmentId: value })}
-                  disabled={externalLoading || loading.appointments}
+                  disabled={externalLoading}
                 >
                   <SelectTrigger className="h-8 text-gray-500">
                     <SelectValue placeholder={
-                      (externalLoading || loading.appointments) ? "Cargando citas..." : 
+                      externalLoading ? "Cargando citas..." : 
                       appointments.length === 0 ? "No hay citas" : "Seleccionar cita"
                     } />
                   </SelectTrigger>
@@ -542,15 +632,27 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="due-date">Fecha límite</Label>
-              <Input
-                id="due-date"
-                type="date"
-                value={newTask.dueDate}
-                onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-                className="h-8 text-gray-500"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="due-date">Fecha límite</Label>
+                <Input
+                  id="due-date"
+                  type="date"
+                  value={newTask.dueDate}
+                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                  className="h-8 text-gray-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="due-time">Hora límite</Label>
+                <Input
+                  id="due-time"
+                  type="time"
+                  value={newTask.dueTime}
+                  onChange={(e) => setNewTask({ ...newTask, dueTime: e.target.value })}
+                  className="h-8 text-gray-500"
+                />
+              </div>
             </div>
             {saveError && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -567,14 +669,14 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
               </div>
             )}
             <div className="flex items-center justify-between">
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 hidden sm:block">
                 <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border rounded">Cmd+Enter</kbd> para guardar, <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border rounded">Esc</kbd> para cancelar
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Button 
                   onClick={handleAddTask} 
                   disabled={isSaving || !newTask.title.trim() || !newTask.description.trim()}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 w-full sm:w-auto"
                 >
                   {isSaving ? (
                     <>
@@ -592,6 +694,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                     setSaveError(null);
                   }}
                   disabled={isSaving}
+                  className="w-full sm:w-auto"
                 >
                   Cancelar
                 </Button>
@@ -603,8 +706,8 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
 
       <div className="space-y-2">
         {tasks.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>No hay tareas registradas para esta propiedad</p>
+          <div className="text-center py-6 sm:py-8 text-gray-500">
+            <p className="text-sm sm:text-base">No hay tareas registradas para esta propiedad</p>
           </div>
         ) : (
           <div className="space-y-1">
@@ -614,86 +717,165 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
                 }
                 if (name) {
-                  const parts = name.split(' ');
-                  return parts.length > 1 
-                    ? `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase()
-                    : name.charAt(0).toUpperCase();
+                  const parts = name.split(' ').filter(p => p.length > 0);
+                  if (parts.length >= 2 && parts[0] && parts[1]) {
+                    return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+                  } else if (parts[0]) {
+                    return parts[0].charAt(0).toUpperCase();
+                  }
                 }
                 return 'U';
+              };
+              
+              const getRemainingTime = (dueDate?: Date) => {
+                if (!dueDate) return null;
+                
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const taskDate = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+                
+                // Create full datetime - defaulting to end of day
+                const fullDueDateTime = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate(), 23, 59);
+                
+                const diffMs = fullDueDateTime.getTime() - now.getTime();
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                
+                if (diffMs < 0) {
+                  const overdueDays = Math.abs(diffDays);
+                  const overdueHours = Math.abs(diffHours);
+                  if (overdueDays > 0) {
+                    return `${overdueDays} día${overdueDays !== 1 ? 's' : ''} vencido`;
+                  } else if (overdueHours > 0) {
+                    return `${overdueHours} hora${overdueHours !== 1 ? 's' : ''} vencido`;
+                  } else {
+                    return 'Vencido';
+                  }
+                }
+                
+                if (taskDate.getTime() === today.getTime()) {
+                  // Same day
+                  if (diffHours > 0) {
+                    return `${diffHours} hora${diffHours !== 1 ? 's' : ''} restantes`;
+                  } else if (diffMinutes > 0) {
+                    return `${diffMinutes} minuto${diffMinutes !== 1 ? 's' : ''} restantes`;
+                  } else {
+                    return 'Vence ahora';
+                  }
+                } else {
+                  // Different day
+                  return `${diffDays} día${diffDays !== 1 ? 's' : ''} restantes`;
+                }
               };
               
               return (
                 <div 
                   key={task.id} 
-                  className={`relative cursor-pointer p-3 rounded-lg border hover:bg-gray-50 transition-colors ${
-                    task.completed ? 'bg-gray-50 opacity-75' : 'bg-white'
+                  className={`relative cursor-pointer p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 ${
+                    task.completed ? 'bg-gray-50/50 opacity-75' : 'bg-white'
                   } ${taskStates[task.id] === 'saving' ? 'opacity-70' : ''}`}
                   onClick={() => handleToggleCompleted(task.id)}
                 >
                   {/* User avatar - top right */}
-                  <div className="absolute top-2 right-2" title={task.userName || `${task.userFirstName || ''} ${task.userLastName || ''}`.trim() || 'Usuario'}>
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="text-xs">
+                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3" title={task.userName || `${task.userFirstName || ''} ${task.userLastName || ''}`.trim() || 'Usuario'}>
+                    <Avatar className="h-6 w-6 sm:h-7 sm:w-7 ring-2 ring-gray-100">
+                      <AvatarFallback className="text-xs font-medium">
                         {getInitials(task.userFirstName, task.userLastName, task.userName)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
                   
                   {/* Task content */}
-                  <div className="pr-8 pb-6">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="pr-8 sm:pr-10">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
                       {/* Checkbox */}
                       <div 
-                        className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                        className={`flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
                           task.completed 
-                            ? 'bg-green-500 border-green-500 text-white' 
-                            : 'border-gray-300'
+                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm' 
+                            : 'border-gray-300 hover:border-gray-400'
                         }`}
                       >
-                        {task.completed && <Check className="w-2.5 h-2.5" />}
+                        {task.completed && <Check className="w-3 h-3" />}
                       </div>
                       
-                      <h3 className={`font-medium text-sm ${task.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                      <h3 className={`font-semibold text-sm leading-tight ${task.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
                         {task.title}
                       </h3>
                       
                       {taskStates[task.id] === 'saving' && (
-                        <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
                       )}
                       {taskStates[task.id] === 'saved' && (
-                        <CheckCircle2 className="h-3 w-3 text-green-500" />
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                       )}
                     </div>
                     
-                    <p className={`text-xs mb-2 ml-6 ${task.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
-                      {task.description}
-                    </p>
+                    <div className="ml-6 sm:ml-8 mb-3">
+                      {(() => {
+                        const isExpanded = expandedDescriptions[task.id];
+                        const isLongDescription = task.description.length > 120;
+                        const displayText = isExpanded || !isLongDescription 
+                          ? task.description 
+                          : task.description.substring(0, 120) + '...';
+                        
+                        return (
+                          <div className="group">
+                            <p className={`text-sm leading-relaxed ${task.completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
+                              {displayText}
+                            </p>
+                            {isLongDescription && (
+                              <button
+                                onClick={(e) => toggleDescriptionExpansion(task.id, e)}
+                                className={`text-xs mt-1 flex items-center gap-1 transition-colors ${
+                                  task.completed ? 'text-gray-400 hover:text-gray-500' : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <span>Ver menos</span>
+                                    <ChevronUp className="h-3 w-3" />
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>Ver más</span>
+                                    <ChevronDown className="h-3 w-3" />
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
                     
-                    {task.dueDate && (
-                      <div className="text-xs text-gray-500 ml-6">
-                        Plazo: {task.dueDate.toLocaleDateString()}
-                      </div>
-                    )}
-                    
-                    {/* Related items */}
-                    {(task.relatedContact || task.relatedAppointment) && (
-                      <div className="flex gap-2 mt-2 ml-6">
+                    {/* Related items with time */}
+                    {(task.relatedContact || task.relatedAppointment || task.dueDate) && (
+                      <div className="flex flex-wrap items-center gap-2 ml-6 sm:ml-8 mb-1">
                         {task.relatedContact && (
-                          <Badge variant="secondary" className="text-xs px-2 py-0">
-                            👤 {task.relatedContact.name}
-                          </Badge>
+                          <span className="text-xs text-gray-500 flex items-center gap-1 font-normal break-words">
+                            <User className="h-3 w-3 opacity-60 flex-shrink-0" />
+                            <span className="truncate max-w-32 sm:max-w-none">{task.relatedContact.name}</span>
+                          </span>
                         )}
                         {task.relatedAppointment && (
-                          <Badge variant="outline" className="text-xs px-2 py-0">
-                            📅 {task.relatedAppointment.type}
+                          <Badge variant="outline" className="text-xs px-2 sm:px-2.5 py-1 flex items-center gap-1.5 font-medium">
+                            <Calendar className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{task.relatedAppointment.type}</span>
                           </Badge>
+                        )}
+                        {task.dueDate && (
+                          <span className="text-xs text-amber-600 bg-amber-50 px-2 sm:px-2.5 py-0.5 rounded-full font-normal border border-amber-200 whitespace-nowrap">
+                            {getRemainingTime(task.dueDate)}
+                          </span>
                         )}
                       </div>
                     )}
                   </div>
                   
                   {/* Delete button - bottom right */}
-                  <div className="absolute bottom-2 right-2">
+                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2">
                     <Button
                       size="sm"
                       variant="ghost"
@@ -701,9 +883,9 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                         e.stopPropagation();
                         handleDeleteTask(task.id);
                       }}
-                      className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                      className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded-lg"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -713,8 +895,8 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
         )}
       </div>
 
-      <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4">Comentarios</h3>
+      <div className="mt-6 sm:mt-8">
+        <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Comentarios</h3>
         <Comments 
           propertyId={propertyId}
           listingId={listingId}

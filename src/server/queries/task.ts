@@ -5,7 +5,7 @@ import {
   tasks,
   contacts,
   prospects,
-  leads,
+  listingContacts,
   listings,
   properties,
   users,
@@ -37,9 +37,9 @@ export async function getListingTasksWithAuth(listingId: number) {
   return getListingTasks(listingId, accountId);
 }
 
-export async function getLeadTasksWithAuth(leadId: number) {
+export async function getLeadTasksWithAuth(listingContactId: number) {
   const accountId = await getCurrentUserAccountId();
-  return getLeadTasks(leadId, accountId);
+  return getLeadTasks(listingContactId, accountId);
 }
 
 export async function getDealTasksWithAuth(dealId: number) {
@@ -105,15 +105,16 @@ export async function createTask(
       if (!prospect) throw new Error("Prospect not found or access denied");
     }
 
-    if (data.leadId) {
+    if (data.listingContactId) {
       const [lead] = await db
-        .select({ leadId: leads.leadId })
-        .from(leads)
-        .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+        .select({ listingContactId: listingContacts.listingContactId })
+        .from(listingContacts)
+        .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
         .where(
           and(
-            eq(leads.leadId, data.leadId),
+            eq(listingContacts.listingContactId, data.listingContactId),
             eq(contacts.accountId, BigInt(accountId)),
+            eq(listingContacts.contactType, "buyer"),
           ),
         );
       if (!lead) throw new Error("Lead not found or access denied");
@@ -148,9 +149,10 @@ export async function createTask(
         title: tasks.title,
         description: tasks.description,
         dueDate: tasks.dueDate,
+        dueTime: tasks.dueTime,
         completed: tasks.completed,
         listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
-        leadId: sql<number>`CAST(${tasks.leadId} AS UNSIGNED)`,
+        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
         appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
         prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
@@ -176,7 +178,10 @@ export async function getTaskById(taskId: number, accountId: number) {
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listingContacts, and(
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+        eq(listingContacts.contactType, "buyer")
+      ))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -206,7 +211,10 @@ export async function getUserTasks(userId: string, accountId: number) {
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listingContacts, and(
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+        eq(listingContacts.contactType, "buyer")
+      ))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -239,9 +247,10 @@ export async function getListingTasks(listingId: number, accountId: number) {
         title: tasks.title,
         description: tasks.description,
         dueDate: tasks.dueDate,
+        dueTime: tasks.dueTime,
         completed: tasks.completed,
         listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
-        leadId: sql<number>`CAST(${tasks.leadId} AS UNSIGNED)`,
+        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
         appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
         prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
@@ -273,16 +282,19 @@ export async function getListingTasks(listingId: number, accountId: number) {
 }
 
 // Get tasks by lead ID
-export async function getLeadTasks(leadId: number, accountId: number) {
+export async function getLeadTasks(listingContactId: number, accountId: number) {
   try {
     const leadTasks = await db
       .select()
       .from(tasks)
-      .innerJoin(leads, eq(tasks.leadId, leads.leadId))
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .innerJoin(listingContacts, and(
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+        eq(listingContacts.contactType, "buyer")
+      ))
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(
         and(
-          eq(tasks.leadId, BigInt(leadId)),
+          eq(tasks.listingContactId, BigInt(listingContactId)),
           eq(tasks.isActive, true),
           eq(contacts.accountId, BigInt(accountId)),
         ),
@@ -355,7 +367,10 @@ export async function updateTask(
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listingContacts, and(
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+        eq(listingContacts.contactType, "buyer")
+      ))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -384,9 +399,10 @@ export async function updateTask(
         title: tasks.title,
         description: tasks.description,
         dueDate: tasks.dueDate,
+        dueTime: tasks.dueTime,
         completed: tasks.completed,
         listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
-        leadId: sql<number>`CAST(${tasks.leadId} AS UNSIGNED)`,
+        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
         appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
         prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
@@ -412,7 +428,10 @@ export async function completeTask(taskId: number, accountId: number) {
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listingContacts, and(
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+        eq(listingContacts.contactType, "buyer")
+      ))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -441,9 +460,10 @@ export async function completeTask(taskId: number, accountId: number) {
         title: tasks.title,
         description: tasks.description,
         dueDate: tasks.dueDate,
+        dueTime: tasks.dueTime,
         completed: tasks.completed,
         listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
-        leadId: sql<number>`CAST(${tasks.leadId} AS UNSIGNED)`,
+        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
         appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
         prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
@@ -469,7 +489,10 @@ export async function softDeleteTask(taskId: number, accountId: number) {
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listingContacts, and(
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+        eq(listingContacts.contactType, "buyer")
+      ))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -506,7 +529,10 @@ export async function deleteTask(taskId: number, accountId: number) {
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listingContacts, and(
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+        eq(listingContacts.contactType, "buyer")
+      ))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -576,7 +602,10 @@ export async function listTasks(
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listingContacts, and(
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+        eq(listingContacts.contactType, "buyer")
+      ))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)

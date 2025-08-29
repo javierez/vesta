@@ -9,6 +9,7 @@ import {
   decimal,
   smallint,
   int,
+  time,
 } from "drizzle-orm/singlestore-core";
 
 // Accounts table (CRM organization/tenant - top level entity)
@@ -417,13 +418,21 @@ export const contacts = singlestoreTable("contacts", {
 });
 
 // Listing Contact junction table (Many-to-Many relationship between listings and contacts)
+// Enhanced to replace leads table functionality
 export const listingContacts = singlestoreTable("listing_contacts", {
   listingContactId: bigint("listing_contact_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
-  listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
+  listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
-  contactType: varchar("contact_type", { length: 20 }).notNull(), // e.g. "buyer", "owner", "viewer"
+  contactType: varchar("contact_type", { length: 20 }).notNull(), // "buyer", "owner", "viewer"
+  
+  // NEW COLUMNS (from leads table):
+  prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.id (nullable)
+  source: varchar("source", { length: 50 }), // e.g. "Website", "Walk-In", "Appointment"
+  status: varchar("status", { length: 50 }), // Lead status workflow
+  
+  // Existing columns:
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
@@ -440,23 +449,12 @@ export const organizations = singlestoreTable("organizations", {
   country: varchar("country", { length: 100 }),
 });
 
-// Leads (inbound interest for a listing)
-export const leads = singlestoreTable("leads", {
-  leadId: bigint("lead_id", { mode: "bigint" }).primaryKey().autoincrement(),
-  contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
-  listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
-  prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.id (nullable) - for lineage tracking
-  source: varchar("source", { length: 50 }).notNull(), // e.g. "Website", "Walk-In"
-  status: varchar("status", { length: 50 }).notNull(), // Support Spanish status workflow
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
 
 // Deals (potential or closed transaction)
 export const deals = singlestoreTable("deals", {
   dealId: bigint("deal_id", { mode: "bigint" }).primaryKey().autoincrement(),
   listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
-  leadId: bigint("lead_id", { mode: "bigint" }), // FK → leads.lead_id (nullable) - for lineage tracking
+  listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (nullable)
   status: varchar("stage", { length: 20 }).notNull(), // e.g. "Offer", "UnderContract", "Closed", "Lost"
   closeDate: timestamp("close_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -478,7 +476,7 @@ export const appointments = singlestoreTable("appointments", {
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
-  leadId: bigint("lead_id", { mode: "bigint" }), // FK → leads.lead_id (nullable)
+  listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)
   prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.prospect_id (nullable)
   datetimeStart: timestamp("datetime_start").notNull(),
@@ -523,9 +521,10 @@ export const tasks = singlestoreTable("tasks", {
   title: varchar("title", { length: 255 }).notNull(), // Task title
   description: text("description").notNull(),
   dueDate: timestamp("due_date"),
+  dueTime: time("due_time"),
   completed: boolean("completed").default(false),
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
-  leadId: bigint("lead_id", { mode: "bigint" }), // FK → leads.lead_id (nullable)
+  listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)
   appointmentId: bigint("appointment_id", { mode: "bigint" }), // FK → appointments.appointment_id (nullable)
   prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.prospect_id (nullable)
@@ -546,7 +545,7 @@ export const documents = singlestoreTable("documents", {
   propertyId: bigint("property_id", { mode: "bigint" }), // FK → properties.property_id (nullable)
   contactId: bigint("contact_id", { mode: "bigint" }), // FK → contacts.contact_id (nullable)
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
-  leadId: bigint("lead_id", { mode: "bigint" }), // FK → leads.lead_id (nullable)
+  listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)
   appointmentId: bigint("appointment_id", { mode: "bigint" }), // FK → appointments.appointment_id (nullable)
   prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.prospect_id (nullable)

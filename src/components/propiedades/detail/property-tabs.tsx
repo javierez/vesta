@@ -68,18 +68,22 @@ export function PropertyTabs({
       fileUrl: string;
     } | null;
     tasks: any[] | null;
+    agents: { id: string; name: string; firstName?: string; lastName?: string; }[] | null;
   }>({
     images: null,
     convertedListing: null,
     energyCertificate: null,
     tasks: null,
+    agents: null,
   });
   const [loading, setLoading] = useState<{
     caracteristicas: boolean;
     tasks: boolean;
+    agents: boolean;
   }>({
     caracteristicas: false,
     tasks: false,
+    agents: false,
   });
 
   const fetchGeneralData = useCallback(async () => {
@@ -139,7 +143,7 @@ export function PropertyTabs({
         id: task.taskId?.toString() || Date.now().toString(),
         taskId: task.taskId ? BigInt(task.taskId) : undefined,
         listingId: task.listingId ? BigInt(task.listingId) : undefined,
-        leadId: task.leadId ? BigInt(task.leadId) : undefined,
+        listingContactId: task.listingContactId ? BigInt(task.listingContactId) : undefined,
         dealId: task.dealId ? BigInt(task.dealId) : undefined,
         appointmentId: task.appointmentId ? BigInt(task.appointmentId) : undefined,
         prospectId: task.prospectId ? BigInt(task.prospectId) : undefined,
@@ -158,6 +162,26 @@ export function PropertyTabs({
     }
   }, [listing.listingId, tabData.tasks]);
 
+  const fetchAgentsData = useCallback(async () => {
+    if (tabData.agents) return;
+    setLoading((prev) => ({ ...prev, agents: true }));
+    try {
+      // For now, just provide the current user until we implement proper API endpoint
+      const agentsData = session?.user ? [{
+        id: session.user.id,
+        name: session.user.name || '',
+        firstName: session.user.name?.split(' ')[0] || undefined,
+        lastName: session.user.name?.split(' ')[1] || undefined,
+      }] : [];
+      setTabData((prev) => ({ ...prev, agents: agentsData }));
+    } catch (error) {
+      console.error('Error fetching agents:', error);
+      setTabData((prev) => ({ ...prev, agents: [] }));
+    } finally {
+      setLoading((prev) => ({ ...prev, agents: false }));
+    }
+  }, [tabData.agents, session?.user]);
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
@@ -167,7 +191,8 @@ export function PropertyTabs({
     void fetchImagesData();
     void fetchCertificateData();
     void fetchTasksData();
-  }, [fetchGeneralData, fetchImagesData, fetchCertificateData, fetchTasksData]);
+    void fetchAgentsData();
+  }, [fetchGeneralData, fetchImagesData, fetchCertificateData, fetchTasksData, fetchAgentsData]);
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">

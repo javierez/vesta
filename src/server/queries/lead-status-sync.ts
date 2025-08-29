@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "../db";
-import { leads, contacts } from "../db/schema";
+import { listingContacts, contacts } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentUserAccountId } from "../../lib/dal";
 import {
@@ -19,30 +19,32 @@ import { createLeadWithAuth, updateLeadWithAuth } from "./lead";
 export async function findLeadByContactAndListing(
   contactId: bigint,
   listingId: bigint | undefined,
-): Promise<{ leadId: bigint } | null> {
+): Promise<{ listingContactId: bigint } | null> {
   try {
     // PATTERN: Always get account ID for security (see lead.ts patterns)
     const accountId = await getCurrentUserAccountId();
 
     const whereConditions = [
-      eq(leads.contactId, contactId),
+      eq(listingContacts.contactId, contactId),
       eq(contacts.accountId, BigInt(accountId)),
+      eq(listingContacts.contactType, "buyer"),
     ];
 
     // Add listing condition if provided, otherwise look for leads with no listing
     if (listingId) {
-      whereConditions.push(eq(leads.listingId, listingId));
+      whereConditions.push(eq(listingContacts.listingId, listingId));
     } else {
       // Find leads with null listingId for this contact
       // This uses a different approach since we can't directly eq with null
       const [existingLead] = await db
-        .select({ leadId: leads.leadId })
-        .from(leads)
-        .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+        .select({ listingContactId: listingContacts.listingContactId })
+        .from(listingContacts)
+        .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
         .where(
           and(
-            eq(leads.contactId, contactId),
+            eq(listingContacts.contactId, contactId),
             eq(contacts.accountId, BigInt(accountId)),
+            eq(listingContacts.contactType, "buyer"),
           ),
         )
         .limit(1);
@@ -51,9 +53,9 @@ export async function findLeadByContactAndListing(
     }
 
     const [existingLead] = await db
-      .select({ leadId: leads.leadId })
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
+      .select({ listingContactId: listingContacts.listingContactId })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(and(...whereConditions))
       .limit(1);
 
@@ -72,7 +74,7 @@ export async function findOrCreateLeadForAppointment(
   contactId: bigint,
   listingId: bigint | undefined,
   prospectId: bigint | undefined,
-): Promise<{ leadId: bigint; created: boolean }> {
+): Promise<{ listingContactId: bigint; created: boolean }> {
   try {
     // CRITICAL: Check for existing lead by contact+listing combination
     const existingLead = await findLeadByContactAndListing(
@@ -81,7 +83,7 @@ export async function findOrCreateLeadForAppointment(
     );
 
     if (existingLead) {
-      return { leadId: existingLead.leadId, created: false };
+      return { listingContactId: existingLead.listingContactId, created: false };
     }
 
     // PATTERN: Use auth wrapper for database operations (see lead.ts)
@@ -89,22 +91,24 @@ export async function findOrCreateLeadForAppointment(
       contactId,
       listingId,
       prospectId,
+      contactType: "buyer",
       status: DEFAULT_APPOINTMENT_LEAD_STATUS,
       source: APPOINTMENT_LEAD_SOURCE,
+      isActive: true,
     });
 
-    if (!newLead?.leads?.leadId) {
-      throw new Error("Failed to create new lead - no leadId returned");
+    if (!newLead?.listingContacts?.listingContactId) {
+      throw new Error("Failed to create new lead - no listingContactId returned");
     }
 
     console.log("🆕 Created new lead for appointment:", {
-      leadId: newLead.leads.leadId.toString(),
+      listingContactId: newLead.listingContacts.listingContactId.toString(),
       contactId: contactId.toString(),
       listingId: listingId?.toString(),
       status: DEFAULT_APPOINTMENT_LEAD_STATUS,
     });
 
-    return { leadId: newLead.leads.leadId, created: true };
+    return { listingContactId: newLead.listingContacts.listingContactId, created: true };
   } catch (error) {
     console.error("Error finding or creating lead for appointment:", error);
     throw error;
@@ -116,7 +120,7 @@ export async function findOrCreateLeadForAppointment(
  * PATTERN: Follow same structure as existing lead functions
  */
 export async function syncLeadStatusFromAppointment(
-  leadId: bigint,
+  listingContactId: bigint,
   appointmentStatus: string,
 ): Promise<void> {
   try {
@@ -131,12 +135,12 @@ export async function syncLeadStatusFromAppointment(
     }
 
     // PATTERN: Use auth wrapper for updates (see lead.ts)
-    await updateLeadWithAuth(Number(leadId), {
+    await updateLeadWithAuth(Number(listingContactId), {
       status: newLeadStatus,
     });
 
     console.log("🔄 Synced lead status from appointment:", {
-      leadId: leadId.toString(),
+      listingContactId: listingContactId.toString(),
       appointmentStatus,
       newLeadStatus,
     });
@@ -151,7 +155,7 @@ export async function syncLeadStatusFromAppointment(
  * Used when visit is recorded to advance lead through workflow
  */
 export async function updateLeadStatusFromVisitOutcome(
-  leadId: bigint,
+  listingContactId: bigint,
   visitOutcome: "offer_made" | "info_needed",
 ): Promise<void> {
   try {
@@ -159,12 +163,12 @@ export async function updateLeadStatusFromVisitOutcome(
       visitOutcome === "offer_made" ? "Oferta Presentada" : "Info Solicitada";
 
     // PATTERN: Use auth wrapper for updates (see lead.ts)
-    await updateLeadWithAuth(Number(leadId), {
+    await updateLeadWithAuth(Number(listingContactId), {
       status: newStatus,
     });
 
     console.log("📋 Updated lead status from visit outcome:", {
-      leadId: leadId.toString(),
+      listingContactId: listingContactId.toString(),
       visitOutcome,
       newStatus,
     });

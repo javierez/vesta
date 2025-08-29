@@ -4,7 +4,7 @@ import { db } from "~/server/db";
 import {
   contacts,
   prospects,
-  leads,
+  listingContacts,
   deals,
   tasks,
   appointments,
@@ -105,15 +105,18 @@ export async function getOperacionesSummary(
     // Get leads summary by status and listing type (through listings)
     const leadsData = await db
       .select({
-        status: leads.status,
+        status: listingContacts.status,
         listingType: listings.listingType,
         count: sql<number>`COUNT(*)`,
       })
-      .from(leads)
-      .innerJoin(contacts, eq(leads.contactId, contacts.contactId))
-      .leftJoin(listings, eq(leads.listingId, listings.listingId))
-      .where(eq(contacts.accountId, accountId))
-      .groupBy(leads.status, listings.listingType);
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
+      .where(and(
+        eq(contacts.accountId, accountId),
+        eq(listingContacts.contactType, "buyer")
+      ))
+      .groupBy(listingContacts.status, listings.listingType);
 
     // Get deals summary by status and listing type (through listings)
     const dealsData = await db
@@ -196,7 +199,7 @@ export async function getUrgentTasks(
         completed: tasks.completed,
         // Entity relationships
         prospectId: tasks.prospectId,
-        leadId: tasks.leadId,
+        listingContactId: tasks.listingContactId,
         dealId: tasks.dealId,
         listingId: tasks.listingId,
         appointmentId: tasks.appointmentId,
@@ -204,7 +207,7 @@ export async function getUrgentTasks(
         contactName: sql<string>`
           CASE 
             WHEN ${tasks.prospectId} IS NOT NULL THEN CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})
-            WHEN ${tasks.leadId} IS NOT NULL THEN CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})
+            WHEN ${tasks.listingContactId} IS NOT NULL THEN CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})
             ELSE NULL 
           END
         `,
@@ -222,7 +225,10 @@ export async function getUrgentTasks(
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
       // Join for lead contact names
-      .leftJoin(leads, eq(tasks.leadId, leads.leadId))
+      .leftJoin(listingContacts, and(
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+        eq(listingContacts.contactType, "buyer")
+      ))
       // Join for property addresses (through listings or deals)
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(deals, eq(tasks.dealId, deals.dealId))
@@ -255,9 +261,9 @@ export async function getUrgentTasks(
         entityType = "prospect";
         entityId = task.prospectId;
         entityName = task.contactName || "Unknown Contact";
-      } else if (task.leadId) {
+      } else if (task.listingContactId) {
         entityType = "lead";
-        entityId = task.leadId;
+        entityId = task.listingContactId;
         entityName = task.contactName || "Unknown Contact";
       } else if (task.dealId) {
         entityType = "deal";

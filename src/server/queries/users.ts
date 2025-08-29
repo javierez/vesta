@@ -28,6 +28,29 @@ export async function listUsersWithAuth(page = 1, limit = 10) {
   return listUsersByAccount(accountId, page, limit);
 }
 
+// Get all agents (users) for selection dropdowns - filtered by account
+export async function getAgentsForSelectionWithAuth() {
+  try {
+    const accountId = await getCurrentUserAccountId();
+    const agents = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        firstName: users.firstName,
+        lastName: users.lastName,
+      })
+      .from(users)
+      .where(
+        and(eq(users.accountId, BigInt(accountId)), eq(users.isActive, true)),
+      )
+      .orderBy(users.name);
+    return agents;
+  } catch (error) {
+    console.error("Error fetching agents for selection:", error);
+    throw error;
+  }
+}
+
 // Create a new user
 export async function createUser(data: {
   id: string;
