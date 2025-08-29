@@ -13,7 +13,7 @@ export function serializeDocument(document: any) {
     propertyId: document.propertyId?.toString(),
     contactId: document.contactId?.toString(),
     listingId: document.listingId?.toString(),
-    leadId: document.leadId?.toString(),
+    listingContactId: document.listingContactId?.toString(),
     dealId: document.dealId?.toString(),
     appointmentId: document.appointmentId?.toString(),
     prospectId: document.prospectId?.toString(),
@@ -137,9 +137,9 @@ export async function getListingDocuments(listingId: number, isActive = true) {
 }
 
 // Get documents by lead ID
-export async function getLeadDocuments(leadId: number, isActive = true) {
+export async function getLeadDocuments(listingContactId: number, isActive = true) {
   try {
-    const conditions = [eq(documents.listingContactId, BigInt(leadId))];
+    const conditions = [eq(documents.listingContactId, BigInt(listingContactId))];
     if (isActive !== undefined) {
       conditions.push(eq(documents.isActive, isActive));
     }
@@ -289,7 +289,7 @@ export async function listDocuments(
     userId?: string; // Changed to string for BetterAuth compatibility
     contactId?: number;
     listingId?: number;
-    leadId?: number;
+    listingContactId?: number;
     dealId?: number;
     appointmentId?: number;
     prospectId?: number;
@@ -317,8 +317,8 @@ export async function listDocuments(
           eq(documents.listingId, BigInt(filters.listingId)),
         );
       }
-      if (filters.leadId) {
-        whereConditions.push(eq(documents.listingContactId, BigInt(filters.leadId)));
+      if (filters.listingContactId) {
+        whereConditions.push(eq(documents.listingContactId, BigInt(filters.listingContactId)));
       }
       if (filters.dealId) {
         whereConditions.push(eq(documents.dealId, BigInt(filters.dealId)));

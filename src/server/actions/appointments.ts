@@ -21,7 +21,7 @@ import { syncToGoogle } from "~/lib/google-calendar-sync";
 interface AppointmentFormData {
   contactId: bigint;
   listingId?: bigint;
-  leadId?: bigint;
+  listingContactId?: bigint;
   dealId?: bigint;
   prospectId?: bigint;
   startDate: string; // YYYY-MM-DD format
@@ -48,7 +48,7 @@ export async function updateAppointmentAction(
       userId: currentUser.id, // String for BetterAuth
       contactId: BigInt(formData.contactId),
       listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
-      leadId: formData.leadId ? BigInt(formData.leadId) : undefined,
+      listingContactId: formData.listingContactId ? BigInt(formData.listingContactId) : undefined,
       dealId: formData.dealId ? BigInt(formData.dealId) : undefined,
       prospectId: formData.prospectId ? BigInt(formData.prospectId) : undefined,
       datetimeStart: new Date(`${formData.startDate}T${formData.startTime}`),
@@ -130,7 +130,7 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       userId: currentUser.id, // String for BetterAuth
       contactId: BigInt(formData.contactId),
       listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
-      leadId: formData.leadId ? BigInt(formData.leadId) : undefined,
+      listingContactId: formData.listingContactId ? BigInt(formData.listingContactId) : undefined,
       dealId: formData.dealId ? BigInt(formData.dealId) : undefined,
       prospectId: formData.prospectId ? BigInt(formData.prospectId) : undefined,
       datetimeStart: new Date(`${formData.startDate}T${formData.startTime}`),
@@ -151,18 +151,18 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
     }
 
     // NEW: Auto-create lead if missing and we have required data
-    if (!appointmentData.leadId && appointmentData.contactId) {
+    if (!appointmentData.listingContactId && appointmentData.contactId) {
       try {
-        const { leadId: autoCreatedLeadId, created } =
+        const { listingContactId: autoCreatedListingContactId, created } =
           await findOrCreateLeadForAppointment(
             appointmentData.contactId,
             appointmentData.listingId,
             appointmentData.prospectId,
           );
-        appointmentData.leadId = autoCreatedLeadId;
+        appointmentData.listingContactId = autoCreatedListingContactId;
 
         console.log("🎯 Lead auto-creation result:", {
-          leadId: autoCreatedLeadId.toString(),
+          listingContactId: autoCreatedListingContactId.toString(),
           created,
           contactId: appointmentData.contactId.toString(),
           listingId: appointmentData.listingId?.toString(),
@@ -198,9 +198,9 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
     }
 
     // NEW: Sync lead status to "Visita Pendiente" after successful appointment creation
-    if (result.leadId) {
+    if (result.listingContactId) {
       try {
-        await syncLeadStatusFromAppointment(result.leadId, "Scheduled");
+        await syncLeadStatusFromAppointment(result.listingContactId, "Scheduled");
       } catch (error) {
         console.error(
           "Failed to sync lead status after appointment creation:",

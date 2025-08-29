@@ -14,6 +14,28 @@ import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
 import { getListingTasksWithAuth } from "~/server/queries/task";
 
+// Task type that matches what Tareas component expects
+interface TaskWithId {
+  taskId?: bigint;
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  dueDate?: Date;
+  completed: boolean;
+  listingId?: bigint;
+  leadId?: bigint;
+  dealId?: bigint;
+  appointmentId?: bigint;
+  prospectId?: bigint;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt?: Date;
+  userName?: string;
+  userFirstName?: string;
+  userLastName?: string;
+}
+
 interface PropertyTabsProps {
   listing: {
     listingId: bigint;
@@ -67,7 +89,7 @@ export function PropertyTabs({
       documentKey: string;
       fileUrl: string;
     } | null;
-    tasks: any[] | null;
+    tasks: TaskWithId[] | null;
     agents: { id: string; name: string; firstName?: string; lastName?: string; }[] | null;
   }>({
     images: null,
@@ -140,18 +162,17 @@ export function PropertyTabs({
       const tasksData = await getListingTasksWithAuth(Number(listing.listingId));
       const tasksWithId = tasksData.map(task => ({
         ...task,
-        id: task.taskId?.toString() || Date.now().toString(),
-        taskId: task.taskId ? BigInt(task.taskId) : undefined,
+        id: task.taskId.toString(),
+        taskId: BigInt(task.taskId),
+        leadId: task.listingContactId ? BigInt(task.listingContactId) : undefined,
         listingId: task.listingId ? BigInt(task.listingId) : undefined,
-        listingContactId: task.listingContactId ? BigInt(task.listingContactId) : undefined,
         dealId: task.dealId ? BigInt(task.dealId) : undefined,
         appointmentId: task.appointmentId ? BigInt(task.appointmentId) : undefined,
         prospectId: task.prospectId ? BigInt(task.prospectId) : undefined,
-        createdAt: new Date(task.createdAt),
-        updatedAt: task.updatedAt ? new Date(task.updatedAt) : undefined,
-        dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+        dueDate: task.dueDate ?? undefined,
         completed: task.completed ?? false,
         isActive: task.isActive ?? true,
+        updatedAt: task.updatedAt ?? undefined,
       }));
       setTabData((prev) => ({ ...prev, tasks: tasksWithId }));
     } catch (error) {
@@ -170,8 +191,8 @@ export function PropertyTabs({
       const agentsData = session?.user ? [{
         id: session.user.id,
         name: session.user.name || '',
-        firstName: session.user.name?.split(' ')[0] || undefined,
-        lastName: session.user.name?.split(' ')[1] || undefined,
+        firstName: session.user.name?.split(' ')[0] ?? undefined,
+        lastName: session.user.name?.split(' ')[1] ?? undefined,
       }] : [];
       setTabData((prev) => ({ ...prev, agents: agentsData }));
     } catch (error) {

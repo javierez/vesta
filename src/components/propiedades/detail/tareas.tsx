@@ -132,8 +132,8 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     session?.user ? [{
       id: session.user.id,
       name: session.user.name || '',
-      firstName: session.user.name?.split(' ')[0] || undefined,
-      lastName: session.user.name?.split(' ')[1] || undefined
+      firstName: session.user.name?.split(' ')[0] ?? undefined,
+      lastName: session.user.name?.split(' ')[1] ?? undefined
     }] : []
   );
   const [loading, setLoading] = useState({
@@ -159,30 +159,61 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
           getDealsByListingIdWithAuth(Number(listingId))
         ]);
         
-        const formattedLeads = leadsData.map((item: any) => ({
-          leadId: item.listingContacts?.listingContactId || item.listing_contacts?.listing_contact_id,
-          contactId: item.listingContacts?.contactId || item.listing_contacts?.contact_id,
-          listingId: item.listingContacts?.listingId || item.listing_contacts?.listing_id,
-          status: item.listingContacts?.status || item.listing_contacts?.status,
-          contact: {
-            contactId: item.contacts?.contactId || item.contacts?.contact_id,
-            firstName: item.contacts?.firstName || item.contacts?.first_name,
-            lastName: item.contacts?.lastName || item.contacts?.last_name,
-            email: item.contacts?.email,
+        const formattedLeads = leadsData.map((item: unknown) => {
+          const typedItem = item as { listingContacts?: { listingContactId: bigint; contactId: bigint; listingId: bigint; status: string }; listing_contacts?: { listing_contact_id: bigint; contact_id: bigint; listing_id: bigint; status: string }; contacts?: { contactId: bigint; contact_id: bigint; firstName: string; first_name: string; lastName: string; last_name: string; email: string } };
+          const leadId = typedItem.listingContacts?.listingContactId ?? typedItem.listing_contacts?.listing_contact_id;
+          const contactId = typedItem.listingContacts?.contactId ?? typedItem.listing_contacts?.contact_id;
+          const listingId = typedItem.listingContacts?.listingId ?? typedItem.listing_contacts?.listing_id;
+          const status = typedItem.listingContacts?.status ?? typedItem.listing_contacts?.status;
+          const contactDbId = typedItem.contacts?.contactId ?? typedItem.contacts?.contact_id;
+          const firstName = typedItem.contacts?.firstName ?? typedItem.contacts?.first_name;
+          const lastName = typedItem.contacts?.lastName ?? typedItem.contacts?.last_name;
+          
+          // Only return leads that have all required fields
+          if (!leadId || !contactId || !listingId || !status || !contactDbId || !firstName || !lastName) {
+            return null;
           }
-        }));
+          
+          return {
+            leadId,
+            contactId,
+            listingId,
+            status,
+            contact: {
+              contactId: contactDbId,
+              firstName,
+              lastName,
+              email: typedItem.contacts?.email,
+            }
+          };
+        }).filter((lead): lead is NonNullable<typeof lead> => lead !== null);
         
-        const formattedDeals = dealsData.map((item: any) => ({
-          dealId: item.deals?.dealId || item.deals?.deal_id,
-          listingId: item.deals?.listingId || item.deals?.listing_id,
-          status: item.deals?.status,
-          contact: {
-            contactId: item.contacts?.contactId || item.contacts?.contact_id || BigInt(0),
-            firstName: item.contacts?.firstName || item.contacts?.first_name || '',
-            lastName: item.contacts?.lastName || item.contacts?.last_name || '',
-            email: item.contacts?.email,
+        const formattedDeals = dealsData.map((item: unknown) => {
+          const typedItem = item as { deals?: { dealId: bigint; deal_id: bigint; listingId: bigint; listing_id: bigint; status: string }; contacts?: { contactId: bigint; contact_id: bigint; firstName: string; first_name: string; lastName: string; last_name: string; email: string } };
+          const dealId = typedItem.deals?.dealId ?? typedItem.deals?.deal_id;
+          const listingId = typedItem.deals?.listingId ?? typedItem.deals?.listing_id;
+          const status = typedItem.deals?.status;
+          const contactId = typedItem.contacts?.contactId ?? typedItem.contacts?.contact_id;
+          const firstName = typedItem.contacts?.firstName ?? typedItem.contacts?.first_name;
+          const lastName = typedItem.contacts?.lastName ?? typedItem.contacts?.last_name;
+          
+          // Only return deals that have all required fields
+          if (!dealId || !listingId || !status || !contactId || !firstName || !lastName) {
+            return null;
           }
-        }));
+          
+          return {
+            dealId,
+            listingId,
+            status,
+            contact: {
+              contactId,
+              firstName,
+              lastName,
+              email: typedItem.contacts?.email,
+            }
+          };
+        }).filter((deal): deal is NonNullable<typeof deal> => deal !== null);
         
         setLeads(formattedLeads);
         setDeals(formattedDeals);

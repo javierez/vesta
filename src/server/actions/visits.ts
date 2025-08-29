@@ -84,7 +84,7 @@ export async function createVisitAction(formData: VisitFormData) {
         "firma-visita", // documentTag to identify visit signatures
         appointment.contactId,
         appointment.listingId,
-        undefined, // leadId
+        undefined, // listingContactId
         undefined, // dealId
         formData.appointmentId,
         undefined, // propertyId - we have it through listing
@@ -118,7 +118,7 @@ export async function createVisitAction(formData: VisitFormData) {
         "firma-visita", // documentTag to identify visit signatures
         appointment.contactId,
         appointment.listingId,
-        undefined, // leadId
+        undefined, // listingContactId
         undefined, // dealId
         formData.appointmentId,
         undefined, // propertyId - we have it through listing
@@ -143,15 +143,15 @@ export async function createVisitAction(formData: VisitFormData) {
       }
 
       // NEW: Update lead status based on visit outcome
-      if (appointment.leadId && formData.visitOutcome) {
+      if (appointment.listingContactId && formData.visitOutcome) {
         try {
           await updateLeadStatusFromVisitOutcome(
-            BigInt(appointment.leadId),
+            BigInt(appointment.listingContactId),
             formData.visitOutcome,
           );
           console.log("📈 Updated lead status from visit outcome:", {
             appointmentId: formData.appointmentId.toString(),
-            leadId: appointment.leadId.toString(),
+            listingContactId: appointment.listingContactId.toString(),
             visitOutcome: formData.visitOutcome,
           });
         } catch (error) {
@@ -161,7 +161,7 @@ export async function createVisitAction(formData: VisitFormData) {
           );
           // Don't fail the visit recording if lead status update fails
         }
-      } else if (!appointment.leadId) {
+      } else if (!appointment.listingContactId) {
         console.warn(
           "⚠️ No lead associated with appointment for status progression:",
           {

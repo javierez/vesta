@@ -59,7 +59,7 @@ export async function POST(
       documentTag,
       undefined, // contactId
       listing.listingId, // listingId
-      undefined, // leadId
+      undefined, // listingContactId
       undefined, // dealId
       undefined, // appointmentId
       listing.propertyId, // propertyId
@@ -73,7 +73,7 @@ export async function POST(
       propertyId: document.propertyId?.toString(),
       contactId: document.contactId?.toString(),
       listingId: document.listingId?.toString(),
-      leadId: document.leadId?.toString(),
+      listingContactId: document.listingContactId?.toString(),
       dealId: document.dealId?.toString(),
       appointmentId: document.appointmentId?.toString(),
     };
@@ -137,7 +137,7 @@ export async function GET(
       propertyId: doc.propertyId?.toString(),
       contactId: doc.contactId?.toString(),
       listingId: doc.listingId?.toString(),
-      leadId: doc.leadId?.toString(),
+      listingContactId: doc.listingContactId?.toString(),
       dealId: doc.dealId?.toString(),
       appointmentId: doc.appointmentId?.toString(),
     }));

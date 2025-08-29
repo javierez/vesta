@@ -162,7 +162,7 @@ export async function getOperacionesSummary(
     // Process leads data
     leadsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
-      if (row.listingType) {
+      if (row.listingType && row.status) {
         summary[type].leads[row.status] = row.count;
       }
     });
@@ -170,7 +170,9 @@ export async function getOperacionesSummary(
     // Process deals data
     dealsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
-      summary[type].deals[row.status] = row.count;
+      if (row.status) {
+        summary[type].deals[row.status] = row.count;
+      }
     });
 
     return summary;

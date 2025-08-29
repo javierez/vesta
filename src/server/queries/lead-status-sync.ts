@@ -97,18 +97,18 @@ export async function findOrCreateLeadForAppointment(
       isActive: true,
     });
 
-    if (!newLead?.listingContacts?.listingContactId) {
+    if (!newLead?.listing_contacts?.listingContactId) {
       throw new Error("Failed to create new lead - no listingContactId returned");
     }
 
     console.log("🆕 Created new lead for appointment:", {
-      listingContactId: newLead.listingContacts.listingContactId.toString(),
+      listingContactId: newLead.listing_contacts.listingContactId.toString(),
       contactId: contactId.toString(),
       listingId: listingId?.toString(),
       status: DEFAULT_APPOINTMENT_LEAD_STATUS,
     });
 
-    return { listingContactId: newLead.listingContacts.listingContactId, created: true };
+    return { listingContactId: newLead.listing_contacts.listingContactId, created: true };
   } catch (error) {
     console.error("Error finding or creating lead for appointment:", error);
     throw error;
