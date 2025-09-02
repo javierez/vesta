@@ -227,6 +227,7 @@ function CommentItem({
 }
 
 export function Comments({ propertyId, listingId, referenceNumber: _referenceNumber, initialComments = [], currentUserId, currentUser }: CommentsProps) {
+  const [isLoading, setIsLoading] = useState(false);
   const [comments, setComments] = useState(initialComments);
   
   // Generate initials from user name
