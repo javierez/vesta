@@ -14,7 +14,7 @@ export interface VisitFormData {
 export interface AppointmentWithDetails {
   appointmentId: bigint;
   listingId?: bigint | null;
-  leadId?: bigint | null; // Added for lead status progression
+  listingContactId?: bigint | null; // For lead status progression
   contactId: bigint;
   userId: string;
   datetimeStart: Date;

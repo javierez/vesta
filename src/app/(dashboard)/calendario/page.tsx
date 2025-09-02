@@ -988,7 +988,7 @@ export default function AppointmentsPage() {
                         initialData: {
                           contactId: event.contactId,
                           listingId: event.listingId ?? undefined,
-                          leadId: event.leadId ?? undefined,
+                          listingContactId: event.listingContactId ?? undefined,
                           dealId: event.dealId ?? undefined,
                           prospectId: event.prospectId ?? undefined,
                           startDate: event.startTime

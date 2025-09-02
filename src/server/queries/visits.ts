@@ -26,7 +26,7 @@ export async function getAppointmentWithDetails(
     .select({
       appointmentId: appointments.appointmentId,
       listingId: appointments.listingId,
-      leadId: appointments.listingContactId, // Add leadId for status progression
+      listingContactId: appointments.listingContactId, // For lead status progression
       contactId: appointments.contactId,
       userId: appointments.userId,
       datetimeStart: appointments.datetimeStart,
@@ -185,6 +185,7 @@ export async function getCompletedVisitAppointments(
     .select({
       appointmentId: appointments.appointmentId,
       listingId: appointments.listingId,
+      listingContactId: appointments.listingContactId,
       contactId: appointments.contactId,
       userId: appointments.userId,
       datetimeStart: appointments.datetimeStart,

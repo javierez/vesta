@@ -20,7 +20,7 @@ interface CalendarEvent {
   // Additional fields needed for editing
   contactId: bigint;
   listingId?: bigint | null;
-  leadId?: bigint | null;
+  listingContactId?: bigint | null;
   dealId?: bigint | null;
   prospectId?: bigint | null;
   // Agent information
@@ -33,7 +33,7 @@ interface RawAppointment {
   userId: string;
   contactId: bigint;
   listingId: bigint | null;
-  leadId: bigint | null;
+  listingContactId: bigint | null;
   dealId: bigint | null;
   prospectId: bigint | null;
   datetimeStart: Date;
@@ -94,7 +94,7 @@ function transformToCalendarEvent(
     // Additional fields needed for editing
     contactId: rawAppointment.contactId,
     listingId: rawAppointment.listingId,
-    leadId: rawAppointment.leadId,
+    listingContactId: rawAppointment.listingContactId,
     dealId: rawAppointment.dealId,
     prospectId: rawAppointment.prospectId,
     // Agent information
