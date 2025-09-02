@@ -612,7 +612,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                 <SelectContent>
                   {agents.map((agent) => (
                     <SelectItem key={agent.id} value={agent.id}>
-                      {agent.name ?? `${agent.firstName ?? ''} ${agent.lastName ?? ''}`.trim() || agent.id}
+                      {agent.name ?? (`${agent.firstName ?? ''} ${agent.lastName ?? ''}`.trim() || agent.id)}
                     </SelectItem>
                   ))}
                 </SelectContent>
