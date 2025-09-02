@@ -221,14 +221,45 @@ export async function deleteCommentAction(commentId: bigint): Promise<CommentAct
 
     console.log("Soft deleting comment:", commentId);
 
-    // Get property ID for revalidation before deletion
+    // Get property ID and check for replies before deletion
     const [comment] = await db
-      .select({ propertyId: comments.propertyId })
+      .select({ propertyId: comments.propertyId, parentId: comments.parentId })
       .from(comments)
       .where(eq(comments.commentId, commentId));
 
-    // PATTERN: Soft delete - set isDeleted to true
-    await db
+    // Check if this comment has replies (only for parent comments)
+    const replies = comment?.parentId === null ? await db
+      .select({ commentId: comments.commentId })
+      .from(comments)
+      .where(
+        and(
+          eq(comments.parentId, commentId),
+          eq(comments.isDeleted, false)
+        )
+      ) : [];
+
+    console.log(`Comment has ${replies.length} replies that will also be deleted`);
+
+    // PATTERN: Cascade soft delete - delete parent and all replies
+    if (comment?.parentId === null && replies.length > 0) {
+      // Delete parent comment + all replies in a transaction-like approach
+      await db
+        .update(comments)
+        .set({
+          isDeleted: true,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(comments.parentId, commentId),
+            eq(comments.isDeleted, false)
+          )
+        );
+      console.log(`Cascade deleted ${replies.length} replies`);
+    }
+
+    // Delete the main comment
+    const updateResult = await db
       .update(comments)
       .set({
         isDeleted: true,
@@ -241,7 +272,14 @@ export async function deleteCommentAction(commentId: bigint): Promise<CommentAct
         )
       );
 
-    console.log("Comment soft deleted successfully");
+    console.log("Comment soft deleted successfully. Rows affected:", updateResult.rowCount);
+    
+    // Double check if the comment was actually deleted
+    const [checkComment] = await db
+      .select({ isDeleted: comments.isDeleted })
+      .from(comments)
+      .where(eq(comments.commentId, commentId));
+    console.log("Comment after delete - isDeleted:", checkComment?.isDeleted);
 
     // PATTERN: Revalidate path after mutation
     if (comment?.propertyId) {

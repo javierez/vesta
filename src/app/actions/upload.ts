@@ -123,6 +123,18 @@ export async function updateImageOrders(
   }
 }
 
+export async function togglePropertyImageVisibility(
+  propertyImageId: bigint,
+  isActive: boolean,
+): Promise<void> {
+  try {
+    await updatePropertyImage(propertyImageId, { isActive });
+  } catch (error) {
+    console.error("Error toggling image visibility:", error);
+    throw error;
+  }
+}
+
 export async function uploadDocument(
   file: File,
   userId: string, // Changed to string for BetterAuth compatibility

@@ -10,6 +10,8 @@ import {
   Download,
   CheckSquare2,
   Square,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -18,6 +20,7 @@ import {
   uploadPropertyImage,
   deletePropertyImage,
   updateImageOrders,
+  togglePropertyImageVisibility,
 } from "~/app/actions/upload";
 import {
   Dialog,
@@ -54,6 +57,7 @@ export function ImageGallery({
   const [selectedImages, setSelectedImages] = useState<Set<number>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(new Set());
 
   // Drag and drop state
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -273,6 +277,43 @@ export function ImageGallery({
     }
   };
 
+  const handleToggleVisibility = async (index: number) => {
+    const image = images[index];
+    if (!image) return;
+
+    const newActiveStatus = !image.isActive;
+
+    // Add to loading set
+    setIsTogglingVisibility((prev) => new Set([...prev, index]));
+
+    // Optimistic update
+    setImages((prev) =>
+      prev.map((img, i) =>
+        i === index ? { ...img, isActive: newActiveStatus } : img
+      )
+    );
+
+    try {
+      await togglePropertyImageVisibility(image.propertyImageId, newActiveStatus);
+    } catch (error) {
+      console.error("Error toggling image visibility:", error);
+      // Revert optimistic update
+      setImages((prev) =>
+        prev.map((img, i) =>
+          i === index ? { ...img, isActive: !newActiveStatus } : img
+        )
+      );
+      // TODO: Show error toast
+    } finally {
+      // Remove from loading set
+      setIsTogglingVisibility((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }
+  };
+
   const handleDragStart = (e: React.DragEvent, index: number) => {
     if (isSelectMode) return;
     setDraggedIndex(index);
@@ -414,7 +455,11 @@ export function ImageGallery({
               alt={title ?? `Property image ${idx + 1}`}
               width={300}
               height={200}
-              className={`h-40 w-full object-cover ${imageSources[idx] === defaultPlaceholder ? "grayscale" : ""}`}
+              className={cn(
+                "h-40 w-full object-cover transition-opacity duration-200",
+                imageSources[idx] === defaultPlaceholder && "grayscale",
+                !image.isActive && "opacity-50"
+              )}
               onError={() => handleImageError(idx)}
               onLoad={() => handleImageLoad(idx)}
             />
@@ -472,6 +517,24 @@ export function ImageGallery({
                     <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   ) : (
                     <Download className="h-3.5 w-3.5" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 disabled:opacity-50 group-hover:opacity-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleToggleVisibility(idx);
+                  }}
+                  disabled={isTogglingVisibility.has(idx)}
+                  aria-label={image.isActive ? "Ocultar imagen" : "Mostrar imagen"}
+                >
+                  {isTogglingVisibility.has(idx) ? (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : image.isActive ? (
+                    <Eye className="h-3.5 w-3.5" />
+                  ) : (
+                    <EyeOff className="h-3.5 w-3.5" />
                   )}
                 </button>
               </>

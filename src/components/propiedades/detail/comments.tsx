@@ -11,6 +11,7 @@ import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import type { CommentWithUser } from "~/types/comments";
 import { createCommentAction, updateCommentAction, deleteCommentAction } from "~/server/actions/comments";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 
 
 interface CommentsProps {
@@ -39,11 +40,14 @@ interface CommentItemProps {
   editContent: string;
   setEditContent: (content: string) => void;
   isPending: boolean;
+  isDeleting: boolean;
   handleAddReply: (parentId: bigint) => Promise<void>;
   handleEditComment: (commentId: bigint) => Promise<void>;
   handleDeleteComment: (commentId: bigint) => Promise<void>;
   startEditingComment: (comment: CommentWithUser) => void;
   cancelEditing: () => void;
+  setCommentToDelete: (id: bigint | null) => void;
+  setDeleteConfirmOpen: (open: boolean) => void;
 }
 
 function CommentItem({ 
@@ -59,11 +63,14 @@ function CommentItem({
   editContent,
   setEditContent,
   isPending,
+  isDeleting,
   handleAddReply,
   handleEditComment,
   handleDeleteComment,
   startEditingComment,
-  cancelEditing
+  cancelEditing,
+  setCommentToDelete,
+  setDeleteConfirmOpen
 }: CommentItemProps) {
   return (
     <div className={`${isReply ? 'ml-12 pl-4' : ''}`}>
@@ -110,7 +117,10 @@ function CommentItem({
                   </button>
                   
                   <button
-                    onClick={() => handleDeleteComment(comment.commentId)}
+                    onClick={() => {
+                      setCommentToDelete(comment.commentId);
+                      setDeleteConfirmOpen(true);
+                    }}
                     className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
                     title="Eliminar"
                   >
@@ -149,7 +159,7 @@ function CommentItem({
                   <Button
                     size="sm"
                     onClick={() => handleEditComment(comment.commentId)}
-                    disabled={!editContent.trim() || isPending}
+                    disabled={!editContent.trim()}
                   >
                     Guardar
                   </Button>
@@ -185,7 +195,7 @@ function CommentItem({
                   <Button
                     size="sm"
                     onClick={() => handleAddReply(comment.commentId)}
-                    disabled={!(replyContents[comment.commentId.toString()] ?? "").trim() || isPending}
+                    disabled={!(replyContents[comment.commentId.toString()] ?? "").trim()}
                   >
                     Responder
                   </Button>
@@ -211,11 +221,14 @@ function CommentItem({
                   editContent={editContent}
                   setEditContent={setEditContent}
                   isPending={isPending}
+                  isDeleting={isDeleting}
                   handleAddReply={handleAddReply}
                   handleEditComment={handleEditComment}
                   handleDeleteComment={handleDeleteComment}
                   startEditingComment={startEditingComment}
                   cancelEditing={cancelEditing}
+                  setCommentToDelete={setCommentToDelete}
+                  setDeleteConfirmOpen={setDeleteConfirmOpen}
                 />
               ))}
             </div>
@@ -229,6 +242,11 @@ function CommentItem({
 export function Comments({ propertyId, listingId, referenceNumber: _referenceNumber, initialComments = [], currentUserId, currentUser }: CommentsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [comments, setComments] = useState(initialComments);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<bigint | null>(null);
+  
+  // Background queue for processing server requests
+  const [processingQueue, setProcessingQueue] = useState<Set<string>>(new Set());
   
   // Generate initials from user name
   const getCurrentUserInitials = () => {
@@ -308,6 +326,7 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
     setComments(initialComments);
   }, [initialComments]);
   const [isPending, startTransition] = useTransition();
+  const [isDeleting, startDeleteTransition] = useTransition();
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<bigint | null>(null);
   const [replyContents, setReplyContents] = useState<Record<string, string>>({});
@@ -316,7 +335,7 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
 
 
   const handleAddComment = async () => {
-    if (!newComment.trim() || isPending) return;
+    if (!newComment.trim()) return;
 
     const tempComment: CommentWithUser = {
       commentId: BigInt(Date.now()),
@@ -330,22 +349,26 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
       updatedAt: new Date(),
       user: {
         id: currentUserId ?? "temp",
-        name: currentUser?.name ?? "Enviando...",
+        name: currentUser?.name ?? "Usuario",
         initials: getCurrentUserInitials(),
         image: currentUser?.image
       },
       replies: []
     };
 
+    // Non-blocking: Store comment content and clear form immediately
+    const commentContent = newComment;
+    setNewComment(""); // Clear immediately so user can type more
+    
+    // Process optimistic update and server request in transition
     startTransition(async () => {
+      // Add optimistic comment inside transition
       addOptimisticComment({ type: 'ADD_COMMENT', comment: tempComment });
-      setNewComment("");
-      
       try {
         const result = await createCommentAction({
           listingId,
           propertyId,
-          content: newComment,
+          content: commentContent,
         });
 
         if (!result.success) {
@@ -353,6 +376,14 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
           // Revert optimistic update on error
           addOptimisticComment({ type: 'DELETE_COMMENT', commentId: tempComment.commentId.toString() });
         } else {
+          // Refetch comments to get the real data with user info
+          try {
+            const { getCommentsByListingIdWithAuth } = await import("~/server/queries/comments");
+            const freshComments = await getCommentsByListingIdWithAuth(listingId);
+            setComments(freshComments);
+          } catch {
+            // If refetch fails, optimistic update remains
+          }
           toast.success("Comentario creado exitosamente");
         }
       } catch (error) {
@@ -364,7 +395,7 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
 
   const handleAddReply = async (parentId: bigint) => {
     const content = replyContents[parentId.toString()] ?? "";
-    if (!content.trim() || isPending) return;
+    if (!content.trim()) return;
 
     // Create optimistic reply with current user info
     const tempReply: CommentWithUser = {
@@ -379,24 +410,25 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
       updatedAt: new Date(),
       user: {
         id: currentUserId ?? "temp",
-        name: currentUser?.name ?? "Enviando...",
+        name: currentUser?.name ?? "Usuario",
         initials: getCurrentUserInitials(),
         image: currentUser?.image
       },
       replies: []
     };
 
+    // Non-blocking: Clear form and close reply UI immediately so user can continue
+    setReplyContents(prev => ({ ...prev, [parentId.toString()]: "" }));
+    setReplyingTo(null);
+    
+    // Process optimistic update and server request in transition
     startTransition(async () => {
-      // Optimistically add reply immediately
+      // Add optimistic reply inside transition
       addOptimisticComment({ 
         type: 'ADD_REPLY', 
         parentId: parentId.toString(),
         reply: tempReply 
       });
-      // Clear form and close reply UI immediately
-      setReplyContents(prev => ({ ...prev, [parentId.toString()]: "" }));
-      setReplyingTo(null);
-      
       try {
         const result = await createCommentAction({
           listingId,
@@ -410,6 +442,14 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
           // Revert optimistic update on error
           addOptimisticComment({ type: 'DELETE_REPLY', commentId: tempReply.commentId.toString() });
         } else {
+          // Refetch comments to get the real data with user info
+          try {
+            const { getCommentsByListingIdWithAuth } = await import("~/server/queries/comments");
+            const freshComments = await getCommentsByListingIdWithAuth(listingId);
+            setComments(freshComments);
+          } catch {
+            // If refetch fails, optimistic update remains
+          }
           toast.success("Respuesta creada exitosamente");
         }
       } catch (error) {
@@ -420,55 +460,74 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
   };
 
   const handleEditComment = async (commentId: bigint) => {
-    if (!editContent.trim() || isPending) return;
+    if (!editContent.trim()) return;
+
+    // Store original content for potential reversion
+    const originalComment = optimisticComments.find(c => c.commentId === commentId) || 
+                           optimisticComments.find(c => c.replies.some(r => r.commentId === commentId))?.replies.find(r => r.commentId === commentId);
+    const originalContent = originalComment?.content || "";
+    
+    // Store edit content and exit edit mode immediately for instant UX
+    const newContent = editContent;
+    setEditingComment(null);
+    setEditContent("");
 
     startTransition(async () => {
       // Optimistically update comment content immediately
       addOptimisticComment({ 
         type: 'UPDATE_COMMENT', 
         commentId: commentId.toString(),
-        content: editContent 
+        content: newContent 
       });
-      // Exit edit mode immediately
-      setEditingComment(null);
-      setEditContent("");
       
       try {
         const result = await updateCommentAction({
           commentId,
-          content: editContent,
+          content: newContent,
         });
 
         if (!result.success) {
           toast.error(result.error ?? "Error al editar el comentario");
-          // Revert optimistic update on error - we'd need to store original content
-          // For now, just refresh the page or refetch comments
-          window.location.reload();
+          // Revert optimistic update to original content
+          addOptimisticComment({ 
+            type: 'UPDATE_COMMENT', 
+            commentId: commentId.toString(),
+            content: originalContent 
+          });
         } else {
+          // Success - optimistic update was correct, just show success message
           toast.success("Comentario editado exitosamente");
         }
       } catch (error) {
         console.error("Error editing comment:", error);
         toast.error("Error interno del servidor");
+        // Revert optimistic update to original content
+        addOptimisticComment({ 
+          type: 'UPDATE_COMMENT', 
+          commentId: commentId.toString(),
+          content: originalContent 
+        });
       }
     });
   };
 
   const handleDeleteComment = async (commentId: bigint) => {
-    if (!confirm("\u00bfEst\u00e1s seguro de que quieres eliminar este comentario?")) {
-      return;
-    }
-
-    startTransition(async () => {
-      // Optimistically remove comment immediately
-      // Check if it's a reply first
+    startDeleteTransition(async () => {
+      // Check if it's a parent comment with replies
+      const parentComment = optimisticComments.find(comment => comment.commentId === commentId);
       const isReply = optimisticComments.some(comment => 
         comment.replies.some(reply => reply.commentId === commentId)
       );
       
       if (isReply) {
+        // Simple reply delete
         addOptimisticComment({ type: 'DELETE_REPLY', commentId: commentId.toString() });
+      } else if (parentComment && parentComment.replies.length > 0) {
+        // Parent comment with replies - cascade delete
+        console.log(`Optimistically deleting parent comment with ${parentComment.replies.length} replies`);
+        addOptimisticComment({ type: 'DELETE_COMMENT', commentId: commentId.toString() });
       } else {
+        // Parent comment without replies
         addOptimisticComment({ type: 'DELETE_COMMENT', commentId: commentId.toString() });
       }
       
@@ -477,7 +536,23 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
 
         if (!result.success) {
           toast.error(result.error ?? "Error al eliminar el comentario");
+          // Revert optimistic delete by refetching comments
+          try {
+            const { getCommentsByListingIdWithAuth } = await import("~/server/queries/comments");
+            const freshComments = await getCommentsByListingIdWithAuth(listingId);
+            setComments(freshComments);
+          } catch {
+            // If refetch fails, do nothing - optimistic update remains
+          }
         } else {
+          // Refetch comments after successful delete to ensure consistency
+          try {
+            const { getCommentsByListingIdWithAuth } = await import("~/server/queries/comments");
+            const freshComments = await getCommentsByListingIdWithAuth(listingId);
+            setComments(freshComments);
+          } catch {
+            // If refetch fails, optimistic update remains which is still good
+          }
           toast.success("Comentario eliminado exitosamente");
         }
       } catch (error) {
@@ -518,11 +593,11 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
               <div className="flex justify-end mt-3">
                 <Button
                   onClick={handleAddComment}
-                  disabled={!newComment.trim() || isPending}
+                  disabled={!newComment.trim()}
                   className="flex items-center gap-2"
                 >
                   <MessageCircle className="h-4 w-4" />
-                  {isPending ? "Enviando..." : "Comentar"}
+                  Comentar
                 </Button>
               </div>
             </div>
@@ -559,17 +634,48 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
                   editContent={editContent}
                   setEditContent={setEditContent}
                   isPending={isPending}
+                  isDeleting={isDeleting}
                   handleAddReply={handleAddReply}
                   handleEditComment={handleEditComment}
                   handleDeleteComment={handleDeleteComment}
                   startEditingComment={startEditingComment}
                   cancelEditing={cancelEditing}
+                  setCommentToDelete={setCommentToDelete}
+                  setDeleteConfirmOpen={setDeleteConfirmOpen}
                 />
               </CardContent>
             </Card>
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Eliminar comentario"
+        description={(() => {
+          if (!commentToDelete) return "¿Estás seguro de que quieres eliminar este comentario? Esta acción no se puede deshacer.";
+          
+          const comment = optimisticComments.find(c => c.commentId === commentToDelete);
+          const replyCount = comment?.replies?.length || 0;
+          
+          if (replyCount > 0) {
+            return `Este comentario tiene ${replyCount} respuesta${replyCount > 1 ? 's' : ''}. Al eliminarlo también se eliminarán todas las respuestas. ¿Estás seguro? Esta acción no se puede deshacer.`;
+          }
+          
+          return "¿Estás seguro de que quieres eliminar este comentario? Esta acción no se puede deshacer.";
+        })()}
+        onConfirm={() => {
+          if (commentToDelete) {
+            void handleDeleteComment(commentToDelete);
+            setCommentToDelete(null);
+          }
+        }}
+        onCancel={() => setCommentToDelete(null)}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        confirmVariant="destructive"
+      />
     </div>
   );
 }

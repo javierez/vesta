@@ -816,6 +816,7 @@ export async function buildFotocasaPayload(
 
     // Build PropertyDocument (images) - use processed images (watermarked if applicable)
     const propertyDocuments: PropertyDocument[] = processedImages
+      .filter((image) => image.isActive) // Only include active images
       .sort((a, b) => (a.imageOrder || 0) - (b.imageOrder || 0)) // Ensure proper order
       .map((image) => ({
         TypeId: 1, // Image type
