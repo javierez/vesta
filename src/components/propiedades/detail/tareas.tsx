@@ -291,7 +291,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     
     if (savedDraft) {
       try {
-        const draft = JSON.parse(savedDraft);
+        const draft = JSON.parse(savedDraft) as typeof newTask;
         setNewTask(draft);
       } catch (error) {
         console.error('Error loading draft:', error);
@@ -379,7 +379,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
 
     // Create optimistic task
     const optimisticId = Date.now().toString();
-    const selectedUserId = newTask.agentId || (session?.user?.id || "current-user-id");
+    const selectedUserId = newTask.agentId ?? (session?.user?.id ?? "current-user-id");
     const optimisticTask: Task = {
       id: optimisticId,
       userId: selectedUserId,
@@ -612,7 +612,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                 <SelectContent>
                   {agents.map((agent) => (
                     <SelectItem key={agent.id} value={agent.id}>
-                      {agent.name || `${agent.firstName || ''} ${agent.lastName || ''}`.trim() || agent.id}
+                      {agent.name ?? `${agent.firstName ?? ''} ${agent.lastName ?? ''}`.trim() || agent.id}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -625,7 +625,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                 <Select
                   value={newTask.contactId}
                   onValueChange={(value) => setNewTask({ ...newTask, contactId: value })}
-                  disabled={externalLoading || loading.leads || loading.deals}
+                  disabled={externalLoading ?? loading.leads ?? loading.deals}
                 >
                   <SelectTrigger className="h-8 text-gray-500">
                     <SelectValue placeholder={
@@ -812,7 +812,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                   onClick={() => handleToggleCompleted(task.id)}
                 >
                   {/* User avatar - top right */}
-                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3" title={task.userName || `${task.userFirstName || ''} ${task.userLastName || ''}`.trim() || 'Usuario'}>
+                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3" title={task.userName ?? `${task.userFirstName ?? ''} ${task.userLastName ?? ''}`.trim() || 'Usuario'}>
                     <Avatar className="h-6 w-6 sm:h-7 sm:w-7 ring-2 ring-gray-100">
                       <AvatarFallback className="text-xs font-medium">
                         {getInitials(task.userFirstName, task.userLastName, task.userName)}
@@ -885,7 +885,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                     </div>
                     
                     {/* Related items with time */}
-                    {(task.relatedContact || task.relatedAppointment || task.dueDate) && (
+                    {(task.relatedContact ?? task.relatedAppointment ?? task.dueDate) && (
                       <div className="flex flex-wrap items-center gap-2 ml-6 sm:ml-8 mb-1">
                         {task.relatedContact && (
                           <span className="text-xs text-gray-500 flex items-center gap-1 font-normal break-words">
@@ -915,7 +915,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                       variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteTask(task.id);
+                        void handleDeleteTask(task.id);
                       }}
                       className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded-lg"
                     >

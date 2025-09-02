@@ -167,7 +167,7 @@ function CommentItem({
               <div className="flex-1">
                 <Textarea
                   placeholder={`Responder a ${comment.user.name}...`}
-                  value={replyContents[comment.commentId.toString()] || ""}
+                  value={replyContents[comment.commentId.toString()] ?? ""}
                   onChange={(e) => setReplyContents(prev => ({ ...prev, [comment.commentId.toString()]: e.target.value }))}
                   className="min-h-[60px] resize-none border-gray-200"
                 />
@@ -185,7 +185,7 @@ function CommentItem({
                   <Button
                     size="sm"
                     onClick={() => handleAddReply(comment.commentId)}
-                    disabled={!(replyContents[comment.commentId.toString()] || "").trim() || isPending}
+                    disabled={!(replyContents[comment.commentId.toString()] ?? "").trim() || isPending}
                   >
                     Responder
                   </Button>
@@ -227,7 +227,6 @@ function CommentItem({
 }
 
 export function Comments({ propertyId, listingId, referenceNumber: _referenceNumber, initialComments = [], currentUserId, currentUser }: CommentsProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const [comments, setComments] = useState(initialComments);
   
   // Generate initials from user name
@@ -322,15 +321,15 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
       commentId: BigInt(Date.now()),
       listingId,
       propertyId,
-      userId: currentUserId || "temp",
+      userId: currentUserId ?? "temp",
       content: newComment,
       parentId: null,
       isDeleted: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       user: {
-        id: currentUserId || "temp",
-        name: currentUser?.name || "Enviando...",
+        id: currentUserId ?? "temp",
+        name: currentUser?.name ?? "Enviando...",
         initials: getCurrentUserInitials(),
         image: currentUser?.image
       },
@@ -363,7 +362,7 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
   };
 
   const handleAddReply = async (parentId: bigint) => {
-    const content = replyContents[parentId.toString()] || "";
+    const content = replyContents[parentId.toString()] ?? "";
     if (!content.trim() || isPending) return;
 
     // Create optimistic reply with current user info
@@ -371,15 +370,15 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
       commentId: BigInt(Date.now()),
       listingId,
       propertyId,
-      userId: currentUserId || "temp",
+      userId: currentUserId ?? "temp",
       content: content,
       parentId: parentId,
       isDeleted: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       user: {
-        id: currentUserId || "temp",
-        name: currentUser?.name || "Enviando...",
+        id: currentUserId ?? "temp",
+        name: currentUser?.name ?? "Enviando...",
         initials: getCurrentUserInitials(),
         image: currentUser?.image
       },

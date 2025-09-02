@@ -1137,6 +1137,7 @@ export type Document = {
   dealId?: bigint;
   appointmentId?: bigint;
   propertyId?: bigint;
+  prospectId?: bigint;
   // Add these fields to match schema
   documentKey: string;
   s3key: string;

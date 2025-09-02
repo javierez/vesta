@@ -4,12 +4,12 @@ import { eq, and, like, desc, asc } from "drizzle-orm";
 import type { Document } from "../../lib/data";
 
 // Helper function to serialize document with BigInt values
-export function serializeDocument(document: any) {
+export function serializeDocument(document: Document | null | undefined) {
   if (!document) return null;
   
   return {
     ...document,
-    docId: document.docId?.toString(),
+    docId: document.docId.toString(),
     propertyId: document.propertyId?.toString(),
     contactId: document.contactId?.toString(),
     listingId: document.listingId?.toString(),
