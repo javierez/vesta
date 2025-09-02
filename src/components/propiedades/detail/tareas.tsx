@@ -812,7 +812,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                   onClick={() => handleToggleCompleted(task.id)}
                 >
                   {/* User avatar - top right */}
-                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3" title={task.userName ?? `${task.userFirstName ?? ''} ${task.userLastName ?? ''}`.trim() || 'Usuario'}>
+                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3" title={task.userName ?? (`${task.userFirstName ?? ''} ${task.userLastName ?? ''}`.trim() || 'Usuario')}>
                     <Avatar className="h-6 w-6 sm:h-7 sm:w-7 ring-2 ring-gray-100">
                       <AvatarFallback className="text-xs font-medium">
                         {getInitials(task.userFirstName, task.userLastName, task.userName)}
