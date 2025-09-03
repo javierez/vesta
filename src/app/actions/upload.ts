@@ -17,6 +17,8 @@ import { and, eq } from "drizzle-orm";
 import { db } from "~/server/db";
 import { propertyImages, documents } from "~/server/db/schema";
 import { s3Client } from "~/server/s3";
+import { auth } from "~/lib/auth";
+import { headers } from "next/headers";
 
 export async function uploadPropertyImage(
   file: File,
@@ -270,6 +272,41 @@ export async function deleteDocument(documentKey: string, docId: bigint) {
   } catch (error) {
     console.error("Error deleting document:", error);
     throw new Error("Failed to delete document");
+  }
+}
+
+export async function deleteDocumentAction(docId: bigint, documentKey: string, propertyId?: bigint) {
+  "use server";
+  
+  try {
+    // Get current user for security
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    
+    if (!session?.user?.id) {
+      return {
+        success: false,
+        error: "Usuario no autenticado",
+      };
+    }
+    
+    // Call the existing deleteDocument function
+    await deleteDocument(documentKey, docId);
+    
+    // Revalidate the property page if propertyId is provided
+    if (propertyId) {
+      const { revalidatePath } = await import("next/cache");
+      revalidatePath(`/propiedades/${propertyId}`);
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Error in deleteDocumentAction:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error al eliminar el documento",
+    };
   }
 }
 

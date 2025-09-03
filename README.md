@@ -148,6 +148,20 @@ pnpm build
 
 # TODOs: 
 
+## Performance Optimizations
+
+- **Memoize session data in PropertyTabs**: Use React.useMemo to prevent unnecessary re-renders when session data hasn't changed
+  Impact: Reduce component re-renders and improve UI responsiveness on property detail pages
+
+- **Implement lazy loading for tab data**: Only fetch data when user switches to specific tabs instead of loading all data upfront
+  Impact: Faster initial page load and reduced memory usage, especially for properties with many images/documents
+
+- **Add React Query for data caching**: Replace manual fetch logic with React Query to cache API responses across components
+  Impact: Eliminate duplicate API calls when navigating between pages and provide automatic background refetching
+
+- **Cache property images with service worker**: Implement service worker caching strategy for property images to reduce bandwidth usage
+  Impact: Faster image loading on repeat visits and offline capability for previously viewed properties
+
 ## High Priority
 
 - Remove all the harcoded things about Acropolis.

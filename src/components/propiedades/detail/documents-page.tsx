@@ -11,6 +11,7 @@ import {
   MoreVertical,
   FolderIcon,
   X,
+  Loader2,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
@@ -20,6 +21,9 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { DocumentsPageSkeleton } from "./skeletons";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+import { deleteDocumentAction } from "~/app/actions/upload";
+import { toast } from "sonner";
 
 interface Document {
   docId: bigint;
@@ -46,6 +50,9 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Map folder types for API calls
   const folderTypeMap = {
@@ -147,6 +154,41 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
   const handleDownload = (document: Document) => {
     // Open the document URL in a new tab for download
     window.open(document.fileUrl, "_blank");
+  };
+
+  const handleDeleteClick = (document: Document) => {
+    setDocumentToDelete(document);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!documentToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await deleteDocumentAction(
+        documentToDelete.docId,
+        documentToDelete.documentKey,
+        listing.propertyId
+      );
+
+      if (result.success) {
+        // Remove document from local state
+        setDocuments((prev) => 
+          prev.filter((doc) => doc.docId !== documentToDelete.docId)
+        );
+        toast.success("Documento eliminado correctamente");
+      } else {
+        toast.error(result.error ?? "Error al eliminar el documento");
+      }
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      toast.error("Error al eliminar el documento");
+    } finally {
+      setIsDeleting(false);
+      setDocumentToDelete(null);
+      setDeleteConfirmOpen(false);
+    }
   };
 
   const formatDate = (date: Date) => {
@@ -264,7 +306,10 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
                             <Download className="mr-2 h-4 w-4" />
                             Descargar
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => handleDeleteClick(document)}
+                          >
                             <X className="mr-2 h-4 w-4" />
                             Eliminar
                           </DropdownMenuItem>
@@ -315,6 +360,18 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
           </Button>
         </label>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Eliminar documento"
+        description={`¿Estás seguro de que quieres eliminar "${documentToDelete?.filename}"? Esta acción no se puede deshacer.`}
+        onConfirm={handleDeleteConfirm}
+        confirmText={isDeleting ? "Eliminando..." : "Eliminar"}
+        cancelText="Cancelar"
+        confirmVariant="destructive"
+      />
     </div>
   );
 }

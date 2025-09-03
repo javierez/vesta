@@ -95,9 +95,9 @@ export function PropertyTabs({
     agents: { id: string; name: string; firstName?: string; lastName?: string; }[] | null;
     comments: CommentWithUser[] | null;
   }>({
-    images: null,
-    convertedListing: null,
-    energyCertificate: null,
+    images: images ?? null,
+    convertedListing: convertedListing ?? null,
+    energyCertificate: energyCertificate ?? null,
     tasks: null,
     agents: null,
     comments: null,
@@ -114,55 +114,10 @@ export function PropertyTabs({
     comments: false,
   });
 
-  const fetchGeneralData = useCallback(async () => {
-    if (tabData.convertedListing) return;
-    setLoading((prev) => ({ ...prev, caracteristicas: true }));
-    try {
-      const response = await fetch(
-        `/api/properties/${listing.listingId}/characteristics`,
-      );
-      if (response.ok) {
-        const characteristicsData = (await response.json()) as PropertyListing;
-        setTabData((prev) => ({
-          ...prev,
-          convertedListing: characteristicsData,
-        }));
-      } else {
-        setTabData((prev) => ({ ...prev, convertedListing }));
-      }
-    } catch {
-      setTabData((prev) => ({ ...prev, convertedListing }));
-    } finally {
-      setLoading((prev) => ({ ...prev, caracteristicas: false }));
-    }
-  }, [listing.listingId, tabData.convertedListing, convertedListing]);
-
-  const fetchImagesData = useCallback(async () => {
-    if (tabData.images) return;
-    try {
-      const response = await fetch(
-        `/api/properties/${listing.propertyId}/images`,
-      );
-      if (response.ok) {
-        const imageData = (await response.json()) as PropertyImage[];
-        setTabData((prev) => ({ ...prev, images: imageData }));
-      } else {
-        setTabData((prev) => ({ ...prev, images: images }));
-      }
-    } catch {
-      setTabData((prev) => ({ ...prev, images: images }));
-    }
-  }, [listing.propertyId, tabData.images, images]);
-
-  const fetchCertificateData = useCallback(async () => {
-    // Energy certificate is now always fetched server-side
-    if (!tabData.energyCertificate && energyCertificate) {
-      setTabData((prev) => ({ ...prev, energyCertificate }));
-    }
-  }, [tabData.energyCertificate, energyCertificate]);
+  // These are no longer needed - data comes from props
+  // Removing to prevent redundant API calls
 
   const fetchTasksData = useCallback(async () => {
-    if (tabData.tasks) return;
     setLoading((prev) => ({ ...prev, tasks: true }));
     try {
       const tasksData = await getListingTasksWithAuth(Number(listing.listingId));
@@ -187,10 +142,9 @@ export function PropertyTabs({
     } finally {
       setLoading((prev) => ({ ...prev, tasks: false }));
     }
-  }, [listing.listingId, tabData.tasks]);
+  }, [listing.listingId]); // Removed tabData.tasks dependency to prevent infinite loop
 
   const fetchAgentsData = useCallback(async () => {
-    if (tabData.agents) return;
     setLoading((prev) => ({ ...prev, agents: true }));
     try {
       // For now, just provide the current user until we implement proper API endpoint
@@ -207,10 +161,9 @@ export function PropertyTabs({
     } finally {
       setLoading((prev) => ({ ...prev, agents: false }));
     }
-  }, [tabData.agents, session?.user]);
+  }, [session?.user]); // Removed tabData.agents dependency to prevent infinite loop
 
   const fetchCommentsData = useCallback(async () => {
-    if (tabData.comments) return;
     setLoading((prev) => ({ ...prev, comments: true }));
     try {
       const commentsData = await getCommentsByListingIdWithAuth(listing.listingId);
@@ -221,20 +174,26 @@ export function PropertyTabs({
     } finally {
       setLoading((prev) => ({ ...prev, comments: false }));
     }
-  }, [listing.listingId, tabData.comments]);
+  }, [listing.listingId]); // Removed tabData.comments dependency to prevent infinite loop
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
 
+  // Fetch only the data that's not provided as props, and only once on mount
   useEffect(() => {
-    void fetchGeneralData();
-    void fetchImagesData();
-    void fetchCertificateData();
-    void fetchTasksData();
-    void fetchAgentsData();
-    void fetchCommentsData();
-  }, [fetchGeneralData, fetchImagesData, fetchCertificateData, fetchTasksData, fetchAgentsData, fetchCommentsData]);
+    // Only fetch data that's not provided via props
+    if (!tabData.tasks) {
+      void fetchTasksData();
+    }
+    if (!tabData.agents) {
+      void fetchAgentsData();
+    }
+    if (!tabData.comments) {
+      void fetchCommentsData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - run once on mount only
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
