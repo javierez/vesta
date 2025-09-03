@@ -1392,6 +1392,74 @@ export async function addListingContactRelationshipWithAuth(
   }
 }
 
+// Remove listing-contact relationship (soft delete)
+export async function removeListingContactRelationshipWithAuth(
+  contactId: number,
+  listingId: number,
+  contactType: "buyer" | "owner" = "buyer",
+) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    // Verify the contact exists and belongs to this account
+    const contact = await getContactById(contactId, accountId);
+    if (!contact) {
+      throw new Error("Contact not found or access denied");
+    }
+
+    // Verify the listing exists and belongs to this account
+    const [listing] = await db
+      .select({ listingId: listings.listingId })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+        ),
+      );
+
+    if (!listing) {
+      throw new Error("Listing not found or access denied");
+    }
+
+    // Check if active relationship exists
+    const [existingRelation] = await db
+      .select({ listingContactId: listingContacts.listingContactId })
+      .from(listingContacts)
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.listingId, BigInt(listingId)),
+          eq(listingContacts.contactType, contactType),
+          eq(listingContacts.isActive, true),
+        ),
+      );
+
+    if (!existingRelation) {
+      throw new Error("Active relationship not found");
+    }
+
+    // Soft delete the relationship by setting isActive to false
+    await db
+      .update(listingContacts)
+      .set({ isActive: false })
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.listingId, BigInt(listingId)),
+          eq(listingContacts.contactType, contactType),
+          eq(listingContacts.isActive, true),
+        ),
+      );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error removing listing-contact relationship:", error);
+    throw error;
+  }
+}
+
 // Progressive Loading: Owner Data Query
 export async function listContactsOwnerDataWithAuth(
   page = 1,

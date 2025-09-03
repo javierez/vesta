@@ -13,6 +13,7 @@ import {
   SquareIcon as SquareFoot,
   MapPin,
   User,
+  X,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { formatPrice } from "~/lib/utils";
@@ -62,15 +63,27 @@ type Listing = {
 interface PropertyCardProps {
   listing: Listing | ListingOverview;
   accountWebsite?: string | null;
+  // Context-specific props for contact management
+  showDeleteButton?: boolean;
+  contactId?: bigint;
+  contactType?: "buyer" | "owner";
+  onRemove?: (listingId: bigint) => Promise<void>;
+  isRemoving?: boolean;
 }
 
 export const PropertyCard = React.memo(function PropertyCard({
   listing,
   accountWebsite,
+  showDeleteButton = false,
+  contactId,
+  contactType,
+  onRemove,
+  isRemoving = false,
 }: PropertyCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [image2Loaded, setImage2Loaded] = useState(false);
+  const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
 
   const getPropertyTypeLabel = (type: string | null) => {
     switch (type) {
@@ -123,13 +136,22 @@ export const PropertyCard = React.memo(function PropertyCard({
     window.open(whatsappUrl, "_blank");
   };
 
+  const handleRemoveClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (onRemove) {
+      await onRemove(listing.listingId);
+    }
+  };
+
   return (
     <Link
       href={`/propiedades/${listing.listingId.toString()}`}
       className="block"
     >
       <Card
-        className="overflow-hidden transition-all hover:shadow-lg"
+        className="group overflow-hidden transition-all hover:shadow-lg"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -194,6 +216,29 @@ export const PropertyCard = React.memo(function PropertyCard({
           <Badge className="absolute right-2 top-2 z-10 text-sm">
             {formatListingType(listing.listingType)}
           </Badge>
+
+          {/* Delete Button - Top Center (when in contact context) */}
+          {showDeleteButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "absolute left-1/2 top-2 z-30 h-10 w-10 -translate-x-1/2 rounded-full transition-all duration-200",
+                "!bg-red-600 backdrop-blur-sm !text-white",
+                "opacity-0 group-hover:opacity-100",
+                "!hover:bg-red-800 hover:scale-110 hover:shadow-lg",
+                isDeleteButtonHovered && "!bg-red-800 scale-110 shadow-lg",
+                isRemoving && "opacity-50 pointer-events-none"
+              )}
+              onClick={handleRemoveClick}
+              onMouseEnter={() => setIsDeleteButtonHovered(true)}
+              onMouseLeave={() => setIsDeleteButtonHovered(false)}
+              disabled={isRemoving}
+              title="Quitar de contacto"
+            >
+              <X className="h-5 w-5 text-white" />
+            </Button>
+          )}
 
           {/* Bottom Center - Reference Number */}
           <div className="absolute bottom-1 left-1/2 z-10 -translate-x-1/2">
@@ -267,7 +312,7 @@ export const PropertyCard = React.memo(function PropertyCard({
           </div>
         </CardContent>
         <CardFooter className="relative border-t border-border/40 p-3 pt-2">
-          <div className="group flex cursor-pointer items-center gap-1.5 transition-all">
+          <div className="agent-info flex cursor-pointer items-center gap-1.5 transition-all">
             <User className="h-3 w-3 text-muted-foreground/80 transition-all group-hover:scale-110 group-hover:text-primary" />
             <p className="text-xs font-light text-muted-foreground/80 transition-all group-hover:font-bold group-hover:text-primary group-hover:underline">
               {listing.agentName ?? ""}
@@ -276,7 +321,7 @@ export const PropertyCard = React.memo(function PropertyCard({
           <Button
             variant="ghost"
             size="icon"
-            className="group absolute bottom-1 right-1 mr-2 h-8 w-8 text-muted-foreground/80 hover:bg-transparent"
+            className="absolute bottom-1 right-1 mr-2 h-8 w-8 text-muted-foreground/80 hover:bg-transparent group"
             onClick={handleWhatsAppClick}
           >
             <Image

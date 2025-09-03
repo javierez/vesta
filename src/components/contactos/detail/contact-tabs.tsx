@@ -13,6 +13,7 @@ import {
   updateContactWithAuth,
   getOwnerListingsWithAuth,
   getBuyerListingsWithAuth,
+  removeListingContactRelationshipWithAuth,
 } from "~/server/queries/contact";
 import { toast } from "sonner";
 import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern-save-indicator";
@@ -32,6 +33,7 @@ import { ContactProspectCompact } from "./forms/contact-prospect-compact";
 import { getLocationByNeighborhoodId } from "~/server/queries/locations";
 import type { PropertyListing } from "~/types/property-listing";
 import { AddPropertyDialog } from "./add-property-dialog";
+import { RemovePropertyDialog } from "./remove-property-dialog";
 
 // Define ProspectData interface to match database schema
 interface ProspectData {
@@ -208,6 +210,19 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   // Add property dialog state
   const [showAddPropertyDialog, setShowAddPropertyDialog] = useState(false);
 
+  // Remove property dialog state
+  const [showRemovePropertyDialog, setShowRemovePropertyDialog] = useState(false);
+  const [propertyToRemove, setPropertyToRemove] = useState<{
+    listingId: bigint;
+    title: string | null;
+    street: string | null;
+    city: string | null;
+    province: string | null;
+    price: string;
+    propertyType: string | null;
+  } | null>(null);
+  const [isRemovingProperty, setIsRemovingProperty] = useState(false);
+
   // Load contact listings if owner or buyer
   useEffect(() => {
     if (isOwner || isBuyer) {
@@ -286,6 +301,56 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       } finally {
         setIsLoadingListings(false);
       }
+    }
+  };
+
+  // Function to handle property removal request
+  const handleRemoveProperty = async (listingId: bigint) => {
+    // Find the property to show in confirmation dialog
+    const property = contactListings.find(
+      (listing) => listing.listingId?.toString() === listingId.toString()
+    );
+    
+    if (property && property.listingId) {
+      setPropertyToRemove({
+        listingId: BigInt(property.listingId),
+        title: property.street ?? null, // Using street as title since PropertyListing doesn't have title
+        street: property.street ?? null,
+        city: property.city ?? null,
+        province: property.province ?? null,
+        price: property.price?.toString() ?? "0",
+        propertyType: property.propertyType ?? null,
+      });
+      setShowRemovePropertyDialog(true);
+    }
+  };
+
+  // Function to confirm property removal
+  const handleConfirmRemoveProperty = async () => {
+    if (!propertyToRemove) return;
+
+    setIsRemovingProperty(true);
+    try {
+      const contactType = isOwner ? "owner" : "buyer";
+      await removeListingContactRelationshipWithAuth(
+        Number(contact.contactId),
+        Number(propertyToRemove.listingId),
+        contactType
+      );
+
+      // Update the listings state optimistically
+      setContactListings((prev) =>
+        prev.filter((listing) => listing.listingId?.toString() !== propertyToRemove.listingId.toString())
+      );
+
+      toast.success("Propiedad quitada del contacto correctamente");
+      setShowRemovePropertyDialog(false);
+      setPropertyToRemove(null);
+    } catch (error) {
+      console.error("Error removing property from contact:", error);
+      toast.error("Error al quitar la propiedad del contacto");
+    } finally {
+      setIsRemovingProperty(false);
     }
   };
 
@@ -859,6 +924,11 @@ export function ContactTabs({ contact }: ContactTabsProps) {
                     <PropertyCard
                       key={listing.listingId?.toString() ?? "unknown"}
                       listing={listing as unknown as PropertyCardListing}
+                      showDeleteButton={isBuyer} // Only show delete button for buyers
+                      contactId={contact.contactId}
+                      contactType={isOwner ? "owner" : "buyer"}
+                      onRemove={(listingId) => handleRemoveProperty(listingId)}
+                      isRemoving={isRemovingProperty && propertyToRemove?.listingId.toString() === listing.listingId?.toString()}
                     />
                   ))}
                 </div>
@@ -883,6 +953,16 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         onOpenChange={setShowAddPropertyDialog}
         contactId={contact.contactId}
         onSuccess={reloadContactListings}
+      />
+
+      {/* Remove Property Dialog */}
+      <RemovePropertyDialog
+        open={showRemovePropertyDialog}
+        onOpenChange={setShowRemovePropertyDialog}
+        property={propertyToRemove}
+        contactName={`${contact.firstName} ${contact.lastName}`}
+        isRemoving={isRemovingProperty}
+        onConfirm={handleConfirmRemoveProperty}
       />
     </Tabs>
   );
