@@ -34,6 +34,9 @@ import { getLocationByNeighborhoodId } from "~/server/queries/locations";
 import type { PropertyListing } from "~/types/property-listing";
 import { AddPropertyDialog } from "./add-property-dialog";
 import { RemovePropertyDialog } from "./remove-property-dialog";
+import { ContactTareas } from "./contact-tareas";
+import { getUserCommentsByContactIdWithAuth, getContactTasksWithAuth } from "~/server/queries/user-comments";
+import type { UserCommentWithUser } from "~/types/user-comments";
 
 // Define ProspectData interface to match database schema
 interface ProspectData {
@@ -90,6 +93,29 @@ type PropertyCardListing = {
   s3key2: string | null;
 };
 
+// Task interface matching what ContactTareas expects
+interface Task {
+  taskId?: bigint;
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  dueDate?: Date;
+  completed: boolean;
+  listingId?: bigint;
+  leadId?: bigint;
+  dealId?: bigint;
+  appointmentId?: bigint;
+  prospectId?: bigint;
+  contactId?: bigint;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt?: Date;
+  userName?: string;
+  userFirstName?: string;
+  userLastName?: string;
+}
+
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error";
 
 interface ModuleState {
@@ -141,6 +167,13 @@ interface ContactTabsProps {
 }
 
 export function ContactTabs({ contact }: ContactTabsProps) {
+  // State for contact comments
+  const [contactComments, setContactComments] = useState<UserCommentWithUser[]>([]);
+  const [, setIsLoadingComments] = useState(false);
+  
+  // State for tasks
+  const [contactTasks, setContactTasks] = useState<Task[]>([]);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   // Derive role flags using actual data (flags/counts) and fall back to contactType if present
   const isOwner =
     contact.isOwner === true ||
@@ -165,6 +198,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   // Build tabs array based on contact type
   const tabs = [
     { value: "informacion", label: "Información" },
+    { value: "tareas", label: "Tareas" },
     ...(showSolicitudes
       ? [{ value: "solicitudes", label: "Solicitudes" }]
       : []),
@@ -211,7 +245,8 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   const [showAddPropertyDialog, setShowAddPropertyDialog] = useState(false);
 
   // Remove property dialog state
-  const [showRemovePropertyDialog, setShowRemovePropertyDialog] = useState(false);
+  const [showRemovePropertyDialog, setShowRemovePropertyDialog] =
+    useState(false);
   const [propertyToRemove, setPropertyToRemove] = useState<{
     listingId: bigint;
     title: string | null;
@@ -222,6 +257,54 @@ export function ContactTabs({ contact }: ContactTabsProps) {
     propertyType: string | null;
   } | null>(null);
   const [isRemovingProperty, setIsRemovingProperty] = useState(false);
+
+  // Load comments and tasks for the contact
+  useEffect(() => {
+    const loadCommentsAndTasks = async () => {
+      setIsLoadingComments(true);
+      setIsLoadingTasks(true);
+      try {
+        const [comments, tasks] = await Promise.all([
+          getUserCommentsByContactIdWithAuth(contact.contactId),
+          getContactTasksWithAuth(contact.contactId)
+        ]);
+        
+        setContactComments(comments);
+        
+        // Transform tasks to expected format
+        const formattedTasks = tasks.map((task) => ({
+          id: task.taskId?.toString() ?? Date.now().toString(),
+          taskId: task.taskId ? BigInt(task.taskId) : undefined,
+          userId: task.userId,
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+          completed: task.completed ?? false,
+          listingId: task.listingId ? BigInt(task.listingId) : undefined,
+          leadId: task.listingContactId ? BigInt(task.listingContactId) : undefined,
+          dealId: task.dealId ? BigInt(task.dealId) : undefined,
+          appointmentId: task.appointmentId ? BigInt(task.appointmentId) : undefined,
+          prospectId: task.prospectId ? BigInt(task.prospectId) : undefined,
+          contactId: contact.contactId,
+          isActive: task.isActive ?? true,
+          createdAt: new Date(task.createdAt),
+          updatedAt: task.updatedAt ? new Date(task.updatedAt) : undefined,
+          userName: task.userName ?? undefined,
+          userFirstName: task.userFirstName ?? undefined,
+          userLastName: task.userLastName ?? undefined,
+        }));
+        
+        setContactTasks(formattedTasks);
+      } catch (error) {
+        console.error("Error loading contact data:", error);
+        toast.error("Error al cargar los datos del contacto");
+      } finally {
+        setIsLoadingComments(false);
+        setIsLoadingTasks(false);
+      }
+    };
+    void loadCommentsAndTasks();
+  }, [contact.contactId]);
 
   // Load contact listings if owner or buyer
   useEffect(() => {
@@ -308,10 +391,10 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   const handleRemoveProperty = async (listingId: bigint) => {
     // Find the property to show in confirmation dialog
     const property = contactListings.find(
-      (listing) => listing.listingId?.toString() === listingId.toString()
+      (listing) => listing.listingId?.toString() === listingId.toString(),
     );
-    
-    if (property && property.listingId) {
+
+    if (property?.listingId) {
       setPropertyToRemove({
         listingId: BigInt(property.listingId),
         title: property.street ?? null, // Using street as title since PropertyListing doesn't have title
@@ -335,12 +418,16 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       await removeListingContactRelationshipWithAuth(
         Number(contact.contactId),
         Number(propertyToRemove.listingId),
-        contactType
+        contactType,
       );
 
       // Update the listings state optimistically
       setContactListings((prev) =>
-        prev.filter((listing) => listing.listingId?.toString() !== propertyToRemove.listingId.toString())
+        prev.filter(
+          (listing) =>
+            listing.listingId?.toString() !==
+            propertyToRemove.listingId.toString(),
+        ),
       );
 
       toast.success("Propiedad quitada del contacto correctamente");
@@ -802,6 +889,17 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         </div>
       </TabsContent>
 
+      <TabsContent value="tareas" className="mt-6">
+        <div className="mx-auto max-w-4xl">
+          <ContactTareas
+            contactId={contact.contactId}
+            tasks={contactTasks}
+            loading={isLoadingTasks}
+            comments={contactComments}
+          />
+        </div>
+      </TabsContent>
+
       {/* Solicitudes Tab - Show for demandante, interesado, and propietario */}
       {showSolicitudes && (
         <TabsContent value="solicitudes" className="mt-6">
@@ -928,7 +1026,11 @@ export function ContactTabs({ contact }: ContactTabsProps) {
                       contactId={contact.contactId}
                       contactType={isOwner ? "owner" : "buyer"}
                       onRemove={(listingId) => handleRemoveProperty(listingId)}
-                      isRemoving={isRemovingProperty && propertyToRemove?.listingId.toString() === listing.listingId?.toString()}
+                      isRemoving={
+                        isRemovingProperty &&
+                        propertyToRemove?.listingId.toString() ===
+                          listing.listingId?.toString()
+                      }
                     />
                   ))}
                 </div>

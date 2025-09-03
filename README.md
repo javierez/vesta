@@ -162,6 +162,8 @@ pnpm build
 - **Cache property images with service worker**: Implement service worker caching strategy for property images to reduce bandwidth usage
   Impact: Faster image loading on repeat visits and offline capability for previously viewed properties
 
+  
+
 ## High Priority
 
 - Remove all the harcoded things about Acropolis.

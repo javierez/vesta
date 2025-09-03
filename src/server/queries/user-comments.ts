@@ -92,8 +92,8 @@ export async function getUserCommentsByContactId(
           eq(userComments.contactId, contactId),
           eq(userComments.isDeleted, false),
           isNull(userComments.parentId),
-          eq(contacts.accountId, BigInt(accountId))
-        )
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
       )
       .orderBy(desc(userComments.createdAt));
 
@@ -145,8 +145,8 @@ export async function getUserCommentById(
         and(
           eq(userComments.commentId, commentId),
           eq(userComments.isDeleted, false),
-          eq(contacts.accountId, BigInt(accountId))
-        )
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
       );
 
     if (!comment) {
@@ -199,12 +199,12 @@ export async function getUserCommentReplies(
         and(
           eq(userComments.parentId, parentCommentId),
           eq(userComments.isDeleted, false),
-          eq(contacts.accountId, BigInt(accountId))
-        )
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
       )
       .orderBy(userComments.createdAt);
 
-    return replies.map(reply => ({
+    return replies.map((reply) => ({
       ...reply,
       replies: [], // Replies don't have sub-replies
     }));
@@ -216,7 +216,10 @@ export async function getUserCommentReplies(
 
 // Create a new user comment
 export async function createUserComment(
-  data: Omit<UserComment, "commentId" | "createdAt" | "updatedAt" | "isDeleted">,
+  data: Omit<
+    UserComment,
+    "commentId" | "createdAt" | "updatedAt" | "isDeleted"
+  >,
   accountId: number,
 ) {
   try {
@@ -230,7 +233,7 @@ export async function createUserComment(
           eq(contacts.accountId, BigInt(accountId)),
         ),
       );
-    
+
     if (!contact) {
       throw new Error("Contact not found or access denied");
     }
@@ -245,16 +248,18 @@ export async function createUserComment(
           and(
             eq(userComments.commentId, data.parentId),
             eq(userComments.isDeleted, false),
-            eq(contacts.accountId, BigInt(accountId))
+            eq(contacts.accountId, BigInt(accountId)),
           ),
         );
-      
+
       if (!parentComment) {
         throw new Error("Parent comment not found or access denied");
       }
-      
+
       if (parentComment.contactId !== data.contactId) {
-        throw new Error("Reply must belong to the same contact as parent comment");
+        throw new Error(
+          "Reply must belong to the same contact as parent comment",
+        );
       }
     }
 
@@ -265,9 +270,9 @@ export async function createUserComment(
         isDeleted: false,
       })
       .$returningId();
-    
+
     if (!result) throw new Error("Failed to create user comment");
-    
+
     const [newComment] = await db
       .select({
         commentId: sql<number>`CAST(${userComments.commentId} AS UNSIGNED)`,
@@ -281,7 +286,7 @@ export async function createUserComment(
       })
       .from(userComments)
       .where(eq(userComments.commentId, BigInt(result.commentId)));
-    
+
     return newComment;
   } catch (error) {
     console.error("Error creating user comment:", error);
@@ -319,10 +324,10 @@ export async function updateUserComment(
       .where(
         and(
           eq(userComments.commentId, commentId),
-          eq(userComments.isDeleted, false)
-        )
+          eq(userComments.isDeleted, false),
+        ),
       );
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error updating user comment:", error);
@@ -353,11 +358,7 @@ export async function deleteUserComment(commentId: bigint, accountId: number) {
     await db
       .update(userComments)
       .set({ isDeleted: true })
-      .where(
-        and(
-          eq(userComments.commentId, commentId),
-        ),
-      );
+      .where(and(eq(userComments.commentId, commentId)));
 
     // Also soft delete any replies to this comment
     await db
@@ -381,7 +382,7 @@ export async function getContactTasksWithAuth(contactId: bigint) {
 export async function getContactTasks(contactId: bigint, accountId: number) {
   try {
     const { tasks, listingContacts } = await import("../db/schema");
-    
+
     const contactTasks = await db
       .select({
         // Task fields - convert BigInt to number for JSON serialization
@@ -397,6 +398,7 @@ export async function getContactTasks(contactId: bigint, accountId: number) {
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
         appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
         prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
+        contactId: sql<number>`CAST(${tasks.contactId} AS UNSIGNED)`,
         isActive: tasks.isActive,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
@@ -406,21 +408,106 @@ export async function getContactTasks(contactId: bigint, accountId: number) {
         userLastName: users.lastName,
       })
       .from(tasks)
-      .innerJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
-      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .leftJoin(
+        listingContacts,
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+      )
+      .leftJoin(contacts, eq(contacts.contactId, contactId))
       .innerJoin(users, eq(tasks.userId, users.id))
       .where(
         and(
-          eq(listingContacts.contactId, contactId),
+          eq(tasks.contactId, contactId),
           eq(tasks.isActive, true),
           eq(contacts.accountId, BigInt(accountId)),
         ),
       )
       .orderBy(tasks.createdAt);
-    
+
     return contactTasks;
   } catch (error) {
     console.error("Error fetching contact tasks:", error);
+    throw error;
+  }
+}
+
+// Get contact's listing relationships for task association
+export async function getContactListingsForTasksWithAuth(contactId: bigint) {
+  const accountId = await getCurrentUserAccountId();
+  return getContactListingsForTasks(contactId, accountId);
+}
+
+export async function getContactListingsForTasks(contactId: bigint, accountId: number) {
+  try {
+    const { listings, listingContacts, properties, locations } = await import("../db/schema");
+    
+    const contactListings = await db
+      .select({
+        listingContactId: sql<number>`CAST(${listingContacts.listingContactId} AS UNSIGNED)`,
+        listingId: sql<number>`CAST(${listings.listingId} AS UNSIGNED)`,
+        contactType: listingContacts.contactType,
+        // Property info
+        street: properties.street,
+        city: locations.city,
+        province: locations.province,
+        propertyType: properties.propertyType,
+        // Listing info
+        listingType: listings.listingType,
+        price: listings.price,
+        status: listings.status,
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .innerJoin(listings, eq(listingContacts.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .where(
+        and(
+          eq(listingContacts.contactId, contactId),
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(listings.isActive, true)
+        )
+      )
+      .orderBy(desc(listingContacts.createdAt));
+    
+    return contactListings;
+  } catch (error) {
+    console.error("Error fetching contact listings for tasks:", error);
+    throw error;
+  }
+}
+
+// Get contact's deals for task association
+export async function getContactDealsWithAuth(contactId: bigint) {
+  const accountId = await getCurrentUserAccountId();
+  return getContactDeals(contactId, accountId);
+}
+
+export async function getContactDeals(contactId: bigint, accountId: number) {
+  try {
+    const { deals, dealParticipants } = await import("../db/schema");
+    
+    const contactDeals = await db
+      .select({
+        dealId: sql<number>`CAST(${deals.dealId} AS UNSIGNED)`,
+        status: deals.status,
+        closeDate: deals.closeDate,
+        createdAt: deals.createdAt,
+        role: dealParticipants.role,
+      })
+      .from(dealParticipants)
+      .innerJoin(deals, eq(dealParticipants.dealId, deals.dealId))
+      .innerJoin(contacts, eq(dealParticipants.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(dealParticipants.contactId, contactId),
+          eq(contacts.accountId, BigInt(accountId))
+        )
+      )
+      .orderBy(desc(deals.createdAt));
+    
+    return contactDeals;
+  } catch (error) {
+    console.error("Error fetching contact deals:", error);
     throw error;
   }
 }

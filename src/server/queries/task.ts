@@ -60,6 +60,22 @@ export async function updateTaskWithAuth(
   return updateTask(taskId, data, accountId);
 }
 
+export async function updateContactTaskWithAuth(
+  taskId: number,
+  data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
+) {
+  const accountId = await getCurrentUserAccountId();
+  return updateContactTask(taskId, data, accountId);
+}
+
+export async function updateListingTaskWithAuth(
+  taskId: number,
+  data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
+) {
+  const accountId = await getCurrentUserAccountId();
+  return updateListingTask(taskId, data, accountId);
+}
+
 export async function completeTaskWithAuth(taskId: number) {
   const accountId = await getCurrentUserAccountId();
   return completeTask(taskId, accountId);
@@ -73,6 +89,16 @@ export async function softDeleteTaskWithAuth(taskId: number) {
 export async function deleteTaskWithAuth(taskId: number) {
   const accountId = await getCurrentUserAccountId();
   return deleteTask(taskId, accountId);
+}
+
+export async function deleteContactTaskWithAuth(taskId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return deleteContactTask(taskId, accountId);
+}
+
+export async function deleteListingTaskWithAuth(taskId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return deleteListingTask(taskId, accountId);
 }
 
 export async function listTasksWithAuth(
@@ -114,10 +140,9 @@ export async function createTask(
           and(
             eq(listingContacts.listingContactId, data.listingContactId),
             eq(contacts.accountId, BigInt(accountId)),
-            eq(listingContacts.contactType, "buyer"),
           ),
         );
-      if (!lead) throw new Error("Lead not found or access denied");
+      if (!lead) throw new Error("Listing contact not found or access denied");
     }
 
     if (data.listingId) {
@@ -132,6 +157,19 @@ export async function createTask(
           ),
         );
       if (!listing) throw new Error("Listing not found or access denied");
+    }
+
+    if (data.contactId) {
+      const [contact] = await db
+        .select({ contactId: contacts.contactId })
+        .from(contacts)
+        .where(
+          and(
+            eq(contacts.contactId, data.contactId),
+            eq(contacts.accountId, BigInt(accountId)),
+          ),
+        );
+      if (!contact) throw new Error("Contact not found or access denied");
     }
 
     const [result] = await db
@@ -156,6 +194,7 @@ export async function createTask(
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
         appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
         prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
+        contactId: sql<number>`CAST(${tasks.contactId} AS UNSIGNED)`,
         isActive: tasks.isActive,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
@@ -177,11 +216,11 @@ export async function getTaskById(taskId: number, accountId: number) {
       .select()
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(listingContacts, and(
-        eq(tasks.listingContactId, listingContacts.listingContactId),
-        eq(listingContacts.contactType, "buyer")
+      .leftJoin(contacts, or(
+        eq(prospects.contactId, contacts.contactId),
+        eq(tasks.contactId, contacts.contactId)
       ))
+      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -210,11 +249,11 @@ export async function getUserTasks(userId: string, accountId: number) {
       .select()
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(listingContacts, and(
-        eq(tasks.listingContactId, listingContacts.listingContactId),
-        eq(listingContacts.contactType, "buyer")
+      .leftJoin(contacts, or(
+        eq(prospects.contactId, contacts.contactId),
+        eq(tasks.contactId, contacts.contactId)
       ))
+      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -361,16 +400,16 @@ export async function updateTask(
   accountId: number,
 ) {
   try {
-    // First verify the task belongs to this account
+    // First verify the task belongs to this account using JOINs instead of subqueries
     const [existingTask] = await db
       .select({ taskId: tasks.taskId })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(listingContacts, and(
-        eq(tasks.listingContactId, listingContacts.listingContactId),
-        eq(listingContacts.contactType, "buyer")
+      .leftJoin(contacts, or(
+        eq(prospects.contactId, contacts.contactId),
+        eq(tasks.contactId, contacts.contactId)
       ))
+      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -419,6 +458,121 @@ export async function updateTask(
   }
 }
 
+// Update contact-specific task
+export async function updateContactTask(
+  taskId: number,
+  data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
+  accountId: number,
+) {
+  try {
+    // Verify task exists and belongs to account through contact relationship
+    const [existingTask] = await db
+      .select({ taskId: tasks.taskId })
+      .from(tasks)
+      .innerJoin(contacts, eq(tasks.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(tasks.taskId, BigInt(taskId)),
+          eq(tasks.isActive, true),
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!existingTask) {
+      throw new Error("Contact task not found or access denied");
+    }
+
+    await db
+      .update(tasks)
+      .set(data)
+      .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
+      
+    const [updatedTask] = await db
+      .select({
+        taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
+        userId: tasks.userId,
+        title: tasks.title,
+        description: tasks.description,
+        dueDate: tasks.dueDate,
+        dueTime: tasks.dueTime,
+        completed: tasks.completed,
+        listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
+        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
+        dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
+        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
+        prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
+        contactId: sql<number>`CAST(${tasks.contactId} AS UNSIGNED)`,
+        isActive: tasks.isActive,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+      })
+      .from(tasks)
+      .where(eq(tasks.taskId, BigInt(taskId)));
+    return updatedTask;
+  } catch (error) {
+    console.error("Error updating contact task:", error);
+    throw error;
+  }
+}
+
+// Update listing-specific task
+export async function updateListingTask(
+  taskId: number,
+  data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
+  accountId: number,
+) {
+  try {
+    // Verify task exists and belongs to account through listing->property relationship
+    const [existingTask] = await db
+      .select({ taskId: tasks.taskId })
+      .from(tasks)
+      .innerJoin(listings, eq(tasks.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(tasks.taskId, BigInt(taskId)),
+          eq(tasks.isActive, true),
+          eq(properties.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!existingTask) {
+      throw new Error("Listing task not found or access denied");
+    }
+
+    await db
+      .update(tasks)
+      .set(data)
+      .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
+      
+    const [updatedTask] = await db
+      .select({
+        taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
+        userId: tasks.userId,
+        title: tasks.title,
+        description: tasks.description,
+        dueDate: tasks.dueDate,
+        dueTime: tasks.dueTime,
+        completed: tasks.completed,
+        listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
+        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
+        dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
+        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
+        prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
+        contactId: sql<number>`CAST(${tasks.contactId} AS UNSIGNED)`,
+        isActive: tasks.isActive,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+      })
+      .from(tasks)
+      .where(eq(tasks.taskId, BigInt(taskId)));
+    return updatedTask;
+  } catch (error) {
+    console.error("Error updating listing task:", error);
+    throw error;
+  }
+}
+
 // Mark task as completed
 export async function completeTask(taskId: number, accountId: number) {
   try {
@@ -427,11 +581,11 @@ export async function completeTask(taskId: number, accountId: number) {
       .select({ taskId: tasks.taskId })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(listingContacts, and(
-        eq(tasks.listingContactId, listingContacts.listingContactId),
-        eq(listingContacts.contactType, "buyer")
+      .leftJoin(contacts, or(
+        eq(prospects.contactId, contacts.contactId),
+        eq(tasks.contactId, contacts.contactId)
       ))
+      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -488,11 +642,11 @@ export async function softDeleteTask(taskId: number, accountId: number) {
       .select({ taskId: tasks.taskId })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(listingContacts, and(
-        eq(tasks.listingContactId, listingContacts.listingContactId),
-        eq(listingContacts.contactType, "buyer")
+      .leftJoin(contacts, or(
+        eq(prospects.contactId, contacts.contactId),
+        eq(tasks.contactId, contacts.contactId)
       ))
+      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -523,16 +677,16 @@ export async function softDeleteTask(taskId: number, accountId: number) {
 // Hard delete task (remove from database)
 export async function deleteTask(taskId: number, accountId: number) {
   try {
-    // First verify the task belongs to this account
+    // First verify the task belongs to this account using JOINs instead of subqueries
     const [existingTask] = await db
       .select({ taskId: tasks.taskId })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(listingContacts, and(
-        eq(tasks.listingContactId, listingContacts.listingContactId),
-        eq(listingContacts.contactType, "buyer")
+      .leftJoin(contacts, or(
+        eq(prospects.contactId, contacts.contactId),
+        eq(tasks.contactId, contacts.contactId)
       ))
+      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -553,6 +707,61 @@ export async function deleteTask(taskId: number, accountId: number) {
     return { success: true };
   } catch (error) {
     console.error("Error deleting task:", error);
+    throw error;
+  }
+}
+
+// Delete contact-specific task
+export async function deleteContactTask(taskId: number, accountId: number) {
+  try {
+    // Verify task exists and belongs to account through contact relationship
+    const [existingTask] = await db
+      .select({ taskId: tasks.taskId })
+      .from(tasks)
+      .innerJoin(contacts, eq(tasks.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(tasks.taskId, BigInt(taskId)),
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!existingTask) {
+      throw new Error("Contact task not found or access denied");
+    }
+
+    await db.delete(tasks).where(eq(tasks.taskId, BigInt(taskId)));
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting contact task:", error);
+    throw error;
+  }
+}
+
+// Delete listing-specific task
+export async function deleteListingTask(taskId: number, accountId: number) {
+  try {
+    // Verify task exists and belongs to account through listing->property relationship
+    const [existingTask] = await db
+      .select({ taskId: tasks.taskId })
+      .from(tasks)
+      .innerJoin(listings, eq(tasks.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(tasks.taskId, BigInt(taskId)),
+          eq(properties.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!existingTask) {
+      throw new Error("Listing task not found or access denied");
+    }
+
+    await db.delete(tasks).where(eq(tasks.taskId, BigInt(taskId)));
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting listing task:", error);
     throw error;
   }
 }
@@ -601,11 +810,11 @@ export async function listTasks(
       .select()
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
-      .leftJoin(listingContacts, and(
-        eq(tasks.listingContactId, listingContacts.listingContactId),
-        eq(listingContacts.contactType, "buyer")
+      .leftJoin(contacts, or(
+        eq(prospects.contactId, contacts.contactId),
+        eq(tasks.contactId, contacts.contactId)
       ))
+      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)

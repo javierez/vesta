@@ -528,6 +528,7 @@ export const tasks = singlestoreTable("tasks", {
   dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)
   appointmentId: bigint("appointment_id", { mode: "bigint" }), // FK → appointments.appointment_id (nullable)
   prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.prospect_id (nullable)
+  contactId: bigint("contact_id", { mode: "bigint" }), // FK → contacts.contact_id (nullable)
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

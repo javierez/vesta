@@ -18,12 +18,18 @@ export async function createUserCommentAction(
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
-      return { success: false, error: "No tienes permisos para crear comentarios" };
+      return {
+        success: false,
+        error: "No tienes permisos para crear comentarios",
+      };
     }
 
     // Validate input
     if (!formData.content?.trim()) {
-      return { success: false, error: "El contenido del comentario no puede estar vacío" };
+      return {
+        success: false,
+        error: "El contenido del comentario no puede estar vacío",
+      };
     }
 
     if (!formData.contactId) {
@@ -31,12 +37,15 @@ export async function createUserCommentAction(
     }
 
     // Convert string IDs to BigInt if needed
-    const contactId = typeof formData.contactId === "string" 
-      ? BigInt(formData.contactId) 
-      : formData.contactId;
-    
-    const parentId = formData.parentId 
-      ? (typeof formData.parentId === "string" ? BigInt(formData.parentId) : formData.parentId)
+    const contactId =
+      typeof formData.contactId === "string"
+        ? BigInt(formData.contactId)
+        : formData.contactId;
+
+    const parentId = formData.parentId
+      ? typeof formData.parentId === "string"
+        ? BigInt(formData.parentId)
+        : formData.parentId
       : null;
 
     const comment = await createUserComment(
@@ -49,27 +58,32 @@ export async function createUserCommentAction(
       Number(currentUser.accountId),
     );
 
+    if (!comment) {
+      return { success: false, error: "Error al crear el comentario" };
+    }
+
     // Revalidate the contact page to show new comment
     revalidatePath(`/contactos/${contactId}`);
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       data: {
         commentId: BigInt(comment.commentId),
         contactId: BigInt(comment.contactId),
         userId: comment.userId,
         content: comment.content,
         parentId: comment.parentId ? BigInt(comment.parentId) : null,
-        isDeleted: comment.isDeleted,
+        isDeleted: comment.isDeleted ?? false,
         createdAt: comment.createdAt,
         updatedAt: comment.updatedAt,
-      }
+      },
     };
   } catch (error) {
     console.error("Error in createUserCommentAction:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Error interno del servidor" 
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error interno del servidor",
     };
   }
 }
@@ -80,12 +94,18 @@ export async function updateUserCommentAction(
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
-      return { success: false, error: "No tienes permisos para editar comentarios" };
+      return {
+        success: false,
+        error: "No tienes permisos para editar comentarios",
+      };
     }
 
     // Validate input
     if (!formData.content?.trim()) {
-      return { success: false, error: "El contenido del comentario no puede estar vacío" };
+      return {
+        success: false,
+        error: "El contenido del comentario no puede estar vacío",
+      };
     }
 
     if (!formData.commentId) {
@@ -93,9 +113,10 @@ export async function updateUserCommentAction(
     }
 
     // Convert string ID to BigInt if needed
-    const commentId = typeof formData.commentId === "string" 
-      ? BigInt(formData.commentId) 
-      : formData.commentId;
+    const commentId =
+      typeof formData.commentId === "string"
+        ? BigInt(formData.commentId)
+        : formData.commentId;
 
     // Verify the comment exists and belongs to the current user
     const existingComment = await getUserCommentByIdWithAuth(commentId);
@@ -104,7 +125,10 @@ export async function updateUserCommentAction(
     }
 
     if (existingComment.userId !== currentUser.id) {
-      return { success: false, error: "Solo puedes editar tus propios comentarios" };
+      return {
+        success: false,
+        error: "Solo puedes editar tus propios comentarios",
+      };
     }
 
     await updateUserComment(
@@ -115,22 +139,28 @@ export async function updateUserCommentAction(
 
     // Revalidate the contact page to show updated comment
     revalidatePath(`/contactos/${existingComment.contactId}`);
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error in updateUserCommentAction:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Error interno del servidor" 
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error interno del servidor",
     };
   }
 }
 
-export async function deleteUserCommentAction(commentId: bigint): Promise<UserCommentActionResult> {
+export async function deleteUserCommentAction(
+  commentId: bigint,
+): Promise<UserCommentActionResult> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
-      return { success: false, error: "No tienes permisos para eliminar comentarios" };
+      return {
+        success: false,
+        error: "No tienes permisos para eliminar comentarios",
+      };
     }
 
     // Verify the comment exists and belongs to the current user
@@ -140,20 +170,24 @@ export async function deleteUserCommentAction(commentId: bigint): Promise<UserCo
     }
 
     if (existingComment.userId !== currentUser.id) {
-      return { success: false, error: "Solo puedes eliminar tus propios comentarios" };
+      return {
+        success: false,
+        error: "Solo puedes eliminar tus propios comentarios",
+      };
     }
 
     await deleteUserComment(commentId, Number(currentUser.accountId));
 
     // Revalidate the contact page to hide deleted comment
     revalidatePath(`/contactos/${existingComment.contactId}`);
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error in deleteUserCommentAction:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Error interno del servidor" 
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error interno del servidor",
     };
   }
 }

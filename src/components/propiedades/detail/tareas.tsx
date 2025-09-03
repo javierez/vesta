@@ -11,7 +11,7 @@ import { Badge } from "~/components/ui/badge";
 import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp, Key } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Comments } from "./comments";
-import { createTaskWithAuth, updateTaskWithAuth, deleteTaskWithAuth } from "~/server/queries/task";
+import { createTaskWithAuth, updateListingTaskWithAuth, deleteListingTaskWithAuth } from "~/server/queries/task";
 import { getLeadsByListingIdWithAuth } from "~/server/queries/lead";
 import { getDealsByListingIdWithAuth } from "~/server/queries/deal";
 import { toggleListingKeysWithAuth, getListingDetailsWithAuth } from "~/server/queries/listing";
@@ -157,7 +157,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     const fetchHasKeys = async () => {
       try {
         const listingDetails = await getListingDetailsWithAuth(Number(listingId));
-        setHasKeys((listingDetails as any).hasKeys ?? false);
+        setHasKeys((listingDetails as { hasKeys?: boolean }).hasKeys ?? false);
       } catch (error) {
         console.error('Error fetching hasKeys value:', error);
         setHasKeys(false); // Default to false if error
@@ -528,7 +528,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     ));
 
     try {
-      await updateTaskWithAuth(Number(task.taskId), { completed: newCompleted });
+      await updateListingTaskWithAuth(Number(task.taskId), { completed: newCompleted });
     } catch (error) {
       console.error('Error updating task:', error);
       // Revert optimistic update on error
@@ -546,7 +546,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     setTasks(tasks.filter(task => task.id !== id));
 
     try {
-      await deleteTaskWithAuth(Number(task.taskId));
+      await deleteListingTaskWithAuth(Number(task.taskId));
     } catch (error) {
       console.error('Error deleting task:', error);
       // Revert optimistic update on error

@@ -6,7 +6,12 @@
       "Bash(pnpm lint:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm exec tsc:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm run format:check:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx prettier:*)",
+      "Bash(npm run check:*)"
     ],
     "deny": [],
     "ask": []

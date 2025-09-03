@@ -75,8 +75,8 @@ export const PropertyCard = React.memo(function PropertyCard({
   listing,
   accountWebsite,
   showDeleteButton = false,
-  contactId,
-  contactType,
+  contactId: _contactId,
+  contactType: _contactType,
   onRemove,
   isRemoving = false,
 }: PropertyCardProps) {
