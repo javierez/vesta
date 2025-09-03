@@ -463,9 +463,9 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
     if (!editContent.trim()) return;
 
     // Store original content for potential reversion
-    const originalComment = optimisticComments.find(c => c.commentId === commentId) || 
+    const originalComment = optimisticComments.find(c => c.commentId === commentId) ?? 
                            optimisticComments.find(c => c.replies.some(r => r.commentId === commentId))?.replies.find(r => r.commentId === commentId);
-    const originalContent = originalComment?.content || "";
+    const originalContent = originalComment?.content ?? "";
     
     // Store edit content and exit edit mode immediately for instant UX
     const newContent = editContent;
@@ -657,7 +657,7 @@ export function Comments({ propertyId, listingId, referenceNumber: _referenceNum
           if (!commentToDelete) return "¿Estás seguro de que quieres eliminar este comentario? Esta acción no se puede deshacer.";
           
           const comment = optimisticComments.find(c => c.commentId === commentToDelete);
-          const replyCount = comment?.replies?.length || 0;
+          const replyCount = comment?.replies?.length ?? 0;
           
           if (replyCount > 0) {
             return `Este comentario tiene ${replyCount} respuesta${replyCount > 1 ? 's' : ''}. Al eliminarlo también se eliminarán todas las respuestas. ¿Estás seguro? Esta acción no se puede deshacer.`;

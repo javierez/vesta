@@ -259,7 +259,7 @@ export async function deleteCommentAction(commentId: bigint): Promise<CommentAct
     }
 
     // Delete the main comment
-    const updateResult = await db
+    await db
       .update(comments)
       .set({
         isDeleted: true,
@@ -272,7 +272,7 @@ export async function deleteCommentAction(commentId: bigint): Promise<CommentAct
         )
       );
 
-    console.log("Comment soft deleted successfully. Rows affected:", updateResult.rowCount);
+    console.log("Comment soft deleted successfully.");
     
     // Double check if the comment was actually deleted
     const [checkComment] = await db

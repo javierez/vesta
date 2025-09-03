@@ -151,7 +151,7 @@ export async function createVisitAction(formData: VisitFormData) {
           );
           console.log("📈 Updated lead status from visit outcome:", {
             appointmentId: formData.appointmentId.toString(),
-            listingContactId: appointment.listingContactId.toString(),
+            listingContactId: String(appointment.listingContactId),
             visitOutcome: formData.visitOutcome,
           });
         } catch (error) {
