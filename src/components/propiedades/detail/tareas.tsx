@@ -8,12 +8,13 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp, Key } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Comments } from "./comments";
 import { createTaskWithAuth, updateTaskWithAuth, deleteTaskWithAuth } from "~/server/queries/task";
 import { getLeadsByListingIdWithAuth } from "~/server/queries/lead";
 import { getDealsByListingIdWithAuth } from "~/server/queries/deal";
+import { toggleListingKeysWithAuth, getListingDetailsWithAuth } from "~/server/queries/listing";
 import { useSession } from "~/lib/auth-client";
 import type { CommentWithUser } from "~/types/comments";
 
@@ -125,6 +126,8 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasKeys, setHasKeys] = useState<boolean | null>(null);
+  const [keysLoading, setKeysLoading] = useState(false);
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -149,6 +152,20 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     setTasks(initialTasks);
   }, [initialTasks]);
 
+  // Fetch initial hasKeys value
+  useEffect(() => {
+    const fetchHasKeys = async () => {
+      try {
+        const listingDetails = await getListingDetailsWithAuth(Number(listingId));
+        setHasKeys((listingDetails as any).hasKeys ?? false);
+      } catch (error) {
+        console.error('Error fetching hasKeys value:', error);
+        setHasKeys(false); // Default to false if error
+      }
+    };
+    
+    void fetchHasKeys();
+  }, [listingId]);
 
   // Fetch leads and deals for dropdowns when user starts creating a task
   useEffect(() => {
@@ -537,6 +554,27 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     }
   };
 
+  const handleToggleKeys = async () => {
+    if (keysLoading) return;
+    
+    setKeysLoading(true);
+    const previousValue = hasKeys;
+    
+    // Optimistic update
+    setHasKeys(!hasKeys);
+    
+    try {
+      const result = await toggleListingKeysWithAuth(Number(listingId));
+      setHasKeys(result.hasKeys);
+    } catch (error) {
+      console.error('Error toggling keys:', error);
+      // Revert optimistic update on error
+      setHasKeys(previousValue);
+    } finally {
+      setKeysLoading(false);
+    }
+  };
+
   const toggleDescriptionExpansion = (taskId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent task toggle
     setExpandedDescriptions(prev => ({
@@ -561,6 +599,28 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
               Borrador guardado
             </div>
           )}
+        </div>
+        
+        {/* Keys toggle button */}
+        <div className="flex items-center">
+          <Button
+            onClick={handleToggleKeys}
+            disabled={keysLoading || hasKeys === null}
+            size="sm"
+            variant={hasKeys ? "default" : "outline"}
+            className={`w-10 h-10 rounded-full p-0 transition-all duration-200 ${
+              hasKeys 
+                ? "bg-gray-900 hover:bg-black text-white shadow-lg border-2 border-gray-900" 
+                : "bg-transparent hover:bg-gray-50 text-gray-400 border-2 border-gray-200 hover:border-gray-300"
+            }`}
+            title={hasKeys ? "Tenemos las llaves" : "No tenemos las llaves"}
+          >
+            {keysLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Key className={`h-4 w-4 ${hasKeys ? "fill-current" : ""}`} />
+            )}
+          </Button>
         </div>
       </div>
 

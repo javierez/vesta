@@ -94,7 +94,7 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
                   </button>
                 </div>
               </div>
-              <span className={cn("truncate", isActive ? "" : "text-gray-400")}>
+              <span className={cn("truncate transition-all group-hover:font-bold", isActive ? "" : "text-gray-400")}>
                 {email}
               </span>
             </div>
@@ -165,7 +165,7 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
                   </button>
                 </div>
               </div>
-              <span className={cn("truncate", isActive ? "" : "text-gray-400")}>
+              <span className={cn("truncate transition-all group-hover:font-bold", isActive ? "" : "text-gray-400")}>
                 {phone}
               </span>
             </div>

@@ -1677,8 +1677,8 @@ export async function listContactsBuyerData(
     // Always filter by account
     whereConditions.push(eq(contacts.accountId, BigInt(accountId)));
 
-    // Get contacts with buyer data focus
-    const uniqueContacts = await db
+    // Build the base query
+    const baseQuery = db
       .select({
         contactId: contacts.contactId,
         firstName: contacts.firstName,
@@ -1696,7 +1696,7 @@ export async function listContactsBuyerData(
           COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END)
         `,
         prospectCount: sql<number>`
-          (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId})
+          COUNT(DISTINCT ${prospects.id})
         `,
         isOwner: sql<boolean>`
           CASE WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0 THEN true ELSE false END
@@ -1705,7 +1705,7 @@ export async function listContactsBuyerData(
           CASE WHEN COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0 THEN true ELSE false END
         `,
         isInteresado: sql<boolean>`
-          CASE WHEN (SELECT COUNT(*) FROM prospects WHERE contact_id = ${contacts.contactId}) > 0 THEN true ELSE false END
+          CASE WHEN COUNT(DISTINCT ${prospects.id}) > 0 THEN true ELSE false END
         `,
       })
       .from(contacts)
@@ -1728,6 +1728,7 @@ export async function listContactsBuyerData(
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
+      .leftJoin(prospects, eq(contacts.contactId, prospects.contactId))
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
       .groupBy(
         contacts.contactId,
@@ -1740,7 +1741,17 @@ export async function listContactsBuyerData(
         contacts.isActive,
         contacts.createdAt,
         contacts.updatedAt,
-      )
+      );
+
+    // Get contacts with buyer data focus - apply HAVING conditionally
+    const isBuyerFilter = filters?.roles?.includes("buyer");
+
+    const uniqueContacts = await (isBuyerFilter
+      ? baseQuery.having(sql`
+          COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0
+          OR COUNT(DISTINCT ${prospects.id}) > 0
+        `)
+      : baseQuery)
       .limit(limit)
       .offset(offset)
       .orderBy(contacts.createdAt);
@@ -1860,13 +1871,9 @@ export async function listContactsBuyerData(
       }),
     );
 
-    // Apply role filtering - show contacts that have buyer relationships or are prospects
+    // Database-level filtering already applied via HAVING clause for buyer role
+    // Client-side filtering is no longer needed since we filter at DB level
     let filteredContacts = contactsWithBuyerData;
-    if (filters?.roles?.includes("buyer")) {
-      filteredContacts = contactsWithBuyerData.filter(
-        (contact) => contact.isBuyer || contact.isInteresado,
-      );
-    }
 
     // Apply last contact date filtering
     if (filters?.lastContactFilter && filters.lastContactFilter !== "all") {

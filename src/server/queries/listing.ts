@@ -58,6 +58,34 @@ export async function updateListingWithAuth(
   return updateListing(listingId, accountId, data);
 }
 
+export async function toggleListingKeysWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  
+  try {
+    // First get the current hasKeys value
+    const currentListing = await getListingById(listingId, accountId);
+    if (!currentListing) {
+      throw new Error("Listing not found");
+    }
+    
+    // Toggle the hasKeys value
+    const newHasKeysValue = !currentListing.hasKeys;
+    
+    // Update the listing
+    const updatedListing = await updateListing(listingId, accountId, {
+      hasKeys: newHasKeysValue
+    });
+    
+    return {
+      hasKeys: newHasKeysValue,
+      listing: updatedListing
+    };
+  } catch (error) {
+    console.error("Error toggling listing keys:", error);
+    throw error;
+  }
+}
+
 export async function getListingDetailsWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
 
