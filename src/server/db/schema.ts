@@ -666,3 +666,15 @@ export const comments = singlestoreTable("comments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
+
+// User Comments table (Contact-based comments)
+export const userComments = singlestoreTable("user_comments", {
+  commentId: bigint("comment_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
+  content: text("content").notNull(),
+  parentId: bigint("parent_id", { mode: "bigint" }), // Self-reference for replies
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
