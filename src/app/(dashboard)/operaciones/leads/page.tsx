@@ -70,6 +70,7 @@ export default function LeadsPage() {
                 ? {
                     listingId: item.listing.listingId,
                     referenceNumber: item.listing.referenceNumber,
+                    title: item.listing.title,
                     street: item.listing.street,
                     price: item.listing.price ?? "0",
                     listingType: item.listing.listingType,

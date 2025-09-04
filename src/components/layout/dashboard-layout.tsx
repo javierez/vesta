@@ -23,6 +23,7 @@ import {
   Search,
   TrendingUp,
   HandHeart,
+  Coins,
 } from "lucide-react";
 import type { FC, ReactNode } from "react";
 
@@ -46,10 +47,11 @@ interface NavigationItem {
 }
 
 const baseNavigation: NavigationItem[] = [
-  { name: "Resumen", href: "/dashboard", icon: BarChart3 },
+  { name: "Resumen", href: "/operaciones", icon: BarChart3 },
   { name: "Propiedades", href: "/propiedades", icon: Building2 },
   { name: "Contactos", href: "/contactos", icon: Users },
   { name: "Calendario", href: "/calendario", icon: Calendar },
+  { name: "Contabilidad", href: "/contabilidad", icon: Coins, disabled: true },
   { name: "Ajustes", href: "/ajustes", icon: Settings },
 ];
 
@@ -180,33 +182,15 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
             {/* Operaciones Section - Mobile */}
             <div className="space-y-1">
               <div className="flex items-center">
-                <Link
-                  href="/operaciones"
-                  className={cn(
-                    "group flex flex-1 items-center rounded-md px-2 py-2 text-sm font-medium",
-                    pathname === "/operaciones"
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Briefcase
-                    className={cn(
-                      "mr-3 h-5 w-5 flex-shrink-0",
-                      pathname === "/operaciones"
-                        ? "text-gray-500"
-                        : "text-gray-400 group-hover:text-gray-500",
-                    )}
-                  />
-                  Operaciones
-                </Link>
                 <button
                   onClick={() => setOperacionesExpanded(!operacionesExpanded)}
-                  className="rounded p-1 hover:bg-gray-100"
+                  className="group flex flex-1 items-center rounded-md px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 >
+                  <Briefcase className="mr-3 h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-gray-500" />
+                  Operaciones
                   <ChevronDown
                     className={cn(
-                      "h-4 w-4 text-gray-400 transition-transform",
+                      "ml-auto h-4 w-4 text-gray-400 transition-transform",
                       operacionesExpanded && "rotate-180",
                     )}
                   />
@@ -310,7 +294,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
             <h1 className="text-xl font-bold text-gray-900">Vesta CRM</h1>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => {
+            {navigation.slice(0, 3).map((item) => {
               const isActive = pathname === item.href;
               if (item.disabled) {
                 return (
@@ -353,32 +337,15 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
             {/* Operaciones Section - Desktop */}
             <div className="space-y-1">
               <div className="flex items-center">
-                <Link
-                  href="/operaciones"
-                  className={cn(
-                    "group flex flex-1 items-center rounded-md px-2 py-2 text-sm font-medium",
-                    pathname === "/operaciones"
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                >
-                  <Briefcase
-                    className={cn(
-                      "mr-3 h-5 w-5 flex-shrink-0",
-                      pathname === "/operaciones"
-                        ? "text-gray-500"
-                        : "text-gray-400 group-hover:text-gray-500",
-                    )}
-                  />
-                  Operaciones
-                </Link>
                 <button
                   onClick={() => setOperacionesExpanded(!operacionesExpanded)}
-                  className="rounded p-1 hover:bg-gray-100"
+                  className="group flex flex-1 items-center rounded-md px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 >
+                  <Briefcase className="mr-3 h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-gray-500" />
+                  Operaciones
                   <ChevronDown
                     className={cn(
-                      "h-4 w-4 text-gray-400 transition-transform",
+                      "ml-auto h-4 w-4 text-gray-400 transition-transform",
                       operacionesExpanded && "rotate-180",
                     )}
                   />
@@ -441,6 +408,46 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                 </div>
               )}
             </div>
+
+            {navigation.slice(3).map((item) => {
+              const isActive = pathname === item.href;
+              if (item.disabled) {
+                return (
+                  <div
+                    key={item.name}
+                    className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
+                  >
+                    <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                    <span className="flex-1">{item.name}</span>
+                    <span className="text-[10px] text-gray-400">
+                      (próximamente)
+                    </span>
+                  </div>
+                );
+              }
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
+                    isActive
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "mr-3 h-5 w-5 flex-shrink-0",
+                      isActive
+                        ? "text-gray-500"
+                        : "text-gray-400 group-hover:text-gray-500",
+                    )}
+                  />
+                  {item.name}
+                </Link>
+              );
+            })}
           </nav>
           {/* Desktop User profile section */}
           <div className="border-t border-gray-200 p-4">

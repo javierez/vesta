@@ -387,6 +387,7 @@ export async function listLeadsWithDetails(
         listing: {
           listingId: listings.listingId,
           referenceNumber: properties.referenceNumber,
+          title: properties.title,
           street: properties.street,
           price: listings.price,
           listingType: listings.listingType,

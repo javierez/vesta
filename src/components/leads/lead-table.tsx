@@ -17,6 +17,7 @@ import {
   Home,
   ExternalLink,
   ChevronDown,
+  MapPin,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -60,6 +61,7 @@ export type LeadWithDetails = {
   listing?: {
     listingId: bigint;
     referenceNumber?: string | null;
+    title?: string | null;
     street?: string | null;
     price: string;
     listingType?: string | null;
@@ -214,7 +216,6 @@ export function LeadTable({
               <TableHead>Propietario</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Creado</TableHead>
-              <TableHead className="w-12">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -259,20 +260,21 @@ export function LeadTable({
                   <TableCell>
                     {lead.listing ? (
                       <div
-                        className="cursor-pointer rounded-md border bg-gray-50 p-2 transition-colors hover:bg-gray-100"
+                        className="cursor-pointer rounded-lg bg-gray-50 p-2 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md"
                         onClick={() => handleViewListing(lead.listingId)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-sm font-medium">
-                              {lead.listing.referenceNumber ?? "Sin ref."}
+                              {lead.listing.title ?? "Sin título"}
                             </div>
-                            <div className="truncate text-xs text-muted-foreground">
+                            <div className="flex items-center truncate text-xs text-muted-foreground">
+                              <MapPin className="h-3 w-3 mr-1 text-gray-400 flex-shrink-0" />
                               {lead.listing.street ?? "Sin dirección"}
                             </div>
                           </div>
                           <div className="ml-2 text-right">
-                            <div className="text-xs font-medium text-green-600">
+                            <div className="text-xs font-medium text-gray-900">
                               {lead.listing.price
                                 ? new Intl.NumberFormat("es-ES").format(
                                     Number(lead.listing.price),
@@ -338,23 +340,19 @@ export function LeadTable({
                         <Button
                           variant="ghost"
                           size="sm"
+                          className="group h-8 px-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
                           disabled={isUpdating}
-                          className="h-auto p-0"
                         >
-                          <Badge
-                            variant={getStatusBadgeVariant(currentStatus)}
-                            className="cursor-pointer"
-                          >
-                            {currentStatus}
-                            <ChevronDown className="ml-1 h-3 w-3" />
-                          </Badge>
+                          <span className="truncate">{currentStatus}</span>
+                          <ChevronDown className="ml-1 h-3 w-3 opacity-40 transition-opacity group-hover:opacity-70" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
+                      <DropdownMenuContent align="center">
                         {LEAD_STATUSES.map((status) => (
                           <DropdownMenuItem
                             key={status}
                             onClick={() => handleStatusUpdate(leadId, status)}
+                            disabled={isUpdating}
                             className={cn(
                               currentStatus === status && "bg-gray-100",
                             )}
@@ -367,43 +365,10 @@ export function LeadTable({
                   </TableCell>
 
                   {/* Created */}
-                  <TableCell className="text-sm">
+                  <TableCell className="text-xs">
                     {formatDate(lead.createdAt)}
                   </TableCell>
 
-                  {/* Actions */}
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => lead.leadId && handleViewLead(lead.leadId)}
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Ver lead
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleViewContact(lead.contactId)}
-                        >
-                          <User className="mr-2 h-4 w-4" />
-                          Ver contacto
-                        </DropdownMenuItem>
-                        {lead.listingId && (
-                          <DropdownMenuItem
-                            onClick={() => handleViewListing(lead.listingId)}
-                          >
-                            <Home className="mr-2 h-4 w-4" />
-                            Ver propiedad
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
                 </TableRow>
               );
             })}
