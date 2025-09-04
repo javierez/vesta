@@ -454,6 +454,7 @@ export function Tareas({
         title: formData.title,
         description: formData.description,
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+        dueTime: formData.dueDate ? (formData.dueTime || "00:00") : undefined,
         completed: false,
         listingId: BigInt(listingId),
         listingContactId: leadId ? BigInt(leadId) : undefined,

@@ -270,7 +270,7 @@ export function ContactTareas({
         completed: false,
         isActive: true,
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
-        dueTime: formData.dueTime ?? undefined,
+        dueTime: formData.dueDate ? (formData.dueTime || "00:00") : undefined,
         // Entity associations
         contactId,
         listingId: selectedListingId ? BigInt(selectedListingId) : undefined,

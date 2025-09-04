@@ -9,18 +9,23 @@ import {
   Home,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { GlobalTaskModalTrigger } from "~/components/tasks/global-task-modal";
 
-export default function OperacionesQuickActionsCard() {
+interface OperacionesQuickActionsCardProps {
+  onTaskCreated?: () => void;
+}
+
+export default function OperacionesQuickActionsCard({ onTaskCreated }: OperacionesQuickActionsCardProps = {}) {
   const actions = [
     {
       icon: Users,
       label: "Añadir Contacto",
-      href: "/contactos/crear?type=prospect",
+      href: "/contactos/crear",
     },
     {
       icon: CheckSquare,
       label: "Crear Tarea",
-      href: "#", // Esto abriría un modal
+      isModal: true,
     },
     {
       icon: TrendingUp,
@@ -48,20 +53,39 @@ export default function OperacionesQuickActionsCard() {
     <Card className="group relative">
       <CardContent>
         <div className="mb-4 mt-8 grid grid-cols-2 gap-3">
-          {actions.map((action) => (
-            <motion.a
-              key={action.label}
-              href={action.href}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md`}
-            >
-              <action.icon className="mb-2 h-6 w-6" />
-              <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
-                {action.label}
-              </span>
-            </motion.a>
-          ))}
+          {actions.map((action) => {
+            if (action.isModal && action.label === "Crear Tarea") {
+              return (
+                <GlobalTaskModalTrigger key={action.label} onSuccess={onTaskCreated}>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer"
+                  >
+                    <action.icon className="mb-2 h-6 w-6" />
+                    <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
+                      {action.label}
+                    </span>
+                  </motion.div>
+                </GlobalTaskModalTrigger>
+              );
+            }
+
+            return (
+              <motion.a
+                key={action.label}
+                href={action.href}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+              >
+                <action.icon className="mb-2 h-6 w-6" />
+                <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
+                  {action.label}
+                </span>
+              </motion.a>
+            );
+          })}
         </div>
       </CardContent>
     </Card>

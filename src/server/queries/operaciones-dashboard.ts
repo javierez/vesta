@@ -317,6 +317,7 @@ export async function getTodayAppointments(
         tripTimeMinutes: appointments.tripTimeMinutes,
         status: appointments.status,
         notes: appointments.notes,
+        appointmentType: appointments.type,
         // Contact information
         contactName: sql<string>`CONCAT(contacts.first_name, ' ', contacts.last_name)`,
         // Property information (if linked to listing)
@@ -353,7 +354,7 @@ export async function getTodayAppointments(
       endTime: appt.endTime,
       tripTimeMinutes: appt.tripTimeMinutes ?? undefined,
       status: appt.status as TodayAppointment["status"],
-      appointmentType: "viewing", // Default type - could be enhanced with more data
+      appointmentType: appt.appointmentType || "Visita", // Use actual type from database, default to "Visita"
     }));
   } catch (error) {
     console.error("Error fetching today's appointments:", error);

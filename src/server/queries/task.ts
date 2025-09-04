@@ -10,7 +10,7 @@ import {
   properties,
   users,
 } from "../db/schema";
-import { eq, and, or, sql } from "drizzle-orm";
+import { eq, and, or, sql, isNotNull, asc, lte } from "drizzle-orm";
 import type { Task } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
@@ -108,6 +108,11 @@ export async function listTasksWithAuth(
 ) {
   const accountId = await getCurrentUserAccountId();
   return listTasks(page, limit, accountId, filters);
+}
+
+export async function getMostUrgentTasksWithAuth(limit = 10, daysAhead = 30) {
+  const accountId = await getCurrentUserAccountId();
+  return getMostUrgentTasks(accountId, limit, daysAhead);
 }
 
 // Create a new task
@@ -824,6 +829,68 @@ export async function listTasks(
     return allTasks;
   } catch (error) {
     console.error("Error listing tasks:", error);
+    throw error;
+  }
+}
+
+// Get most urgent tasks sorted by due date
+export async function getMostUrgentTasks(accountId: number, limit = 10, daysAhead = 30) {
+  try {
+    // Calculate the end date based on daysAhead parameter
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + daysAhead);
+    
+    const urgentTasks = await db
+      .select({
+        taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
+        userId: tasks.userId,
+        title: tasks.title,
+        description: tasks.description,
+        dueDate: tasks.dueDate,
+        dueTime: tasks.dueTime,
+        completed: tasks.completed,
+        listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
+        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
+        dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
+        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
+        prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
+        contactId: sql<number>`CAST(${tasks.contactId} AS UNSIGNED)`,
+        isActive: tasks.isActive,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+        userName: users.name,
+        userFirstName: users.firstName,
+        userLastName: users.lastName,
+      })
+      .from(tasks)
+      .innerJoin(users, eq(tasks.userId, users.id))
+      .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+      .leftJoin(contacts, or(
+        eq(prospects.contactId, contacts.contactId),
+        eq(tasks.contactId, contacts.contactId)
+      ))
+      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(tasks.isActive, true),
+          eq(tasks.completed, false),
+          isNotNull(tasks.dueDate),
+          lte(tasks.dueDate, endDate),
+          or(
+            eq(contacts.accountId, BigInt(accountId)),
+            eq(properties.accountId, BigInt(accountId)),
+          ),
+        ),
+      )
+      .orderBy(asc(tasks.dueDate))
+      .limit(limit);
+    
+    return urgentTasks;
+  } catch (error) {
+    console.error("Error fetching most urgent tasks:", error);
     throw error;
   }
 }

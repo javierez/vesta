@@ -1113,6 +1113,7 @@ export type Task = {
   title: string;
   description: string;
   dueDate?: Date;
+  dueTime?: string;
   completed: boolean;
   listingId?: bigint;
   listingContactId?: bigint;

@@ -136,7 +136,6 @@ export default function ProspectsPage() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold">Demandas y Prospectos</h1>
-          <p className="text-sm text-muted-foreground">Text</p>
         </div>
         <div className="flex gap-2">
           <Button variant="default" disabled>

@@ -12,6 +12,7 @@ import {
   getTodayAppointmentsWithAuth,
 } from "~/server/queries/operaciones-dashboard";
 import type { OperacionesSummary, UrgentTask, TodayAppointment } from "~/server/queries/operaciones-dashboard";
+import { getMostUrgentTasksWithAuth } from "~/server/queries/task";
 
 // Componente esqueleto de carga para las tarjetas del panel
 function DashboardCardSkeleton() {
@@ -38,22 +39,28 @@ export default function OperacionesPage() {
   const [summary, setSummary] = useState<OperacionesSummary | null>(null);
   const [urgentTasks, setUrgentTasks] = useState<UrgentTask[]>([]);
   const [appointments, setAppointments] = useState<TodayAppointment[]>([]);
+  const [mostUrgentTasks, setMostUrgentTasks] = useState<Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>>([]);
+  const [tasksDaysFilter, setTasksDaysFilter] = useState(7);
+  const [tasksLoading, setTasksLoading] = useState(false);
 
+  // Initial data fetch (without detailed tasks)
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Obtención de datos en paralelo para mejor rendimiento
-        const [summaryData, tasksData, appointmentsData] = await Promise.all([
+        // Obtención de datos iniciales en paralelo para mejor rendimiento
+        const [summaryData, tasksData, appointmentsData, mostUrgentTasksData] = await Promise.all([
           getOperacionesSummaryWithAuth(),
           getUrgentTasksWithAuth(5), // 5 días laborables
           getTodayAppointmentsWithAuth(),
+          getMostUrgentTasksWithAuth(10, tasksDaysFilter), // Initial detailed tasks
         ]);
 
         setSummary(summaryData);
         setUrgentTasks(tasksData);
         setAppointments(appointmentsData);
+        setMostUrgentTasks(mostUrgentTasksData);
       } catch (error) {
         console.error("Error al cargar datos de operaciones:", error);
         setError("No se pudieron cargar los datos de operaciones. Por favor, intenta actualizar la página.");
@@ -62,8 +69,42 @@ export default function OperacionesPage() {
       }
     };
 
-    void fetchData();
+    void fetchInitialData();
   }, []);
+
+  // Separate effect for fetching detailed tasks based on days filter
+  useEffect(() => {
+    const fetchDetailedTasks = async () => {
+      setTasksLoading(true);
+      try {
+        const mostUrgentTasksData = await getMostUrgentTasksWithAuth(10, tasksDaysFilter);
+        setMostUrgentTasks(mostUrgentTasksData);
+      } catch (error) {
+        console.error("Error al cargar tareas detalladas:", error);
+      } finally {
+        setTasksLoading(false);
+      }
+    };
+
+    void fetchDetailedTasks();
+  }, [tasksDaysFilter]);
+
+  const handleDaysFilterChange = (days: number) => {
+    setTasksDaysFilter(days);
+  };
+
+  const refreshTasks = async () => {
+    try {
+      const [urgentTasksData, mostUrgentTasksData] = await Promise.all([
+        getUrgentTasksWithAuth(5),
+        getMostUrgentTasksWithAuth(10, tasksDaysFilter),
+      ]);
+      setUrgentTasks(urgentTasksData);
+      setMostUrgentTasks(mostUrgentTasksData);
+    } catch (error) {
+      console.error("Error refreshing tasks:", error);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -91,10 +132,13 @@ export default function OperacionesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <OperacionesSummaryCard data={summary!} className="lg:col-span-2" />
-          <OperacionesQuickActionsCard />
+          <OperacionesQuickActionsCard onTaskCreated={refreshTasks} />
           <WorkQueueCard
             tasks={urgentTasks}
             appointments={appointments}
+            detailedTasks={mostUrgentTasks}
+            loading={tasksLoading}
+            onDaysChange={handleDaysFilterChange}
             className="md:col-span-2 lg:col-span-3"
           />
         </div>
