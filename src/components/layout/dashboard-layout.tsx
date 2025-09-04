@@ -54,15 +54,15 @@ const baseNavigation: NavigationItem[] = [
 ];
 
 const operacionesItems: NavigationItem[] = [
-  { name: "Prospects", href: "/operaciones/prospects", icon: Search },
+  { name: "Prospectos", href: "/operaciones/prospects", icon: Search },
   {
-    name: "Leads",
+    name: "Conexiones",
     href: "/operaciones/leads",
     icon: TrendingUp,
     disabled: false,
   },
   {
-    name: "Deals",
+    name: "Acuerdos",
     href: "/operaciones/deals",
     icon: HandHeart,
     disabled: true,

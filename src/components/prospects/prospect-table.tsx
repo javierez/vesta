@@ -7,15 +7,14 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
-  MoreHorizontal,
   Euro,
   Bed,
   Bath,
   Square,
   ChevronDown,
+  MapPin,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -54,9 +53,8 @@ const DEFAULT_COLUMN_WIDTHS = {
   contacto: 140,
   estado: 130,
   ubicacion: 120,
-  resumen: 140,
-  creado: 90,
-  acciones: 50,
+  resumen: 160,
+  creado: 70,
 } as const;
 
 // Minimum column widths
@@ -65,9 +63,8 @@ const MIN_COLUMN_WIDTHS = {
   contacto: 100,
   estado: 100,
   ubicacion: 100,
-  resumen: 100,
-  creado: 70,
-  acciones: 50,
+  resumen: 120,
+  creado: 60,
 } as const;
 
 // Simple type for prospect with contact data (matching ACTUAL database structure)
@@ -343,7 +340,7 @@ export function ProspectTable({
           : prospect.prospects.minBathrooms;
 
       return (
-        <div className="rounded-lg bg-gray-50 p-2">
+        <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-100 p-3 shadow-sm">
           <div className="grid grid-cols-2 gap-2 text-xs">
             {/* Price */}
             {prospect.prospects.maxPrice ? (
@@ -424,7 +421,7 @@ export function ProspectTable({
       }
 
       return (
-        <div className="rounded-lg bg-gray-50 p-2">
+        <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-100 p-3 shadow-sm">
           <div className="grid grid-cols-2 gap-2 text-xs">
             {/* Price */}
             {listing.listings.price ? (
@@ -762,19 +759,13 @@ export function ProspectTable({
                   <div className="truncate">Creado</div>
                   <ResizeHandle column="creado" />
                 </TableHead>
-                <TableHead
-                  className="relative"
-                  style={getColumnStyle("acciones")}
-                >
-                  <ResizeHandle column="acciones" />
-                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredOperations.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={6}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No se encontraron operaciones
@@ -850,19 +841,14 @@ export function ProspectTable({
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
-                                className="group h-7 border-dashed px-3 text-xs transition-all duration-200 hover:border-solid hover:bg-gray-100"
+                                className="group h-8 px-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
                                 disabled={updatingStatus === operation.id}
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <Badge
-                                  variant="secondary"
-                                  className="border-0 bg-transparent p-0 text-xs transition-colors group-hover:text-gray-800"
-                                >
-                                  {operation.status}
-                                </Badge>
-                                <ChevronDown className="ml-1 h-3 w-3 opacity-50 transition-opacity group-hover:opacity-100" />
+                                <span className="truncate">{operation.status}</span>
+                                <ChevronDown className="ml-1 h-3 w-3 opacity-40 transition-opacity group-hover:opacity-70" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
@@ -917,53 +903,57 @@ export function ProspectTable({
                         className="overflow-hidden"
                         style={getColumnStyle("ubicacion")}
                       >
-                        <div className="text-sm text-gray-600">
-                          {operation.type === "prospect" ? (
-                            (() => {
-                              const areas = parsePreferredAreas(
-                                (operation.rawData as ProspectWithContact)
-                                  .prospects.preferredAreas,
-                              );
-
-                              if (areas.length === 0) {
-                                return (
-                                  <span className="text-muted-foreground">
-                                    Sin especificar
-                                  </span>
+                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                          <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            {operation.type === "prospect" ? (
+                              (() => {
+                                const areas = parsePreferredAreas(
+                                  (operation.rawData as ProspectWithContact)
+                                    .prospects.preferredAreas,
                                 );
-                              }
 
-                              if (areas.length === 1) {
+                                if (areas.length === 0) {
+                                  return (
+                                    <span className="text-muted-foreground text-xs">
+                                      Sin especificar
+                                    </span>
+                                  );
+                                }
+
+                                if (areas.length === 1) {
+                                  return (
+                                    <div className="truncate text-xs" title={areas[0]}>
+                                      {areas[0]}
+                                    </div>
+                                  );
+                                }
+
                                 return (
-                                  <span className="truncate text-xs">
-                                    {areas[0]}
-                                  </span>
+                                  <div className="space-y-0.5">
+                                    {areas.slice(0, 2).map((area, index) => (
+                                      <div
+                                        key={index}
+                                        className="truncate text-xs"
+                                        title={area}
+                                      >
+                                        • {area}
+                                      </div>
+                                    ))}
+                                    {areas.length > 2 && (
+                                      <div className="text-xs text-muted-foreground">
+                                        +{areas.length - 2} más
+                                      </div>
+                                    )}
+                                  </div>
                                 );
-                              }
-
-                              return (
-                                <div className="space-y-0.5">
-                                  {areas.slice(0, 2).map((area, index) => (
-                                    <div
-                                      key={index}
-                                      className="truncate text-xs"
-                                    >
-                                      • {area}
-                                    </div>
-                                  ))}
-                                  {areas.length > 2 && (
-                                    <div className="text-xs text-muted-foreground">
-                                      +{areas.length - 2} más
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })()
-                          ) : (
-                            <span className="truncate text-xs">
-                              {operation.location}
-                            </span>
-                          )}
+                              })()
+                            ) : (
+                              <div className="truncate text-xs" title={operation.location}>
+                                {operation.location}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
 
@@ -977,7 +967,7 @@ export function ProspectTable({
 
                       {/* Creado Column */}
                       <TableCell
-                        className="overflow-hidden text-sm text-muted-foreground"
+                        className="overflow-hidden text-xs text-muted-foreground"
                         style={getColumnStyle("creado")}
                       >
                         <div className="truncate">
@@ -985,33 +975,6 @@ export function ProspectTable({
                         </div>
                       </TableCell>
 
-                      {/* Actions Column */}
-                      <TableCell
-                        className="overflow-hidden"
-                        style={getColumnStyle("acciones")}
-                      >
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Abrir menú</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Ver detalles</DropdownMenuItem>
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem>Agregar tarea</DropdownMenuItem>
-                            <DropdownMenuItem>Programar cita</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
                     </TableRow>
                   );
                 })

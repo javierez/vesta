@@ -98,6 +98,18 @@ export function LeadTable({
     Record<string, LeadStatus>
   >({});
 
+  // Deduplicate leads by leadId to prevent duplicate keys
+  const uniqueLeads = leads.reduce((acc, lead) => {
+    const key = lead.leadId?.toString();
+    if (key && !acc.some(existingLead => existingLead.leadId?.toString() === key)) {
+      acc.push(lead);
+    } else if (!key) {
+      // Keep leads without leadId (shouldn't happen, but just in case)
+      acc.push(lead);
+    }
+    return acc;
+  }, [] as LeadWithDetails[]);
+
   const getStatusBadgeVariant = (status: LeadStatus) => {
     switch (status) {
       case "Info Incompleta":
@@ -206,8 +218,8 @@ export function LeadTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {leads.map((lead) => {
-              const leadId = lead.leadId.toString();
+            {uniqueLeads.map((lead) => {
+              const leadId = lead.leadId?.toString() ?? '';
               const currentStatus = optimisticStatuses[leadId] ?? lead.status;
               const isUpdating = updatingStatus === leadId;
 
@@ -369,7 +381,7 @@ export function LeadTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => handleViewLead(lead.leadId)}
+                          onClick={() => lead.leadId && handleViewLead(lead.leadId)}
                         >
                           <ExternalLink className="mr-2 h-4 w-4" />
                           Ver lead

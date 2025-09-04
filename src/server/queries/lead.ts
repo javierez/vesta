@@ -7,7 +7,7 @@ import {
   listings,
   properties,
 } from "../db/schema";
-import { eq, and, like, or, count, aliasedTable } from "drizzle-orm";
+import { eq, and, like, or, aliasedTable, countDistinct, desc, asc } from "drizzle-orm";
 import type { Lead } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
@@ -357,7 +357,8 @@ export async function listLeadsWithDetails(
       }
     }
 
-    // Create alias for owner contacts to avoid naming conflicts
+    // Create aliases for owner tables to avoid naming conflicts
+    const ownerListingContacts = aliasedTable(listingContacts, "ownerListingContacts");
     const ownerContacts = aliasedTable(contacts, "ownerContacts");
 
     // Main query with all joins
@@ -407,22 +408,39 @@ export async function listLeadsWithDetails(
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      // TODO: Implement proper owner lookup via listing_contacts with contactType="owner"
+      // Join owner data via listing_contacts with contactType="owner"
+      .leftJoin(
+        ownerListingContacts,
+        and(
+          eq(listings.listingId, ownerListingContacts.listingId),
+          eq(ownerListingContacts.contactType, "owner")
+        )
+      )
+      .leftJoin(ownerContacts, eq(ownerListingContacts.contactId, ownerContacts.contactId))
       .where(and(
         eq(listingContacts.contactType, "buyer"),
         ...whereConditions
       ))
-      .orderBy(listingContacts.createdAt)
+      .orderBy(desc(listingContacts.createdAt), asc(listingContacts.status))
       .limit(limit)
       .offset(offset);
 
-    // Get total count for pagination
+    // Get total count for pagination (count distinct to handle duplicates)
     const totalResults = await db
-      .select({ count: count() })
+      .select({ count: countDistinct(listingContacts.listingContactId) })
       .from(listingContacts)
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      // Add same owner joins to maintain consistency
+      .leftJoin(
+        ownerListingContacts,
+        and(
+          eq(listings.listingId, ownerListingContacts.listingId),
+          eq(ownerListingContacts.contactType, "owner")
+        )
+      )
+      .leftJoin(ownerContacts, eq(ownerListingContacts.contactId, ownerContacts.contactId))
       .where(and(
         eq(listingContacts.contactType, "buyer"),
         ...whereConditions
@@ -432,8 +450,19 @@ export async function listLeadsWithDetails(
       ? Number((totalResults[0] as {count: unknown}).count)
       : 0;
 
+    // Deduplicate results by listingContactId in case of duplicate rows from joins
+    const uniqueLeads = allLeads.reduce((acc, lead) => {
+      const key = lead.listingContactId.toString();
+      if (!acc.has(key)) {
+        acc.set(key, lead);
+      }
+      return acc;
+    }, new Map());
+
+    const deduplicatedLeads = Array.from(uniqueLeads.values());
+
     return {
-      leads: allLeads,
+      leads: deduplicatedLeads,
       total: totalCount,
       page,
       totalPages: Math.ceil(totalCount / limit),

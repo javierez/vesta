@@ -57,7 +57,7 @@ export default function LeadsPage() {
           /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
           setLeads(
             result.leads.map((item: any) => ({
-              leadId: item.leadId,
+              leadId: item.listingContactId,
               contactId: item.contactId,
               listingId: item.listingId ?? null,
               prospectId: item.prospectId ?? null,
