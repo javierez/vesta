@@ -19,11 +19,13 @@ export async function GET(_request: NextRequest) {
         connected: true,
         lastSync: integration.syncToken ? new Date().toISOString() : null,
         calendarId: integration.calendarId,
+        syncDirection: integration.syncDirection,
       });
     } else {
       return NextResponse.json({
         connected: false,
         lastSync: null,
+        syncDirection: "bidirectional",
       });
     }
   } catch (error) {

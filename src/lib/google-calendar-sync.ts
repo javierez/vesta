@@ -40,6 +40,12 @@ export async function syncFromGoogle(userId: string): Promise<SyncResult> {
       return { success: false, error: "No integration found" };
     }
 
+    // Check sync direction preference
+    if (integration.syncDirection === "vesta_to_google" || integration.syncDirection === "none") {
+      console.log(`Skipping sync from Google - sync direction is ${integration.syncDirection}`);
+      return { success: true, syncedEvents: 0 };
+    }
+
     // Prepare sync parameters
     const listParams: calendar_v3.Params$Resource$Events$List = {
       calendarId: integration.calendarId,
@@ -303,6 +309,12 @@ export async function syncToGoogle(
     if (!integration) {
       console.log("No Google Calendar integration for user:", userId);
       return false; // User doesn't have Google Calendar connected
+    }
+
+    // Check sync direction preference
+    if (integration.syncDirection === "google_to_vesta" || integration.syncDirection === "none") {
+      console.log(`Skipping sync to Google - sync direction is ${integration.syncDirection}`);
+      return false;
     }
 
     // Get appointment data

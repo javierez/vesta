@@ -19,6 +19,7 @@ export interface GoogleCalendarIntegration {
   channelId: string | null;
   resourceId: string | null;
   channelExpiration: Date | null;
+  syncDirection: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none";
   isActive: boolean;
 }
 
@@ -126,6 +127,7 @@ export async function getUserIntegration(
     channelId: row.channelId,
     resourceId: row.resourceId,
     channelExpiration: row.channelExpiration,
+    syncDirection: (row.syncDirection as "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none") ?? "bidirectional",
     isActive: row.isActive ?? true,
   };
 }
@@ -151,6 +153,7 @@ export async function storeUserIntegration(
     channelId: channelData?.channelId || null,
     resourceId: channelData?.resourceId || null,
     channelExpiration: channelData?.expiration || null,
+    syncDirection: "vesta_to_google" as const, // Default to recommended one-way sync
     isActive: true,
   };
 

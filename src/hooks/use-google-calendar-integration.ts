@@ -3,12 +3,16 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing */
 
 import { useState, useEffect } from "react";
+import { 
+  updateGoogleCalendarSyncDirectionAction 
+} from "~/server/actions/google-calendar-settings";
 
 export interface GoogleCalendarIntegration {
   connected: boolean;
   lastSync: Date | null;
   loading: boolean;
   error: string | null;
+  syncDirection: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none";
 }
 
 export function useGoogleCalendarIntegration() {
@@ -17,6 +21,7 @@ export function useGoogleCalendarIntegration() {
     lastSync: null,
     loading: true,
     error: null,
+    syncDirection: "bidirectional",
   });
 
   // Check integration status on mount
@@ -32,6 +37,7 @@ export function useGoogleCalendarIntegration() {
       const data = (await response.json()) as {
         connected: boolean;
         lastSync?: string;
+        syncDirection?: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none";
         error?: string;
       };
 
@@ -40,6 +46,7 @@ export function useGoogleCalendarIntegration() {
           ...prev,
           connected: Boolean(data.connected),
           lastSync: data.lastSync ? new Date(data.lastSync) : null,
+          syncDirection: data.syncDirection ?? "bidirectional",
           loading: false,
         }));
       } else {
@@ -91,6 +98,7 @@ export function useGoogleCalendarIntegration() {
           lastSync: null,
           loading: false,
           error: null,
+          syncDirection: "bidirectional",
         });
         return { success: true, message: data.message };
       } else {
@@ -150,11 +158,47 @@ export function useGoogleCalendarIntegration() {
     }
   };
 
+  const updateSyncDirection = async (
+    direction: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none"
+  ) => {
+    try {
+      setIntegration((prev) => ({ ...prev, loading: true, error: null }));
+
+      const result = await updateGoogleCalendarSyncDirectionAction(direction);
+      
+      if (result.success) {
+        setIntegration((prev) => ({
+          ...prev,
+          syncDirection: direction,
+          loading: false,
+        }));
+        return { success: true };
+      } else {
+        setIntegration((prev) => ({
+          ...prev,
+          error: result.error || "Failed to update sync direction",
+          loading: false,
+        }));
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error("Error updating sync direction:", error);
+      const errorMessage = "Failed to update sync direction";
+      setIntegration((prev) => ({
+        ...prev,
+        error: errorMessage,
+        loading: false,
+      }));
+      return { success: false, error: errorMessage };
+    }
+  };
+
   return {
     integration,
     connect,
     disconnect,
     syncNow,
+    updateSyncDirection,
     refresh: checkIntegrationStatus,
   };
 }

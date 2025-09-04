@@ -34,6 +34,11 @@ import {
   Train,
   RefreshCw,
   AlertCircle,
+  Settings,
+  ArrowLeftRight,
+  ArrowRight,
+  ArrowLeft,
+  Ban,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -44,6 +49,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "~/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import { Label } from "~/components/ui/label";
 import Image from "next/image"; // Add Image import for optimized images
 import { useWeeklyAppointments } from "~/hooks/use-appointments";
 import CalendarEvent, {
@@ -55,6 +69,7 @@ import AppointmentModal, {
 } from "~/components/appointments/appointment-modal";
 import { getAgentsForFilterAction } from "~/server/actions/appointments";
 import { useGoogleCalendarIntegration } from "~/hooks/use-google-calendar-integration";
+import { GoogleCalendarSyncSettings } from "~/components/calendar/google-calendar-sync-settings";
 
 // Appointment types configuration
 const appointmentTypes = {
@@ -164,8 +179,10 @@ export default function AppointmentsPage() {
   } = useAppointmentModal();
 
   // Use Google Calendar integration
-  const { integration, connect, disconnect, syncNow } =
+  const { integration, connect, disconnect, syncNow, updateSyncDirection } =
     useGoogleCalendarIntegration();
+    
+  const [syncSettingsOpen, setSyncSettingsOpen] = useState(false);
 
   // Fetch agents for filter on component mount
   useEffect(() => {
@@ -509,17 +526,9 @@ export default function AppointmentsPage() {
                       <CheckCircle2 className="h-4 w-4 text-green-600" />
                       <RefreshCw
                         className={cn(
-                          "h-4 w-4 cursor-pointer text-muted-foreground transition-colors hover:text-blue-600",
+                          "h-4 w-4 text-muted-foreground opacity-50",
                           integration.loading && "animate-spin",
                         )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void syncNow()
-                            .then((result) => {
-                              if (result.success) void refetch();
-                            })
-                            .catch(console.error);
-                        }}
                       />
                       <XCircle
                         className="h-4 w-4 cursor-pointer text-muted-foreground transition-colors hover:text-red-600"
@@ -530,6 +539,13 @@ export default function AppointmentsPage() {
                               if (result.success) void refetch();
                             })
                             .catch(console.error);
+                        }}
+                      />
+                      <Settings
+                        className="h-4 w-4 cursor-pointer text-muted-foreground transition-colors hover:text-blue-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSyncSettingsOpen(true);
                         }}
                       />
                     </div>
@@ -1054,6 +1070,14 @@ export default function AppointmentsPage() {
         addOptimisticEvent={addOptimisticEvent}
         removeOptimisticEvent={removeOptimisticEvent}
         updateOptimisticEvent={updateOptimisticEvent}
+      />
+
+      <GoogleCalendarSyncSettings
+        open={syncSettingsOpen}
+        onOpenChange={setSyncSettingsOpen}
+        currentDirection={integration.syncDirection}
+        onDirectionChange={updateSyncDirection}
+        loading={integration.loading}
       />
     </div>
   );

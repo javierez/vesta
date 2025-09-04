@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "../db";
-import { accounts, users } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { accounts, users, userIntegrations } from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import type {
   AccountSettings,
   AccountInput,
@@ -215,5 +215,56 @@ export async function getAccountIdForUser(
   } catch (error) {
     console.error("Error fetching account ID for user:", error);
     return null;
+  }
+}
+
+// Google Calendar Integration Settings
+export async function getGoogleCalendarSyncDirection(
+  userId: string,
+): Promise<"bidirectional" | "vesta_to_google" | "google_to_vesta" | "none" | null> {
+  try {
+    const [integration] = await db
+      .select({
+        syncDirection: userIntegrations.syncDirection,
+      })
+      .from(userIntegrations)
+      .where(
+        and(
+          eq(userIntegrations.userId, userId),
+          eq(userIntegrations.provider, "google_calendar"),
+          eq(userIntegrations.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    return (integration?.syncDirection as "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none") ?? null;
+  } catch (error) {
+    console.error("Error getting Google Calendar sync direction:", error);
+    throw new Error("Failed to get sync direction");
+  }
+}
+
+export async function updateGoogleCalendarSyncDirection(
+  userId: string,
+  syncDirection: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none",
+): Promise<boolean> {
+  try {
+    await db
+      .update(userIntegrations)
+      .set({
+        syncDirection,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(userIntegrations.userId, userId),
+          eq(userIntegrations.provider, "google_calendar"),
+        ),
+      );
+
+    return true;
+  } catch (error) {
+    console.error("Error updating Google Calendar sync direction:", error);
+    throw new Error("Failed to update sync direction");
   }
 }

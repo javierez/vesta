@@ -509,6 +509,7 @@ export const userIntegrations = singlestoreTable("user_integrations", {
   channelId: varchar("channel_id", { length: 64 }), // Webhook channel ID
   resourceId: varchar("resource_id", { length: 255 }), // Webhook resource ID
   channelExpiration: timestamp("channel_expiration"),
+  syncDirection: varchar("sync_direction", { length: 20 }).default("bidirectional"), // "bidirectional", "vesta_to_google", "google_to_vesta", "none"
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
