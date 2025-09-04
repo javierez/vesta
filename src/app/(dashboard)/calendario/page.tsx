@@ -59,7 +59,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Label } from "~/components/ui/label";
 import Image from "next/image"; // Add Image import for optimized images
-import { useWeeklyAppointments } from "~/hooks/use-appointments";
+import { useWeeklyAppointments } from "~/hooks/use-cached-calendar";
 import CalendarEvent, {
   ListCalendarEvent,
   CompactCalendarEvent,
