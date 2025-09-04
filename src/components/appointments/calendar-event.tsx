@@ -24,6 +24,8 @@ interface CalendarEvent {
   type: string;
   tripTimeMinutes?: number;
   notes?: string;
+  // Optimistic update flag
+  isOptimistic?: boolean;
 }
 
 interface CalendarEventProps {
@@ -93,7 +95,7 @@ export default function CalendarEvent({
   const statusConfig = statusColors[event.status] || statusColors.Scheduled;
   
   // Apply visual indicators for optimistic events
-  const isOptimisticEvent = event.isOptimistic === true;
+  const isOptimisticEvent = event.isOptimistic ?? false;
   const optimisticStyles = isOptimisticEvent 
     ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse" 
     : "";
@@ -216,7 +218,7 @@ export function CompactCalendarEvent({
   const statusConfig = statusColors[event.status] || statusColors.Scheduled;
   
   // Apply visual indicators for optimistic events
-  const isOptimisticEvent = event.isOptimistic === true;
+  const isOptimisticEvent = event.isOptimistic ?? false;
   const optimisticStyles = isOptimisticEvent 
     ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse" 
     : "";
@@ -298,7 +300,7 @@ export function ListCalendarEvent({
   };
 
   // Apply visual indicators for optimistic events
-  const isOptimisticEvent = event.isOptimistic === true;
+  const isOptimisticEvent = event.isOptimistic ?? false;
   const optimisticStyles = isOptimisticEvent 
     ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse" 
     : "";
