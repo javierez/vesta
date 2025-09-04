@@ -31,8 +31,6 @@ import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { ContactComments } from "./contact-comments";
 import {
   createTaskWithAuth,
-  updateContactTaskWithAuth,
-  deleteContactTaskWithAuth,
 } from "~/server/queries/task";
 import { getContactListingsForTasksWithAuth } from "~/server/queries/user-comments";
 import { useSession } from "~/lib/auth-client";
@@ -102,16 +100,31 @@ interface ContactTareasProps {
   tasks?: Task[];
   loading?: boolean;
   comments?: UserCommentWithUser[];
+  onToggleCompleted: (taskId: string) => Promise<void>;
+  onDeleteTask: (taskId: string) => Promise<void>;
+  onAddTask: (task: Task) => Promise<Task>;
+  onUpdateTaskAfterSave: (optimisticId: string, savedTask: Task) => void;
+  onRemoveOptimisticTask: (optimisticId: string) => void;
+  onAddComment: (comment: UserCommentWithUser) => Promise<{ success: boolean; error?: string }>;
+  onEditComment: (commentId: bigint, content: string) => Promise<{ success: boolean; error?: string }>;
+  onDeleteComment: (commentId: bigint) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function ContactTareas({
   contactId,
-  tasks: initialTasks = [],
+  tasks = [],
   loading: externalLoading,
   comments: initialComments = [],
+  onToggleCompleted,
+  onDeleteTask,
+  onAddTask,
+  onUpdateTaskAfterSave,
+  onRemoveOptimisticTask,
+  onAddComment,
+  onEditComment,
+  onDeleteComment,
 }: ContactTareasProps) {
   const { data: session } = useSession();
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isAdding, setIsAdding] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
@@ -163,10 +176,6 @@ export function ContactTareas({
     void loadContactListings();
   }, [contactId]);
 
-  // Update tasks when props change
-  useEffect(() => {
-    setTasks(initialTasks);
-  }, [initialTasks]);
 
   // Initialize agent selection with current user when starting to add a task
   useEffect(() => {
@@ -235,8 +244,8 @@ export function ContactTareas({
       isActive: true,
     };
 
-    // OPTIMISTIC UPDATE: Add task to UI immediately
-    setTasks([optimisticTask, ...tasks]);
+    // OPTIMISTIC UPDATE: Add task to UI immediately via parent
+    await onAddTask(optimisticTask);
     setTaskStates((prev) => ({ ...prev, [optimisticId]: "saving" }));
 
     // Clear form
@@ -278,21 +287,17 @@ export function ContactTareas({
         throw new Error('Failed to save task');
       }
 
-      // SUCCESS: Update with server response
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === optimisticId
-            ? ({
-                ...task,
-                taskId: savedTask.taskId ? BigInt(savedTask.taskId) : undefined,
-                createdAt: new Date(savedTask.createdAt),
-                updatedAt: savedTask.updatedAt
-                  ? new Date(savedTask.updatedAt)
-                  : undefined,
-              } as Task)
-            : task,
-        ),
-      );
+      // SUCCESS: Update with server response via parent
+      const updatedTask: Task = {
+        ...optimisticTask,
+        taskId: savedTask.taskId ? BigInt(savedTask.taskId) : undefined,
+        createdAt: new Date(savedTask.createdAt),
+        updatedAt: savedTask.updatedAt
+          ? new Date(savedTask.updatedAt)
+          : undefined,
+      };
+      
+      onUpdateTaskAfterSave(optimisticId, updatedTask);
       setTaskStates((prev) => ({ ...prev, [optimisticId]: "saved" }));
 
       // Clear draft after successful save
@@ -310,10 +315,8 @@ export function ContactTareas({
     } catch (error) {
       console.error("Error saving task:", error);
 
-      // ERROR: Revert optimistic update
-      setTasks((prevTasks) =>
-        prevTasks.filter((task) => task.id !== optimisticId),
-      );
+      // ERROR: Revert optimistic update via parent
+      onRemoveOptimisticTask(optimisticId);
       setTaskStates((prev) => ({ ...prev, [optimisticId]: "error" }));
       setSaveError(
         error instanceof Error ? error.message : "Failed to save task",
@@ -338,47 +341,11 @@ export function ContactTareas({
   };
 
   const handleToggleCompleted = async (id: string) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task?.taskId) return;
-
-    const newCompleted = !task.completed;
-
-    // Optimistic update
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: newCompleted } : task,
-      ),
-    );
-
-    try {
-      await updateContactTaskWithAuth(Number(task.taskId), {
-        completed: newCompleted,
-      });
-    } catch (error) {
-      console.error("Error updating task:", error);
-      // Revert optimistic update on error
-      setTasks(
-        tasks.map((task) =>
-          task.id === id ? { ...task, completed: !newCompleted } : task,
-        ),
-      );
-    }
+    await onToggleCompleted(id);
   };
 
   const handleDeleteTask = async (id: string) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task?.taskId) return;
-
-    // Optimistic update: remove from UI immediately
-    setTasks(tasks.filter((task) => task.id !== id));
-
-    try {
-      await deleteContactTaskWithAuth(Number(task.taskId));
-    } catch (error) {
-      console.error("Error deleting task:", error);
-      // Revert optimistic update on error
-      setTasks((prevTasks) => [...prevTasks, task]);
-    }
+    await onDeleteTask(id);
   };
 
   const toggleDescriptionExpansion = (taskId: string, e: React.MouseEvent) => {
@@ -495,7 +462,7 @@ export function ContactTareas({
                   </SelectTrigger>
                   <SelectContent>
                     {contactListings.length === 0 ? (
-                      <SelectItem value="no-properties" disabled>
+                      <SelectItem value="no-properties" disabled className="pl-2">
                         No hay propiedades asociadas
                       </SelectItem>
                     ) : (
@@ -503,7 +470,7 @@ export function ContactTareas({
                         <SelectItem 
                           key={listing.listingContactId} 
                           value={listing.listingId.toString()}
-                          className="text-left"
+                          className="text-left pl-2"
                         >
                           {listing.street ?? 'Sin dirección'} - {listing.city}, {listing.province} ({listing.contactType})
                         </SelectItem>
@@ -858,6 +825,9 @@ export function ContactTareas({
                 }
               : undefined
           }
+          onAddComment={onAddComment}
+          onEditComment={onEditComment}
+          onDeleteComment={onDeleteComment}
         />
       </div>
     </div>

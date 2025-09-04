@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, useOptimistic, useTransition, useEffect } from "react";
+import { useState, useTransition, useOptimistic } from "react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card, CardContent } from "~/components/ui/card";
-import { MessageCircle, Reply, Edit2, Trash2 } from "lucide-react";
+import { MessageCircle, Reply, Edit2, Trash2, Loader2, CheckCircle2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import type { UserCommentWithUser } from "~/types/user-comments";
-import {
-  createUserCommentAction,
-  updateUserCommentAction,
-  deleteUserCommentAction,
-} from "~/server/actions/user-comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+
+// Extended UserComment type with status
+interface CommentWithStatus extends UserCommentWithUser {
+  status?: 'sending' | 'sent' | 'error';
+}
 
 interface ContactCommentsProps {
   contactId: bigint;
@@ -26,10 +26,13 @@ interface ContactCommentsProps {
     name?: string;
     image?: string;
   };
+  onAddComment: (comment: UserCommentWithUser) => Promise<{ success: boolean; error?: string }>;
+  onEditComment: (commentId: bigint, content: string) => Promise<{ success: boolean; error?: string }>;
+  onDeleteComment: (commentId: bigint) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface UserCommentItemProps {
-  comment: UserCommentWithUser;
+  comment: CommentWithStatus;
   isReply?: boolean;
   currentUserId?: string;
   replyingTo: bigint | null;
@@ -148,19 +151,18 @@ function UserCommentItem({
               >
                 {comment.user.name}
               </span>
-              {comment.userId === "temp" && (
-                <div className="flex items-center space-x-1">
-                  <div className="h-1 w-1 animate-bounce rounded-full bg-blue-500"></div>
-                  <div
-                    className="h-1 w-1 animate-bounce rounded-full bg-blue-500"
-                    style={{ animationDelay: "0.1s" }}
-                  ></div>
-                  <div
-                    className="h-1 w-1 animate-bounce rounded-full bg-blue-500"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
-                </div>
+              
+              {/* Status indicator */}
+              {comment.status === 'sending' && (
+                <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
               )}
+              {comment.status === 'sent' && currentUserId === comment.userId && (
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+              )}
+              {comment.status === 'error' && (
+                <div className="h-3 w-3 rounded-full bg-red-500" title="Error al enviar" />
+              )}
+              
               <span
                 className={`text-gray-500 ${isReply ? "text-xs" : "text-xs"}`}
               >
@@ -283,8 +285,10 @@ export function ContactComments({
   initialComments = [],
   currentUserId,
   currentUser,
+  onAddComment,
+  onEditComment,
+  onDeleteComment,
 }: ContactCommentsProps) {
-  const [comments, setComments] = useState(initialComments);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<bigint | null>(null);
 
@@ -300,17 +304,19 @@ export function ContactComments({
     return "UA";
   };
 
+  // Optimistic comments with status tracking
   const [optimisticComments, addOptimisticComment] = useOptimistic(
-    comments,
+    initialComments.map(comment => ({ ...comment, status: 'sent' as const })),
     (
-      state,
+      state: CommentWithStatus[],
       action: {
         type: string;
-        comment?: UserCommentWithUser;
+        comment?: CommentWithStatus;
         commentId?: string;
-        updatedComment?: UserCommentWithUser;
+        status?: 'sending' | 'sent' | 'error';
+        updatedComment?: CommentWithStatus;
         parentId?: string;
-        reply?: UserCommentWithUser;
+        reply?: CommentWithStatus;
         content?: string;
       },
     ) => {
@@ -326,7 +332,7 @@ export function ContactComments({
             ) {
               return {
                 ...comment,
-                replies: [...comment.replies, action.reply],
+                replies: [...comment.replies.map(r => ({ ...r, status: 'sent' as const })), action.reply],
               };
             }
             return comment;
@@ -344,6 +350,25 @@ export function ContactComments({
                 replies: comment.replies.map((reply) =>
                   reply.commentId.toString() === action.commentId
                     ? { ...reply, content: action.content! }
+                    : reply,
+                ),
+              };
+            });
+          }
+          return state;
+
+        case "UPDATE_STATUS":
+          if (action.commentId && action.status) {
+            return state.map((comment) => {
+              if (comment.commentId.toString() === action.commentId) {
+                return { ...comment, status: action.status! };
+              }
+              // Also check replies
+              return {
+                ...comment,
+                replies: comment.replies.map((reply) =>
+                  reply.commentId.toString() === action.commentId
+                    ? { ...reply, status: action.status! }
                     : reply,
                 ),
               };
@@ -370,9 +395,6 @@ export function ContactComments({
     },
   );
 
-  useEffect(() => {
-    setComments(initialComments);
-  }, [initialComments]);
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
   const [newComment, setNewComment] = useState("");
@@ -386,7 +408,7 @@ export function ContactComments({
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
 
-    const tempComment: UserCommentWithUser = {
+    const tempComment: CommentWithStatus = {
       commentId: BigInt(Date.now()),
       contactId,
       userId: currentUserId ?? "temp",
@@ -402,45 +424,43 @@ export function ContactComments({
         image: currentUser?.image,
       },
       replies: [],
+      status: 'sending',
     };
 
-    // Non-blocking: Store comment content and clear form immediately
-    const commentContent = newComment;
-    setNewComment(""); // Clear immediately so user can type more
+    // Clear form immediately so user can type more
+    setNewComment("");
 
-    // Process optimistic update and server request in transition
+    // Call parent function and add optimistic comment inside transition
     startTransition(async () => {
-      // Add optimistic comment inside transition
+      // Add optimistic comment with "sending" status
       addOptimisticComment({ type: "ADD_COMMENT", comment: tempComment });
       try {
-        const result = await createUserCommentAction({
-          contactId,
-          content: commentContent,
-        });
+        const result = await onAddComment(tempComment);
 
         if (!result.success) {
-          toast.error(result.error ?? "Error al crear el comentario");
-          // Revert optimistic update on error
+          // Update status to error
           addOptimisticComment({
-            type: "DELETE_COMMENT",
+            type: "UPDATE_STATUS",
             commentId: tempComment.commentId.toString(),
+            status: 'error'
           });
+          toast.error(result.error ?? "Error al crear el comentario");
         } else {
-          // Refetch comments to get the real data with user info
-          try {
-            const { getUserCommentsByContactIdWithAuth } = await import(
-              "~/server/queries/user-comments"
-            );
-            const freshComments =
-              await getUserCommentsByContactIdWithAuth(contactId);
-            setComments(freshComments);
-          } catch {
-            // If refetch fails, optimistic update remains
-          }
-          toast.success("Comentario creado exitosamente");
+          // Update status to sent
+          addOptimisticComment({
+            type: "UPDATE_STATUS",
+            commentId: tempComment.commentId.toString(),
+            status: 'sent'
+          });
         }
       } catch (error) {
         console.error("Error creating comment:", error);
+        // Update status to error
+        addOptimisticComment({
+          type: "UPDATE_STATUS",
+          commentId: tempComment.commentId.toString(),
+          status: 'error'
+        });
         toast.error("Error interno del servidor");
       }
     });
@@ -450,8 +470,8 @@ export function ContactComments({
     const content = replyContents[parentId.toString()] ?? "";
     if (!content.trim()) return;
 
-    // Create optimistic reply with current user info
-    const tempReply: UserCommentWithUser = {
+    // Create reply with current user info and sending status
+    const tempReply: CommentWithStatus = {
       commentId: BigInt(Date.now()),
       contactId,
       userId: currentUserId ?? "temp",
@@ -467,50 +487,48 @@ export function ContactComments({
         image: currentUser?.image,
       },
       replies: [],
+      status: 'sending',
     };
 
-    // Non-blocking: Clear form and close reply UI immediately so user can continue
+    // Clear form and close reply UI immediately so user can continue
     setReplyContents((prev) => ({ ...prev, [parentId.toString()]: "" }));
     setReplyingTo(null);
 
-    // Process optimistic update and server request in transition
+    // Call parent function and add optimistic reply inside transition
     startTransition(async () => {
-      // Add optimistic reply inside transition
+      // Add optimistic reply with "sending" status
       addOptimisticComment({
         type: "ADD_REPLY",
         parentId: parentId.toString(),
         reply: tempReply,
       });
       try {
-        const result = await createUserCommentAction({
-          contactId,
-          content: content,
-          parentId,
-        });
+        const result = await onAddComment(tempReply);
 
         if (!result.success) {
-          toast.error(result.error ?? "Error al crear la respuesta");
-          // Revert optimistic update on error
+          // Update status to error
           addOptimisticComment({
-            type: "DELETE_REPLY",
+            type: "UPDATE_STATUS",
             commentId: tempReply.commentId.toString(),
+            status: 'error'
           });
+          toast.error(result.error ?? "Error al crear la respuesta");
         } else {
-          // Refetch comments to get the real data with user info
-          try {
-            const { getUserCommentsByContactIdWithAuth } = await import(
-              "~/server/queries/user-comments"
-            );
-            const freshComments =
-              await getUserCommentsByContactIdWithAuth(contactId);
-            setComments(freshComments);
-          } catch {
-            // If refetch fails, optimistic update remains
-          }
-          toast.success("Respuesta creada exitosamente");
+          // Update status to sent
+          addOptimisticComment({
+            type: "UPDATE_STATUS",
+            commentId: tempReply.commentId.toString(),
+            status: 'sent'
+          });
         }
       } catch (error) {
         console.error("Error creating reply:", error);
+        // Update status to error
+        addOptimisticComment({
+          type: "UPDATE_STATUS",
+          commentId: tempReply.commentId.toString(),
+          status: 'error'
+        });
         toast.error("Error interno del servidor");
       }
     });
@@ -519,119 +537,37 @@ export function ContactComments({
   const handleEditComment = async (commentId: bigint) => {
     if (!editContent.trim()) return;
 
-    // Store original content for potential reversion
-    const originalComment =
-      optimisticComments.find((c) => c.commentId === commentId) ??
-      optimisticComments
-        .find((c) => c.replies.some((r) => r.commentId === commentId))
-        ?.replies.find((r) => r.commentId === commentId);
-    const originalContent = originalComment?.content ?? "";
-
     // Store edit content and exit edit mode immediately for instant UX
     const newContent = editContent;
     setEditingComment(null);
     setEditContent("");
 
+    // Call parent function - parent handles optimistic updates
     startTransition(async () => {
-      // Optimistically update comment content immediately
-      addOptimisticComment({
-        type: "UPDATE_COMMENT",
-        commentId: commentId.toString(),
-        content: newContent,
-      });
-
       try {
-        const result = await updateUserCommentAction({
-          commentId,
-          content: newContent,
-        });
+        const result = await onEditComment(commentId, newContent);
 
         if (!result.success) {
           toast.error(result.error ?? "Error al editar el comentario");
-          // Revert optimistic update to original content
-          addOptimisticComment({
-            type: "UPDATE_COMMENT",
-            commentId: commentId.toString(),
-            content: originalContent,
-          });
         } else {
-          // Success - optimistic update was correct, just show success message
           toast.success("Comentario editado exitosamente");
         }
       } catch (error) {
         console.error("Error editing comment:", error);
         toast.error("Error interno del servidor");
-        // Revert optimistic update to original content
-        addOptimisticComment({
-          type: "UPDATE_COMMENT",
-          commentId: commentId.toString(),
-          content: originalContent,
-        });
       }
     });
   };
 
   const handleDeleteComment = async (commentId: bigint) => {
+    // Call parent function - parent handles optimistic updates
     startDeleteTransition(async () => {
-      // Check if it's a parent comment with replies
-      const parentComment = optimisticComments.find(
-        (comment) => comment.commentId === commentId,
-      );
-      const isReply = optimisticComments.some((comment) =>
-        comment.replies.some((reply) => reply.commentId === commentId),
-      );
-
-      if (isReply) {
-        // Simple reply delete
-        addOptimisticComment({
-          type: "DELETE_REPLY",
-          commentId: commentId.toString(),
-        });
-      } else if (parentComment && parentComment.replies.length > 0) {
-        // Parent comment with replies - cascade delete
-        console.log(
-          `Optimistically deleting parent comment with ${parentComment.replies.length} replies`,
-        );
-        addOptimisticComment({
-          type: "DELETE_COMMENT",
-          commentId: commentId.toString(),
-        });
-      } else {
-        // Parent comment without replies
-        addOptimisticComment({
-          type: "DELETE_COMMENT",
-          commentId: commentId.toString(),
-        });
-      }
-
       try {
-        const result = await deleteUserCommentAction(commentId);
+        const result = await onDeleteComment(commentId);
 
         if (!result.success) {
           toast.error(result.error ?? "Error al eliminar el comentario");
-          // Revert optimistic delete by refetching comments
-          try {
-            const { getUserCommentsByContactIdWithAuth } = await import(
-              "~/server/queries/user-comments"
-            );
-            const freshComments =
-              await getUserCommentsByContactIdWithAuth(contactId);
-            setComments(freshComments);
-          } catch {
-            // If refetch fails, do nothing - optimistic update remains
-          }
         } else {
-          // Refetch comments after successful delete to ensure consistency
-          try {
-            const { getUserCommentsByContactIdWithAuth } = await import(
-              "~/server/queries/user-comments"
-            );
-            const freshComments =
-              await getUserCommentsByContactIdWithAuth(contactId);
-            setComments(freshComments);
-          } catch {
-            // If refetch fails, optimistic update remains which is still good
-          }
           toast.success("Comentario eliminado exitosamente");
         }
       } catch (error) {

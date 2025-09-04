@@ -11,7 +11,7 @@ import { Badge } from "~/components/ui/badge";
 import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp, Key } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Comments } from "./comments";
-import { createTaskWithAuth, updateListingTaskWithAuth, deleteListingTaskWithAuth } from "~/server/queries/task";
+import { createTaskWithAuth } from "~/server/queries/task";
 import { getLeadsByListingIdWithAuth } from "~/server/queries/lead";
 import { getDealsByListingIdWithAuth } from "~/server/queries/deal";
 import { toggleListingKeysWithAuth, getListingDetailsWithAuth } from "~/server/queries/listing";
@@ -107,11 +107,33 @@ interface TareasProps {
   tasks: Task[];
   loading?: boolean;
   comments?: CommentWithUser[];
+  onToggleCompleted: (taskId: string) => Promise<void>;
+  onDeleteTask: (taskId: string) => Promise<void>;
+  onAddTask: (task: Task) => Promise<Task>;
+  onUpdateTaskAfterSave: (optimisticId: string, savedTask: Task) => void;
+  onRemoveOptimisticTask: (optimisticId: string) => void;
+  onAddComment: (comment: CommentWithUser) => Promise<{ success: boolean; error?: string }>;
+  onEditComment: (commentId: bigint, content: string) => Promise<{ success: boolean; error?: string }>;
+  onDeleteComment: (commentId: bigint) => Promise<{ success: boolean; error?: string }>;
 }
 
-export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialTasks, loading: externalLoading, comments: initialComments = [] }: TareasProps) {
+export function Tareas({ 
+  propertyId, 
+  listingId, 
+  referenceNumber, 
+  tasks, 
+  loading: externalLoading, 
+  comments: initialComments = [],
+  onToggleCompleted,
+  onDeleteTask,
+  onAddTask,
+  onUpdateTaskAfterSave,
+  onRemoveOptimisticTask,
+  onAddComment,
+  onEditComment,
+  onDeleteComment,
+}: TareasProps) {
   const { data: session } = useSession();
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isAdding, setIsAdding] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
@@ -126,7 +148,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasKeys, setHasKeys] = useState<boolean | null>(null);
+  const [hasKeys, setHasKeys] = useState<boolean>(false);
   const [keysLoading, setKeysLoading] = useState(false);
 
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -147,10 +169,6 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     appointments: false,
   });
 
-  // Update tasks when props change
-  useEffect(() => {
-    setTasks(initialTasks);
-  }, [initialTasks]);
 
   // Fetch initial hasKeys value
   useEffect(() => {
@@ -414,8 +432,8 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
       relatedAppointment
     };
 
-    // OPTIMISTIC UPDATE: Add task to UI immediately
-    setTasks([optimisticTask, ...tasks]);
+    // OPTIMISTIC UPDATE: Add task to UI immediately via parent
+    await onAddTask(optimisticTask);
     setTaskStates(prev => ({ ...prev, [optimisticId]: 'saving' }));
     
     // Clear form
@@ -467,14 +485,8 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
         isActive: savedTask.isActive ?? true,
       };
       
-      // SUCCESS: Update with server response
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === optimisticId 
-            ? { ...task, ...savedTaskForComponent } as Task
-            : task
-        )
-      );
+      // SUCCESS: Update with server response via parent
+      onUpdateTaskAfterSave(optimisticId, savedTaskForComponent as Task);
       setTaskStates(prev => ({ ...prev, [optimisticId]: 'saved' }));
       
       // Clear draft after successful save
@@ -493,8 +505,8 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
     } catch (error) {
       console.error('Error saving task:', error);
       
-      // ERROR: Revert optimistic update
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== optimisticId));
+      // ERROR: Revert optimistic update via parent
+      onRemoveOptimisticTask(optimisticId);
       setTaskStates(prev => ({ ...prev, [optimisticId]: 'error' }));
       setSaveError(error instanceof Error ? error.message : 'Failed to save task');
       
@@ -517,41 +529,11 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
   };
 
   const handleToggleCompleted = async (id: string) => {
-    const task = tasks.find(t => t.id === id);
-    if (!task?.taskId) return;
-
-    const newCompleted = !task.completed;
-
-    // Optimistic update
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: newCompleted } : task
-    ));
-
-    try {
-      await updateListingTaskWithAuth(Number(task.taskId), { completed: newCompleted });
-    } catch (error) {
-      console.error('Error updating task:', error);
-      // Revert optimistic update on error
-      setTasks(tasks.map(task => 
-        task.id === id ? { ...task, completed: !newCompleted } : task
-      ));
-    }
+    await onToggleCompleted(id);
   };
 
   const handleDeleteTask = async (id: string) => {
-    const task = tasks.find(t => t.id === id);
-    if (!task?.taskId) return;
-
-    // Optimistic update: remove from UI immediately
-    setTasks(tasks.filter(task => task.id !== id));
-
-    try {
-      await deleteListingTaskWithAuth(Number(task.taskId));
-    } catch (error) {
-      console.error('Error deleting task:', error);
-      // Revert optimistic update on error
-      setTasks(prevTasks => [...prevTasks, task]);
-    }
+    await onDeleteTask(id);
   };
 
   const handleToggleKeys = async () => {
@@ -605,7 +587,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
         <div className="flex items-center">
           <Button
             onClick={handleToggleKeys}
-            disabled={keysLoading || hasKeys === null}
+            disabled={keysLoading}
             size="sm"
             variant={hasKeys ? "default" : "outline"}
             className={`w-10 h-10 rounded-full p-0 transition-all duration-200 ${
@@ -975,7 +957,7 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
                       variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
-                        void handleDeleteTask(task.id);
+                        void handleDeleteTask(task.taskId?.toString() ?? task.id);
                       }}
                       className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded-lg"
                     >
@@ -1002,6 +984,9 @@ export function Tareas({ propertyId, listingId, referenceNumber, tasks: initialT
             name: session.user.name ?? undefined,
             image: session.user.image ?? undefined
           } : undefined}
+          onAddComment={onAddComment}
+          onEditComment={onEditComment}
+          onDeleteComment={onDeleteComment}
         />
       </div>
     </div>

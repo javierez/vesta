@@ -12,9 +12,15 @@ import { CharacteristicsSkeleton } from "./skeletons";
 import { useSession } from "~/lib/auth-client";
 import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
-import { getListingTasksWithAuth } from "~/server/queries/task";
+import { 
+  getListingTasksWithAuth,
+  updateListingTaskWithAuth,
+  deleteListingTaskWithAuth
+} from "~/server/queries/task";
 import { getCommentsByListingIdWithAuth } from "~/server/queries/comments";
+import { createCommentAction, updateCommentAction, deleteCommentAction } from "~/server/actions/comments";
 import type { CommentWithUser } from "~/types/comments";
+import { toast } from "sonner";
 
 // Task type that matches what Tareas component expects
 interface TaskWithId {
@@ -144,6 +150,151 @@ export function PropertyTabs({
     }
   }, [listing.listingId]); // Removed tabData.tasks dependency to prevent infinite loop
 
+  // Task update functions
+  const handleToggleTaskCompleted = async (taskId: string) => {
+    const tasks = tabData.tasks ?? [];
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task?.taskId) return;
+
+    const newCompleted = !task.completed;
+
+    // Optimistic update
+    setTabData((prev) => ({
+      ...prev,
+      tasks: prev.tasks?.map((t) =>
+        t.id === taskId ? { ...t, completed: newCompleted } : t
+      ) ?? null
+    }));
+
+    try {
+      await updateListingTaskWithAuth(Number(task.taskId), {
+        completed: newCompleted,
+      });
+    } catch (error) {
+      console.error("Error updating task:", error);
+      // Revert optimistic update on error
+      setTabData((prev) => ({
+        ...prev,
+        tasks: prev.tasks?.map((t) =>
+          t.id === taskId ? { ...t, completed: !newCompleted } : t
+        ) ?? null
+      }));
+      toast.error("Error al actualizar la tarea");
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    const tasks = tabData.tasks ?? [];
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task?.taskId) return;
+
+    // Optimistic update: remove from UI immediately
+    const previousTasks = tabData.tasks;
+    setTabData((prev) => ({
+      ...prev,
+      tasks: prev.tasks?.filter((t) => t.id !== taskId) ?? null
+    }));
+
+    try {
+      await deleteListingTaskWithAuth(Number(task.taskId));
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      // Revert optimistic update on error
+      setTabData((prev) => ({
+        ...prev,
+        tasks: previousTasks
+      }));
+      toast.error("Error al eliminar la tarea");
+    }
+  };
+
+  const handleAddTask = async (newTask: TaskWithId) => {
+    // Add task optimistically
+    setTabData((prev) => ({
+      ...prev,
+      tasks: prev.tasks ? [newTask, ...prev.tasks] : [newTask]
+    }));
+    return newTask;
+  };
+
+  const handleUpdateTaskAfterSave = (optimisticId: string, savedTask: TaskWithId) => {
+    // Update with server response
+    setTabData((prev) => ({
+      ...prev,
+      tasks: prev.tasks?.map((task) =>
+        task.id === optimisticId ? savedTask : task
+      ) ?? null
+    }));
+  };
+
+  const handleRemoveOptimisticTask = (optimisticId: string) => {
+    // Remove optimistic task on error
+    setTabData((prev) => ({
+      ...prev,
+      tasks: prev.tasks?.filter((task) => task.id !== optimisticId) ?? null
+    }));
+  };
+
+  // Comment update functions
+  const handleAddComment = async (tempComment: CommentWithUser): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const result = await createCommentAction({
+        listingId: tempComment.listingId,
+        propertyId: tempComment.propertyId,
+        content: tempComment.content,
+        parentId: tempComment.parentId,
+      });
+
+      if (result.success) {
+        // Refresh comments data after successful creation
+        await fetchCommentsData();
+        return { success: true };
+      } else {
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      return { success: false, error: "Error interno del servidor" };
+    }
+  };
+
+  const handleEditComment = async (commentId: bigint, content: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const result = await updateCommentAction({
+        commentId,
+        content,
+      });
+
+      if (result.success) {
+        // Refresh comments data after successful update
+        await fetchCommentsData();
+        return { success: true };
+      } else {
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error("Error editing comment:", error);
+      return { success: false, error: "Error interno del servidor" };
+    }
+  };
+
+  const handleDeleteComment = async (commentId: bigint): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const result = await deleteCommentAction(commentId);
+
+      if (result.success) {
+        // Refresh comments data after successful deletion
+        await fetchCommentsData();
+        return { success: true };
+      } else {
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      return { success: false, error: "Error interno del servidor" };
+    }
+  };
+
   const fetchAgentsData = useCallback(async () => {
     setLoading((prev) => ({ ...prev, agents: true }));
     try {
@@ -199,11 +350,11 @@ export function PropertyTabs({
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
         <TabsTrigger value="general">General</TabsTrigger>
+        <TabsTrigger value="tareas">Tareas</TabsTrigger>
         <TabsTrigger value="imagenes">Imágenes</TabsTrigger>
         <TabsTrigger value="portales">Portales</TabsTrigger>
         <TabsTrigger value="certificado">Certificado</TabsTrigger>
         <TabsTrigger value="documentos">Documentos</TabsTrigger>
-        <TabsTrigger value="tareas">Tareas</TabsTrigger>
       </TabsList>
 
       <TabsContent value="general" className="mt-6">
@@ -219,6 +370,27 @@ export function PropertyTabs({
               <p>No se pudo cargar la información de la propiedad</p>
             </div>
           )}
+        </div>
+      </TabsContent>
+
+      <TabsContent value="tareas" className="mt-6">
+        <div className="mx-auto max-w-6xl">
+          <Tareas
+            propertyId={listing.propertyId}
+            listingId={listing.listingId}
+            referenceNumber={listing.referenceNumber ?? ""}
+            tasks={tabData.tasks ?? []}
+            loading={loading.tasks}
+            comments={tabData.comments ?? []}
+            onToggleCompleted={handleToggleTaskCompleted}
+            onDeleteTask={handleDeleteTask}
+            onAddTask={handleAddTask}
+            onUpdateTaskAfterSave={handleUpdateTaskAfterSave}
+            onRemoveOptimisticTask={handleRemoveOptimisticTask}
+            onAddComment={handleAddComment}
+            onEditComment={handleEditComment}
+            onDeleteComment={handleDeleteComment}
+          />
         </div>
       </TabsContent>
 
@@ -279,19 +451,6 @@ export function PropertyTabs({
             propertyId={listing.propertyId}
             listingId={listing.listingId}
             referenceNumber={listing.referenceNumber ?? ""}
-          />
-        </div>
-      </TabsContent>
-
-      <TabsContent value="tareas" className="mt-6">
-        <div className="mx-auto max-w-6xl">
-          <Tareas
-            propertyId={listing.propertyId}
-            listingId={listing.listingId}
-            referenceNumber={listing.referenceNumber ?? ""}
-            tasks={tabData.tasks ?? []}
-            loading={loading.tasks}
-            comments={tabData.comments ?? []}
           />
         </div>
       </TabsContent>

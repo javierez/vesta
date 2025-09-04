@@ -464,7 +464,8 @@ export async function getContactListingsForTasks(contactId: bigint, accountId: n
         and(
           eq(listingContacts.contactId, contactId),
           eq(contacts.accountId, BigInt(accountId)),
-          eq(listings.isActive, true)
+          eq(listings.isActive, true),
+          eq(listingContacts.isActive, true)
         )
       )
       .orderBy(desc(listingContacts.createdAt));
