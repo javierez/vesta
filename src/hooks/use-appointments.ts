@@ -230,8 +230,8 @@ export function useAppointments(): UseAppointmentsReturn {
     refetch: fetchAppointments,
     fetchByDateRange,
     addOptimisticEvent: () => BigInt(0), // Placeholder implementation
-    removeOptimisticEvent: () => {}, // Placeholder implementation
-    updateOptimisticEvent: () => {}, // Placeholder implementation
+    removeOptimisticEvent: () => { /* placeholder */ }, // Placeholder implementation  
+    updateOptimisticEvent: () => { /* placeholder */ }, // Placeholder implementation
   };
 }
 
@@ -429,8 +429,8 @@ export function useTodayAppointments(): UseAppointmentsReturn {
       }
     },
     addOptimisticEvent: () => BigInt(0), // Placeholder implementation
-    removeOptimisticEvent: () => {}, // Placeholder implementation
-    updateOptimisticEvent: () => {}, // Placeholder implementation
+    removeOptimisticEvent: () => { /* placeholder */ }, // Placeholder implementation  
+    updateOptimisticEvent: () => { /* placeholder */ }, // Placeholder implementation
   };
 }
 

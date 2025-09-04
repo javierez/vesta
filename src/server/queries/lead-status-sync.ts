@@ -92,7 +92,7 @@ export async function findOrCreateLeadForAppointment(
       listingId,
       prospectId,
       contactType: "buyer",
-      status: DEFAULT_APPOINTMENT_LEAD_STATUS,
+      status: "Visita Pendiente", // Set correct status immediately for appointment-created leads
       source: APPOINTMENT_LEAD_SOURCE,
       isActive: true,
     });

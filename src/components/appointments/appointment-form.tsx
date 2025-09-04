@@ -510,7 +510,7 @@ export default function AppointmentForm({
     return {
       contactId: data.contactId,
       contactName: selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : "New Contact",
-      propertyAddress: selectedListing?.title || undefined,
+      propertyAddress: selectedListing?.title ?? undefined,
       startTime: startDateTime,
       endTime: endDateTime,
       status: "Scheduled" as const,

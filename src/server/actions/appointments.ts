@@ -197,18 +197,8 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       };
     }
 
-    // NEW: Sync lead status to "Visita Pendiente" after successful appointment creation
-    if (result.listingContactId) {
-      try {
-        await syncLeadStatusFromAppointment(result.listingContactId, "Scheduled");
-      } catch (error) {
-        console.error(
-          "Failed to sync lead status after appointment creation:",
-          error,
-        );
-        // Don't fail the appointment creation if lead status sync fails
-      }
-    }
+    // Lead status is already set to "Visita Pendiente" during creation
+    // No need to update it again
 
     // NEW: Sync to Google Calendar after successful appointment creation
     try {
