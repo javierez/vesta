@@ -25,6 +25,8 @@ interface CalendarEvent {
   prospectId?: bigint | null;
   // Agent information
   agentName?: string | null;
+  // Optimistic update flag
+  isOptimistic?: boolean;
 }
 
 // Raw appointment data from database with joined contact and property data
@@ -63,6 +65,55 @@ interface UseAppointmentsReturn {
   error: string | null;
   refetch: () => Promise<void>;
   fetchByDateRange: (startDate: Date, endDate: Date) => Promise<void>;
+  addOptimisticEvent: (event: Partial<CalendarEvent>) => bigint;
+  removeOptimisticEvent: (tempId: bigint) => void;
+  updateOptimisticEvent: (tempId: bigint, updates: Partial<CalendarEvent>) => void;
+}
+
+// Generate temporary ID for optimistic events
+function generateTempId(): bigint {
+  // Use negative timestamp to avoid conflicts with real IDs
+  return BigInt(-Date.now());
+}
+
+// Transform partial event data to full calendar event for optimistic updates
+function transformToOptimisticEvent(
+  eventData: Partial<CalendarEvent>,
+  tempId: bigint,
+): CalendarEvent {
+  const now = new Date();
+  
+  return {
+    appointmentId: tempId,
+    contactName: eventData.contactName ?? "New Contact",
+    propertyAddress: eventData.propertyAddress,
+    startTime: eventData.startTime ?? now,
+    endTime: eventData.endTime ?? new Date(now.getTime() + 60 * 60 * 1000), // Default 1 hour
+    status: eventData.status ?? "Scheduled",
+    type: eventData.type ?? "Visita",
+    tripTimeMinutes: eventData.tripTimeMinutes,
+    notes: eventData.notes,
+    contactId: eventData.contactId ?? BigInt(0),
+    listingId: eventData.listingId,
+    listingContactId: eventData.listingContactId,
+    dealId: eventData.dealId,
+    prospectId: eventData.prospectId,
+    agentName: eventData.agentName,
+    isOptimistic: true,
+  };
+}
+
+// Merge and sort server events with optimistic events
+function mergeAndSortEvents(
+  serverEvents: CalendarEvent[],
+  optimisticEvents: CalendarEvent[],
+): CalendarEvent[] {
+  const allEvents = [...serverEvents, ...optimisticEvents];
+  
+  // Sort by start time
+  return allEvents.sort((a, b) => {
+    return a.startTime.getTime() - b.startTime.getTime();
+  });
 }
 
 // Transform raw appointment to calendar event
@@ -99,6 +150,7 @@ function transformToCalendarEvent(
     prospectId: rawAppointment.prospectId,
     // Agent information
     agentName: rawAppointment.agentName,
+    isOptimistic: false,
   };
 }
 
@@ -183,6 +235,7 @@ export function useAppointments(): UseAppointmentsReturn {
 // Hook for weekly appointments (specific date range)
 export function useWeeklyAppointments(weekStart: Date): UseAppointmentsReturn {
   const [appointments, setAppointments] = useState<CalendarEvent[]>([]);
+  const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -216,16 +269,54 @@ export function useWeeklyAppointments(weekStart: Date): UseAppointmentsReturn {
     }
   }, [weekStart]);
 
-  // Refetch when week changes
+  // Add optimistic event
+  const addOptimisticEvent = useCallback((eventData: Partial<CalendarEvent>): bigint => {
+    const tempId = generateTempId();
+    const optimisticEvent = transformToOptimisticEvent(eventData, tempId);
+    
+    setOptimisticEvents(prev => [...prev, optimisticEvent]);
+    
+    // Auto-cleanup optimistic events after 30 seconds if not manually removed
+    setTimeout(() => {
+      setOptimisticEvents(prev => prev.filter(event => event.appointmentId !== tempId));
+    }, 30000);
+    
+    return tempId;
+  }, []);
+
+  // Remove optimistic event
+  const removeOptimisticEvent = useCallback((tempId: bigint) => {
+    setOptimisticEvents(prev => prev.filter(event => event.appointmentId !== tempId));
+  }, []);
+
+  // Update optimistic event
+  const updateOptimisticEvent = useCallback((tempId: bigint, updates: Partial<CalendarEvent>) => {
+    setOptimisticEvents(prev => prev.map(event => {
+      if (event.appointmentId === tempId) {
+        return { ...event, ...updates };
+      }
+      return event;
+    }));
+  }, []);
+
+  // Merge server events with optimistic events for display
+  const mergedAppointments = mergeAndSortEvents(appointments, optimisticEvents);
+
+  // Refetch when week changes and clear optimistic events
   useEffect(() => {
     void fetchWeeklyAppointments();
+    // Clear optimistic events when changing weeks
+    setOptimisticEvents([]);
   }, [fetchWeeklyAppointments]);
 
   return {
-    appointments,
+    appointments: mergedAppointments,
     loading,
     error,
     refetch: fetchWeeklyAppointments,
+    addOptimisticEvent,
+    removeOptimisticEvent,
+    updateOptimisticEvent,
     fetchByDateRange: async (startDate: Date, endDate: Date) => {
       setLoading(true);
       setError(null);

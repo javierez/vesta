@@ -67,6 +67,12 @@ interface ExtendedContact {
     listingType?: string;
     status?: string;
   }>;
+  tasks?: Array<{
+    id: string;
+    title: string;
+    completed: boolean;
+    dueDate?: Date;
+  }>;
 }
 
 interface ContactSpreadsheetTableProps {
@@ -258,7 +264,7 @@ export function ContactSpreadsheetTable({
                   style={getColumnStyle("recordatorios")}
                 >
                   <div className="truncate">
-                    <Recordatorios isActive={contact.isActive} />
+                    <Recordatorios isActive={contact.isActive} tasks={contact.tasks} />
                   </div>
                 </TableCell>
               </TableRow>

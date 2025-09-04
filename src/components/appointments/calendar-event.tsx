@@ -91,6 +91,12 @@ export default function CalendarEvent({
   };
 
   const statusConfig = statusColors[event.status] || statusColors.Scheduled;
+  
+  // Apply visual indicators for optimistic events
+  const isOptimisticEvent = event.isOptimistic === true;
+  const optimisticStyles = isOptimisticEvent 
+    ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse" 
+    : "";
 
   const formatTime = (date: Date) => {
     return new Intl.DateTimeFormat("es-ES", {
@@ -128,6 +134,7 @@ export default function CalendarEvent({
         typeConfig.textColor,
         statusConfig,
         isSelected && "ring-2 ring-black ring-offset-1",
+        optimisticStyles,
         className,
       )}
       style={style}
@@ -207,6 +214,12 @@ export function CompactCalendarEvent({
   };
 
   const statusConfig = statusColors[event.status] || statusColors.Scheduled;
+  
+  // Apply visual indicators for optimistic events
+  const isOptimisticEvent = event.isOptimistic === true;
+  const optimisticStyles = isOptimisticEvent 
+    ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse" 
+    : "";
 
   const formatTime = (date: Date) => {
     return new Intl.DateTimeFormat("es-ES", {
@@ -228,6 +241,7 @@ export function CompactCalendarEvent({
         typeConfig.textColor,
         statusConfig,
         isSelected && "ring-2 ring-black ring-offset-1",
+        optimisticStyles,
         className,
       )}
       onClick={handleClick}
@@ -283,6 +297,12 @@ export function ListCalendarEvent({
     textColor: "text-gray-800",
   };
 
+  // Apply visual indicators for optimistic events
+  const isOptimisticEvent = event.isOptimistic === true;
+  const optimisticStyles = isOptimisticEvent 
+    ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse" 
+    : "";
+
   const formatTime = (date: Date) => {
     return new Intl.DateTimeFormat("es-ES", {
       hour: "2-digit",
@@ -317,6 +337,7 @@ export function ListCalendarEvent({
       className={cn(
         "calendar-event flex cursor-pointer items-center gap-4 rounded-lg border bg-white p-4 transition-all duration-200 hover:shadow-md",
         isSelected && "ring-2 ring-blue-500 ring-offset-1",
+        optimisticStyles,
         className,
       )}
       onClick={handleClick}

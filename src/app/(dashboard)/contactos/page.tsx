@@ -35,6 +35,13 @@ interface ExtendedContact extends Omit<Contact, "contactType"> {
     listingType?: string;
     status?: string;
   }>;
+  // Tasks for this contact
+  tasks?: Array<{
+    id: string;
+    title: string;
+    completed: boolean;
+    dueDate?: Date;
+  }>;
 }
 
 // Type for a contact returned by optimized queries - only fields we actually fetch and use
@@ -64,6 +71,13 @@ type DbContact = {
     propertyType?: string;
     listingType?: string;
     status?: string;
+  }>;
+  // Tasks for this contact
+  tasks?: Array<{
+    id: string;
+    title: string;
+    completed: boolean;
+    dueDate?: Date;
   }>;
 };
 
@@ -114,6 +128,7 @@ export default function ContactsPage() {
         isInteresado: contact.isInteresado,
         prospectTitles: contact.prospectTitles ?? [],
         allListings: contact.allListings ?? [],
+        tasks: contact.tasks ?? [],
       }));
 
       // Apply sorting

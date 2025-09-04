@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "~/components/ui/button";
 import { FloatingLabelInput } from "~/components/ui/floating-label-input";
 import { Textarea } from "~/components/ui/textarea";
@@ -85,6 +85,10 @@ interface AppointmentFormProps {
   onCancel?: () => void;
   mode?: "create" | "edit"; // New prop to distinguish between create and edit modes
   appointmentId?: bigint; // Required for edit mode
+  // Optimistic update functions
+  addOptimisticEvent?: (event: Partial<any>) => bigint;
+  removeOptimisticEvent?: (tempId: bigint) => void;
+  updateOptimisticEvent?: (tempId: bigint, updates: Partial<any>) => void;
 }
 
 const initialFormData: Omit<AppointmentFormData, "contactId"> = {
@@ -161,6 +165,9 @@ export default function AppointmentForm({
   onCancel,
   mode = "create",
   appointmentId,
+  addOptimisticEvent,
+  removeOptimisticEvent,
+  updateOptimisticEvent,
 }: AppointmentFormProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Partial<AppointmentFormData>>({
@@ -173,11 +180,26 @@ export default function AppointmentForm({
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [optimisticEventId, setOptimisticEventId] = useState<bigint | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const isMountedRef = useRef(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [listingSearchQuery, setListingSearchQuery] = useState("");
+
+  // Cleanup effect to handle component unmounting
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      // Clean up optimistic event if component unmounts during creation
+      if (optimisticEventId && removeOptimisticEvent) {
+        removeOptimisticEvent(optimisticEventId);
+      }
+    };
+  }, [optimisticEventId, removeOptimisticEvent]);
 
   // Fetch last 10 contacts on mount, then fetch when user searches
   useEffect(() => {
@@ -475,12 +497,58 @@ export default function AppointmentForm({
     }
   };
 
+  // Transform form data to CalendarEvent format for optimistic updates
+  const transformFormDataToCalendarEvent = (data: Partial<AppointmentFormData>) => {
+    if (!data.contactId || !data.startDate || !data.startTime) {
+      return null;
+    }
+
+    // Create start and end Date objects
+    const startDateTime = new Date(`${data.startDate}T${data.startTime}`);
+    const endDateTime = new Date(`${data.endDate || data.startDate}T${data.endTime || data.startTime}`);
+
+    return {
+      contactId: data.contactId,
+      contactName: selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : "New Contact",
+      propertyAddress: selectedListing?.title || undefined,
+      startTime: startDateTime,
+      endTime: endDateTime,
+      status: "Scheduled" as const,
+      type: data.appointmentType || "Visita",
+      tripTimeMinutes: data.tripTimeMinutes,
+      notes: data.notes,
+      listingId: data.listingId,
+      listingContactId: data.leadId,
+      dealId: data.dealId,
+      prospectId: data.prospectId,
+    };
+  };
+
   // Form submission
   const handleSubmit = async () => {
     const isValid = await validateCurrentStep();
     if (!isValid) return;
 
     setIsCreating(true);
+    
+    // Add optimistic update for create mode
+    let tempEventId: bigint | null = null;
+    if (mode === "create" && addOptimisticEvent) {
+      try {
+        const eventData = transformFormDataToCalendarEvent(formData);
+        if (eventData) {
+          tempEventId = addOptimisticEvent(eventData);
+          setOptimisticEventId(tempEventId);
+          console.log("Added optimistic event with ID:", tempEventId);
+        } else {
+          console.warn("Could not create optimistic event: invalid form data");
+        }
+      } catch (error) {
+        console.error("Error adding optimistic event:", error);
+        // Continue with server action even if optimistic update fails
+      }
+    }
+
     try {
       let result;
 
@@ -501,22 +569,43 @@ export default function AppointmentForm({
       }
 
       if (result.success) {
-        onSubmit?.(result.appointmentId!);
+        // Remove optimistic event on success (server data will be refetched)
+        if (tempEventId && removeOptimisticEvent) {
+          removeOptimisticEvent(tempEventId);
+        }
+        if (isMountedRef.current) {
+          onSubmit?.(result.appointmentId!);
+        }
       } else {
-        setValidationError(result.error ?? "Error desconocido");
+        // Remove optimistic event on error
+        if (tempEventId && removeOptimisticEvent) {
+          removeOptimisticEvent(tempEventId);
+        }
+        if (isMountedRef.current) {
+          setValidationError(result.error ?? "Error desconocido");
+        }
       }
     } catch (error) {
-      const errorMessage =
-        mode === "edit"
-          ? "Error al actualizar la cita"
-          : "Error al crear la cita";
-      setValidationError(errorMessage);
+      // Remove optimistic event on error
+      if (tempEventId && removeOptimisticEvent) {
+        removeOptimisticEvent(tempEventId);
+      }
+      if (isMountedRef.current) {
+        const errorMessage =
+          mode === "edit"
+            ? "Error al actualizar la cita"
+            : "Error al crear la cita";
+        setValidationError(errorMessage);
+      }
       console.error(
         `Error ${mode === "edit" ? "updating" : "creating"} appointment:`,
         error,
       );
     } finally {
-      setIsCreating(false);
+      if (isMountedRef.current) {
+        setIsCreating(false);
+        setOptimisticEventId(null);
+      }
     }
   };
 

@@ -36,6 +36,10 @@ interface AppointmentModalProps {
   onSuccess?: () => void; // Callback to refresh data after successful creation/edit
   mode?: "create" | "edit"; // New prop to distinguish between create and edit modes
   appointmentId?: bigint; // Required for edit mode
+  // Optimistic update functions
+  addOptimisticEvent?: (event: Partial<any>) => bigint;
+  removeOptimisticEvent?: (tempId: bigint) => void;
+  updateOptimisticEvent?: (tempId: bigint, updates: Partial<any>) => void;
 }
 
 export default function AppointmentModal({
@@ -47,6 +51,9 @@ export default function AppointmentModal({
   onSuccess,
   mode = "create",
   appointmentId,
+  addOptimisticEvent,
+  removeOptimisticEvent,
+  updateOptimisticEvent,
 }: AppointmentModalProps) {
   // Set default title and description based on mode
   const defaultTitle = mode === "edit" ? "Editar Cita" : "Crear Nueva Cita";
@@ -95,6 +102,9 @@ export default function AppointmentModal({
             onCancel={handleCancel}
             mode={mode}
             appointmentId={appointmentId}
+            addOptimisticEvent={addOptimisticEvent}
+            removeOptimisticEvent={removeOptimisticEvent}
+            updateOptimisticEvent={updateOptimisticEvent}
           />
         </div>
       </DialogContent>

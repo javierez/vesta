@@ -5,38 +5,27 @@ import { cn } from "~/lib/utils";
 
 interface RecordatoriosProps {
   isActive: boolean;
-  reminders?: Array<{
+  tasks?: Array<{
     id: string;
     title: string;
-    completed?: boolean;
+    completed: boolean;
     dueDate?: Date;
   }>;
 }
 
 export function Recordatorios({
   isActive,
-  reminders = [],
+  tasks = [],
 }: RecordatoriosProps) {
-  // Default reminders if none provided
-  const defaultReminders = [
-    { id: "1", title: "Llamar seguimiento", completed: false },
-    { id: "2", title: "Enviar propuesta", completed: false },
-    { id: "3", title: "Revisar documentos", completed: false },
-    { id: "4", title: "Agendar visita", completed: false },
-    { id: "5", title: "Confirmar cita", completed: false },
-    { id: "6", title: "Enviar contrato", completed: false },
-  ];
+  const [tasksList, setTasksList] = useState(tasks);
 
-  const initialReminders = reminders.length > 0 ? reminders : defaultReminders;
-  const [remindersList, setRemindersList] = useState(initialReminders);
-
-  const handleToggleReminder = (id: string, e: React.MouseEvent) => {
+  const handleToggleTask = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setRemindersList((prev) => {
-      const updated = prev.map((reminder) =>
-        reminder.id === id
-          ? { ...reminder, completed: !reminder.completed }
-          : reminder,
+    setTasksList((prev) => {
+      const updated = prev.map((task) =>
+        task.id === id
+          ? { ...task, completed: !task.completed }
+          : task,
       );
 
       // Sort: incomplete first, then completed
@@ -47,9 +36,9 @@ export function Recordatorios({
     });
   };
 
-  const displayReminders = remindersList;
+  const displayTasks = tasksList;
 
-  if (displayReminders.length === 0) {
+  if (displayTasks.length === 0) {
     return (
       <div
         className={cn(
@@ -65,16 +54,16 @@ export function Recordatorios({
   return (
     <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 h-[60px] overflow-y-auto">
       <div className="flex flex-col gap-0.5">
-        {displayReminders.map((reminder) => (
+        {displayTasks.map((task) => (
           <button
-            key={reminder.id}
-            onClick={(e) => handleToggleReminder(reminder.id, e)}
+            key={task.id}
+            onClick={(e) => handleToggleTask(task.id, e)}
             className="flex h-[18px] w-full items-center gap-1 rounded px-1 text-left transition-colors hover:bg-gray-50"
           >
             <span
               className={cn(
                 "inline-block h-2 w-2 flex-shrink-0 rounded-full border",
-                reminder.completed
+                task.completed
                   ? "border-green-500 bg-green-500"
                   : isActive
                     ? "border-gray-300 bg-gray-50"
@@ -84,13 +73,13 @@ export function Recordatorios({
             <span
               className={cn(
                 "truncate text-[12px] transition-all",
-                reminder.completed && "text-gray-400 line-through",
-                !reminder.completed && isActive
+                task.completed && "text-gray-400 line-through",
+                !task.completed && isActive
                   ? "text-gray-800"
                   : "text-gray-500",
               )}
             >
-              {reminder.title}
+              {task.title}
             </span>
           </button>
         ))}

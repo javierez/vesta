@@ -7,6 +7,7 @@ import {
   properties,
   locations,
   prospects,
+  tasks,
 } from "../db/schema";
 import { eq, and, or, like, sql, inArray } from "drizzle-orm";
 import type { Contact } from "../../lib/data";
@@ -1593,6 +1594,44 @@ export async function listContactsOwnerData(
 
     const contactIds = uniqueContacts.map((c) => c.contactId);
 
+    // Fetch tasks for these contacts
+    const contactTasks = await db
+      .select({
+        contactId: tasks.contactId,
+        taskId: tasks.taskId,
+        title: tasks.title,
+        completed: tasks.completed,
+        dueDate: tasks.dueDate,
+      })
+      .from(tasks)
+      .where(
+        and(
+          contactIds.length > 0
+            ? inArray(tasks.contactId, contactIds)
+            : undefined,
+          eq(tasks.isActive, true),
+        ),
+      )
+      .orderBy(tasks.dueDate, tasks.createdAt);
+
+    // Group tasks by contactId
+    const tasksByContact = contactTasks.reduce(
+      (acc, task) => {
+        const contactId = task.contactId?.toString();
+        if (contactId) {
+          acc[contactId] ??= [];
+          acc[contactId].push({
+            id: task.taskId.toString(),
+            title: task.title,
+            completed: task.completed ?? false,
+            dueDate: task.dueDate ?? undefined,
+          });
+        }
+        return acc;
+      },
+      {} as Record<string, Array<{ id: string; title: string; completed: boolean; dueDate?: Date }>>,
+    );
+
     // Fetch only OWNER listings for these contacts
     const ownerListings = await db
       .select({
@@ -1644,12 +1683,14 @@ export async function listContactsOwnerData(
     const contactsWithOwnerData = uniqueContacts.map((contact) => {
       const contactId = contact.contactId.toString();
       const allContactListings = listingsByContact[contactId] ?? [];
+      const contactTaskList = tasksByContact[contactId] ?? [];
 
       return {
         ...contact,
         prospectTitles: [], // Empty for owner view
         prospectCount: contact.prospectCount,
         allListings: allContactListings, // Only owner listings
+        tasks: contactTaskList, // Tasks for this contact
         ownerCount: contact.ownerCount,
         buyerCount: contact.buyerCount,
         isOwner: contact.isOwner,
@@ -1826,6 +1867,44 @@ export async function listContactsBuyerData(
 
     const contactIds = uniqueContacts.map((c) => c.contactId);
 
+    // Fetch tasks for these contacts
+    const contactTasks = await db
+      .select({
+        contactId: tasks.contactId,
+        taskId: tasks.taskId,
+        title: tasks.title,
+        completed: tasks.completed,
+        dueDate: tasks.dueDate,
+      })
+      .from(tasks)
+      .where(
+        and(
+          contactIds.length > 0
+            ? inArray(tasks.contactId, contactIds)
+            : undefined,
+          eq(tasks.isActive, true),
+        ),
+      )
+      .orderBy(tasks.dueDate, tasks.createdAt);
+
+    // Group tasks by contactId
+    const tasksByContactBuyer = contactTasks.reduce(
+      (acc, task) => {
+        const contactId = task.contactId?.toString();
+        if (contactId) {
+          acc[contactId] ??= [];
+          acc[contactId].push({
+            id: task.taskId.toString(),
+            title: task.title,
+            completed: task.completed ?? false,
+            dueDate: task.dueDate ?? undefined,
+          });
+        }
+        return acc;
+      },
+      {} as Record<string, Array<{ id: string; title: string; completed: boolean; dueDate?: Date }>>,
+    );
+
     // Fetch prospects for buyer context
     const allProspects = await db
       .select({
@@ -1930,6 +2009,7 @@ export async function listContactsBuyerData(
           prospectTitles, // Array of prospect titles for buyer view
           prospectCount: contact.prospectCount,
           allListings: allContactListings, // Only buyer listings
+          tasks: tasksByContactBuyer[contactId] ?? [], // Tasks for this contact
           ownerCount: contact.ownerCount,
           buyerCount: contact.buyerCount,
           isOwner: contact.isOwner,

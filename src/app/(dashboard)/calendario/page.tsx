@@ -150,6 +150,9 @@ export default function AppointmentsPage() {
     loading,
     error,
     refetch,
+    addOptimisticEvent,
+    removeOptimisticEvent,
+    updateOptimisticEvent,
   } = useWeeklyAppointments(weekStart);
 
   // Use appointment modal
@@ -1045,9 +1048,12 @@ export default function AppointmentsPage() {
         mode={editMode}
         appointmentId={editingAppointmentId ?? undefined}
         onSuccess={() => {
-          // Refresh appointments after successful creation/edit
-          void refetch();
+          // No need to refetch - optimistic updates handle immediate UI changes
+          // The form will handle adding optimistic events and cleaning up on server response
         }}
+        addOptimisticEvent={addOptimisticEvent}
+        removeOptimisticEvent={removeOptimisticEvent}
+        updateOptimisticEvent={updateOptimisticEvent}
       />
     </div>
   );
