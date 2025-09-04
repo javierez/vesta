@@ -86,9 +86,9 @@ interface AppointmentFormProps {
   mode?: "create" | "edit"; // New prop to distinguish between create and edit modes
   appointmentId?: bigint; // Required for edit mode
   // Optimistic update functions
-  addOptimisticEvent?: (event: Partial<any>) => bigint;
+  addOptimisticEvent?: (event: Partial<Record<string, unknown>>) => bigint;
   removeOptimisticEvent?: (tempId: bigint) => void;
-  updateOptimisticEvent?: (tempId: bigint, updates: Partial<any>) => void;
+  updateOptimisticEvent?: (tempId: bigint, updates: Partial<Record<string, unknown>>) => void;
 }
 
 const initialFormData: Omit<AppointmentFormData, "contactId"> = {
@@ -505,7 +505,7 @@ export default function AppointmentForm({
 
     // Create start and end Date objects
     const startDateTime = new Date(`${data.startDate}T${data.startTime}`);
-    const endDateTime = new Date(`${data.endDate || data.startDate}T${data.endTime || data.startTime}`);
+    const endDateTime = new Date(`${data.endDate ?? data.startDate}T${data.endTime ?? data.startTime}`);
 
     return {
       contactId: data.contactId,
@@ -514,13 +514,35 @@ export default function AppointmentForm({
       startTime: startDateTime,
       endTime: endDateTime,
       status: "Scheduled" as const,
-      type: data.appointmentType || "Visita",
+      type: data.appointmentType ?? "Visita",
       tripTimeMinutes: data.tripTimeMinutes,
       notes: data.notes,
       listingId: data.listingId,
       listingContactId: data.leadId,
       dealId: data.dealId,
       prospectId: data.prospectId,
+    };
+  };
+
+  // Transform server response to CalendarEvent format
+  const transformServerResponseToCalendarEvent = (appointmentId: bigint) => {
+    return {
+      appointmentId,
+      contactId: formData.contactId!,
+      contactName: selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : "New Contact",
+      propertyAddress: selectedListing?.title ?? undefined,
+      startTime: new Date(`${formData.startDate}T${formData.startTime}`),
+      endTime: new Date(`${formData.endDate ?? formData.startDate}T${formData.endTime ?? formData.startTime}`),
+      status: "Scheduled" as const,
+      type: formData.appointmentType ?? "Visita",
+      tripTimeMinutes: formData.tripTimeMinutes,
+      notes: formData.notes,
+      listingId: formData.listingId,
+      listingContactId: formData.leadId,
+      dealId: formData.dealId,
+      prospectId: formData.prospectId,
+      agentName: undefined,
+      isOptimistic: false,
     };
   };
 
@@ -569,9 +591,10 @@ export default function AppointmentForm({
       }
 
       if (result.success) {
-        // Remove optimistic event on success (server data will be refetched)
-        if (tempEventId && removeOptimisticEvent) {
-          removeOptimisticEvent(tempEventId);
+        // Convert optimistic event to real event instead of removing
+        if (tempEventId && updateOptimisticEvent && result.appointmentId) {
+          const realEventData = transformServerResponseToCalendarEvent(result.appointmentId);
+          updateOptimisticEvent(tempEventId, realEventData);
         }
         if (isMountedRef.current) {
           onSubmit?.(result.appointmentId!);

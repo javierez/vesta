@@ -37,9 +37,9 @@ interface AppointmentModalProps {
   mode?: "create" | "edit"; // New prop to distinguish between create and edit modes
   appointmentId?: bigint; // Required for edit mode
   // Optimistic update functions
-  addOptimisticEvent?: (event: Partial<any>) => bigint;
+  addOptimisticEvent?: (event: Partial<Record<string, unknown>>) => bigint;
   removeOptimisticEvent?: (tempId: bigint) => void;
-  updateOptimisticEvent?: (tempId: bigint, updates: Partial<any>) => void;
+  updateOptimisticEvent?: (tempId: bigint, updates: Partial<Record<string, unknown>>) => void;
 }
 
 export default function AppointmentModal({

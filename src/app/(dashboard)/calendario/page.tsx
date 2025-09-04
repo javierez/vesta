@@ -1048,8 +1048,8 @@ export default function AppointmentsPage() {
         mode={editMode}
         appointmentId={editingAppointmentId ?? undefined}
         onSuccess={() => {
-          // No need to refetch - optimistic updates handle immediate UI changes
-          // The form will handle adding optimistic events and cleaning up on server response
+          // Optimistic updates handle immediate UI changes
+          // The form will convert optimistic events to real events on server response
         }}
         addOptimisticEvent={addOptimisticEvent}
         removeOptimisticEvent={removeOptimisticEvent}

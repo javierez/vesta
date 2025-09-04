@@ -229,6 +229,9 @@ export function useAppointments(): UseAppointmentsReturn {
     error,
     refetch: fetchAppointments,
     fetchByDateRange,
+    addOptimisticEvent: () => BigInt(0), // Placeholder implementation
+    removeOptimisticEvent: () => {}, // Placeholder implementation
+    updateOptimisticEvent: () => {}, // Placeholder implementation
   };
 }
 
@@ -276,9 +279,11 @@ export function useWeeklyAppointments(weekStart: Date): UseAppointmentsReturn {
     
     setOptimisticEvents(prev => [...prev, optimisticEvent]);
     
-    // Auto-cleanup optimistic events after 30 seconds if not manually removed
+    // Auto-cleanup optimistic events after 30 seconds if still optimistic (not converted to real)
     setTimeout(() => {
-      setOptimisticEvents(prev => prev.filter(event => event.appointmentId !== tempId));
+      setOptimisticEvents(prev => prev.filter(event => 
+        event.appointmentId !== tempId || !event.isOptimistic
+      ));
     }, 30000);
     
     return tempId;
@@ -423,6 +428,9 @@ export function useTodayAppointments(): UseAppointmentsReturn {
         setLoading(false);
       }
     },
+    addOptimisticEvent: () => BigInt(0), // Placeholder implementation
+    removeOptimisticEvent: () => {}, // Placeholder implementation
+    updateOptimisticEvent: () => {}, // Placeholder implementation
   };
 }
 
