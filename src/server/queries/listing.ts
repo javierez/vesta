@@ -1207,11 +1207,6 @@ export async function getListingTabsData(listingId: number) {
         milanuncios: listings.milanuncios,
         energyCertification: properties.energyCertification,
         agentId: listings.agentId,
-        energyCertificateStatus: properties.energyCertificateStatus,
-        energyConsumptionScale: properties.energyConsumptionScale,
-        energyConsumptionValue: properties.energyConsumptionValue,
-        emissionsScale: properties.emissionsScale,
-        emissionsValue: properties.emissionsValue,
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
