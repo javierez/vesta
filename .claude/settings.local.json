@@ -15,7 +15,9 @@
       "WebFetch(domain:developers.google.com)",
       "Bash(npm run build:*)",
       "WebFetch(domain:docs.freepik.com)",
-      "WebFetch(domain:www.freepik.com)"
+      "WebFetch(domain:www.freepik.com)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

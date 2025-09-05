@@ -23,6 +23,15 @@ import { createCommentAction, updateCommentAction, deleteCommentAction } from "~
 import type { CommentWithUser } from "~/types/comments";
 import { toast } from "sonner";
 
+// Cartel type that matches what CartelesManager component expects
+interface Cartel {
+  docId: bigint;
+  filename: string;
+  fileUrl: string;
+  documentKey: string;
+  uploadedAt: Date;
+}
+
 // Task type that matches what Tareas component expects
 interface TaskWithId {
   taskId?: bigint;
@@ -97,6 +106,7 @@ export function PropertyTabs({
     tasks: TaskWithId[] | null;
     agents: { id: string; name: string; firstName?: string; lastName?: string; }[] | null;
     comments: CommentWithUser[] | null;
+    carteles: Cartel[] | null;
   }>({
     images: images ?? null,
     convertedListing: convertedListing ?? null,
@@ -104,17 +114,20 @@ export function PropertyTabs({
     tasks: null,
     agents: null,
     comments: null,
+    carteles: null,
   });
   const [loading, setLoading] = useState<{
     caracteristicas: boolean;
     tasks: boolean;
     agents: boolean;
     comments: boolean;
+    carteles: boolean;
   }>({
     caracteristicas: false,
     tasks: false,
     agents: false,
     comments: false,
+    carteles: false,
   });
 
   // These are no longer needed - data comes from props
@@ -324,6 +337,23 @@ export function PropertyTabs({
     }
   }, [listing.listingId]); // Removed tabData.comments dependency to prevent infinite loop
 
+  const fetchCartelesData = useCallback(async () => {
+    setLoading((prev) => ({ ...prev, carteles: true }));
+    try {
+      const response = await fetch(`/api/properties/${listing.listingId}/carteles`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch carteles");
+      }
+      const data = await response.json() as { documents?: Cartel[] };
+      setTabData((prev) => ({ ...prev, carteles: data.documents ?? [] }));
+    } catch (error) {
+      console.error('Error fetching carteles:', error);
+      setTabData((prev) => ({ ...prev, carteles: [] }));
+    } finally {
+      setLoading((prev) => ({ ...prev, carteles: false }));
+    }
+  }, [listing.listingId]); // Removed tabData.carteles dependency to prevent infinite loop
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
@@ -339,6 +369,9 @@ export function PropertyTabs({
     }
     if (!tabData.comments) {
       void fetchCommentsData();
+    }
+    if (!tabData.carteles) {
+      void fetchCartelesData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - run once on mount only
@@ -418,6 +451,9 @@ export function PropertyTabs({
             propertyId={listing.propertyId}
             listingId={listing.listingId}
             referenceNumber={listing.referenceNumber ?? ""}
+            carteles={tabData.carteles ?? []}
+            loading={loading.carteles}
+            onRefreshCarteles={fetchCartelesData}
           />
         </div>
       </TabsContent>

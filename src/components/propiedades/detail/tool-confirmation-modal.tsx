@@ -20,14 +20,33 @@ interface ToolConfirmationModalProps {
 }
 
 export function ToolConfirmationModal({ isOpen, tool, onConfirm, onCancel }: ToolConfirmationModalProps) {
+  console.log('🪟 [ToolConfirmationModal] Rendered', {
+    isOpen,
+    toolId: tool?.id,
+    toolTitle: tool?.title
+  });
+  
   if (!isOpen || !tool) return null;
+  
+  const handleConfirm = () => {
+    console.log('✅ [ToolConfirmationModal] Confirm button clicked', {
+      toolId: tool.id,
+      toolTitle: tool.title
+    });
+    onConfirm();
+  };
+  
+  const handleCancel = () => {
+    console.log('❌ [ToolConfirmationModal] Cancel button clicked');
+    onCancel();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onCancel}
+        onClick={handleCancel}
       />
       
       {/* Modal */}
@@ -44,7 +63,7 @@ export function ToolConfirmationModal({ isOpen, tool, onConfirm, onCancel }: Too
             </div>
           </div>
           <button
-            onClick={onCancel}
+            onClick={handleCancel}
             className="w-8 h-8 rounded-full p-0 transition-all duration-200 bg-transparent hover:bg-gray-50 text-gray-400 hover:text-gray-600"
           >
             <X className="h-4 w-4 mx-auto" />
@@ -81,13 +100,13 @@ export function ToolConfirmationModal({ isOpen, tool, onConfirm, onCancel }: Too
           <div className="flex gap-3">
             <Button
               variant="outline"
-              onClick={onCancel}
+              onClick={handleCancel}
               className="flex-1"
             >
               Cancelar
             </Button>
             <Button
-              onClick={onConfirm}
+              onClick={handleConfirm}
               className="flex-1 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white border-0"
             >
               Proceder

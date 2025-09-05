@@ -9,6 +9,7 @@ import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import type { CommentWithUser } from "~/types/comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+import { CommentsSkeleton } from "~/components/ui/skeletons";
 
 // Extended Comment type with status
 interface CommentWithStatus extends CommentWithUser {
@@ -20,6 +21,7 @@ interface CommentsProps {
   listingId: bigint;
   referenceNumber: string;
   initialComments?: CommentWithUser[];
+  loading?: boolean;
   currentUserId?: string;
   currentUser?: {
     id: string;
@@ -285,6 +287,7 @@ export function Comments({
   listingId,
   referenceNumber: _referenceNumber,
   initialComments = [],
+  loading = false,
   currentUserId,
   currentUser,
   onAddComment,
@@ -590,6 +593,10 @@ export function Comments({
     setEditingComment(null);
     setEditContent("");
   };
+
+  if (loading) {
+    return <CommentsSkeleton />;
+  }
 
   return (
     <div className="space-y-6">

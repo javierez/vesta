@@ -1,11 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import { Info } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Info, Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { ToolConfirmationModal } from "./tool-confirmation-modal";
+import type { EnhancementStatus, PropertyImage } from "~/types/freepik";
 
-export function ImageStudioTools() {
+interface ImageStudioToolsProps {
+  onEnhanceImage: () => Promise<void>;
+  enhancementStatus: EnhancementStatus;
+  enhancementProgress: number;
+  _enhancementError: string | null;
+  selectedImage?: PropertyImage;
+  isComparisonVisible?: boolean;
+  onShowComparison?: () => void;
+}
+
+export function ImageStudioTools({
+  onEnhanceImage,
+  enhancementStatus,
+  enhancementProgress,
+  _enhancementError,
+  selectedImage,
+  isComparisonVisible,
+  onShowComparison,
+}: ImageStudioToolsProps) {
   const [showDescriptions, setShowDescriptions] = useState<Record<string, boolean>>({
     quality: false,
     remove: false,
@@ -41,6 +60,10 @@ export function ImageStudioTools() {
   };
 
   const openConfirmModal = (tool: typeof tools[0]) => {
+    console.log('🪟 [ImageStudioTools] Opening confirmation modal', {
+      toolId: tool.id,
+      toolTitle: tool.title
+    });
     setConfirmModal({
       isOpen: true,
       tool: tool
@@ -54,26 +77,84 @@ export function ImageStudioTools() {
     });
   };
 
-  const handleConfirmTool = () => {
+  const handleConfirmTool = async () => {
+    console.log('🔧 [ImageStudioTools] handleConfirmTool called', {
+      tool: confirmModal.tool?.title,
+      toolId: confirmModal.tool?.id,
+      selectedImage: selectedImage ? `${selectedImage.propertyImageId}` : 'none'
+    });
+    
     if (confirmModal.tool) {
-      // TODO: Implement actual tool operation
-      console.log(`Executing tool: ${confirmModal.tool.title}`);
+      console.log(`🔧 [ImageStudioTools] Executing tool: ${confirmModal.tool.title}`);
+      
+      // Close modal immediately after user confirms
+      console.log('🔧 [ImageStudioTools] Closing modal immediately after confirmation');
+      const currentTool = confirmModal.tool;
       closeConfirmModal();
-      // Flip the card back to front
-      setFlippedCards(prev => ({
-        ...prev,
-        [confirmModal.tool!.id]: false
-      }));
+      
+      if (currentTool.id === 'quality') {
+        // Handle quality enhancement
+        if (!selectedImage) {
+          console.error('❌ [ImageStudioTools] No image selected for enhancement');
+          return;
+        }
+        
+        console.log('🚀 [ImageStudioTools] Starting enhancement for image:', {
+          imageId: selectedImage.propertyImageId,
+          imageUrl: selectedImage.imageUrl,
+          referenceNumber: selectedImage.referenceNumber,
+          imageOrder: selectedImage.imageOrder
+        });
+        
+        try {
+          console.log('📞 [ImageStudioTools] Calling onEnhanceImage()');
+          await onEnhanceImage();
+          console.log('✅ [ImageStudioTools] onEnhanceImage() completed successfully');
+          
+          // Wait for the comparison modal to open before flipping card back
+          // The callback will be triggered from the parent component
+          
+        } catch (error) {
+          console.error('❌ [ImageStudioTools] Enhancement failed:', error);
+          // Only flip card back on error
+          setFlippedCards(prev => ({
+            ...prev,
+            [currentTool.id]: false
+          }));
+        }
+      } else {
+        // Other tools are not implemented yet
+        console.log(`ℹ️ [ImageStudioTools] Tool ${currentTool.id} not implemented yet`);
+        
+        // Flip the card back to front immediately for non-implemented tools
+        setFlippedCards(prev => ({
+          ...prev,
+          [currentTool.id]: false
+        }));
+      }
+    } else {
+      console.warn('⚠️ [ImageStudioTools] No tool selected in modal');
     }
   };
+
+  // Handle comparison modal opening - flip quality card back when comparison becomes visible
+  useEffect(() => {
+    if (isComparisonVisible) {
+      console.log('📱 [ImageStudioTools] Comparison became visible, flipping quality card back');
+      setFlippedCards(prev => ({
+        ...prev,
+        quality: false
+      }));
+    }
+  }, [isComparisonVisible]);
 
   const tools = [
     {
       id: "quality",
       title: "Mejorar Calidad",
-      description: "Corrección automática de color y brillo",
-      price: "€0.12",
-      priceDescription: "por imagen procesada",
+      description: "Mejora la imagen con IA hasta 16x más resolución",
+      price: "€1.00",
+      priceDescription: "por imagen mejorada",
       icon: (
         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -138,6 +219,11 @@ export function ImageStudioTools() {
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-rose-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 
+                {/* Green dot for available functionality */}
+                {tool.id === 'quality' && (
+                  <div className="absolute top-2 left-2 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full shadow-md z-20" />
+                )}
+                
                 {/* Info toggle button */}
                 <button
                   onClick={(e) => {
@@ -179,23 +265,85 @@ export function ImageStudioTools() {
                 onClick={() => toggleCard(tool.id)}
               >
                 <div className="relative z-10 flex flex-col justify-center items-center h-full">
-                  <button 
-                    className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center mb-3 hover:from-amber-500 hover:to-rose-500 transition-all duration-200 shadow-md hover:shadow-lg"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openConfirmModal(tool);
-                    }}
-                  >
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
-                  <div className="text-xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent mb-1">
-                    {tool.price}
-                  </div>
-                  <p className="text-xs text-gray-700 font-medium">
-                    {tool.priceDescription}
-                  </p>
+                  {tool.id === 'quality' && enhancementStatus === 'processing' ? (
+                    // Show processing state for quality tool
+                    <div className="flex flex-col items-center space-y-3">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 text-white animate-spin" />
+                      </div>
+                      <div className="text-sm font-medium text-gray-700">
+                        Mejorando...
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 max-w-20 overflow-hidden">
+                        <div className="bg-gradient-to-r from-amber-400 to-rose-400 h-2 rounded-full animate-pulse w-full opacity-75"></div>
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        Procesando con IA...
+                      </div>
+                    </div>
+                  ) : tool.id === 'quality' && enhancementStatus === 'success' ? (
+                    // Show success state with comparison option
+                    <div className="flex flex-col items-center space-y-3">
+                      <button 
+                        className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-400 to-emerald-400 flex items-center justify-center mb-1 hover:from-green-500 hover:to-emerald-500 transition-all duration-200 shadow-md hover:shadow-lg"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onShowComparison) {
+                            console.log('👀 [ImageStudioTools] Show comparison clicked');
+                            onShowComparison();
+                          }
+                        }}
+                      >
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
+                      <div className="text-sm font-medium text-green-700">
+                        ¡Completado!
+                      </div>
+                      <div className="text-xs text-green-600">
+                        Ver comparación
+                      </div>
+                    </div>
+                  ) : (
+                    // Normal state
+                    <>
+                      <button 
+                        className={cn(
+                          "w-10 h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center mb-3 hover:from-amber-500 hover:to-rose-500 transition-all duration-200 shadow-md hover:shadow-lg",
+                          tool.id === 'quality' && !selectedImage && "opacity-50 cursor-not-allowed"
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('💲 [ImageStudioTools] Action button clicked', {
+                            toolId: tool.id,
+                            hasSelectedImage: !!selectedImage,
+                            selectedImageId: selectedImage?.propertyImageId
+                          });
+                          
+                          if (tool.id === 'quality' && !selectedImage) {
+                            console.warn('⚠️ [ImageStudioTools] No image selected, blocking modal');
+                            // Don't open modal if no image is selected
+                            return;
+                          }
+                          
+                          openConfirmModal(tool);
+                        }}
+                        disabled={tool.id === 'quality' && !selectedImage}
+                      >
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                      <div className="text-xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent mb-1">
+                        {tool.price}
+                      </div>
+                      <p className="text-xs text-gray-700 font-medium">
+                        {tool.priceDescription}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -204,11 +352,14 @@ export function ImageStudioTools() {
       </div>
       
       <div className="text-center mt-12">
-        <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-gradient-to-r from-amber-100 to-rose-100 border border-amber-200/50">
-          <div className="w-2 h-2 bg-gradient-to-r from-amber-400 to-rose-400 rounded-full mr-2 animate-pulse" />
-          <p className="text-xs font-medium text-gray-700">
-            Próximamente disponible
-          </p>
+        <div className="space-y-4">
+          {/* Other tools coming soon */}
+          <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-gradient-to-r from-amber-100 to-rose-100 border border-amber-200/50">
+            <div className="w-2 h-2 bg-gradient-to-r from-amber-400 to-rose-400 rounded-full mr-2 animate-pulse" />
+            <p className="text-xs font-medium text-gray-700">
+              Más herramientas próximamente
+            </p>
+          </div>
         </div>
       </div>
 

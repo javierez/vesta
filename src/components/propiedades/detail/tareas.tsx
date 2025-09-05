@@ -9,6 +9,7 @@ import { Badge } from "~/components/ui/badge";
 import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp, Key, Globe } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Comments } from "./comments";
+import { TareasSkeleton, CommentsSkeleton } from "~/components/ui/skeletons";
 import { createTaskWithAuth } from "~/server/queries/task";
 import { getLeadsByListingIdWithAuth } from "~/server/queries/lead";
 import { getDealsByListingIdWithAuth } from "~/server/queries/deal";
@@ -602,7 +603,17 @@ export function Tareas({
     }));
   };
 
-
+  if (externalLoading) {
+    return (
+      <div className="space-y-6">
+        <TareasSkeleton />
+        <div>
+          <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Comentarios</h3>
+          <CommentsSkeleton />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -1036,6 +1047,7 @@ export function Tareas({
           listingId={listingId}
           referenceNumber={referenceNumber}
           initialComments={initialComments}
+          loading={externalLoading}
           currentUserId={session?.user?.id}
           currentUser={session?.user ? {
             id: session.user.id,

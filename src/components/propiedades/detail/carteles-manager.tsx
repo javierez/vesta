@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { FileText, Upload, Trash2, Eye, Plus, X } from "lucide-react";
+import { FileText, Upload, Trash2, Eye, Plus, X, Pencil } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
 
@@ -20,6 +20,9 @@ interface CartelesManagerProps {
   listingId: bigint;
   referenceNumber: string;
   className?: string;
+  carteles?: Cartel[];
+  loading?: boolean;
+  onRefreshCarteles?: () => void;
 }
 
 export function CartelesManager({
@@ -27,35 +30,14 @@ export function CartelesManager({
   listingId,
   referenceNumber,
   className = "",
+  carteles = [],
+  loading = false,
+  onRefreshCarteles,
 }: CartelesManagerProps) {
-  const [carteles, setCarteles] = useState<Cartel[]>([]);
-  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
 
-  // Fetch carteles from API
-  useEffect(() => {
-    void fetchCarteles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listingId]);
-
-  const fetchCarteles = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/properties/${listingId}/carteles`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch carteles");
-      }
-      const data = await response.json() as { documents?: Cartel[] };
-      setCarteles(data.documents ?? []);
-    } catch (error) {
-      console.error("Error fetching carteles:", error);
-      toast.error("Error al cargar los carteles");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFileUpload = async (files: FileList) => {
     if (!files || files.length === 0) return;
@@ -97,7 +79,7 @@ export function CartelesManager({
 
     try {
       await Promise.all(uploadPromises);
-      await fetchCarteles(); // Refresh the list
+      onRefreshCarteles?.(); // Refresh the list
     } catch (error) {
       console.error("Error during upload:", error);
     } finally {
@@ -127,7 +109,7 @@ export function CartelesManager({
       }
 
       toast.success(`${cartel.filename} eliminado correctamente`);
-      await fetchCarteles(); // Refresh the list
+      onRefreshCarteles?.(); // Refresh the list
     } catch (error) {
       console.error("Error deleting cartel:", error);
       toast.error("Error al eliminar el cartel");
@@ -275,8 +257,16 @@ export function CartelesManager({
         </div>
       )}
 
-      {/* Upload Toggle Button */}
-      <div className="flex justify-center">
+      {/* Action Buttons */}
+      <div className="flex justify-center space-x-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.location.href = `/propiedades/${propertyId}/cartel-editor`}
+          className="h-10 w-10 rounded-full p-0 border-gray-200 hover:border-gray-300 transition-all duration-300"
+        >
+          <Pencil className="h-4 w-4 text-gray-600" />
+        </Button>
         <Button
           variant="outline"
           size="sm"
