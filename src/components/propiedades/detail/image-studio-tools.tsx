@@ -13,7 +13,6 @@ interface ImageStudioToolsProps {
   _enhancementError: string | null;
   selectedImage?: PropertyImage;
   isComparisonVisible?: boolean;
-  onShowComparison?: () => void;
 }
 
 export function ImageStudioTools({
@@ -23,7 +22,6 @@ export function ImageStudioTools({
   _enhancementError,
   selectedImage,
   isComparisonVisible,
-  onShowComparison,
 }: ImageStudioToolsProps) {
   const [showDescriptions, setShowDescriptions] = useState<Record<string, boolean>>({
     quality: false,
@@ -271,39 +269,11 @@ export function ImageStudioTools({
                       <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center">
                         <Loader2 className="w-4 h-4 text-white animate-spin" />
                       </div>
-                      <div className="text-sm font-medium text-gray-700">
-                        Mejorando...
-                      </div>
                       <div className="w-full bg-gray-200 rounded-full h-2 max-w-20 overflow-hidden">
                         <div className="bg-gradient-to-r from-amber-400 to-rose-400 h-2 rounded-full animate-pulse w-full opacity-75"></div>
                       </div>
                       <div className="text-xs text-gray-600">
                         Procesando con IA...
-                      </div>
-                    </div>
-                  ) : tool.id === 'quality' && enhancementStatus === 'success' ? (
-                    // Show success state with comparison option
-                    <div className="flex flex-col items-center space-y-3">
-                      <button 
-                        className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-400 to-emerald-400 flex items-center justify-center mb-1 hover:from-green-500 hover:to-emerald-500 transition-all duration-200 shadow-md hover:shadow-lg"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onShowComparison) {
-                            console.log('👀 [ImageStudioTools] Show comparison clicked');
-                            onShowComparison();
-                          }
-                        }}
-                      >
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </button>
-                      <div className="text-sm font-medium text-green-700">
-                        ¡Completado!
-                      </div>
-                      <div className="text-xs text-green-600">
-                        Ver comparación
                       </div>
                     </div>
                   ) : (

@@ -4,7 +4,6 @@ import { useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { ImageStudioGallery } from "./image-studio-gallery";
 import { ImageStudioTools } from "./image-studio-tools";
-import { ImageComparisonSlider } from "~/components/ui/image-comparison-slider";
 import { useImageEnhancement } from "~/hooks/use-image-enhancement";
 import type { PropertyImage } from "~/lib/data";
 import { toast } from "sonner";
@@ -155,17 +154,6 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
     console.log("✅ [ImageStudioClientWrapper] Comparison hidden (enhancement data preserved)");
   }, []);
 
-  // Handle showing the comparison again
-  const handleShowComparison = useCallback(() => {
-    console.log('👀 [ImageStudioClientWrapper] handleShowComparison called');
-    if (originalImageUrl && enhancedImageUrl) {
-      setIsComparisonVisible(true);
-      console.log("✅ [ImageStudioClientWrapper] Comparison slider reopened");
-    } else {
-      console.warn('⚠️ [ImageStudioClientWrapper] Cannot show comparison - missing image URLs');
-      toast.error("No hay comparación disponible");
-    }
-  }, [originalImageUrl, enhancedImageUrl]);
 
   return (
     <>
@@ -189,7 +177,6 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
           _enhancementError={enhancementError}
           selectedImage={selectedImage}
           isComparisonVisible={isComparisonVisible}
-          onShowComparison={handleShowComparison}
         />
         
         {/* Results Section (big image) */}
@@ -200,19 +187,13 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
             showOnlyMainImage={true}
             selectedIndex={selectedIndex}
             onImageSelect={setSelectedIndex}
+            isComparisonMode={isComparisonVisible}
+            enhancedImageUrl={enhancedImageUrl ?? ""}
+            onSave={handleSaveEnhanced}
+            onDiscard={handleDiscardEnhanced}
           />
         </section>
       </div>
-
-      {/* Image Comparison Slider Overlay */}
-      <ImageComparisonSlider
-        originalImage={originalImageUrl ?? ""}
-        enhancedImage={enhancedImageUrl ?? ""}
-        isVisible={isComparisonVisible}
-        onSave={handleSaveEnhanced}
-        onDiscard={handleDiscardEnhanced}
-        title="Comparar: Original vs Mejorada"
-      />
     </>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, X, Move, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import type { PropertyImage } from "~/lib/data";
@@ -14,6 +14,11 @@ interface ImageStudioGalleryProps {
   showOnlyMainImage?: boolean;
   selectedIndex?: number;
   onImageSelect?: (index: number) => void;
+  // Comparison mode props
+  isComparisonMode?: boolean;
+  enhancedImageUrl?: string;
+  onSave?: () => void;
+  onDiscard?: () => void;
 }
 
 export function ImageStudioGallery({
@@ -23,6 +28,10 @@ export function ImageStudioGallery({
   showOnlyMainImage = false,
   selectedIndex: externalSelectedIndex,
   onImageSelect,
+  isComparisonMode = false,
+  enhancedImageUrl,
+  onSave,
+  onDiscard,
 }: ImageStudioGalleryProps) {
   const [internalSelectedIndex, setInternalSelectedIndex] = useState(0);
   const [, setSelectedImage] = useState<PropertyImage | null>(
@@ -32,6 +41,12 @@ export function ImageStudioGallery({
   // Use external selectedIndex if provided, otherwise use internal
   const selectedIndex = externalSelectedIndex ?? internalSelectedIndex;
   const [imageOrientation, setImageOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+  
+  // Comparison slider state
+  const [sliderPosition, setSliderPosition] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number | undefined>(undefined);
 
   // Use the same placeholder image as property-card.tsx
   const defaultPlaceholder = "/properties/suburban-dream.png";
@@ -48,12 +63,89 @@ export function ImageStudioGallery({
 
   const [imageLoaded, setImageLoaded] = useState<Record<string, boolean>>({});
 
+  // Comparison slider interaction logic
+  const updateSliderPosition = useCallback((clientX: number) => {
+    if (!containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const percentage = Math.min(100, Math.max(0, (x / rect.width) * 100));
+    
+    setSliderPosition(percentage);
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
+    
+    if (animationFrameRef.current !== undefined) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    animationFrameRef.current = requestAnimationFrame(() => {
+      updateSliderPosition(e.clientX);
+    });
+  }, [isDragging, updateSliderPosition]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging || !e.touches[0]) return;
+    
+    e.preventDefault();
+    
+    if (animationFrameRef.current !== undefined) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    animationFrameRef.current = requestAnimationFrame(() => {
+      updateSliderPosition(e.touches[0]!.clientX);
+    });
+  }, [isDragging, updateSliderPosition]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
   // Update selected image when index changes
   useEffect(() => {
     if (images[selectedIndex]) {
       setSelectedImage(images[selectedIndex]);
     }
   }, [selectedIndex, images]);
+
+  // Slider event listeners
+  useEffect(() => {
+    if (isDragging && isComparisonMode) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      
+      if (animationFrameRef.current !== undefined) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isDragging, isComparisonMode, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+
+  // Reset slider position when entering comparison mode
+  useEffect(() => {
+    if (isComparisonMode) {
+      setSliderPosition(50);
+    }
+  }, [isComparisonMode]);
 
   const handleImageError = (imageId: string) => {
     setImageSources((prev) => ({
@@ -168,13 +260,26 @@ export function ImageStudioGallery({
 
   // Show only main image (for results)
   if (showOnlyMainImage) {
+    const currentImage = images[selectedIndex];
+    const currentImageId = currentImage?.propertyImageId.toString();
+    
     return (
       <div className="space-y-8">
         {/* Main Image Display */}
-        <div className={cn(
-          "group relative w-full overflow-hidden rounded-2xl bg-gray-100 shadow-lg transition-all duration-500 ease-in-out",
-          imageOrientation === 'horizontal' ? "aspect-[16/9]" : "aspect-[3/4] max-h-[80vh]"
-        )}>
+        <div 
+          ref={containerRef}
+          className={cn(
+            "group relative w-full overflow-hidden rounded-2xl bg-gray-100 shadow-lg transition-all duration-500 ease-in-out",
+            imageOrientation === 'horizontal' ? "aspect-[16/9]" : "aspect-[3/4] max-h-[80vh]",
+            isComparisonMode && "cursor-col-resize"
+          )}
+          onClick={(e) => {
+            if (isComparisonMode && !isDragging) {
+              updateSliderPosition(e.clientX);
+            }
+          }}
+        >
+          {/* Original Image (always visible) */}
           {images.map((image, index) => {
             const imageId = image.propertyImageId.toString();
             return (
@@ -204,46 +309,138 @@ export function ImageStudioGallery({
                 {!imageLoaded[imageId] && (
                   <div className="absolute inset-0 animate-pulse bg-gray-200" />
                 )}
+                
+                {/* Original image label in comparison mode */}
+                {isComparisonMode && index === selectedIndex && (
+                  <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-lg text-sm font-medium backdrop-blur-sm">
+                    Original
+                  </div>
+                )}
               </div>
             );
           })}
 
-          {/* Orientation Control Panel */}
-          <div className="absolute right-4 top-4 opacity-0 transition-all duration-300 group-hover:opacity-100">
-            <div className="flex rounded-xl bg-white/90 backdrop-blur-sm border border-white/20 shadow-lg p-1">
-              <button
+          {/* Enhanced Image Overlay (only in comparison mode) */}
+          {isComparisonMode && enhancedImageUrl && (
+            <div 
+              className="absolute inset-0 overflow-hidden transition-all duration-75 ease-out"
+              style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
+            >
+              <Image
+                src={enhancedImageUrl}
+                alt="Imagen mejorada"
+                fill
                 className={cn(
-                  "flex items-center justify-center w-10 h-8 rounded-lg transition-all duration-200",
-                  imageOrientation === 'horizontal' 
-                    ? "bg-gradient-to-r from-amber-400 to-rose-400 text-white shadow-sm" 
-                    : "text-gray-600 hover:bg-gray-100"
+                  imageOrientation === 'horizontal' ? "object-cover" : "object-contain"
                 )}
-                onClick={() => handleOrientationChange('horizontal')}
-                title="Vista horizontal"
-                aria-label="Vista horizontal"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <rect x="3" y="6" width="18" height="12" rx="2" strokeWidth={2} />
-                </svg>
-              </button>
-              <button
-                className={cn(
-                  "flex items-center justify-center w-10 h-8 rounded-lg transition-all duration-200",
-                  imageOrientation === 'vertical' 
-                    ? "bg-gradient-to-r from-amber-400 to-rose-400 text-white shadow-sm" 
-                    : "text-gray-600 hover:bg-gray-100"
-                )}
-                onClick={() => handleOrientationChange('vertical')}
-                title="Vista vertical"
-                aria-label="Vista vertical"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <rect x="6" y="3" width="12" height="18" rx="2" strokeWidth={2} />
-                </svg>
-              </button>
+                priority
+              />
+              {/* Enhanced image label */}
+              <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1 rounded-lg text-sm font-medium shadow-lg">
+                Mejorada con IA
+              </div>
             </div>
-          </div>
+          )}
+          
+          {/* Comparison Slider Handle (only in comparison mode) */}
+          {isComparisonMode && (
+            <>
+              <div
+                className="absolute top-0 bottom-0 w-1 bg-white shadow-lg transition-all duration-75 ease-out"
+                style={{ left: `${sliderPosition}%` }}
+              >
+                {/* Draggable handle */}
+                <div
+                  className={cn(
+                    "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-12 h-12 bg-white rounded-full shadow-xl border-2 border-gray-200 flex items-center justify-center cursor-grab transition-all duration-200",
+                    isDragging ? "scale-110 cursor-grabbing shadow-2xl border-amber-400" : "hover:scale-105 hover:shadow-xl"
+                  )}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  aria-label="Arrastrar para comparar"
+                  role="slider"
+                  aria-valuenow={sliderPosition}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <Move className="w-5 h-5 text-gray-600" />
+                </div>
+                
+                {/* Arrows for keyboard users */}
+                <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-60">
+                  <ArrowLeft className="w-4 h-4 text-white" />
+                  <span className="text-white text-xs">Arrastra</span>
+                  <ArrowRight className="w-4 h-4 text-white" />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Orientation Control Panel (hidden in comparison mode) */}
+          {!isComparisonMode && (
+            <div className="absolute right-4 top-4 opacity-0 transition-all duration-300 group-hover:opacity-100">
+              <div className="flex rounded-xl bg-white/90 backdrop-blur-sm border border-white/20 shadow-lg p-1">
+                <button
+                  className={cn(
+                    "flex items-center justify-center w-10 h-8 rounded-lg transition-all duration-200",
+                    imageOrientation === 'horizontal' 
+                      ? "bg-gradient-to-r from-amber-400 to-rose-400 text-white shadow-sm" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  )}
+                  onClick={() => handleOrientationChange('horizontal')}
+                  title="Vista horizontal"
+                  aria-label="Vista horizontal"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="3" y="6" width="18" height="12" rx="2" strokeWidth={2} />
+                  </svg>
+                </button>
+                <button
+                  className={cn(
+                    "flex items-center justify-center w-10 h-8 rounded-lg transition-all duration-200",
+                    imageOrientation === 'vertical' 
+                      ? "bg-gradient-to-r from-amber-400 to-rose-400 text-white shadow-sm" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  )}
+                  onClick={() => handleOrientationChange('vertical')}
+                  title="Vista vertical"
+                  aria-label="Vista vertical"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="3" width="12" height="18" rx="2" strokeWidth={2} />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+        
+        {/* Save/Discard Buttons (only in comparison mode) */}
+        {isComparisonMode && (
+          <div className="flex justify-center gap-4">
+            <Button
+              onClick={onSave}
+              className="bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white border-0 shadow-lg hover:shadow-xl transition-all px-6 py-3"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Guardar versión mejorada
+            </Button>
+            <Button
+              onClick={onDiscard}
+              variant="outline"
+              className="border-gray-200 hover:bg-gray-50 shadow-lg hover:shadow-xl transition-all px-6 py-3"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Descartar
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
