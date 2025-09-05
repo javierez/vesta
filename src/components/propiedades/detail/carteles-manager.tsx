@@ -1,11 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
-import { Card, CardContent } from "~/components/ui/card";
+import React, { useState, useRef } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { FileText, Upload, Trash2, Eye, Plus, X, Pencil } from "lucide-react";
+import { Label } from "~/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { Switch } from "~/components/ui/switch";
+import { Input } from "~/components/ui/input";
+import { Slider } from "~/components/ui/slider";
+import {
+  FileText, Upload, Trash2, Eye, Plus, X, Pencil, Download,
+  Settings, Image as ImageIcon, Loader2, ZoomIn, ZoomOut, RotateCcw
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
+import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
+import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
+import type {
+  TemplateConfiguration,
+  ExtendedTemplatePropertyData,
+} from "~/types/template-data";
+import { AdditionalFieldsSelector } from "~/components/admin/carteleria/controls/additional-fields-selector";
+import { getTemplateImages } from "~/lib/carteleria/s3-images";
 
 interface Cartel {
   docId: bigint;
@@ -37,6 +53,43 @@ export function CartelesManager({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  
+  // Template editor state
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  
+  // Template configuration state
+  const [config, setConfig] = useState<TemplateConfiguration>({
+    templateStyle: "classic",
+    orientation: "vertical",
+    propertyType: "piso",
+    listingType: "venta",
+    imageCount: 4,
+    showPhone: true,
+    showEmail: true,
+    showWebsite: true,
+    showQR: true,
+    showReference: true,
+    showWatermark: true,
+    showIcons: true,
+    showShortDescription: false,
+    titleFont: "default",
+    priceFont: "default",
+    overlayColor: "default",
+    additionalFields: ["hasElevator", "hasGarage", "energyConsumptionScale"],
+  });
+
+  // Property data state
+  const [propertyData, setPropertyData] = useState<ExtendedTemplatePropertyData>(() =>
+    getExtendedDefaultPropertyData("piso"),
+  );
+  
+  // UI state
+  const [showPreview, setShowPreview] = useState(true);
+  const [previewZoom, setPreviewZoom] = useState(0.4);
+  const [lastGeneratedPdf, setLastGeneratedPdf] = useState<string | null>(null);
+  
+  const previewRef = useRef<HTMLDivElement>(null);
 
 
   const handleFileUpload = async (files: FileList) => {

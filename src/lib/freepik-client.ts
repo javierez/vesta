@@ -4,20 +4,21 @@ import {
   type FreepikTaskStatus 
 } from '~/types/freepik';
 
-// Validate required environment variables
-const requiredEnvVars = {
-  FREEPIK_API_KEY: process.env.FREEPIK_API_KEY,
-};
+// Environment validation function (called at runtime, not module load)
+function validateEnvironment() {
+  const requiredEnvVars = {
+    FREEPIK_API_KEY: process.env.FREEPIK_API_KEY,
+  };
 
-// Check if any required environment variables are missing
-const missingEnvVars = Object.entries(requiredEnvVars)
-  .filter(([_, value]) => !value)
-  .map(([key]) => key);
+  const missingEnvVars = Object.entries(requiredEnvVars)
+    .filter(([_, value]) => !value)
+    .map(([key]) => key);
 
-if (missingEnvVars.length > 0) {
-  throw new Error(
-    `Missing required Freepik environment variables: ${missingEnvVars.join(", ")}`,
-  );
+  if (missingEnvVars.length > 0) {
+    throw new Error(
+      `Missing required Freepik environment variables: ${missingEnvVars.join(", ")}`,
+    );
+  }
 }
 
 class FreepikClient {
@@ -25,6 +26,7 @@ class FreepikClient {
   private baseUrl = 'https://api.freepik.com/v1/ai/image-upscaler-precision';
 
   constructor() {
+    validateEnvironment();
     this.apiKey = process.env.FREEPIK_API_KEY!;
   }
 
