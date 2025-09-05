@@ -213,7 +213,7 @@ export function CartelesManager({
                     {/* PDF Preview - Using iframe with zoom for better coverage */}
                     <iframe
                       src={`${cartel.fileUrl}#toolbar=0&navpanes=0&scrollbar=0&page=1&view=FitH&zoom=120`}
-                      className="w-[110%] h-[110%] object-cover group-hover:opacity-65 transition-all duration-300 transform scale-110"
+                      className="w-[110%] h-[110%] object-cover group-hover:opacity-30 transition-all duration-300 transform scale-110"
                       title={`Preview of ${cartel.filename}`}
                       style={{ 
                         filter: 'contrast(1.1) brightness(0.95)',

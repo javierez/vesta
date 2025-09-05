@@ -303,7 +303,6 @@ export function ImageStudioGallery({
         {images.map((image, index) => {
           const imageId = image.propertyImageId.toString();
           const isSelected = index === selectedIndex;
-          console.log(`Image ${index}: isSelected=${isSelected}, selectedIndex=${selectedIndex}`);
           return (
             <div
               key={imageId}
