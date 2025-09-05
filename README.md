@@ -142,7 +142,7 @@ The application is configured for deployment on Vercel with the included `vercel
 ```bash
 pnpm build
 ```
-
+revert 
 
 ---
 
@@ -162,9 +162,14 @@ pnpm build
 - **Cache property images with service worker**: Implement service worker caching strategy for property images to reduce bandwidth usage
   Impact: Faster image loading on repeat visits and offline capability for previously viewed properties
 
-  
+
+
+
 
 ## High Priority
+
+- Freepik: https://docs.freepik.com/api-reference/image-upscaler-precision/post-image-upscaler-precision
+https://www.freepik.com/api/pricing
 
 - Remove all the harcoded things about Acropolis.
 

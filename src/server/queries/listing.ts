@@ -86,6 +86,34 @@ export async function toggleListingKeysWithAuth(listingId: number) {
   }
 }
 
+export async function toggleListingPublishToWebsiteWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  
+  try {
+    // First get the current publishToWebsite value
+    const currentListing = await getListingById(listingId, accountId);
+    if (!currentListing) {
+      throw new Error("Listing not found");
+    }
+    
+    // Toggle the publishToWebsite value
+    const newPublishToWebsiteValue = !currentListing.publishToWebsite;
+    
+    // Update the listing
+    const updatedListing = await updateListing(listingId, accountId, {
+      publishToWebsite: newPublishToWebsiteValue
+    });
+    
+    return {
+      publishToWebsite: newPublishToWebsiteValue,
+      listing: updatedListing
+    };
+  } catch (error) {
+    console.error("Error toggling listing publishToWebsite:", error);
+    throw error;
+  }
+}
+
 export async function getListingDetailsWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
 
@@ -153,6 +181,7 @@ export async function createListing(
         status: data.status,
         isFeatured: data.isFeatured,
         isBankOwned: data.isBankOwned,
+        publishToWebsite: data.publishToWebsite,
         visibilityMode: data.visibilityMode,
         isFurnished: data.isFurnished,
         furnitureQuality: data.furnitureQuality,
@@ -825,6 +854,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         milanuncios: listings.milanuncios,
         isFeatured: listings.isFeatured,
         isBankOwned: listings.isBankOwned,
+        publishToWebsite: listings.publishToWebsite,
         visibilityMode: listings.visibilityMode,
         isActive: listings.isActive,
         viewCount: listings.viewCount,

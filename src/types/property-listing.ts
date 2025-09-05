@@ -15,6 +15,7 @@ export interface PropertyListing {
   isBankOwned?: boolean;
   isFeatured?: boolean;
   newConstruction?: boolean;
+  publishToWebsite?: boolean;
 
   // Dimensions
   bedrooms?: number;
@@ -182,6 +183,7 @@ export function convertDbListingToPropertyListing(
     isBankOwned: (dbListing.isBankOwned as boolean) ?? undefined,
     isFeatured: (dbListing.isFeatured as boolean) ?? undefined,
     newConstruction: (dbListing.newConstruction as boolean) ?? undefined,
+    publishToWebsite: (dbListing.publishToWebsite as boolean) ?? undefined,
     bedrooms: (dbListing.bedrooms as number) ?? undefined,
     bathrooms: (dbListing.bathrooms as number) ?? undefined,
     squareMeter: (dbListing.squareMeter as number) ?? undefined,

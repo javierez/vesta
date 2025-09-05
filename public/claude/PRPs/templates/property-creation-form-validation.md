@@ -103,3 +103,4 @@ The form implements step skipping based on property type:
 - **Unified Data Model**: Same field names, types, validation rules, and save operations
 - **Seamless User Flow**: Users can create properties and immediately edit characteristics without data loss or inconsistencies
 - **Maintainable Codebase**: Shared components, interfaces, and patterns reduce duplication and improve maintainability
+

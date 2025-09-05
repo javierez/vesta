@@ -380,6 +380,7 @@ export const listings = singlestoreTable("listings", {
   isFeatured: boolean("is_featured").default(false),
   isBankOwned: boolean("is_bank_owned").default(false),
   isActive: boolean("is_active").default(true),
+  publishToWebsite: boolean("publish_to_website").default(false), // Controls whether listing appears on company website
   visibilityMode: smallint("visibility_mode").default(1), // 1=Exact, 2=Street, 3=Zone
 
   // Analytics

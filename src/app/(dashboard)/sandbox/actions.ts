@@ -283,6 +283,7 @@ export async function seedDatabase() {
           isActive: mockListing?.isActive ?? true,
           isFeatured: mockListing?.isFeatured ?? false,
           isBankOwned: mockListing?.isBankOwned ?? false,
+          publishToWebsite: mockListing?.publishToWebsite ?? false,
           visibilityMode: mockListing?.visibilityMode ?? 1,
           viewCount: mockListing?.viewCount ?? 0,
           inquiryCount: mockListing?.inquiryCount ?? 0,

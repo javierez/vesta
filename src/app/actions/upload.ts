@@ -149,7 +149,7 @@ export async function uploadDocument(
   dealId?: bigint,
   appointmentId?: bigint,
   propertyId?: bigint,
-  folderType?: "initial-docs" | "visitas" | "others",
+  folderType?: "initial-docs" | "visitas" | "others" | "carteles",
 ): Promise<Document> {
   try {
     console.log(`📤 Starting document upload:`, {

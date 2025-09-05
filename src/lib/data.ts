@@ -1004,6 +1004,7 @@ export type Listing = {
   status: "Active" | "Pending" | "Resolved";
   isFeatured: boolean;
   isBankOwned: boolean;
+  publishToWebsite: boolean;
   visibilityMode: number; // 1=Exact, 2=Street, 3=Zone
   viewCount: number;
   inquiryCount: number;
@@ -1443,6 +1444,7 @@ export const listings: Listing[] = [
     status: "Active",
     isFeatured: true,
     isBankOwned: false,
+    publishToWebsite: false,
     visibilityMode: 1,
     viewCount: 150,
     inquiryCount: 12,
@@ -1481,6 +1483,7 @@ export const listings: Listing[] = [
     status: "Active",
     isFeatured: true,
     isBankOwned: false,
+    publishToWebsite: false,
     visibilityMode: 1,
     viewCount: 89,
     inquiryCount: 7,
@@ -1519,6 +1522,7 @@ export const listings: Listing[] = [
     status: "Active",
     isFeatured: false,
     isBankOwned: false,
+    publishToWebsite: false,
     visibilityMode: 1,
     viewCount: 45,
     inquiryCount: 3,

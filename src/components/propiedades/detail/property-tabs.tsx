@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { ImageGallery } from "./image-gallery";
 import { PortalSelection } from "./portal-selection";
 import { DocumentsManager } from "./documents-manager";
+import { CartelesManager } from "./carteles-manager";
 import { Tareas } from "./tareas";
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form";
 import { CharacteristicsSkeleton } from "./skeletons";
@@ -344,10 +345,11 @@ export function PropertyTabs({
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
+      <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
         <TabsTrigger value="general">General</TabsTrigger>
         <TabsTrigger value="tareas">Tareas</TabsTrigger>
         <TabsTrigger value="imagenes">Imágenes</TabsTrigger>
+        <TabsTrigger value="carteles">Carteles</TabsTrigger>
         <TabsTrigger value="portales">Portales</TabsTrigger>
         <TabsTrigger value="documentos">Documentos</TabsTrigger>
       </TabsList>
@@ -410,6 +412,16 @@ export function PropertyTabs({
         </div>
       </TabsContent>
 
+      <TabsContent value="carteles" className="mt-6">
+        <div className="mx-auto max-w-6xl">
+          <CartelesManager
+            propertyId={listing.propertyId}
+            listingId={listing.listingId}
+            referenceNumber={listing.referenceNumber ?? ""}
+          />
+        </div>
+      </TabsContent>
+
       <TabsContent value="portales" className="mt-6">
         <div className="mx-auto max-w-4xl">
           <PortalSelection
@@ -432,6 +444,7 @@ export function PropertyTabs({
           />
         </div>
       </TabsContent>
+
     </Tabs>
   );
 }

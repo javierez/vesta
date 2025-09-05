@@ -92,7 +92,7 @@ export async function uploadDocumentToS3(
   referenceNumber: string,
   documentOrder: number,
   documentTag?: string,
-  folderType?: "initial-docs" | "visitas" | "others",
+  folderType?: "initial-docs" | "visitas" | "others" | "carteles",
 ): Promise<{
   fileUrl: string;
   s3key: string;

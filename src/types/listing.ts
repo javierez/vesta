@@ -33,6 +33,7 @@ export type ListingOverview = {
   isActive?: boolean | null;
   isFeatured?: boolean | null;
   isBankOwned?: boolean | null;
+  publishToWebsite?: boolean | null;
   viewCount?: number | null;
   inquiryCount?: number | null;
   street?: string | null;

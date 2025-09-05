@@ -210,6 +210,7 @@ export default function RentPage({
             isActive: true,
             isFeatured: false,
             isBankOwned: false,
+            publishToWebsite: false,
             visibilityMode: 1,
             isFurnished: formData.isFurnished,
             furnitureQuality: formData.furnitureQuality,
