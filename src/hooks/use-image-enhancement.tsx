@@ -7,6 +7,7 @@ import type { EnhancementStatus, PropertyImage } from "~/types/freepik";
 interface UseImageEnhancementProps {
   propertyId: string;
   onSuccess?: (enhancedImage: PropertyImage) => void;
+  onComparisonReady?: () => void;
   onError?: (error: string) => void;
 }
 
@@ -17,7 +18,9 @@ interface UseImageEnhancementReturn {
   enhancedPropertyImage: PropertyImage | null;
   originalImageUrl: string | null;
   enhancedImageUrl: string | null;
+  enhancementMetadata: { referenceNumber: string; currentImageOrder: string } | null;
   enhance: (imageUrl: string, referenceNumber: string, currentImageOrder: number) => Promise<void>;
+  saveEnhanced: () => Promise<void>;
   reset: () => void;
   cancel: () => void;
 }
@@ -29,6 +32,7 @@ interface UseImageEnhancementReturn {
 export function useImageEnhancement({
   propertyId,
   onSuccess,
+  onComparisonReady,
   onError,
 }: UseImageEnhancementProps): UseImageEnhancementReturn {
   const [status, setStatus] = useState<EnhancementStatus>('idle');
@@ -37,6 +41,7 @@ export function useImageEnhancement({
   const [enhancedPropertyImage, setEnhancedPropertyImage] = useState<PropertyImage | null>(null);
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [enhancedImageUrl, setEnhancedImageUrl] = useState<string | null>(null);
+  const [enhancementMetadata, setEnhancementMetadata] = useState<{ referenceNumber: string; currentImageOrder: string } | null>(null);
   
   // Refs for cleanup
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -45,11 +50,9 @@ export function useImageEnhancement({
 
   // Mount/unmount management
   useEffect(() => {
-    console.log('📌 [useImageEnhancement] Component mounted, setting isMounted to true');
     setIsMounted(true);
     
     return () => {
-      console.log('📌 [useImageEnhancement] Component unmounting, setting isMounted to false');
       setIsMounted(false);
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
@@ -69,21 +72,11 @@ export function useImageEnhancement({
     referenceNumber: string,
     currentImageOrder: number
   ) => {
-    console.log('🎣 [useImageEnhancement] enhance() called', {
-      imageUrl,
-      referenceNumber,
-      currentImageOrder,
-      propertyId,
-      isMounted
-    });
-    
     if (!isMounted) {
-      console.warn('⚠️ [useImageEnhancement] Component unmounted, skipping enhancement');
       return;
     }
 
     try {
-      console.log('🔄 [useImageEnhancement] Setting initial state');
       setStatus('processing');
       setProgress(0);
       setError(null);
@@ -91,49 +84,19 @@ export function useImageEnhancement({
       setEnhancedImageUrl(null);
       setEnhancedPropertyImage(null);
 
-      console.log(`🚀 [useImageEnhancement] Starting enhancement for image: ${imageUrl}`);
-
       // 1. Start enhancement
-      const apiUrl = `/api/properties/${propertyId}/freepik-enhance`;
-      const requestBody = { 
-        imageUrl, 
-        referenceNumber, 
-        currentImageOrder 
-      };
-      
-      console.log('📞 [useImageEnhancement] Making POST request', {
-        url: apiUrl,
-        body: requestBody
-      });
-      
-      const startResponse = await fetch(apiUrl, {
+      const startResponse = await fetch(`/api/properties/${propertyId}/freepik-enhance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
-      
-      console.log('📞 [useImageEnhancement] POST response received', {
-        status: startResponse.status,
-        ok: startResponse.ok,
-        statusText: startResponse.statusText
+        body: JSON.stringify({ imageUrl, referenceNumber, currentImageOrder }),
       });
 
       if (!startResponse.ok) {
-        console.error('❌ [useImageEnhancement] POST request failed', {
-          status: startResponse.status,
-          statusText: startResponse.statusText
-        });
         const errorData = await startResponse.json() as { error?: string };
-        console.error('❌ [useImageEnhancement] Error data:', errorData);
         throw new Error(errorData.error ?? 'Failed to start enhancement');
       }
 
-      const startResponseData = await startResponse.json() as { taskId: string };
-      const { taskId } = startResponseData;
-      console.log('✅ [useImageEnhancement] Enhancement task started successfully', {
-        taskId,
-        responseData: startResponseData
-      });
+      const { taskId } = await startResponse.json() as { taskId: string };
 
       // 2. Set up polling for status updates
       let pollAttempts = 0;
@@ -141,7 +104,6 @@ export function useImageEnhancement({
 
       const pollStatus = async () => {
         if (!isMounted) {
-          console.warn('⚠️ [useImageEnhancement] Component unmounted during polling, stopping');
           clearPolling();
           return;
         }
@@ -162,16 +124,10 @@ export function useImageEnhancement({
             progress?: number;
             propertyImage?: PropertyImage;
             enhancedImageUrl?: string;
+            referenceNumber?: string;
+            currentImageOrder?: string;
             error?: string;
           };
-          console.log('🔍 [useImageEnhancement] Status response received:', {
-            status: statusData.status,
-            progress: statusData.progress,
-            hasPropertyImage: !!statusData.propertyImage,
-            hasEnhancedImageUrl: !!statusData.enhancedImageUrl,
-            enhancedImageUrl: statusData.enhancedImageUrl,
-            fullResponse: statusData
-          });
 
           if (!isMounted) return;
 
@@ -179,29 +135,30 @@ export function useImageEnhancement({
             clearPolling();
             setStatus('success');
             setProgress(100);
-            if (statusData.propertyImage) {
-              setEnhancedPropertyImage(statusData.propertyImage);
-            }
+            
+            // Store enhanced image URL and metadata for later saving
             if (statusData.enhancedImageUrl) {
               setEnhancedImageUrl(statusData.enhancedImageUrl);
             }
-            
-            console.log(`Enhancement completed successfully. New image: ${statusData.enhancedImageUrl}`);
-            
-            // Call success callback
-            if (onSuccess && statusData.propertyImage) {
-              onSuccess(statusData.propertyImage);
+            if (statusData.referenceNumber && statusData.currentImageOrder) {
+              setEnhancementMetadata({
+                referenceNumber: statusData.referenceNumber,
+                currentImageOrder: statusData.currentImageOrder
+              });
             }
             
-            toast.success("¡Imagen mejorada correctamente!");
+            // Call comparison ready callback to show the slider
+            if (onComparisonReady) {
+              onComparisonReady();
+            }
+            
+            toast.success("¡Mejora completada! Usa el slider para comparar.");
             
           } else if (statusData.status === 'FAILED') {
             clearPolling();
             const errorMsg = statusData.error ?? 'Enhancement failed';
             setStatus('error');
             setError(errorMsg);
-            
-            console.error(`Enhancement failed: ${errorMsg}`);
             
             if (onError) {
               onError(errorMsg);
@@ -225,10 +182,8 @@ export function useImageEnhancement({
               toast.error("La mejora de imagen está tardando más de lo esperado");
             }
           }
-        } catch (error) {
+        } catch (_error) {
           if (!isMounted) return;
-          
-          console.error('Error polling status:', error);
           
           // If we've tried many times, give up
           if (pollAttempts >= 5) {
@@ -249,33 +204,85 @@ export function useImageEnhancement({
 
     } catch (error) {
       if (!isMounted) {
-        console.warn('⚠️ [useImageEnhancement] Component unmounted during error handling');
         return;
       }
       
-      console.error('❌ [useImageEnhancement] Enhancement error:', error);
-      
       const errorMessage = error instanceof Error ? error.message : 'Enhancement failed';
-      console.error('❌ [useImageEnhancement] Setting error state:', errorMessage);
       
       setStatus('error');
       setError(errorMessage);
       
       if (onError) {
-        console.log('📞 [useImageEnhancement] Calling onError callback');
         onError(errorMessage);
       }
       
       toast.error("Error al iniciar la mejora de imagen");
     }
-  }, [propertyId, onSuccess, onError, clearPolling, isMounted]);
+  }, [propertyId, onComparisonReady, onError, clearPolling, isMounted]);
+
+  const saveEnhanced = useCallback(async () => {
+    if (!isMounted) {
+      return;
+    }
+
+    if (!enhancedImageUrl || !enhancementMetadata) {
+      toast.error("No hay imagen mejorada para guardar");
+      return;
+    }
+
+    try {
+      setStatus('processing'); // Show loading state during save
+      
+      const saveResponse = await fetch(`/api/properties/${propertyId}/save-enhanced`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enhancedImageUrl: enhancedImageUrl,
+          referenceNumber: enhancementMetadata.referenceNumber,
+          currentImageOrder: enhancementMetadata.currentImageOrder
+        }),
+      });
+
+      if (!saveResponse.ok) {
+        const errorData = await saveResponse.json() as { error?: string };
+        throw new Error(errorData.error ?? 'Failed to save enhanced image');
+      }
+
+      const saveData = await saveResponse.json() as {
+        success: boolean;
+        propertyImage: PropertyImage;
+        message: string;
+      };
+
+      // Update state with the saved property image
+      setEnhancedPropertyImage(saveData.propertyImage);
+      setStatus('success');
+
+      // Now call the success callback with the actual saved image
+      if (onSuccess) {
+        onSuccess(saveData.propertyImage);
+      }
+
+      toast.success("¡Imagen mejorada guardada correctamente!");
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save enhanced image';
+      setError(errorMessage);
+      setStatus('error');
+      
+      if (onError) {
+        onError(errorMessage);
+      }
+      
+      toast.error("Error al guardar la imagen mejorada");
+    }
+  }, [propertyId, enhancedImageUrl, enhancementMetadata, onSuccess, onError, isMounted]);
 
   const cancel = useCallback(() => {
     clearPolling();
     setStatus('idle');
     setProgress(0);
     setError(null);
-    console.log('Enhancement cancelled by user');
   }, [clearPolling]);
 
   const reset = useCallback(() => {
@@ -286,6 +293,7 @@ export function useImageEnhancement({
     setEnhancedPropertyImage(null);
     setOriginalImageUrl(null);
     setEnhancedImageUrl(null);
+    setEnhancementMetadata(null);
   }, [clearPolling]);
 
   return {
@@ -295,7 +303,9 @@ export function useImageEnhancement({
     enhancedPropertyImage,
     originalImageUrl,
     enhancedImageUrl,
+    enhancementMetadata,
     enhance,
+    saveEnhanced,
     reset,
     cancel,
   };

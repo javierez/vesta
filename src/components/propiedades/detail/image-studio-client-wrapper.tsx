@@ -29,130 +29,88 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
     status: enhancementStatus,
     progress: enhancementProgress,
     error: enhancementError,
-    originalImageUrl,
+    originalImageUrl: _originalImageUrl,
     enhancedImageUrl,
-    enhancedPropertyImage,
+    enhancedPropertyImage: _enhancedPropertyImage,
+    enhancementMetadata,
     enhance,
+    saveEnhanced,
     reset: resetEnhancement,
   } = useImageEnhancement({
     propertyId,
-    onSuccess: (_newImage) => {
-      console.log('✅ [ImageStudioClientWrapper] Enhancement success callback');
+    onSuccess: (newImage) => {
+      // Add the new image to the gallery (this happens after user confirms save)
+      setAllImages(currentImages => {
+        const newImages = [...currentImages, newImage];
+        return newImages.sort((a, b) => a.imageOrder - b.imageOrder);
+      });
+
+      // Hide comparison slider and reset
+      setIsComparisonVisible(false);
+      resetEnhancement();
+    },
+    onComparisonReady: () => {
       // Show comparison slider when enhancement completes
       setIsComparisonVisible(true);
     },
     onError: (error) => {
-      console.error("❌ [ImageStudioClientWrapper] Enhancement failed:", error);
+      console.error("Enhancement failed:", error);
       toast.error("Error al mejorar la imagen");
     },
   });
   
-  // Debug log for status changes
-  console.log('📊 [ImageStudioClientWrapper] Current enhancement state', {
-    status: enhancementStatus,
-    progress: enhancementProgress,
-    hasError: !!enhancementError,
-    hasOriginalImageUrl: !!originalImageUrl,
-    hasEnhancedImageUrl: !!enhancedImageUrl,
-    hasEnhancedPropertyImage: !!enhancedPropertyImage,
-    isComparisonVisible,
-    originalImageUrlValue: originalImageUrl,
-    enhancedImageUrlValue: enhancedImageUrl
-  });
 
   // Handle enhancement request from tools
   const handleEnhanceImage = useCallback(async () => {
-    console.log('🎯 [ImageStudioClientWrapper] handleEnhanceImage called', {
-      selectedImage: selectedImage ? `ID: ${selectedImage.propertyImageId}` : 'none',
-      enhancementStatus,
-      propertyId
-    });
-    
     if (!selectedImage) {
-      console.error('❌ [ImageStudioClientWrapper] No image selected');
       toast.error("No hay imagen seleccionada");
       return;
     }
 
     if (enhancementStatus === 'processing') {
-      console.warn('⚠️ [ImageStudioClientWrapper] Enhancement already in progress');
       toast.warning("Ya hay una mejora en progreso");
       return;
     }
 
     try {
-      console.log(`🚀 [ImageStudioClientWrapper] Starting enhancement for image ${selectedImage.propertyImageId}`, {
-        imageUrl: selectedImage.imageUrl,
-        referenceNumber: selectedImage.referenceNumber,
-        imageOrder: selectedImage.imageOrder,
-        propertyId
-      });
-      
-      // Start the enhancement process
-      console.log('📞 [ImageStudioClientWrapper] Calling enhance() hook');
       await enhance(
         selectedImage.imageUrl,
         selectedImage.referenceNumber,
         selectedImage.imageOrder
       );
-      console.log('✅ [ImageStudioClientWrapper] enhance() hook completed');
     } catch (error) {
-      console.error("❌ [ImageStudioClientWrapper] Failed to start enhancement:", error);
+      console.error("Failed to start enhancement:", error);
       toast.error("Error al iniciar la mejora de imagen");
     }
-  }, [selectedImage, enhancementStatus, enhance, propertyId]);
+  }, [selectedImage, enhancementStatus, enhance]);
 
   // Handle saving the enhanced image
-  const handleSaveEnhanced = useCallback(() => {
-    console.log('💾 [ImageStudioClientWrapper] handleSaveEnhanced called', {
-      hasEnhancedPropertyImage: !!enhancedPropertyImage,
-      enhancedPropertyImage: enhancedPropertyImage ? {
-        id: enhancedPropertyImage.propertyImageId,
-        imageUrl: enhancedPropertyImage.imageUrl,
-        imageOrder: enhancedPropertyImage.imageOrder
-      } : null
-    });
-    
-    if (!enhancedPropertyImage) {
-      console.error('❌ [ImageStudioClientWrapper] No enhanced property image available');
+  const handleSaveEnhanced = useCallback(async () => {
+    if (!enhancedImageUrl || !enhancementMetadata) {
       toast.error("No hay imagen mejorada para guardar");
       return;
     }
 
-    // Add the new image to the gallery (optimistic update)
-    console.log('📸 [ImageStudioClientWrapper] Adding enhanced image to gallery');
-    setAllImages(currentImages => {
-      const newImages = [...currentImages, enhancedPropertyImage];
-      // Sort by image order to maintain proper ordering
-      const sortedImages = newImages.sort((a, b) => a.imageOrder - b.imageOrder);
-      console.log('📸 [ImageStudioClientWrapper] Gallery updated', {
-        previousCount: currentImages.length,
-        newCount: sortedImages.length,
-        addedImage: {
-          id: enhancedPropertyImage.propertyImageId,
-          imageOrder: enhancedPropertyImage.imageOrder
-        }
-      });
-      return sortedImages;
-    });
-
-    // Hide comparison slider
-    console.log('👁️ [ImageStudioClientWrapper] Hiding comparison slider');
-    setIsComparisonVisible(false);
-    resetEnhancement();
-    
-    toast.success("Imagen mejorada guardada correctamente");
-    console.log("✅ [ImageStudioClientWrapper] Enhanced image saved successfully:", enhancedPropertyImage.propertyImageId);
-  }, [enhancedPropertyImage, resetEnhancement]);
+    try {
+      await saveEnhanced();
+    } catch (error) {
+      console.error('Save enhanced image failed:', error);
+    }
+  }, [enhancedImageUrl, enhancementMetadata, saveEnhanced]);
 
   // Handle discarding the enhanced image
   const handleDiscardEnhanced = useCallback(() => {
-    console.log('🗑️ [ImageStudioClientWrapper] handleDiscardEnhanced called');
+    // Hide comparison and reset all enhancement state
     setIsComparisonVisible(false);
-    // Don't reset enhancement data - just hide the comparison
-    // This allows users to reopen the comparison later
-    console.log("✅ [ImageStudioClientWrapper] Comparison hidden (enhancement data preserved)");
-  }, []);
+    resetEnhancement();
+    
+    // Since we're using defer storage pattern:
+    // - The enhanced image was never saved to S3 or database
+    // - Only the temporary Freepik URL existed
+    // - Discarding simply clears the temporary state
+    // - No cleanup needed, no waste generated!
+    toast.success("Imagen mejorada descartada");
+  }, [resetEnhancement]);
 
 
   return (
@@ -173,7 +131,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
         <ImageStudioTools 
           onEnhanceImage={handleEnhanceImage}
           enhancementStatus={enhancementStatus}
-          enhancementProgress={enhancementProgress}
+          _enhancementProgress={enhancementProgress}
           _enhancementError={enhancementError}
           selectedImage={selectedImage}
           isComparisonVisible={isComparisonVisible}
@@ -189,6 +147,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
             onImageSelect={setSelectedIndex}
             isComparisonMode={isComparisonVisible}
             enhancedImageUrl={enhancedImageUrl ?? ""}
+            enhancementStatus={enhancementStatus}
             onSave={handleSaveEnhanced}
             onDiscard={handleDiscardEnhanced}
           />

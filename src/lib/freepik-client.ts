@@ -81,16 +81,6 @@ class FreepikClient {
       };
     };
 
-    console.log('🔍 [FreepikClient] Raw API response for task', taskId, ':', {
-      fullResponse: response,
-      dataKeys: Object.keys(response.data || {}),
-      status: response.data?.status,
-      generated: response.data?.generated,
-      generatedLength: response.data?.generated?.length,
-      generatedIsEmpty: response.data?.generated?.length === 0,
-      allDataFields: response.data
-    });
-
     // Fix: Freepik returns generated images directly in data.generated, not data.result.generated
     const result = response.data.generated && response.data.generated.length > 0 ? {
       generated: response.data.generated
@@ -98,7 +88,7 @@ class FreepikClient {
 
     return {
       id: taskId,
-      status: response.data.status as 'IN_PROGRESS' | 'SUCCESS' | 'FAILED',
+      status: response.data.status,
       progress: response.data.progress,
       result: result,
       error: response.data.error,
@@ -121,7 +111,6 @@ class FreepikClient {
           if (response.status === 429) {
             // Rate limited - wait and retry
             const waitTime = Math.pow(2, i) * 1000;
-            console.log(`Freepik API rate limited, waiting ${waitTime}ms before retry...`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
             continue;
           }
@@ -150,7 +139,6 @@ class FreepikClient {
         
         // Wait before retrying with exponential backoff
         const waitTime = Math.pow(2, i) * 1000;
-        console.log(`Freepik API request failed, waiting ${waitTime}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }

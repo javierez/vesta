@@ -9,7 +9,7 @@ import type { EnhancementStatus, PropertyImage } from "~/types/freepik";
 interface ImageStudioToolsProps {
   onEnhanceImage: () => Promise<void>;
   enhancementStatus: EnhancementStatus;
-  enhancementProgress: number;
+  _enhancementProgress: number;
   _enhancementError: string | null;
   selectedImage?: PropertyImage;
   isComparisonVisible?: boolean;
@@ -18,7 +18,7 @@ interface ImageStudioToolsProps {
 export function ImageStudioTools({
   onEnhanceImage,
   enhancementStatus,
-  enhancementProgress,
+  _enhancementProgress,
   _enhancementError,
   selectedImage,
   isComparisonVisible,
@@ -58,10 +58,6 @@ export function ImageStudioTools({
   };
 
   const openConfirmModal = (tool: typeof tools[0]) => {
-    console.log('🪟 [ImageStudioTools] Opening confirmation modal', {
-      toolId: tool.id,
-      toolTitle: tool.title
-    });
     setConfirmModal({
       isOpen: true,
       tool: tool
@@ -76,44 +72,28 @@ export function ImageStudioTools({
   };
 
   const handleConfirmTool = async () => {
-    console.log('🔧 [ImageStudioTools] handleConfirmTool called', {
-      tool: confirmModal.tool?.title,
-      toolId: confirmModal.tool?.id,
-      selectedImage: selectedImage ? `${selectedImage.propertyImageId}` : 'none'
-    });
     
     if (confirmModal.tool) {
-      console.log(`🔧 [ImageStudioTools] Executing tool: ${confirmModal.tool.title}`);
-      
       // Close modal immediately after user confirms
-      console.log('🔧 [ImageStudioTools] Closing modal immediately after confirmation');
       const currentTool = confirmModal.tool;
       closeConfirmModal();
       
       if (currentTool.id === 'quality') {
         // Handle quality enhancement
         if (!selectedImage) {
-          console.error('❌ [ImageStudioTools] No image selected for enhancement');
+          console.error('No image selected for enhancement');
           return;
         }
         
-        console.log('🚀 [ImageStudioTools] Starting enhancement for image:', {
-          imageId: selectedImage.propertyImageId,
-          imageUrl: selectedImage.imageUrl,
-          referenceNumber: selectedImage.referenceNumber,
-          imageOrder: selectedImage.imageOrder
-        });
         
         try {
-          console.log('📞 [ImageStudioTools] Calling onEnhanceImage()');
           await onEnhanceImage();
-          console.log('✅ [ImageStudioTools] onEnhanceImage() completed successfully');
           
           // Wait for the comparison modal to open before flipping card back
           // The callback will be triggered from the parent component
           
         } catch (error) {
-          console.error('❌ [ImageStudioTools] Enhancement failed:', error);
+          console.error('Enhancement failed:', error);
           // Only flip card back on error
           setFlippedCards(prev => ({
             ...prev,
@@ -122,7 +102,6 @@ export function ImageStudioTools({
         }
       } else {
         // Other tools are not implemented yet
-        console.log(`ℹ️ [ImageStudioTools] Tool ${currentTool.id} not implemented yet`);
         
         // Flip the card back to front immediately for non-implemented tools
         setFlippedCards(prev => ({
@@ -131,14 +110,13 @@ export function ImageStudioTools({
         }));
       }
     } else {
-      console.warn('⚠️ [ImageStudioTools] No tool selected in modal');
+      console.warn('No tool selected in modal');
     }
   };
 
   // Handle comparison modal opening - flip quality card back when comparison becomes visible
   useEffect(() => {
     if (isComparisonVisible) {
-      console.log('📱 [ImageStudioTools] Comparison became visible, flipping quality card back');
       setFlippedCards(prev => ({
         ...prev,
         quality: false
@@ -281,19 +259,13 @@ export function ImageStudioTools({
                     <>
                       <button 
                         className={cn(
-                          "w-10 h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center mb-3 hover:from-amber-500 hover:to-rose-500 transition-all duration-200 shadow-md hover:shadow-lg",
+                          "w-14 h-14 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center mb-2 hover:from-amber-500 hover:to-rose-500 transition-all duration-200 shadow-md hover:shadow-lg",
                           tool.id === 'quality' && !selectedImage && "opacity-50 cursor-not-allowed"
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log('💲 [ImageStudioTools] Action button clicked', {
-                            toolId: tool.id,
-                            hasSelectedImage: !!selectedImage,
-                            selectedImageId: selectedImage?.propertyImageId
-                          });
                           
                           if (tool.id === 'quality' && !selectedImage) {
-                            console.warn('⚠️ [ImageStudioTools] No image selected, blocking modal');
                             // Don't open modal if no image is selected
                             return;
                           }
@@ -302,11 +274,11 @@ export function ImageStudioTools({
                         }}
                         disabled={tool.id === 'quality' && !selectedImage}
                       >
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       </button>
-                      <div className="text-xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent mb-1">
+                      <div className="text-lg font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent mb-1">
                         {tool.price}
                       </div>
                       <p className="text-xs text-gray-700 font-medium">

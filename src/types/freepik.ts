@@ -16,7 +16,7 @@ export interface FreepikEnhanceResponse {
 
 export interface FreepikTaskStatus {
   id: string;
-  status: 'IN_PROGRESS' | 'SUCCESS' | 'FAILED';
+  status: 'IN_PROGRESS' | 'SUCCESS' | 'FAILED' | 'COMPLETED';
   progress?: number;
   result?: {
     generated: string[];

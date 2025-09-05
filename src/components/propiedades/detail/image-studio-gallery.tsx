@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Save, X, Move, ArrowLeft, ArrowRight } from 
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import type { PropertyImage } from "~/lib/data";
+import type { EnhancementStatus } from "~/types/freepik";
 
 interface ImageStudioGalleryProps {
   images: PropertyImage[];
@@ -17,6 +18,7 @@ interface ImageStudioGalleryProps {
   // Comparison mode props
   isComparisonMode?: boolean;
   enhancedImageUrl?: string;
+  enhancementStatus?: EnhancementStatus;
   onSave?: () => void;
   onDiscard?: () => void;
 }
@@ -30,6 +32,7 @@ export function ImageStudioGallery({
   onImageSelect,
   isComparisonMode = false,
   enhancedImageUrl,
+  enhancementStatus,
   onSave,
   onDiscard,
 }: ImageStudioGalleryProps) {
@@ -261,7 +264,7 @@ export function ImageStudioGallery({
   // Show only main image (for results)
   if (showOnlyMainImage) {
     const currentImage = images[selectedIndex];
-    const currentImageId = currentImage?.propertyImageId.toString();
+    const _currentImageId = currentImage?.propertyImageId.toString();
     
     return (
       <div className="space-y-8">
@@ -426,15 +429,26 @@ export function ImageStudioGallery({
           <div className="flex justify-center gap-4">
             <Button
               onClick={onSave}
-              className="bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white border-0 shadow-lg hover:shadow-xl transition-all px-6 py-3"
+              disabled={enhancementStatus === 'processing'}
+              className="bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white border-0 shadow-lg hover:shadow-xl transition-all px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save className="w-4 h-4 mr-2" />
-              Guardar versión mejorada
+              {enhancementStatus === 'processing' ? (
+                <>
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar versión mejorada
+                </>
+              )}
             </Button>
             <Button
               onClick={onDiscard}
+              disabled={enhancementStatus === 'processing'}
               variant="outline"
-              className="border-gray-200 hover:bg-gray-50 shadow-lg hover:shadow-xl transition-all px-6 py-3"
+              className="border-gray-200 hover:bg-gray-50 shadow-lg hover:shadow-xl transition-all px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <X className="w-4 h-4 mr-2" />
               Descartar
