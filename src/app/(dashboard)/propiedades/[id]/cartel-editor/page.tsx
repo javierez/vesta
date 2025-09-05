@@ -4,18 +4,19 @@ import { ArrowLeft, Edit, FileText } from "lucide-react";
 import Link from "next/link";
 
 interface CartelEditorPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function CartelEditorPage({ params }: CartelEditorPageProps) {
+export default async function CartelEditorPage({ params }: CartelEditorPageProps) {
+  const resolvedParams = await params;
   return (
     <div className="container mx-auto py-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <Link href={`/propiedades/${params.id}`}>
+          <Link href={`/propiedades/${resolvedParams.id}`}>
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver a la Propiedad
@@ -23,7 +24,7 @@ export default function CartelEditorPage({ params }: CartelEditorPageProps) {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Editor de Carteles</h1>
-            <p className="text-sm text-gray-600">Propiedad ID: {params.id}</p>
+            <p className="text-sm text-gray-600">Propiedad ID: {resolvedParams.id}</p>
           </div>
         </div>
       </div>
