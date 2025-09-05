@@ -25,12 +25,12 @@ export function ImageStudioGallery({
   onImageSelect,
 }: ImageStudioGalleryProps) {
   const [internalSelectedIndex, setInternalSelectedIndex] = useState(0);
-  const [selectedImage, setSelectedImage] = useState<PropertyImage | null>(
+  const [, setSelectedImage] = useState<PropertyImage | null>(
     images.length > 0 ? images[0]! : null
   );
   
   // Use external selectedIndex if provided, otherwise use internal
-  const selectedIndex = externalSelectedIndex !== undefined ? externalSelectedIndex : internalSelectedIndex;
+  const selectedIndex = externalSelectedIndex ?? internalSelectedIndex;
   const [imageOrientation, setImageOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
 
   // Use the same placeholder image as property-card.tsx

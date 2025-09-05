@@ -13,7 +13,7 @@ interface ReplyComposerProps {
 }
 
 export function ReplyComposer({
-  parentId,
+  parentId: _parentId,
   onReply,
   onCancel,
   placeholder = "Escribe tu respuesta...",

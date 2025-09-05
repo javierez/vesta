@@ -70,6 +70,7 @@ export default function OperacionesPage() {
     };
 
     void fetchInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Separate effect for fetching detailed tasks based on days filter

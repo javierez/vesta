@@ -36,7 +36,8 @@ export function CartelesManager({
 
   // Fetch carteles from API
   useEffect(() => {
-    fetchCarteles();
+    void fetchCarteles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listingId]);
 
   const fetchCarteles = async () => {
@@ -46,8 +47,8 @@ export function CartelesManager({
       if (!response.ok) {
         throw new Error("Failed to fetch carteles");
       }
-      const data = await response.json();
-      setCarteles(data.documents || []);
+      const data = await response.json() as { documents?: Cartel[] };
+      setCarteles(data.documents ?? []);
     } catch (error) {
       console.error("Error fetching carteles:", error);
       toast.error("Error al cargar los carteles");
@@ -84,7 +85,7 @@ export function CartelesManager({
           throw new Error(`Failed to upload ${file.name}`);
         }
 
-        const result = await response.json();
+        const result = await response.json() as { document: Cartel };
         toast.success(`${file.name} subido correctamente`);
         return result.document;
       } catch (error) {
@@ -167,7 +168,7 @@ export function CartelesManager({
     return (
       <div className={cn("space-y-6", className)}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+          {[...Array<undefined>(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="p-6">
                 <div className="flex flex-col items-center space-y-4">

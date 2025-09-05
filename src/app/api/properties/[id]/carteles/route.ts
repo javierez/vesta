@@ -155,7 +155,7 @@ export async function DELETE(
       );
     }
 
-    const body = await request.json();
+    const body = await request.json() as { docId: string; documentKey: string };
     const { docId, documentKey } = body;
 
     if (!docId || !documentKey) {
@@ -170,7 +170,7 @@ export async function DELETE(
       await s3Client.send(
         new DeleteObjectCommand({
           Bucket: process.env.AWS_S3_BUCKET!,
-          Key: documentKey,
+          Key: String(documentKey),
         }),
       );
     } catch (s3Error) {

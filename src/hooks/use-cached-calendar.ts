@@ -315,6 +315,7 @@ export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarRetu
       // Start processing queue
       processPrefetchQueue();
     }, 100) as unknown as number; // Small delay to batch multiple navigation events
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentWeekStart, isCacheStale]);
 
   const processPrefetchQueue = useCallback(() => {
