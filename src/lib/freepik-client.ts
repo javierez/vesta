@@ -150,8 +150,19 @@ class FreepikClient {
   }
 }
 
-// Export a singleton instance
-export const freepikClient = new FreepikClient();
+// Export a lazy-loaded singleton instance
+let clientInstance: FreepikClient | null = null;
+
+export const freepikClient = {
+  get instance(): FreepikClient {
+    clientInstance ??= new FreepikClient();
+    return clientInstance;
+  },
+  
+  // Proxy methods to the actual client
+  enhance: (imageBase64: string) => freepikClient.instance.enhance(imageBase64),
+  checkStatus: (taskId: string) => freepikClient.instance.checkStatus(taskId),
+};
 
 // Also export the class for testing purposes
 export { FreepikClient };
