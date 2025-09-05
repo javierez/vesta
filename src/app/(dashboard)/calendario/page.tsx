@@ -35,10 +35,6 @@ import {
   RefreshCw,
   AlertCircle,
   Settings,
-  ArrowLeftRight,
-  ArrowRight,
-  ArrowLeft,
-  Ban,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -49,15 +45,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "~/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { Label } from "~/components/ui/label";
 import Image from "next/image"; // Add Image import for optimized images
 import { useWeeklyAppointments } from "~/hooks/use-cached-calendar";
 import CalendarEvent, {
@@ -179,7 +166,7 @@ export default function AppointmentsPage() {
   } = useAppointmentModal();
 
   // Use Google Calendar integration
-  const { integration, connect, disconnect, syncNow, updateSyncDirection } =
+  const { integration, connect, disconnect, updateSyncDirection } =
     useGoogleCalendarIntegration();
     
   const [syncSettingsOpen, setSyncSettingsOpen] = useState(false);

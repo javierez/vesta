@@ -13,7 +13,6 @@ import {
 } from "~/server/queries/appointment";
 import {
   findOrCreateLeadForAppointment,
-  syncLeadStatusFromAppointment,
 } from "~/server/queries/lead-status-sync";
 import { syncToGoogle } from "~/lib/google-calendar-sync";
 

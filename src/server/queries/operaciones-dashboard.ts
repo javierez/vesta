@@ -354,7 +354,7 @@ export async function getTodayAppointments(
       endTime: appt.endTime,
       tripTimeMinutes: appt.tripTimeMinutes ?? undefined,
       status: appt.status as TodayAppointment["status"],
-      appointmentType: appt.appointmentType || "Visita", // Use actual type from database, default to "Visita"
+      appointmentType: appt.appointmentType ?? "Visita", // Use actual type from database, default to "Visita"
     }));
   } catch (error) {
     console.error("Error fetching today's appointments:", error);

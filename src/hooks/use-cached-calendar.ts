@@ -181,7 +181,6 @@ export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarRetu
   // State
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cacheVersion, setCacheVersion] = useState(0);
   
   // Prefetch management
   const prefetchQueueRef = useRef<PrefetchRequest[]>([]);
@@ -252,7 +251,6 @@ export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarRetu
         
         // Trigger re-render if this is for the current week
         if (weekKey === currentWeekKey) {
-          setCacheVersion(prev => prev + 1);
         }
         
         if (!isBackground && weekKey === currentWeekKey) {
@@ -355,7 +353,7 @@ export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarRetu
     if (!cache) return [];
     
     return mergeAndSortEvents(cache.appointments, cache.optimisticEvents);
-  }, [currentWeekKey, cacheVersion]);
+  }, [currentWeekKey]);
 
   // Check if current week is loading
   const isCurrentWeekLoading = useMemo(() => {
@@ -372,7 +370,6 @@ export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarRetu
         
         // Trigger re-render if this affects the current week
         if (weekKey === currentWeekKey) {
-          setCacheVersion(prev => prev + 1);
         }
         break;
       }
@@ -402,7 +399,6 @@ export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarRetu
     
     // Trigger re-render if this affects the current week
     if (eventWeekKey === currentWeekKey) {
-      setCacheVersion(prev => prev + 1);
     }
     
     // Auto-cleanup
@@ -421,7 +417,6 @@ export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarRetu
         
         // Trigger re-render if this affects the current week
         if (weekKey === currentWeekKey) {
-          setCacheVersion(prev => prev + 1);
         }
         break;
       }
@@ -464,7 +459,6 @@ export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarRetu
         
         // Trigger re-render if this affects the current week
         if (weekKey === currentWeekKey) {
-          setCacheVersion(prev => prev + 1);
         }
       } else {
         setError(result.error ?? "Error desconocido");
@@ -475,14 +469,13 @@ export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarRetu
     } finally {
       setLoading(false);
     }
-  }, [updateAccessOrder]);
+  }, [updateAccessOrder, currentWeekKey]);
 
   const clearCache = useCallback(() => {
     cacheRef.current.clear();
     accessOrderRef.current.length = 0;
     prefetchQueueRef.current.length = 0;
     activeFetchesRef.current.clear();
-    setCacheVersion(prev => prev + 1);
   }, []);
 
   const getCacheStats = useCallback((): CacheStats => {

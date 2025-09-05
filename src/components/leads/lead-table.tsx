@@ -9,13 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
-  MoreHorizontal,
-  User,
-  Home,
-  ExternalLink,
   ChevronDown,
   MapPin,
 } from "lucide-react";
@@ -24,7 +19,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "~/components/ui/dropdown-menu";
 import {
   Tooltip,
@@ -112,32 +106,6 @@ export function LeadTable({
     return acc;
   }, [] as LeadWithDetails[]);
 
-  const getStatusBadgeVariant = (status: LeadStatus) => {
-    switch (status) {
-      case "Info Incompleta":
-        return "secondary";
-      case "Info Solicitada":
-        return "outline";
-      case "Respuesta Pendiente":
-        return "outline";
-      case "Visita Pendiente":
-        return "default";
-      case "Visita Realizada":
-        return "default";
-      case "Oferta Presentada":
-        return "default";
-      case "Oferta Pendiente":
-        return "default";
-      case "Oferta Aceptada":
-        return "default";
-      case "Oferta Rechazada":
-        return "destructive";
-      case "Cerrado":
-        return "secondary";
-      default:
-        return "secondary";
-    }
-  };
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("es-ES", {
@@ -190,19 +158,10 @@ export function LeadTable({
     }
   };
 
-  const handleViewContact = (contactId: bigint) => {
-    router.push(`/contactos/${contactId.toString()}`);
-  };
-
   const handleViewListing = (listingId: bigint | null | undefined) => {
     if (listingId) {
       router.push(`/propiedades/${listingId.toString()}`);
     }
-  };
-
-  const handleViewLead = (leadId: bigint) => {
-    // Future: navigate to lead detail page
-    router.push(`/operaciones/leads/${leadId.toString()}`);
   };
 
   return (

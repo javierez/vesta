@@ -27,7 +27,7 @@ import type {
   UrgentTask,
   TodayAppointment,
 } from "~/server/queries/operaciones-dashboard";
-import { getMostUrgentTasksWithAuth, updateTaskWithAuth, deleteTaskWithAuth } from "~/server/queries/task";
+import { type getMostUrgentTasksWithAuth, updateTaskWithAuth, deleteTaskWithAuth } from "~/server/queries/task";
 import DaysDropdown from "~/components/ui/DaysDropdown";
 
 type DetailedTask = Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>[0];
@@ -171,7 +171,7 @@ export default function WorkQueueCard({
       "Viaje": "viaje",
     };
     
-    return typeMap[appointmentType] || appointmentType?.toLowerCase() || "cita";
+    return typeMap[appointmentType] ?? appointmentType?.toLowerCase() ?? "cita";
   };
 
   const getInitials = (firstName?: string, lastName?: string, name?: string) => {
@@ -315,7 +315,7 @@ export default function WorkQueueCard({
       
       // Revert optimistic update on error - restore the task
       setOptimisticTasks(prev => [...prev, taskToDelete].sort((a, b) => 
-        new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime()
+        new Date(a.dueDate ?? 0).getTime() - new Date(b.dueDate ?? 0).getTime()
       ));
       
       setTaskStates(prev => ({ ...prev, [taskIdStr]: 'error' }));
@@ -369,7 +369,7 @@ export default function WorkQueueCard({
 
             {loading ? (
               <div className="space-y-1.5">
-                {[...Array(3)].map((_, i) => (
+                {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="animate-pulse rounded-lg shadow-md p-2.5">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-gray-200 rounded"></div>

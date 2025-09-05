@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { ImageGallery } from "./image-gallery";
 import { PortalSelection } from "./portal-selection";
@@ -88,6 +89,7 @@ export function PropertyTabs({
   energyCertificate,
 }: PropertyTabsProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("general");
   const [tabData, setTabData] = useState<{
     images: PropertyImage[] | null;
@@ -402,6 +404,16 @@ export function PropertyTabs({
             propertyId={BigInt(listing.propertyId)}
             referenceNumber={listing.referenceNumber ?? ""}
           />
+          <div className="flex justify-center pt-6">
+            <button
+              type="button"
+              onClick={() => router.push(`/propiedades/${listing.listingId}/image-studio`)}
+              className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95"
+            >
+              Vesta Image Studio
+              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+            </button>
+          </div>
         </div>
       </TabsContent>
 

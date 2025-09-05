@@ -453,7 +453,7 @@ export async function listLeadsWithDetails(
 
     // Deduplicate results by listingContactId in case of duplicate rows from joins
     const uniqueLeads = allLeads.reduce((acc, lead) => {
-      const key = lead.listingContactId.toString();
+      const key = String((lead as Record<string, unknown>).listingContactId);
       if (!acc.has(key)) {
         acc.set(key, lead);
       }

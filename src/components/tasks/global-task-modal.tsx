@@ -143,10 +143,15 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
     try {
       const contactsData = await searchContactsWithAuth(query);
       // Transform the data to match our interface
-      const formattedContacts: Contact[] = contactsData.map((contact: any) => ({
+      const formattedContacts: Contact[] = contactsData.map((contact: {
+        contactId: string | number | bigint;
+        firstName: string;
+        lastName: string;
+        email?: string | null;
+      }) => ({
         contactId: BigInt(contact.contactId),
-        firstName: contact.firstName as string,
-        lastName: contact.lastName as string,
+        firstName: contact.firstName,
+        lastName: contact.lastName,
         email: contact.email ?? undefined,
       }));
       setSearchResults(formattedContacts);
