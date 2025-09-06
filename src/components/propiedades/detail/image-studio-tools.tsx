@@ -259,8 +259,9 @@ export function ImageStudioTools({
                     <>
                       <button 
                         className={cn(
-                          "w-14 h-14 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center mb-2 hover:from-amber-500 hover:to-rose-500 transition-all duration-200 shadow-md hover:shadow-lg",
-                          tool.id === 'quality' && !selectedImage && "opacity-50 cursor-not-allowed"
+                          "w-20 h-20 rounded-xl bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center mb-2 hover:from-amber-500 hover:to-rose-500 transition-all duration-200 shadow-xl hover:shadow-2xl hover:scale-105 relative overflow-hidden group",
+                          tool.id === 'quality' && !selectedImage && "opacity-50 cursor-not-allowed",
+                          tool.id === 'quality' && selectedImage && "animate-pulse-glow"
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -274,8 +275,9 @@ export function ImageStudioTools({
                         }}
                         disabled={tool.id === 'quality' && !selectedImage}
                       >
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                        <svg className="w-6 h-6 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
                       </button>
                       <div className="text-lg font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent mb-1">
