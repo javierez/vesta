@@ -1300,3 +1300,32 @@ export async function getListingDocumentsData(listingId: number) {
     throw error;
   }
 }
+
+// Ultra-lightweight query for CartelEditor component - only listing type needed
+export async function getListingCartelData(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+
+  try {
+    const [cartelData] = await db
+      .select({
+        listingType: listings.listingType,
+      })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+        ),
+      );
+
+    if (!cartelData) {
+      throw new Error("Listing not found");
+    }
+
+    return cartelData;
+  } catch (error) {
+    console.error("Error fetching listing cartel data:", error);
+    throw error;
+  }
+}
