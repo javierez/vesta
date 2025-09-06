@@ -69,7 +69,7 @@ export function CartelImageSelector({
 
   const handleSelectAll = () => {
     if (images.length <= maxSelection) {
-      const allUrls = images.map(img => img.imageUrl).filter(Boolean) as string[];
+      const allUrls = images.map(img => img.imageUrl).filter(Boolean);
       onSelectionChange(allUrls);
     }
   };
@@ -194,7 +194,7 @@ export function CartelImageSelector({
               {/* Selection order for selected images */}
               {isSelected && (
                 <div className="absolute bottom-2 left-2 bg-amber-400 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">
-                  {selectedImages.indexOf(imageUrl!) + 1}
+                  {selectedImages.indexOf(imageUrl) + 1}
                 </div>
               )}
             </button>

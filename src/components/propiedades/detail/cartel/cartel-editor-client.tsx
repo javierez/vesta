@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
+import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
 import {
@@ -45,31 +46,41 @@ import { getTemplateImages } from "~/lib/carteleria/s3-images";
 import { CartelMiniGallery } from "./cartel-mini-gallery";
 import type { PropertyImage } from "~/lib/data";
 
+// Database to UI value mapping
+const mapDatabaseListingType = (dbType?: "Sale" | "Rent"): "venta" | "alquiler" | null => {
+  if (!dbType) return null;
+  return dbType === "Sale" ? "venta" : "alquiler";
+};
+
 interface CartelEditorClientProps {
   listingId: string;
   images?: PropertyImage[];
+  databaseListingType?: "Sale" | "Rent"; // NEW: Optional database value
 }
 
-export function CartelEditorClient({ listingId, images = [] }: CartelEditorClientProps) {
+export function CartelEditorClient({ listingId, images = [], databaseListingType }: CartelEditorClientProps) {
   // Template configuration state
-  const [config, setConfig] = useState<TemplateConfiguration>({
-    templateStyle: "classic",
-    orientation: "vertical",
-    propertyType: "piso",
-    listingType: "venta",
-    imageCount: 4,
-    showPhone: true,
-    showEmail: true,
-    showWebsite: true,
-    showQR: true,
-    showReference: true,
-    showWatermark: true,
-    showIcons: true,
-    showShortDescription: false,
-    titleFont: "default",
-    priceFont: "default",
-    overlayColor: "default",
-    additionalFields: ["hasElevator", "hasGarage", "energyConsumptionScale"],
+  const [config, setConfig] = useState<TemplateConfiguration>(() => {
+    const mappedListingType = mapDatabaseListingType(databaseListingType);
+    return {
+      templateStyle: "classic",
+      orientation: "vertical",
+      propertyType: "piso",
+      listingType: mappedListingType ?? "venta", // Use DB value or fallback
+      imageCount: 4,
+      showPhone: true,
+      showEmail: true,
+      showWebsite: true,
+      showQR: true,
+      showReference: true,
+      showWatermark: true,
+      showIcons: true,
+      showShortDescription: false,
+      titleFont: "default",
+      priceFont: "default",
+      overlayColor: "default",
+      additionalFields: ["hasElevator", "hasGarage", "energyConsumptionScale"],
+    };
   });
 
   // Property data state (using mock data as base)
@@ -293,14 +304,22 @@ export function CartelEditorClient({ listingId, images = [] }: CartelEditorClien
                 </div>
 
                 <div>
-                  <Label htmlFor="listingType">Tipo de Listado</Label>
+                  <Label htmlFor="listingType" className="flex items-center gap-2">
+                    Tipo de Listado
+                    {databaseListingType && (
+                      <Badge variant="secondary" className="text-xs">
+                        Desde DB
+                      </Badge>
+                    )}
+                  </Label>
                   <Select
                     value={config.listingType}
                     onValueChange={(value: "venta" | "alquiler") =>
                       updateConfig({ listingType: value })
                     }
+                    disabled={!!databaseListingType}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={databaseListingType ? "opacity-75" : ""}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -308,6 +327,11 @@ export function CartelEditorClient({ listingId, images = [] }: CartelEditorClien
                       <SelectItem value="alquiler">Alquiler</SelectItem>
                     </SelectContent>
                   </Select>
+                  {databaseListingType && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Valor cargado desde base de datos - No editable
+                    </p>
+                  )}
                 </div>
 
                 <div>

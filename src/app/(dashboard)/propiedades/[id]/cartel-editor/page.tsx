@@ -6,7 +6,7 @@ import {
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { getSecureSession } from "~/lib/dal";
-import { CartelEditorClient } from "~/components/propiedades/detail/cartel/cartel-editor-client";
+import { CartelEditorPhase1 } from "~/components/propiedades/detail/cartel/cartel-editor-phase1";
 import { getPropertyImages } from "~/server/queries/property_images";
 import type { PropertyImage } from "~/lib/data";
 
@@ -59,7 +59,7 @@ export default async function CartelEditorPage({ params }: CartelEditorPageProps
       />
 
       {/* Main Content */}
-      <CartelEditorClient listingId={unwrappedParams.id} images={images as PropertyImage[]} />
+      <CartelEditorPhase1 listingId={unwrappedParams.id} images={images as PropertyImage[]} />
     </div>
   );
 }
