@@ -1,10 +1,33 @@
-# Dynamic Cartel Database Integration Guide
+# Dynamic Cartel Database Integration Guide - Incremental Approach
 
 ## Problem Statement & Process Flow
 
 Currently, the cartel editor system uses mock data from `getExtendedDefaultPropertyData()` which creates fake property information for template previews and PDF generation. 
 
-## The Exact Process We Need:
+**🚀 INCREMENTAL STRATEGY**: We will implement database integration step by step, starting with individual fields and testing each one before moving to the next. This allows for safe, controlled migration without breaking existing functionality.
+
+## Phase 1: Start with Single Field - `listingType`
+
+### Step 1.1: First Field Integration - Tipo de Listado
+Our first target is the **"Tipo de Listado"** select field (lines 296-311 in cartel-editor-client.tsx):
+- Currently hardcoded with manual selection between "venta"/"alquiler"
+- Will be dynamized to fetch from `listings.listingType` database field
+- Both database and hardcoded values will coexist during testing phase
+
+### Step 1.2: Test & Validate
+After implementing `listingType` integration:
+1. ✅ Verify database value loads correctly
+2. ✅ Test fallback to hardcoded when DB unavailable  
+3. ✅ Confirm PDF generation works with database value
+4. ✅ UI shows clear indication of data source (DB vs hardcoded)
+
+### Step 1.3: Then Continue Incrementally
+Once `listingType` is stable, proceed field by field:
+- Next: `propertyType` 
+- Then: Basic property data (title, price, bedrooms, etc.)
+- Finally: Complex data structures and full integration
+
+## The Target Process (Eventually):
 
 ```
 [Database] → [Server Component] → [cartel-editor-client.tsx] → [EDITABLE Dynamic Template] → [Static Template] → [PDF]
@@ -12,13 +35,22 @@ Currently, the cartel editor system uses mock data from `getExtendedDefaultPrope
                                     [User Can Edit Data]        [Live Preview]         [Generate PDF]
 ```
 
-### Key Requirements:
+### Key Requirements (Final Goal):
 
 1. **cartel-editor-client.tsx receives dynamic data** from a server component (from listings table, properties table, etc.)
 2. **User can edit that dynamic data** within the cartel editor interface 
 3. **Dynamic template shows in live preview** with user's edits in real-time
 4. **From that dynamic template, create a static component** that captures the final edited data
 5. **Static component is used for PDF generation** via Puppeteer
+
+## Benefits of Incremental Approach
+
+✅ **Risk Mitigation**: Test each change thoroughly before proceeding  
+✅ **No Breaking Changes**: Existing functionality always preserved  
+✅ **Easy Rollback**: Can revert individual features if issues arise  
+✅ **Clear Progress**: Tangible progress with each field integrated  
+✅ **Debugging Simplicity**: Isolate issues to specific components  
+✅ **Team Confidence**: Build trust through small, successful deployments
 
 ## Current System Architecture Analysis
 
@@ -159,24 +191,157 @@ interface ExtendedTemplatePropertyData {
 }
 ```
 
-## Recommended Solution: Database → Editable Dynamic Template → Static PDF
+## Phase 1 Implementation: Start with `listingType` Only
 
-### Your Exact Architecture Requirements:
+### Step 1: Minimal Infrastructure for Single Field
+
+Instead of building the full data conversion system, we start with the minimum needed for `listingType`:
+
+**Current State (lines 296-311 in cartel-editor-client.tsx):**
+```typescript
+<Label htmlFor="listingType">Tipo de Listado</Label>
+<Select
+  value={config.listingType}  // Currently "venta" | "alquiler"
+  onValueChange={(value: "venta" | "alquiler") =>
+    updateConfig({ listingType: value })
+  }
+>
+  <SelectContent>
+    <SelectItem value="venta">Venta</SelectItem>
+    <SelectItem value="alquiler">Alquiler</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+**Target State (Phase 1):**
+```typescript
+<Label htmlFor="listingType">
+  Tipo de Listado 
+  {databaseListingType && (
+    <Badge variant="secondary" className="ml-2">
+      Desde DB
+    </Badge>
+  )}
+</Label>
+<Select
+  value={config.listingType}
+  onValueChange={(value: "venta" | "alquiler") =>
+    updateConfig({ listingType: value })
+  }
+  disabled={!!databaseListingType} // Disabled when from database
+>
+  <SelectContent>
+    <SelectItem value="venta">Venta</SelectItem>
+    <SelectItem value="alquiler">Alquiler</SelectItem>
+  </SelectContent>
+</Select>
+{databaseListingType && (
+  <p className="text-sm text-muted-foreground mt-1">
+    Valor cargado desde base de datos. No editable.
+  </p>
+)}
+```
+
+### Phase 1 Implementation Plan
+
+#### Step 1.1: Update CartelEditorClient Props
+```typescript
+interface CartelEditorClientProps {
+  listingId: string;
+  images?: PropertyImage[];
+  databaseListingType?: "Sale" | "Rent"; // NEW: Single field from DB
+}
+```
+
+#### Step 1.2: Add Database Value Mapping
+```typescript
+// In CartelEditorClient component
+const mapDatabaseListingType = (dbType?: "Sale" | "Rent"): "venta" | "alquiler" | null => {
+  if (!dbType) return null;
+  return dbType === "Sale" ? "venta" : "alquiler";
+};
+
+// Initialize config with database value if available
+const [config, setConfig] = useState<TemplateConfiguration>(() => {
+  const mappedListingType = mapDatabaseListingType(databaseListingType);
+  return {
+    templateStyle: "classic",
+    orientation: "vertical",
+    propertyType: "piso",
+    listingType: mappedListingType || "venta", // Use DB value or fallback
+    // ... rest of config
+  };
+});
+```
+
+#### Step 1.3: Create Minimal Server Component
+```typescript
+// src/components/propiedades/detail/cartel/cartel-editor-phase1.tsx
+import { CartelEditorClient } from "./cartel-editor-client";
+import { getListingCartelData } from "~/server/queries/listing";
+
+interface CartelEditorPhase1Props {
+  listingId: string;
+  images?: PropertyImage[];
+}
+
+export async function CartelEditorPhase1({ listingId, images }: CartelEditorPhase1Props) {
+  let databaseListingType: "Sale" | "Rent" | undefined;
+  
+  try {
+    const cartelData = await getListingCartelData(parseInt(listingId));
+    databaseListingType = cartelData.listingType;
+    console.log("✅ Loaded listingType from database:", databaseListingType);
+  } catch (error) {
+    console.error("❌ Failed to load listingType from database:", error);
+    // Fall back to hardcoded - no databaseListingType passed
+  }
+
+  return (
+    <CartelEditorClient
+      listingId={listingId}
+      images={images}
+      databaseListingType={databaseListingType}
+    />
+  );
+}
+```
+
+### Phase 1 Validation Checklist
+
+After implementing Phase 1:
+1. ✅ Field shows "Desde DB" badge when database value loaded
+2. ✅ Field becomes disabled/non-editable when database value present  
+3. ✅ Field remains editable when database unavailable (fallback)
+4. ✅ PDF generation works with database-sourced listingType
+5. ✅ Clear visual indication of data source
+6. ✅ No breaking changes to existing functionality
+
+### Future Phases (After Phase 1 Success)
+
+#### Phase 2: Add `propertyType`
+- Same pattern as Phase 1
+- Test independently 
+- Validate before proceeding
+
+#### Phase 3: Basic Property Data
+- title, price, bedrooms, bathrooms
+- Incremental field-by-field approach
+
+#### Phase 4: Full Integration  
+- Complete data structures
+- Full server component
+- Complete database integration
+
+### Recommended Solution (Final Goal): Database → Editable Dynamic Template → Static PDF
+
+### Full Architecture (Eventually):
 
 ```
 [Database] → [Server Component] → [cartel-editor-client.tsx] → [EDITABLE Dynamic Template] → [Static Template] → [PDF]
                                            ↓                           ↓                        ↓
                                     [User Can Edit Data]        [Live Preview]         [Generate PDF]
 ```
-
-### Key Components:
-
-1. **Server Component**: Fetches database data and passes to cartel editor
-2. **cartel-editor-client.tsx**: Receives real data, allows editing, shows live preview
-3. **Dynamic Template**: ClassicTemplate showing user's edits in real-time
-4. **Static Template**: Snapshot of final edited data for PDF generation
-
-### Implementation Plan
 
 #### Step 1: Create Database-to-Template Data Converter
 
@@ -734,36 +899,71 @@ export async function safeConvertPropertyToTemplateData(
 }
 ```
 
-## Migration Strategy
+## Incremental Migration Strategy
 
-### Phase 1: Add Database Support (No Breaking Changes)
-1. ✅ Create `property-data-converter.ts`
-2. ✅ Create server wrapper `cartel-editor.tsx` 
-3. ✅ Update client to accept `initialPropertyData` prop
-4. ✅ Keep existing mock data as fallback
+### 🚀 Phase 1: Single Field - `listingType` (CURRENT FOCUS)
+1. ✅ Create minimal server query: `getListingCartelData()`
+2. ✅ Update CartelEditorClient to accept `databaseListingType` prop
+3. ✅ Modify "Tipo de Listado" select with database integration
+4. ✅ Add visual indicators (badges) for data source
+5. ✅ Test thoroughly: database load, fallback, PDF generation
 
-**Result**: System works with both mock and real data
+**Result**: Single field dynamized, both DB and hardcoded coexist
 
-### Phase 2: Update PDF Generation
-1. ✅ Add `propertyId` support to `/templates` page
-2. ✅ Add `propertyId` support to PDF generation API
-3. ✅ Update editor to pass `propertyId` for PDF generation
+**Validation Checklist:**
+- [ ] Database value loads and maps correctly ("Sale" → "venta")
+- [ ] Field becomes disabled when DB value present
+- [ ] Field remains editable when DB unavailable (graceful fallback)
+- [ ] Visual badge shows "Desde DB" when database value loaded
+- [ ] PDF generation works with database-sourced value
+- [ ] Zero breaking changes to existing functionality
 
-**Result**: PDFs can be generated with real database data
+### 🔄 Phase 2: Add `propertyType` Field
+1. ✅ Extend server query to fetch `properties.propertyType`
+2. ✅ Add `databasePropertyType` prop to CartelEditorClient  
+3. ✅ Update "Tipo de Propiedad" select with same pattern as Phase 1
+4. ✅ Test independently before proceeding
 
-### Phase 3: Integrate in Property Pages
-1. ✅ Update property detail pages to use `CartelEditor` 
-2. ✅ Remove mock data dependencies where not needed
-3. ✅ Add proper error handling and loading states
+**Result**: Two fields dynamized and tested
 
-**Result**: Full database integration complete
+### 📈 Phase 3: Basic Property Data Fields
+Add incrementally, one at a time:
+- `title` (property title)
+- `price` (listing price)
+- `bedrooms` / `bathrooms` (property specs)
+- `squareMeters` (property area)
 
-### Testing Strategy
+**Pattern**: Each field gets its own prop, visual indicators, and fallback logic
 
-1. **Unit Tests**: Test data conversion functions
-2. **Integration Tests**: Test database → template → PDF flow
-3. **Manual Testing**: Verify PDFs generate correctly with real data
-4. **Fallback Testing**: Ensure system still works when database is unavailable
+### 🎯 Phase 4: Complex Data & Full Integration
+Only after all individual fields are stable:
+- Consolidate into full `ExtendedTemplatePropertyData` structure
+- Implement complete server wrapper component  
+- Add comprehensive PDF generation with database integration
+- Remove individual field props in favor of complete data structure
+
+### Field-by-Field Testing Strategy
+
+**For Each Field:**
+1. **Unit Tests**: Database query and data mapping
+2. **Visual Tests**: UI shows correct values and indicators  
+3. **Interaction Tests**: Disabled vs editable behavior
+4. **Fallback Tests**: Graceful degradation when DB unavailable
+5. **PDF Tests**: Generated PDFs include correct database values
+
+**Integration Tests (After All Fields):**
+1. **Full Flow**: Database → UI → PDF with real data
+2. **Performance**: Page load times with database queries
+3. **Error Resilience**: System behavior under various failure conditions
+
+### Benefits of Field-by-Field Approach
+
+✅ **Immediate Value**: See progress with each field  
+✅ **Risk Isolation**: Problems affect only one field at a time  
+✅ **Easy Debugging**: Simple to identify and fix issues  
+✅ **Rapid Feedback**: Quick validation of each integration  
+✅ **Team Learning**: Build expertise incrementally  
+✅ **Production Safety**: Always have working fallbacks
 
 ## Benefits of This Approach
 
