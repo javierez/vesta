@@ -1,7 +1,47 @@
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+"use client";
+
+import React, { useState, useRef } from "react";
 import { Button } from "~/components/ui/button";
-import { ArrowLeft, Edit, FileText } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Switch } from "~/components/ui/switch";
+import { Input } from "~/components/ui/input";
+import { Slider } from "~/components/ui/slider";
+import {
+  ArrowLeft,
+  Download,
+  Eye,
+  FileText,
+  Image as ImageIcon,
+  Settings,
+  Loader2,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+} from "lucide-react";
 import Link from "next/link";
+import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
+import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
+import type {
+  TemplateConfiguration,
+  ExtendedTemplatePropertyData,
+} from "~/types/template-data";
+import { AdditionalFieldsSelector } from "~/components/admin/carteleria/controls/additional-fields-selector";
+import { toast } from "sonner";
+import { getTemplateImages } from "~/lib/carteleria/s3-images";
 
 interface CartelEditorPageProps {
   params: Promise<{
@@ -9,101 +49,753 @@ interface CartelEditorPageProps {
   }>;
 }
 
-export default async function CartelEditorPage({ params }: CartelEditorPageProps) {
-  const resolvedParams = await params;
-  return (
-    <div className="container mx-auto py-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <Link href={`/propiedades/${resolvedParams.id}`}>
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver a la Propiedad
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Editor de Carteles</h1>
-            <p className="text-sm text-gray-600">Propiedad ID: {resolvedParams.id}</p>
+export default function CartelEditorPage({ params }: CartelEditorPageProps) {
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+  
+  // Resolve params on component mount
+  React.useEffect(() => {
+    params.then(setResolvedParams);
+  }, [params]);
+
+  // Template configuration state
+  const [config, setConfig] = useState<TemplateConfiguration>({
+    templateStyle: "classic",
+    orientation: "vertical",
+    propertyType: "piso",
+    listingType: "venta",
+    imageCount: 4,
+    showPhone: true,
+    showEmail: true,
+    showWebsite: true,
+    showQR: true,
+    showReference: true,
+    showWatermark: true,
+    showIcons: true,
+    showShortDescription: false,
+    titleFont: "default",
+    priceFont: "default",
+    overlayColor: "default",
+    additionalFields: ["hasElevator", "hasGarage", "energyConsumptionScale"],
+  });
+
+  // Property data state (using mock data as base)
+  const [propertyData, setPropertyData] =
+    useState<ExtendedTemplatePropertyData>(() =>
+      getExtendedDefaultPropertyData("piso"),
+    );
+
+  // UI state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
+  const [lastGeneratedPdf, setLastGeneratedPdf] = useState<string | null>(null);
+  const [previewZoom, setPreviewZoom] = useState(0.4); // Default zoom level
+
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // Handle configuration updates
+  const updateConfig = (updates: Partial<TemplateConfiguration>) => {
+    setConfig((prev) => ({ ...prev, ...updates }));
+  };
+
+  // Handle property data updates
+  const updatePropertyData = (
+    updates: Partial<ExtendedTemplatePropertyData>,
+  ) => {
+    setPropertyData((prev) => ({
+      ...prev,
+      ...updates,
+      location: {
+        ...prev.location,
+        ...(updates.location ?? {}),
+      },
+      specs: {
+        ...prev.specs,
+        ...(updates.specs ?? {}),
+      },
+      contact: {
+        ...prev.contact,
+        ...(updates.contact ?? {}),
+      },
+    }));
+  };
+
+  // Handle image positioning updates
+  const updateImagePosition = (imageUrl: string, x: number, y: number) => {
+    setPropertyData((prev) => ({
+      ...prev,
+      imagePositions: {
+        ...prev.imagePositions,
+        [imageUrl]: { x, y },
+      },
+    }));
+  };
+
+  // Get template images for positioning controls
+  const templateImages = getTemplateImages(config.imageCount);
+
+  // Zoom control functions
+  const zoomIn = () => setPreviewZoom((prev) => Math.min(prev + 0.1, 1.0));
+  const zoomOut = () => setPreviewZoom((prev) => Math.max(prev - 0.1, 0.2));
+  const resetZoom = () =>
+    setPreviewZoom(config.orientation === "vertical" ? 0.4 : 0.35);
+
+  // Generate PDF using Puppeteer
+  const generatePDF = async () => {
+    setIsGenerating(true);
+    try {
+      console.log("🚀 Starting PDF generation...");
+
+      const response = await fetch("/api/puppet/generate-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          templateConfig: config,
+          propertyData: propertyData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as { error?: string };
+        throw new Error(errorData.error ?? "PDF generation failed");
+      }
+
+      // Get the PDF blob
+      const pdfBlob = await response.blob();
+
+      // Create download link
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      setLastGeneratedPdf(pdfUrl);
+
+      // Automatically download the PDF
+      const link = document.createElement("a");
+      link.href = pdfUrl;
+      link.download = `property-template-${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("PDF generado exitosamente!");
+      console.log("✅ PDF generated and downloaded");
+    } catch (error) {
+      console.error("❌ PDF generation error:", error);
+      toast.error(
+        `Error al generar PDF: ${error instanceof Error ? error.message : "Error desconocido"}`,
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Preview the template in a new window
+  const previewTemplate = () => {
+    const templateUrl = new URL("/api/puppet/template", window.location.origin);
+    templateUrl.searchParams.set("config", JSON.stringify(config));
+    templateUrl.searchParams.set("data", JSON.stringify(propertyData));
+
+    window.open(
+      templateUrl.toString(),
+      "_blank",
+      "width=820,height=1160,scrollbars=yes,resizable=yes",
+    );
+  };
+
+  if (!resolvedParams) {
+    return (
+      <div className="container mx-auto max-w-7xl p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-6"></div>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-1 space-y-6">
+              <div className="h-96 bg-gray-200 rounded"></div>
+              <div className="h-64 bg-gray-200 rounded"></div>
+            </div>
+            <div className="lg:col-span-2">
+              <div className="h-[600px] bg-gray-200 rounded"></div>
+            </div>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Editor Panel */}
-        <div className="lg:col-span-2">
+  return (
+    <div className="container mx-auto max-w-7xl p-6">
+      <div className="mb-8">
+        <div className="flex items-center gap-4 mb-4">
+          <Link href={`/propiedades/${resolvedParams.id}`}>
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold">Generador de Carteles PDF</h1>
+        </div>
+        <p className="text-muted-foreground">
+          Genera PDFs de alta calidad usando la plantilla ClassicTemplate
+          optimizada para impresión con integración Puppeteer
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Configuration Panel */}
+        <div className="space-y-6 lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Edit className="h-5 w-5 mr-2" />
-                Editor de Carteles
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Configuración de Plantilla
               </CardTitle>
+              <CardDescription>
+                Configura la apariencia y diseño de la plantilla
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Editor de Carteles en Desarrollo
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Aquí podrás crear y editar carteles personalizados para tu propiedad.
-                  </p>
-                  <div className="space-y-2 text-sm text-gray-500">
-                    <p>• Plantillas prediseñadas</p>
-                    <p>• Editor visual de arrastrar y soltar</p>
-                    <p>• Personalización de colores y tipografías</p>
-                    <p>• Exportación en alta calidad</p>
+            <CardContent className="space-y-4">
+              {/* Basic Settings */}
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="orientation">Orientación</Label>
+                  <Select
+                    value={config.orientation}
+                    onValueChange={(value: "vertical" | "horizontal") =>
+                      updateConfig({ orientation: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vertical">
+                        Vertical (794x1123)
+                      </SelectItem>
+                      <SelectItem value="horizontal">
+                        Horizontal (1123x794)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="listingType">Tipo de Listado</Label>
+                  <Select
+                    value={config.listingType}
+                    onValueChange={(value: "venta" | "alquiler") =>
+                      updateConfig({ listingType: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="venta">Venta</SelectItem>
+                      <SelectItem value="alquiler">Alquiler</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="imageCount">Cantidad de Imágenes</Label>
+                  <Select
+                    value={config.imageCount.toString()}
+                    onValueChange={(value) =>
+                      updateConfig({ imageCount: parseInt(value) as 3 | 4 })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 Imágenes</SelectItem>
+                      <SelectItem value="4">4 Imágenes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="propertyType">Tipo de Propiedad</Label>
+                  <Select
+                    value={config.propertyType}
+                    onValueChange={(
+                      value: "piso" | "casa" | "local" | "garaje" | "solar",
+                    ) => {
+                      updateConfig({ propertyType: value });
+                      // Update property data to match
+                      setPropertyData(getExtendedDefaultPropertyData(value));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="piso">Piso</SelectItem>
+                      <SelectItem value="casa">Casa</SelectItem>
+                      <SelectItem value="local">Local</SelectItem>
+                      <SelectItem value="garaje">Garaje</SelectItem>
+                      <SelectItem value="solar">Solar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="overlayColor">Color de Overlay</Label>
+                  <Select
+                    value={config.overlayColor}
+                    onValueChange={(
+                      value:
+                        | "default"
+                        | "dark"
+                        | "light"
+                        | "blue"
+                        | "green"
+                        | "purple"
+                        | "red",
+                    ) => updateConfig({ overlayColor: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Gris Default</SelectItem>
+                      <SelectItem value="dark">Oscuro</SelectItem>
+                      <SelectItem value="light">Claro</SelectItem>
+                      <SelectItem value="blue">Azul</SelectItem>
+                      <SelectItem value="green">Verde</SelectItem>
+                      <SelectItem value="purple">Púrpura</SelectItem>
+                      <SelectItem value="red">Rojo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Display Options */}
+              <div className="space-y-3">
+                <h4 className="font-medium">Opciones de Visualización</h4>
+                <div className="space-y-2">
+                  {[
+                    { key: "showPhone" as const, label: "Mostrar Teléfono" },
+                    { key: "showEmail" as const, label: "Mostrar Email" },
+                    { key: "showWebsite" as const, label: "Mostrar Website" },
+                    { key: "showQR" as const, label: "Mostrar Código QR" },
+                    { key: "showReference" as const, label: "Mostrar Referencia" },
+                    { key: "showWatermark" as const, label: "Mostrar Marca de Agua" },
+                    { key: "showIcons" as const, label: "Mostrar Iconos" },
+                    {
+                      key: "showShortDescription" as const,
+                      label: "Descripción Corta",
+                    },
+                  ].map(({ key, label }) => (
+                    <div
+                      key={key}
+                      className="flex items-center justify-between"
+                    >
+                      <Label htmlFor={key} className="text-sm">
+                        {label}
+                      </Label>
+                      <Switch
+                        id={key}
+                        checked={config[key] ?? false}
+                        onCheckedChange={(checked) =>
+                          updateConfig({ [key]: checked })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Additional Fields Selector */}
+              <div>
+                <AdditionalFieldsSelector
+                  config={config}
+                  onChange={updateConfig}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Property Data */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Datos de la Propiedad
+              </CardTitle>
+              <CardDescription>Edita la información de la propiedad</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="title">Título</Label>
+                <Input
+                  id="title"
+                  value={propertyData.title}
+                  onChange={(e) =>
+                    updatePropertyData({ title: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="price">Precio (€)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={propertyData.price}
+                  onChange={(e) =>
+                    updatePropertyData({ price: parseInt(e.target.value) || 0 })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="bedrooms">Habitaciones</Label>
+                  <Input
+                    id="bedrooms"
+                    type="number"
+                    value={propertyData.specs.bedrooms ?? 0}
+                    onChange={(e) =>
+                      updatePropertyData({
+                        specs: {
+                          ...propertyData.specs,
+                          bedrooms: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bathrooms">Baños</Label>
+                  <Input
+                    id="bathrooms"
+                    type="number"
+                    value={propertyData.specs.bathrooms ?? 0}
+                    onChange={(e) =>
+                      updatePropertyData({
+                        specs: {
+                          ...propertyData.specs,
+                          bathrooms: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="sqm">Metros Cuadrados</Label>
+                <Input
+                  id="sqm"
+                  type="number"
+                  value={propertyData.specs.squareMeters}
+                  onChange={(e) =>
+                    updatePropertyData({
+                      specs: {
+                        ...propertyData.specs,
+                        squareMeters: parseInt(e.target.value) || 0,
+                      },
+                    })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="city">Ciudad</Label>
+                  <Input
+                    id="city"
+                    value={propertyData.location.city}
+                    onChange={(e) =>
+                      updatePropertyData({
+                        location: {
+                          ...propertyData.location,
+                          city: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="neighborhood">Barrio</Label>
+                  <Input
+                    id="neighborhood"
+                    value={propertyData.location.neighborhood}
+                    onChange={(e) =>
+                      updatePropertyData({
+                        location: {
+                          ...propertyData.location,
+                          neighborhood: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                  id="phone"
+                  value={propertyData.contact.phone}
+                  onChange={(e) =>
+                    updatePropertyData({
+                      contact: {
+                        ...propertyData.contact,
+                        phone: e.target.value,
+                      },
+                    })
+                  }
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Image Positioning Controls */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImageIcon className="h-5 w-5" />
+                Posicionamiento de Imágenes
+              </CardTitle>
+              <CardDescription>
+                Arrastra y posiciona las imágenes dentro de sus contenedores para
+                mejor encuadre
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {templateImages.map((imageUrl, index) => {
+                const position = propertyData.imagePositions?.[imageUrl] ?? {
+                  x: 50,
+                  y: 50,
+                };
+                return (
+                  <div key={`image-${index}`} className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">
+                        Imagen {index + 1}
+                      </span>
+                      {index === 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          (Principal)
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Image preview with positioning */}
+                    <div className="relative h-20 w-full overflow-hidden rounded-md border bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imageUrl}
+                        alt={`Preview ${index + 1}`}
+                        className="absolute h-full w-full object-cover"
+                        style={{
+                          objectPosition: `${position.x}% ${position.y}%`,
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                        <span className="text-xs font-medium text-white">
+                          {position.x.toFixed(0)}%, {position.y.toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* X Position Slider */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">
+                        Posición Horizontal ({position.x.toFixed(0)}%)
+                      </Label>
+                      <Slider
+                        value={[position.x]}
+                        onValueChange={([value]) =>
+                          updateImagePosition(imageUrl, value!, position.y)
+                        }
+                        max={100}
+                        min={0}
+                        step={1}
+                        className="w-full"
+                      />
+                    </div>
+
+                    {/* Y Position Slider */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">
+                        Posición Vertical ({position.y.toFixed(0)}%)
+                      </Label>
+                      <Slider
+                        value={[position.y]}
+                        onValueChange={([value]) =>
+                          updateImagePosition(imageUrl, position.x, value!)
+                        }
+                        max={100}
+                        min={0}
+                        step={1}
+                        className="w-full"
+                      />
+                    </div>
+
+                    {/* Reset button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => updateImagePosition(imageUrl, 50, 50)}
+                      className="w-full text-xs"
+                    >
+                      Resetear a Centro
+                    </Button>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          {/* Action Buttons */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-3">
+                <Button
+                  onClick={generatePDF}
+                  disabled={isGenerating}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generando PDF...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Generar PDF
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={previewTemplate}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Preview de Plantilla
+                </Button>
+
+                <Button
+                  onClick={() => setShowPreview(!showPreview)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  {showPreview ? "Ocultar Preview" : "Mostrar Preview"}
+                </Button>
+
+                {lastGeneratedPdf && (
+                  <Button
+                    onClick={() => window.open(lastGeneratedPdf, "_blank")}
+                    variant="secondary"
+                    className="w-full"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Abrir Último PDF
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Preview Panel */}
+        {showPreview && (
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5" />
+                    Preview en Vivo
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={zoomOut}
+                      disabled={previewZoom <= 0.2}
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <span className="min-w-[60px] text-center text-sm font-medium">
+                      {Math.round(previewZoom * 100)}%
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={zoomIn}
+                      disabled={previewZoom >= 1.0}
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={resetZoom}>
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardTitle>
+                <CardDescription>
+                  Preview en tiempo real de la plantilla con configuración actual.
+                  Usa controles de zoom para magnificar para posicionamiento detallado de imágenes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div
+                  ref={previewRef}
+                  className="overflow-auto border border-gray-300 bg-gray-100 p-4"
+                  style={{
+                    height: "600px",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      transform: `scale(${previewZoom})`,
+                      transformOrigin: "center center",
+                      border: "1px solid #ccc",
+                      boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                      transition: "transform 0.2s ease-in-out",
+                    }}
+                  >
+                    <ClassicTemplate
+                      data={propertyData}
+                      config={config}
+                      className="print-preview"
+                    />
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Plantillas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                Próximamente tendrás acceso a plantillas prediseñadas.
-              </p>
-              <div className="grid gap-2">
-                <div className="aspect-[3/4] bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
-                  <span className="text-xs text-gray-500">Plantilla 1</span>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Preview al {Math.round(previewZoom * 100)}% escala. PDF
+                    actual:{" "}
+                    {config.orientation === "vertical"
+                      ? "794×1123"
+                      : "1123×794"}
+                    px
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Zoom:</span>
+                    <Slider
+                      value={[previewZoom]}
+                      onValueChange={([value]) => setPreviewZoom(value!)}
+                      max={1.0}
+                      min={0.2}
+                      step={0.05}
+                      className="w-24"
+                    />
+                  </div>
                 </div>
-                <div className="aspect-[3/4] bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
-                  <span className="text-xs text-gray-500">Plantilla 2</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Herramientas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Button variant="outline" className="w-full justify-start" disabled>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Nuevo Cartel
-                </Button>
-                <Button variant="outline" className="w-full justify-start" disabled>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar Existente
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500 mt-4">
-                Funcionalidad próximamente disponible
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
