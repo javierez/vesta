@@ -183,4 +183,7 @@ export interface ConfigurableTemplateProps {
   data: ExtendedTemplatePropertyData;
   config: TemplateConfiguration;
   className?: string;
+  onElementClick?: (elementType: string, elementData?: any) => void;
+  selectedElement?: string | null;
+  isInteractive?: boolean;
 }

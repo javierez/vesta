@@ -73,6 +73,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   data,
   config,
   className,
+  onElementClick,
+  selectedElement,
+  isInteractive = false,
 }) => {
   // Inject print styles for PDF generation
   if (typeof window !== "undefined") {
@@ -149,6 +152,35 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   };
 
   const locationText = formatLocation(data.location);
+
+  // Create click handler with element type
+  const createClickHandler = (elementType: string, elementData?: any) => {
+    if (!isInteractive || !onElementClick) return undefined;
+    return (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onElementClick(elementType, elementData);
+    };
+  };
+
+  // Get element style based on selection and interactive state
+  const getElementStyle = (elementType: string) => {
+    const baseStyle: React.CSSProperties = {};
+    
+    if (isInteractive) {
+      baseStyle.cursor = 'pointer';
+      baseStyle.transition = 'all 0.2s ease';
+      
+      if (selectedElement === elementType) {
+        baseStyle.boxShadow = '0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.3)';
+        baseStyle.borderRadius = '4px';
+      } else {
+        baseStyle.boxShadow = 'inset 0 0 0 1px rgba(59, 130, 246, 0.2)';
+        baseStyle.borderRadius = '2px';
+      }
+    }
+    
+    return baseStyle;
+  };
 
   // Format location with truncation + line breaks
   const formatLocationWithTruncationAndBreaks = (location: {
@@ -820,7 +852,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   })}px`,
                   lineHeight: "1.2",
                   margin: 0,
+                  ...getElementStyle('title'),
                 }}
+                onClick={createClickHandler('title', { type: 'listingType', value: config.listingType })}
               >
                 {config.listingType}
               </h2>
@@ -837,7 +871,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   })}px`,
                   lineHeight: "1.2",
                   margin: 0,
+                  ...getElementStyle('title'),
                 }}
+                onClick={createClickHandler('title', { type: 'propertyType', value: safeData.propertyType })}
               >
                 {safeData.propertyType}
               </h3>
@@ -863,7 +899,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   paddingRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                   paddingTop: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                   paddingBottom: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
+                  ...getElementStyle('location'),
                 }}
+                onClick={createClickHandler('location', { neighborhood: data.location.neighborhood, city: data.location.city })}
               >
                 <MapPin
                   style={{
@@ -935,7 +973,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   priceDigits: data.price.toString().length,
                 })}px`,
                 lineHeight: "1.2",
+                ...getElementStyle('price'),
               }}
+              onClick={createClickHandler('price', { value: data.price, type: config.listingType })}
             >
               {config.listingType === "alquiler" ? (
                 <>

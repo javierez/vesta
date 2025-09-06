@@ -86,6 +86,10 @@ export function CartelEditorClient({ listingId, images = [] }: CartelEditorClien
   
   // Selected images for cartel (using indices instead of URLs)
   const [selectedImageIndices, setSelectedImageIndices] = useState<number[]>([]);
+  
+  // Interactive preview state
+  const [selectedElement, setSelectedElement] = useState<string | null>(null);
+  const [isInteractiveMode, setIsInteractiveMode] = useState(true);
 
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -187,6 +191,37 @@ export function CartelEditorClient({ listingId, images = [] }: CartelEditorClien
     }
   };
 
+  // Handle element selection in interactive preview
+  const handleElementClick = (elementType: string, elementData?: any) => {
+    if (!isInteractiveMode) return;
+    
+    setSelectedElement(elementType);
+    
+    // You can add specific actions based on element type
+    switch (elementType) {
+      case 'title':
+        toast.info('Título seleccionado - Editable en el panel de configuración');
+        break;
+      case 'price':
+        toast.info('Precio seleccionado - Editable en datos de la propiedad');
+        break;
+      case 'location':
+        toast.info('Ubicación seleccionada - Editable en datos de la propiedad');
+        break;
+      case 'image':
+        toast.info(`Imagen ${elementData?.index + 1} seleccionada - Ajustable en posicionamiento`);
+        break;
+      case 'contact':
+        toast.info('Información de contacto seleccionada - Editable en datos de la propiedad');
+        break;
+      case 'features':
+        toast.info('Características seleccionadas - Configurables en opciones adicionales');
+        break;
+      default:
+        toast.info(`Elemento ${elementType} seleccionado`);
+    }
+  };
+
   // Preview the template in a new window
   const previewTemplate = () => {
     const templateUrl = new URL("/api/puppet/template", window.location.origin);
@@ -248,10 +283,10 @@ export function CartelEditorClient({ listingId, images = [] }: CartelEditorClien
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="vertical">
-                        Vertical (794x1123)
+                        Vertical
                       </SelectItem>
                       <SelectItem value="horizontal">
-                        Horizontal (1123x794)
+                        Horizontal
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -665,6 +700,15 @@ export function CartelEditorClient({ listingId, images = [] }: CartelEditorClien
                   <Eye className="mr-2 h-4 w-4" />
                   Preview de Plantilla
                 </Button>
+                
+                <Button
+                  onClick={() => setIsInteractiveMode(!isInteractiveMode)}
+                  variant={isInteractiveMode ? "default" : "outline"}
+                  className="w-full"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  {isInteractiveMode ? "Modo Interactivo ON" : "Modo Interactivo OFF"}
+                </Button>
 
                 <Button
                   onClick={() => setShowPreview(!showPreview)}
@@ -699,6 +743,11 @@ export function CartelEditorClient({ listingId, images = [] }: CartelEditorClien
                   <div className="flex items-center gap-2">
                     <ImageIcon className="h-5 w-5" />
                     Preview en Vivo
+                    {isInteractiveMode && (
+                      <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-800">
+                        Interactivo
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -727,7 +776,11 @@ export function CartelEditorClient({ listingId, images = [] }: CartelEditorClien
                 </CardTitle>
                 <CardDescription>
                   Preview en tiempo real de la plantilla con configuración actual.
-                  Usa controles de zoom para magnificar para posicionamiento detallado de imágenes.
+                  {isInteractiveMode ? (
+                    <>Haz clic en los elementos del preview para seleccionarlos y editarlos.</>  
+                  ) : (
+                    <>Usa controles de zoom para magnificar para posicionamiento detallado de imágenes.</>
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -754,18 +807,28 @@ export function CartelEditorClient({ listingId, images = [] }: CartelEditorClien
                       data={propertyData}
                       config={config}
                       className="print-preview"
+                      onElementClick={isInteractiveMode ? handleElementClick : undefined}
+                      selectedElement={selectedElement}
+                      isInteractive={isInteractiveMode}
                     />
                   </div>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    Preview al {Math.round(previewZoom * 100)}% escala. PDF
-                    actual:{" "}
-                    {config.orientation === "vertical"
-                      ? "794×1123"
-                      : "1123×794"}
-                    px
-                  </p>
+                  <div className="text-xs text-muted-foreground">
+                    <p>
+                      Preview al {Math.round(previewZoom * 100)}% escala. PDF
+                      actual:{" "}
+                      {config.orientation === "vertical"
+                        ? "794×1123"
+                        : "1123×794"}
+                      px
+                    </p>
+                    {selectedElement && (
+                      <p className="text-blue-600">
+                        Elemento seleccionado: <span className="font-medium">{selectedElement}</span>
+                      </p>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Zoom:</span>
                     <Slider
