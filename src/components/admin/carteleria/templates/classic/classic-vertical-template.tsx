@@ -56,17 +56,37 @@ const getOverlayClass = (overlayType: string) => {
     default: "bg-gray-400",
     dark: "bg-gray-800",
     light: "bg-gray-200",
-    blue: "bg-blue-500",
-    green: "bg-green-500",
-    purple: "bg-purple-500",
-    red: "bg-red-500",
   };
+  
+  // If it's a hex color, return empty string (we'll handle it with inline styles)
+  if (overlayType.startsWith('#')) {
+    return "";
+  }
+  
   return overlayMap[overlayType] ?? "bg-gray-400";
 };
 
 const getTextColor = (overlayType: string) => {
-  // Light overlay needs dark text, others need white text
-  return overlayType === "light" ? "text-gray-900" : "text-white";
+  // Light overlay needs dark text
+  if (overlayType === "light") {
+    return "text-gray-900";
+  }
+  
+  // For hex colors, determine brightness and choose appropriate text color
+  if (overlayType.startsWith('#')) {
+    // Simple brightness check - convert hex to RGB and calculate luminance
+    const hex = overlayType.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // If bright color (>125), use dark text, else white text
+    return brightness > 125 ? "text-gray-900" : "text-white";
+  }
+  
+  // Default: white text for all other colors
+  return "text-white";
 };
 
 export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
@@ -260,8 +280,21 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
     config.listingType,
   );
 
-  // Get images based on configuration
-  const templateImages = getTemplateImages(config.imageCount);
+  // Get images based on configuration - use data.images if available, fallback to template images
+  const templateImages = data.images && data.images.length > 0 
+    ? data.images.slice(0, config.imageCount)
+    : getTemplateImages(config.imageCount);
+
+  // Debug logging for template images
+  React.useEffect(() => {
+    console.log("🎨 ClassicTemplate Images Debug:", {
+      dataImages: data.images?.length || 0,
+      templateImages: templateImages.length,
+      imageCount: config.imageCount,
+      usingDataImages: data.images && data.images.length > 0,
+      firstImage: templateImages[0]
+    });
+  }, [data.images, templateImages, config.imageCount]);
 
   // Print-optimized image gallery with fixed positioning
   const renderImages = () => {
@@ -820,6 +853,10 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
           height: `${PRINT_DIMENSIONS.OVERLAY.left.height}px`,
           borderRadius: "0px",
           backdropFilter: "blur(4px)",
+          // Use inline background color for hex values
+          ...(config.overlayColor.startsWith('#') && {
+            backgroundColor: config.overlayColor
+          })
         }}
       >
         <div
@@ -832,51 +869,39 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
         >
           {/* Top section with title and content - variable size */}
           <div style={{ flex: 1 }}>
-            {/* Title - listing type and property type */}
+            {/* Title - combined listing type and property type with customization */}
             <div
               style={{
                 marginBottom: `${PRINT_DIMENSIONS.SPACING.titleToLocation}px`,
-                marginLeft: `${PRINT_DIMENSIONS.SPACING.titleLeftMargin}px`,
+                marginLeft: `${PRINT_DIMENSIONS.SPACING.titleLeftMargin + (config.titlePositionX ?? 0)}px`,
+                textAlign: config.titleAlignment ?? "left",
+                width: `calc(100% - ${PRINT_DIMENSIONS.SPACING.titleLeftMargin + Math.abs(config.titlePositionX ?? 0)}px)`,
               }}
             >
               <h2
                 className={cn(
-                  "font-bold uppercase",
-                  modernColors.text,
+                  "font-bold",
+                  // Only apply uppercase if title matches the default pattern (auto-generated)
+                  (safeData.title === `${config.listingType.toUpperCase()} ${safeData.propertyType.toUpperCase()}` || 
+                   safeData.title === `${config.listingType === "venta" ? "VENTA" : "ALQUILER"} ${safeData.propertyType.toUpperCase()}`) && "uppercase",
+                  !config.titleColor && modernColors.text,
                   getFontClass(config.titleFont),
                 )}
                 style={{
-                  fontSize: `${getTypographySize("title", {
+                  fontSize: `${config.titleSize || getTypographySize("title", {
                     isCompact: locationNeedsLineBreak,
                     isRental: config.listingType === "alquiler",
                   })}px`,
                   lineHeight: "1.2",
                   margin: 0,
+                  transform: `translateY(${config.titlePositionY ?? 0}px)`,
+                  color: config.titleColor || undefined,
                   ...getElementStyle('title'),
                 }}
-                onClick={createClickHandler('title', { type: 'listingType', value: config.listingType })}
+                onClick={createClickHandler('title', { type: 'title', value: safeData.title })}
               >
-                {config.listingType}
+                {safeData.title}
               </h2>
-              <h3
-                className={cn(
-                  "font-bold uppercase",
-                  modernColors.text,
-                  getFontClass(config.titleFont),
-                )}
-                style={{
-                  fontSize: `${getTypographySize("title", {
-                    isCompact: locationNeedsLineBreak,
-                    isRental: config.listingType === "alquiler",
-                  })}px`,
-                  lineHeight: "1.2",
-                  margin: 0,
-                  ...getElementStyle('title'),
-                }}
-                onClick={createClickHandler('title', { type: 'propertyType', value: safeData.propertyType })}
-              >
-                {safeData.propertyType}
-              </h3>
             </div>
 
             {/* Location and features - right under title */}
@@ -889,33 +914,40 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
             >
               {/* Location */}
               <div
-                className={cn(modernColors.text)}
+                className={cn(
+                  !config.locationColor && modernColors.text,
+                  getFontClass(config.locationFont),
+                )}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  borderRadius: "8px",
                   backgroundColor: "rgba(255, 255, 255, 0.2)",
                   paddingLeft: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                   paddingRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                   paddingTop: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                   paddingBottom: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
+                  transform: `translate(${config.locationPositionX ?? 0}px, ${config.locationPositionY ?? 0}px)`,
+                  justifyContent: config.locationAlignment === "center" ? "center" : config.locationAlignment === "right" ? "flex-end" : "flex-start",
+                  color: config.locationColor || undefined,
                   ...getElementStyle('location'),
+                  // Apply border radius after getElementStyle to prevent override
+                  borderRadius: `${config.locationBorderRadius || 8}px`,
                 }}
                 onClick={createClickHandler('location', { neighborhood: data.location.neighborhood, city: data.location.city })}
               >
                 <MapPin
                   style={{
                     marginRight: "4px",
-                    marginLeft: "-4px",
-                    width: `${getTypographySize("location")}px`,
-                    height: `${getTypographySize("location")}px`,
+                    marginLeft: "6px",
+                    width: `${config.locationSize || getTypographySize("location")}px`,
+                    height: `${config.locationSize || getTypographySize("location")}px`,
                     flexShrink: 0,
                   }}
                 />
                 <span
                   className="font-medium"
                   style={{
-                    fontSize: `${getTypographySize("location")}px`,
+                    fontSize: `${config.locationSize || getTypographySize("location")}px`,
                     lineHeight: "1.3",
                     marginLeft: "4px",
                   }}
@@ -946,6 +978,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   getFieldValue={getFieldValue}
                   getFieldLabel={getFieldLabel}
                   shouldCompact={shouldCompactIcons}
+                  iconSize={config.iconSize}
+                  iconSpacingHorizontal={config.iconSpacingHorizontal}
+                  iconSpacingVertical={config.iconSpacingVertical}
                 />
               )}
             </div>
@@ -958,21 +993,23 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 totalFeatures > 4
                   ? `${PRINT_DIMENSIONS.SPACING.iconsToPrice * 2}px`
                   : `${PRINT_DIMENSIONS.SPACING.iconsToPrice}px`,
-              textAlign: "center",
+              textAlign: config.priceAlignment === "center" ? "center" : config.priceAlignment === "right" ? "right" : "left",
+              transform: `translate(${config.pricePositionX ?? 0}px, ${config.pricePositionY ?? 0}px)`,
             }}
           >
             <div
               className={cn(
                 "font-bold",
-                modernColors.price,
+                !config.priceColor && modernColors.price,
                 getFontClass(config.priceFont),
               )}
               style={{
-                fontSize: `${getTypographySize("price", {
+                fontSize: `${config.priceSize || getTypographySize("price", {
                   isRental: config.listingType === "alquiler",
                   priceDigits: data.price.toString().length,
                 })}px`,
                 lineHeight: "1.2",
+                color: config.priceColor || undefined,
                 ...getElementStyle('price'),
               }}
               onClick={createClickHandler('price', { value: data.price, type: config.listingType })}
@@ -983,7 +1020,8 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   <span
                     className="font-normal"
                     style={{
-                      fontSize: `${getTypographySize("body")}px`,
+                      fontSize: `${config.priceSize ? config.priceSize * 0.4 : getTypographySize("body")}px`,
+                      color: config.priceColor || undefined,
                     }}
                   >
                     {" "}
@@ -1003,14 +1041,26 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
         ((config.showEmail ?? false) && (data.contact.email ?? false)) ||
         ((config.showWebsite ?? false) && (data.contact.website ?? false))) && (
         <div
-          className={cn("no-break", modernColors.overlay)}
+          className={cn("no-break", config.contactBackgroundColor === "default" && modernColors.overlay)}
           style={{
             position: "absolute",
             bottom: `${PRINT_DIMENSIONS.OVERLAY.contact.position.bottom}px`,
             right: `${PRINT_DIMENSIONS.OVERLAY.contact.position.right}px`,
             zIndex: 10,
-            borderRadius: "6px",
+            borderRadius: `${config.contactBorderRadius || 6}px`,
             backdropFilter: "blur(4px)",
+            transform: `translate(${config.contactPositionX ?? 0}px, ${config.contactPositionY ?? 0}px)`,
+            // Use inline background color for non-default colors
+            ...(config.contactBackgroundColor !== "default" && {
+              backgroundColor: config.contactBackgroundColor.startsWith('#') 
+                ? config.contactBackgroundColor 
+                : config.contactBackgroundColor === "white" ? "white"
+                : config.contactBackgroundColor === "black" ? "black"
+                : config.contactBackgroundColor === "gray" ? "#6B7280"
+                : config.contactBackgroundColor === "light" ? "#E5E7EB"
+                : config.contactBackgroundColor === "dark" ? "#1F2937"
+                : config.contactBackgroundColor // Use as-is for account colors (hex values)
+            })
           }}
         >
           <div

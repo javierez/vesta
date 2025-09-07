@@ -9,6 +9,7 @@ import {
   users,
   listingContacts,
   accounts,
+  websiteProperties,
 } from "../db/schema";
 import { eq, and, ne, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
@@ -1301,7 +1302,7 @@ export async function getListingDocumentsData(listingId: number) {
   }
 }
 
-// Ultra-lightweight query for CartelEditor component - only listing type needed
+// Ultra-lightweight query for CartelEditor component - only listing type and property type needed
 export async function getListingCartelData(listingId: number) {
   const accountId = await getCurrentUserAccountId();
 
@@ -1309,8 +1310,20 @@ export async function getListingCartelData(listingId: number) {
     const [cartelData] = await db
       .select({
         listingType: listings.listingType,
+        propertyType: properties.propertyType,
+        city: locations.city,
+        neighborhood: locations.neighborhood,
+        bedrooms: properties.bedrooms,
+        bathrooms: properties.bathrooms,
+        squareMeter: properties.squareMeter,
+        contactProps: websiteProperties.contactProps,
+        website: accounts.website,
       })
       .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(accounts, eq(listings.accountId, accounts.accountId))
+      .leftJoin(websiteProperties, eq(accounts.accountId, websiteProperties.accountId))
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),

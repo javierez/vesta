@@ -25,7 +25,7 @@ export const PRINT_DIMENSIONS = {
       position: { top: 8, left: 8 },
     },
     contact: {
-      position: { bottom: 12, right: 12 },
+      position: { bottom: 12, right: 160 },
     },
     reference: {
       position: { bottom: 8, left: 8 },

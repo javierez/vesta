@@ -390,3 +390,29 @@ export async function updateAccountPreferences(
     throw error;
   }
 }
+
+// Get account color palette from preferences
+export async function getAccountColorPalette(accountId: number | bigint) {
+  try {
+    const account = await getAccountById(accountId);
+
+    if (!account) {
+      console.warn(`Account not found for ID: ${accountId}`);
+      return [];
+    }
+
+    // Extract color palette from preferences
+    const preferences = (account.preferences as Record<string, unknown>) ?? {};
+    const colorPalette = preferences.colorPalette as string[];
+
+    console.log("Retrieved color palette for account:", {
+      accountId: accountId.toString(),
+      colors: colorPalette?.length || 0,
+    });
+
+    return colorPalette || [];
+  } catch (error) {
+    console.error("Error getting account color palette:", error);
+    return [];
+  }
+}

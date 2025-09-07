@@ -35,7 +35,7 @@ export default async function CartelEditorPage({ params }: CartelEditorPageProps
   const images = await getPropertyImages(headerData.propertyId).catch(() => []);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <>
       <PropertyBreadcrumb
         propertyType={breadcrumbData.propertyType ?? ""}
         street={breadcrumbData.street ?? ""}
@@ -59,7 +59,9 @@ export default async function CartelEditorPage({ params }: CartelEditorPageProps
       />
 
       {/* Main Content */}
-      <CartelEditorPhase1 listingId={unwrappedParams.id} images={images as PropertyImage[]} />
-    </div>
+      <div className="mt-6">
+        <CartelEditorPhase1 listingId={unwrappedParams.id} images={images as PropertyImage[]} />
+      </div>
+    </>
   );
 }

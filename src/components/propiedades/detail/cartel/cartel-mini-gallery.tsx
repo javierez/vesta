@@ -179,10 +179,16 @@ export function CartelMiniGallery({
         </div>
       </div>
 
-      {/* Selection limit warning */}
+      {/* Selection warnings */}
       {selectedIndices.length >= maxSelection && (
         <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
           Has alcanzado el límite de {maxSelection} imágenes. Deselecciona una imagen para cambiar la selección.
+        </div>
+      )}
+      
+      {selectedIndices.length > 0 && selectedIndices.length < 3 && (
+        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
+          Selecciona al menos 3 imágenes para el cartel. Actualmente tienes {selectedIndices.length} seleccionada{selectedIndices.length === 1 ? '' : 's'}.
         </div>
       )}
     </div>

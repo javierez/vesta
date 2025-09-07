@@ -19,6 +19,9 @@ interface FeaturesGridProps {
   getFieldValue: (fieldValue: string) => string;
   getFieldLabel: (fieldValue: string) => string;
   shouldCompact?: boolean;
+  iconSize?: number;
+  iconSpacingHorizontal?: number;
+  iconSpacingVertical?: number;
 }
 
 export const FeaturesGrid: FC<FeaturesGridProps> = ({
@@ -29,6 +32,9 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
   getFieldValue,
   getFieldLabel,
   shouldCompact = false,
+  iconSize = 1.0,
+  iconSpacingHorizontal = 32,
+  iconSpacingVertical = 12,
 }) => {
   // Print-optimized margins using fixed pixel values
   const leftMargin =
@@ -86,14 +92,21 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
             return PRINT_DIMENSIONS.SPACING.featuresTopMargin;
           };
 
-          // Determine icon size based on feature count
+          // Determine icon size based on feature count and apply custom multiplier
           const getIconSize = () => {
-            if (totalFeatures === 1) return PRINT_DIMENSIONS.ICONS.extraLarge;
-            if (shouldCompact) return PRINT_DIMENSIONS.ICONS.small;
-            return PRINT_DIMENSIONS.ICONS.large;
+            let baseSize;
+            if (totalFeatures === 1) baseSize = PRINT_DIMENSIONS.ICONS.extraLarge;
+            else if (shouldCompact) baseSize = PRINT_DIMENSIONS.ICONS.small;
+            else baseSize = PRINT_DIMENSIONS.ICONS.large;
+            
+            // Apply custom size multiplier
+            return {
+              width: Math.round(baseSize.width * iconSize),
+              height: Math.round(baseSize.height * iconSize),
+            };
           };
 
-          const iconSize = getIconSize();
+          const finalIconSize = getIconSize();
 
           return (
             <div
@@ -107,8 +120,8 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
-                  columnGap: `${PRINT_DIMENSIONS.SPACING.iconColumns}px`,
-                  rowGap: `${PRINT_DIMENSIONS.SPACING.iconRowGap}px`,
+                  columnGap: `${iconSpacingHorizontal}px`,
+                  rowGap: `${iconSpacingVertical}px`,
                   maxWidth: "fit-content",
                 }}
               >
@@ -137,8 +150,8 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
                           display: "block",
                           margin: "0 auto",
                           marginBottom: `${PRINT_DIMENSIONS.SPACING.iconToText}px`,
-                          width: `${iconSize.width}px`,
-                          height: `${iconSize.height}px`,
+                          width: `${finalIconSize.width}px`,
+                          height: `${finalIconSize.height}px`,
                         }}
                       />
                       <div
