@@ -2534,13 +2534,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   </Button>
                   
 
-                  <Button
-                    onClick={() => setShowPreview(!showPreview)}
-                    variant="outline"
-                  >
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    {showPreview ? "Ocultar Preview" : "Mostrar Preview"}
-                  </Button>
 
                   {lastGeneratedPdf && (
                     <Button
