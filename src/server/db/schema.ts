@@ -681,3 +681,20 @@ export const userComments = singlestoreTable("user_comments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
+
+// Cartel Configurations table
+export const cartelConfigurations = singlestoreTable("cartel_configurations", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
+  userId: varchar("user_id", { length: 36 }), // FK → users.id (nullable)
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  propertyId: bigint("property_id", { mode: "bigint" }), // FK → properties.property_id (nullable)
+  name: varchar("name", { length: 255 }).notNull(),
+  templateConfig: json("template_config").notNull(),
+  propertyOverrides: json("property_overrides").default("{}"),
+  selectedContacts: json("selected_contacts").default("{}"),
+  selectedImageIndices: json("selected_image_indices").default("[]"),
+  isDefault: boolean("is_default").default(false),
+  isGlobal: boolean("is_global").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});

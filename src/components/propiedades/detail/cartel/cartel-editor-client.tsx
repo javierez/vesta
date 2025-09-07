@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -37,17 +37,22 @@ import {
   ChevronLeft,
   ChevronUp,
   ChevronDown,
+  Save,
 } from "lucide-react";
 import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
 import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
 import type {
   TemplateConfiguration,
   ExtendedTemplatePropertyData,
+  SavedCartelConfiguration,
+  SaveConfigurationRequest,
 } from "~/types/template-data";
 import { AdditionalFieldsSelector } from "~/components/admin/carteleria/controls/additional-fields-selector";
 import { toast } from "sonner";
 import { getTemplateImages } from "~/lib/carteleria/s3-images";
 import { CartelMiniGallery } from "./cartel-mini-gallery";
+import { SaveConfigurationModal } from "./save-configuration-modal";
+import { SavedConfigurations } from "./saved-configurations";
 import type { PropertyImage } from "~/lib/data";
 
 // Database to UI value mapping
@@ -185,7 +190,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
         local: "LOCAL",
         garaje: "GARAJE",
         solar: "SOLAR"
-      }[config.propertyType] || "PROPIEDAD";
+      }[config.propertyType] ?? "PROPIEDAD";
       
       // Use selected images if available
       const selectedImages = images.slice(0, 4).map(img => img.imageUrl).filter(Boolean);
@@ -305,6 +310,13 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   
   // Icon grid customization toggle state
   const [showIconCustomization, setShowIconCustomization] = useState(false);
+  
+  // Configuration management state
+  const [savedConfigurations, setSavedConfigurations] = useState<SavedCartelConfiguration[]>([]);
+  const [currentConfigurationId, setCurrentConfigurationId] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [isLoadingConfigurations, setIsLoadingConfigurations] = useState(false);
   
 
   const previewRef = useRef<HTMLDivElement>(null);
@@ -615,6 +627,143 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   };
 
 
+  // Configuration management functions
+  const fetchConfigurations = async () => {
+    setIsLoadingConfigurations(true);
+    try {
+      const response = await fetch('/api/cartel-configurations');
+      const data = await response.json() as { success: boolean; data?: SavedCartelConfiguration[]; error?: string };
+      
+      if (data.success) {
+        setSavedConfigurations(data.data ?? []);
+      }
+    } catch (error) {
+      console.error('Error fetching configurations:', error);
+    } finally {
+      setIsLoadingConfigurations(false);
+    }
+  };
+
+  const saveConfiguration = async (request: SaveConfigurationRequest): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/cartel-configurations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      const data = await response.json() as { success: boolean; data?: SavedCartelConfiguration; error?: string };
+      
+      if (data.success) {
+        await fetchConfigurations(); // Refresh the list
+        setCurrentConfigurationId(data.data?.id ?? null);
+        setHasUnsavedChanges(false);
+        return true;
+      } else {
+        toast.error(data.error ?? 'Error al guardar la configuración');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error saving configuration:', error);
+      toast.error('Error al guardar la configuración');
+      return false;
+    }
+  };
+
+  const loadConfiguration = (configuration: SavedCartelConfiguration) => {
+    try {
+      setConfig(configuration.templateConfig);
+      
+      // Apply property overrides if any
+      if (configuration.propertyOverrides) {
+        setPropertyData(prev => ({ ...prev, ...configuration.propertyOverrides }));
+      }
+      
+      // Apply selected contacts
+      if (configuration.selectedContacts?.phone) {
+        setSelectedPhone(configuration.selectedContacts.phone);
+      }
+      if (configuration.selectedContacts?.email) {
+        setSelectedEmail(configuration.selectedContacts.email);
+      }
+      
+      // Apply selected image indices
+      setSelectedImageIndices(configuration.selectedImageIndices);
+      
+      setCurrentConfigurationId(configuration.id);
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Error loading configuration:', error);
+      toast.error('Error al cargar la configuración');
+    }
+  };
+
+  const deleteConfiguration = async (configurationId: string): Promise<void> => {
+    try {
+      const response = await fetch(`/api/cartel-configurations/${configurationId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json() as { success: boolean; error?: string };
+      
+      if (data.success) {
+        await fetchConfigurations(); // Refresh the list
+        if (currentConfigurationId === configurationId) {
+          setCurrentConfigurationId(null);
+          setHasUnsavedChanges(false);
+        }
+      } else {
+        throw new Error(data.error ?? 'Error deleting configuration');
+      }
+    } catch (error) {
+      console.error('Error deleting configuration:', error);
+      throw error;
+    }
+  };
+
+  const setDefaultConfiguration = async (configurationId: string): Promise<void> => {
+    try {
+      const response = await fetch(`/api/cartel-configurations/${configurationId}/set-default`, {
+        method: 'POST',
+      });
+
+      const data = await response.json() as { success: boolean; error?: string };
+      
+      if (data.success) {
+        await fetchConfigurations(); // Refresh the list
+      } else {
+        throw new Error(data.error ?? 'Error setting default configuration');
+      }
+    } catch (error) {
+      console.error('Error setting default configuration:', error);
+      throw error;
+    }
+  };
+
+  // Load configurations on component mount
+  useEffect(() => {
+    void fetchConfigurations();
+  }, []);
+
+  // Track changes to detect unsaved modifications
+  useEffect(() => {
+    if (currentConfigurationId) {
+      const currentConfig = savedConfigurations.find(c => c.id === currentConfigurationId);
+      if (currentConfig) {
+        const hasConfigChanges = JSON.stringify(config) !== JSON.stringify(currentConfig.templateConfig);
+        const hasContactChanges = selectedPhone !== (currentConfig.selectedContacts?.phone ?? '') ||
+                                selectedEmail !== (currentConfig.selectedContacts?.email ?? '');
+        const hasImageChanges = JSON.stringify(selectedImageIndices) !== JSON.stringify(currentConfig.selectedImageIndices);
+        
+        setHasUnsavedChanges(hasConfigChanges || hasContactChanges || hasImageChanges);
+      }
+    } else {
+      setHasUnsavedChanges(false);
+    }
+  }, [config, selectedPhone, selectedEmail, selectedImageIndices, currentConfigurationId, savedConfigurations]);
+
   // Navigation functions
   const goToNextStep = () => {
     if (currentStep < totalSteps - 1) {
@@ -664,6 +813,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+
               {/* Basic Settings */}
               <div className="space-y-3">
                 <div>
@@ -830,7 +980,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                       {!config.showIcons && (
                         <div className="ml-5">
                           <textarea
-                            value={propertyData.iconListText || ""}
+                            value={propertyData.iconListText ?? ""}
                             onChange={(e) =>
                               updatePropertyData({ iconListText: e.target.value })
                             }
@@ -1022,7 +1172,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                       {config.showShortDescription && (
                         <div className="ml-5">
                           <textarea
-                            value={propertyData.shortDescription || ""}
+                            value={propertyData.shortDescription ?? ""}
                             onChange={(e) =>
                               updatePropertyData({ shortDescription: e.target.value })
                             }
@@ -1293,7 +1443,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   <span className="mr-1">2.</span>
-                  Datos de la Propiedad
+                  Propiedad
                 </CardTitle>
               <CardDescription>Edita la información de la propiedad</CardDescription>
             </CardHeader>
@@ -2280,7 +2430,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   Imágenes
                 </CardTitle>
               <CardDescription>
-                Arrastra y posiciona las imágenes dentro de sus contenedores para
+                Posiciona las imágenes dentro de sus contenedores para
                 mejor encuadre
               </CardDescription>
             </CardHeader>
@@ -2413,7 +2563,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 <CardTitle className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center gap-2">
                     <ImageIcon className="h-5 w-5" />
-                    Preview en Vivo
+                    Previsualización
                   </div>
                   <div className="flex items-center gap-1 md:gap-2">
                     <Button
@@ -2530,10 +2680,17 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                     variant="outline"
                   >
                     <Eye className="mr-2 h-4 w-4" />
-                    Preview de Plantilla
+                    Vista Rápida
                   </Button>
-                  
 
+                  <Button
+                    onClick={() => setShowSaveModal(true)}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    Guardar Plantilla
+                  </Button>
 
                   {lastGeneratedPdf && (
                     <Button
@@ -2548,9 +2705,30 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 </div>
               </CardContent>
             </Card>
+
+            {/* Saved Configurations Section */}
+            <SavedConfigurations
+              savedConfigurations={savedConfigurations}
+              selectedConfigurationId={currentConfigurationId}
+              isLoading={isLoadingConfigurations}
+              onLoadConfiguration={loadConfiguration}
+              onDeleteConfiguration={deleteConfiguration}
+              onSetDefaultConfiguration={setDefaultConfiguration}
+              onRefreshConfigurations={fetchConfigurations}
+            />
           </div>
         )}
       </div>
+      
+      {/* Save Configuration Modal */}
+      <SaveConfigurationModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        templateConfig={config}
+        selectedContacts={{ phone: selectedPhone, email: selectedEmail }}
+        selectedImageIndices={selectedImageIndices}
+        onSave={saveConfiguration}
+      />
     </div>
   );
 }

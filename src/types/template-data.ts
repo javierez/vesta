@@ -226,3 +226,52 @@ export interface ConfigurableTemplateProps {
   selectedElement?: string | null;
   isInteractive?: boolean;
 }
+
+// Saved cartel configuration for persistence
+export interface SavedCartelConfiguration {
+  id: string;
+  name: string;
+  userId: string;
+  accountId: string;
+  propertyId?: string; // For property-specific configs
+  templateConfig: TemplateConfiguration;
+  propertyOverrides: Partial<ExtendedTemplatePropertyData>;
+  selectedContacts: {
+    phone?: string;
+    email?: string;
+  };
+  selectedImageIndices: number[];
+  isDefault: boolean;
+  isGlobal: boolean; // Can be used for any property
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Configuration save request interface
+export interface SaveConfigurationRequest {
+  name: string;
+  templateConfig: TemplateConfiguration;
+  propertyOverrides?: Partial<ExtendedTemplatePropertyData>;
+  selectedContacts?: {
+    phone?: string;
+    email?: string;
+  };
+  selectedImageIndices: number[];
+  isDefault?: boolean;
+  isGlobal?: boolean;
+  propertyId?: string;
+}
+
+// Configuration load response interface
+export interface ConfigurationResponse {
+  success: boolean;
+  data?: SavedCartelConfiguration;
+  error?: string;
+}
+
+// Multiple configurations response
+export interface ConfigurationsListResponse {
+  success: boolean;
+  data?: SavedCartelConfiguration[];
+  error?: string;
+}
