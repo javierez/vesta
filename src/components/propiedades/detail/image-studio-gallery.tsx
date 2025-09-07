@@ -263,8 +263,7 @@ export function ImageStudioGallery({
 
   // Show only main image (for results)
   if (showOnlyMainImage) {
-    const currentImage = images[selectedIndex];
-    const _currentImageId = currentImage?.propertyImageId.toString();
+    const _currentImage = images[selectedIndex];
     
     return (
       <div className="space-y-8">

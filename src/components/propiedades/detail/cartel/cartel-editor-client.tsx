@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
 import {
@@ -28,6 +27,9 @@ import {
   Image as ImageIcon,
   Settings,
   Loader2,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
   ZoomIn,
   ZoomOut,
   RotateCcw,
@@ -35,9 +37,6 @@ import {
   ChevronLeft,
   ChevronUp,
   ChevronDown,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
 } from "lucide-react";
 import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
 import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
@@ -157,6 +156,20 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       iconSpacingVertical: 12,
       overlayColor: "default",
       additionalFields: ["hasElevator", "hasGarage", "energyConsumptionScale"],
+      // Description styling defaults
+      descriptionFont: "default",
+      descriptionAlignment: "left",
+      descriptionSize: 16,
+      descriptionColor: "#ffffff",
+      descriptionPositionX: 0,
+      descriptionPositionY: 0,
+      // Bullet styling defaults
+      bulletFont: "default",
+      bulletAlignment: "left",
+      bulletSize: 14,
+      bulletColor: "#ffffff",
+      bulletPositionX: 0,
+      bulletPositionY: 0,
     };
   });
 
@@ -182,27 +195,29 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
         title: `${listingTypeText} ${propertyTypeText}`,
         images: selectedImages.length > 0 ? selectedImages : baseData.images,
         location: {
-          neighborhood: databaseNeighborhood || baseData.location.neighborhood,
-          city: databaseCity || baseData.location.city
+          neighborhood: databaseNeighborhood ?? baseData.location.neighborhood,
+          city: databaseCity ?? baseData.location.city
         },
         specs: {
           ...baseData.specs,
-          bedrooms: databaseBedrooms || baseData.specs.bedrooms,
-          bathrooms: databaseBathrooms || baseData.specs.bathrooms,
-          squareMeters: databaseSquareMeter || baseData.specs.squareMeters
-        }
+          bedrooms: databaseBedrooms ?? baseData.specs.bedrooms,
+          bathrooms: databaseBathrooms ?? baseData.specs.bathrooms,
+          squareMeters: databaseSquareMeter ?? baseData.specs.squareMeters
+        },
+        shortDescription: "Magnífico piso totalmente reformado en pleno corazón de Madrid. Luminoso y con excelentes acabados.",
+        iconListText: "• 3 dormitorios\n• 2 baños\n• Ascensor\n• Garaje"
       };
     });
 
   // Location field state - format: "neighborhood (city)"
   const [locationText, setLocationText] = useState(() => {
-    const neighborhood = databaseNeighborhood || "Salamanca";
-    const city = databaseCity || "Madrid";
+    const neighborhood = databaseNeighborhood ?? "Salamanca";
+    const city = databaseCity ?? "Madrid";
     return `${neighborhood} (${city})`;
   });
 
   // Contact data state
-  const [contactData, setContactData] = useState<ContactOffice[]>(() => {
+  const [contactData] = useState<ContactOffice[]>(() => {
     if (databaseContactProps) {
       try {
         // Handle double-escaped JSON from database
@@ -213,7 +228,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
         }
         
         console.log("🔄 Parsing contact props:", cleanedJson);
-        const parsed: ContactProps = JSON.parse(cleanedJson);
+        const parsed = JSON.parse(cleanedJson) as ContactProps;
         console.log("✅ Parsed contact data:", parsed);
         return parsed.offices || [];
       } catch (error) {
@@ -243,13 +258,17 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
         setSelectedEmail(firstOffice.emailAddresses.info);
       }
     }
-  }, [contactData]);
+  }, [contactData, selectedPhone, selectedEmail]);
 
   // UI state
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
   const [lastGeneratedPdf, setLastGeneratedPdf] = useState<string | null>(null);
   const [previewZoom, setPreviewZoom] = useState(0.4); // Default zoom level
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   
   // Selected images for cartel (using indices instead of URLs)
   // Auto-select first 3-4 images on load
@@ -286,8 +305,73 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   
   // Icon grid customization toggle state
   const [showIconCustomization, setShowIconCustomization] = useState(false);
+  
 
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // Generate placeholder text that matches what the template would show
+  const generateDescriptionPlaceholder = React.useCallback(() => {
+    const parts: string[] = [];
+
+    // Start with property type and location
+    parts.push(
+      `${propertyData.propertyType.charAt(0).toUpperCase() + propertyData.propertyType.slice(1)} en ${propertyData.location.neighborhood}, ${propertyData.location.city}`,
+    );
+
+    // Add basic specs
+    const specs: string[] = [];
+    if (propertyData.specs.bedrooms || propertyData.specs.bathrooms) {
+      const roomSpecs: string[] = [];
+      if (propertyData.specs.bedrooms) {
+        roomSpecs.push(
+          propertyData.specs.bedrooms === 1
+            ? "una habitación"
+            : `${propertyData.specs.bedrooms} habitaciones`,
+        );
+      }
+      if (propertyData.specs.bathrooms) {
+        roomSpecs.push(
+          propertyData.specs.bathrooms === 1
+            ? "un baño"
+            : `${propertyData.specs.bathrooms} baños`,
+        );
+      }
+      specs.push(`Cuenta con ${roomSpecs.join(" y ")}`);
+    }
+    specs.push(`${propertyData.specs.squareMeters} metros cuadrados`);
+
+    if (specs.length > 0) {
+      parts.push(specs.join(", "));
+    }
+
+    // Add additional features preview
+    const features: string[] = [];
+    config.additionalFields.slice(0, 2).forEach((fieldValue) => {
+      if (fieldValue === "hasElevator") features.push("Con ascensor");
+      if (fieldValue === "hasGarage") features.push("Con garaje");
+    });
+
+    // Join all parts
+    let fullText = parts.join(". ");
+    if (features.length > 0) {
+      fullText += ". " + features.join(". ");
+    }
+    fullText += ".";
+
+    return fullText;
+  }, [propertyData.propertyType, propertyData.location.neighborhood, propertyData.location.city,
+      propertyData.specs.bedrooms, propertyData.specs.bathrooms, propertyData.specs.squareMeters,
+      config.additionalFields]);
+
+  // Auto-generate short description when it's empty or when relevant data changes
+  React.useEffect(() => {
+    if (!propertyData.shortDescription || propertyData.shortDescription.trim() === "") {
+      const generatedDescription = generateDescriptionPlaceholder();
+      updatePropertyData({ shortDescription: generatedDescription });
+    }
+  }, [propertyData.propertyType, propertyData.location.neighborhood, propertyData.location.city, 
+      propertyData.specs.bedrooms, propertyData.specs.bathrooms, propertyData.specs.squareMeters,
+      propertyData.shortDescription, config.additionalFields, generateDescriptionPlaceholder]);
 
   // Get template images for positioning controls - use selected images or fallback to default S3 images
   const templateImages = selectedImageIndices.length > 0 
@@ -326,16 +410,16 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
     if (selectedCount >= 3 && selectedCount <= 4) {
       updateConfig({ imageCount: selectedCount as 3 | 4 });
     }
-  }, [selectedImageIndices]);
+  }, [selectedImageIndices, selectedImageIndices.length]);
 
   // Parse location text and update property data
   const parseLocationText = (locationText: string) => {
-    const match = locationText.match(/^(.*?)\s*\((.*?)\)$/);
+    const match = /^(.*?)\s*\((.*?)\)$/.exec(locationText);
     if (match) {
       const [, neighborhood, city] = match;
       return {
-        neighborhood: neighborhood?.trim() || "",
-        city: city?.trim() || ""
+        neighborhood: neighborhood?.trim() ?? "",
+        city: city?.trim() ?? ""
       };
     }
     // Fallback if format doesn't match
@@ -359,7 +443,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       contact: {
         phone: selectedPhone,
         email: selectedEmail,
-        website: databaseWebsite || undefined,
+        website: databaseWebsite ?? undefined,
       }
     });
   }, [selectedPhone, selectedEmail, databaseWebsite]);
@@ -405,8 +489,61 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   // Zoom control functions
   const zoomIn = () => setPreviewZoom((prev) => Math.min(prev + 0.1, 1.0));
   const zoomOut = () => setPreviewZoom((prev) => Math.max(prev - 0.1, 0.2));
-  const resetZoom = () =>
+  const resetZoom = () => {
     setPreviewZoom(config.orientation === "vertical" ? 0.4 : 0.35);
+    setPanX(0);
+    setPanY(0);
+  };
+
+  // Trackpad/mouse wheel zoom handler
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY;
+    const zoomFactor = 0.1;
+    
+    if (delta < 0) {
+      // Zoom in
+      setPreviewZoom((prev) => Math.min(prev + zoomFactor, 1.0));
+    } else {
+      // Zoom out
+      setPreviewZoom((prev) => Math.max(prev - zoomFactor, 0.2));
+    }
+  };
+
+  // Drag start handler
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - panX, y: e.clientY - panY });
+    e.preventDefault();
+  };
+
+
+  // Add global mouse event listeners for dragging
+  React.useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      
+      const newPanX = e.clientX - dragStart.x;
+      const newPanY = e.clientY - dragStart.y;
+      
+      setPanX(newPanX);
+      setPanY(newPanY);
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging, dragStart.x, dragStart.y]);
 
   // Generate PDF using Puppeteer
   const generatePDF = async () => {
@@ -424,7 +561,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
           propertyData: {
             ...propertyData,
             images: templateImages
-          },
+          }
         }),
       });
 
@@ -477,12 +614,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
     );
   };
 
-  // Wizard step titles
-  const stepTitles = [
-    "Configuración",
-    "Datos de la Propiedad",
-    "Imágenes"
-  ];
 
   // Navigation functions
   const goToNextStep = () => {
@@ -498,7 +629,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full p-4 md:p-6">
       {/* Image Selection Section */}
       {images.length > 0 && (
         <div className="mb-6">
@@ -516,9 +647,9 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
         </div>
       )}
       
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
         {/* Configuration Panel */}
-        <div className="space-y-6 xl:col-span-1">
+        <div className="space-y-4 md:space-y-6 lg:col-span-1">
           {/* Step 1: Configuration */}
           {currentStep === 0 && (
             <Card>
@@ -635,7 +766,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                           id={key}
                           checked={config[key] ?? false}
                           onCheckedChange={(checked) =>
-                            updateConfig({ [key]: checked })
+                            updateConfig({ [key]: checked === true })
                           }
                           className="no-checkmark h-3 w-3"
                         />
@@ -651,28 +782,206 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 <div className="space-y-2">
                   <h5 className="text-sm font-medium text-muted-foreground">Elementos Visuales</h5>
                   <div className="space-y-2">
-                    {[
-                      { key: "showQR" as const, label: "Código QR" },
-                      { key: "showWatermark" as const, label: "Marca de Agua" },
-                      { key: "showIcons" as const, label: "Iconos" },
-                    ].map(({ key, label }) => (
-                      <div
-                        key={key}
-                        className="flex items-center space-x-2"
-                      >
+                    {/* QR Code Checkbox */}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="showQR"
+                        checked={config.showQR ?? false}
+                        onCheckedChange={(checked) =>
+                          updateConfig({ showQR: checked === true })
+                        }
+                        className="no-checkmark h-3 w-3"
+                      />
+                      <Label htmlFor="showQR" className="text-xs">
+                        Código QR
+                      </Label>
+                    </div>
+                    
+                    {/* Watermark Checkbox */}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="showWatermark"
+                        checked={config.showWatermark ?? false}
+                        onCheckedChange={(checked) =>
+                          updateConfig({ showWatermark: checked === true })
+                        }
+                        className="no-checkmark h-3 w-3"
+                      />
+                      <Label htmlFor="showWatermark" className="text-xs">
+                        Marca de Agua
+                      </Label>
+                    </div>
+                    
+                    {/* Icons with Editable List */}
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
                         <Checkbox
-                          id={key}
-                          checked={config[key] ?? false}
+                          id="showIcons"
+                          checked={config.showIcons ?? false}
                           onCheckedChange={(checked) =>
-                            updateConfig({ [key]: checked })
+                            updateConfig({ showIcons: checked === true })
                           }
                           className="no-checkmark h-3 w-3"
                         />
-                        <Label htmlFor={key} className="text-xs">
-                          {label}
+                        <Label htmlFor="showIcons" className="text-xs">
+                          Iconos
                         </Label>
                       </div>
-                    ))}
+                      {!config.showIcons && (
+                        <div className="ml-5">
+                          <textarea
+                            value={propertyData.iconListText || ""}
+                            onChange={(e) =>
+                              updatePropertyData({ iconListText: e.target.value })
+                            }
+                            placeholder="Lista de características (una por línea)..."
+                            className="w-full p-3 text-sm rounded border border-gray-200 resize-none md:p-2 md:text-xs"
+                            rows={4}
+                          />
+                          
+                          {/* Bullet List Styling Controls */}
+                          <div className="mt-3 space-y-3 p-3 bg-gray-50 rounded-lg">
+                            <Label className="text-xs font-medium">Personalización de Lista</Label>
+                            
+                            {/* Font and Size */}
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <div>
+                                <Label className="text-xs">Fuente</Label>
+                                <Select
+                                  value={config.bulletFont}
+                                  onValueChange={(value) =>
+                                    updateConfig({ bulletFont: value as TemplateConfiguration["bulletFont"] })
+                                  }
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="default">Por defecto</SelectItem>
+                                    <SelectItem value="serif">Serif</SelectItem>
+                                    <SelectItem value="sans">Sans</SelectItem>
+                                    <SelectItem value="mono">Mono</SelectItem>
+                                    <SelectItem value="elegant">Elegante</SelectItem>
+                                    <SelectItem value="modern">Moderno</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs">Tamaño</Label>
+                                <div className="flex items-center space-x-2">
+                                  <Slider
+                                    value={[config.bulletSize]}
+                                    onValueChange={([value]) =>
+                                      updateConfig({ bulletSize: value })
+                                    }
+                                    max={24}
+                                    min={12}
+                                    step={1}
+                                    className="flex-1"
+                                  />
+                                  <span className="text-xs w-8">{config.bulletSize}px</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Alignment and Color */}
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <div>
+                                <Label className="text-xs">Alineación</Label>
+                                <div className="flex border rounded-md">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateConfig({ bulletAlignment: "left" })}
+                                    className={`flex-1 p-2 rounded-l-md border-r ${
+                                      config.bulletAlignment === "left"
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    <AlignLeft className="w-4 h-4 mx-auto" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateConfig({ bulletAlignment: "center" })}
+                                    className={`flex-1 p-2 border-r ${
+                                      config.bulletAlignment === "center"
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    <AlignCenter className="w-4 h-4 mx-auto" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateConfig({ bulletAlignment: "right" })}
+                                    className={`flex-1 p-2 rounded-r-md ${
+                                      config.bulletAlignment === "right"
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    <AlignRight className="w-4 h-4 mx-auto" />
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs">Color</Label>
+                                <Input
+                                  type="color"
+                                  value={config.bulletColor}
+                                  onChange={(e) =>
+                                    updateConfig({ bulletColor: e.target.value })
+                                  }
+                                  className="h-8"
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Position */}
+                            <div className="space-y-2">
+                              <Label className="text-xs">Posición</Label>
+                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                <div>
+                                  <Label className="text-xs text-gray-500">Horizontal</Label>
+                                  <div className="flex items-center space-x-2 min-w-0">
+                                    <Slider
+                                      value={[config.bulletPositionX]}
+                                      onValueChange={([value]) =>
+                                        updateConfig({ bulletPositionX: value })
+                                      }
+                                      max={50}
+                                      min={-50}
+                                      step={1}
+                                      className="flex-1"
+                                    />
+                                    <span className="text-xs w-10">{config.bulletPositionX}px</span>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <Label className="text-xs text-gray-500">Vertical</Label>
+                                  <div className="flex items-center space-x-2 min-w-0">
+                                    <Slider
+                                      value={[config.bulletPositionY]}
+                                      onValueChange={([value]) =>
+                                        updateConfig({ bulletPositionY: value })
+                                      }
+                                      max={30}
+                                      min={-30}
+                                      step={1}
+                                      className="flex-1"
+                                    />
+                                    <span className="text-xs w-10">{config.bulletPositionY}px</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -680,30 +989,191 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 <div className="space-y-2">
                   <h5 className="text-sm font-medium text-muted-foreground">Contenido</h5>
                   <div className="space-y-2">
-                    {[
-                      { key: "showReference" as const, label: "Referencia" },
-                      {
-                        key: "showShortDescription" as const,
-                        label: "Descripción Corta",
-                      },
-                    ].map(({ key, label }) => (
-                      <div
-                        key={key}
-                        className="flex items-center space-x-2"
-                      >
+                    {/* Reference Checkbox */}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="showReference"
+                        checked={config.showReference ?? false}
+                        onCheckedChange={(checked) =>
+                          updateConfig({ showReference: checked === true })
+                        }
+                        className="no-checkmark h-3 w-3"
+                      />
+                      <Label htmlFor="showReference" className="text-xs">
+                        Referencia
+                      </Label>
+                    </div>
+                    
+                    {/* Short Description with Edit */}
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
                         <Checkbox
-                          id={key}
-                          checked={config[key] ?? false}
+                          id="showShortDescription"
+                          checked={config.showShortDescription ?? false}
                           onCheckedChange={(checked) =>
-                            updateConfig({ [key]: checked })
+                            updateConfig({ showShortDescription: checked === true })
                           }
                           className="no-checkmark h-3 w-3"
                         />
-                        <Label htmlFor={key} className="text-xs">
-                          {label}
+                        <Label htmlFor="showShortDescription" className="text-xs">
+                          Descripción Corta
                         </Label>
                       </div>
-                    ))}
+                      {config.showShortDescription && (
+                        <div className="ml-5">
+                          <textarea
+                            value={propertyData.shortDescription || ""}
+                            onChange={(e) =>
+                              updatePropertyData({ shortDescription: e.target.value })
+                            }
+                            placeholder="Escribe una descripción personalizada..."
+                            className="w-full p-3 text-sm rounded border border-gray-200 resize-none md:p-2 md:text-xs"
+                            rows={2}
+                          />
+                          
+                          {/* Description Styling Controls */}
+                          <div className="mt-3 space-y-3 p-3 bg-gray-50 rounded-lg">
+                            <Label className="text-xs font-medium">Personalización de Descripción</Label>
+                            
+                            {/* Font and Size */}
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <div>
+                                <Label className="text-xs">Fuente</Label>
+                                <Select
+                                  value={config.descriptionFont}
+                                  onValueChange={(value) =>
+                                    updateConfig({ descriptionFont: value as TemplateConfiguration["descriptionFont"] })
+                                  }
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="default">Por defecto</SelectItem>
+                                    <SelectItem value="serif">Serif</SelectItem>
+                                    <SelectItem value="sans">Sans</SelectItem>
+                                    <SelectItem value="mono">Mono</SelectItem>
+                                    <SelectItem value="elegant">Elegante</SelectItem>
+                                    <SelectItem value="modern">Moderno</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs">Tamaño</Label>
+                                <div className="flex items-center space-x-2">
+                                  <Slider
+                                    value={[config.descriptionSize]}
+                                    onValueChange={([value]) =>
+                                      updateConfig({ descriptionSize: value })
+                                    }
+                                    max={32}
+                                    min={12}
+                                    step={1}
+                                    className="flex-1"
+                                  />
+                                  <span className="text-xs w-8">{config.descriptionSize}px</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Alignment and Color */}
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <div>
+                                <Label className="text-xs">Alineación</Label>
+                                <div className="flex border rounded-md">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateConfig({ descriptionAlignment: "left" })}
+                                    className={`flex-1 p-2 rounded-l-md border-r ${
+                                      config.descriptionAlignment === "left"
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    <AlignLeft className="w-4 h-4 mx-auto" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateConfig({ descriptionAlignment: "center" })}
+                                    className={`flex-1 p-2 border-r ${
+                                      config.descriptionAlignment === "center"
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    <AlignCenter className="w-4 h-4 mx-auto" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateConfig({ descriptionAlignment: "right" })}
+                                    className={`flex-1 p-2 rounded-r-md ${
+                                      config.descriptionAlignment === "right"
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    <AlignRight className="w-4 h-4 mx-auto" />
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs">Color</Label>
+                                <Input
+                                  type="color"
+                                  value={config.descriptionColor}
+                                  onChange={(e) =>
+                                    updateConfig({ descriptionColor: e.target.value })
+                                  }
+                                  className="h-8"
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Position */}
+                            <div className="space-y-2">
+                              <Label className="text-xs">Posición</Label>
+                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                <div>
+                                  <Label className="text-xs text-gray-500">Horizontal</Label>
+                                  <div className="flex items-center space-x-2 min-w-0">
+                                    <Slider
+                                      value={[config.descriptionPositionX]}
+                                      onValueChange={([value]) =>
+                                        updateConfig({ descriptionPositionX: value })
+                                      }
+                                      max={50}
+                                      min={-50}
+                                      step={1}
+                                      className="flex-1"
+                                    />
+                                    <span className="text-xs w-10">{config.descriptionPositionX}px</span>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <Label className="text-xs text-gray-500">Vertical</Label>
+                                  <div className="flex items-center space-x-2 min-w-0">
+                                    <Slider
+                                      value={[config.descriptionPositionY]}
+                                      onValueChange={([value]) =>
+                                        updateConfig({ descriptionPositionY: value })
+                                      }
+                                      max={30}
+                                      min={-30}
+                                      step={1}
+                                      className="flex-1"
+                                    />
+                                    <span className="text-xs w-10">{config.descriptionPositionY}px</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -741,17 +1211,9 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                     <div className="space-y-4">
                       {/* Icon Size */}
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="font-medium">Tamaño de Iconos</Label>
-                          <span className="text-sm font-mono text-gray-600 bg-white px-2 py-1 rounded">
-                            {config.iconSize.toFixed(1)}x
-                          </span>
-                        </div>
+                        <Label className="font-medium">Tamaño de Iconos</Label>
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1 text-gray-500">
-                            <div className="w-3 h-3 border border-gray-400 rounded-sm"></div>
-                            <span className="text-xs">Pequeño</span>
-                          </div>
+                          <span className="text-sm text-gray-500">A</span>
                           <Slider
                             value={[config.iconSize]}
                             onValueChange={([value]) => updateConfig({ iconSize: value })}
@@ -760,10 +1222,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                             step={0.1}
                             className="flex-1"
                           />
-                          <div className="flex items-center gap-1 text-gray-500">
-                            <div className="w-5 h-5 border-2 border-gray-400 rounded-sm"></div>
-                            <span className="text-xs">Grande</span>
-                          </div>
+                          <span className="text-xl font-bold text-gray-500">A</span>
                         </div>
                       </div>
 
@@ -774,69 +1233,37 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         {/* Horizontal Spacing */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">↔️ Horizontal</span>
+                            <span className="text-sm text-gray-600">Horizontal</span>
                             <span className="text-xs font-mono text-gray-600 bg-white px-2 py-1 rounded">
                               {config.iconSpacingHorizontal}px
                             </span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1 text-gray-500">
-                              <div className="flex gap-0.5">
-                                <div className="w-2 h-2 bg-gray-400 rounded-sm"></div>
-                                <div className="w-2 h-2 bg-gray-400 rounded-sm"></div>
-                              </div>
-                              <span className="text-xs">Junto</span>
-                            </div>
-                            <Slider
-                              value={[config.iconSpacingHorizontal]}
-                              onValueChange={([value]) => updateConfig({ iconSpacingHorizontal: value })}
-                              max={80}
-                              min={8}
-                              step={2}
-                              className="flex-1"
-                            />
-                            <div className="flex items-center gap-1 text-gray-500">
-                              <div className="flex gap-2">
-                                <div className="w-2 h-2 bg-gray-400 rounded-sm"></div>
-                                <div className="w-2 h-2 bg-gray-400 rounded-sm"></div>
-                              </div>
-                              <span className="text-xs">Separado</span>
-                            </div>
-                          </div>
+                          <Slider
+                            value={[config.iconSpacingHorizontal]}
+                            onValueChange={([value]) => updateConfig({ iconSpacingHorizontal: value })}
+                            max={80}
+                            min={8}
+                            step={2}
+                            className="w-full"
+                          />
                         </div>
 
                         {/* Vertical Spacing */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">↕️ Vertical</span>
+                            <span className="text-sm text-gray-600">Vertical</span>
                             <span className="text-xs font-mono text-gray-600 bg-white px-2 py-1 rounded">
                               {config.iconSpacingVertical}px
                             </span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1 text-gray-500">
-                              <div className="flex flex-col gap-0.5">
-                                <div className="w-2 h-2 bg-gray-400 rounded-sm"></div>
-                                <div className="w-2 h-2 bg-gray-400 rounded-sm"></div>
-                              </div>
-                              <span className="text-xs">Compacto</span>
-                            </div>
-                            <Slider
-                              value={[config.iconSpacingVertical]}
-                              onValueChange={([value]) => updateConfig({ iconSpacingVertical: value })}
-                              max={40}
-                              min={4}
-                              step={2}
-                              className="flex-1"
-                            />
-                            <div className="flex items-center gap-1 text-gray-500">
-                              <div className="flex flex-col gap-2">
-                                <div className="w-2 h-2 bg-gray-400 rounded-sm"></div>
-                                <div className="w-2 h-2 bg-gray-400 rounded-sm"></div>
-                              </div>
-                              <span className="text-xs">Espaciado</span>
-                            </div>
-                          </div>
+                          <Slider
+                            value={[config.iconSpacingVertical]}
+                            onValueChange={([value]) => updateConfig({ iconSpacingVertical: value })}
+                            max={40}
+                            min={4}
+                            step={2}
+                            className="w-full"
+                          />
                         </div>
                       </div>
                     </div>
@@ -901,7 +1328,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 {showTitleCustomization && (
                   <div className="space-y-4 p-3 bg-gray-50 rounded-lg">
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {/* Font Style */}
                         <div>
                           <Label htmlFor="titleFont">Fuente</Label>
@@ -978,7 +1405,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {/* Text Alignment */}
                         <div>
                           <Label>Alineación</Label>
@@ -1126,7 +1553,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 {showLocationCustomization && (
                   <div className="space-y-4 p-3 bg-gray-50 rounded-lg mt-3">
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {/* Font Style */}
                         <div>
                           <Label htmlFor="locationFont">Fuente</Label>
@@ -1203,7 +1630,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {/* Text Alignment */}
                         <div>
                           <Label>Alineación</Label>
@@ -1370,7 +1797,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 {showPriceCustomization && (
                   <div className="space-y-4 p-3 bg-gray-50 rounded-lg mt-3">
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {/* Font Style */}
                         <div>
                           <Label htmlFor="priceFont">Fuente</Label>
@@ -1447,7 +1874,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {/* Text Alignment */}
                         <div>
                           <Label>Alineación</Label>
@@ -1980,15 +2407,15 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
 
         {/* Preview Panel */}
         {showPreview && (
-          <div className="xl:col-span-2">
+          <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
+                <CardTitle className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center gap-2">
                     <ImageIcon className="h-5 w-5" />
                     Preview en Vivo
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 md:gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -2008,7 +2435,12 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                     >
                       <ZoomIn className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={resetZoom}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={resetZoom}
+                      title="Reset zoom and position"
+                    >
                       <RotateCcw className="h-4 w-4" />
                     </Button>
                   </div>
@@ -2020,23 +2452,26 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
               <CardContent>
                 <div
                   ref={previewRef}
-                  className="overflow-auto border border-gray-300 bg-gray-100 p-4"
+                  className="overflow-auto border border-gray-300 bg-gray-100 p-2 md:p-4"
                   style={{
-                    height: "600px",
-                    minHeight: "400px",
+                    height: "50vh",
+                    minHeight: "300px",
                     maxHeight: "80vh",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
+                    cursor: isDragging ? "grabbing" : "grab",
                   }}
+                  onWheel={handleWheel}
+                  onMouseDown={handleMouseDown}
                 >
                   <div
                     style={{
-                      transform: `scale(${previewZoom})`,
+                      transform: `scale(${previewZoom}) translate(${panX}px, ${panY}px)`,
                       transformOrigin: "center center",
                       border: "1px solid #ccc",
                       boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                      transition: "transform 0.2s ease-in-out",
+                      transition: isDragging ? "none" : "transform 0.2s ease-in-out",
                       maxWidth: "100%",
                       overflow: "hidden",
                     }}
@@ -2051,17 +2486,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                     />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="text-xs text-muted-foreground">
-                    <p>
-                      Preview al {Math.round(previewZoom * 100)}% escala. PDF
-                      actual:{" "}
-                      {config.orientation === "vertical"
-                        ? "794×1123"
-                        : "1123×794"}
-                      px
-                    </p>
-                  </div>
+                <div className="mt-2 flex items-center justify-end">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Zoom:</span>
                     <Slider
@@ -2070,7 +2495,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                       max={1.0}
                       min={0.2}
                       step={0.05}
-                      className="w-24"
+                      className="w-16 md:w-24"
                     />
                   </div>
                 </div>
@@ -2080,7 +2505,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
             {/* Action Buttons - Below Preview */}
             <Card className="mt-4">
               <CardContent className="pt-6">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Button
                     onClick={generatePDF}
                     disabled={isGenerating || selectedImageIndices.length < 3}

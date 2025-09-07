@@ -172,6 +172,20 @@ export interface TemplateConfiguration {
     | "green"
     | "purple"
     | "red";
+  // Short description styling
+  descriptionFont: "default" | "serif" | "sans" | "mono" | "elegant" | "modern";
+  descriptionAlignment: "left" | "center" | "right";
+  descriptionSize: number; // Font size in pixels (12-32)
+  descriptionColor: string; // Text color (hex, rgb, or CSS color name)
+  descriptionPositionX: number; // Horizontal position offset in pixels (-50 to 50)
+  descriptionPositionY: number; // Vertical position offset in pixels (-30 to 30)
+  // Bullet list styling
+  bulletFont: "default" | "serif" | "sans" | "mono" | "elegant" | "modern";
+  bulletAlignment: "left" | "center" | "right";
+  bulletSize: number; // Font size in pixels (12-24)
+  bulletColor: string; // Text color (hex, rgb, or CSS color name)
+  bulletPositionX: number; // Horizontal position offset in pixels (-50 to 50)
+  bulletPositionY: number; // Vertical position offset in pixels (-30 to 30)
 }
 
 // Image positioning data for cropping/repositioning within containers
@@ -196,6 +210,7 @@ export interface ExtendedTemplatePropertyData extends TemplatePropertyData {
   conservationStatus?: number; // 1=Good, 2=Pretty good, 3=Almost new, 4=Needs renovation, 6=Renovated
   heatingType?: string;
   shortDescription?: string;
+  iconListText?: string; // Custom bullet list text when icons are disabled
   listingType?: "venta" | "alquiler";
   logoUrl?: string; // URL to the transparent logo for watermark
   // Image positioning for drag-and-drop cropping (indexed by image URL or position)
@@ -207,7 +222,7 @@ export interface ConfigurableTemplateProps {
   data: ExtendedTemplatePropertyData;
   config: TemplateConfiguration;
   className?: string;
-  onElementClick?: (elementType: string, elementData?: any) => void;
+  onElementClick?: (elementType: string, elementData?: unknown) => void;
   selectedElement?: string | null;
   isInteractive?: boolean;
 }

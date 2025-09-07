@@ -599,6 +599,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const generateShortDescription = () => {
     const parts: string[] = [];
 
@@ -883,15 +884,18 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
               {/* Features display - icons, bullets, or text */}
               {config.showShortDescription ? (
                 <div
-                  className={cn(modernColors.text)}
+                  className={cn(getFontClass(config.descriptionFont))}
                   style={{
-                    marginTop: `${PRINT_DIMENSIONS.SPACING.featuresTopMargin}px`,
-                    marginLeft: `${PRINT_DIMENSIONS.SPACING.iconsLeftMargin}px`,
-                    fontSize: `${getTypographySize("body", { isCompact: true })}px`,
+                    marginTop: `${PRINT_DIMENSIONS.SPACING.featuresTopMargin + config.descriptionPositionY}px`,
+                    marginLeft: `${PRINT_DIMENSIONS.SPACING.iconsLeftMargin + config.descriptionPositionX}px`,
+                    fontSize: `${config.descriptionSize}px`,
                     lineHeight: "1.5",
+                    textAlign: config.descriptionAlignment,
+                    color: config.descriptionColor,
+                    whiteSpace: "pre-wrap",
                   }}
                 >
-                  {generateShortDescription()}
+                  {data.shortDescription ?? ""}
                 </div>
               ) : (
                 <FeaturesGrid
@@ -902,6 +906,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   getFieldValue={getFieldValue}
                   getFieldLabel={getFieldLabel}
                   shouldCompact={shouldCompactIcons}
+                  getFontClass={getFontClass}
                 />
               )}
             </div>

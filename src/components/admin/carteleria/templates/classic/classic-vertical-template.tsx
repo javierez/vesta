@@ -174,7 +174,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   const locationText = formatLocation(data.location);
 
   // Create click handler with element type
-  const createClickHandler = (elementType: string, elementData?: any) => {
+  const createClickHandler = (elementType: string, elementData?: unknown) => {
     if (!isInteractive || !onElementClick) return undefined;
     return (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -977,6 +977,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   getFieldIcon={getFieldIcon}
                   getFieldValue={getFieldValue}
                   getFieldLabel={getFieldLabel}
+                  getFontClass={getFontClass}
                   shouldCompact={shouldCompactIcons}
                   iconSize={config.iconSize}
                   iconSpacingHorizontal={config.iconSpacingHorizontal}

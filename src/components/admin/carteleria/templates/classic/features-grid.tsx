@@ -3,13 +3,13 @@ import { cn } from "~/lib/utils";
 import { Bath, Bed, Square } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type {
-  TemplatePropertyData,
+  ExtendedTemplatePropertyData,
   TemplateConfiguration,
 } from "~/types/template-data";
 import { PRINT_DIMENSIONS } from "~/lib/carteleria/classic-vertical-constants";
 
 interface FeaturesGridProps {
-  data: TemplatePropertyData;
+  data: ExtendedTemplatePropertyData;
   config: TemplateConfiguration;
   modernColors: {
     text: string;
@@ -18,6 +18,7 @@ interface FeaturesGridProps {
   getFieldIcon: (fieldValue: string) => LucideIcon;
   getFieldValue: (fieldValue: string) => string;
   getFieldLabel: (fieldValue: string) => string;
+  getFontClass: (fontType: string) => string;
   shouldCompact?: boolean;
   iconSize?: number;
   iconSpacingHorizontal?: number;
@@ -31,6 +32,7 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
   getFieldIcon,
   getFieldValue,
   getFieldLabel,
+  getFontClass,
   shouldCompact = false,
   iconSize = 1.0,
   iconSpacingHorizontal = 32,
@@ -177,86 +179,79 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
         <div
           style={{
             marginTop: shouldCompact
-              ? `${PRINT_DIMENSIONS.SPACING.featuresTopMarginCompact}px`
-              : `${PRINT_DIMENSIONS.SPACING.featuresTopMargin}px`,
-            marginLeft: `${leftMargin}px`,
+              ? `${PRINT_DIMENSIONS.SPACING.featuresTopMarginCompact + config.bulletPositionY}px`
+              : `${PRINT_DIMENSIONS.SPACING.featuresTopMargin + config.bulletPositionY}px`,
+            marginLeft: `${leftMargin + config.bulletPositionX}px`,
           }}
         >
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: `${PRINT_DIMENSIONS.SPACING.iconRowGap}px`,
-              fontSize: shouldCompact
-                ? `${PRINT_DIMENSIONS.TYPOGRAPHY.body.small}px`
-                : `${PRINT_DIMENSIONS.TYPOGRAPHY.body.standard}px`,
-              lineHeight: "1.3",
-            }}
-          >
-            {data.specs.bathrooms && (
-              <li
-                className={cn(modernColors.text)}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                }}
-              >
-                <span
-                  style={{
-                    marginRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
-                    marginTop: "2px",
-                  }}
-                >
-                  •
-                </span>
-                <span>{data.specs.bathrooms} baños</span>
-              </li>
-            )}
-            {data.specs.bedrooms && (
-              <li
-                className={cn(modernColors.text)}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                }}
-              >
-                <span
-                  style={{
-                    marginRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
-                    marginTop: "2px",
-                  }}
-                >
-                  •
-                </span>
-                <span>{data.specs.bedrooms} dormitorios</span>
-              </li>
-            )}
-            <li
-              className={cn(modernColors.text)}
+          {data.iconListText ? (
+            /* Custom text list from user input */
+            <div
+              className={cn(getFontClass(config.bulletFont))}
               style={{
-                display: "flex",
-                alignItems: "flex-start",
+                fontSize: `${config.bulletSize}px`,
+                lineHeight: "1.5",
+                whiteSpace: "pre-wrap",
+                textAlign: config.bulletAlignment,
+                color: config.bulletColor,
               }}
             >
-              <span
-                style={{
-                  marginRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
-                  marginTop: "2px",
-                }}
-              >
-                •
-              </span>
-              <span>{data.specs.squareMeters} m²</span>
-            </li>
-
-            {/* Additional fields as bullet points */}
-            {config.additionalFields.slice(0, 3).map((fieldValue) => (
+              {data.iconListText}
+            </div>
+          ) : (
+            /* Default bullet list from property data */
+            <ul
+              className={cn(getFontClass(config.bulletFont))}
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: `${PRINT_DIMENSIONS.SPACING.iconRowGap}px`,
+                fontSize: `${config.bulletSize}px`,
+                lineHeight: "1.3",
+                textAlign: config.bulletAlignment,
+                color: config.bulletColor,
+              }}
+            >
+              {data.specs.bathrooms && (
+                <li
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <span
+                    style={{
+                      marginRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
+                      marginTop: "2px",
+                    }}
+                  >
+                    •
+                  </span>
+                  <span>{data.specs.bathrooms} baños</span>
+                </li>
+              )}
+              {data.specs.bedrooms && (
+                <li
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <span
+                    style={{
+                      marginRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
+                      marginTop: "2px",
+                    }}
+                  >
+                    •
+                  </span>
+                  <span>{data.specs.bedrooms} dormitorios</span>
+                </li>
+              )}
               <li
-                key={fieldValue}
-                className={cn(modernColors.text)}
                 style={{
                   display: "flex",
                   alignItems: "flex-start",
@@ -270,12 +265,33 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
                 >
                   •
                 </span>
-                <span>
-                  {getFieldLabel(fieldValue)}: {getFieldValue(fieldValue)}
-                </span>
+                <span>{data.specs.squareMeters} m²</span>
               </li>
-            ))}
-          </ul>
+
+              {/* Additional fields as bullet points */}
+              {config.additionalFields.slice(0, 3).map((fieldValue) => (
+                <li
+                  key={fieldValue}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <span
+                    style={{
+                      marginRight: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
+                      marginTop: "2px",
+                    }}
+                  >
+                    •
+                  </span>
+                  <span>
+                    {getFieldLabel(fieldValue)}: {getFieldValue(fieldValue)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>

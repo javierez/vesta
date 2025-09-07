@@ -72,7 +72,7 @@ export async function CartelEditorPhase1({
     console.log("✅ CartelEditorPhase1: Loaded from database:", { 
       listingType: databaseListingType,
       propertyType: databasePropertyType,
-      imagesCount: images?.length || 0,
+      imagesCount: images?.length ?? 0,
       colorsCount: accountColorPalette.length,
       city: databaseCity,
       neighborhood: databaseNeighborhood,
