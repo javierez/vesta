@@ -55,7 +55,7 @@ export async function CartelEditorPhase1({
       databaseBedrooms = cartelData.bedrooms;
     }
     if (cartelData.bathrooms) {
-      databaseBathrooms = cartelData.bathrooms;
+      databaseBathrooms = parseInt(cartelData.bathrooms);
     }
     if (cartelData.squareMeter) {
       databaseSquareMeter = cartelData.squareMeter;

@@ -334,8 +334,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
     if (match) {
       const [, neighborhood, city] = match;
       return {
-        neighborhood: neighborhood.trim(),
-        city: city.trim()
+        neighborhood: neighborhood?.trim() || "",
+        city: city?.trim() || ""
       };
     }
     // Fallback if format doesn't match
@@ -562,7 +562,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   <Label htmlFor="overlayColor">Color de Fondo</Label>
                   <Select
                     value={config.overlayColor}
-                    onValueChange={(value: string) => updateConfig({ overlayColor: value })}
+                    onValueChange={(value) => updateConfig({ overlayColor: value as "default" | "dark" | "light" | "blue" | "green" | "purple" | "red" })}
                   >
                     <SelectTrigger>
                       <SelectValue />
