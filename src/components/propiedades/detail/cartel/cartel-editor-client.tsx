@@ -268,10 +268,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
     return images.map((_, index) => index);
   });
   
-  // Interactive preview state
-  const [selectedElement, setSelectedElement] = useState<string | null>(null);
-  const [isInteractiveMode, setIsInteractiveMode] = useState(true);
-  
   // Wizard state
   const [currentStep, setCurrentStep] = useState(0);
   const totalSteps = 3;
@@ -464,36 +460,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
     }
   };
 
-  // Handle element selection in interactive preview
-  const handleElementClick = (elementType: string, elementData?: any) => {
-    if (!isInteractiveMode) return;
-    
-    setSelectedElement(elementType);
-    
-    // You can add specific actions based on element type
-    switch (elementType) {
-      case 'title':
-        toast.info('Título seleccionado - Editable en el panel de configuración');
-        break;
-      case 'price':
-        toast.info('Precio seleccionado - Editable en datos de la propiedad');
-        break;
-      case 'location':
-        toast.info('Ubicación seleccionada - Editable en datos de la propiedad');
-        break;
-      case 'image':
-        toast.info(`Imagen ${elementData?.index + 1} seleccionada - Ajustable en posicionamiento`);
-        break;
-      case 'contact':
-        toast.info('Información de contacto seleccionada - Editable en datos de la propiedad');
-        break;
-      case 'features':
-        toast.info('Características seleccionadas - Configurables en opciones adicionales');
-        break;
-      default:
-        toast.info(`Elemento ${elementType} seleccionado`);
-    }
-  };
 
   // Preview the template in a new window
   const previewTemplate = () => {
@@ -2021,11 +1987,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   <div className="flex items-center gap-2">
                     <ImageIcon className="h-5 w-5" />
                     Preview en Vivo
-                    {isInteractiveMode && (
-                      <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-800">
-                        Interactivo
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -2054,11 +2015,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 </CardTitle>
                 <CardDescription>
                   Preview en tiempo real de la plantilla con configuración actual.
-                  {isInteractiveMode ? (
-                    <>Haz clic en los elementos del preview para seleccionarlos y editarlos.</>  
-                  ) : (
-                    <>Usa controles de zoom para magnificar para posicionamiento detallado de imágenes.</>
-                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -2092,9 +2048,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                       }}
                       config={config}
                       className="print-preview"
-                      onElementClick={isInteractiveMode ? handleElementClick : undefined}
-                      selectedElement={selectedElement}
-                      isInteractive={isInteractiveMode}
                     />
                   </div>
                 </div>
@@ -2108,11 +2061,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         : "1123×794"}
                       px
                     </p>
-                    {selectedElement && (
-                      <p className="text-blue-600">
-                        Elemento seleccionado: <span className="font-medium">{selectedElement}</span>
-                      </p>
-                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Zoom:</span>
@@ -2160,13 +2108,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                     Preview de Plantilla
                   </Button>
                   
-                  <Button
-                    onClick={() => setIsInteractiveMode(!isInteractiveMode)}
-                    variant={isInteractiveMode ? "default" : "outline"}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    {isInteractiveMode ? "Modo Interactivo ON" : "Modo Interactivo OFF"}
-                  </Button>
 
                   <Button
                     onClick={() => setShowPreview(!showPreview)}
