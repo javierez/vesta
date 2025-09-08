@@ -364,8 +364,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
 
             {/* Supporting images - bottom 50%, 2 columns - full width since overlay doesn't cover this area */}
             {templateImages.slice(1, 3).map((image, index) => {
+              // Make bottom images bigger by using full width with smaller gap
               const fullWidthSubImageWidth =
-                Math.floor(containerDims.width / 2) - gap / 2;
+                Math.floor((containerDims.width - gap) / 2);
               return (
                 <div
                   key={index}
