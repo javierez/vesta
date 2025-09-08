@@ -18,7 +18,8 @@
       "WebFetch(domain:www.freepik.com)",
       "Bash(find:*)",
       "Bash(mkdir:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(pnpm run:*)"
     ],
     "deny": [],
     "ask": []

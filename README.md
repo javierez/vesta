@@ -179,20 +179,41 @@ revert
    - Assign People to accounts
 
 
+
 ## Med Priority
-- MatchSeeker --> change params
+
+- Add Notifications to DB
+
+- MatchSeeker
+   - Be able to send out notifications to other accounts
+
 - Generación de Nota de encargo: P000460
+
 - Pasarela de pagos 
+
 - Object Removal
+
 - Reforma and amueblado
+
 - Operations page
    - Deals page
 
+
 ## Low Priority
 - Rent: add deposit information
+
 - Separators (tabs on top) in Property and Contact detail pages -> improve UI 
+
 - Short name for barrios
+
 - Integración Idealista
+
+
+
+
+
+
+
 
 
 

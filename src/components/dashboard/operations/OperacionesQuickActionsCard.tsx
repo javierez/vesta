@@ -90,11 +90,6 @@ export default function OperacionesQuickActionsCard({ onTaskCreated }: Operacion
                     alert('Funcionalidad próximamente disponible');
                   }}
                 >
-                  {action.isNew && !action.isDisabled && (
-                    <div className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-sm">
-                      <div className="h-1.5 w-1.5 rounded-full bg-white"></div>
-                    </div>
-                  )}
                   <action.icon className="mb-2 h-6 w-6" />
                   <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
                     {action.label}

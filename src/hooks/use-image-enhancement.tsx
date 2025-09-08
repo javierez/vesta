@@ -182,6 +182,7 @@ export function useImageEnhancement({
               toast.error("La mejora de imagen está tardando más de lo esperado");
             }
           }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
           if (!isMounted) return;
           
