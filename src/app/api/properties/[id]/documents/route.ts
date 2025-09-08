@@ -33,7 +33,8 @@ export async function POST(
     const folderType = formData.get("folderType") as
       | "initial-docs"
       | "visitas"
-      | "others";
+      | "others"
+      | "carteles";
 
     if (!file || !folderType) {
       return NextResponse.json(
@@ -47,6 +48,7 @@ export async function POST(
       "initial-docs": "documentacion-inicial",
       visitas: "visitas",
       others: "otros",
+      carteles: "carteles",
     };
 
     const documentTag = documentTagMap[folderType];
@@ -108,6 +110,7 @@ export async function GET(
       | "initial-docs"
       | "visitas"
       | "others"
+      | "carteles"
       | null;
 
     if (!folderType) {
@@ -122,6 +125,7 @@ export async function GET(
       "initial-docs": "documentacion-inicial",
       visitas: "visitas",
       others: "otros",
+      carteles: "carteles",
     };
 
     const documentTag = documentTagMap[folderType];

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -54,6 +55,7 @@ import { CartelMiniGallery } from "./cartel-mini-gallery";
 import { SaveConfigurationModal } from "./save-configuration-modal";
 import { SavedConfigurations } from "./saved-configurations";
 import type { PropertyImage } from "~/lib/data";
+import { getListingCartelSaveData } from "~/server/queries/listing";
 
 // Database to UI value mapping
 const mapDatabaseListingType = (dbType?: "Sale" | "Rent"): "venta" | "alquiler" | null => {
@@ -115,6 +117,12 @@ interface CartelEditorClientProps {
 }
 
 export function CartelEditorClient({ images = [], databaseListingType, databasePropertyType, accountColorPalette = [], databaseCity, databaseNeighborhood, databaseBedrooms, databaseBathrooms, databaseSquareMeter, databaseContactProps, databaseWebsite }: CartelEditorClientProps) {
+  // Get listing ID from URL
+  const params = useParams();
+  const listingId = params.id ? parseInt(params.id as string, 10) : null;
+  
+  // Debug logging
+  console.log("CartelEditorClient - listingId from URL:", listingId);
   // Template configuration state
   const [config, setConfig] = useState<TemplateConfiguration>(() => {
     const mappedListingType = mapDatabaseListingType(databaseListingType);
@@ -317,6 +325,9 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isLoadingConfigurations, setIsLoadingConfigurations] = useState(false);
+  
+  // Cartel save state
+  const [isSavingCartel, setIsSavingCartel] = useState(false);
   
 
   const previewRef = useRef<HTMLDivElement>(null);
@@ -609,6 +620,75 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
     }
   };
 
+  // Save cartel as document to database and S3
+  const saveCartelAsDocument = async () => {
+    if (!listingId) {
+      toast.error("No se puede guardar: ID de listing no disponible");
+      return;
+    }
+
+    setIsSavingCartel(true);
+    try {
+      console.log("🚀 Starting cartel save process...");
+
+      // Get listing data for reference number
+      const listingData = await getListingCartelSaveData(listingId);
+
+      // Generate PDF blob
+      const response = await fetch("/api/puppet/generate-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          templateConfig: config,
+          propertyData: {
+            ...propertyData,
+            images: templateImages
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as { error?: string };
+        throw new Error(errorData.error ?? "PDF generation failed");
+      }
+
+      // Get the PDF blob
+      const pdfBlob = await response.blob();
+
+      // Convert blob to File object for upload
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const fileName = `cartel_${listingData.referenceNumber}_${timestamp}.pdf`;
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+      // Create FormData for upload using the existing API endpoint
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folderType', 'carteles');
+
+      // Upload using the properties documents API (which handles authentication internally)
+      const uploadResponse = await fetch(`/api/properties/${listingId}/documents`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Failed to upload document');
+      }
+
+      toast.success("Cartel guardado exitosamente en documentos!");
+      console.log("✅ Cartel saved successfully");
+    } catch (error) {
+      console.error("❌ Cartel save error:", error);
+      toast.error(
+        `Error al guardar cartel: ${error instanceof Error ? error.message : "Error desconocido"}`,
+      );
+    } finally {
+      setIsSavingCartel(false);
+    }
+  };
 
   // Preview the template in a new window
   const previewTemplate = () => {
@@ -2676,11 +2756,22 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   </Button>
 
                   <Button
-                    onClick={() => toast.success("Cartel guardado exitosamente!")}
+                    onClick={saveCartelAsDocument}
+                    disabled={isSavingCartel || !listingId || selectedImageIndices.length < 3}
                     className="flex items-center gap-2"
+                    title={!listingId ? "ID de listing no disponible" : selectedImageIndices.length < 3 ? "Selecciona al menos 3 imágenes" : ""}
                   >
-                    <Save className="h-4 w-4" />
-                    Guardar Cartel
+                    {isSavingCartel ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Guardar Cartel
+                      </>
+                    )}
                   </Button>
 
                   <Button
