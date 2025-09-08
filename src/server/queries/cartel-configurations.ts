@@ -22,8 +22,8 @@ interface CartelConfigurationRow {
   propertyOverrides: unknown;
   selectedContacts: unknown;
   selectedImageIndices: unknown;
-  isDefault: boolean;
-  isGlobal: boolean;
+  isDefault: boolean | null;
+  isGlobal: boolean | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,8 +40,8 @@ function dbRowToConfiguration(row: CartelConfigurationRow): SavedCartelConfigura
     propertyOverrides: row.propertyOverrides as Partial<ExtendedTemplatePropertyData>,
     selectedContacts: row.selectedContacts as { phone?: string; email?: string },
     selectedImageIndices: row.selectedImageIndices as number[],
-    isDefault: row.isDefault,
-    isGlobal: row.isGlobal,
+    isDefault: row.isDefault ?? false,
+    isGlobal: row.isGlobal ?? true,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

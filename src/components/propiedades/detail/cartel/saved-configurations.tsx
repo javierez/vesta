@@ -260,7 +260,7 @@ export function SavedConfigurations({
           <DialogHeader>
             <DialogTitle>¿Eliminar configuración?</DialogTitle>
             <DialogDescription>
-              Se eliminará permanentemente "{configToDelete?.name}". Esta acción no se puede deshacer.
+              Se eliminará permanentemente &ldquo;{configToDelete?.name}&rdquo;. Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
