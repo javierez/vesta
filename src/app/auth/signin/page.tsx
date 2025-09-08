@@ -26,7 +26,7 @@ const SignInPage: FC = () => {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/operaciones";
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

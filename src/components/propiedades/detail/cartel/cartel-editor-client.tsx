@@ -370,6 +370,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   // Configuration management state
   const [savedConfigurations, setSavedConfigurations] = useState<SavedCartelConfiguration[]>([]);
   const [currentConfigurationId, setCurrentConfigurationId] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isLoadingConfigurations, setIsLoadingConfigurations] = useState(false);

@@ -155,7 +155,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
           <div className="flex h-16 items-center justify-between px-4 mt-4">
             <div className="flex items-center ml-8">
               <Image 
-                src={accountLogo || "/logo-transparent.svg"} 
+                src={accountLogo ?? "/logo-transparent.svg"} 
                 alt="Vesta CRM Logo" 
                 width={140} 
                 height={64} 
@@ -338,7 +338,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
           <div className="flex h-16 items-center px-4 mt-2">
             <div className="flex items-center ml-8">
               <Image 
-                src={accountLogo || "/logo-transparent.svg"} 
+                src={accountLogo ?? "/logo-transparent.svg"} 
                 alt="Vesta CRM Logo" 
                 width={150} 
                 height={64} 

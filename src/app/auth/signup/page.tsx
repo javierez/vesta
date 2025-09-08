@@ -150,9 +150,9 @@ export default function SignUpPage() {
 
       setSuccess(true);
 
-      // Redirect to dashboard after successful registration
+      // Redirect to operaciones after successful registration
       void setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/operaciones");
       }, 2000);
     } catch (err) {
       setError("Error inesperado al crear la cuenta");
@@ -167,7 +167,7 @@ export default function SignUpPage() {
     try {
       await signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: "/operaciones",
       });
     } catch (err) {
       setError("Error al registrarse con Google");

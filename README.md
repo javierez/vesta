@@ -148,19 +148,6 @@ revert
 
 # TODOs: 
 
-## Performance Optimizations
-
-- **Memoize session data in PropertyTabs**: Use React.useMemo to prevent unnecessary re-renders when session data hasn't changed
-  Impact: Reduce component re-renders and improve UI responsiveness on property detail pages
-
-- **Implement lazy loading for tab data**: Only fetch data when user switches to specific tabs instead of loading all data upfront
-  Impact: Faster initial page load and reduced memory usage, especially for properties with many images/documents
-
-- **Add React Query for data caching**: Replace manual fetch logic with React Query to cache API responses across components
-  Impact: Eliminate duplicate API calls when navigating between pages and provide automatic background refetching
-
-- **Cache property images with service worker**: Implement service worker caching strategy for property images to reduce bandwidth usage
-  Impact: Faster image loading on repeat visits and offline capability for previously viewed properties
 
 
 
@@ -168,40 +155,28 @@ revert
 
 ## High Priority
 
+- Cartelería
+   - Create PRODUCTION READY POSTER
+      - Acropolis's basic: horizontal and vertical
 
-
-- Remove all the harcoded things about Acropolis.
-Key files to update:
-  - src/app/actions/settings.ts:62,405 - S3 folder names (apparently ok)
-  - src/lib/data.ts:273-422 - S3 URLs and testimonials
-  - src/lib/carteleria/mock-data.ts:33-254 - Contact information
-  - src/components/propiedades/detail/cartel/templates/classic-template.tsx:592 - Default logo
-  - next.config.js:13,19,37 - Allowed image domains
-
-- Cartelería (ongoing) -- Laura's notes
-   - Create another poster (Amaya's basic one and horizontal)
-      - Amaya's basic: horizontal and vertical
-      - Fix current vertical
-      - Create current horizontal
-   - Change color on current poster
-   - Create comment section to add to the poster
-
-- Operations page
-   - Leads page
-   - Prospects page
-   - Deals page #missing
-
-- Calendar Integration
-   - Accomplished except for Google -> Vesta Sync (which could be possible using AI)
-
-- Account Admin can see all the data for the agents and allow agents to see more data 
-
+- Roles
+   - Restricted actions
+   - Restricted views (mostly for calendar and tasks, rest is ok)
 
 - Webpage
+   - Add SEO to the page
+   - Connect Webpage with Webapp
 
 - Webscraping
+   - Recover code and connect to database
 
+- Boost Efficiency
+   - Make use of caché and memoized items
 
+- Change to Other Optimal Database
+
+- Clarify Authentication
+   - Assign People to accounts
 
 
 ## Med Priority
@@ -210,6 +185,8 @@ Key files to update:
 - Pasarela de pagos 
 - Object Removal
 - Reforma and amueblado
+- Operations page
+   - Deals page
 
 ## Low Priority
 - Rent: add deposit information
@@ -278,3 +255,18 @@ OPTIMIZATIONS
 
 
 M
+
+
+## Performance Optimizations
+
+- **Memoize session data in PropertyTabs**: Use React.useMemo to prevent unnecessary re-renders when session data hasn't changed
+  Impact: Reduce component re-renders and improve UI responsiveness on property detail pages
+
+- **Implement lazy loading for tab data**: Only fetch data when user switches to specific tabs instead of loading all data upfront
+  Impact: Faster initial page load and reduced memory usage, especially for properties with many images/documents
+
+- **Add React Query for data caching**: Replace manual fetch logic with React Query to cache API responses across components
+  Impact: Eliminate duplicate API calls when navigating between pages and provide automatic background refetching
+
+- **Cache property images with service worker**: Implement service worker caching strategy for property images to reduce bandwidth usage
+  Impact: Faster image loading on repeat visits and offline capability for previously viewed properties

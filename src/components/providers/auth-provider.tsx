@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         await fetchUser(); // Refresh user data after login
-        router.push("/dashboard");
+        router.push("/operaciones");
       } else {
         const errorData = (await response.json()) as { message?: string };
         throw new Error(errorData.message ?? "Login failed");

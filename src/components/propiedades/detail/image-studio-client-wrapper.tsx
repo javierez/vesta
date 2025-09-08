@@ -29,8 +29,10 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
     status: enhancementStatus,
     progress: enhancementProgress,
     error: enhancementError,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     originalImageUrl: _originalImageUrl,
     enhancedImageUrl,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     enhancedPropertyImage: _enhancedPropertyImage,
     enhancementMetadata,
     enhance,

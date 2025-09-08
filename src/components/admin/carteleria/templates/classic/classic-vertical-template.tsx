@@ -670,6 +670,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const generateShortDescription = () => {
     const parts: string[] = [];
 

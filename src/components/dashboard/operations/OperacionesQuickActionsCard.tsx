@@ -6,7 +6,7 @@ import {
   FileText,
   Calendar,
   Users,
-  Home,
+  TrendingUp,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { GlobalTaskModalTrigger } from "~/components/tasks/global-task-modal";
@@ -31,12 +31,13 @@ export default function OperacionesQuickActionsCard({ onTaskCreated }: Operacion
       icon: FileText,
       label: "Crear Contrato",
       isMock: true,
-      isNew: true,
+      isDisabled: true,
     },
     {
-      icon: Home,
-      label: "Pipeline de Alquileres",
-      href: "/operaciones/deals?type=rent",
+      icon: TrendingUp,
+      label: "Gestionar Leads",
+      href: "/operaciones/leads",
+      isDisabled: true,
     },
     {
       icon: Calendar,
@@ -76,19 +77,38 @@ export default function OperacionesQuickActionsCard({ onTaskCreated }: Operacion
               return (
                 <motion.div
                   key={action.label}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer opacity-90"
+                  whileHover={action.isDisabled ? {} : { scale: 1.02 }}
+                  whileTap={action.isDisabled ? {} : { scale: 0.98 }}
+                  className={`relative flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 ${
+                    action.isDisabled 
+                      ? 'opacity-50 cursor-not-allowed' 
+                      : 'hover:shadow-md cursor-pointer opacity-90'
+                  }`}
                   onClick={() => {
+                    if (action.isDisabled) return;
                     // Mock button - just show an alert for now
                     alert('Funcionalidad próximamente disponible');
                   }}
                 >
-                  {action.isNew && (
+                  {action.isNew && !action.isDisabled && (
                     <div className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-sm">
                       <div className="h-1.5 w-1.5 rounded-full bg-white"></div>
                     </div>
                   )}
+                  <action.icon className="mb-2 h-6 w-6" />
+                  <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
+                    {action.label}
+                  </span>
+                </motion.div>
+              );
+            }
+
+            if (action.isDisabled) {
+              return (
+                <motion.div
+                  key={action.label}
+                  className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 opacity-50 cursor-not-allowed"
+                >
                   <action.icon className="mb-2 h-6 w-6" />
                   <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
                     {action.label}

@@ -263,6 +263,7 @@ export function ImageStudioGallery({
 
   // Show only main image (for results)
   if (showOnlyMainImage) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const _currentImage = images[selectedIndex];
     
     return (
