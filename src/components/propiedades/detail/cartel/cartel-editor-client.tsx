@@ -2630,8 +2630,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                           variant="outline"
                           size="sm"
                           className="h-6 w-6 p-0 mb-0.5"
-                          onClick={() => updateImagePosition(imageUrl, position.x, Math.max(position.y - 5, 0))}
-                          disabled={position.y <= 0}
+                          onClick={() => updateImagePosition(imageUrl, position.x, Math.max(position.y - 5, -50))}
+                          disabled={position.y <= -50}
                         >
                           <ChevronUp className="h-3 w-3" />
                         </Button>
@@ -2642,8 +2642,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                             variant="outline"
                             size="sm"
                             className="h-6 w-6 p-0"
-                            onClick={() => updateImagePosition(imageUrl, Math.min(position.x + 5, 100), position.y)}
-                            disabled={position.x >= 100}
+                            onClick={() => updateImagePosition(imageUrl, Math.min(position.x + 5, 150), position.y)}
+                            disabled={position.x >= 150}
                           >
                             <ChevronLeft className="h-3 w-3" />
                           </Button>
@@ -2663,8 +2663,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                             variant="outline"
                             size="sm"
                             className="h-6 w-6 p-0"
-                            onClick={() => updateImagePosition(imageUrl, Math.max(position.x - 5, 0), position.y)}
-                            disabled={position.x <= 0}
+                            onClick={() => updateImagePosition(imageUrl, Math.max(position.x - 5, -50), position.y)}
+                            disabled={position.x <= -50}
                           >
                             <ChevronRight className="h-3 w-3" />
                           </Button>
@@ -2675,8 +2675,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                           variant="outline"
                           size="sm"
                           className="h-6 w-6 p-0 mt-0.5"
-                          onClick={() => updateImagePosition(imageUrl, position.x, Math.min(position.y + 5, 100))}
-                          disabled={position.y >= 100}
+                          onClick={() => updateImagePosition(imageUrl, position.x, Math.min(position.y + 5, 150))}
+                          disabled={position.y >= 150}
                         >
                           <ChevronDown className="h-3 w-3" />
                         </Button>
