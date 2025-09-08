@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { feedback } from "~/server/db/schema";
 import { auth } from "~/lib/auth";
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the request body
-    const body = await request.json();
+    const body = await request.json() as { scale?: unknown; feedbackComment?: unknown };
     const { scale, feedbackComment } = body;
 
     // Validate input
@@ -58,8 +59,8 @@ export async function POST(request: NextRequest) {
     await db.insert(feedback).values({
       userId: session.user.id,
       accountId: BigInt(accountId),
-      feedbackComment: feedbackComment.trim(),
-      scale: scale,
+      feedbackComment: (feedbackComment as string).trim(),
+      scale: scale as number,
     });
 
     return NextResponse.json(

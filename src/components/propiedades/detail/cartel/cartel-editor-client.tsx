@@ -323,7 +323,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
 
   // UI state
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
+  const [showPreview] = useState(true);
   const [lastGeneratedPdf, setLastGeneratedPdf] = useState<string | null>(null);
   const [previewZoom, setPreviewZoom] = useState(0.4); // Default zoom level
   const [panX, setPanX] = useState(0);
@@ -370,7 +370,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   // Configuration management state
   const [savedConfigurations, setSavedConfigurations] = useState<SavedCartelConfiguration[]>([]);
   const [currentConfigurationId, setCurrentConfigurationId] = useState<string | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [hasUnsavedChanges] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isLoadingConfigurations, setIsLoadingConfigurations] = useState(false);
   
@@ -380,59 +380,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
 
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Generate placeholder text that matches what the template would show
-  const generateDescriptionPlaceholder = React.useCallback(() => {
-    const parts: string[] = [];
-
-    // Start with property type and location
-    parts.push(
-      `${propertyData.propertyType.charAt(0).toUpperCase() + propertyData.propertyType.slice(1)} en ${propertyData.location.neighborhood}, ${propertyData.location.city}`,
-    );
-
-    // Add basic specs
-    const specs: string[] = [];
-    if (propertyData.specs.bedrooms || propertyData.specs.bathrooms) {
-      const roomSpecs: string[] = [];
-      if (propertyData.specs.bedrooms) {
-        roomSpecs.push(
-          propertyData.specs.bedrooms === 1
-            ? "una habitación"
-            : `${propertyData.specs.bedrooms} habitaciones`,
-        );
-      }
-      if (propertyData.specs.bathrooms) {
-        roomSpecs.push(
-          propertyData.specs.bathrooms === 1
-            ? "un baño"
-            : `${propertyData.specs.bathrooms} baños`,
-        );
-      }
-      specs.push(`Cuenta con ${roomSpecs.join(" y ")}`);
-    }
-    specs.push(`${propertyData.specs.squareMeters} metros cuadrados`);
-
-    if (specs.length > 0) {
-      parts.push(specs.join(", "));
-    }
-
-    // Add additional features preview
-    const features: string[] = [];
-    config.additionalFields.slice(0, 2).forEach((fieldValue) => {
-      if (fieldValue === "hasElevator") features.push("Con ascensor");
-      if (fieldValue === "hasGarage") features.push("Con garaje");
-    });
-
-    // Join all parts
-    let fullText = parts.join(". ");
-    if (features.length > 0) {
-      fullText += ". " + features.join(". ");
-    }
-    fullText += ".";
-
-    return fullText;
-  }, [propertyData.propertyType, propertyData.location.neighborhood, propertyData.location.city,
-      propertyData.specs.bedrooms, propertyData.specs.bathrooms, propertyData.specs.squareMeters,
-      config.additionalFields]);
 
 
   // Get template images for positioning controls - use selected images or fallback to default S3 images
@@ -713,8 +660,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       });
 
       if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        throw new Error(errorData.error || 'Failed to upload document');
+        const errorData = await uploadResponse.json() as { error?: string };
+        throw new Error(errorData.error ?? 'Failed to upload document');
       }
 
       toast.success("Cartel guardado exitosamente en documentos!");

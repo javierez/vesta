@@ -411,7 +411,7 @@ export async function getAccountTransparentLogo(accountId: number | bigint): Pro
       logoUrl: logoTransparent,
     });
 
-    return logoTransparent || null;
+    return logoTransparent ?? null;
   } catch (error) {
     console.error("Error getting account transparent logo:", error);
     return null;

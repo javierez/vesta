@@ -31,7 +31,7 @@ import { toast } from "sonner";
 import {
   getPortalConfigurationAction,
   updatePortalConfigurationAction,
-  getCurrentUserAccountId,
+  getCurrentUserAccountIdAction,
 } from "~/app/actions/settings";
 import {
   portalConfigurationSchema,
@@ -86,15 +86,15 @@ export function PortalConfiguration() {
 
       try {
         setIsLoading(true);
-        const userAccountId = await getCurrentUserAccountId(session.user.id);
+        const userAccountId = await getCurrentUserAccountIdAction();
 
         if (!userAccountId) {
           setError("No se pudo obtener el ID de la cuenta");
           return;
         }
 
-        setAccountId(userAccountId);
-        const result = await getPortalConfigurationAction(userAccountId);
+        setAccountId(BigInt(userAccountId));
+        const result = await getPortalConfigurationAction(BigInt(userAccountId));
 
         if (result.success && result.data) {
           form.reset(result.data);

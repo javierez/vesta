@@ -11,7 +11,6 @@ import {
   updateAccountPaymentSettings,
   getUserSettings,
   updateUserSettings,
-  getAccountIdForUser,
 } from "~/server/queries/settings";
 import { getAccountById } from "~/server/queries/accounts";
 import { getCurrentUserAccountId } from "~/lib/dal";

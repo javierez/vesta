@@ -10,7 +10,7 @@ import { Upload } from "lucide-react";
 import {
   uploadAccountLogoForConfig,
   getAccountSettingsAction,
-  getCurrentUserAccountId,
+  getCurrentUserAccountIdAction,
 } from "~/app/actions/settings";
 import { useToast } from "~/components/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -25,10 +25,10 @@ export const AccountConfiguration = () => {
   useEffect(() => {
     async function loadAccountData() {
       if (session?.user?.id) {
-        const userAccountId = await getCurrentUserAccountId(session.user.id);
+        const userAccountId = await getCurrentUserAccountIdAction();
         if (userAccountId) {
-          setAccountId(userAccountId);
-          const settings = await getAccountSettingsAction(userAccountId);
+          setAccountId(BigInt(userAccountId));
+          const settings = await getAccountSettingsAction(BigInt(userAccountId));
           if (settings.success && settings.data?.logo) {
             setLogoUrl(settings.data.logo);
           }
