@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useToast } from "~/components/hooks/use-toast";
 import { useSession } from "~/lib/auth-client";
-import { getCurrentUserAccountId } from "~/app/actions/settings";
+import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
 import {
   loadPosterPreferencesWithDefaults,
   savePosterPreferences,
@@ -124,9 +124,9 @@ export const Carteleria: FC = () => {
     async function loadAccountData() {
       if (session?.user?.id) {
         try {
-          const userAccountId = await getCurrentUserAccountId(session.user.id);
+          const userAccountId = await getCurrentUserAccountIdAction();
           if (userAccountId) {
-            setAccountId(Number(userAccountId));
+            setAccountId(userAccountId);
           }
         } catch (error) {
           console.error("Error loading account ID:", error);

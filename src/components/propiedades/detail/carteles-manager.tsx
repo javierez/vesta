@@ -3,6 +3,14 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { FileText, Upload, Trash2, Eye, Plus, X, Pencil } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
@@ -37,6 +45,7 @@ export function CartelesManager({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [cartelToDelete, setCartelToDelete] = useState<Cartel | null>(null);
 
   const handleFileUpload = async (files: FileList) => {
     if (!files || files.length === 0) return;
@@ -86,10 +95,12 @@ export function CartelesManager({
     }
   };
 
-  const handleDelete = async (cartel: Cartel) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar ${cartel.filename}?`)) {
-      return;
-    }
+  const handleDeleteClick = (cartel: Cartel) => {
+    setCartelToDelete(cartel);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!cartelToDelete) return;
 
     try {
       const response = await fetch(`/api/properties/${listingId}/carteles`, {
@@ -98,8 +109,8 @@ export function CartelesManager({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          docId: cartel.docId.toString(),
-          documentKey: cartel.documentKey,
+          docId: cartelToDelete.docId.toString(),
+          documentKey: cartelToDelete.documentKey,
         }),
       });
 
@@ -107,12 +118,18 @@ export function CartelesManager({
         throw new Error("Failed to delete cartel");
       }
 
-      toast.success(`${cartel.filename} eliminado correctamente`);
+      toast.success(`${cartelToDelete.filename} eliminado correctamente`);
       onRefreshCarteles?.(); // Refresh the list
     } catch (error) {
       console.error("Error deleting cartel:", error);
       toast.error("Error al eliminar el cartel");
+    } finally {
+      setCartelToDelete(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setCartelToDelete(null);
   };
 
   const handleDownload = (cartel: Cartel) => {
@@ -219,7 +236,7 @@ export function CartelesManager({
                     <Button
                       size="sm"
                       variant="secondary"
-                      onClick={() => handleDelete(cartel)}
+                      onClick={() => handleDeleteClick(cartel)}
                       className="h-8 w-8 p-0 bg-white/90 backdrop-blur-sm hover:bg-red-50 shadow-sm border-0"
                     >
                       <Trash2 className="h-3.5 w-3.5 text-gray-600 hover:text-red-600" />
@@ -336,6 +353,27 @@ export function CartelesManager({
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={!!cartelToDelete} onOpenChange={handleDeleteCancel}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmar eliminación</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que quieres eliminar <strong>{cartelToDelete?.filename}</strong>?
+              Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleDeleteCancel}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,6 +1,47 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+
+// Static description generator that works during initialization
+const generateStaticDescription = (
+  propertyType: string,
+  neighborhood: string,
+  city: string,
+  bedrooms: number,
+  bathrooms: number,
+  squareMeters: number
+) => {
+  const parts: string[] = [];
+
+  // Start with property type and location
+  parts.push(
+    `${propertyType.charAt(0).toUpperCase() + propertyType.slice(1)} en ${neighborhood}, ${city}`
+  );
+
+  // Add basic specs
+  const specs: string[] = [];
+  if (bedrooms || bathrooms) {
+    const roomSpecs: string[] = [];
+    if (bedrooms) {
+      roomSpecs.push(bedrooms === 1 ? "una habitación" : `${bedrooms} habitaciones`);
+    }
+    if (bathrooms) {
+      roomSpecs.push(bathrooms === 1 ? "un baño" : `${bathrooms} baños`);
+    }
+    specs.push(`Cuenta con ${roomSpecs.join(" y ")}`);
+  }
+  specs.push(`${squareMeters} metros cuadrados`);
+
+  if (specs.length > 0) {
+    parts.push(specs.join(", "));
+  }
+
+  // Join all parts into one continuous text
+  let fullText = parts.join(". ");
+  fullText += ".";
+
+  return fullText;
+};
 import { useParams } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import {
@@ -140,7 +181,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       showReference: true,
       showWatermark: true,
       showIcons: true,
-      showShortDescription: false,
+      showShortDescription: true,
       titleFont: "default",
       priceFont: "default",
       titleAlignment: "left",
@@ -217,8 +258,15 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
           bathrooms: databaseBathrooms ?? baseData.specs.bathrooms,
           squareMeters: databaseSquareMeter ?? baseData.specs.squareMeters
         },
-        shortDescription: "Magnífico piso totalmente reformado en pleno corazón de Madrid. Luminoso y con excelentes acabados.",
-        iconListText: "• 3 dormitorios\n• 2 baños\n• Ascensor\n• Garaje"
+        shortDescription: generateStaticDescription(
+          baseData.propertyType,
+          databaseNeighborhood ?? baseData.location.neighborhood,
+          databaseCity ?? baseData.location.city,
+          databaseBedrooms ?? baseData.specs.bedrooms ?? 0,
+          databaseBathrooms ?? baseData.specs.bathrooms ?? 0,
+          databaseSquareMeter ?? baseData.specs.squareMeters ?? 0
+        ),
+        iconListText: `• ${databaseBedrooms ?? baseData.specs.bedrooms ?? 0} dormitorios\n• ${databaseBathrooms ?? baseData.specs.bathrooms ?? 0} baños\n• ${databaseSquareMeter ?? baseData.specs.squareMeters ?? 0} m²`
       };
     });
 
@@ -386,15 +434,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       propertyData.specs.bedrooms, propertyData.specs.bathrooms, propertyData.specs.squareMeters,
       config.additionalFields]);
 
-  // Auto-generate short description when it's empty or when relevant data changes
-  React.useEffect(() => {
-    if (!propertyData.shortDescription || propertyData.shortDescription.trim() === "") {
-      const generatedDescription = generateDescriptionPlaceholder();
-      updatePropertyData({ shortDescription: generatedDescription });
-    }
-  }, [propertyData.propertyType, propertyData.location.neighborhood, propertyData.location.city, 
-      propertyData.specs.bedrooms, propertyData.specs.bathrooms, propertyData.specs.squareMeters,
-      propertyData.shortDescription, config.additionalFields, generateDescriptionPlaceholder]);
 
   // Get template images for positioning controls - use selected images or fallback to default S3 images
   const templateImages = selectedImageIndices.length > 0 
@@ -1253,9 +1292,10 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         <div className="ml-5">
                           <textarea
                             value={propertyData.shortDescription ?? ""}
-                            onChange={(e) =>
-                              updatePropertyData({ shortDescription: e.target.value })
-                            }
+                            onChange={(e) => {
+                              console.log('Updating shortDescription:', e.target.value);
+                              updatePropertyData({ shortDescription: e.target.value });
+                            }}
                             placeholder="Escribe una descripción personalizada..."
                             className="w-full p-3 text-sm rounded border border-gray-200 resize-none md:p-2 md:text-xs"
                             rows={2}
@@ -1361,42 +1401,66 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                               </div>
                             </div>
                             
-                            {/* Position */}
-                            <div className="space-y-2">
-                              <Label className="text-xs">Posición</Label>
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                <div>
-                                  <Label className="text-xs text-gray-500">Horizontal</Label>
-                                  <div className="flex items-center space-x-2 min-w-0">
-                                    <Slider
-                                      value={[config.descriptionPositionX]}
-                                      onValueChange={([value]) =>
-                                        updateConfig({ descriptionPositionX: value })
-                                      }
-                                      max={50}
-                                      min={-50}
-                                      step={1}
-                                      className="flex-1"
-                                    />
-                                    <span className="text-xs w-10">{config.descriptionPositionX}px</span>
+                            {/* Position Controls */}
+                            <div>
+                              <Label className="text-xs text-gray-600">Posición</Label>
+                              <div className="flex items-center justify-center mt-2">
+                                <div className="flex flex-col items-center">
+                                  {/* Up Arrow */}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 mb-0.5"
+                                    onClick={() => updateConfig({ descriptionPositionY: Math.max((config.descriptionPositionY || 0) - 5, -30) })}
+                                    disabled={(config.descriptionPositionY || 0) <= -30}
+                                  >
+                                    <ChevronUp className="h-3 w-3" />
+                                  </Button>
+                                  
+                                  <div className="flex items-center gap-0.5">
+                                    {/* Left Arrow */}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                      onClick={() => updateConfig({ descriptionPositionX: Math.max((config.descriptionPositionX || 0) - 5, -50) })}
+                                      disabled={(config.descriptionPositionX || 0) <= -50}
+                                    >
+                                      <ChevronLeft className="h-3 w-3" />
+                                    </Button>
+                                    
+                                    {/* Center/Reset Button */}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 rounded-full"
+                                      onClick={() => updateConfig({ descriptionPositionX: 0, descriptionPositionY: 0 })}
+                                    >
+                                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                    </Button>
+                                    
+                                    {/* Right Arrow */}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                      onClick={() => updateConfig({ descriptionPositionX: Math.min((config.descriptionPositionX || 0) + 5, 50) })}
+                                      disabled={(config.descriptionPositionX || 0) >= 50}
+                                    >
+                                      <ChevronRight className="h-3 w-3" />
+                                    </Button>
                                   </div>
-                                </div>
-                                
-                                <div>
-                                  <Label className="text-xs text-gray-500">Vertical</Label>
-                                  <div className="flex items-center space-x-2 min-w-0">
-                                    <Slider
-                                      value={[config.descriptionPositionY]}
-                                      onValueChange={([value]) =>
-                                        updateConfig({ descriptionPositionY: value })
-                                      }
-                                      max={30}
-                                      min={-30}
-                                      step={1}
-                                      className="flex-1"
-                                    />
-                                    <span className="text-xs w-10">{config.descriptionPositionY}px</span>
-                                  </div>
+                                  
+                                  {/* Down Arrow */}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 mt-0.5"
+                                    onClick={() => updateConfig({ descriptionPositionY: Math.min((config.descriptionPositionY || 0) + 5, 30) })}
+                                    disabled={(config.descriptionPositionY || 0) >= 30}
+                                  >
+                                    <ChevronDown className="h-3 w-3" />
+                                  </Button>
                                 </div>
                               </div>
                             </div>

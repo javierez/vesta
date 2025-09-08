@@ -391,6 +391,33 @@ export async function updateAccountPreferences(
   }
 }
 
+// Get account transparent logo URL
+export async function getAccountTransparentLogo(accountId: number | bigint): Promise<string | null> {
+  try {
+    const account = await getAccountById(accountId);
+    
+    if (!account) {
+      console.warn(`Account not found for ID: ${accountId}`);
+      return null;
+    }
+
+    // Extract transparent logo URL from preferences
+    const preferences = (account.preferences as Record<string, unknown>) ?? {};
+    const logoTransparent = preferences.logoTransparent as string | null;
+    
+    console.log("Retrieved transparent logo for account:", {
+      accountId: accountId.toString(),
+      hasLogo: !!logoTransparent,
+      logoUrl: logoTransparent,
+    });
+
+    return logoTransparent || null;
+  } catch (error) {
+    console.error("Error getting account transparent logo:", error);
+    return null;
+  }
+}
+
 // Get account color palette from preferences
 export async function getAccountColorPalette(accountId: number | bigint) {
   try {

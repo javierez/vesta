@@ -168,10 +168,15 @@ revert
 
 ## High Priority
 
-- Freepik: https://docs.freepik.com/api-reference/image-upscaler-precision/post-image-upscaler-precision
-https://www.freepik.com/api/pricing
+
 
 - Remove all the harcoded things about Acropolis.
+Key files to update:
+  - src/app/actions/settings.ts:62,405 - S3 folder names (apparently ok)
+  - src/lib/data.ts:273-422 - S3 URLs and testimonials
+  - src/lib/carteleria/mock-data.ts:33-254 - Contact information
+  - src/components/propiedades/detail/cartel/templates/classic-template.tsx:592 - Default logo
+  - next.config.js:13,19,37 - Allowed image domains
 
 - Cartelería (ongoing) -- Laura's notes
    - Create another poster (Amaya's basic one and horizontal)
@@ -203,9 +208,8 @@ https://www.freepik.com/api/pricing
 - MatchSeeker --> change params
 - Generación de Nota de encargo: P000460
 - Pasarela de pagos 
-- Upscaller images
-
-
+- Object Removal
+- Reforma and amueblado
 
 ## Low Priority
 - Rent: add deposit information

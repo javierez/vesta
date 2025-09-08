@@ -13,6 +13,8 @@ import {
   updateUserSettings,
   getAccountIdForUser,
 } from "~/server/queries/settings";
+import { getAccountById } from "~/server/queries/accounts";
+import { getCurrentUserAccountId } from "~/lib/dal";
 import type {
   AccountInput,
   UserInput,
@@ -33,20 +35,30 @@ import type {
 } from "~/types/portal-settings";
 import { portalConfigurationSchema } from "~/types/portal-settings";
 
+// Helper function to normalize account name for S3 folder naming
+function normalizeAccountNameForS3(accountName: string): string {
+  return accountName
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '') // Remove spaces, hyphens, quotes, slashes, etc.
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens (if any remain)
+}
+
 // Account Logo Upload
 export async function uploadAccountLogo(
   formData: FormData,
 ): Promise<AccountSettingsResponse> {
   try {
     const file = formData.get("logo") as File;
-    const accountId = formData.get("accountId") as string;
 
-    if (!file || !accountId) {
+    if (!file) {
       return {
         success: false,
-        error: "Archivo y ID de cuenta requeridos",
+        error: "Archivo requerido",
       };
     }
+
+    // Get authenticated user's account ID (secure)
+    const accountId = await getCurrentUserAccountId();
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
@@ -56,15 +68,27 @@ export async function uploadAccountLogo(
       };
     }
 
-    // Upload to S3 in inmobiliariaacropolis folder as requested
+    // Get account details to determine dynamic folder name
+    const account = await getAccountById(accountId);
+    if (!account) {
+      return {
+        success: false,
+        error: "Cuenta no encontrada",
+      };
+    }
+
+    // Generate dynamic folder name based on account name
+    const normalizedAccountName = normalizeAccountNameForS3(account.name);
+    
+    // Upload to S3 in account-specific folder
     const { imageUrl } = await uploadImageToS3(
       file,
-      "inmobiliariaacropolis", // Specific folder as requested in PRP
+      normalizedAccountName,
       1, // Order doesn't matter for logos
     );
 
     // Update account with new logo URL
-    const updatedAccount = await updateAccountLogo(BigInt(accountId), imageUrl);
+    const updatedAccount = await updateAccountLogo(accountId, imageUrl);
 
     // Revalidate the settings page
     revalidatePath("/ajustes");
@@ -257,12 +281,11 @@ export async function getUserSettingsAction(
   }
 }
 
-// Helper function to get account ID for current user
-export async function getCurrentUserAccountId(
-  userId: string,
-): Promise<bigint | null> {
+// Helper function to get account ID for current user (server action wrapper for DAL)
+export async function getCurrentUserAccountIdAction(): Promise<number | null> {
   try {
-    return await getAccountIdForUser(userId);
+    const accountId = await getCurrentUserAccountId();
+    return accountId;
   } catch (error) {
     console.error("Error getting account ID for user:", error);
     return null;
@@ -383,14 +406,16 @@ export async function uploadAccountLogoForConfig(
 ): Promise<AccountSettingsResponse> {
   try {
     const file = formData.get("logo") as File;
-    const accountId = formData.get("accountId") as string;
 
-    if (!file || !accountId) {
+    if (!file) {
       return {
         success: false,
-        error: "Archivo y ID de cuenta requeridos",
+        error: "Archivo requerido",
       };
     }
+
+    // Get authenticated user's account ID (secure)
+    const accountId = await getCurrentUserAccountId();
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
@@ -400,9 +425,21 @@ export async function uploadAccountLogoForConfig(
       };
     }
 
+    // Get account details to determine dynamic folder name
+    const account = await getAccountById(accountId);
+    if (!account) {
+      return {
+        success: false,
+        error: "Cuenta no encontrada",
+      };
+    }
+
+    // Generate dynamic folder name based on account name
+    const normalizedAccountName = normalizeAccountNameForS3(account.name);
+    
     // Create a custom upload function for the config folder
     const fileExtension = file.name.split(".").pop();
-    const logoKey = `inmobiliariaAcropolis/config/logo_${accountId}_${Date.now()}.${fileExtension}`;
+    const logoKey = `${normalizedAccountName}/config/logo_${accountId}_${Date.now()}.${fileExtension}`;
 
     // Convert File to Buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -429,7 +466,7 @@ export async function uploadAccountLogoForConfig(
     const imageUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${logoKey}`;
 
     // Update account with new logo URL
-    const updatedAccount = await updateAccountLogo(BigInt(accountId), imageUrl);
+    const updatedAccount = await updateAccountLogo(accountId, imageUrl);
 
     // Revalidate pages
     revalidatePath("/account-admin");

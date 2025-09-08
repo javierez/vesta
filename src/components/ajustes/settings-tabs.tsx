@@ -10,7 +10,7 @@ import { PaymentSettings } from "./payment-settings";
 import {
   getAccountSettingsAction,
   getUserSettingsAction,
-  getCurrentUserAccountId,
+  getCurrentUserAccountIdAction,
 } from "~/app/actions/settings";
 import type {
   AccountSettings as AccountSettingsType,
@@ -70,17 +70,17 @@ export function SettingsTabs({
       try {
         setIsLoading(true);
 
-        // Get account ID for the user
-        const userAccountId = await getCurrentUserAccountId(userId);
+        // Get account ID for the authenticated user
+        const userAccountId = await getCurrentUserAccountIdAction();
         if (!userAccountId) {
           console.error("No account ID found for user");
           return;
         }
-        setAccountId(userAccountId);
+        setAccountId(BigInt(userAccountId));
 
         // Load account and user settings in parallel
         const [accountResult, userResult] = await Promise.all([
-          getAccountSettingsAction(userAccountId),
+          getAccountSettingsAction(BigInt(userAccountId)),
           getUserSettingsAction(userId),
         ]);
 

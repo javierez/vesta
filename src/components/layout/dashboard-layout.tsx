@@ -7,6 +7,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { useSession, signOut } from "~/lib/auth-client";
 import { useUserRole } from "~/hooks/use-user-role";
+import { FeedbackModal } from "~/components/feedback/feedback-modal";
 import {
   Building2,
   Users,
@@ -24,6 +25,7 @@ import {
   TrendingUp,
   HandHeart,
   Coins,
+  MessageCircle,
 } from "lucide-react";
 import type { FC, ReactNode } from "react";
 
@@ -86,6 +88,7 @@ interface DashboardLayoutProps {
 export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [operacionesExpanded, setOperacionesExpanded] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
@@ -258,6 +261,18 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
               )}
             </div>
           </nav>
+          {/* Mobile Feedback button */}
+          <div className="px-2 pb-2">
+            <Button
+              onClick={() => setFeedbackModalOpen(true)}
+              variant="ghost"
+              className="w-full justify-start text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            >
+              <MessageCircle className="mr-2 h-4 w-4" />
+              Enviar feedback
+            </Button>
+          </div>
+
           {/* Mobile User profile section */}
           <div className="border-t border-gray-200 p-4">
             <div className="flex items-center">
@@ -449,6 +464,18 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
               );
             })}
           </nav>
+          {/* Desktop Feedback button */}
+          <div className="px-2 pb-2">
+            <Button
+              onClick={() => setFeedbackModalOpen(true)}
+              variant="ghost"
+              className="w-full justify-start text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            >
+              <MessageCircle className="mr-2 h-4 w-4" />
+              Enviar feedback
+            </Button>
+          </div>
+
           {/* Desktop User profile section */}
           <div className="border-t border-gray-200 p-4">
             <div className="flex items-center">
@@ -496,6 +523,12 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
           </div>
         </main>
       </div>
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={feedbackModalOpen}
+        onClose={() => setFeedbackModalOpen(false)}
+      />
     </div>
   );
 };

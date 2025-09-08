@@ -698,3 +698,16 @@ export const cartelConfigurations = singlestoreTable("cartel_configurations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
+
+// Feedback table
+export const feedback = singlestoreTable("feedback", {
+  feedbackId: bigint("feedback_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  feedbackComment: text("feedback_comment").notNull(),
+  scale: smallint("scale").notNull(), // 1-4 scale rating
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});

@@ -47,7 +47,6 @@ export const AccountConfiguration = () => {
     setUploading(true);
     const formData = new FormData();
     formData.append("logo", file);
-    formData.append("accountId", accountId.toString());
 
     try {
       const result = await uploadAccountLogoForConfig(formData);

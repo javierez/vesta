@@ -104,7 +104,6 @@ export function AccountSettings({
     try {
       const formData = new FormData();
       formData.append("logo", file);
-      formData.append("accountId", accountId.toString());
 
       const result = await uploadAccountLogo(formData);
 

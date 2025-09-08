@@ -19,7 +19,7 @@ import {
   updateColorPalette,
 } from "~/app/actions/brand-upload";
 import { getColorAdjustmentPreviews } from "~/lib/color-adjustment";
-import { getCurrentUserAccountId } from "~/app/actions/settings";
+import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
 import { useToast } from "~/components/hooks/use-toast";
 import {
   Tooltip,
@@ -78,7 +78,7 @@ export const AccountBranding = () => {
     async function loadAccountData() {
       if (session?.user?.id) {
         try {
-          const userAccountId = await getCurrentUserAccountId(session.user.id);
+          const userAccountId = await getCurrentUserAccountIdAction();
           if (userAccountId) {
             const accountIdStr = userAccountId.toString();
             setAccountId(accountIdStr);
