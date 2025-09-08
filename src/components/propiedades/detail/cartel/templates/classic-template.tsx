@@ -588,8 +588,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
       <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
         <Image
           src={
-            data.logoUrl ??
-            "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/branding/logo_transparent_1754307054237_gBmkUg.png"
+            data.logoUrl ?? ""
           }
           alt="Logo watermark"
           width={width}

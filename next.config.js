@@ -10,25 +10,13 @@ const config = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "inmobiliariaacropolis.s3.us-east-1.amazonaws.com",
+        hostname: "*.s3.amazonaws.com",
         port: "",
         pathname: "/**",
       },
       {
         protocol: "https",
-        hostname: "inmobiliaria-acropolis.s3.amazonaws.com",
-        port: "",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "vesta-configuration-files.s3.amazonaws.com",
-        port: "",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "vesta-configuration-files.s3.us-east-1.amazonaws.com",
+        hostname: "*.s3.us-east-1.amazonaws.com",
         port: "",
         pathname: "/**",
       },

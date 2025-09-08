@@ -88,7 +88,7 @@ export async function uploadAccountLogo(
     );
 
     // Update account with new logo URL
-    const updatedAccount = await updateAccountLogo(accountId, imageUrl);
+    const updatedAccount = await updateAccountLogo(BigInt(accountId), imageUrl);
 
     // Revalidate the settings page
     revalidatePath("/ajustes");
@@ -466,7 +466,7 @@ export async function uploadAccountLogoForConfig(
     const imageUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${logoKey}`;
 
     // Update account with new logo URL
-    const updatedAccount = await updateAccountLogo(accountId, imageUrl);
+    const updatedAccount = await updateAccountLogo(BigInt(accountId), imageUrl);
 
     // Revalidate pages
     revalidatePath("/account-admin");

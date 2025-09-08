@@ -42,10 +42,15 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       });
 
       if (response.ok) {
-        // Reset form
-        setRating(null);
-        setComment("");
-        onClose();
+        // Show success state
+        setIsSuccess(true);
+        // Reset form and close after 2 seconds
+        setTimeout(() => {
+          setRating(null);
+          setComment("");
+          setIsSuccess(false);
+          onClose();
+        }, 2000);
       } else {
         console.error("Error submitting feedback");
       }
@@ -59,88 +64,102 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const handleClose = () => {
     setRating(null);
     setComment("");
+    setIsSuccess(false);
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-            <MessageSquare className="h-5 w-5 text-gray-600" />
-            Tu opinión nos ayuda
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6 py-4">
-          {/* Comment Section */}
-          <div className="space-y-3">
-            <label htmlFor="feedback-comment" className="text-sm font-medium text-gray-700">
-              Cuéntanos tu experiencia...
-            </label>
-            <Textarea
-              id="feedback-comment"
-              placeholder="Comparte tus comentarios, sugerencias o problemas que hayas encontrado..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="min-h-[100px] resize-none focus:ring-gray-400 focus:border-gray-400"
-              maxLength={500}
-            />
-            <div className="text-xs text-gray-500 text-right">
-              {comment.length}/500 caracteres
-            </div>
+        {isSuccess ? (
+          // Success State
+          <div className="py-12 text-center">
+            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+            <p className="text-lg font-medium text-gray-900">
+              ¡Gracias por tu feedback!
+            </p>
           </div>
+        ) : (
+          // Feedback Form
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                <MessageSquare className="h-5 w-5 text-gray-600" />
+                Tu opinión nos ayuda
+              </DialogTitle>
+            </DialogHeader>
 
-          {/* Rating Section */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-700">
-              ¿Cómo calificarías tu experiencia?
-            </label>
-            <div className="grid grid-cols-4 gap-3">
-              {ratingOptions.map((item) => {
-                const IconComponent = item.icon;
-                return (
-                  <button
-                    key={item.value}
-                    onClick={() => setRating(item.value)}
-                    className={cn(
-                      "flex items-center justify-center p-3 rounded-lg border transition-all duration-200",
-                      rating === item.value
-                        ? "border-gray-900 bg-gray-50"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                    )}
-                  >
-                    <IconComponent className={cn(
-                      "h-5 w-5",
-                      rating === item.value ? "text-gray-900" : "text-gray-500"
-                    )} />
-                  </button>
-                );
-              })}
+            <div className="space-y-6 py-4">
+              {/* Comment Section */}
+              <div className="space-y-3">
+                <label htmlFor="feedback-comment" className="text-sm font-medium text-gray-700">
+                  Cuéntanos tu experiencia...
+                </label>
+                <Textarea
+                  id="feedback-comment"
+                  placeholder="Comparte tus comentarios, sugerencias o problemas que hayas encontrado..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="min-h-[100px] resize-none focus:ring-gray-400 focus:border-gray-400"
+                  maxLength={500}
+                />
+                <div className="text-xs text-gray-500 text-right">
+                  {comment.length}/500 caracteres
+                </div>
+              </div>
+
+              {/* Rating Section */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-700">
+                  ¿Cómo calificarías tu experiencia?
+                </label>
+                <div className="grid grid-cols-4 gap-3">
+                  {ratingOptions.map((item) => {
+                    const IconComponent = item.icon;
+                    return (
+                      <button
+                        key={item.value}
+                        onClick={() => setRating(item.value)}
+                        className={cn(
+                          "flex items-center justify-center p-3 rounded-lg border transition-all duration-200",
+                          rating === item.value
+                            ? "border-gray-900 bg-gray-50"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        )}
+                      >
+                        <IconComponent className={cn(
+                          "h-5 w-5",
+                          rating === item.value ? "text-gray-900" : "text-gray-500"
+                        )} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 pt-4">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            className="flex-1"
-            disabled={isSubmitting}
-          >
-            <X className="h-4 w-4 mr-2" />
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!rating || !comment.trim() || isSubmitting}
-            className="flex-1"
-          >
-            <Send className="h-4 w-4 mr-2" />
-            {isSubmitting ? "Enviando..." : "Enviar"}
-          </Button>
-        </div>
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                className="flex-1"
+                disabled={isSubmitting}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={!rating || !comment.trim() || isSubmitting}
+                className="flex-1"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {isSubmitting ? "Enviando..." : "Enviar"}
+              </Button>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
