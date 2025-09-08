@@ -1342,3 +1342,35 @@ export async function getListingCartelData(listingId: number) {
     throw error;
   }
 }
+
+// Lightweight query for Guardar Cartel functionality - only essential IDs and reference
+export async function getListingCartelSaveData(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+
+  try {
+    const [cartelSaveData] = await db
+      .select({
+        listingId: listings.listingId,
+        propertyId: listings.propertyId,
+        referenceNumber: properties.referenceNumber,
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+        ),
+      );
+
+    if (!cartelSaveData) {
+      throw new Error("Listing not found");
+    }
+
+    return cartelSaveData;
+  } catch (error) {
+    console.error("Error fetching listing cartel save data:", error);
+    throw error;
+  }
+}

@@ -2676,11 +2676,11 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   </Button>
 
                   <Button
-                    onClick={previewTemplate}
-                    variant="outline"
+                    onClick={() => toast.success("Cartel guardado exitosamente!")}
+                    className="flex items-center gap-2"
                   >
-                    <Eye className="mr-2 h-4 w-4" />
-                    Vista Rápida
+                    <Save className="h-4 w-4" />
+                    Guardar Cartel
                   </Button>
 
                   <Button
@@ -2690,6 +2690,14 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   >
                     <Save className="h-4 w-4" />
                     Guardar Plantilla
+                  </Button>
+
+                  <Button
+                    onClick={previewTemplate}
+                    variant="outline"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Vista Rápida
                   </Button>
 
                   {lastGeneratedPdf && (
