@@ -483,3 +483,28 @@ export async function uploadAccountLogoForConfig(
     };
   }
 }
+
+// Get account transparent logo
+export async function getAccountTransparentLogoAction(): Promise<{
+  success: boolean;
+  logoUrl?: string | null;
+  error?: string;
+}> {
+  try {
+    const accountId = await getCurrentUserAccountId();
+    const { getAccountTransparentLogo } = await import("~/server/queries/accounts");
+    
+    const logoUrl = await getAccountTransparentLogo(accountId);
+    
+    return {
+      success: true,
+      logoUrl,
+    };
+  } catch (error) {
+    console.error("Error getting account transparent logo:", error);
+    return {
+      success: false,
+      error: "Error al obtener el logo de la cuenta",
+    };
+  }
+}

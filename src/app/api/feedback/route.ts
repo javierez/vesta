@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (scale < 1 || scale > 4) {
+    if (typeof scale !== "number" || scale < 1 || scale > 4) {
       return NextResponse.json(
         { error: "La calificación debe estar entre 1 y 4" },
         { status: 400 }
@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
     await db.insert(feedback).values({
       userId: session.user.id,
       accountId: BigInt(accountId),
-      feedbackComment: (feedbackComment as string).trim(),
-      scale: scale as number,
+      feedbackComment: feedbackComment.trim(),
+      scale: scale,
     });
 
     return NextResponse.json(

@@ -2,17 +2,18 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { useSession, signOut } from "~/lib/auth-client";
 import { useUserRole } from "~/hooks/use-user-role";
 import { FeedbackModal } from "~/components/feedback/feedback-modal";
+import { getAccountDetailsAction, getCurrentUserAccountId } from "~/app/actions/account-settings";
 import {
   Building2,
   Users,
   Calendar,
-  Settings,
   BarChart3,
   Menu,
   X,
@@ -54,7 +55,6 @@ const baseNavigation: NavigationItem[] = [
   { name: "Contactos", href: "/contactos", icon: Users },
   { name: "Calendario", href: "/calendario", icon: Calendar },
   { name: "Contabilidad", href: "/contabilidad", icon: Coins, disabled: true },
-  { name: "Ajustes", href: "/ajustes", icon: Settings },
 ];
 
 const operacionesItems: NavigationItem[] = [
@@ -89,6 +89,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [operacionesExpanded, setOperacionesExpanded] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [accountLogo, setAccountLogo] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
@@ -111,6 +112,27 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
     }
   }, [pathname]);
 
+  // Fetch account logo
+  useEffect(() => {
+    const fetchAccountLogo = async () => {
+      if (!session?.user?.id) return;
+
+      try {
+        const userAccountId = await getCurrentUserAccountId(session.user.id);
+        if (!userAccountId) return;
+
+        const result = await getAccountDetailsAction(userAccountId);
+        if (result.success && result.data?.logo) {
+          setAccountLogo(result.data.logo);
+        }
+      } catch (error) {
+        console.error("Error fetching account logo:", error);
+      }
+    };
+
+    void fetchAccountLogo();
+  }, [session?.user?.id]);
+
   const handleSignOut = async () => {
     await signOut();
     router.push("/");
@@ -130,8 +152,16 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
           onClick={() => setSidebarOpen(false)}
         />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
-          <div className="flex h-16 items-center justify-between px-4">
-            <h1 className="text-xl font-bold text-gray-900">Vesta CRM</h1>
+          <div className="flex h-16 items-center justify-between px-4 mt-4">
+            <div className="flex items-center ml-8">
+              <Image 
+                src={accountLogo || "/logo-transparent.svg"} 
+                alt="Vesta CRM Logo" 
+                width={140} 
+                height={64} 
+                className="h-16 w-36"
+              />
+            </div>
             <Button
               variant="ghost"
               size="sm"
@@ -305,8 +335,16 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex min-h-0 flex-1 flex-col border-r border-gray-200 bg-white">
-          <div className="flex h-16 items-center px-4">
-            <h1 className="text-xl font-bold text-gray-900">Vesta CRM</h1>
+          <div className="flex h-16 items-center px-4 mt-2">
+            <div className="flex items-center ml-8">
+              <Image 
+                src={accountLogo || "/logo-transparent.svg"} 
+                alt="Vesta CRM Logo" 
+                width={150} 
+                height={64} 
+                className="h-16 w-42"
+              />
+            </div>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.slice(0, 3).map((item) => {

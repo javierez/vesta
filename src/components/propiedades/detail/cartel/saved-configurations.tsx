@@ -21,9 +21,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "~/components/ui/dialog";
-import { Badge } from "~/components/ui/badge";
 import {
   Star,
   Trash2,
@@ -32,7 +30,6 @@ import {
   Package,
   ChevronDown,
   ChevronRight,
-  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SavedCartelConfiguration } from "~/types/template-data";

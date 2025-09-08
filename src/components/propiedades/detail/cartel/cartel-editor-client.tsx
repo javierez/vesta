@@ -370,7 +370,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   // Configuration management state
   const [savedConfigurations, setSavedConfigurations] = useState<SavedCartelConfiguration[]>([]);
   const [currentConfigurationId, setCurrentConfigurationId] = useState<string | null>(null);
-  const [hasUnsavedChanges] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isLoadingConfigurations, setIsLoadingConfigurations] = useState(false);
   
@@ -411,7 +411,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
         setSelectedImageIndices(images.map((_, index) => index));
       }
     }
-  }, [images]);
+  }, [images, selectedImageIndices.length]);
 
   // Update imageCount based on selected images (3 or 4)
   React.useEffect(() => {
@@ -419,7 +419,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
     if (selectedCount >= 3 && selectedCount <= 4) {
       updateConfig({ imageCount: selectedCount as 3 | 4 });
     }
-  }, [selectedImageIndices, selectedImageIndices.length]);
+  }, [selectedImageIndices]);
 
   // Parse location text and update property data
   const parseLocationText = (locationText: string) => {
