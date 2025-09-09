@@ -6,7 +6,7 @@ import {
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { getSecureSession } from "~/lib/dal";
-import { CartelEditorPhase1 } from "~/components/propiedades/detail/cartel/cartel-editor-phase1";
+import { CartelEditorPhase1 } from "~/components/propiedades/detail/cartel/cartel-editor-phase";
 import { getPropertyImages } from "~/server/queries/property_images";
 import type { PropertyImage } from "~/lib/data";
 
