@@ -43,8 +43,8 @@ interface TemplateRendererProps {
   displayOptions?: PosterPreferences;
 }
 
-// Modern template preview with black background
-const ModernTemplateWrapper: FC<BaseTemplateProps> = ({
+// Basic template preview with black background
+const BasicTemplateWrapper: FC<BaseTemplateProps> = ({
   data: _data,
   className,
 }) => {
@@ -56,7 +56,7 @@ const ModernTemplateWrapper: FC<BaseTemplateProps> = ({
       )}
     >
       <div className="flex h-full w-full items-center justify-center">
-        <span className="text-2xl font-bold text-white">Modern Template</span>
+        <span className="text-2xl font-bold text-white">Basic Template</span>
       </div>
     </div>
   );
@@ -80,24 +80,6 @@ const ClassicTemplateWrapper: FC<BaseTemplateProps> = ({
   );
 };
 
-// Basic template wrapper with black background
-const BasicTemplateWrapper: FC<BaseTemplateProps> = ({ 
-  data: _data, 
-  className 
-}) => {
-  return (
-    <div
-      className={cn(
-        "relative aspect-[210/297] h-full w-full overflow-hidden bg-black",
-        className,
-      )}
-    >
-      <div className="flex h-full w-full items-center justify-center">
-        <span className="text-2xl font-bold text-white">Basic Template</span>
-      </div>
-    </div>
-  );
-};
 
 // Minimalist template wrapper with black background
 const MinimalistTemplateWrapper: FC<BaseTemplateProps> = ({
@@ -176,7 +158,6 @@ const ProfessionalTemplateWrapper: FC<BaseTemplateProps> = ({
 const templateComponents = {
   base: FallbackTemplate,
   basic: BasicTemplateWrapper,
-  modern: ModernTemplateWrapper,
   classic: ClassicTemplateWrapper,
   minimalist: MinimalistTemplateWrapper,
   luxury: LuxuryTemplateWrapper,

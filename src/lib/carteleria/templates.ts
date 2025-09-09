@@ -9,11 +9,11 @@ import type {
 // Template Styles - 6 main design styles
 export const templateStyles: TemplateStyle[] = [
   {
-    id: "modern",
-    name: "Moderno",
+    id: "basic",
+    name: "Básico",
     description: "Diseño limpio y contemporáneo con líneas minimalistas",
-    preview: "/templates/styles/modern-preview.jpg",
-    category: "modern",
+    preview: "/templates/styles/basic-preview.jpg",
+    category: "basic",
     colorScheme: {
       primary: "#2563eb",
       secondary: "#64748b",
@@ -307,34 +307,34 @@ export const propertyTypes: PropertyType[] = [
 
 // Sample Templates - combining styles, formats, and property types
 export const sampleTemplates: CarteleriaTemplate[] = [
-  // Modern Style Templates
+  // Basic Style Templates
   {
-    id: "modern-piso-a4",
-    name: "Piso Moderno A4",
-    description: "Plantilla moderna para venta de pisos en formato A4",
-    styleId: "modern",
+    id: "basic-piso-a4",
+    name: "Piso Básico A4",
+    description: "Plantilla básica para venta de pisos en formato A4",
+    styleId: "basic",
     formatId: "a4-portrait",
     propertyTypeId: "piso",
-    preview: "/templates/modern-piso-a4-preview.jpg",
+    preview: "/templates/basic-piso-a4-preview.jpg",
     fields:
       propertyTypes.find((pt) => pt.id === "piso")?.defaultFields ??
       defaultFields,
     featured: true,
-    tags: ["venta", "piso", "moderno"],
+    tags: ["venta", "piso", "básico"],
   },
   {
-    id: "modern-casa-a3",
-    name: "Casa Moderna A3",
-    description: "Diseño moderno para casas en formato A3 horizontal",
-    styleId: "modern",
+    id: "basic-casa-a3",
+    name: "Casa Básica A3",
+    description: "Diseño básico para casas en formato A3 horizontal",
+    styleId: "basic",
     formatId: "a3-landscape",
     propertyTypeId: "casa",
-    preview: "/templates/modern-casa-a3-preview.jpg",
+    preview: "/templates/basic-casa-a3-preview.jpg",
     fields:
       propertyTypes.find((pt) => pt.id === "casa")?.defaultFields ??
       defaultFields,
     featured: true,
-    tags: ["venta", "casa", "moderno"],
+    tags: ["venta", "casa", "básico"],
   },
 
   // Classic Style Templates

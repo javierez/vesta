@@ -12,7 +12,7 @@ export interface PosterPreferences {
   show_description: boolean; // Incluir descripción breve
 
   // Style preferences (from Estilo tab)
-  template_style?: string; // Selected template style (e.g., "modern", "classic")
+  template_style?: string; // Selected template style (e.g., "basic", "classic")
 
   // Format preferences (from Formatos tab)
   orientation?: "vertical" | "horizontal";
