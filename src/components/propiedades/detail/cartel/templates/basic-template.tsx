@@ -302,13 +302,17 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
     }
   }, [printStylesCSS]);
 
-  // Calculate section heights based on wireframe spec
-  const headerHeight = Math.floor(containerDimensions.height * 0.12); // ~12%
-  const descriptionHeight = config.showShortDescription && data.shortDescription ? 60 : 0;
-  const statsHeight = 80;
-  const bottomStripHeight = 80;
-  const footerHeight = 60;
-  const galleryHeight = containerDimensions.height - headerHeight - descriptionHeight - statsHeight - bottomStripHeight - footerHeight;
+  // Calculate section heights to fit within A4 bounds (794x1123 for vertical)
+  // Fixed heights optimized for A4 paper
+  const headerHeight = 100; // Header with title and reference
+  const descriptionHeight = config.showShortDescription && data.shortDescription ? 50 : 0;
+  const statsHeight = 70; // Property stats row
+  const bottomStripHeight = 70; // QR, Price, Energy
+  const footerHeight = 50; // Contact bar
+  
+  // Calculate remaining space for gallery (ensure total = containerDimensions.height)
+  const totalFixedHeight = headerHeight + descriptionHeight + statsHeight + bottomStripHeight + footerHeight;
+  const galleryHeight = containerDimensions.height - totalFixedHeight;
 
   // Wireframe-structured layout
   return (
