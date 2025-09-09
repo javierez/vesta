@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
-  Settings,
   Palette,
   FileText,
   Loader2,
@@ -28,13 +27,12 @@ import { defaultPosterPreferences } from "~/types/poster-preferences";
 // Import all the sub-components
 import { StyleSelector } from "./carteleria/style-selector";
 import { FormatSelector } from "./carteleria/format-selector";
-import { Personalization } from "./carteleria/personalization";
 import { TemplatePreview } from "./carteleria/template-preview";
 
 import type { CarteleriaState, CarteleriaSelection } from "~/types/carteleria";
 import { templateStyles, templateFormats } from "~/lib/carteleria/templates";
 
-type Step = "style" | "format" | "personalization";
+type Step = "style" | "format";
 
 interface StepConfig {
   id: Step;
@@ -62,14 +60,6 @@ const steps: StepConfig[] = [
     isComplete: (state) => state.selections.formatIds.length > 0,
     canProceed: (state) => state.selections.formatIds.length > 0,
   },
-  {
-    id: "personalization",
-    title: "Personalización",
-    description: "Ajusta los detalles",
-    icon: Settings,
-    isComplete: () => true, // Always completable
-    canProceed: () => true,
-  },
 ];
 
 const STORAGE_KEY = "carteleria_selection";
@@ -78,9 +68,6 @@ export const Carteleria: FC = () => {
   const { toast } = useToast();
   const { data: session } = useSession();
   const [accountId, setAccountId] = useState<number | null>(null);
-  const [preferences, setPreferences] = useState<PosterPreferences>(
-    defaultPosterPreferences,
-  );
   const [loadingPreferences, setLoadingPreferences] = useState(false);
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -146,7 +133,6 @@ export const Carteleria: FC = () => {
         const result = await loadPosterPreferencesWithDefaults(accountId);
         if (result.success && result.data) {
           const data = result.data;
-          setPreferences(data);
 
           // Update state with saved style and format preferences
           if (data.template_style || data.format_ids) {
@@ -218,13 +204,14 @@ export const Carteleria: FC = () => {
 
     setSavingPreferences(true);
     try {
-      const fullPreferences: PosterPreferences = {
-        ...preferences,
+      // Only save style and format preferences
+      const minimalPreferences: PosterPreferences = {
+        ...defaultPosterPreferences,
         template_style: state.selections.styleId ?? undefined,
         format_ids: state.selections.formatIds,
       };
 
-      const result = await savePosterPreferences(accountId, fullPreferences);
+      const result = await savePosterPreferences(accountId, minimalPreferences);
 
       if (result.success) {
         setHasUnsavedChanges(false);
@@ -247,7 +234,6 @@ export const Carteleria: FC = () => {
     }
   }, [
     accountId,
-    preferences,
     state.selections.styleId,
     state.selections.formatIds,
     toast,
@@ -416,24 +402,6 @@ export const Carteleria: FC = () => {
               formats={templateFormats}
             />
           )}
-
-          {state.currentStep === "personalization" && (
-            <Personalization
-              currentSelection={{
-                styleId: state.selections.styleId,
-                formatIds: state.selections.formatIds,
-              }}
-              preferences={preferences}
-              onUpdate={(updates) => {
-                // Update preferences locally (no auto-save)
-                setPreferences((prevPrefs) => ({
-                  ...prevPrefs,
-                  ...updates.displayOptions,
-                }));
-                setHasUnsavedChanges(true);
-              }}
-            />
-          )}
         </CardContent>
       </Card>
 
@@ -449,7 +417,7 @@ export const Carteleria: FC = () => {
         </Button>
 
         <div className="flex items-center gap-4">
-          {state.currentStep === "personalization" ? (
+          {state.currentStep === "format" ? (
             <Button
               onClick={handleSavePreferences}
               disabled={savingPreferences || !hasUnsavedChanges}

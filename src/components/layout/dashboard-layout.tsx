@@ -171,7 +171,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
             </Button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => {
+            {navigation.filter(item => !item.href.includes('admin')).slice(0, 3).map((item) => {
               const isActive = pathname === item.href;
               if (item.disabled) {
                 return (
@@ -290,6 +290,76 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                 </>
               )}
             </div>
+
+            {/* Remaining non-admin items */}
+            {navigation.filter(item => !item.href.includes('admin')).slice(3).map((item) => {
+              const isActive = pathname === item.href;
+              if (item.disabled) {
+                return (
+                  <div
+                    key={item.name}
+                    className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
+                  >
+                    <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                    <span className="flex-1">{item.name}</span>
+                    <span className="text-[10px] text-gray-400">
+                      (próximamente)
+                    </span>
+                  </div>
+                );
+              }
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
+                    isActive
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                  )}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon
+                    className={cn(
+                      "mr-3 h-5 w-5 flex-shrink-0",
+                      isActive
+                        ? "text-gray-500"
+                        : "text-gray-400 group-hover:text-gray-500",
+                    )}
+                  />
+                  {item.name}
+                </Link>
+              );
+            })}
+
+            {/* Admin buttons at the end */}
+            {navigation.filter(item => item.href.includes('admin')).map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
+                    isActive
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                  )}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon
+                    className={cn(
+                      "mr-3 h-5 w-5 flex-shrink-0",
+                      isActive
+                        ? "text-gray-500"
+                        : "text-gray-400 group-hover:text-gray-500",
+                    )}
+                  />
+                  {item.name}
+                </Link>
+              );
+            })}
           </nav>
           {/* Mobile Feedback button */}
           <div className="px-2 pb-2">
@@ -347,7 +417,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.slice(0, 3).map((item) => {
+            {navigation.filter(item => !item.href.includes('admin')).slice(0, 3).map((item) => {
               const isActive = pathname === item.href;
               if (item.disabled) {
                 return (
@@ -462,7 +532,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
               )}
             </div>
 
-            {navigation.slice(3).map((item) => {
+            {navigation.filter(item => !item.href.includes('admin')).slice(3).map((item) => {
               const isActive = pathname === item.href;
               if (item.disabled) {
                 return (
@@ -478,6 +548,33 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                   </div>
                 );
               }
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
+                    isActive
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "mr-3 h-5 w-5 flex-shrink-0",
+                      isActive
+                        ? "text-gray-500"
+                        : "text-gray-400 group-hover:text-gray-500",
+                    )}
+                  />
+                  {item.name}
+                </Link>
+              );
+            })}
+
+            {/* Admin buttons at the end */}
+            {navigation.filter(item => item.href.includes('admin')).map((item) => {
+              const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.name}

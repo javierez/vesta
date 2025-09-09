@@ -12,15 +12,24 @@ import {
   getDefaultPropertyData,
   getRandomPropertyData,
 } from "~/lib/carteleria/mock-data";
-import Image from "next/image";
 
-// Import all template components
-import { BaseTemplate } from "./base/base-template";
-import { MinimalistTemplate } from "./minimalist/minimalist-template";
-import { LuxuryTemplate } from "./luxury/luxury-template";
-import { CreativeTemplate } from "./creative/creative-template";
-import { ProfessionalTemplate } from "./professional/professional-template";
 import { cn } from "~/lib/utils";
+
+// Simple fallback template component
+const FallbackTemplate: FC<BaseTemplateProps> = ({ data: _data, className }) => {
+  return (
+    <div
+      className={cn(
+        "relative aspect-[210/297] h-full w-full overflow-hidden bg-gray-800",
+        className,
+      )}
+    >
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-xl text-gray-400">Template Preview</span>
+      </div>
+    </div>
+  );
+};
 
 interface TemplateRendererProps {
   styleId: string;
@@ -34,7 +43,7 @@ interface TemplateRendererProps {
   displayOptions?: PosterPreferences;
 }
 
-// Modern template preview using the template-classic image
+// Modern template preview with black background
 const ModernTemplateWrapper: FC<BaseTemplateProps> = ({
   data: _data,
   className,
@@ -42,63 +51,130 @@ const ModernTemplateWrapper: FC<BaseTemplateProps> = ({
   return (
     <div
       className={cn(
-        "relative aspect-[210/297] h-full w-full overflow-hidden",
+        "relative aspect-[210/297] h-full w-full overflow-hidden bg-black",
         className,
       )}
     >
-      <Image
-        src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/templates/template-classic.png"
-        alt="Modern Template Preview"
-        fill
-        className="object-cover"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-      />
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-2xl font-bold text-white">Modern Template</span>
+      </div>
     </div>
   );
 };
 
 const ClassicTemplateWrapper: FC<BaseTemplateProps> = ({
   data: _data,
-  className: _className,
-}) => {
-  // Classic style has no preview - return null
-  return null;
-};
-
-// Basic template wrapper - uses BaseTemplate for simplicity
-const BasicTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
-  return <BaseTemplate data={data} className={className} />;
-};
-
-// Wrapper for other templates using BaseTemplate as fallback
-const MinimalistTemplateWrapper: FC<BaseTemplateProps> = ({
-  data,
   className,
 }) => {
-  return <MinimalistTemplate data={data} className={className} />;
+  return (
+    <div
+      className={cn(
+        "relative aspect-[210/297] h-full w-full overflow-hidden bg-black",
+        className,
+      )}
+    >
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-2xl font-bold text-white">Classic Template</span>
+      </div>
+    </div>
+  );
 };
 
-const LuxuryTemplateWrapper: FC<BaseTemplateProps> = ({ data, className }) => {
-  return <LuxuryTemplate data={data} className={className} />;
+// Basic template wrapper with black background
+const BasicTemplateWrapper: FC<BaseTemplateProps> = ({ 
+  data: _data, 
+  className 
+}) => {
+  return (
+    <div
+      className={cn(
+        "relative aspect-[210/297] h-full w-full overflow-hidden bg-black",
+        className,
+      )}
+    >
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-2xl font-bold text-white">Basic Template</span>
+      </div>
+    </div>
+  );
+};
+
+// Minimalist template wrapper with black background
+const MinimalistTemplateWrapper: FC<BaseTemplateProps> = ({
+  data: _data,
+  className,
+}) => {
+  return (
+    <div
+      className={cn(
+        "relative aspect-[210/297] h-full w-full overflow-hidden bg-black",
+        className,
+      )}
+    >
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-2xl font-bold text-white">Minimalist Template</span>
+      </div>
+    </div>
+  );
+};
+
+const LuxuryTemplateWrapper: FC<BaseTemplateProps> = ({ 
+  data: _data, 
+  className 
+}) => {
+  return (
+    <div
+      className={cn(
+        "relative aspect-[210/297] h-full w-full overflow-hidden bg-black",
+        className,
+      )}
+    >
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-2xl font-bold text-white">Luxury Template</span>
+      </div>
+    </div>
+  );
 };
 
 const CreativeTemplateWrapper: FC<BaseTemplateProps> = ({
-  data,
+  data: _data,
   className,
 }) => {
-  return <CreativeTemplate data={data} className={className} />;
+  return (
+    <div
+      className={cn(
+        "relative aspect-[210/297] h-full w-full overflow-hidden bg-black",
+        className,
+      )}
+    >
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-2xl font-bold text-white">Creative Template</span>
+      </div>
+    </div>
+  );
 };
 
 const ProfessionalTemplateWrapper: FC<BaseTemplateProps> = ({
-  data,
+  data: _data,
   className,
 }) => {
-  return <ProfessionalTemplate data={data} className={className} />;
+  return (
+    <div
+      className={cn(
+        "relative aspect-[210/297] h-full w-full overflow-hidden bg-black",
+        className,
+      )}
+    >
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-2xl font-bold text-white">Professional Template</span>
+      </div>
+    </div>
+  );
 };
 
 // Template component mapping for dynamic rendering
 const templateComponents = {
-  base: BaseTemplate,
+  base: FallbackTemplate,
   basic: BasicTemplateWrapper,
   modern: ModernTemplateWrapper,
   classic: ClassicTemplateWrapper,
@@ -152,7 +228,7 @@ export const TemplateRenderer: FC<TemplateRendererProps> = ({
     console.warn(
       `Unknown template style: ${styleId}, falling back to base template`,
     );
-    return BaseTemplate;
+    return FallbackTemplate;
   }, [styleId]);
 
   // Error boundary wrapper for template rendering
@@ -163,9 +239,9 @@ export const TemplateRenderer: FC<TemplateRendererProps> = ({
     setHasError(true);
   };
 
-  // If error occurred, render base template as fallback
+  // If error occurred, render fallback template
   if (hasError) {
-    return <BaseTemplate data={propertyData} className={className} />;
+    return <FallbackTemplate data={propertyData} className={className} />;
   }
 
   try {
@@ -174,7 +250,7 @@ export const TemplateRenderer: FC<TemplateRendererProps> = ({
     return <TemplateComponent data={propertyData} className={className} />;
   } catch (error) {
     handleTemplateError(error as Error);
-    return <BaseTemplate data={propertyData} className={className} />;
+    return <FallbackTemplate data={propertyData} className={className} />;
   }
 };
 
@@ -264,5 +340,5 @@ export const getTemplateComponentName = (styleId: string): string => {
       styleId
     );
   }
-  return "BaseTemplate";
+  return "FallbackTemplate";
 };

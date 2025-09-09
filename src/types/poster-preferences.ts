@@ -31,16 +31,6 @@ export const defaultPosterPreferences: PosterPreferences = {
   show_description: false,
 };
 
-// Props for the personalization component
-export interface PersonalizationProps {
-  currentSelection: {
-    styleId: string | null;
-    formatIds: string[];
-  };
-  preferences: PosterPreferences;
-  onUpdate: (updates: { displayOptions: PosterPreferences }) => void;
-}
-
 // Props for display options control component
 export interface DisplayOptionsProps {
   preferences: PosterPreferences;
