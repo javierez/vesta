@@ -18,10 +18,8 @@ import { useSession } from "~/lib/auth-client";
 import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
 import {
   loadPosterPreferencesWithDefaults,
-  savePosterPreferences,
+  updatePosterPreferenceFields,
 } from "~/app/actions/poster-preferences";
-import type { PosterPreferences } from "~/types/poster-preferences";
-import { defaultPosterPreferences } from "~/types/poster-preferences";
 
 // Import all the sub-components
 import { StyleSelector } from "./carteleria/style-selector";
@@ -203,14 +201,13 @@ export const Carteleria: FC = () => {
 
     setSavingPreferences(true);
     try {
-      // Only save style and format preferences
-      const minimalPreferences: PosterPreferences = {
-        ...defaultPosterPreferences,
+      // Only save style and format preferences - no display options
+      const minimalUpdates = {
         template_style: state.selections.styleId ?? undefined,
         format_ids: state.selections.formatIds,
       };
 
-      const result = await savePosterPreferences(accountId, minimalPreferences);
+      const result = await updatePosterPreferenceFields(accountId, minimalUpdates);
 
       if (result.success) {
         setHasUnsavedChanges(false);
