@@ -2,46 +2,8 @@
 
 import React, { useState, useRef, useEffect } from "react";
 
-// Static description generator that works during initialization
-const generateStaticDescription = (
-  propertyType: string,
-  neighborhood: string,
-  city: string,
-  bedrooms: number,
-  bathrooms: number,
-  squareMeters: number
-) => {
-  const parts: string[] = [];
-
-  // Start with property type and location
-  parts.push(
-    `${propertyType.charAt(0).toUpperCase() + propertyType.slice(1)} en ${neighborhood}, ${city}`
-  );
-
-  // Add basic specs
-  const specs: string[] = [];
-  if (bedrooms || bathrooms) {
-    const roomSpecs: string[] = [];
-    if (bedrooms) {
-      roomSpecs.push(bedrooms === 1 ? "una habitación" : `${bedrooms} habitaciones`);
-    }
-    if (bathrooms) {
-      roomSpecs.push(bathrooms === 1 ? "un baño" : `${bathrooms} baños`);
-    }
-    specs.push(`Cuenta con ${roomSpecs.join(" y ")}`);
-  }
-  specs.push(`${squareMeters} metros cuadrados`);
-
-  if (specs.length > 0) {
-    parts.push(specs.join(", "));
-  }
-
-  // Join all parts into one continuous text
-  let fullText = parts.join(". ");
-  fullText += ".";
-
-  return fullText;
-};
+import { generateStaticDescription, mapDatabaseListingType, mapDatabasePropertyType, parseContactData } from "~/lib/cartel-editor/utils";
+import type { CartelEditorClientProps, ContactOffice } from "~/lib/cartel-editor/types";
 import { useParams } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import {
@@ -98,64 +60,6 @@ import { SavedConfigurations } from "./saved-configurations";
 import type { PropertyImage } from "~/lib/data";
 import { getListingCartelSaveData } from "~/server/queries/listing";
 
-// Database to UI value mapping
-const mapDatabaseListingType = (dbType?: "Sale" | "Rent"): "venta" | "alquiler" | null => {
-  if (!dbType) return null;
-  return dbType === "Sale" ? "venta" : "alquiler";
-};
-
-// Map database property types to UI values
-const mapDatabasePropertyType = (dbType?: string): "piso" | "casa" | "local" | "garaje" | "solar" | null => {
-  if (!dbType) return null;
-  
-  const mappings: Record<string, "piso" | "casa" | "local" | "garaje" | "solar"> = {
-    "Piso": "piso",
-    "Casa": "casa",
-    "Chalet": "casa",
-    "Villa": "casa",
-    "Local comercial": "local",
-    "Local": "local",
-    "Oficina": "local",
-    "Garaje": "garaje",
-    "Plaza de garaje": "garaje",
-    "Solar": "solar",
-    "Terreno": "solar"
-  };
-  
-  return mappings[dbType] ?? "piso"; // Default to piso if not found
-};
-
-// Types for contact data from database
-interface ContactOffice {
-  id: string;
-  name: string;
-  phoneNumbers: {
-    main: string;
-    sales?: string;
-  };
-  emailAddresses: {
-    info: string;
-    sales?: string;
-  };
-}
-
-interface ContactProps {
-  offices: ContactOffice[];
-}
-
-interface CartelEditorClientProps {
-  images?: PropertyImage[];
-  databaseListingType?: "Sale" | "Rent"; // NEW: Optional database value
-  databasePropertyType?: string; // NEW: Optional database property type
-  accountColorPalette?: string[]; // NEW: Account color palette
-  databaseCity?: string; // NEW: Optional database city
-  databaseNeighborhood?: string; // NEW: Optional database neighborhood
-  databaseBedrooms?: number; // NEW: Optional database bedrooms
-  databaseBathrooms?: number; // NEW: Optional database bathrooms
-  databaseSquareMeter?: number; // NEW: Optional database square meters
-  databaseContactProps?: string; // NEW: Optional database contact props JSON
-  databaseWebsite?: string; // NEW: Optional database website
-}
 
 export function CartelEditorClient({ images = [], databaseListingType, databasePropertyType, accountColorPalette = [], databaseCity, databaseNeighborhood, databaseBedrooms, databaseBathrooms, databaseSquareMeter, databaseContactProps, databaseWebsite }: CartelEditorClientProps) {
   // Get listing ID from URL
@@ -279,25 +183,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
 
   // Contact data state
   const [contactData] = useState<ContactOffice[]>(() => {
-    if (databaseContactProps) {
-      try {
-        // Handle double-escaped JSON from database
-        let cleanedJson = databaseContactProps;
-        if (cleanedJson.includes('""')) {
-          // Replace double quotes with single quotes
-          cleanedJson = cleanedJson.replace(/""/g, '"');
-        }
-        
-        console.log("🔄 Parsing contact props:", cleanedJson);
-        const parsed = JSON.parse(cleanedJson) as ContactProps;
-        console.log("✅ Parsed contact data:", parsed);
-        return parsed.offices || [];
-      } catch (error) {
-        console.error("❌ Error parsing contact props:", error);
-        console.error("Raw contact props:", databaseContactProps);
-      }
-    }
-    return [];
+    return parseContactData(databaseContactProps);
   });
 
   // Selected contact options state
