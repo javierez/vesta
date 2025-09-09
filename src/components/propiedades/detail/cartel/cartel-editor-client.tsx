@@ -43,8 +43,8 @@ import {
   ChevronDown,
   Save,
 } from "lucide-react";
-import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
 import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
+import { getTemplateComponent } from "~/lib/carteleria/template-resolver";
 import type {
   TemplateConfiguration,
   ExtendedTemplatePropertyData,
@@ -61,13 +61,17 @@ import type { PropertyImage } from "~/lib/data";
 import { getListingCartelSaveData } from "~/server/queries/listing";
 
 
-export function CartelEditorClient({ images = [], databaseListingType, databasePropertyType, accountColorPalette = [], databaseCity, databaseNeighborhood, databaseBedrooms, databaseBathrooms, databaseSquareMeter, databaseContactProps, databaseWebsite }: CartelEditorClientProps) {
+export function CartelEditorClient({ images = [], databaseListingType, databasePropertyType, accountColorPalette = [], databaseCity, databaseNeighborhood, databaseBedrooms, databaseBathrooms, databaseSquareMeter, databaseContactProps, databaseWebsite, accountPreferences }: CartelEditorClientProps) {
   // Get listing ID from URL
   const params = useParams();
   const listingId = params.id ? parseInt(params.id as string, 10) : null;
   
   // Debug logging
   console.log("CartelEditorClient - listingId from URL:", listingId);
+  
+  // Get the appropriate template component based on account preferences
+  const TemplateComponent = getTemplateComponent(accountPreferences);
+  
   // Template configuration state
   const [config, setConfig] = useState<TemplateConfiguration>(() => {
     const mappedListingType = mapDatabaseListingType(databaseListingType);
@@ -2604,7 +2608,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                       overflow: "hidden",
                     }}
                   >
-                    <ClassicTemplate
+                    <TemplateComponent
                       data={{
                         ...propertyData,
                         images: templateImages

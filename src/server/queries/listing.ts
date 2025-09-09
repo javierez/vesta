@@ -1318,6 +1318,7 @@ export async function getListingCartelData(listingId: number) {
         squareMeter: properties.squareMeter,
         contactProps: websiteProperties.contactProps,
         website: accounts.website,
+        preferences: accounts.preferences,
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))

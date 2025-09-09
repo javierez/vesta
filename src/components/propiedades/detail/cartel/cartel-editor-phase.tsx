@@ -27,6 +27,7 @@ export async function CartelEditorPhase1({
   let databaseSquareMeter: number | undefined;
   let databaseContactProps: string | undefined;
   let databaseWebsite: string | undefined;
+  let accountPreferences: string | undefined;
   
   try {
     console.log("🔄 CartelEditorPhase1: Fetching data for:", listingId);
@@ -66,6 +67,11 @@ export async function CartelEditorPhase1({
     if (cartelData.website) {
       databaseWebsite = cartelData.website;
     }
+    if (cartelData.preferences) {
+      accountPreferences = typeof cartelData.preferences === 'string' 
+        ? cartelData.preferences 
+        : JSON.stringify(cartelData.preferences);
+    }
     
     accountColorPalette = colorPalette;
     
@@ -104,6 +110,7 @@ export async function CartelEditorPhase1({
       databaseSquareMeter={databaseSquareMeter}
       databaseContactProps={databaseContactProps}
       databaseWebsite={databaseWebsite}
+      accountPreferences={accountPreferences}
     />
   );
 }

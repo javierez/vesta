@@ -222,8 +222,10 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
     config.listingType,
   );
 
-  // Get images based on configuration
-  const templateImages = getTemplateImages(config.imageCount);
+  // Get images from data prop (passed by the editor) or fallback to default S3 images
+  const templateImages = data.images && data.images.length > 0 
+    ? data.images 
+    : getTemplateImages(config.imageCount);
 
   // Print-optimized image gallery with fixed positioning
   const renderImages = () => {
@@ -267,20 +269,22 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 overflow: "hidden",
               }}
             >
-              <Image
-                src={templateImages[0] ?? ""}
-                alt={`${data.title} - Imagen principal`}
-                fill
-                className="object-cover"
-                onError={handleImageError}
-                sizes={`${containerDims.width}px`}
-                style={{
-                  objectPosition: data.imagePositions?.[templateImages[0] ?? ""]
-                    ? `${data.imagePositions[templateImages[0] ?? ""]?.x ?? 50}% ${data.imagePositions[templateImages[0] ?? ""]?.y ?? 50}%`
-                    : "50% 50%",
-                }}
-                priority
-              />
+              {templateImages[0] && (
+                <Image
+                  src={templateImages[0]}
+                  alt={`${data.title} - Imagen principal`}
+                  fill
+                  className="object-cover"
+                  onError={handleImageError}
+                  sizes={`${containerDims.width}px`}
+                  style={{
+                    objectPosition: data.imagePositions?.[templateImages[0]]
+                      ? `${data.imagePositions[templateImages[0]]?.x ?? 50}% ${data.imagePositions[templateImages[0]]?.y ?? 50}%`
+                      : "50% 50%",
+                  }}
+                  priority
+                />
+              )}
               {renderWatermark("large")}
             </div>
 
@@ -300,19 +304,21 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                     overflow: "hidden",
                   }}
                 >
-                  <Image
-                    src={image}
-                    alt={`${data.title} - Imagen ${index + 2}`}
-                    fill
-                    className="object-cover"
-                    onError={handleImageError}
-                    sizes={`${fullWidthSubImageWidth}px`}
-                    style={{
-                      objectPosition: data.imagePositions?.[image]
-                        ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
-                        : "50% 50%",
-                    }}
-                  />
+                  {image && (
+                    <Image
+                      src={image}
+                      alt={`${data.title} - Imagen ${index + 2}`}
+                      fill
+                      className="object-cover"
+                      onError={handleImageError}
+                      sizes={`${fullWidthSubImageWidth}px`}
+                      style={{
+                        objectPosition: data.imagePositions?.[image]
+                          ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
+                          : "50% 50%",
+                      }}
+                    />
+                  )}
                   {renderWatermark("small")}
                 </div>
               );
@@ -345,20 +351,22 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 overflow: "hidden",
               }}
             >
-              <Image
-                src={templateImages[0] ?? ""}
-                alt={`${data.title} - Imagen principal`}
-                fill
-                className="object-cover"
-                onError={handleImageError}
-                sizes={`${containerDims.width}px`}
-                style={{
-                  objectPosition: data.imagePositions?.[templateImages[0] ?? ""]
-                    ? `${data.imagePositions[templateImages[0] ?? ""]?.x ?? 50}% ${data.imagePositions[templateImages[0] ?? ""]?.y ?? 50}%`
-                    : "50% 50%",
-                }}
-                priority
-              />
+              {templateImages[0] && (
+                <Image
+                  src={templateImages[0]}
+                  alt={`${data.title} - Imagen principal`}
+                  fill
+                  className="object-cover"
+                  onError={handleImageError}
+                  sizes={`${containerDims.width}px`}
+                  style={{
+                    objectPosition: data.imagePositions?.[templateImages[0]]
+                      ? `${data.imagePositions[templateImages[0]]?.x ?? 50}% ${data.imagePositions[templateImages[0]]?.y ?? 50}%`
+                      : "50% 50%",
+                  }}
+                  priority
+                />
+              )}
               {renderWatermark("large")}
             </div>
 
@@ -379,19 +387,21 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                     overflow: "hidden",
                   }}
                 >
-                  <Image
-                    src={image}
-                    alt={`${data.title} - Imagen ${index + 2}`}
-                    fill
-                    className="object-cover"
-                    onError={handleImageError}
-                    sizes={`${fullWidthSubImageWidth}px`}
-                    style={{
-                      objectPosition: data.imagePositions?.[image]
-                        ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
-                        : "50% 50%",
-                    }}
-                  />
+                  {image && (
+                    <Image
+                      src={image}
+                      alt={`${data.title} - Imagen ${index + 2}`}
+                      fill
+                      className="object-cover"
+                      onError={handleImageError}
+                      sizes={`${fullWidthSubImageWidth}px`}
+                      style={{
+                        objectPosition: data.imagePositions?.[image]
+                          ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
+                          : "50% 50%",
+                      }}
+                    />
+                  )}
                   {renderWatermark("medium")}
                 </div>
               );
@@ -426,20 +436,22 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
               overflow: "hidden",
             }}
           >
-            <Image
-              src={templateImages[0] ?? ""}
-              alt={`${data.title} - Imagen principal`}
-              fill
-              className="object-cover"
-              onError={handleImageError}
-              sizes={`${mainWidth}px`}
-              style={{
-                objectPosition: data.imagePositions?.[templateImages[0] ?? ""]
-                  ? `${data.imagePositions[templateImages[0] ?? ""]?.x ?? 50}% ${data.imagePositions[templateImages[0] ?? ""]?.y ?? 50}%`
-                  : "50% 50%",
-              }}
-              priority
-            />
+            {templateImages[0] && (
+              <Image
+                src={templateImages[0]}
+                alt={`${data.title} - Imagen principal`}
+                fill
+                className="object-cover"
+                onError={handleImageError}
+                sizes={`${mainWidth}px`}
+                style={{
+                  objectPosition: data.imagePositions?.[templateImages[0]]
+                    ? `${data.imagePositions[templateImages[0]]?.x ?? 50}% ${data.imagePositions[templateImages[0]]?.y ?? 50}%`
+                    : "50% 50%",
+                }}
+                priority
+              />
+            )}
             {renderWatermark("large")}
           </div>
 
@@ -461,19 +473,21 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                       overflow: "hidden",
                     }}
                   >
-                    <Image
-                      src={image}
-                      alt={`${data.title} - Imagen ${index + 2}`}
-                      fill
-                      className="object-cover"
-                      onError={handleImageError}
-                      sizes={`${gridWidth}px`}
-                      style={{
-                        objectPosition: data.imagePositions?.[image]
-                          ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
-                          : "50% 50%",
-                      }}
-                    />
+                    {image && (
+                      <Image
+                        src={image}
+                        alt={`${data.title} - Imagen ${index + 2}`}
+                        fill
+                        className="object-cover"
+                        onError={handleImageError}
+                        sizes={`${gridWidth}px`}
+                        style={{
+                          objectPosition: data.imagePositions?.[image]
+                            ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
+                            : "50% 50%",
+                        }}
+                      />
+                    )}
                     {renderWatermark("small")}
                   </div>
                 );
@@ -494,19 +508,21 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                       overflow: "hidden",
                     }}
                   >
-                    <Image
-                      src={image}
-                      alt={`${data.title} - Imagen ${index + 2}`}
-                      fill
-                      className="object-cover"
-                      onError={handleImageError}
-                      sizes={`${gridWidth}px`}
-                      style={{
-                        objectPosition: data.imagePositions?.[image]
-                          ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
-                          : "50% 50%",
-                      }}
-                    />
+                    {image && (
+                      <Image
+                        src={image}
+                        alt={`${data.title} - Imagen ${index + 2}`}
+                        fill
+                        className="object-cover"
+                        onError={handleImageError}
+                        sizes={`${gridWidth}px`}
+                        style={{
+                          objectPosition: data.imagePositions?.[image]
+                            ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
+                            : "50% 50%",
+                        }}
+                      />
+                    )}
                     {renderWatermark("medium")}
                   </div>
                 );
@@ -586,15 +602,15 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
 
     return (
       <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-        <Image
-          src={
-            data.logoUrl ?? ""
-          }
-          alt="Logo watermark"
-          width={width}
-          height={height}
-          className="object-contain opacity-25"
-        />
+        {data.logoUrl && (
+          <Image
+            src={data.logoUrl}
+            alt="Logo watermark"
+            width={width}
+            height={height}
+            className="object-contain opacity-25"
+          />
+        )}
       </div>
     );
   };

@@ -19,7 +19,8 @@
       "Bash(find:*)",
       "Bash(mkdir:*)",
       "Bash(npx tsc:*)",
-      "Bash(pnpm run:*)"
+      "Bash(pnpm run:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

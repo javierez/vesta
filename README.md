@@ -158,6 +158,7 @@ revert
 - Cartelería
    - Create PRODUCTION READY POSTER
       - Acropolis's basic: horizontal and vertical
+      
 
 - Roles
    - Restricted actions
