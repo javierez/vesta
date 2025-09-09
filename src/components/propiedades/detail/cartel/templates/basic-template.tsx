@@ -36,6 +36,24 @@ const getFontClass = (fontType: string) => {
   return fontMap[fontType] ?? "font-sans";
 };
 
+const getOverlayClass = (overlayType: string) => {
+  const overlayMap: Record<string, string> = {
+    default: "bg-gray-400",
+    dark: "bg-gray-800",
+    light: "bg-gray-200",
+    blue: "bg-blue-500",
+    green: "bg-green-500",
+    purple: "bg-purple-500",
+    red: "bg-red-500",
+  };
+  return overlayMap[overlayType] ?? "";
+};
+
+const getTextColorForOverlay = (overlayType: string) => {
+  // Light overlay needs dark text, others need white text
+  return overlayType === "light" ? "#1e293b" : "white";
+};
+
 export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
   data,
   config,
@@ -48,6 +66,8 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
 
   // Get fixed dimensions for print optimization first
   const containerDimensions = getDimensionsForOrientation(config.orientation);
+  const overlayClass = getOverlayClass(config.overlayColor);
+  const textColor = getTextColorForOverlay(config.overlayColor);
 
   // Component-specific print styles for wireframe layout
   const printStylesCSS = `
@@ -57,9 +77,15 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
         height: ${containerDimensions.height}px !important;
         margin: 0 !important;
         padding: 0 !important;
+        box-sizing: border-box !important;
         page-break-inside: avoid !important;
         -webkit-print-color-adjust: exact !important;
         color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      .basic-template-container * {
+        box-sizing: border-box !important;
       }
       
       .basic-template-container img {
@@ -303,12 +329,12 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
   }, [printStylesCSS]);
 
   // Calculate section heights to fit within A4 bounds (794x1123 for vertical)
-  // Fixed heights optimized for A4 paper
-  const headerHeight = 100; // Header with title and reference
-  const descriptionHeight = config.showShortDescription && data.shortDescription ? 50 : 0;
-  const statsHeight = 70; // Property stats row
-  const bottomStripHeight = 70; // QR, Price, Energy
-  const footerHeight = 50; // Contact bar
+  // Fixed heights optimized for A4 paper - using exact measurements
+  const headerHeight = 80; // Header with title and reference
+  const descriptionHeight = config.showShortDescription && data.shortDescription ? 45 : 0;
+  const statsHeight = 60; // Property stats row
+  const bottomStripHeight = 60; // QR, Price, Energy
+  const footerHeight = 45; // Contact bar
   
   // Calculate remaining space for gallery (ensure total = containerDimensions.height)
   const totalFixedHeight = headerHeight + descriptionHeight + statsHeight + bottomStripHeight + footerHeight;
@@ -326,19 +352,26 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
         backgroundColor: "white",
         display: "flex",
         flexDirection: "column",
+        boxSizing: "border-box",
+        margin: 0,
+        padding: 0,
       }}
       data-testid={`template-wireframe-${config.orientation}`}
     >
       {/* 1. HEADER BAR - Title left, Reference right */}
       <div
+        className={overlayClass}
         style={{
           height: `${headerHeight}px`,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "0 24px",
-          backgroundColor: "#f8fafc",
-          borderBottom: "2px solid #e2e8f0",
+          paddingLeft: "20px",
+          paddingRight: "20px",
+          borderBottom: overlayClass ? "none" : "2px solid #e2e8f0",
+          flexShrink: 0,
+          boxSizing: "border-box",
+          backgroundColor: overlayClass ? undefined : "#f8fafc",
         }}
       >
         <div>
@@ -351,7 +384,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               fontSize: `${Math.min(getTypographySize("title"), 24)}px`,
               lineHeight: "1.1",
               margin: 0,
-              color: "#1e293b",
+              color: textColor,
             }}
           >
             {config.listingType} {safeData.propertyType}
@@ -364,7 +397,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             style={{
               fontSize: `${getTypographySize("reference")}px`,
               letterSpacing: "0.05em",
-              color: "#64748b",
+              color: overlayClass ? textColor : "#64748b",
             }}
           >
             {data.reference}
@@ -379,8 +412,11 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             height: `${descriptionHeight}px`,
             display: "flex",
             alignItems: "center",
-            padding: "0 24px",
+            paddingLeft: "20px",
+            paddingRight: "20px",
             backgroundColor: "#ffffff",
+            flexShrink: 0,
+            boxSizing: "border-box",
           }}
         >
           <p
@@ -402,8 +438,14 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
       <div
         style={{
           height: `${galleryHeight}px`,
-          padding: "24px",
+          paddingLeft: "20px",
+          paddingRight: "20px",
+          paddingTop: "20px",
+          paddingBottom: "20px",
           backgroundColor: "#ffffff",
+          flexGrow: 1,
+          flexShrink: 0,
+          boxSizing: "border-box",
         }}
       >
         {renderImageGallery()}
@@ -416,10 +458,13 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
           gap: "16px",
-          padding: "0 24px",
+          paddingLeft: "20px",
+          paddingRight: "20px",
           backgroundColor: "#f8fafc",
           borderTop: "1px solid #e2e8f0",
           borderBottom: "1px solid #e2e8f0",
+          flexShrink: 0,
+          boxSizing: "border-box",
         }}
       >
         {/* Bedrooms */}
@@ -493,9 +538,12 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           display: "grid",
           gridTemplateColumns: "1fr 2fr 1fr",
           gap: "16px",
-          padding: "0 24px",
+          paddingLeft: "20px",
+          paddingRight: "20px",
           backgroundColor: "#ffffff",
           alignItems: "center",
+          flexShrink: 0,
+          boxSizing: "border-box",
         }}
       >
         {/* QR Code */}
@@ -580,25 +628,29 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
 
       {/* 6. FOOTER BAR - Website left, Phone right */}
       <div
+        className={overlayClass}
         style={{
           height: `${footerHeight}px`,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "0 24px",
-          backgroundColor: "#1e293b",
-          color: "white",
+          paddingLeft: "20px",
+          paddingRight: "20px",
+          backgroundColor: overlayClass ? undefined : "#1e293b",
+          color: textColor,
+          flexShrink: 0,
+          boxSizing: "border-box",
         }}
       >
         {/* Website */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {config.showWebsite && data.contact.website && (
             <>
-              <Globe size={16} color="white" />
+              <Globe size={16} color={textColor} />
               <span
                 style={{
                   fontSize: `${getTypographySize("contact")}px`,
-                  color: "white",
+                  color: textColor,
                 }}
               >
                 {data.contact.website.replace(/^https?:\/\/(www\.)?/, "")}
@@ -611,11 +663,11 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {config.showPhone && data.contact.phone && (
             <>
-              <Phone size={16} color="white" />
+              <Phone size={16} color={textColor} />
               <span
                 style={{
                   fontSize: `${getTypographySize("contact")}px`,
-                  color: "white",
+                  color: textColor,
                 }}
               >
                 {data.contact.phone}

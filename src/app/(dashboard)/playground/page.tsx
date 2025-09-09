@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ModernTemplate } from "~/components/admin/carteleria/templates/modern/modern-template";
+// import { ModernTemplate } from "~/components/admin/carteleria/templates/modern/modern-template";
 import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
 import {
   mockPropertyData,
@@ -434,19 +434,12 @@ export default function PlaygroundPage() {
                 config.orientation === "vertical" ? "max-w-md" : "max-w-lg",
               )}
             >
-              {config.templateStyle === "classic" ? (
-                <ClassicTemplate
-                  data={propertyData}
-                  config={config}
-                  className="border shadow-lg"
-                />
-              ) : (
-                <ModernTemplate
-                  data={propertyData}
-                  config={config}
-                  className="border shadow-lg"
-                />
-              )}
+              {/* ModernTemplate not yet implemented, using ClassicTemplate for all styles */}
+              <ClassicTemplate
+                data={propertyData}
+                config={config}
+                className="border shadow-lg"
+              />
             </div>
           </div>
         </div>

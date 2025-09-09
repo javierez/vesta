@@ -20,7 +20,8 @@
       "Bash(mkdir:*)",
       "Bash(npx tsc:*)",
       "Bash(pnpm run:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Read(//var/folders/zk/slrtmhdd7kd3g8n3jb1bd1700000gn/T/TemporaryItems/NSIRD_screencaptureui_HjQpVc/**)"
     ],
     "deny": [],
     "ask": []
