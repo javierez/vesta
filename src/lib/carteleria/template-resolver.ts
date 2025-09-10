@@ -2,8 +2,11 @@ import { type FC } from "react";
 import type { ConfigurableTemplateProps } from "~/types/template-data";
 import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
 import { BasicTemplate } from "~/components/propiedades/detail/cartel/templates/basic-template";
+import { BasicHorizontalTemplate } from "~/components/propiedades/detail/cartel/templates/basic-horizontal-template";
 
 export type TemplateStyle = "classic" | "basic";
+export type TemplateOrientation = "vertical" | "horizontal";
+export type FullTemplateStyle = "classic-vertical" | "classic-horizontal" | "basic-vertical" | "basic-horizontal";
 
 export interface AccountPreferences {
   poster_preferences?: {
@@ -14,12 +17,14 @@ export interface AccountPreferences {
 }
 
 /**
- * Resolves and returns the appropriate template component based on account preferences
+ * Resolves and returns the appropriate template component based on account preferences and orientation
  * @param preferences - Account preferences JSON containing poster_preferences
+ * @param orientation - Template orientation ("vertical" or "horizontal")
  * @returns The template component to render
  */
 export function getTemplateComponent(
   preferences: string | AccountPreferences | null | undefined,
+  orientation: TemplateOrientation = "vertical",
 ): FC<ConfigurableTemplateProps> {
   try {
     let parsedPreferences: AccountPreferences;
@@ -35,14 +40,23 @@ export function getTemplateComponent(
     }
 
     // Extract template style from poster_preferences
-    const templateStyle = parsedPreferences.poster_preferences?.template_style;
+    const templateStyle = parsedPreferences.poster_preferences?.template_style ?? "classic";
+    
+    // Create full template identifier
+    const fullTemplateStyle: FullTemplateStyle = `${templateStyle}-${orientation}`;
 
-    switch (templateStyle) {
-      case "basic":
-        return BasicTemplate;
-      case "classic":
+    switch (fullTemplateStyle) {
+      case "basic-vertical":
+        return BasicTemplate; // Current basic template is vertical
+      case "basic-horizontal":
+        return BasicHorizontalTemplate; // New horizontal template
+      case "classic-vertical":
+        return ClassicTemplate; // Current classic template is vertical
+      case "classic-horizontal":
+        // TODO: Import ClassicHorizontalTemplate when created
+        return ClassicTemplate; // Temporary fallback
       default:
-        return ClassicTemplate;
+        return ClassicTemplate; // Safe fallback
     }
   } catch (error) {
     console.error("Error parsing account preferences for template selection:", error);
@@ -54,11 +68,13 @@ export function getTemplateComponent(
 /**
  * Gets the template style name from preferences for display purposes
  * @param preferences - Account preferences JSON containing poster_preferences
- * @returns The template style name or "classic" as default
+ * @param orientation - Template orientation ("vertical" or "horizontal")
+ * @returns The full template style name or "classic-vertical" as default
  */
 export function getTemplateStyleName(
   preferences: string | AccountPreferences | null | undefined,
-): TemplateStyle {
+  orientation: TemplateOrientation = "vertical",
+): FullTemplateStyle {
   try {
     let parsedPreferences: AccountPreferences;
 
@@ -67,12 +83,13 @@ export function getTemplateStyleName(
     } else if (preferences && typeof preferences === "object") {
       parsedPreferences = preferences;
     } else {
-      return "classic";
+      return `classic-${orientation}`;
     }
 
-    return parsedPreferences.poster_preferences?.template_style ?? "classic";
+    const templateStyle = parsedPreferences.poster_preferences?.template_style ?? "classic";
+    return `${templateStyle}-${orientation}` as FullTemplateStyle;
   } catch (error) {
     console.error("Error parsing account preferences for template style:", error);
-    return "classic";
+    return `classic-${orientation}` as FullTemplateStyle;
   }
 }

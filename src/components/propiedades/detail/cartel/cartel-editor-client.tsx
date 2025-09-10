@@ -68,16 +68,15 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   // Debug logging
   console.log("CartelEditorClient - listingId from URL:", listingId);
   
-  // Get the appropriate template component based on account preferences
-  const TemplateComponent = getTemplateComponent(accountPreferences);
-  
   // Template configuration state
   const [config, setConfig] = useState<TemplateConfiguration>(() => {
     const mappedListingType = mapDatabaseListingType(databaseListingType);
     const mappedPropertyType = mapDatabasePropertyType(databasePropertyType);
-    const resolvedTemplateStyle = getTemplateStyleName(accountPreferences);
+    const resolvedTemplateStyle = getTemplateStyleName(accountPreferences, "vertical");
+    // Extract just the template style part (basic/classic) for TemplateConfiguration
+    const baseTemplateStyle = resolvedTemplateStyle.split('-')[0] as "basic" | "classic";
     return {
-      templateStyle: resolvedTemplateStyle,
+      templateStyle: baseTemplateStyle,
       orientation: "vertical",
       propertyType: mappedPropertyType ?? "piso", // Use DB value or fallback
       listingType: mappedListingType ?? "venta", // Use DB value or fallback
@@ -138,6 +137,13 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       energyConsumptionScale: "B",
     };
   });
+
+  // Get the appropriate template component based on account preferences and orientation
+  // This will update when config.orientation changes
+  const TemplateComponent = React.useMemo(
+    () => getTemplateComponent(accountPreferences, config.orientation),
+    [accountPreferences, config.orientation]
+  );
 
   // Property data state (using mock data as base)
   const [propertyData, setPropertyData] =
