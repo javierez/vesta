@@ -44,7 +44,7 @@ import {
   Save,
 } from "lucide-react";
 import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
-import { getTemplateComponent } from "~/lib/carteleria/template-resolver";
+import { getTemplateComponent, getTemplateStyleName } from "~/lib/carteleria/template-resolver";
 import type {
   TemplateConfiguration,
   ExtendedTemplatePropertyData,
@@ -76,8 +76,9 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   const [config, setConfig] = useState<TemplateConfiguration>(() => {
     const mappedListingType = mapDatabaseListingType(databaseListingType);
     const mappedPropertyType = mapDatabasePropertyType(databasePropertyType);
+    const resolvedTemplateStyle = getTemplateStyleName(accountPreferences);
     return {
-      templateStyle: "classic",
+      templateStyle: resolvedTemplateStyle,
       orientation: "vertical",
       propertyType: mappedPropertyType ?? "piso", // Use DB value or fallback
       listingType: mappedListingType ?? "venta", // Use DB value or fallback
@@ -139,8 +140,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   const [propertyData, setPropertyData] =
     useState<ExtendedTemplatePropertyData>(() => {
       const baseData = getExtendedDefaultPropertyData(config.propertyType);
-      // Generate default title from listing type and property type in UPPERCASE
-      const listingTypeText = config.listingType === "venta" ? "VENTA" : "ALQUILER";
+      // Generate default title - just the property type in uppercase (listing type is handled separately in template)
       const propertyTypeText = {
         piso: "PISO",
         casa: "CASA", 
@@ -154,7 +154,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       
       return {
         ...baseData,
-        title: `${listingTypeText} ${propertyTypeText}`,
+        title: propertyTypeText,
+        propertyType: config.propertyType, // Ensure propertyType is explicitly set
         images: selectedImages.length > 0 ? selectedImages : baseData.images,
         location: {
           neighborhood: databaseNeighborhood ?? baseData.location.neighborhood,
@@ -800,7 +801,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   <Label htmlFor="overlayColor">Color de Fondo</Label>
                   <Select
                     value={config.overlayColor}
-                    onValueChange={(value) => updateConfig({ overlayColor: value as "default" | "dark" | "light" | "blue" | "green" | "purple" | "red" })}
+                    onValueChange={(value) => updateConfig({ overlayColor: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -835,6 +836,26 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         </div>
                       </SelectItem>
                       
+                      {/* Standard color options - matching other selectors */}
+                      <SelectItem value="white">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full bg-white border border-gray-300"></div>
+                          <span>Blanco</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="black">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full bg-black"></div>
+                          <span>Negro</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="gray">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full bg-gray-500"></div>
+                          <span>Gris Estándar</span>
+                        </div>
+                      </SelectItem>
+                      
                       {/* Account color palette */}
                       {accountColorPalette.length > 0 && accountColorPalette.map((color, index) => (
                         <SelectItem key={color} value={color}>
@@ -843,7 +864,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                               className="w-4 h-4 rounded-full border border-gray-300"
                               style={{ backgroundColor: color }}
                             />
-                            <span>Color {index + 1}</span>
+                            <span>Corporativo {index + 1}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -1876,22 +1897,24 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         </div>
                       </div>
 
-                      {/* Border Radius Control */}
-                      <div>
-                        <Label className="text-sm text-gray-600">Esquinas redondeadas</Label>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-xs">◼</span>
-                          <Slider
-                            value={[config.locationBorderRadius]}
-                            onValueChange={([value]) => updateConfig({ locationBorderRadius: value })}
-                            max={20}
-                            min={0}
-                            step={2}
-                            className="flex-1"
-                          />
-                          <span className="text-xs">◯</span>
+                      {/* Border Radius Control - Only show for classic template */}
+                      {config.templateStyle !== "basic" && (
+                        <div>
+                          <Label className="text-sm text-gray-600">Esquinas redondeadas</Label>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs">◼</span>
+                            <Slider
+                              value={[config.locationBorderRadius]}
+                              onValueChange={([value]) => updateConfig({ locationBorderRadius: value })}
+                              max={20}
+                              min={0}
+                              step={2}
+                              className="flex-1"
+                            />
+                            <span className="text-xs">◯</span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -2586,13 +2609,14 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   ref={previewRef}
                   className="overflow-auto border border-gray-300 bg-gray-100 p-2 md:p-4"
                   style={{
-                    height: "50vh",
-                    minHeight: "300px",
-                    maxHeight: "80vh",
+                    height: "60vh",
+                    minHeight: "400px",
+                    maxHeight: "90vh",
                     display: "flex",
                     justifyContent: "center",
-                    alignItems: "center",
+                    alignItems: "flex-start",
                     cursor: isDragging ? "grabbing" : "grab",
+                    paddingTop: "20px",
                   }}
                   onWheel={handleWheel}
                   onMouseDown={handleMouseDown}
@@ -2600,12 +2624,12 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   <div
                     style={{
                       transform: `scale(${previewZoom}) translate(${panX}px, ${panY}px)`,
-                      transformOrigin: "center center",
+                      transformOrigin: "top center",
                       border: "1px solid #ccc",
                       boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
                       transition: isDragging ? "none" : "transform 0.2s ease-in-out",
                       maxWidth: "100%",
-                      overflow: "hidden",
+                      overflow: "visible",
                     }}
                   >
                     <TemplateComponent

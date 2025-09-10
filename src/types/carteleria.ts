@@ -6,6 +6,7 @@ export interface TemplateStyle {
   description: string;
   preview: string;
   category:
+    | "basic"
     | "modern"
     | "classic"
     | "minimalist"

@@ -71,15 +71,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Wait for template to be fully rendered
+    // Wait for template to be fully rendered - dynamically determine container selector
+    const getTemplateSelector = (templateStyle: string) => {
+      switch (templateStyle) {
+        case "basic":
+          return ".basic-template-container";
+        case "classic":
+        default:
+          return ".template-container";
+      }
+    };
+
+    const templateSelector = getTemplateSelector(templateConfig.templateStyle ?? "classic");
+    console.log(`🎯 Waiting for template container: ${templateSelector} (style: ${templateConfig.templateStyle ?? "classic"})`);
+
     try {
-      await page.waitForSelector(".template-container", { timeout: 10000 });
+      await page.waitForSelector(templateSelector, { timeout: 10000 });
+      console.log(`✅ Template container found: ${templateSelector}`);
     } catch {
-      console.error(
-        "Template container not found. Page content:",
-        await page.content(),
-      );
-      throw new Error("Template container not found after 10 seconds");
+      // Fallback: try waiting for either container type
+      console.warn(`⚠️ Primary template container (${templateSelector}) not found, trying fallback...`);
+      try {
+        await page.waitForSelector(".template-container, .basic-template-container", { timeout: 5000 });
+        console.log("✅ Template container found via fallback selector");
+      } catch {
+        console.error(
+          "Template container not found. Page content:",
+          await page.content(),
+        );
+        throw new Error(`Template container not found after 15 seconds. Expected: ${templateSelector} (template style: ${templateConfig.templateStyle ?? "classic"})`);
+      }
     }
 
     // Wait for the template ready signal

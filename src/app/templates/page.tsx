@@ -1,4 +1,5 @@
 import { ClassicTemplate } from "~/components/admin/carteleria/templates/classic/classic-vertical-template";
+import { BasicTemplate } from "~/components/propiedades/detail/cartel/templates/basic-template";
 import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
 import type {
   TemplateConfiguration,
@@ -149,9 +150,20 @@ export default async function TemplatesPage({
     };
   }
 
+  // Determine which template component to render based on config
+  const getTemplateComponent = () => {
+    switch (config.templateStyle) {
+      case "basic":
+        return <BasicTemplate data={data} config={config} />;
+      case "classic":
+      default:
+        return <ClassicTemplate data={data} config={config} />;
+    }
+  };
+
   return (
     <div style={{ margin: 0, padding: 0, backgroundColor: "white" }}>
-      <ClassicTemplate data={data} config={config} />
+      {getTemplateComponent()}
       <script
         dangerouslySetInnerHTML={{
           __html: `

@@ -171,7 +171,11 @@ export interface TemplateConfiguration {
     | "blue"
     | "green"
     | "purple"
-    | "red";
+    | "red"
+    | "white"
+    | "black"
+    | "gray"
+    | string; // Allow any string for custom colors (account palette)
   // Short description styling
   descriptionFont: "default" | "serif" | "sans" | "mono" | "elegant" | "modern";
   descriptionAlignment: "left" | "center" | "right";

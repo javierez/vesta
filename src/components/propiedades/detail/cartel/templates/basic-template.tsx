@@ -45,6 +45,9 @@ const getOverlayClass = (overlayType: string) => {
     green: "bg-green-500",
     purple: "bg-purple-500",
     red: "bg-red-500",
+    white: "bg-white",
+    black: "bg-black",
+    gray: "bg-gray-500",
   };
   return overlayMap[overlayType] ?? "";
 };
@@ -278,7 +281,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 priority={index === 0}
               />
             )}
-            {renderWatermark(index === 0 ? "large" : "small")}
+            {renderWatermark("medium")}
           </div>
         ))}
       </div>
@@ -328,17 +331,18 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
     }
   }, [printStylesCSS]);
 
-  // Calculate section heights to fit within A4 bounds (794x1123 for vertical)
-  // Fixed heights optimized for A4 paper - using exact measurements
-  const headerHeight = 80; // Header with title and reference
-  const descriptionHeight = config.showShortDescription && data.shortDescription ? 45 : 0;
-  const statsHeight = 60; // Property stats row
-  const bottomStripHeight = 60; // QR, Price, Energy
-  const footerHeight = 45; // Contact bar
+  // Calculate section heights to fit within A4 bounds - flexible approach
+  // Base heights that can adapt to content
+  const headerHeight = Math.max(120, config.showShortDescription && data.shortDescription ? 140 : 120);
+  const descriptionHeight = config.showShortDescription && data.shortDescription ? Math.max(30, 35) : 0;
+  const statsHeight = 80; // Property stats row - increased for bigger icons
+  const bottomStripHeight = 80; // QR, Price, Energy - increased for bigger price
+  const footerHeight = 45; // Contact bar - keep fixed
   
-  // Calculate remaining space for gallery (ensure total = containerDimensions.height)
+  // Calculate remaining space for gallery with significantly reduced height for bigger icons/price
   const totalFixedHeight = headerHeight + descriptionHeight + statsHeight + bottomStripHeight + footerHeight;
-  const galleryHeight = containerDimensions.height - totalFixedHeight;
+  const calculatedGalleryHeight = containerDimensions.height - totalFixedHeight;
+  const galleryHeight = Math.max(calculatedGalleryHeight - 40, 160); // Further reduced, minimum 160px
 
   // Wireframe-structured layout
   return (
@@ -375,32 +379,55 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
         }}
       >
         <div>
-          <h1
+          <h2
             className={cn(
               "font-bold uppercase",
               getFontClass(config.titleFont),
             )}
             style={{
-              fontSize: `${Math.min(getTypographySize("title"), 24)}px`,
+              fontSize: `${config.titleSize || getTypographySize("title")}px`,
               lineHeight: "1.1",
               margin: 0,
-              color: textColor,
+              marginBottom: "6px",
+              color: config.titleColor || textColor,
+              textAlign: config.titleAlignment || "left",
+              transform: config.titlePositionX || config.titlePositionY 
+                ? `translate(${config.titlePositionX || 0}px, ${config.titlePositionY || 0}px)` 
+                : undefined,
             }}
           >
-            {config.listingType} {safeData.propertyType}
-          </h1>
+            {safeData.title}
+          </h2>
+          <div
+            className={cn(
+              "font-medium",
+              getFontClass(config.locationFont),
+            )}
+            style={{
+              fontSize: `${config.locationSize || getTypographySize("body")}px`,
+              lineHeight: "1.2",
+              margin: 0,
+              color: config.locationColor || "#64748b",
+              opacity: 0.9,
+              textAlign: config.locationAlignment || "left",
+              transform: config.locationPositionX || config.locationPositionY 
+                ? `translate(${config.locationPositionX || 0}px, ${config.locationPositionY || 0}px)` 
+                : undefined,
+            }}
+          >
+            {formatLocation(safeData.location)}
+          </div>
         </div>
         
-        {config.showReference && data.reference && (
-          <div
-            className="font-medium uppercase"
-            style={{
-              fontSize: `${getTypographySize("reference")}px`,
-              letterSpacing: "0.05em",
-              color: overlayClass ? textColor : "#64748b",
-            }}
-          >
-            {data.reference}
+        {/* QR Code - Top Right */}
+        {config.showQR && (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <PropertyQRCode
+              phone={data.contact.phone}
+              email={data.contact.email}
+              size={80}
+              className="border-0 bg-transparent p-0 shadow-none"
+            />
           </div>
         )}
       </div>
@@ -437,15 +464,16 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
       {/* 3. IMAGE GALLERY - Centerpiece */}
       <div
         style={{
-          height: `${galleryHeight}px`,
+          minHeight: `${galleryHeight}px`,
           paddingLeft: "20px",
           paddingRight: "20px",
-          paddingTop: "20px",
+          paddingTop: "0px",
           paddingBottom: "20px",
           backgroundColor: "#ffffff",
           flexGrow: 1,
-          flexShrink: 0,
+          flexShrink: 1,
           boxSizing: "border-box",
+          overflow: "hidden",
         }}
       >
         {renderImageGallery()}
@@ -461,8 +489,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           paddingLeft: "20px",
           paddingRight: "20px",
           backgroundColor: "#f8fafc",
-          borderTop: "1px solid #e2e8f0",
-          borderBottom: "1px solid #e2e8f0",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
           flexShrink: 0,
           boxSizing: "border-box",
         }}
@@ -476,10 +503,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             gap: "8px",
           }}
         >
-          <Bed size={24} color="#64748b" />
+          <Bed size={32} color="#64748b" />
           <span
             style={{
-              fontSize: "18px",
+              fontSize: "24px",
               fontWeight: "600",
               color: "#1e293b",
             }}
@@ -497,10 +524,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             gap: "8px",
           }}
         >
-          <Bath size={24} color="#64748b" />
+          <Bath size={32} color="#64748b" />
           <span
             style={{
-              fontSize: "18px",
+              fontSize: "24px",
               fontWeight: "600",
               color: "#1e293b",
             }}
@@ -518,10 +545,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             gap: "8px",
           }}
         >
-          <Maximize size={24} color="#64748b" />
+          <Maximize size={32} color="#64748b" />
           <span
             style={{
-              fontSize: "18px",
+              fontSize: "24px",
               fontWeight: "600",
               color: "#1e293b",
             }}
@@ -531,34 +558,23 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
         </div>
       </div>
 
-      {/* 5. BOTTOM STRIP - QR, Price, Energy */}
+      {/* 5. BOTTOM STRIP - Price, Energy */}
       <div
         style={{
           height: `${bottomStripHeight}px`,
-          display: "grid",
-          gridTemplateColumns: "1fr 2fr 1fr",
-          gap: "16px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "8px",
           paddingLeft: "20px",
           paddingRight: "20px",
           backgroundColor: "#ffffff",
-          alignItems: "center",
           flexShrink: 0,
           boxSizing: "border-box",
         }}
       >
-        {/* QR Code */}
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          {config.showQR && (
-            <PropertyQRCode
-              phone={data.contact.phone}
-              email={data.contact.email}
-              size={60}
-              className="border-0 bg-transparent p-0 shadow-none"
-            />
-          )}
-        </div>
-
-        {/* Price - Center */}
+        {/* Price - Centered and Prominent */}
         <div
           style={{
             display: "flex",
@@ -572,10 +588,13 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               getFontClass(config.priceFont),
             )}
             style={{
-              fontSize: `${Math.min(getTypographySize("price"), 32)}px`,
+              fontSize: `${config.priceSize || Math.min(getTypographySize("price"), 40)}px`,
               lineHeight: "1.1",
-              color: "#1e293b",
+              color: config.priceColor || "#000000",
               textAlign: "center",
+              transform: config.pricePositionX || config.pricePositionY 
+                ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)` 
+                : undefined,
             }}
           >
             {config.listingType === "alquiler" ? (
@@ -584,8 +603,8 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 <span
                   className="font-normal"
                   style={{
-                    fontSize: `${Math.min(getTypographySize("body"), 18)}px`,
-                    color: "#64748b",
+                    fontSize: `${Math.min(getTypographySize("body"), 24)}px`,
+                    color: config.priceColor ? `${config.priceColor}80` : "#00000080", // Use price color with opacity if set, default black with opacity
                   }}
                 >
                   {" €/mes"}
@@ -597,33 +616,6 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           </div>
         </div>
 
-        {/* Energy Label */}
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          {data.energyConsumptionScale && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 12px",
-                backgroundColor: "#f1f5f9",
-                borderRadius: "6px",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <Award size={16} color="#64748b" />
-              <span
-                style={{
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  color: "#374151",
-                }}
-              >
-                {data.energyConsumptionScale}
-              </span>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* 6. FOOTER BAR - Website left, Phone right */}
