@@ -1,3 +1,5 @@
+import type { ContactOffice } from "./types";
+
 // Static description generator that works during initialization
 export const generateStaticDescription = (
   propertyType: string,
@@ -67,7 +69,7 @@ export const mapDatabasePropertyType = (dbType?: string): "piso" | "casa" | "loc
 };
 
 // Parse contact data with error handling
-export const parseContactData = (databaseContactProps?: string) => {
+export const parseContactData = (databaseContactProps?: string): ContactOffice[] => {
   if (!databaseContactProps) return [];
   
   try {
@@ -79,9 +81,9 @@ export const parseContactData = (databaseContactProps?: string) => {
     }
     
     console.log("🔄 Parsing contact props:", cleanedJson);
-    const parsed = JSON.parse(cleanedJson);
+    const parsed = JSON.parse(cleanedJson) as {offices?: ContactOffice[]};
     console.log("✅ Parsed contact data:", parsed);
-    return parsed.offices || [];
+    return parsed.offices ?? [];
   } catch (error) {
     console.error("❌ Error parsing contact props:", error);
     console.error("Raw contact props:", databaseContactProps);

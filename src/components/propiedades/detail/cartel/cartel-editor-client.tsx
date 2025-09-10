@@ -57,7 +57,6 @@ import { getTemplateImages } from "~/lib/carteleria/s3-images";
 import { CartelMiniGallery } from "./cartel-mini-gallery";
 import { SaveConfigurationModal } from "./save-configuration-modal";
 import { SavedConfigurations } from "./saved-configurations";
-import type { PropertyImage } from "~/lib/data";
 import { getListingCartelSaveData } from "~/server/queries/listing";
 
 
@@ -157,13 +156,13 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       const selectedImages = images.slice(0, 4).map(img => img.imageUrl).filter(Boolean);
       
       // Extract logo URL from account preferences
-      let logoUrl = null;
+      let logoUrl: string | undefined = undefined;
       try {
         if (accountPreferences) {
           const preferences = typeof accountPreferences === 'string' 
-            ? JSON.parse(accountPreferences) 
-            : accountPreferences;
-          logoUrl = preferences?.logoTransparent || null;
+            ? JSON.parse(accountPreferences) as {logoTransparent?: string}
+            : accountPreferences as {logoTransparent?: string};
+          logoUrl = preferences?.logoTransparent;
         }
       } catch (error) {
         console.warn('Error parsing account preferences for logo:', error);
@@ -174,7 +173,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
         title: propertyTypeText,
         propertyType: config.propertyType, // Ensure propertyType is explicitly set
         images: selectedImages.length > 0 ? selectedImages : baseData.images,
-        logoUrl: logoUrl, // Add logo URL from account preferences
+        logoUrl, // Add logo URL from account preferences
         location: {
           neighborhood: databaseNeighborhood ?? baseData.location.neighborhood,
           city: databaseCity ?? baseData.location.city
@@ -206,7 +205,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
 
   // Contact data state
   const [contactData] = useState<ContactOffice[]>(() => {
-    return parseContactData(databaseContactProps);
+    return parseContactData(databaseContactProps) as ContactOffice[];
   });
 
   // Selected contact options state
@@ -387,7 +386,6 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
         
         // If more than 2 contact elements are selected, keep only the first 2
         if (contactElements.length > 2) {
-          const elementsToKeep = contactElements.slice(0, 2);
           const elementsToRemove = contactElements.slice(2);
           
           elementsToRemove.forEach(el => {
@@ -2766,7 +2764,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         className="absolute h-full w-full object-cover"
                         style={{
                           objectPosition: `${position.x}% ${position.y}%`,
-                          transform: `scale(${position.zoom || 1.0})`,
+                          transform: `scale(${position.zoom ?? 1.0})`,
                           transformOrigin: 'center',
                         }}
                       />
@@ -2776,7 +2774,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                             {position.x.toFixed(0)}%, {position.y.toFixed(0)}%
                           </div>
                           <div className="text-xs text-white/80">
-                            {(position.zoom || 1.0).toFixed(1)}x
+                            {(position.zoom ?? 1.0).toFixed(1)}x
                           </div>
                         </div>
                       </div>
@@ -2858,8 +2856,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         <button
                           type="button"
                           className="h-6 w-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          onClick={() => updateImageZoom(imageUrl, (position.zoom || 1.0) - 0.1)}
-                          disabled={(position.zoom || 1.0) <= 0.5}
+                          onClick={() => updateImageZoom(imageUrl, (position.zoom ?? 1.0) - 0.1)}
+                          disabled={(position.zoom ?? 1.0) <= 0.5}
                         >
                           <ZoomOut className="h-3 w-3 text-gray-600" />
                         </button>
@@ -2878,8 +2876,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         <button
                           type="button"
                           className="h-6 w-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          onClick={() => updateImageZoom(imageUrl, (position.zoom || 1.0) + 0.1)}
-                          disabled={(position.zoom || 1.0) >= 3.0}
+                          onClick={() => updateImageZoom(imageUrl, (position.zoom ?? 1.0) + 0.1)}
+                          disabled={(position.zoom ?? 1.0) >= 3.0}
                         >
                           <ZoomIn className="h-3 w-3 text-gray-600" />
                         </button>

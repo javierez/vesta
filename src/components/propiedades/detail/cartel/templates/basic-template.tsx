@@ -8,19 +8,14 @@ import { getTemplateImages } from "~/lib/carteleria/s3-images";
 import { formatLocation, formatPrice } from "~/lib/carteleria/mock-data";
 import { cn } from "~/lib/utils";
 import {
-  MapPin,
   Bed,
   Bath,
   Maximize,
-  Phone,
-  Globe,
-  Award,
   Calendar,
   Car,
   Home,
   Compass,
   Flame,
-  Mail,
   Package,
   Trees,
   Wrench,
@@ -28,7 +23,6 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
-  PRINT_DIMENSIONS,
   getDimensionsForOrientation,
   getTypographySize,
 } from "~/lib/carteleria/classic-vertical-constants";
@@ -130,8 +124,8 @@ const getFieldLabel = (fieldValue: string) => {
   return labelMap[fieldValue] ?? fieldValue;
 };
 
-const getFieldValue = (fieldValue: string, data: any): string => {
-  const value = data[fieldValue];
+const getFieldValue = (fieldValue: string, data: ConfigurableTemplateProps["data"]): string => {
+  const value = (data as unknown as Record<string, unknown>)[fieldValue] as string | number | boolean | undefined | null;
 
   if (value === undefined || value === null) return "N/A";
   if (typeof value === "boolean") return value ? "Sí" : "No";
@@ -672,8 +666,8 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 style={{
                   fontSize: `${config.descriptionSize || 16}px`,
                   lineHeight: "1.4",
-                  color: config.descriptionColor || "#374151",
-                  textAlign: (config.descriptionAlignment || "left") as "left" | "center" | "right",
+                  color: config.descriptionColor || "#000000",
+                  textAlign: config.descriptionAlignment || "left",
                   transform: config.descriptionPositionX || config.descriptionPositionY 
                     ? `translate(${config.descriptionPositionX || 0}px, ${config.descriptionPositionY || 0}px)` 
                     : undefined,
@@ -810,7 +804,6 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               if (value === "N/A") return null;
               
               const IconComponent = getFieldIcon(fieldValue);
-              const label = getFieldLabel(fieldValue);
               
               return (
                 <div
@@ -856,7 +849,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                     fontSize: `${config.bulletSize || 16}px`,
                     lineHeight: "1.5",
                     whiteSpace: "pre-wrap",
-                    textAlign: (config.bulletAlignment || "left") as "left" | "center" | "right",
+                    textAlign: config.bulletAlignment || "left",
                     color: config.bulletColor || "#000000",
                     transform: config.bulletPositionX || config.bulletPositionY 
                       ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)` 
@@ -878,7 +871,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                     gap: `${config.iconTextGap || 8}px`,
                     fontSize: `${config.bulletSize || 16}px`,
                     lineHeight: "1.3",
-                    textAlign: (config.bulletAlignment || "left") as "left" | "center" | "right",
+                    textAlign: config.bulletAlignment || "left",
                     color: config.bulletColor || "#000000",
                     transform: config.bulletPositionX || config.bulletPositionY 
                       ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)` 

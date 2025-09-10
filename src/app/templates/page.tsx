@@ -34,6 +34,7 @@ export default async function TemplatesPage({
         orientation: "vertical",
         propertyType: "piso",
         imageCount: 4,
+        twoImageLayout: "vertical",
         showIcons: true,
         showQR: true,
         showWatermark: true,
@@ -42,6 +43,7 @@ export default async function TemplatesPage({
         showWebsite: true,
         showReference: true,
         showShortDescription: false,
+        showEnergyRating: false,
         listingType: "venta",
         additionalFields: ["energyConsumptionScale", "yearBuilt"],
         titleFont: "default",
@@ -69,6 +71,8 @@ export default async function TemplatesPage({
         contactBackgroundColor: "#ffffff",
         contactBorderRadius: 8,
         iconSize: 1.0,
+        iconTextGap: 4,
+        iconPairGap: 20,
         iconSpacingHorizontal: 20,
         iconSpacingVertical: 10,
         // Description styling defaults
@@ -85,6 +89,7 @@ export default async function TemplatesPage({
         bulletColor: "#000000",
         bulletPositionX: 0,
         bulletPositionY: 0,
+        referenceTextColor: "#ffffff",
       };
     }
   } catch (error) {
@@ -96,6 +101,7 @@ export default async function TemplatesPage({
       orientation: "vertical",
       propertyType: "piso",
       imageCount: 4,
+      twoImageLayout: "vertical",
       showIcons: true,
       showQR: true,
       showWatermark: true,
@@ -104,6 +110,7 @@ export default async function TemplatesPage({
       showWebsite: true,
       showReference: true,
       showShortDescription: false,
+      showEnergyRating: false,
       listingType: "venta",
       additionalFields: ["energyConsumptionScale", "yearBuilt"],
       titleFont: "default",
@@ -131,6 +138,8 @@ export default async function TemplatesPage({
       contactBackgroundColor: "#ffffff",
       contactBorderRadius: 8,
       iconSize: 1.0,
+      iconTextGap: 4,
+      iconPairGap: 20,
       iconSpacingHorizontal: 20,
       iconSpacingVertical: 10,
       // Description styling defaults

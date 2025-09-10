@@ -165,18 +165,9 @@ export interface TemplateConfiguration {
   iconSize: number; // Icon size multiplier (0.5 to 2.0)
   iconTextGap: number; // Distance between icon and number within each pair in pixels (2 to 20)
   iconPairGap: number; // Distance between different icon-number pairs in pixels (8 to 40)
-  overlayColor:
-    | "default"
-    | "dark"
-    | "light"
-    | "blue"
-    | "green"
-    | "purple"
-    | "red"
-    | "white"
-    | "black"
-    | "gray"
-    | string; // Allow any string for custom colors (account palette)
+  iconSpacingHorizontal?: number; // Horizontal spacing between icons in pixels
+  iconSpacingVertical?: number; // Vertical spacing between icons in pixels
+  overlayColor: string; // Allow any string for colors (default, dark, light, blue, green, purple, red, white, black, gray, or custom hex/rgb)
   // Short description styling
   descriptionFont: "default" | "serif" | "sans" | "mono" | "elegant" | "modern";
   descriptionAlignment: "left" | "center" | "right";
