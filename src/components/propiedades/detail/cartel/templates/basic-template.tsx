@@ -15,7 +15,18 @@ import {
   Phone,
   Globe,
   Award,
+  Calendar,
+  Car,
+  Home,
+  Compass,
+  Flame,
+  Mail,
+  Package,
+  Trees,
+  Wrench,
+  ArrowUp,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   PRINT_DIMENSIONS,
   getDimensionsForOrientation,
@@ -36,7 +47,32 @@ const getFontClass = (fontType: string) => {
   return fontMap[fontType] ?? "font-sans";
 };
 
+// Helper function to check if a color is a hex value
+const isHexColor = (color: string): boolean => {
+  return /^#([0-9A-F]{3}){1,2}$/i.test(color);
+};
+
+// Helper function to calculate luminance of a hex color
+const getColorLuminance = (hex: string): number => {
+  // Remove # if present
+  const color = hex.replace('#', '');
+  
+  // Convert to RGB
+  const r = parseInt(color.substring(0, 2), 16) / 255;
+  const g = parseInt(color.substring(2, 4), 16) / 255;
+  const b = parseInt(color.substring(4, 6), 16) / 255;
+  
+  // Calculate relative luminance
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance;
+};
+
 const getOverlayClass = (overlayType: string) => {
+  // If it's a hex color, return empty string (will be handled via inline styles)
+  if (isHexColor(overlayType)) {
+    return "";
+  }
+  
   const overlayMap: Record<string, string> = {
     default: "bg-gray-400",
     dark: "bg-gray-800",
@@ -53,8 +89,70 @@ const getOverlayClass = (overlayType: string) => {
 };
 
 const getTextColorForOverlay = (overlayType: string) => {
+  // Handle hex colors with luminance calculation
+  if (isHexColor(overlayType)) {
+    const luminance = getColorLuminance(overlayType);
+    // Use white text for dark backgrounds, dark text for light backgrounds
+    return luminance > 0.5 ? "#1e293b" : "white";
+  }
+  
   // Light overlay needs dark text, others need white text
-  return overlayType === "light" ? "#1e293b" : "white";
+  return overlayType === "light" || overlayType === "white" ? "#1e293b" : "white";
+};
+
+// Helper functions for additional fields
+const getFieldIcon = (fieldValue: string) => {
+  const iconMap: Record<string, LucideIcon> = {
+    energyConsumptionScale: Award,
+    yearBuilt: Calendar,
+    hasElevator: ArrowUp,
+    hasGarage: Car,
+    hasStorageRoom: Package,
+    terrace: Trees,
+    orientation: Compass,
+    heatingType: Flame,
+    conservationStatus: Wrench,
+  };
+  return iconMap[fieldValue] ?? Home;
+};
+
+const getFieldLabel = (fieldValue: string) => {
+  const labelMap: Record<string, string> = {
+    energyConsumptionScale: "Certificación",
+    yearBuilt: "Año",
+    hasElevator: "Ascensor",
+    hasGarage: "Garaje",
+    hasStorageRoom: "Trastero",
+    terrace: "Terraza",
+    orientation: "Orientación",
+    heatingType: "Calefacción",
+    conservationStatus: "Estado",
+  };
+  return labelMap[fieldValue] ?? fieldValue;
+};
+
+const getFieldValue = (fieldValue: string, data: any): string => {
+  const value = data[fieldValue];
+
+  if (value === undefined || value === null) return "N/A";
+  if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (fieldValue === "conservationStatus" && typeof value === "number") {
+    const statusMap: Record<number, string> = {
+      1: "Bueno",
+      2: "Muy bueno",
+      3: "Como nuevo",
+      4: "A reformar",
+      6: "Reformado",
+    };
+    return statusMap[value] ?? "N/A";
+  }
+  if (typeof value === "object" && value !== null) {
+    return "N/A"; // Don't stringify objects
+  }
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+  return "N/A";
 };
 
 export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
@@ -183,12 +281,13 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   onError={handleImageError}
                   style={{
                     objectPosition: data.imagePositions?.[image]
-                      ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
+                      ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
                       : "50% 50%",
                   }}
                 />
               )}
               {renderWatermark("medium")}
+              {config.showReference && renderReferenceOverlay(index === 1)} {/* Bottom right image (index 1) */}
             </div>
           ))}
         </div>
@@ -219,7 +318,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 style={{
                   objectPosition: data.imagePositions?.[templateImages[0]]
-                    ? `${data.imagePositions[templateImages[0]]?.x ?? 50}% ${data.imagePositions[templateImages[0]]?.y ?? 50}%`
+                    ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.y ?? 50)))}%`
                     : "50% 50%",
                 }}
                 priority
@@ -240,12 +339,13 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   onError={handleImageError}
                   style={{
                     objectPosition: data.imagePositions?.[image]
-                      ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
+                      ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
                       : "50% 50%",
                   }}
                 />
               )}
               {renderWatermark("small")}
+              {config.showReference && renderReferenceOverlay(index === 1)} {/* Bottom right image (index 1 of the two below) */}
             </div>
           ))}
         </div>
@@ -275,13 +375,14 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 style={{
                   objectPosition: data.imagePositions?.[image]
-                    ? `${data.imagePositions[image]?.x ?? 50}% ${data.imagePositions[image]?.y ?? 50}%`
+                    ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
                     : "50% 50%",
                 }}
                 priority={index === 0}
               />
             )}
             {renderWatermark("medium")}
+            {config.showReference && renderReferenceOverlay(index === 3)} {/* Bottom right image (index 3) */}
           </div>
         ))}
       </div>
@@ -293,24 +394,64 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
     if (!config.showWatermark) return null;
 
     const sizeMap = {
-      large: { width: 200, height: 200 },
-      medium: { width: 150, height: 150 },
-      small: { width: 100, height: 100 },
+      large: { width: 300, height: 300 },
+      medium: { width: 200, height: 200 },
+      small: { width: 150, height: 150 },
     };
 
     const { width, height } = sizeMap[size];
 
     return (
-      <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+      <div 
+        className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+        style={{
+          zIndex: 10,
+          pointerEvents: 'none'
+        }}
+      >
         {data.logoUrl && (
           <Image
             src={data.logoUrl}
             alt="Logo watermark"
             width={width}
             height={height}
-            className="object-contain opacity-20"
+            className="object-contain opacity-25"
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain'
+            }}
           />
         )}
+      </div>
+    );
+  };
+
+  // Render reference text overlay for bottom right image
+  const renderReferenceOverlay = (isBottomRight: boolean) => {
+    if (!isBottomRight || !data.reference) return null;
+
+    return (
+      <div 
+        className="pointer-events-none absolute bottom-2 right-2 z-20"
+        style={{
+          zIndex: 20,
+          pointerEvents: 'none'
+        }}
+      >
+        <span
+          className="font-mono font-medium"
+          style={{
+            fontSize: '12px',
+            color: config.referenceTextColor || '#000000',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            padding: '2px 6px',
+            borderRadius: '2px',
+            letterSpacing: '0.5px',
+          }}
+        >
+          {data.reference}
+        </span>
       </div>
     );
   };
@@ -334,15 +475,15 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
   // Calculate section heights to fit within A4 bounds - flexible approach
   // Base heights that can adapt to content
   const headerHeight = Math.max(120, config.showShortDescription && data.shortDescription ? 140 : 120);
-  const descriptionHeight = config.showShortDescription && data.shortDescription ? Math.max(30, 35) : 0;
-  const statsHeight = 80; // Property stats row - increased for bigger icons
-  const bottomStripHeight = 80; // QR, Price, Energy - increased for bigger price
+  const descriptionHeight = config.showShortDescription && data.shortDescription ? Math.max(30, 35) : 35; // Always reserve space for consistent image positioning
+  const statsHeight = config.showIcons ? 80 : 180; // When icons disabled or description shown, stats section takes both stats + bottom strip space
+  const bottomStripHeight = config.showIcons ? 100 : 0; // Only show bottom strip when icons are enabled
   const footerHeight = 45; // Contact bar - keep fixed
   
   // Calculate remaining space for gallery with significantly reduced height for bigger icons/price
   const totalFixedHeight = headerHeight + descriptionHeight + statsHeight + bottomStripHeight + footerHeight;
   const calculatedGalleryHeight = containerDimensions.height - totalFixedHeight;
-  const galleryHeight = Math.max(calculatedGalleryHeight - 40, 160); // Further reduced, minimum 160px
+  const galleryHeight = Math.max(calculatedGalleryHeight - 80, 140); // Much more reduced, minimum 140px
 
   // Wireframe-structured layout
   return (
@@ -375,7 +516,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           borderBottom: overlayClass ? "none" : "2px solid #e2e8f0",
           flexShrink: 0,
           boxSizing: "border-box",
-          backgroundColor: overlayClass ? undefined : "#f8fafc",
+          backgroundColor: isHexColor(config.overlayColor) ? config.overlayColor : (overlayClass ? undefined : "#f8fafc"),
         }}
       >
         <div>
@@ -432,11 +573,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
         )}
       </div>
 
-      {/* 2. OPTIONAL DESCRIPTION - Collapses if empty */}
-      {config.showShortDescription && data.shortDescription && (
+      {/* 2. RESERVED SPACE - Always maintain space for consistent image positioning */}
         <div
           style={{
-            height: `${descriptionHeight}px`,
+          height: `30px`,
             display: "flex",
             alignItems: "center",
             paddingLeft: "20px",
@@ -446,20 +586,8 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             boxSizing: "border-box",
           }}
         >
-          <p
-            className={cn(getFontClass(config.descriptionFont))}
-            style={{
-              fontSize: `${config.descriptionSize || 16}px`,
-              lineHeight: "1.4",
-              margin: 0,
-              color: config.descriptionColor || "#374151",
-              textAlign: config.descriptionAlignment || "left",
-            }}
-          >
-            {data.shortDescription}
-          </p>
+        {/* This space is reserved to maintain consistent image positioning */}
         </div>
-      )}
 
       {/* 3. IMAGE GALLERY - Centerpiece */}
       <div
@@ -479,34 +607,116 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
         {renderImageGallery()}
       </div>
 
-      {/* 4. STATS ROW - Beds, Baths, Area */}
+      {/* 4. STATS ROW - Icons, Bullets, or Description */}
       <div
         style={{
           height: `${statsHeight}px`,
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: "16px",
+          display: "flex",
           paddingLeft: "20px",
           paddingRight: "20px",
           backgroundColor: "#f8fafc",
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
           flexShrink: 0,
           boxSizing: "border-box",
+          alignItems: "center",
         }}
       >
+        {config.showShortDescription && data.shortDescription ? (
+          /* Description Layout - Left side description, Right side price */
+          <>
+            {/* Description - Left half */}
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                className={cn(getFontClass(config.descriptionFont || "default"))}
+                style={{
+                  fontSize: `${config.descriptionSize || 16}px`,
+                  lineHeight: "1.4",
+                  color: config.descriptionColor || "#374151",
+                  textAlign: (config.descriptionAlignment || "left") as "left" | "center" | "right",
+                  transform: config.descriptionPositionX || config.descriptionPositionY 
+                    ? `translate(${config.descriptionPositionX || 0}px, ${config.descriptionPositionY || 0}px)` 
+                    : undefined,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {data.shortDescription}
+              </div>
+            </div>
+
+            {/* Price - Right half */}
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <div
+                className={cn(
+                  "font-bold",
+                  getFontClass(config.priceFont),
+                )}
+                style={{
+                  fontSize: `${config.priceSize || Math.min(getTypographySize("price"), 48)}px`,
+                  lineHeight: "1.1",
+                  color: config.priceColor || "#000000",
+                  textAlign: "center",
+                  transform: config.pricePositionX || config.pricePositionY 
+                    ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)` 
+                    : undefined,
+                }}
+              >
+                {config.listingType === "alquiler" ? (
+                  <>
+                    {priceText.replace(" €/mes", "")}
+                    <span
+                      className="font-normal"
+                      style={{
+                        fontSize: `${Math.min(getTypographySize("body"), 28)}px`,
+                        color: config.priceColor ? `${config.priceColor}80` : "#00000080",
+                      }}
+                    >
+                      {" €/mes"}
+                    </span>
+                  </>
+                ) : (
+                  priceText
+                )}
+              </div>
+            </div>
+          </>
+        ) : config.showIcons ? (
+          /* Icon Grid Layout - Dynamic based on selected additional fields */
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${Math.min(3 + (config.additionalFields?.length || 0), 6)}, 1fr)`,
+              gap: `${config.iconPairGap || 16}px`,
+              width: "100%",
+            }}
+          >
+            {/* Default Icons - Always shown */}
         {/* Bedrooms */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "8px",
-          }}
-        >
-          <Bed size={32} color="#64748b" />
+                gap: `${config.iconTextGap || 8}px`,
+              }}
+            >
+              <Bed size={Math.round(32 * (config.iconSize || 1))} color="#64748b" />
           <span
             style={{
-              fontSize: "24px",
+                  fontSize: `${Math.round(24 * (config.iconSize || 1))}px`,
               fontWeight: "600",
               color: "#1e293b",
             }}
@@ -521,13 +731,13 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "8px",
-          }}
-        >
-          <Bath size={32} color="#64748b" />
+                gap: `${config.iconTextGap || 8}px`,
+              }}
+            >
+              <Bath size={Math.round(32 * (config.iconSize || 1))} color="#64748b" />
           <span
             style={{
-              fontSize: "24px",
+                  fontSize: `${Math.round(24 * (config.iconSize || 1))}px`,
               fontWeight: "600",
               color: "#1e293b",
             }}
@@ -542,13 +752,13 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "8px",
-          }}
-        >
-          <Maximize size={32} color="#64748b" />
+                gap: `${config.iconTextGap || 8}px`,
+              }}
+            >
+              <Maximize size={Math.round(32 * (config.iconSize || 1))} color="#64748b" />
           <span
             style={{
-              fontSize: "24px",
+                  fontSize: `${Math.round(24 * (config.iconSize || 1))}px`,
               fontWeight: "600",
               color: "#1e293b",
             }}
@@ -556,14 +766,225 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             {safeData.specs.squareMeters}m²
           </span>
         </div>
+
+            {/* Additional Fields - Dynamic based on selection */}
+            {config.additionalFields?.slice(0, 3).map((fieldValue) => {
+              const value = getFieldValue(fieldValue, data);
+              if (value === "N/A") return null;
+              
+              const IconComponent = getFieldIcon(fieldValue);
+              const label = getFieldLabel(fieldValue);
+              
+              return (
+                <div
+                  key={fieldValue}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: `${config.iconTextGap || 8}px`,
+                  }}
+                >
+                  <IconComponent size={Math.round(32 * (config.iconSize || 1))} color="#64748b" />
+                  <span
+                    style={{
+                      fontSize: `${Math.round(24 * (config.iconSize || 1))}px`,
+                      fontWeight: "600",
+                      color: "#1e293b",
+                    }}
+                  >
+                    {value}
+                  </span>
+      </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* Split Layout - Left half bullets, Right half price */
+          <>
+            {/* Bullet List Layout - Left half */}
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              }}
+            >
+              {data.iconListText ? (
+                /* Custom text list from user input */
+                <div
+                  className={cn(getFontClass(config.bulletFont || "default"))}
+                  style={{
+                    fontSize: `${config.bulletSize || 16}px`,
+                    lineHeight: "1.5",
+                    whiteSpace: "pre-wrap",
+                    textAlign: (config.bulletAlignment || "left") as "left" | "center" | "right",
+                    color: config.bulletColor || "#000000",
+                    transform: config.bulletPositionX || config.bulletPositionY 
+                      ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)` 
+                      : undefined,
+                  }}
+                >
+                  {data.iconListText}
+                </div>
+              ) : (
+                /* Default bullet list from property data */
+                <ul
+                  className={cn(getFontClass(config.bulletFont || "default"))}
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    margin: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: `${config.iconTextGap || 8}px`,
+                    fontSize: `${config.bulletSize || 16}px`,
+                    lineHeight: "1.3",
+                    textAlign: (config.bulletAlignment || "left") as "left" | "center" | "right",
+                    color: config.bulletColor || "#000000",
+                    transform: config.bulletPositionX || config.bulletPositionY 
+                      ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)` 
+                      : undefined,
+                  }}
+                >
+                  {safeData.specs.bathrooms && (
+                    <li
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <span
+                        style={{
+                          marginRight: "8px",
+                          marginTop: "2px",
+                        }}
+                      >
+                        •
+                      </span>
+                      <span>{safeData.specs.bathrooms} baños</span>
+                    </li>
+                  )}
+                  {safeData.specs.bedrooms && (
+                    <li
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <span
+                        style={{
+                          marginRight: "8px",
+                          marginTop: "2px",
+                        }}
+                      >
+                        •
+                      </span>
+                      <span>{safeData.specs.bedrooms} dormitorios</span>
+                    </li>
+                  )}
+                  <li
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <span
+                      style={{
+                        marginRight: "8px",
+                        marginTop: "2px",
+                      }}
+                    >
+                      •
+                    </span>
+                    <span>{safeData.specs.squareMeters} m²</span>
+                  </li>
+
+                  {/* Additional fields as bullet points - Show up to 6 total (3 default + 3 additional) */}
+                  {config.additionalFields?.slice(0, 6).map((fieldValue) => {
+                    const value = getFieldValue(fieldValue, data);
+                    if (value === "N/A") return null;
+                    
+                    return (
+                      <li
+                        key={fieldValue}
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <span
+                          style={{
+                            marginRight: "8px",
+                            marginTop: "2px",
+                          }}
+                        >
+                          •
+                        </span>
+                        <span>
+                          {getFieldLabel(fieldValue)}: {value}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            {/* Price - Right half */}
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <div
+                className={cn(
+                  "font-bold",
+                  getFontClass(config.priceFont),
+                )}
+                style={{
+                  fontSize: `${config.priceSize || Math.min(getTypographySize("price"), 48)}px`,
+                  lineHeight: "1.1",
+                  color: config.priceColor || "#000000",
+                  textAlign: "center",
+                  transform: config.pricePositionX || config.pricePositionY 
+                    ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)` 
+                    : undefined,
+                }}
+              >
+                {config.listingType === "alquiler" ? (
+                  <>
+                    {priceText.replace(" €/mes", "")}
+                    <span
+                      className="font-normal"
+                      style={{
+                        fontSize: `${Math.min(getTypographySize("body"), 28)}px`,
+                        color: config.priceColor ? `${config.priceColor}80` : "#00000080",
+                      }}
+                    >
+                      {" €/mes"}
+                    </span>
+                  </>
+                ) : (
+                  priceText
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* 5. BOTTOM STRIP - Price, Energy */}
+      {/* 5. BOTTOM STRIP - Only show when icons are enabled (not when description is shown) */}
+      {config.showIcons && !(config.showShortDescription && data.shortDescription) && (
       <div
         style={{
           height: `${bottomStripHeight}px`,
           display: "flex",
-          flexDirection: "column",
+            flexDirection: "row",
           justifyContent: "center",
           alignItems: "center",
           gap: "8px",
@@ -574,12 +995,13 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           boxSizing: "border-box",
         }}
       >
-        {/* Price - Centered and Prominent */}
+          {/* Price - Centered when icons */}
         <div
           style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+              width: "100%",
           }}
         >
           <div
@@ -588,7 +1010,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               getFontClass(config.priceFont),
             )}
             style={{
-              fontSize: `${config.priceSize || Math.min(getTypographySize("price"), 40)}px`,
+              fontSize: `${config.priceSize || Math.min(getTypographySize("price"), 48)}px`,
               lineHeight: "1.1",
               color: config.priceColor || "#000000",
               textAlign: "center",
@@ -603,8 +1025,8 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 <span
                   className="font-normal"
                   style={{
-                    fontSize: `${Math.min(getTypographySize("body"), 24)}px`,
-                    color: config.priceColor ? `${config.priceColor}80` : "#00000080", // Use price color with opacity if set, default black with opacity
+                    fontSize: `${Math.min(getTypographySize("body"), 28)}px`,
+                      color: config.priceColor ? `${config.priceColor}80` : "#00000080",
                   }}
                 >
                   {" €/mes"}
@@ -615,10 +1037,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             )}
           </div>
         </div>
-
       </div>
+      )}
 
-      {/* 6. FOOTER BAR - Website left, Phone right */}
+      {/* 6. FOOTER BAR - Contact elements (Basic template supports 2 contact elements max) */}
       <div
         className={overlayClass}
         style={{
@@ -628,34 +1050,39 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           alignItems: "center",
           paddingLeft: "20px",
           paddingRight: "20px",
-          backgroundColor: overlayClass ? undefined : "#1e293b",
+          backgroundColor: isHexColor(config.overlayColor) ? config.overlayColor : (overlayClass ? undefined : "#1e293b"),
           color: textColor,
           flexShrink: 0,
           boxSizing: "border-box",
         }}
       >
-        {/* Website */}
+        {/* Left contact element - Basic template enforces 2-element limit */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {config.showWebsite && data.contact.website && (
-            <>
-              <Globe size={16} color={textColor} />
               <span
                 style={{
                   fontSize: `${getTypographySize("contact")}px`,
                   color: textColor,
                 }}
               >
-                {data.contact.website.replace(/^https?:\/\/(www\.)?/, "")}
+              {data.contact.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
               </span>
-            </>
+          )}
+          {config.showEmail && data.contact.email && !config.showWebsite && (
+            <span
+              style={{
+                fontSize: `${getTypographySize("contact")}px`,
+                color: textColor,
+              }}
+            >
+              {data.contact.email}
+            </span>
           )}
         </div>
 
-        {/* Phone */}
+        {/* Right contact element - Only show if we don't already have 2 elements */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {config.showPhone && data.contact.phone && (
-            <>
-              <Phone size={16} color={textColor} />
               <span
                 style={{
                   fontSize: `${getTypographySize("contact")}px`,
@@ -664,7 +1091,17 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               >
                 {data.contact.phone}
               </span>
-            </>
+          )}
+          {/* Only show email on right if we have website on left (so we have exactly 2 elements) */}
+          {config.showEmail && data.contact.email && config.showWebsite && !config.showPhone && (
+            <span
+              style={{
+                fontSize: `${getTypographySize("contact")}px`,
+                color: textColor,
+              }}
+            >
+              {data.contact.email}
+            </span>
           )}
         </div>
       </div>

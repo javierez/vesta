@@ -90,10 +90,12 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
       // Remove field
       newFields = currentFields.filter((field) => field !== fieldValue);
     } else {
-      // Add field (respecting 3-item limit)
-      if (currentFields.length >= 3) {
+      // Add field - different limits based on whether icons are shown
+      const maxFields = config.showIcons ? 6 : 3; // 6 total when icons (3 default + 3 additional), 3 when no icons
+      
+      if (currentFields.length >= maxFields) {
         // Replace the first field with the new one
-        newFields = [currentFields[1]!, currentFields[2]!, fieldValue];
+        newFields = [...currentFields.slice(1), fieldValue];
       } else {
         newFields = [...currentFields, fieldValue];
       }
@@ -102,19 +104,30 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
     onChange({ additionalFields: newFields });
   };
 
+  const maxFields = config.showIcons ? 6 : 3;
+  const selectedCount = config.additionalFields.length;
+
   return (
     <div className="space-y-4">
       <div className="mb-2">
         <h3 className="text-lg font-medium">Información Adicional</h3>
         <p className="text-sm text-gray-600">
-          Selecciona hasta 3 campos.
+          {config.showIcons 
+            ? `Selecciona hasta 6 campos (3 por defecto + 3 adicionales).`
+            : `Selecciona hasta 3 campos.`
+          }
         </p>
+        {config.showIcons && (
+          <p className="text-xs text-blue-600 mt-1">
+            Con iconos habilitados, puedes mostrar más información adicional.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-2">
         {AVAILABLE_FIELDS.map((field) => {
           const isSelected = config.additionalFields.includes(field.value);
-          const isDisabled = !isSelected && config.additionalFields.length >= 3;
+          const isDisabled = !isSelected && selectedCount >= maxFields;
           const IconComponent = field.icon;
 
           return (
@@ -133,7 +146,7 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
                   "cursor-not-allowed bg-gray-100 text-gray-400 opacity-60 shadow-none",
               )}
               title={
-                isDisabled ? "Máximo 3 campos seleccionados" : field.description
+                isDisabled ? `Máximo ${maxFields} campos seleccionados` : field.description
               }
             >
               <IconComponent className="mb-1 h-4 w-4" />
@@ -141,6 +154,11 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
             </button>
           );
         })}
+      </div>
+      
+      {/* Selection counter */}
+      <div className="text-xs text-gray-500 text-center">
+        {selectedCount} de {maxFields} campos seleccionados
       </div>
     </div>
   );

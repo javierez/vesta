@@ -168,17 +168,22 @@ revert
    - Add SEO to the page
    - Connect Webpage with Webapp
 
-- Webscraping
-   - Recover code and connect to database
-
-- Boost Efficiency
-   - Make use of caché and memoized items
 
 - Change to Other Optimal Database
 
 - Clarify Authentication
    - Assign People to accounts
 
+
+## Mid-High Priority
+- Webpage
+   - Add SEO to the page
+
+- Webscraping
+   - Recover code and connect to database
+
+- Boost Efficiency
+   - Make use of caché and memoized items
 
 
 ## Med Priority

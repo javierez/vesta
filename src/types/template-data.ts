@@ -162,8 +162,8 @@ export interface TemplateConfiguration {
   contactBackgroundColor: string; // Background color for contact group
   contactBorderRadius: number; // Border radius in pixels (0-20)
   iconSize: number; // Icon size multiplier (0.5 to 2.0)
-  iconSpacingHorizontal: number; // Horizontal spacing between icons in pixels (8 to 80)
-  iconSpacingVertical: number; // Vertical spacing between icons in pixels (4 to 40)
+  iconTextGap: number; // Distance between icon and number within each pair in pixels (2 to 20)
+  iconPairGap: number; // Distance between different icon-number pairs in pixels (8 to 40)
   overlayColor:
     | "default"
     | "dark"
@@ -190,6 +190,8 @@ export interface TemplateConfiguration {
   bulletColor: string; // Text color (hex, rgb, or CSS color name)
   bulletPositionX: number; // Horizontal position offset in pixels (-50 to 50)
   bulletPositionY: number; // Vertical position offset in pixels (-30 to 30)
+  // Reference text styling
+  referenceTextColor: string; // Text color for reference overlay (hex, rgb, or CSS color name)
 }
 
 // Image positioning data for cropping/repositioning within containers

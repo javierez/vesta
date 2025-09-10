@@ -107,7 +107,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       locationBorderRadius: 8,
       priceAlignment: "center",
       priceSize: 50,
-      priceColor: "white",
+      priceColor: "#000000",
       pricePositionX: 0,
       pricePositionY: 0,
       contactPositionX: 0,
@@ -115,8 +115,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       contactBackgroundColor: "default",
       contactBorderRadius: 8,
       iconSize: 1.0,
-      iconSpacingHorizontal: 32,
-      iconSpacingVertical: 12,
+      iconTextGap: 8,
+      iconPairGap: 16,
       overlayColor: "default",
       additionalFields: ["hasElevator", "hasGarage", "energyConsumptionScale"],
       // Description styling defaults
@@ -130,9 +130,10 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       bulletFont: "default",
       bulletAlignment: "left",
       bulletSize: 14,
-      bulletColor: "#ffffff",
+      bulletColor: "#000000",
       bulletPositionX: 0,
       bulletPositionY: 0,
+      referenceTextColor: "#000000",
     };
   });
 
@@ -152,11 +153,25 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       // Use selected images if available
       const selectedImages = images.slice(0, 4).map(img => img.imageUrl).filter(Boolean);
       
+      // Extract logo URL from account preferences
+      let logoUrl = null;
+      try {
+        if (accountPreferences) {
+          const preferences = typeof accountPreferences === 'string' 
+            ? JSON.parse(accountPreferences) 
+            : accountPreferences;
+          logoUrl = preferences?.logoTransparent || null;
+        }
+      } catch (error) {
+        console.warn('Error parsing account preferences for logo:', error);
+      }
+      
       return {
         ...baseData,
         title: propertyTypeText,
         propertyType: config.propertyType, // Ensure propertyType is explicitly set
         images: selectedImages.length > 0 ? selectedImages : baseData.images,
+        logoUrl: logoUrl, // Add logo URL from account preferences
         location: {
           neighborhood: databaseNeighborhood ?? baseData.location.neighborhood,
           city: databaseCity ?? baseData.location.city
@@ -351,7 +366,30 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
 
   // Handle configuration updates
   const updateConfig = (updates: Partial<TemplateConfiguration>) => {
-    setConfig((prev) => ({ ...prev, ...updates }));
+    setConfig((prev) => {
+      const newConfig = { ...prev, ...updates };
+      
+      // If switching to basic template, ensure only 2 contact elements max
+      if (updates.templateStyle === "basic") {
+        const contactElements = [
+          { key: "showPhone" as const, value: newConfig.showPhone },
+          { key: "showEmail" as const, value: newConfig.showEmail },
+          { key: "showWebsite" as const, value: newConfig.showWebsite },
+        ].filter(el => el.value);
+        
+        // If more than 2 contact elements are selected, keep only the first 2
+        if (contactElements.length > 2) {
+          const elementsToKeep = contactElements.slice(0, 2);
+          const elementsToRemove = contactElements.slice(2);
+          
+          elementsToRemove.forEach(el => {
+            newConfig[el.key] = false;
+          });
+        }
+      }
+      
+      return newConfig;
+    });
   };
 
   // Handle property data updates
@@ -880,29 +918,63 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 {/* Contact Information Group */}
                 <div className="space-y-2">
                   <h5 className="text-sm font-medium text-muted-foreground">Contacto</h5>
+                  {config.templateStyle === "basic" && (
+                    <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                      <strong>Nota:</strong> La plantilla básica solo permite mostrar 2 elementos de contacto máximo.
+                    </div>
+                  )}
                   <div className="space-y-2">
                     {[
                       { key: "showPhone" as const, label: "Teléfono" },
                       { key: "showEmail" as const, label: "Email" },
                       { key: "showWebsite" as const, label: "Website" },
-                    ].map(({ key, label }) => (
-                      <div
-                        key={key}
-                        className="flex items-center space-x-2"
-                      >
-                        <Checkbox
-                          id={key}
-                          checked={config[key] ?? false}
-                          onCheckedChange={(checked) =>
-                            updateConfig({ [key]: checked === true })
-                          }
-                          className="no-checkmark h-3 w-3"
-                        />
-                        <Label htmlFor={key} className="text-xs">
-                          {label}
-                        </Label>
-                      </div>
-                    ))}
+                    ].map(({ key, label }) => {
+                      const isChecked = config[key] ?? false;
+                      
+                      // Count currently selected contact elements
+                      const selectedCount = [
+                        config.showPhone,
+                        config.showEmail,
+                        config.showWebsite
+                      ].filter(Boolean).length;
+                      
+                      // Disable if trying to select more than 2 elements in basic template
+                      const wouldExceedLimit = config.templateStyle === "basic" && 
+                        !isChecked && 
+                        selectedCount >= 2;
+                      
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center space-x-2"
+                        >
+                          <Checkbox
+                            id={key}
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
+                              if (config.templateStyle === "basic" && checked && selectedCount >= 2) {
+                                // If trying to select a 3rd element in basic template, deselect another one
+                                const otherKeys = ["showPhone", "showEmail", "showWebsite"].filter(k => k !== key);
+                                const firstOtherKey = otherKeys.find(k => config[k as keyof typeof config]) as keyof typeof config;
+                                if (firstOtherKey) {
+                                  updateConfig({ [firstOtherKey]: false, [key]: true });
+                                }
+                              } else {
+                                updateConfig({ [key]: checked === true });
+                              }
+                            }}
+                            disabled={wouldExceedLimit}
+                            className="no-checkmark h-3 w-3"
+                          />
+                          <Label 
+                            htmlFor={key} 
+                            className={`text-xs ${wouldExceedLimit ? 'text-gray-500' : ''}`}
+                          >
+                            {label}
+                          </Label>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1067,43 +1139,72 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                               </div>
                             </div>
                             
-                            {/* Position */}
-                            <div className="space-y-2">
-                              <Label className="text-xs">Posición</Label>
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                <div>
-                                  <Label className="text-xs text-gray-500">Horizontal</Label>
-                                  <div className="flex items-center space-x-2 min-w-0">
-                                    <Slider
-                                      value={[config.bulletPositionX]}
-                                      onValueChange={([value]) =>
-                                        updateConfig({ bulletPositionX: value })
-                                      }
-                                      max={50}
-                                      min={-50}
-                                      step={1}
-                                      className="flex-1"
-                                    />
-                                    <span className="text-xs w-10">{config.bulletPositionX}px</span>
+                            {/* Position Controls - Joystick Style */}
+                            <div>
+                              <Label className="text-xs text-gray-600">Posición</Label>
+                              <div className="flex items-center justify-center mt-2">
+                                <div className="flex flex-col items-center">
+                                  {/* Up Arrow */}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 mb-0.5"
+                                    onClick={() => updateConfig({ bulletPositionY: Math.max((config.bulletPositionY || 0) - 5, -30) })}
+                                    disabled={(config.bulletPositionY || 0) <= -30}
+                                  >
+                                    <ChevronUp className="h-3 w-3" />
+                                  </Button>
+                                  
+                                  <div className="flex items-center gap-0.5">
+                                    {/* Left Arrow */}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                      onClick={() => updateConfig({ bulletPositionX: Math.max((config.bulletPositionX || 0) - 5, -50) })}
+                                      disabled={(config.bulletPositionX || 0) <= -50}
+                                    >
+                                      <ChevronLeft className="h-3 w-3" />
+                                    </Button>
+                                    
+                                    {/* Center/Reset Button */}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 rounded-full"
+                                      onClick={() => updateConfig({ bulletPositionX: 0, bulletPositionY: 0 })}
+                                    >
+                                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                    </Button>
+                                    
+                                    {/* Right Arrow */}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                      onClick={() => updateConfig({ bulletPositionX: Math.min((config.bulletPositionX || 0) + 5, 50) })}
+                                      disabled={(config.bulletPositionX || 0) >= 50}
+                                    >
+                                      <ChevronRight className="h-3 w-3" />
+                                    </Button>
                                   </div>
+                                  
+                                  {/* Down Arrow */}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 mt-0.5"
+                                    onClick={() => updateConfig({ bulletPositionY: Math.min((config.bulletPositionY || 0) + 5, 30) })}
+                                    disabled={(config.bulletPositionY || 0) >= 30}
+                                  >
+                                    <ChevronDown className="h-3 w-3" />
+                                  </Button>
                                 </div>
-                                
-                                <div>
-                                  <Label className="text-xs text-gray-500">Vertical</Label>
-                                  <div className="flex items-center space-x-2 min-w-0">
-                                    <Slider
-                                      value={[config.bulletPositionY]}
-                                      onValueChange={([value]) =>
-                                        updateConfig({ bulletPositionY: value })
-                                      }
-                                      max={30}
-                                      min={-30}
-                                      step={1}
-                                      className="flex-1"
-                                    />
-                                    <span className="text-xs w-10">{config.bulletPositionY}px</span>
-                                  </div>
-                                </div>
+                              </div>
+                              <div className="text-center mt-2">
+                                <span className="text-xs text-gray-500">
+                                  {config.bulletPositionX}px, {config.bulletPositionY}px
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -1131,6 +1232,47 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         Referencia
                       </Label>
                     </div>
+                    
+                    {/* Reference Text Color - Only show when reference is enabled */}
+                    {config.showReference && (
+                      <div>
+                        <Label className="text-xs">Color del texto de referencia</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="color"
+                            value={config.referenceTextColor || "#000000"}
+                            onChange={(e) =>
+                              updateConfig({ referenceTextColor: e.target.value })
+                            }
+                            className="h-8 flex-1"
+                          />
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => updateConfig({ referenceTextColor: "#000000" })}
+                              className={`px-2 py-1 text-xs rounded ${
+                                config.referenceTextColor === "#000000" || !config.referenceTextColor
+                                  ? "bg-black text-white"
+                                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                              }`}
+                            >
+                              Negro
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateConfig({ referenceTextColor: "#ffffff" })}
+                              className={`px-2 py-1 text-xs rounded ${
+                                config.referenceTextColor === "#ffffff"
+                                  ? "bg-white text-black border border-gray-300"
+                                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                              }`}
+                            >
+                              Blanco
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Short Description with Edit */}
                     <div className="space-y-2">
@@ -1339,27 +1481,28 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 />
               </div>
 
-              {/* Icon Grid Customization */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-700">Personalización de Iconos</h3>
-                  <button
-                    type="button"
-                    onClick={() => setShowIconCustomization(!showIconCustomization)}
-                    className="p-2 rounded-md hover:bg-gray-100 transition-colors duration-150 group"
-                    title="Personalizar iconos"
-                  >
-                    <div className={`
-                      transition-transform duration-200 text-gray-400 group-hover:text-gray-600
-                      ${showIconCustomization ? 'rotate-180' : 'rotate-0'}
-                    `}>
-                      <ChevronDown className="h-4 w-4" />
-                    </div>
-                  </button>
-                </div>
+              {/* Icon Grid Customization - Only show when icons are enabled */}
+              {config.showIcons && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-700">Personalización de Iconos</h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowIconCustomization(!showIconCustomization)}
+                      className="p-2 rounded-md hover:bg-gray-100 transition-colors duration-150 group"
+                      title="Personalizar iconos"
+                    >
+                      <div className={`
+                        transition-transform duration-200 text-gray-400 group-hover:text-gray-600
+                        ${showIconCustomization ? 'rotate-180' : 'rotate-0'}
+                      `}>
+                        <ChevronDown className="h-4 w-4" />
+                      </div>
+                    </button>
+                  </div>
 
-                {/* Icon Customization Controls */}
-                {showIconCustomization && (
+                  {/* Icon Customization Controls */}
+                  {showIconCustomization && (
                   <div className="space-y-4 p-4 bg-gray-50 rounded-lg mt-3">
                     <div className="space-y-4">
                       {/* Icon Size */}
@@ -1381,39 +1524,39 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
 
                       {/* Spacing Controls */}
                       <div className="space-y-3">
-                        <Label className="font-medium">Separación entre Iconos</Label>
+                        <Label className="font-medium">Separación de Iconos</Label>
                         
-                        {/* Horizontal Spacing */}
+                        {/* Icon-Text Gap */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Horizontal</span>
+                            <span className="text-sm text-gray-600">Distancia Icono-Número</span>
                             <span className="text-xs font-mono text-gray-600 bg-white px-2 py-1 rounded">
-                              {config.iconSpacingHorizontal}px
+                              {config.iconTextGap}px
                             </span>
                           </div>
                           <Slider
-                            value={[config.iconSpacingHorizontal]}
-                            onValueChange={([value]) => updateConfig({ iconSpacingHorizontal: value })}
-                            max={80}
-                            min={8}
-                            step={2}
+                            value={[config.iconTextGap]}
+                            onValueChange={([value]) => updateConfig({ iconTextGap: value })}
+                            max={20}
+                            min={2}
+                            step={1}
                             className="w-full"
                           />
                         </div>
 
-                        {/* Vertical Spacing */}
+                        {/* Icon Pair Gap */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Vertical</span>
+                            <span className="text-sm text-gray-600">Distancia entre Pares</span>
                             <span className="text-xs font-mono text-gray-600 bg-white px-2 py-1 rounded">
-                              {config.iconSpacingVertical}px
+                              {config.iconPairGap}px
                             </span>
                           </div>
                           <Slider
-                            value={[config.iconSpacingVertical]}
-                            onValueChange={([value]) => updateConfig({ iconSpacingVertical: value })}
+                            value={[config.iconPairGap]}
+                            onValueChange={([value]) => updateConfig({ iconPairGap: value })}
                             max={40}
-                            min={4}
+                            min={8}
                             step={2}
                             className="w-full"
                           />
@@ -1422,7 +1565,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                     </div>
                   </div>
                 )}
-              </div>
+                </div>
+              )}
               
               {/* Navigation */}
               <div className="flex justify-end mt-6">
@@ -2491,8 +2635,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                           variant="outline"
                           size="sm"
                           className="h-6 w-6 p-0 mb-0.5"
-                          onClick={() => updateImagePosition(imageUrl, position.x, Math.max(position.y - 5, -50))}
-                          disabled={position.y <= -50}
+                          onClick={() => updateImagePosition(imageUrl, position.x, Math.max(position.y - 5, -500))}
+                          disabled={position.y <= -500}
                         >
                           <ChevronUp className="h-3 w-3" />
                         </Button>
@@ -2503,8 +2647,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                             variant="outline"
                             size="sm"
                             className="h-6 w-6 p-0"
-                            onClick={() => updateImagePosition(imageUrl, Math.min(position.x + 5, 150), position.y)}
-                            disabled={position.x >= 150}
+                          onClick={() => updateImagePosition(imageUrl, Math.min(position.x + 5, 500), position.y)}
+                          disabled={position.x >= 500}
                           >
                             <ChevronLeft className="h-3 w-3" />
                           </Button>
@@ -2524,8 +2668,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                             variant="outline"
                             size="sm"
                             className="h-6 w-6 p-0"
-                            onClick={() => updateImagePosition(imageUrl, Math.max(position.x - 5, -50), position.y)}
-                            disabled={position.x <= -50}
+                          onClick={() => updateImagePosition(imageUrl, Math.max(position.x - 5, -500), position.y)}
+                          disabled={position.x <= -500}
                           >
                             <ChevronRight className="h-3 w-3" />
                           </Button>
@@ -2536,8 +2680,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                           variant="outline"
                           size="sm"
                           className="h-6 w-6 p-0 mt-0.5"
-                          onClick={() => updateImagePosition(imageUrl, position.x, Math.min(position.y + 5, 150))}
-                          disabled={position.y >= 150}
+                          onClick={() => updateImagePosition(imageUrl, position.x, Math.min(position.y + 5, 500))}
+                          disabled={position.y >= 500}
                         >
                           <ChevronDown className="h-3 w-3" />
                         </Button>
