@@ -185,11 +185,6 @@ export function CartelMiniGallery({
         </div>
       )}
       
-      {selectedIndices.length > 0 && selectedIndices.length < 3 && (
-        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
-          Selecciona al menos 3 imágenes para el cartel. Actualmente tienes {selectedIndices.length} seleccionada{selectedIndices.length === 1 ? '' : 's'}.
-        </div>
-      )}
     </div>
   );
 }

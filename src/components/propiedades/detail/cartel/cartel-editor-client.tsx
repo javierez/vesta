@@ -83,6 +83,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       propertyType: mappedPropertyType ?? "piso", // Use DB value or fallback
       listingType: mappedListingType ?? "venta", // Use DB value or fallback
       imageCount: 4,
+      twoImageLayout: "vertical",
       showPhone: true,
       showEmail: true,
       showWebsite: true,
@@ -118,7 +119,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       iconTextGap: 8,
       iconPairGap: 16,
       overlayColor: "default",
-      additionalFields: ["hasElevator", "hasGarage", "energyConsumptionScale"],
+      additionalFields: ["hasElevator", "hasGarage"],
       // Description styling defaults
       descriptionFont: "default",
       descriptionAlignment: "left",
@@ -134,6 +135,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       bulletPositionX: 0,
       bulletPositionY: 0,
       referenceTextColor: "#000000",
+      showEnergyRating: false,
+      energyConsumptionScale: "B",
     };
   });
 
@@ -238,10 +241,10 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   
   // Selected images for cartel (using indices instead of URLs)
-  // Auto-select first 3-4 images on load
+  // Auto-select first 1-4 images on load
   const [selectedImageIndices, setSelectedImageIndices] = useState<number[]>(() => {
-    // Auto-select first 3-4 images (minimum 3, maximum 4)
-    const minImages = 3;
+    // Auto-select first 1-4 images (minimum 1, maximum 4)
+    const minImages = 1;
     const maxImages = 4;
     const availableImages = images.length;
     
@@ -250,8 +253,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       return images.slice(0, imageCount).map((_, index) => index);
     }
     
-    // If less than 3 images available, select all
-    return images.map((_, index) => index);
+    // If no images available, return empty array
+    return [];
   });
   
   // Wizard state
@@ -272,6 +275,9 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   
   // Icon grid customization toggle state
   const [showIconCustomization, setShowIconCustomization] = useState(false);
+  
+  // Reference text customization toggle state
+  const [showReferenceCustomization, setShowReferenceCustomization] = useState(false);
   
   // Configuration management state
   const [savedConfigurations, setSavedConfigurations] = useState<SavedCartelConfiguration[]>([]);
@@ -307,7 +313,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
   // Update selected images when images prop changes (after server-side load)
   React.useEffect(() => {
     if (images.length > 0 && selectedImageIndices.length === 0) {
-      const minImages = 3;
+      const minImages = 1;
       const maxImages = 4;
       const availableImages = images.length;
       
@@ -320,11 +326,13 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
     }
   }, [images, selectedImageIndices.length]);
 
-  // Update imageCount based on selected images (3 or 4)
+  // Update imageCount based on selected images (1-4)
   React.useEffect(() => {
     const selectedCount = selectedImageIndices.length;
-    if (selectedCount >= 3 && selectedCount <= 4) {
-      updateConfig({ imageCount: selectedCount as 3 | 4 });
+    if (selectedCount >= 1 && selectedCount <= 4) {
+      // Map 1-2 images to 2, 3-4 images to their actual count
+      const imageCount = selectedCount <= 2 ? 2 : selectedCount;
+      updateConfig({ imageCount: imageCount as 2 | 3 | 4 });
     }
   }, [selectedImageIndices]);
 
@@ -420,7 +428,26 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       ...prev,
       imagePositions: {
         ...prev.imagePositions,
-        [imageUrl]: { x, y },
+        [imageUrl]: { 
+          ...prev.imagePositions?.[imageUrl],
+          x, 
+          y 
+        },
+      },
+    }));
+  };
+
+  // Handle image zoom updates
+  const updateImageZoom = (imageUrl: string, zoom: number) => {
+    setPropertyData((prev) => ({
+      ...prev,
+      imagePositions: {
+        ...prev.imagePositions,
+        [imageUrl]: { 
+          x: prev.imagePositions?.[imageUrl]?.x ?? 50,
+          y: prev.imagePositions?.[imageUrl]?.y ?? 50,
+          zoom: Math.max(0.5, Math.min(3.0, zoom)) // Clamp between 0.5x and 3.0x
+        },
       },
     }));
   };
@@ -1219,58 +1246,140 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                   <h5 className="text-sm font-medium text-muted-foreground">Contenido</h5>
                   <div className="space-y-2">
                     {/* Reference Checkbox */}
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="showReference"
-                        checked={config.showReference ?? false}
-                        onCheckedChange={(checked) =>
-                          updateConfig({ showReference: checked === true })
-                        }
-                        className="no-checkmark h-3 w-3"
-                      />
-                      <Label htmlFor="showReference" className="text-xs">
-                        Referencia
-                      </Label>
-                    </div>
-                    
-                    {/* Reference Text Color - Only show when reference is enabled */}
-                    {config.showReference && (
-                      <div>
-                        <Label className="text-xs">Color del texto de referencia</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            type="color"
-                            value={config.referenceTextColor || "#000000"}
-                            onChange={(e) =>
-                              updateConfig({ referenceTextColor: e.target.value })
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="showReference"
+                            checked={config.showReference ?? false}
+                            onCheckedChange={(checked) =>
+                              updateConfig({ showReference: checked === true })
                             }
-                            className="h-8 flex-1"
+                            className="no-checkmark h-3 w-3"
                           />
-                          <div className="flex gap-1">
-                            <button
-                              type="button"
-                              onClick={() => updateConfig({ referenceTextColor: "#000000" })}
-                              className={`px-2 py-1 text-xs rounded ${
-                                config.referenceTextColor === "#000000" || !config.referenceTextColor
-                                  ? "bg-black text-white"
-                                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                              }`}
-                            >
-                              Negro
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => updateConfig({ referenceTextColor: "#ffffff" })}
-                              className={`px-2 py-1 text-xs rounded ${
-                                config.referenceTextColor === "#ffffff"
-                                  ? "bg-white text-black border border-gray-300"
-                                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                              }`}
-                            >
-                              Blanco
-                            </button>
+                          <Label htmlFor="showReference" className="text-xs">
+                            Referencia
+                          </Label>
+                        </div>
+                        
+                        {/* Reference Customization Toggle - Only show when reference is enabled */}
+                        {config.showReference && (
+                          <button
+                            type="button"
+                            onClick={() => setShowReferenceCustomization(!showReferenceCustomization)}
+                            className="p-2 rounded-md hover:bg-gray-100 transition-colors duration-150 group"
+                            title="Personalizar referencia"
+                          >
+                            <div className={`
+                              transition-transform duration-200 text-gray-400 group-hover:text-gray-600
+                              ${showReferenceCustomization ? 'rotate-180' : 'rotate-0'}
+                            `}>
+                              <ChevronDown className="h-4 w-4" />
+                            </div>
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Reference Text Color - Only show when reference is enabled and customization is open */}
+                      {config.showReference && showReferenceCustomization && (
+                        <div className="ml-5 space-y-3 p-3 bg-gray-50 rounded-lg">
+                          <Label className="text-xs font-medium">Personalización de Referencia</Label>
+                          
+                          <div>
+                            <Label className="text-xs">Color del texto</Label>
+                            <div className="flex gap-2 mt-1">
+                              <Input
+                                type="color"
+                                value={config.referenceTextColor || "#000000"}
+                                onChange={(e) =>
+                                  updateConfig({ referenceTextColor: e.target.value })
+                                }
+                                className="h-8 flex-1"
+                              />
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => updateConfig({ referenceTextColor: "#000000" })}
+                                  className={`px-2 py-1 text-xs rounded ${
+                                    config.referenceTextColor === "#000000" || !config.referenceTextColor
+                                      ? "bg-black text-white"
+                                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                  }`}
+                                >
+                                  Negro
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => updateConfig({ referenceTextColor: "#ffffff" })}
+                                  className={`px-2 py-1 text-xs rounded ${
+                                    config.referenceTextColor === "#ffffff"
+                                      ? "bg-white text-black border border-gray-300"
+                                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                  }`}
+                                >
+                                  Blanco
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                      )}
+                    </div>
+                    
+                    {/* Energy Certificate - Only show for basic template when description is OFF and icons are ON */}
+                    {config.templateStyle === "basic" && !config.showShortDescription && config.showIcons && (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="showEnergyRating"
+                            checked={config.showEnergyRating ?? false}
+                            onCheckedChange={(checked) =>
+                              updateConfig({ showEnergyRating: checked === true })
+                            }
+                            className="no-checkmark h-3 w-3"
+                          />
+                          <Label htmlFor="showEnergyRating" className="text-xs">
+                            Certificado Energético
+                          </Label>
+                        </div>
+                        
+                        {/* Energy Rating Controls - Only show when enabled */}
+                        {config.showEnergyRating && (
+                          <div className="ml-5 space-y-3 p-3 bg-gray-50 rounded-lg">
+                            <Label className="text-xs font-medium">Configuración Energética</Label>
+                            
+                            {/* Energy Scale Selector */}
+                            <div>
+                              <Label className="text-xs">Calificación</Label>
+                              <div className="flex gap-1 mt-1">
+                                {["A", "B", "C", "D", "E", "F", "G"].map((rating) => {
+                                  const isSelected = config.energyConsumptionScale === rating;
+                                  const getColor = (r: string) => {
+                                    const colors = {
+                                      A: "#22c55e", B: "#4ade80", C: "#facc15", D: "#eab308",
+                                      E: "#fb923c", F: "#f97316", G: "#ef4444"
+                                    };
+                                    return colors[r as keyof typeof colors] || "#6b7280";
+                                  };
+                                  
+                                  return (
+                                    <button
+                                      key={rating}
+                                      type="button"
+                                      onClick={() => updateConfig({ energyConsumptionScale: rating })}
+                                      className={`h-8 w-8 rounded text-white text-xs font-bold transition-all ${
+                                        isSelected ? "ring-2 ring-blue-500 ring-offset-2 scale-110" : "hover:scale-105"
+                                      }`}
+                                      style={{ backgroundColor: getColor(rating) }}
+                                    >
+                                      {rating}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     
@@ -1572,8 +1681,8 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
               <div className="flex justify-end mt-6">
                 <Button 
                   onClick={goToNextStep}
-                  disabled={selectedImageIndices.length < 3}
-                  title={selectedImageIndices.length < 3 ? "Selecciona al menos 3 imágenes" : ""}
+                  disabled={selectedImageIndices.length < 1}
+                  title={selectedImageIndices.length < 1 ? "Selecciona al menos 1 imagen" : ""}
                 >
                   Siguiente
                   <ChevronRight className="ml-2 h-4 w-4" />
@@ -2584,10 +2693,56 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* 2-Image Layout Toggle - Only show when we have exactly 2 images */}
+              {templateImages.length === 2 && (
+                <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+                  <Label className="text-sm font-medium text-gray-700">Diseño de 2 Imágenes</Label>
+                  
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => updateConfig({ twoImageLayout: "vertical" })}
+                      className={`flex-1 p-4 rounded-lg border-2 transition-all ${
+                        config.twoImageLayout === "vertical"
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-8 bg-gray-200 rounded-md flex gap-1 p-1 justify-center">
+                          <div className="w-2 h-full bg-gray-400 rounded-sm"></div>
+                          <div className="w-2 h-full bg-gray-400 rounded-sm"></div>
+                        </div>
+                        <span className="text-sm font-medium">Vertical</span>
+                      </div>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => updateConfig({ twoImageLayout: "horizontal" })}
+                      className={`flex-1 p-4 rounded-lg border-2 transition-all ${
+                        config.twoImageLayout === "horizontal"
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-8 bg-gray-200 rounded-md flex flex-col gap-1 p-1">
+                          <div className="w-full h-2 bg-gray-400 rounded-sm"></div>
+                          <div className="w-full h-2 bg-gray-400 rounded-sm"></div>
+                        </div>
+                        <span className="text-sm font-medium">Horizontal</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {templateImages.map((imageUrl, index) => {
                 const position = propertyData.imagePositions?.[imageUrl] ?? {
                   x: 50,
                   y: 50,
+                  zoom: 1.0,
                 };
                 return (
                   <div key={`image-${index}`} className="space-y-3">
@@ -2602,7 +2757,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                       )}
                     </div>
 
-                    {/* Image preview with positioning */}
+                    {/* Image preview with positioning and zoom */}
                     <div className="relative h-20 w-full overflow-hidden rounded-md border bg-gray-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -2611,12 +2766,19 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         className="absolute h-full w-full object-cover"
                         style={{
                           objectPosition: `${position.x}% ${position.y}%`,
+                          transform: `scale(${position.zoom || 1.0})`,
+                          transformOrigin: 'center',
                         }}
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                        <span className="text-xs font-medium text-white">
-                          {position.x.toFixed(0)}%, {position.y.toFixed(0)}%
-                        </span>
+                        <div className="text-center">
+                          <div className="text-xs font-medium text-white">
+                            {position.x.toFixed(0)}%, {position.y.toFixed(0)}%
+                          </div>
+                          <div className="text-xs text-white/80">
+                            {(position.zoom || 1.0).toFixed(1)}x
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -2685,6 +2847,43 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                         >
                           <ChevronDown className="h-3 w-3" />
                         </Button>
+                      </div>
+                    </div>
+
+                    {/* Zoom Controls - Minimalistic */}
+                    <div className="space-y-2">
+            <Label className="text-xs text-gray-600">Zoom</Label>
+                      
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          className="h-6 w-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          onClick={() => updateImageZoom(imageUrl, (position.zoom || 1.0) - 0.1)}
+                          disabled={(position.zoom || 1.0) <= 0.5}
+                        >
+                          <ZoomOut className="h-3 w-3 text-gray-600" />
+                        </button>
+                        
+            <div className="flex-1">
+              <Slider
+                value={[position.zoom ?? 1.0]}
+                onValueChange={([value]) => updateImageZoom(imageUrl, value ?? 1.0)}
+                max={3.0}
+                min={0.5}
+                step={0.1}
+                className="w-full"
+              />
+            </div>
+                        
+                        <button
+                          type="button"
+                          className="h-6 w-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          onClick={() => updateImageZoom(imageUrl, (position.zoom || 1.0) + 0.1)}
+                          disabled={(position.zoom || 1.0) >= 3.0}
+                        >
+                          <ZoomIn className="h-3 w-3 text-gray-600" />
+                        </button>
+                        
                       </div>
                     </div>
                   </div>
@@ -2808,9 +3007,9 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Button
                     onClick={generatePDF}
-                    disabled={isGenerating || selectedImageIndices.length < 3}
+                    disabled={isGenerating || selectedImageIndices.length < 1}
                     size="lg"
-                    title={selectedImageIndices.length < 3 ? "Selecciona al menos 3 imágenes" : ""}
+                    title={selectedImageIndices.length < 1 ? "Selecciona al menos 1 imagen" : ""}
                   >
                     {isGenerating ? (
                       <>
@@ -2827,9 +3026,9 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
 
                   <Button
                     onClick={saveCartelAsDocument}
-                    disabled={isSavingCartel || !listingId || selectedImageIndices.length < 3}
+                    disabled={isSavingCartel || !listingId || selectedImageIndices.length < 1}
                     className="flex items-center gap-2"
-                    title={!listingId ? "ID de listing no disponible" : selectedImageIndices.length < 3 ? "Selecciona al menos 3 imágenes" : ""}
+                    title={!listingId ? "ID de listing no disponible" : selectedImageIndices.length < 1 ? "Selecciona al menos 1 imagen" : ""}
                   >
                     {isSavingCartel ? (
                       <>

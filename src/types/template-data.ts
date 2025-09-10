@@ -127,7 +127,8 @@ export interface TemplateConfiguration {
     | "creative";
   orientation: "vertical" | "horizontal";
   propertyType: "piso" | "casa" | "local" | "garaje" | "solar";
-  imageCount: 3 | 4;
+  imageCount: 2 | 3 | 4;
+  twoImageLayout: "vertical" | "horizontal"; // For 2-image layouts: vertical (2x1) or horizontal (1x2)
   showIcons: boolean;
   showQR: boolean;
   showWatermark: boolean;
@@ -192,12 +193,15 @@ export interface TemplateConfiguration {
   bulletPositionY: number; // Vertical position offset in pixels (-30 to 30)
   // Reference text styling
   referenceTextColor: string; // Text color for reference overlay (hex, rgb, or CSS color name)
+  showEnergyRating: boolean; // Show miniature energy certificate component
+  energyConsumptionScale?: string; // A-G rating for energy consumption
 }
 
 // Image positioning data for cropping/repositioning within containers
 export interface ImagePosition {
   x: number; // X offset percentage (0-100)
   y: number; // Y offset percentage (0-100)
+  zoom?: number; // Zoom scale factor (0.5-3.0, default 1.0)
 }
 
 // Extended template property data with additional database fields

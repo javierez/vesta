@@ -158,6 +158,9 @@ revert
 - Cartelería
    - Create PRODUCTION READY POSTER
       - Acropolis's basic: horizontal and vertical
+
+
+      Guardar plantilla, certificado energético y poco más
       
 
 - Roles

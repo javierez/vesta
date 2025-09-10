@@ -17,7 +17,7 @@ const AVAILABLE_TEMPLATE_IMAGES = [
  * @param count - Number of images to return (3 or 4)
  * @returns Array of AWS S3 URLs
  */
-export const getTemplateImages = (count: 3 | 4): string[] => {
+export const getTemplateImages = (count: 2 | 3 | 4): string[] => {
   const images = AVAILABLE_TEMPLATE_IMAGES.slice(0, count);
 
   // For 4 images, duplicate first image if we don't have enough

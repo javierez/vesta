@@ -33,6 +33,7 @@ import {
   getTypographySize,
 } from "~/lib/carteleria/classic-vertical-constants";
 import { injectPrintStyles } from "~/lib/carteleria/print-utils";
+import { MiniEnergyCertificate } from "../mini-energy-certificate";
 
 // Helper functions for dynamic styling
 const getFontClass = (fontType: string) => {
@@ -103,7 +104,6 @@ const getTextColorForOverlay = (overlayType: string) => {
 // Helper functions for additional fields
 const getFieldIcon = (fieldValue: string) => {
   const iconMap: Record<string, LucideIcon> = {
-    energyConsumptionScale: Award,
     yearBuilt: Calendar,
     hasElevator: ArrowUp,
     hasGarage: Car,
@@ -118,7 +118,6 @@ const getFieldIcon = (fieldValue: string) => {
 
 const getFieldLabel = (fieldValue: string) => {
   const labelMap: Record<string, string> = {
-    energyConsumptionScale: "Certificación",
     yearBuilt: "Año",
     hasElevator: "Ascensor",
     hasGarage: "Garaje",
@@ -258,13 +257,40 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
       position: "relative",
     };
 
+    if (imageCount === 1) {
+      // 1 Photo: Fill entire gallery space
+      return (
+        <div style={imageContainerStyle}>
+          {templateImages[0] && (
+            <Image
+              src={templateImages[0]}
+              alt={`${data.title} - Imagen principal`}
+              fill
+              className="object-cover"
+              onError={handleImageError}
+              style={{
+                objectPosition: data.imagePositions?.[templateImages[0]]
+                  ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.y ?? 50)))}%`
+                  : "50% 50%",
+              }}
+              priority
+            />
+          )}
+          {renderWatermark("large")}
+          {config.showReference && renderReferenceOverlay(true)} {/* Single image gets reference */}
+        </div>
+      );
+    }
+
     if (imageCount === 2) {
-      // 2 Photos: 1fr 1fr layout
+      // 2 Photos: Layout based on config.twoImageLayout
+      const isVertical = config.twoImageLayout === "vertical";
       return (
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
+            gridTemplateColumns: isVertical ? "1fr 1fr" : "1fr",
+            gridTemplateRows: isVertical ? "1fr" : "1fr 1fr",
             gap: "12px",
             width: "100%",
             height: "100%",
@@ -283,11 +309,13 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                     objectPosition: data.imagePositions?.[image]
                       ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
                       : "50% 50%",
+                    transform: `scale(${data.imagePositions?.[image]?.zoom ?? 1.0})`,
+                    transformOrigin: 'center',
                   }}
                 />
               )}
               {renderWatermark("medium")}
-              {config.showReference && renderReferenceOverlay(index === 1)} {/* Bottom right image (index 1) */}
+              {config.showReference && renderReferenceOverlay(index === 1)} {/* Second image gets reference in both layouts */}
             </div>
           ))}
         </div>
@@ -320,6 +348,8 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   objectPosition: data.imagePositions?.[templateImages[0]]
                     ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.y ?? 50)))}%`
                     : "50% 50%",
+                  transform: `scale(${data.imagePositions?.[templateImages[0]]?.zoom ?? 1.0})`,
+                  transformOrigin: 'center',
                 }}
                 priority
               />
@@ -341,6 +371,8 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                     objectPosition: data.imagePositions?.[image]
                       ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
                       : "50% 50%",
+                    transform: `scale(${data.imagePositions?.[image]?.zoom ?? 1.0})`,
+                    transformOrigin: 'center',
                   }}
                 />
               )}
@@ -377,6 +409,8 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   objectPosition: data.imagePositions?.[image]
                     ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
                     : "50% 50%",
+                  transform: `scale(${data.imagePositions?.[image]?.zoom ?? 1.0})`,
+                  transformOrigin: 'center',
                 }}
                 priority={index === 0}
               />
@@ -657,6 +691,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
+                position: "relative",
               }}
             >
               <div
@@ -691,6 +726,8 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   priceText
                 )}
               </div>
+              
+              {/* Energy Certificate - Never show in description layout */}
             </div>
           </>
         ) : config.showIcons ? (
@@ -939,6 +976,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
+                position: "relative",
               }}
             >
               <div
@@ -973,6 +1011,8 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   priceText
                 )}
               </div>
+              
+              {/* Energy Certificate - Never show in bullet list layout (icons are OFF) */}
             </div>
           </>
         )}
@@ -1002,6 +1042,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             justifyContent: "center",
             alignItems: "center",
               width: "100%",
+            position: "relative",
           }}
         >
           <div
@@ -1035,7 +1076,23 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             ) : (
               priceText
             )}
-          </div>
+        </div>
+
+          {/* Energy Certificate - Right aligned */}
+          {config.showEnergyRating && config.energyConsumptionScale && (
+            <div
+              style={{
+                position: "absolute",
+                right: "0px",
+                top: "50%",
+                transform: "translateY(-50%)",
+              }}
+            >
+              <MiniEnergyCertificate
+                energyRating={config.energyConsumptionScale}
+              />
+      </div>
+          )}
         </div>
       </div>
       )}
