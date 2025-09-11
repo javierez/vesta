@@ -6,6 +6,7 @@ const publicPaths = [
   "/auth/signin",
   "/auth/signup",
   "/auth/forgot-password",
+  "/auth/account-setup",
   "/api/auth",
   "/api/puppet/template",
   "/templates",
@@ -61,6 +62,14 @@ export async function middleware(request: NextRequest) {
       // Redirect to signin page
       const signinUrl = new URL("/auth/signin", request.url);
       return NextResponse.redirect(signinUrl);
+    }
+
+    // Check if user has an accountId (required for multi-tenant data access)
+    if (!session.user.accountId && pathname !== "/auth/account-setup") {
+      // User is authenticated but has no account assigned (likely OAuth user)
+      // Redirect to account setup page to enter invitation code
+      const accountSetupUrl = new URL("/auth/account-setup", request.url);
+      return NextResponse.redirect(accountSetupUrl);
     }
 
     // Add authenticated user context to request headers for server components

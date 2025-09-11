@@ -138,6 +138,26 @@ export async function updateUser(
   }
 }
 
+// Update user's accountId (for OAuth users who need to associate with an account)
+export async function updateUserAccountId(userId: string, accountId: number) {
+  try {
+    await db
+      .update(users)
+      .set({ accountId: BigInt(accountId) })
+      .where(eq(users.id, userId));
+    
+    const [updatedUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    return updatedUser;
+  } catch (error) {
+    console.error("Error updating user accountId:", error);
+    throw error;
+  }
+}
+
 // Update user by account (secure version)
 export async function updateUserByAccount(
   userId: string,

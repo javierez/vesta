@@ -156,26 +156,67 @@ revert
 ## High Priority
 
 - Cartelería
-   - Create PRODUCTION READY POSTER
-      - Acropolis's basic: horizontal and vertical
+   - Guardar configuración de plantilla asignada a tipos de plantilla
+
+- Roles: add a menu to configure role permissions
+   - Role 1 -  Normal
+   - Role 2 - Account Owner
+   - Role 3 - App Owner
+
+   - Restricted actions (on default)
+      - Role 1 can view only their own tasks and calendar appointments
+      - Role 2 can filter by agent for viewing tasks and appoinments
+      - Role 3 no restrictions
+
+      - Role 1 cannot edit and delete properties, contacts.
+      - Role 2 can edit and delete properties, contacts, etc.
+      - Role 3 no restrictions
+
+      - Role 1 cannot use the image studio
+      - Role 2 can use image studio
+
+      (...)
 
 
-      Guardar plantilla, certificado energético y poco más
-      
+- Performance Optimizations
+   - Query management (optimized queries with reduced fields)
+   - Calls happening to authenticate (too many)
+   - Caché optmization (unstable caché)
+   - Database hosted in EU
+   - Indexing in database
+   - N+1 queries
+   - Complex Aggregations in queries
 
-- Roles
-   - Restricted actions
-   - Restricted views (mostly for calendar and tasks, rest is ok)
+   (Auth and Session Management)
+   - Every protected request makes an additional API call to enriched session
+   - Redundant Database Lookups: session validation involves multiple database queries that could be cached
+   - Session Caching: user session are validated in every request without caching.
+
 
 - Webpage
-   - Add SEO to the page
-   - Connect Webpage with Webapp
+   - Connect Webpage to Webapp
 
-
-- Change to Other Optimal Database
 
 - Clarify Authentication
-   - Assign People to accounts
+   - Assign People to accounts (created menu to assign a account id to users)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## Mid-High Priority
