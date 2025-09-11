@@ -155,24 +155,6 @@ revert
 
 ## High Priority
 
-- Roles: add a menu to configure role permissions
-   - Role 1 -  Agent
-   - Role 2 - Superadmin
-   - Role 3 - Account admin
-
-   - Restricted actions (on default)
-      - Role 1 can view only their own tasks and calendar appointments
-      - Role 2 can filter by agent for viewing tasks and appoinments
-      - Role 3 no restrictions
-
-      - Role 1 cannot edit and delete properties, contacts.
-      - Role 2 can edit and delete properties, contacts, etc.
-      - Role 3 no restrictions
-
-      - Role 1 cannot use the image studio
-      - Role 2 can use image studio
-
-      (...)
 
 
 - Performance Optimizations
@@ -217,6 +199,20 @@ revert
 
 
 ## Mid-High Priority
+
+   - Restricted actions (on default)
+      - Role 1 can view only their own tasks and calendar appointments
+      - Role 2 can filter by agent for viewing tasks and appoinments
+      - Role 3 no restrictions
+
+      - Role 1 cannot edit and delete properties, contacts.
+      - Role 2 can edit and delete properties, contacts, etc.
+      - Role 3 no restrictions
+
+      - Role 1 cannot use the image studio
+      - Role 2 can use image studio
+
+      (...)
 
 
 - Cartelería

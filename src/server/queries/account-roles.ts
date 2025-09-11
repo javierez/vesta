@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "../db";
-import { accountRoles, userRoles, users } from "../db/schema";
+import { accountRoles, userRoles } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import type { AccountRolePermissions } from "~/types/account-roles";
 import { getCurrentUserAccountId } from "../../lib/dal";
@@ -212,7 +212,7 @@ export async function getUserPermissions(userId: string, accountId: bigint) {
         )
       );
 
-    return rolePermissions?.permissions || null;
+    return rolePermissions?.permissions ?? null;
   } catch (error) {
     console.error("Error fetching user permissions:", error);
     throw error;
@@ -233,7 +233,7 @@ export async function userHasPermission(
       return false;
     }
 
-    const categoryPermissions = (permissions as any)[category];
+    const categoryPermissions = (permissions as Record<string, Record<string, boolean>>)[category];
     if (!categoryPermissions || typeof categoryPermissions !== 'object') {
       return false;
     }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -24,7 +23,6 @@ export default function AccountSetupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   
-  const router = useRouter();
   const { data: session } = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {

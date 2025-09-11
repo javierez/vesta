@@ -150,14 +150,14 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
         // Ensure category exists as an object
         if (!updatedPermissions[category as keyof AccountRolePermissions] || 
             typeof updatedPermissions[category as keyof AccountRolePermissions] !== 'object') {
-          (updatedPermissions as any)[category] = {};
+          (updatedPermissions as Record<string, Record<string, boolean>>)[category] = {};
         }
         
         const categoryPerms = { ...updatedPermissions[category as keyof AccountRolePermissions] };
         
         // Toggle the permission
-        (categoryPerms as any)[permissionKey] = !(categoryPerms as any)[permissionKey];
-        (updatedPermissions as any)[category] = categoryPerms;
+        (categoryPerms as Record<string, boolean>)[permissionKey] = !(categoryPerms as Record<string, boolean>)[permissionKey];
+        (updatedPermissions as Record<string, Record<string, boolean>>)[category] = categoryPerms;
 
 
         return { ...role, permissions: updatedPermissions };
@@ -186,9 +186,7 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
   };
 
   const groupedPermissions = permissions.reduce((acc, permission) => {
-    if (!acc[permission.category]) {
-      acc[permission.category] = [];
-    }
+    acc[permission.category] ??= [];
     acc[permission.category]!.push(permission);
     return acc;
   }, {} as Record<string, Permission[]>);
@@ -287,14 +285,14 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
                   {Object.entries(groupedPermissions).map(([category, perms]) => (
                     <div key={category} className="space-y-4">
                       <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        {categoryLabels[category] || category}
+                        {categoryLabels[category] ?? category}
                       </h3>
                       <div className="space-y-3">
                         {perms.map((permission) => {
                           const Icon = permission.icon;
                           const categoryPerms = selectedRole?.permissions[category as keyof AccountRolePermissions];
                           const isEnabled = categoryPerms && typeof categoryPerms === 'object' 
-                            ? (categoryPerms as any)[permission.id] === true 
+                            ? (categoryPerms as Record<string, boolean>)[permission.id] === true 
                             : false;
 
                           
@@ -338,7 +336,7 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
                       const Icon = permission.icon;
                       const categoryPerms = selectedRole?.permissions[tab as keyof AccountRolePermissions];
                       const isEnabled = categoryPerms && typeof categoryPerms === 'object' 
-                        ? (categoryPerms as any)[permission.id] === true 
+                        ? (categoryPerms as Record<string, boolean>)[permission.id] === true 
                         : false;
                       
                       return (
