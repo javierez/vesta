@@ -29,7 +29,7 @@ import {
 import { injectPrintStyles } from "~/lib/carteleria/print-utils";
 import { MiniEnergyCertificate } from "../mini-energy-certificate";
 
-// Helper functions for dynamic styling (same as vertical template)
+// Helper functions for dynamic styling
 const getFontClass = (fontType: string) => {
   const fontMap: Record<string, string> = {
     default: "font-sans",
@@ -95,7 +95,7 @@ const getTextColorForOverlay = (overlayType: string) => {
   return overlayType === "light" || overlayType === "white" ? "#1e293b" : "white";
 };
 
-// Helper functions for additional fields (same as vertical)
+// Helper functions for additional fields
 const getFieldIcon = (fieldValue: string) => {
   const iconMap: Record<string, LucideIcon> = {
     yearBuilt: Calendar,
@@ -158,7 +158,7 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
     injectPrintStyles();
   }
 
-  // Get fixed dimensions for horizontal layout (landscape)
+  // Get fixed dimensions for print optimization - force horizontal
   const containerDimensions = getDimensionsForOrientation("horizontal");
   const overlayClass = getOverlayClass(config.overlayColor);
   const textColor = getTextColorForOverlay(config.overlayColor);
@@ -237,7 +237,7 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
     ? data.images 
     : getTemplateImages(config.imageCount);
 
-  // Horizontal-optimized image gallery
+  // Asymmetric image gallery for horizontal layout
   const renderImageGallery = () => {
     if (templateImages.length === 0) return null;
 
@@ -276,13 +276,12 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
     }
 
     if (imageCount === 2) {
-      // 2 Photos: Always horizontal layout for landscape template
+      // 2 Photos: Side by side equal width
       return (
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gridTemplateRows: "1fr",
             gap: "12px",
             width: "100%",
             height: "100%",
@@ -315,7 +314,7 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
     }
 
     if (imageCount === 3) {
-      // 3 Photos: Main image left, two stacked right (landscape optimized)
+      // 3 Photos: Large left, two stacked right
       return (
         <div
           style={{
@@ -327,7 +326,7 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
             height: "100%",
           }}
         >
-          {/* Hero image spans 2 rows on the left */}
+          {/* Hero image spans 2 rows */}
           <div style={{ ...imageContainerStyle, gridRow: "1 / -1" }}>
             {templateImages[0] && (
               <Image
@@ -349,7 +348,7 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
             {renderWatermark("large")}
           </div>
           
-          {/* Two smaller images stacked on the right */}
+          {/* Two stacked images on the right */}
           {templateImages.slice(1, 3).map((image, index) => (
             <div key={index + 1} style={imageContainerStyle}>
               {image && (
@@ -376,24 +375,68 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
       );
     }
 
-    // 4 Photos: 2x2 grid
+    // 4 Photos: Asymmetric layout - large left, medium top-right, two small bottom-right
     return (
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "2fr 1fr 1fr",
           gridTemplateRows: "1fr 1fr",
           gap: "12px",
           width: "100%",
           height: "100%",
         }}
       >
-        {templateImages.slice(0, 4).map((image, index) => (
-          <div key={index} style={imageContainerStyle}>
+        {/* Hero image spans 2 rows and 1 column */}
+        <div style={{ ...imageContainerStyle, gridRow: "1 / -1" }}>
+          {templateImages[0] && (
+            <Image
+              src={templateImages[0]}
+              alt={`${data.title} - Imagen principal`}
+              fill
+              className="object-cover"
+              onError={handleImageError}
+              style={{
+                objectPosition: data.imagePositions?.[templateImages[0]]
+                  ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.y ?? 50)))}%`
+                  : "50% 50%",
+                transform: `scale(${data.imagePositions?.[templateImages[0]]?.zoom ?? 1.0})`,
+                transformOrigin: 'center',
+              }}
+              priority
+            />
+          )}
+          {renderWatermark("large")}
+        </div>
+        
+        {/* Medium image spans 2 columns on top */}
+        <div style={{ ...imageContainerStyle, gridColumn: "2 / -1" }}>
+          {templateImages[1] && (
+            <Image
+              src={templateImages[1]}
+              alt={`${data.title} - Imagen 2`}
+              fill
+              className="object-cover"
+              onError={handleImageError}
+              style={{
+                objectPosition: data.imagePositions?.[templateImages[1]]
+                  ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[1]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[1]]?.y ?? 50)))}%`
+                  : "50% 50%",
+                transform: `scale(${data.imagePositions?.[templateImages[1]]?.zoom ?? 1.0})`,
+                transformOrigin: 'center',
+              }}
+            />
+          )}
+          {renderWatermark("medium")}
+        </div>
+        
+        {/* Two small images on bottom right */}
+        {templateImages.slice(2, 4).map((image, index) => (
+          <div key={index + 2} style={imageContainerStyle}>
             {image && (
               <Image
                 src={image}
-                alt={`${data.title} - Imagen ${index + 1}`}
+                alt={`${data.title} - Imagen ${index + 3}`}
                 fill
                 className="object-cover"
                 onError={handleImageError}
@@ -404,11 +447,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                   transform: `scale(${data.imagePositions?.[image]?.zoom ?? 1.0})`,
                   transformOrigin: 'center',
                 }}
-                priority={index === 0}
               />
             )}
-            {renderWatermark("medium")}
-            {config.showReference && renderReferenceOverlay(index === 3)}
+            {renderWatermark("small")}
+            {config.showReference && renderReferenceOverlay(index === 1)}
           </div>
         ))}
       </div>
@@ -498,11 +540,13 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
     }
   }, [printStylesCSS]);
 
-  // HORIZONTAL LAYOUT STRUCTURE - Side-by-side design
-  // Left side: Images, Right side: Content
-  const leftPanelWidth = Math.round(containerDimensions.width * 0.6); // 60% for images
-  const rightPanelWidth = containerDimensions.width - leftPanelWidth; // 40% for content
+  // Calculate section heights for horizontal A4 layout
+  const headerHeight = 120; // Increased from 80 to 120
+  const footerHeight = 45;
+  const statsRowHeight = 120;
+  const galleryHeight = containerDimensions.height - headerHeight - statsRowHeight - footerHeight;
 
+  // Horizontal layout structure
   return (
     <div
       className={cn("basic-horizontal-template-container no-break", className)}
@@ -513,63 +557,41 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
         height: `${containerDimensions.height}px`,
         backgroundColor: "white",
         display: "flex",
-        flexDirection: "row", // Horizontal layout
+        flexDirection: "column",
         boxSizing: "border-box",
         margin: 0,
         padding: 0,
       }}
-      data-testid="template-horizontal-basic"
+      data-testid={`template-horizontal-wireframe`}
     >
-      {/* LEFT PANEL - Image Gallery */}
+      {/* 1. HEADER BAR - Title left, Reference and QR right */}
       <div
+        className={overlayClass}
         style={{
-          width: `${leftPanelWidth}px`,
-          height: "100%",
-          padding: "20px",
-          backgroundColor: "#ffffff",
-          boxSizing: "border-box",
-        }}
-      >
-        {renderImageGallery()}
-      </div>
-
-      {/* RIGHT PANEL - Content */}
-      <div
-        style={{
-          width: `${rightPanelWidth}px`,
-          height: "100%",
+          height: `${headerHeight}px`,
           display: "flex",
-          flexDirection: "column",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingLeft: "30px",
+          paddingRight: "30px",
+          borderBottom: overlayClass ? "none" : "2px solid #e2e8f0",
+          flexShrink: 0,
           boxSizing: "border-box",
+          backgroundColor: isHexColor(config.overlayColor) ? config.overlayColor : (overlayClass ? undefined : "#f8fafc"),
         }}
       >
-        {/* Header Section */}
-        <div
-          className={overlayClass}
-          style={{
-            minHeight: "120px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            paddingLeft: "20px",
-            paddingRight: "20px",
-            paddingTop: "20px",
-            paddingBottom: "20px",
-            backgroundColor: isHexColor(config.overlayColor) ? config.overlayColor : (overlayClass ? undefined : "#f8fafc"),
-            flexShrink: 0,
-            boxSizing: "border-box",
-          }}
-        >
+        {/* Left side - Title and Location */}
+        <div style={{ flex: 1, paddingRight: "20px" }}>
           <h2
             className={cn(
               "font-bold uppercase",
               getFontClass(config.titleFont),
             )}
             style={{
-              fontSize: `${config.titleSize || getTypographySize("title")}px`,
-              lineHeight: "1.1",
+              fontSize: `${config.titleSize || 36}px`, // Increased from 32 to 36
+              lineHeight: "1.2", // Slightly increased for better spacing
               margin: 0,
-              marginBottom: "8px",
+              marginBottom: "8px", // Increased from 4px to 8px
               color: config.titleColor || textColor,
               textAlign: config.titleAlignment || "left",
               transform: config.titlePositionX || config.titlePositionY 
@@ -585,8 +607,8 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
               getFontClass(config.locationFont),
             )}
             style={{
-              fontSize: `${config.locationSize || getTypographySize("body")}px`,
-              lineHeight: "1.2",
+              fontSize: `${config.locationSize || 20}px`, // Increased from 18 to 20
+              lineHeight: "1.3", // Slightly increased for better spacing
               margin: 0,
               color: config.locationColor || "#64748b",
               opacity: 0.9,
@@ -598,200 +620,202 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
           >
             {formatLocation(safeData.location)}
           </div>
-
-          {/* QR Code - Top Right Corner */}
+        </div>
+        
+        {/* Right side - Reference, Energy Certificate and QR */}
+        <div style={{ display: "flex", alignItems: "center", gap: "40px" }}>
+          {/* Reference */}
+          {!config.showReference && data.reference && (
+            <span
+              className="font-mono font-semibold"
+              style={{
+                fontSize: "14px",
+                color: textColor,
+                opacity: 0.8,
+                letterSpacing: "0.5px",
+              }}
+            >
+              REF: {data.reference}
+            </span>
+          )}
+          
+          {/* Energy Certificate - positioned to the left of QR or in QR's place */}
+          {config.showEnergyRating && config.energyConsumptionScale && (
+            <MiniEnergyCertificate
+              energyRating={config.energyConsumptionScale}
+            />
+          )}
+          
+          {/* QR Code */}
           {config.showQR && (
-            <div style={{ position: "absolute", top: "20px", right: "20px" }}>
-              <PropertyQRCode
-                phone={data.contact.phone}
-                email={data.contact.email}
-                size={60}
-                className="border-0 bg-transparent p-0 shadow-none"
-              />
-            </div>
+            <PropertyQRCode
+              phone={data.contact.phone}
+              email={data.contact.email}
+              size={60}
+              className="border-0 bg-transparent p-0 shadow-none"
+            />
           )}
         </div>
+      </div>
 
-        {/* Content Area - Flexible */}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            paddingLeft: "20px",
-            paddingRight: "20px",
-            paddingTop: "20px",
-            paddingBottom: "10px",
-            backgroundColor: "#ffffff",
-            boxSizing: "border-box",
-          }}
-        >
-          {/* Price - Prominent Display */}
+      {/* 2. IMAGE GALLERY - Main asymmetric grid */}
+      <div
+        style={{
+          height: `${galleryHeight}px`,
+          padding: "20px 20px", // Increased padding for more space around images
+          backgroundColor: "#ffffff",
+          flexGrow: 1,
+          flexShrink: 1,
+          boxSizing: "border-box",
+          overflow: "hidden",
+        }}
+      >
+        {renderImageGallery()}
+      </div>
+
+      {/* 3. STATS ROW with Price Box and Energy Certificate */}
+      <div
+        style={{
+          height: `${statsRowHeight}px`,
+          display: "flex",
+          alignItems: "center",
+          position: "relative",
+          paddingLeft: "30px",
+          paddingRight: "30px",
+          backgroundColor: "#ffffff",
+          flexShrink: 0,
+          boxSizing: "border-box",
+        }}
+      >
+{config.showIcons ? (
+          /* Icons Layout - Only icons, no description */
           <div
             style={{
-              textAlign: "center",
-              marginBottom: "30px",
+              flex: 1,
+              display: "grid",
+              gridTemplateColumns: `repeat(6, 1fr)`,
+              gap: `${config.iconPairGap || 24}px`,
+              maxWidth: "60%",
             }}
           >
+            {/* Default Icons - Always shown */}
+            {/* Bedrooms */}
             <div
-              className={cn(
-                "font-bold",
-                getFontClass(config.priceFont),
-              )}
               style={{
-                fontSize: `${config.priceSize || Math.min(getTypographySize("price"), 56)}px`,
-                lineHeight: "1.1",
-                color: config.priceColor || "#000000",
-                transform: config.pricePositionX || config.pricePositionY 
-                  ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)` 
-                  : undefined,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: `${config.iconTextGap || 4}px`,
               }}
             >
-              {config.listingType === "alquiler" ? (
-                <>
-                  {priceText.replace(" €/mes", "")}
+              <Bed size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
+              <span
+                style={{
+                  fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
+                  fontWeight: "600",
+                  color: "#1e293b",
+                }}
+              >
+                {safeData.specs.bedrooms || 0}
+              </span>
+            </div>
+
+            {/* Bathrooms */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: `${config.iconTextGap || 4}px`,
+              }}
+            >
+              <Bath size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
+              <span
+                style={{
+                  fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
+                  fontWeight: "600",
+                  color: "#1e293b",
+                }}
+              >
+                {safeData.specs.bathrooms || 0}
+              </span>
+            </div>
+
+            {/* Square meters */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: `${config.iconTextGap || 4}px`,
+              }}
+            >
+              <Maximize size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
+              <span
+                style={{
+                  fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
+                  fontWeight: "600",
+                  color: "#1e293b",
+                }}
+              >
+                {safeData.specs.squareMeters}m²
+              </span>
+            </div>
+
+            {/* Additional Fields - Show up to 3 additional fields */}
+            {config.additionalFields?.slice(0, 3).map((fieldValue, index) => {
+              const value = getFieldValue(fieldValue, data);
+              if (value === "N/A") return null;
+              
+              const IconComponent = getFieldIcon(fieldValue);
+              
+              return (
+                <div
+                  key={fieldValue}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: `${config.iconTextGap || 4}px`,
+                  }}
+                >
+                  <IconComponent size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
                   <span
-                    className="font-normal"
                     style={{
-                      fontSize: `${Math.min(getTypographySize("body"), 32)}px`,
-                      color: config.priceColor ? `${config.priceColor}80` : "#00000080",
+                      fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
+                      fontWeight: "600",
+                      color: "#1e293b",
                     }}
                   >
-                    {" €/mes"}
+                    {value}
                   </span>
-                </>
-              ) : (
-                priceText
-              )}
-            </div>
+                </div>
+              );
+            })}
           </div>
-
-          {/* Description or Icons */}
-          {config.showShortDescription && data.shortDescription ? (
-            <div
-              className={cn(getFontClass(config.descriptionFont || "default"))}
-              style={{
-                fontSize: `${config.descriptionSize || 16}px`,
-                lineHeight: "1.4",
-                color: config.descriptionColor || "#000000",
-                textAlign: config.descriptionAlignment || "left",
-                transform: config.descriptionPositionX || config.descriptionPositionY 
-                  ? `translate(${config.descriptionPositionX || 0}px, ${config.descriptionPositionY || 0}px)` 
-                  : undefined,
-                whiteSpace: "pre-wrap",
-                marginBottom: "20px",
-              }}
-            >
-              {data.shortDescription}
-            </div>
-          ) : config.showIcons ? (
-            /* Icon Grid - Horizontal Layout */
+        ) : (
+          /* Bullets Layout (with optional description) - Only when icons are NOT clicked */
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: "40px", // Space between bullets and description
+              maxWidth: "60%",
+            }}
+          >
+            {/* Bullet List - Always shown when icons are not clicked */}
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${Math.min(3 + (config.additionalFields?.length || 0), 4)}, 1fr)`,
-                gap: `${config.iconPairGap || 16}px`,
-                marginBottom: "20px",
+                flex: config.showShortDescription && data.shortDescription ? "0 0 auto" : "1",
               }}
             >
-              {/* Bedrooms */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: `${config.iconTextGap || 8}px`,
-                }}
-              >
-                <Bed size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
-                <span
-                  style={{
-                    fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
-                    fontWeight: "600",
-                    color: "#1e293b",
-                  }}
-                >
-                  {safeData.specs.bedrooms || 0}
-                </span>
-              </div>
-
-              {/* Bathrooms */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: `${config.iconTextGap || 8}px`,
-                }}
-              >
-                <Bath size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
-                <span
-                  style={{
-                    fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
-                    fontWeight: "600",
-                    color: "#1e293b",
-                  }}
-                >
-                  {safeData.specs.bathrooms || 0}
-                </span>
-              </div>
-
-              {/* Square meters */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: `${config.iconTextGap || 8}px`,
-                }}
-              >
-                <Maximize size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
-                <span
-                  style={{
-                    fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
-                    fontWeight: "600",
-                    color: "#1e293b",
-                  }}
-                >
-                  {safeData.specs.squareMeters}m²
-                </span>
-              </div>
-
-              {/* Additional Fields */}
-              {config.additionalFields?.slice(0, 3).map((fieldValue) => {
-                const value = getFieldValue(fieldValue, data);
-                if (value === "N/A") return null;
-                
-                const IconComponent = getFieldIcon(fieldValue);
-                
-                return (
-                  <div
-                    key={fieldValue}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: `${config.iconTextGap || 8}px`,
-                    }}
-                  >
-                    <IconComponent size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
-                    <span
-                      style={{
-                        fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
-                        fontWeight: "600",
-                        color: "#1e293b",
-                      }}
-                    >
-                      {value}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            /* Bullet List */
-            <div style={{ marginBottom: "20px" }}>
               {data.iconListText ? (
+                /* Custom text list from user input */
                 <div
                   className={cn(getFontClass(config.bulletFont || "default"))}
                   style={{
@@ -808,6 +832,7 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                   {data.iconListText}
                 </div>
               ) : (
+                /* Default bullet list */
                 <ul
                   className={cn(getFontClass(config.bulletFont || "default"))}
                   style={{
@@ -815,107 +840,195 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                     padding: 0,
                     margin: 0,
                     display: "flex",
-                    flexDirection: "column",
-                    gap: `${config.iconTextGap || 8}px`,
+                    gap: "20px",
                     fontSize: `${config.bulletSize || 16}px`,
                     lineHeight: "1.3",
-                    textAlign: config.bulletAlignment || "left",
                     color: config.bulletColor || "#000000",
                     transform: config.bulletPositionX || config.bulletPositionY 
                       ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)` 
                       : undefined,
                   }}
                 >
-                  <li style={{ display: "flex", alignItems: "flex-start" }}>
-                    <span style={{ marginRight: "8px", marginTop: "2px" }}>•</span>
-                    <span>{safeData.specs.bedrooms} dormitorios</span>
-                  </li>
-                  <li style={{ display: "flex", alignItems: "flex-start" }}>
-                    <span style={{ marginRight: "8px", marginTop: "2px" }}>•</span>
-                    <span>{safeData.specs.bathrooms} baños</span>
-                  </li>
-                  <li style={{ display: "flex", alignItems: "flex-start" }}>
-                    <span style={{ marginRight: "8px", marginTop: "2px" }}>•</span>
+                  {safeData.specs.bathrooms && (
+                    <li style={{ display: "flex", alignItems: "center" }}>
+                      <span style={{ marginRight: "8px" }}>•</span>
+                      <span>{safeData.specs.bathrooms} baños</span>
+                    </li>
+                  )}
+                  {safeData.specs.bedrooms && (
+                    <li style={{ display: "flex", alignItems: "center" }}>
+                      <span style={{ marginRight: "8px" }}>•</span>
+                      <span>{safeData.specs.bedrooms} dormitorios</span>
+                    </li>
+                  )}
+                  <li style={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ marginRight: "8px" }}>•</span>
                     <span>{safeData.specs.squareMeters} m²</span>
                   </li>
+                  {/* Additional fields */}
+                  {config.additionalFields?.slice(0, 2).map((fieldValue) => {
+                    const value = getFieldValue(fieldValue, data);
+                    if (value === "N/A") return null;
+                    
+                    return (
+                      <li key={fieldValue} style={{ display: "flex", alignItems: "center" }}>
+                        <span style={{ marginRight: "8px" }}>•</span>
+                        <span>{getFieldLabel(fieldValue)}: {value}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
-          )}
 
-          {/* Energy Certificate - Only show for basic template when description is OFF and icons are ON */}
-          {config.showIcons && !config.showShortDescription && config.showEnergyRating && config.energyConsumptionScale && (
-            <div style={{ textAlign: "center", marginBottom: "20px" }}>
-              <MiniEnergyCertificate
-                energyRating={config.energyConsumptionScale}
-              />
-            </div>
+            {/* Description - Only shown when description is clicked AND icons are NOT clicked */}
+            {config.showShortDescription && data.shortDescription && (
+              <div
+                style={{
+                  flex: "1",
+                  paddingLeft: "40px",
+                  borderLeft: "2px solid #e2e8f0",
+                  position: "relative",
+                }}
+              >
+                <div
+                  className={cn(getFontClass(config.descriptionFont || "default"))}
+                  style={{
+                    fontSize: `${config.descriptionSize || 16}px`,
+                    lineHeight: "1.4",
+                    color: config.descriptionColor || "#000000",
+                    textAlign: config.descriptionAlignment || "left",
+                    transform: config.descriptionPositionX || config.descriptionPositionY 
+                      ? `translate(${config.descriptionPositionX || 0}px, ${config.descriptionPositionY || 0}px)` 
+                      : undefined,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {data.shortDescription}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 4. RIGHT-ALIGNED PRICE BOX */}
+        <div
+          style={{
+            position: "absolute",
+            right: "30px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            padding: "16px 24px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minWidth: "200px",
+          }}
+        >
+          <div
+            className={cn(
+              "font-bold",
+              getFontClass(config.priceFont),
+            )}
+            style={{
+              fontSize: `${config.priceSize || 36}px`,
+              lineHeight: "1.1",
+              color: config.priceColor || "#1e293b",
+              textAlign: "center",
+              transform: config.pricePositionX || config.pricePositionY 
+                ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)` 
+                : undefined,
+            }}
+          >
+{config.listingType === "alquiler" ? (
+              <>
+                {priceText.replace(" €/mes", "")}
+                <span
+                  className="font-normal"
+                  style={{
+                    fontSize: `${Math.round((config.priceSize || 36) * 0.7)}px`,
+                    color: config.priceColor ? `${config.priceColor}CC` : "#64748b",
+                    marginLeft: "8px",
+                  }}
+                >
+                  €/mes
+                </span>
+              </>
+            ) : (
+              priceText
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      {/* 6. FOOTER BAR - Contact elements */}
+      <div
+        className={overlayClass}
+        style={{
+          height: `${footerHeight}px`,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingLeft: "30px",
+          paddingRight: "30px",
+          backgroundColor: isHexColor(config.overlayColor) ? config.overlayColor : (overlayClass ? undefined : "#1e293b"),
+          color: textColor,
+          flexShrink: 0,
+          boxSizing: "border-box",
+        }}
+      >
+        {/* Left - Website */}
+        <div style={{ display: "flex", alignItems: "center" }}>
+          {config.showWebsite && data.contact.website && (
+            <span
+              style={{
+                fontSize: "16px",
+                color: textColor,
+                fontWeight: "500",
+              }}
+            >
+              {data.contact.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+            </span>
+          )}
+          {!config.showWebsite && config.showEmail && data.contact.email && (
+            <span
+              style={{
+                fontSize: "16px",
+                color: textColor,
+                fontWeight: "500",
+              }}
+            >
+              {data.contact.email}
+            </span>
           )}
         </div>
 
-        {/* Footer - Contact Bar */}
-        <div
-          className={overlayClass}
-          style={{
-            minHeight: "50px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            paddingLeft: "20px",
-            paddingRight: "20px",
-            backgroundColor: isHexColor(config.overlayColor) ? config.overlayColor : (overlayClass ? undefined : "#1e293b"),
-            color: textColor,
-            flexShrink: 0,
-            boxSizing: "border-box",
-          }}
-        >
-          {/* Left contact element */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {config.showWebsite && data.contact.website && (
-              <span
-                style={{
-                  fontSize: `${getTypographySize("contact")}px`,
-                  color: textColor,
-                }}
-              >
-                {data.contact.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
-              </span>
-            )}
-            {config.showEmail && data.contact.email && !config.showWebsite && (
-              <span
-                style={{
-                  fontSize: `${getTypographySize("contact")}px`,
-                  color: textColor,
-                }}
-              >
-                {data.contact.email}
-              </span>
-            )}
-          </div>
-
-          {/* Right contact element */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {config.showPhone && data.contact.phone && (
-              <span
-                style={{
-                  fontSize: `${getTypographySize("contact")}px`,
-                  color: textColor,
-                }}
-              >
-                {data.contact.phone}
-              </span>
-            )}
-            {config.showEmail && data.contact.email && config.showWebsite && !config.showPhone && (
-              <span
-                style={{
-                  fontSize: `${getTypographySize("contact")}px`,
-                  color: textColor,
-                }}
-              >
-                {data.contact.email}
-              </span>
-            )}
-          </div>
+        {/* Right - Phone */}
+        <div style={{ display: "flex", alignItems: "center" }}>
+          {config.showPhone && data.contact.phone && (
+            <span
+              style={{
+                fontSize: "16px",
+                color: textColor,
+                fontWeight: "500",
+              }}
+            >
+              {data.contact.phone}
+            </span>
+          )}
+          {!config.showPhone && config.showEmail && data.contact.email && config.showWebsite && (
+            <span
+              style={{
+                fontSize: "16px",
+                color: textColor,
+                fontWeight: "500",
+              }}
+            >
+              {data.contact.email}
+            </span>
+          )}
         </div>
       </div>
     </div>
