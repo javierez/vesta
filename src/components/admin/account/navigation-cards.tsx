@@ -44,10 +44,10 @@ const accountAdminSections: AccountAdminCard[] = [
     available: false,
   },
   {
-    title: "Privacidad y Permisos",
+    title: "Roles y Privacidad",
     description: "Gestiona permisos de usuarios y configuración de privacidad",
     icon: Settings,
-    href: "/account-admin/privacy",
+    href: "/account-admin/roles",
     available: true,
   },
   {

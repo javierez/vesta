@@ -711,3 +711,15 @@ export const feedback = singlestoreTable("feedback", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
+
+// Account-specific roles table
+export const accountRoles = singlestoreTable("account_roles", {
+  accountRoleId: bigint("account_role_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  roleId: bigint("role_id", { mode: "bigint" }).notNull(), // References the role type (1=Agente, 2=Superadmin, 3=Admin de Cuenta)
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  permissions: json("permissions").notNull().default({}), // JSON with all permissions for this role in this account
+  isSystem: boolean("is_system").default(false), // True for default roles that shouldn't be deleted
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  isActive: boolean("is_active").default(true),
+});

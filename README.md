@@ -155,13 +155,10 @@ revert
 
 ## High Priority
 
-- Cartelería
-   - Guardar configuración de plantilla asignada a tipos de plantilla
-
 - Roles: add a menu to configure role permissions
-   - Role 1 -  Normal
-   - Role 2 - Account Owner
-   - Role 3 - App Owner
+   - Role 1 -  Agent
+   - Role 2 - Superadmin
+   - Role 3 - Account admin
 
    - Restricted actions (on default)
       - Role 1 can view only their own tasks and calendar appointments
@@ -220,6 +217,11 @@ revert
 
 
 ## Mid-High Priority
+
+
+- Cartelería
+   - Guardar configuración de plantilla asignada a tipos de plantilla
+
 - Webpage
    - Add SEO to the page
 

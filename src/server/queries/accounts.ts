@@ -1,6 +1,7 @@
 import { db } from "../db";
 import { accounts } from "../db/schema";
 import { eq, like, or } from "drizzle-orm";
+import { initializeAccountRoles } from "./account-roles";
 
 // Create a new account
 export async function createAccount(data: {
@@ -14,7 +15,7 @@ export async function createAccount(data: {
   isActive?: boolean | null;
 }) {
   try {
-    await db.insert(accounts).values({
+    const [result] = await db.insert(accounts).values({
       name: data.name,
       email: data.email ?? null,
       phone: data.phone ?? null,
@@ -23,9 +24,17 @@ export async function createAccount(data: {
       plan: data.plan ?? "basic",
       subscriptionStatus: data.subscriptionStatus ?? "active",
       isActive: data.isActive ?? true,
-    });
+    }).$returningId();
 
-    return { success: true, message: "Account created successfully" };
+    if (!result) {
+      throw new Error("Failed to create account");
+    }
+
+    // Initialize default roles for the new account
+    await initializeAccountRoles(BigInt(result.accountId));
+
+    console.log(`✅ Created account ${result.accountId} with default roles`);
+    return { success: true, message: "Account created successfully", accountId: result.accountId };
   } catch (error) {
     console.error("Error creating account:", error);
     throw error;

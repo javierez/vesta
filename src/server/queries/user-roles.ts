@@ -1,10 +1,25 @@
 import { db } from "../db";
 import { userRoles, roles, users } from "../db/schema";
 import { eq, and } from "drizzle-orm";
+import { ensureAccountRoles } from "./account-roles";
 
 // Assign a role to a user
 export async function assignUserRole(userId: string, roleId: number) {
   try {
+    // First get the user's accountId
+    const [user] = await db
+      .select({ accountId: users.accountId })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Ensure the account has role configurations (fallback for existing accounts)
+    await ensureAccountRoles(user.accountId);
+
+    // Now assign the role
     await db.insert(userRoles).values({
       userId: userId,
       roleId: BigInt(roleId),
