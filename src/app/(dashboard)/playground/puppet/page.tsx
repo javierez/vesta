@@ -49,6 +49,7 @@ export default function PuppeteerPlayground() {
     propertyType: "piso",
     listingType: "venta",
     imageCount: 4,
+    twoImageLayout: "vertical",
     showPhone: true,
     showEmail: true,
     showWebsite: true,
@@ -83,6 +84,8 @@ export default function PuppeteerPlayground() {
     contactBackgroundColor: "#ffffff",
     contactBorderRadius: 8,
     iconSize: 1.0,
+    iconTextGap: 8,
+    iconPairGap: 20,
     iconSpacingHorizontal: 20,
     iconSpacingVertical: 10,
     // Description styling defaults
@@ -99,6 +102,8 @@ export default function PuppeteerPlayground() {
     bulletColor: "#000000",
     bulletPositionX: 0,
     bulletPositionY: 0,
+    referenceTextColor: "#ffffff",
+    showEnergyRating: false,
   });
 
   // Property data state (using mock data as base)

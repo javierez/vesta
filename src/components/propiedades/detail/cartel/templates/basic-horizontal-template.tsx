@@ -24,7 +24,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import {
   getDimensionsForOrientation,
-  getTypographySize,
 } from "~/lib/carteleria/classic-vertical-constants";
 import { injectPrintStyles } from "~/lib/carteleria/print-utils";
 import { MiniEnergyCertificate } from "../mini-energy-certificate";
@@ -766,7 +765,7 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
             </div>
 
             {/* Additional Fields - Show up to 3 additional fields */}
-            {config.additionalFields?.slice(0, 3).map((fieldValue, index) => {
+            {config.additionalFields?.slice(0, 3).map((fieldValue, _index) => {
               const value = getFieldValue(fieldValue, data);
               if (value === "N/A") return null;
               

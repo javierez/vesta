@@ -72,18 +72,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Wait for template to be fully rendered - dynamically determine container selector
-    const getTemplateSelector = (templateStyle: string) => {
+    const getTemplateSelector = (templateStyle: string, orientation: string) => {
       switch (templateStyle) {
         case "basic":
-          return ".basic-template-container";
+          return orientation === "horizontal" ? ".basic-horizontal-template-container" : ".basic-template-container";
         case "classic":
         default:
           return ".template-container";
       }
     };
 
-    const templateSelector = getTemplateSelector(templateConfig.templateStyle ?? "classic");
-    console.log(`🎯 Waiting for template container: ${templateSelector} (style: ${templateConfig.templateStyle ?? "classic"})`);
+    const templateSelector = getTemplateSelector(templateConfig.templateStyle ?? "classic", orientation);
+    console.log(`🎯 Waiting for template container: ${templateSelector} (style: ${templateConfig.templateStyle ?? "classic"}, orientation: ${orientation})`);
 
     try {
       await page.waitForSelector(templateSelector, { timeout: 10000 });
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       // Fallback: try waiting for either container type
       console.warn(`⚠️ Primary template container (${templateSelector}) not found, trying fallback...`);
       try {
-        await page.waitForSelector(".template-container, .basic-template-container", { timeout: 5000 });
+        await page.waitForSelector(".template-container, .basic-template-container, .basic-horizontal-template-container", { timeout: 5000 });
         console.log("✅ Template container found via fallback selector");
       } catch {
         console.error(
@@ -123,8 +123,7 @@ export async function POST(request: NextRequest) {
     // Generate PDF with optimized settings
     const pdfBuffer = await page.pdf({
       format: "A4",
-      width: `${dimensions.width}px`,
-      height: `${dimensions.height}px`,
+      landscape: orientation === "horizontal",
       printBackground: true,
       margin: {
         top: "0px",
@@ -132,7 +131,7 @@ export async function POST(request: NextRequest) {
         bottom: "0px",
         left: "0px",
       },
-      preferCSSPageSize: false,
+      preferCSSPageSize: true,
     });
 
     await browser.close();

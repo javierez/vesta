@@ -211,7 +211,7 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
 
   // Contact data state
   const [contactData] = useState<ContactOffice[]>(() => {
-    return parseContactData(databaseContactProps) as ContactOffice[];
+    return parseContactData(databaseContactProps);
   });
 
   // Selected contact options state

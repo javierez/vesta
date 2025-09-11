@@ -31,6 +31,7 @@ export default function PlaygroundPage() {
     orientation: "vertical",
     propertyType: "piso",
     imageCount: 3,
+    twoImageLayout: "vertical",
     showIcons: true,
     showQR: true,
     showWatermark: false,
@@ -66,6 +67,8 @@ export default function PlaygroundPage() {
     contactBackgroundColor: "#ffffff",
     contactBorderRadius: 8,
     iconSize: 1.0,
+    iconTextGap: 8,
+    iconPairGap: 20,
     iconSpacingHorizontal: 20,
     iconSpacingVertical: 10,
     // Description styling defaults
@@ -82,6 +85,8 @@ export default function PlaygroundPage() {
     bulletColor: "#000000",
     bulletPositionX: 0,
     bulletPositionY: 0,
+    referenceTextColor: "#ffffff",
+    showEnergyRating: false,
   });
 
   // Handler for updating template configuration
