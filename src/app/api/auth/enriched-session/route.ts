@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/lib/auth";
 import { getUserRolesFromDB, getPermissionsForRoles } from "~/lib/auth";
+import { getCachedUserRoles } from "~/lib/auth-cache";
 import { headers } from "next/headers";
 
 export async function GET(_request: NextRequest) {
@@ -19,8 +20,9 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json(session);
     }
 
-    // Enrich session with roles and permissions
-    const userRoles = await getUserRolesFromDB(
+    // Enrich session with roles and permissions (using cache)
+    console.log(`🚀 Enriching session for user ${session.user.id}, account ${session.user.accountId}`);
+    const userRoles = await getCachedUserRoles(
       session.user.id,
       Number(session.user.accountId),
     );

@@ -15,12 +15,14 @@ import { ROLE_PERMISSIONS } from "~/lib/permissions";
 import type { Permission } from "~/lib/permissions";
 
 /**
- * Get user roles from database
+ * Get user roles from database (with caching)
  */
 export async function getUserRolesFromDB(
   userId: string,
-  _accountId: number,
+  accountId: number,
 ): Promise<string[]> {
+  console.log(`🔍 getUserRolesFromDB called for user ${userId}, account ${accountId}`);
+  
   try {
     const userRolesList = await db
       .select({
@@ -36,9 +38,11 @@ export async function getUserRolesFromDB(
         ),
       );
 
-    return userRolesList.map((role) => role.roleName);
+    const roleNames = userRolesList.map((role) => role.roleName);
+    console.log(`📊 DB query result for user ${userId}: [${roleNames.join(", ")}]`);
+    return roleNames;
   } catch (error) {
-    console.error("Error fetching user roles:", error);
+    console.error("❌ Error fetching user roles:", error);
     return [];
   }
 }
