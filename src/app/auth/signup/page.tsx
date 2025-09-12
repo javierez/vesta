@@ -167,7 +167,7 @@ export default function SignUpPage() {
     try {
       await signIn.social({
         provider: "google",
-        callbackURL: "/operaciones",
+        callbackURL: "/auth/account-setup", // Redirect to account setup instead of dashboard
       });
     } catch (err) {
       setError("Error al registrarse con Google");

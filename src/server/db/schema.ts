@@ -85,9 +85,9 @@ export const users = singlestoreTable("users", {
   password: varchar("password", { length: 255 }),
 
   // Your additional fields
-  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  accountId: bigint("account_id", { mode: "bigint" }), // FK → accounts.account_id (nullable for social login)
   firstName: varchar("first_name", { length: 100 }).notNull(),
-  lastName: varchar("last_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }),
   phone: varchar("phone", { length: 20 }),
   timezone: varchar("timezone", { length: 50 }).default("UTC"),
   language: varchar("language", { length: 10 }).default("en"),

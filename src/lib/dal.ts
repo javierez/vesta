@@ -149,6 +149,43 @@ export async function getCurrentUser() {
 }
 
 /**
+ * Get current user session without requiring accountId
+ * This is useful for checking if a user is authenticated but needs account setup
+ */
+export async function getCurrentUserWithoutAccountCheck() {
+  try {
+    const headersList = await headers();
+    const session = await auth.api.getSession({
+      headers: headersList,
+    });
+
+    if (!session?.user) {
+      return null;
+    }
+
+    return {
+      user: {
+        id: session.user.id,
+        email: session.user.email,
+        firstName: session.user.name ?? "",
+        lastName: session.user.lastName ?? "",
+        accountId: session.user.accountId ?? null, // Allow null accountId
+        phone: session.user.phone ?? undefined,
+        timezone: session.user.timezone ?? undefined,
+        language: session.user.language ?? undefined,
+      },
+      session: {
+        id: session.session.id,
+        expiresAt: session.session.expiresAt,
+      },
+    };
+  } catch (error) {
+    console.error("Failed to get user session:", error);
+    return null;
+  }
+}
+
+/**
  * Secure database instance that automatically filters by the authenticated user's account
  *
  * Architecture: User authenticates -> Get user's accountId -> Filter all queries by that accountId

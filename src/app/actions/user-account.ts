@@ -1,6 +1,6 @@
 "use server";
 
-import { getSecureSession } from "~/lib/dal";
+import { getCurrentUserWithoutAccountCheck } from "~/lib/dal";
 import { updateUserAccountId } from "~/server/queries/users";
 
 /**
@@ -9,8 +9,8 @@ import { updateUserAccountId } from "~/server/queries/users";
  */
 export async function updateUserAccount(userId: string, accountId: number) {
   try {
-    // Use optimized DAL function for session retrieval
-    const session = await getSecureSession();
+    // Use session method that doesn't require accountId (for account setup flow)
+    const session = await getCurrentUserWithoutAccountCheck();
 
     if (!session?.user) {
       return { 

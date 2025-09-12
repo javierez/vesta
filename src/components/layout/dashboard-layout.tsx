@@ -10,6 +10,7 @@ import { useSession, signOut } from "~/lib/auth-client";
 import { useUserRole } from "~/hooks/use-user-role";
 import { FeedbackModal } from "~/components/feedback/feedback-modal";
 import { getAccountDetailsAction, getCurrentUserAccountId } from "~/app/actions/account-settings";
+import { AccountSetupRedirect } from "~/components/auth/account-setup-redirect";
 import {
   Building2,
   Users,
@@ -140,6 +141,8 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Account Setup Redirect Component */}
+      <AccountSetupRedirect />
       {/* Mobile sidebar */}
       <div
         className={cn(
