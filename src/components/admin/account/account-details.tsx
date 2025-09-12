@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition, useCallback } from "react";
+import Image from "next/image";
 import { useSession } from "~/lib/auth-client";
 import {
   Mail,
@@ -188,9 +189,11 @@ export function AccountDetails() {
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               {accountDetails.logo && (
-                <img
+                <Image
                   src={accountDetails.logo}
                   alt={accountDetails.name}
+                  width={64}
+                  height={64}
                   className="h-16 w-16 rounded-lg object-contain"
                 />
               )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Edit, Plus, RefreshCw, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -359,9 +360,11 @@ export function TestimonialManager({ accountId }: TestimonialManagerProps) {
                     {testimonial.avatar &&
                     showAvatarInput !== testimonial.testimonial_id ? (
                       <div className="group relative mt-3 inline-block">
-                        <img
+                        <Image
                           src={testimonial.avatar}
                           alt={`Avatar de ${testimonial.name}`}
+                          width={64}
+                          height={64}
                           className="h-16 w-16 rounded-full object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = "none";

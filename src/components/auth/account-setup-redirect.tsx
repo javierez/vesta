@@ -17,7 +17,7 @@ export function AccountSetupRedirect() {
     if (isPending) return;
 
     // If user is authenticated but has no accountId, redirect to account setup
-    if (session?.user && !(session.user as any).accountId) {
+    if (session?.user && !('accountId' in session.user && session.user.accountId)) {
       console.log("User authenticated but missing accountId, redirecting to account setup");
       router.push("/auth/account-setup");
     }

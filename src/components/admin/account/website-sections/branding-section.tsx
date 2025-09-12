@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import { Image as ImageIcon, RefreshCw } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { BrandingSectionProps } from "../types/website-sections";
@@ -89,10 +90,11 @@ export function BrandingSection({
           <h3 className="mb-3 text-sm font-medium text-gray-700">Favicon</h3>
           {form.watch("favicon") ? (
             <div className="group relative inline-block">
-              {/* eslint-disable-next-next/no-img-element */}
-              <img
-                src={form.watch("favicon")}
+              <Image
+                src={form.watch("favicon") ?? ""}
                 alt="Favicon preview"
+                width={96}
+                height={96}
                 className="max-h-24 object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = "none";
