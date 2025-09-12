@@ -16,6 +16,10 @@ export async function assignUserRole(userId: string, roleId: number) {
       throw new Error("User not found");
     }
 
+    if (!user.accountId) {
+      throw new Error("User has no account ID");
+    }
+
     // Ensure the account has role configurations (fallback for existing accounts)
     await ensureAccountRoles(user.accountId);
 

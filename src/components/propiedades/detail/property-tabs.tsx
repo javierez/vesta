@@ -150,6 +150,7 @@ export function PropertyTabs({
         completed: task.completed ?? false,
         isActive: task.isActive ?? true,
         updatedAt: task.updatedAt ?? undefined,
+        userLastName: task.userLastName ?? undefined,
       }));
       setTabData((prev) => ({ ...prev, tasks: tasksWithId }));
     } catch (error) {

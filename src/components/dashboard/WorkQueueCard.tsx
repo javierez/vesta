@@ -409,7 +409,7 @@ export default function WorkQueueCard({
                         )}
                         <Avatar className="h-5 w-5 sm:h-6 sm:w-6 ring-1 ring-gray-100" title={task.userName ?? (`${task.userFirstName ?? ''} ${task.userLastName ?? ''}`.trim() || 'Usuario')}>
                           <AvatarFallback className="text-xs font-medium">
-                            {getInitials(task.userFirstName, task.userLastName, task.userName)}
+                            {getInitials(task.userFirstName, task.userLastName ?? undefined, task.userName)}
                           </AvatarFallback>
                         </Avatar>
                       </div>

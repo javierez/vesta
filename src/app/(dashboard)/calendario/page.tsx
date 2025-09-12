@@ -129,7 +129,7 @@ export default function AppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [agents, setAgents] = useState<
-    Array<{ id: string; name: string; firstName: string; lastName: string }>
+    Array<{ id: string; name: string; firstName: string; lastName: string | null }>
   >([]);
   const [view, setView] = useState<"list" | "calendar" | "weekly">("weekly");
   const [weekStart, setWeekStart] = useState(() => {
@@ -410,7 +410,7 @@ export default function AppointmentsPage() {
                           </div>
                           <span className="text-sm">
                             {agent.name ??
-                              `${agent.firstName} ${agent.lastName}`}
+                              `${agent.firstName} ${agent.lastName ?? ""}`}
                           </span>
                         </div>
                       );
