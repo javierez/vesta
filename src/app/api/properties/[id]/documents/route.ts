@@ -3,17 +3,15 @@ import { NextResponse } from "next/server";
 import { uploadDocument } from "~/app/actions/upload";
 import { getDocumentsByFolderType } from "~/server/queries/document";
 import { getListingDocumentsData } from "~/server/queries/listing";
-import { auth } from "~/lib/auth";
-import { headers } from "next/headers";
+import { getSecureSession } from "~/lib/dal";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // Use optimized DAL function for session retrieval
+    const session = await getSecureSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

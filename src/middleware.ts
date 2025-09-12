@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 const publicPaths = [
   "/",
   "/auth/signin",
-  "/auth/signup",
+  "/auth/signup",  
   "/auth/forgot-password",
   "/auth/account-setup",
   "/api/auth",
@@ -28,81 +28,31 @@ export async function middleware(request: NextRequest) {
   }
 
   // Everything else is protected - requires authentication
-  try {
-    // Verify session using BetterAuth
-    const { headers } = request;
-    const cookieHeader = headers.get("cookie");
-
-    const response = await fetch(
-      `${request.nextUrl.origin}/api/auth/enriched-session`,
-      {
-        headers: {
-          cookie: cookieHeader ?? "",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error("No valid session");
-    }
-
-    const session = (await response.json()) as {
-      user?: {
-        id: string;
-        email: string;
-        firstName?: string;
-        lastName?: string;
-        accountId?: number;
-        roles?: string[];
-        permissions?: string[];
-      };
-    };
-
-    if (!session?.user) {
-      // Redirect to signin page
-      const signinUrl = new URL("/auth/signin", request.url);
-      return NextResponse.redirect(signinUrl);
-    }
-
-    // Check if user has an accountId (required for multi-tenant data access)
-    if (!session.user.accountId && pathname !== "/auth/account-setup") {
-      // User is authenticated but has no account assigned (likely OAuth user)
-      // Redirect to account setup page to enter invitation code
-      const accountSetupUrl = new URL("/auth/account-setup", request.url);
-      return NextResponse.redirect(accountSetupUrl);
-    }
-
-    // Add authenticated user context to request headers for server components
-    // Architecture: User authenticates -> User belongs to account -> Account filters data
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-user-id", session.user.id);
-    requestHeaders.set("x-user-email", session.user.email);
-    requestHeaders.set(
-      "x-user-account-id",
-      session.user.accountId?.toString() ?? "",
-    );
-
-    // Add roles and permissions to headers if available
-    if (session.user.roles) {
-      requestHeaders.set("x-user-roles", JSON.stringify(session.user.roles));
-    }
-    if (session.user.permissions) {
-      requestHeaders.set(
-        "x-user-permissions",
-        JSON.stringify(session.user.permissions),
-      );
-    }
-
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-  } catch {
-    // Session validation failed, redirect to signin page
+  // Use cookie-based check to avoid Edge Runtime database issues
+  const sessionToken = request.cookies.get("better-auth.session_token");
+  
+  if (!sessionToken?.value) {
+    // No session token, redirect to signin
     const signinUrl = new URL("/auth/signin", request.url);
     return NextResponse.redirect(signinUrl);
   }
+
+  // For authenticated users, let the DAL handle full session validation
+  // We just pass through with basic session indication
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-has-session-token", "true");
+
+  console.log("🚀 Middleware - Edge Runtime compatible (cookie check):", {
+    hasSessionToken: true,
+    timestamp: new Date().toISOString(),
+    path: pathname,
+  });
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {

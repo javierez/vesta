@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { auth } from "~/lib/auth";
-import { headers } from "next/headers";
+import { getSecureSession } from "~/lib/dal";
 import { uploadEnhancedImageToS3 } from "~/app/actions/enhance-image";
 import { getListingHeaderData } from "~/server/queries/listing";
 
@@ -15,10 +14,8 @@ export async function POST(
   const resolvedParams = await params;
   
   try {
-    // 1. Check authentication
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // 1. Use optimized DAL function for authentication
+    const session = await getSecureSession();
     
     if (!session?.user?.id) {
       console.error('Unauthorized access to save enhanced image');

@@ -40,14 +40,50 @@ export interface SecureSession {
  *
  * Flow: User authenticates -> Session contains user info -> User belongs to account
  * This function verifies the user session and extracts their account context
+ * 
+ * Optimization: First checks middleware headers (fast) before calling auth.api.getSession (slower)
  */
 export async function getSecureSession(): Promise<SecureSession | null> {
   try {
+    // Check if middleware found a session token (Edge Runtime compatible check)
+    const headersList = await headers();
+    
+    // Try legacy header approach first (for compatibility)
+    const userId = headersList.get("x-user-id");
+    const userEmail = headersList.get("x-user-email");
+    const accountId = headersList.get("x-user-account-id");
+
+    if (userId && userEmail && accountId) {
+      // User data available from middleware headers - no need for auth call
+      console.log("🚀 DAL using headers (fast path) for user:", userId);
+      return {
+        user: {
+          id: userId,
+          email: userEmail,
+          firstName: "", // These fields not available in headers, but usually not needed
+          lastName: "",
+          accountId: parseInt(accountId),
+          phone: undefined,
+          timezone: undefined,
+          language: undefined,
+        },
+        session: {
+          id: "middleware-cached", // Placeholder since exact session ID not in headers
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Assume 7 days
+        },
+      };
+    }
+
+    // Middleware indicates session exists, do full session check in Node.js runtime
+    console.log("💾 DAL doing full session check (Node.js runtime)");
     const session = await auth.api.getSession({
-      headers: await headers(),
+      headers: headersList,
     });
 
     if (!session?.user) {
+      // If middleware said there's a session token but we can't validate it,
+      // the session might be expired or invalid
+      console.warn("Middleware found session token but session validation failed");
       return null;
     }
 
@@ -150,6 +186,146 @@ export async function verifyAccountAccess(
   } catch {
     return false;
   }
+}
+
+/**
+ * Get session directly from headers without fallback
+ * Use this in API routes when you're confident headers are present
+ * Returns null if headers are not set (e.g., when called outside middleware context)
+ */
+export async function getSessionFromHeaders(): Promise<SecureSession | null> {
+  try {
+    const headersList = await headers();
+    const userId = headersList.get("x-user-id");
+    const userEmail = headersList.get("x-user-email");
+    const accountId = headersList.get("x-user-account-id");
+
+    if (userId && userEmail && accountId) {
+      console.log("⚡ DAL using headers directly for user:", userId);
+      return {
+        user: {
+          id: userId,
+          email: userEmail,
+          firstName: "",
+          lastName: "",
+          accountId: parseInt(accountId),
+          phone: undefined,
+          timezone: undefined,
+          language: undefined,
+        },
+        session: {
+          id: "middleware-cached",
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Failed to get session from headers:", error);
+    return null;
+  }
+}
+
+/**
+ * Get secure session with validation - throws error if no session
+ * Use this in API routes and server actions where authentication is required
+ */
+export async function requireSecureSession(): Promise<SecureSession> {
+  const session = await getSecureSession();
+  
+  if (!session) {
+    throw new UnauthorizedError("Authentication required");
+  }
+  
+  return session;
+}
+
+/**
+ * Get secure session with cached roles included
+ * Combines session data with role information for complete auth context
+ */
+export async function getSecureSessionWithRoles(): Promise<SecureSession & { roles: string[] }> {
+  const session = await requireSecureSession();
+  
+  // Try to get roles from headers first (may not be set by middleware due to Edge Runtime)
+  const headersList = await headers();
+  const rolesHeader = headersList.get("x-user-roles");
+  
+  let roles: string[] = [];
+  
+  if (rolesHeader) {
+    try {
+      roles = JSON.parse(rolesHeader) as string[];
+      console.log("⚡ Roles from headers:", roles);
+    } catch {
+      console.warn("Failed to parse roles from header");
+    }
+  }
+  
+  // Middleware doesn't set roles due to Edge Runtime, so fetch from cache
+  if (roles.length === 0) {
+    const { getCachedUserRoles } = await import("~/lib/auth-cache");
+    roles = await getCachedUserRoles(session.user.id, session.user.accountId);
+    console.log("💾 Roles from cache/DB (middleware can't set due to Edge Runtime):", roles);
+  }
+  
+  return {
+    ...session,
+    roles,
+  };
+}
+
+/**
+ * Get user roles with caching - standalone function for permission systems
+ */
+export async function getUserRolesForCurrentUser(): Promise<string[]> {
+  const session = await requireSecureSession();
+  
+  // Try headers first (may not be available due to Edge Runtime middleware)
+  const headersList = await headers();
+  const rolesHeader = headersList.get("x-user-roles");
+  
+  if (rolesHeader) {
+    try {
+      const roles = JSON.parse(rolesHeader) as string[];
+      console.log("⚡ User roles from headers:", roles);
+      return roles;
+    } catch {
+      console.warn("Failed to parse roles from header");
+    }
+  }
+  
+  // Fetch from cache/DB
+  const { getCachedUserRoles } = await import("~/lib/auth-cache");
+  const roles = await getCachedUserRoles(session.user.id, session.user.accountId);
+  console.log("💾 User roles from cache/DB:", roles);
+  return roles;
+}
+
+/**
+ * Get user permissions with caching - standalone function for permission systems
+ */
+export async function getUserPermissionsForCurrentUser(): Promise<string[]> {
+  const headersList = await headers();
+  const permissionsHeader = headersList.get("x-user-permissions");
+  
+  if (permissionsHeader) {
+    try {
+      const permissions = JSON.parse(permissionsHeader) as string[];
+      console.log("⚡ User permissions from headers:", permissions);
+      return permissions;
+    } catch {
+      console.warn("Failed to parse permissions from header");
+    }
+  }
+  
+  // Calculate from roles
+  const roles = await getUserRolesForCurrentUser();
+  const { getPermissionsForRoles } = await import("~/lib/auth");
+  const permissions = getPermissionsForRoles(roles);
+  console.log("💾 User permissions calculated from roles:", permissions);
+  return permissions;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "~/lib/auth";
+import { getSecureSession } from "~/lib/dal";
 import { userHasRole } from "~/server/queries/user-roles";
 
 export default async function AccountAdminLayout({
@@ -7,9 +7,8 @@ export default async function AccountAdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
+  // Use optimized DAL function for session retrieval
+  const session = await getSecureSession();
 
   if (!session?.user) {
     redirect("/auth/signin");

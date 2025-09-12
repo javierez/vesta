@@ -17,8 +17,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "~/server/db";
 import { propertyImages, documents } from "~/server/db/schema";
 import { s3Client } from "~/server/s3";
-import { auth } from "~/lib/auth";
-import { headers } from "next/headers";
+import { getSecureSession } from "~/lib/dal";
 
 export async function uploadPropertyImage(
   file: File,
@@ -279,10 +278,8 @@ export async function deleteDocumentAction(docId: bigint, documentKey: string, p
   "use server";
   
   try {
-    // Get current user for security
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // Use optimized DAL function for session retrieval
+    const session = await getSecureSession();
     
     if (!session?.user?.id) {
       return {

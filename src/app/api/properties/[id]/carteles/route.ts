@@ -3,8 +3,7 @@ import { NextResponse } from "next/server";
 import { uploadDocument } from "~/app/actions/upload";
 import { getDocumentsByFolderType, hardDeleteDocument } from "~/server/queries/document";
 import { getListingDocumentsData } from "~/server/queries/listing";
-import { auth } from "~/lib/auth";
-import { headers } from "next/headers";
+import { getSecureSession } from "~/lib/dal";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "~/server/s3";
 
@@ -13,9 +12,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // Use optimized DAL function for session retrieval
+    const session = await getSecureSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -138,9 +136,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // Use optimized DAL function for session retrieval
+    const session = await getSecureSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

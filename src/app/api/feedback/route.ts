@@ -2,15 +2,12 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { feedback } from "~/server/db/schema";
-import { auth } from "~/lib/auth";
-import { headers } from "next/headers";
+import { getSecureSession } from "~/lib/dal";
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the session
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // Use optimized DAL function for session retrieval
+    const session = await getSecureSession();
 
     if (!session?.user?.id) {
       return NextResponse.json(

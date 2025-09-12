@@ -331,7 +331,7 @@ export function getCacheStats() {
 /**
  * Health check for cache system
  */
-export function healthCheck(): { status: "healthy" | "degraded", details: any } {
+export function healthCheck(): { status: "healthy" | "degraded", details: unknown } {
   try {
     const stats = getCacheStats();
     const testKey = "health_check_test";

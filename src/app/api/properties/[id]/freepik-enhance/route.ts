@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { auth } from "~/lib/auth";
-import { headers } from "next/headers";
+import { getSecureSession } from "~/lib/dal";
 import { freepikClient } from "~/lib/freepik-client";
 import { imageUrlToBase64, validateImageSize, getImageSizeInMB } from "~/lib/image-utils";
 import { getListingHeaderData } from "~/server/queries/listing";
@@ -16,10 +15,8 @@ export async function POST(
   const resolvedParams = await _params;
   
   try {
-    // 1. Check authentication
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // 1. Use optimized DAL function for authentication
+    const session = await getSecureSession();
     
     if (!session?.user?.id) {
       console.error('Unauthorized access to enhancement API');
@@ -108,10 +105,8 @@ export async function GET(
   { params: _params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    // 1. Check authentication
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // 1. Use optimized DAL function for authentication
+    const session = await getSecureSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

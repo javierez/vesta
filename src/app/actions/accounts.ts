@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "~/lib/auth";
+import { getSecureSession } from "~/lib/dal";
 import { userHasRole } from "~/server/queries/user-roles";
 import { redirect } from "next/navigation";
 import {
@@ -14,9 +14,8 @@ import {
 
 // Helper function to check superadmin access
 async function checkSuperAdminAccess() {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
+  // Use optimized DAL function instead of direct auth.api.getSession
+  const session = await getSecureSession();
 
   if (!session?.user) {
     redirect("/auth/signin");

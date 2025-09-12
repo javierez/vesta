@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { auth } from "~/lib/auth";
-import { headers } from "next/headers";
+import { getSecureSession } from "~/lib/dal";
 import { setDefaultCartelConfigurationWithAuth } from "~/server/queries/cartel-configurations";
 
 // POST - Set cartel configuration as default
@@ -10,9 +9,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // Use optimized DAL function for session retrieval
+    const session = await getSecureSession();
     
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
-import { auth } from "~/lib/auth";
+import { getSecureSession } from "~/lib/dal";
 import { userHasRole } from "~/server/queries/user-roles";
 import { SystemSettings } from "~/components/admin/management/system-settings";
 import Link from "next/link";
 
 export default async function AdminConfiguracionPage() {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
+  // Use optimized DAL function for session retrieval
+  const session = await getSecureSession();
 
   if (!session?.user) {
     redirect("/auth/signin");

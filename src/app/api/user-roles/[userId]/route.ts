@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "~/lib/auth";
+import { getSecureSession } from "~/lib/dal";
 import { getUserRoles } from "~/server/queries/user-roles";
 
 export async function GET(
@@ -10,10 +10,8 @@ export async function GET(
     // Await params in Next.js 15+
     const { userId } = await params;
 
-    // Verify the user is authenticated
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+    // Use optimized DAL function for authentication
+    const session = await getSecureSession();
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

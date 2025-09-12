@@ -4,8 +4,7 @@ import {
   createVisitAction,
   getUserCompletedVisitsAction,
 } from "~/server/actions/visits";
-import { auth } from "~/lib/auth";
-import { headers } from "next/headers";
+import { getSecureSession } from "~/lib/dal";
 import type { VisitFormData } from "~/types/visits";
 
 /**
@@ -13,9 +12,8 @@ import type { VisitFormData } from "~/types/visits";
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // Use optimized DAL function for session retrieval
+    const session = await getSecureSession();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -54,9 +52,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(_request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // Use optimized DAL function for session retrieval
+    const session = await getSecureSession();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

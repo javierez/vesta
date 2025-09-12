@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
-import { auth } from "~/lib/auth";
+import { getSecureSession } from "~/lib/dal";
 import { userHasRole } from "~/server/queries/user-roles";
 import { AccountsManagement } from "~/components/admin/management/accounts";
 import Link from "next/link";
 
 export default async function AdminCuentasPage() {
-  const session = await auth.api.getSession({
-    headers: await import("next/headers").then((m) => m.headers()),
-  });
+  // Use optimized DAL function for session retrieval
+  const session = await getSecureSession();
 
   if (!session?.user) {
     redirect("/auth/signin");

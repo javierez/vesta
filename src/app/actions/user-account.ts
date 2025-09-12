@@ -1,8 +1,7 @@
 "use server";
 
-import { auth } from "~/lib/auth";
+import { getSecureSession } from "~/lib/dal";
 import { updateUserAccountId } from "~/server/queries/users";
-import { headers } from "next/headers";
 
 /**
  * Update the accountId for a user
@@ -10,10 +9,8 @@ import { headers } from "next/headers";
  */
 export async function updateUserAccount(userId: string, accountId: number) {
   try {
-    // Verify the user is authenticated and updating their own account
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    // Use optimized DAL function for session retrieval
+    const session = await getSecureSession();
 
     if (!session?.user) {
       return { 
