@@ -1,6 +1,7 @@
 import NodeCache from "node-cache";
-import { getUserRolesFromDB, getPermissionsForRoles } from "~/lib/auth";
+import { getUserRolesFromDB, getPermissionsForRoles, auth } from "~/lib/auth";
 import type { Permission } from "~/lib/permissions";
+import { headers } from "next/headers";
 
 /**
  * Enhanced Session Caching Strategy
@@ -18,7 +19,7 @@ import type { Permission } from "~/lib/permissions";
 
 // Cache Configuration
 const SESSION_CACHE_TTL = 4 * 60 * 60; // 4 hours in seconds
-const ROLES_CACHE_TTL = 15 * 60; // 15 minutes in seconds
+const ROLES_CACHE_TTL = 4 * 60 * 60; // 15 minutes in seconds
 
 // Cache Instances
 const sessionCache = new NodeCache({ 
@@ -175,17 +176,14 @@ export async function getCachedUserRoles(
 }
 
 /**
- * Cache full session data for 4 hours
- * This is the main optimization - cache complete session objects
+ * Get cached session data with fallback to auth provider
+ * This follows the same pattern as getCachedUserRoles()
  */
-export async function getCachedSession(
-  sessionId: string,
-  sessionData: CachedSessionData
-): Promise<CachedSessionData> {
+export async function getCachedSession(sessionId: string): Promise<CachedSessionData | null> {
   const cacheKey = `session:${sessionId}`;
 
   try {
-    // Check if we have cached session data
+    // Check cache first
     const cached = sessionCache.get<CachedSessionData>(cacheKey);
     if (cached) {
       AuthMetrics.recordSessionCacheHit();
@@ -193,41 +191,51 @@ export async function getCachedSession(
       return cached;
     }
 
-    // Cache miss - store the provided session data
+    // Cache miss - fetch from auth provider
     AuthMetrics.recordSessionCacheMiss();
+    AuthMetrics.recordDbQuery();
+    console.log(`💾 Cache MISS for session: ${sessionId} - fetching from auth provider`);
     
+    // Get fresh session from auth provider
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user?.accountId) {
+      console.log(`❌ No valid session found for ${sessionId}`);
+      return null;
+    }
+
+    // Create enriched session data
     const enrichedSessionData: CachedSessionData = {
-      ...sessionData,
+      user: {
+        id: session.user.id,
+        email: session.user.email,
+        firstName: session.user.name ?? "",
+        lastName: session.user.lastName ?? "",
+        accountId: Number(session.user.accountId),
+        phone: session.user.phone ?? undefined,
+        timezone: session.user.timezone ?? undefined,
+        language: session.user.language ?? undefined,
+      },
+      session: {
+        id: session.session.id,
+        expiresAt: session.session.expiresAt,
+      },
       cachedAt: new Date(),
     };
 
     // Cache for 4 hours
     sessionCache.set(cacheKey, enrichedSessionData, SESSION_CACHE_TTL);
     
-    console.log(`✅ Cached session for ${sessionId} (user: ${sessionData.user.id})`);
+    console.log(`✅ Cached session for ${sessionId} (user: ${session.user.id})`);
     return enrichedSessionData;
   } catch (error) {
-    console.error(`❌ Error caching session ${sessionId}:`, error);
-    return sessionData;
+    console.error(`❌ Error fetching session ${sessionId}:`, error);
+    return null;
   }
 }
 
-/**
- * Get cached session by session ID
- */
-export function getCachedSessionById(sessionId: string): CachedSessionData | undefined {
-  const cacheKey = `session:${sessionId}`;
-  
-  const cached = sessionCache.get<CachedSessionData>(cacheKey);
-  if (cached) {
-    AuthMetrics.recordSessionCacheHit();
-    console.log(`🎯 Retrieved cached session: ${sessionId}`);
-    return cached;
-  }
-
-  AuthMetrics.recordSessionCacheMiss();
-  return undefined;
-}
 
 /**
  * Cache user permissions (implementation ready for future use)
