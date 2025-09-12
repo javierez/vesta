@@ -114,67 +114,8 @@ export default function AccountSetupPage() {
       return;
     }
 
-    if (!session?.user?.id || !session?.user?.email) {
-      setError("No se pudo obtener la información del usuario");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      // Create new account
-      const response = await fetch("/api/admin/accounts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: companyName.trim(),
-          email: session.user.email,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        setError(result.error ?? "Error al crear la cuenta");
-        setIsLoading(false);
-        return;
-      }
-
-      const newAccountId = result.account.accountId;
-
-      // Update user's accountId
-      const updateResult = await updateUserAccount(session.user.id, newAccountId);
-      if (!updateResult.success) {
-        setError(updateResult.error ?? "Error al asignar la cuenta");
-        setIsLoading(false);
-        return;
-      }
-
-      // Assign admin role to the account creator (roleId = 3 for Account Admin)
-      try {
-        await assignUserRole(session.user.id, 3);
-      } catch (roleError) {
-        console.error("Failed to assign admin role:", roleError);
-        // Don't fail the process if role assignment fails
-      }
-
-      // Force session refresh to get updated user data with accountId
-      console.log("🔄 Refreshing session after account creation...");
-      await getSession();
-
-      setSuccess(true);
-
-      // Redirect to dashboard after successful setup
-      setTimeout(() => {
-        window.location.href = "/operaciones";
-      }, 2000);
-    } catch (err) {
-      setError("Error inesperado al crear la cuenta");
-      console.error("Account creation error:", err);
-    } finally {
-      setIsLoading(false);
-    }
+    // Redirect to Calendly for organization creation request
+    window.location.href = "https://calendly.com/kidoedu/kido-demo";
   };
 
   if (success) {
