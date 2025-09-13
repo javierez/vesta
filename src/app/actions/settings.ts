@@ -33,14 +33,7 @@ import type {
   PortalConfigurationResponse,
 } from "~/types/portal-settings";
 import { portalConfigurationSchema } from "~/types/portal-settings";
-
-// Helper function to normalize account name for S3 folder naming
-function normalizeAccountNameForS3(accountName: string): string {
-  return accountName
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '') // Remove spaces, hyphens, quotes, slashes, etc.
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens (if any remain)
-}
+import { getDynamicBucketNameForAccount } from "~/lib/s3-bucket";
 
 // Account Logo Upload
 export async function uploadAccountLogo(
@@ -76,13 +69,13 @@ export async function uploadAccountLogo(
       };
     }
 
-    // Generate dynamic folder name based on account name
-    const normalizedAccountName = normalizeAccountNameForS3(account.name);
+    // Generate dynamic bucket name based on account name
+    const bucketName = await getDynamicBucketNameForAccount(accountId);
     
     // Upload to S3 in account-specific folder
     const { imageUrl } = await uploadImageToS3(
       file,
-      normalizedAccountName,
+      bucketName,
       1, // Order doesn't matter for logos
     );
 
@@ -433,12 +426,12 @@ export async function uploadAccountLogoForConfig(
       };
     }
 
-    // Generate dynamic folder name based on account name
-    const normalizedAccountName = normalizeAccountNameForS3(account.name);
+    // Generate dynamic bucket name based on account name
+    const bucketName = await getDynamicBucketNameForAccount(accountId);
     
     // Create a custom upload function for the config folder
     const fileExtension = file.name.split(".").pop();
-    const logoKey = `${normalizedAccountName}/config/logo_${accountId}_${Date.now()}.${fileExtension}`;
+    const logoKey = `${bucketName}/config/logo_${accountId}_${Date.now()}.${fileExtension}`;
 
     // Convert File to Buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -455,14 +448,14 @@ export async function uploadAccountLogoForConfig(
 
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
+        Bucket: bucketName,
         Key: logoKey,
         Body: buffer,
         ContentType: file.type,
       }),
     );
 
-    const imageUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${logoKey}`;
+    const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${logoKey}`;
 
     // Update account with new logo URL
     const updatedAccount = await updateAccountLogo(BigInt(accountId), imageUrl);

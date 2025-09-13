@@ -7,6 +7,7 @@ import { db } from "~/server/db";
 import { accounts, websiteProperties } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import type { BrandAsset } from "~/types/brand";
+import { getDynamicBucketName } from "~/lib/s3-bucket";
 
 // Type for account preferences that include branding data
 interface AccountPreferences {
@@ -44,8 +45,11 @@ async function uploadBrandAssetToS3(
 
     // Create the S3 key following the required structure:
     // inmobiliariaacropolis/[accountId]/branding/logo_[type]_[timestamp].[ext]
+    // Get dynamic bucket name
+    const bucketName = await getDynamicBucketName();
+    
     const imageKey = `branding/logo_${fileType}_${timestamp}_${nanoid(6)}.${fileExtension}`;
-    const s3key = `s3://${process.env.AWS_S3_BUCKET}/${imageKey}`;
+    const s3key = `s3://${bucketName}/${imageKey}`;
 
     // Convert Blob to Buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -54,7 +58,7 @@ async function uploadBrandAssetToS3(
     // Upload to S3
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
+        Bucket: bucketName,
         Key: imageKey,
         Body: buffer,
         ContentType:
@@ -64,7 +68,7 @@ async function uploadBrandAssetToS3(
     );
 
     // Return the image URL and keys
-    const imageUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
+    const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
     return {
       imageUrl,
       s3key,
@@ -202,6 +206,9 @@ export async function deleteBrandAsset(
 
     const preferences = account.preferences as AccountPreferences;
 
+    // Get dynamic bucket name for delete operations
+    const bucketName = await getDynamicBucketName();
+
     // 2. Get website config to find transparent logo
     const [websiteConfig] = await db
       .select()
@@ -218,7 +225,7 @@ export async function deleteBrandAsset(
         deletePromises.push(
           s3Client.send(
             new DeleteObjectCommand({
-              Bucket: process.env.AWS_S3_BUCKET!,
+              Bucket: bucketName,
               Key: originalKey,
             }),
           ),
@@ -233,7 +240,7 @@ export async function deleteBrandAsset(
         deletePromises.push(
           s3Client.send(
             new DeleteObjectCommand({
-              Bucket: process.env.AWS_S3_BUCKET!,
+              Bucket: bucketName,
               Key: transparentKey,
             }),
           ),

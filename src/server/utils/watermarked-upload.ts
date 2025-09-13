@@ -8,6 +8,7 @@ import {
 import { nanoid } from "nanoid";
 import { addWatermark, downloadImageBuffer } from "~/lib/watermark";
 import type { WatermarkConfig } from "~/types/watermark";
+import { getDynamicBucketName } from "~/lib/s3-bucket";
 
 // Initialize S3 client
 const s3Client = new S3Client({
@@ -66,10 +67,13 @@ export async function uploadWatermarkedImageToS3(
     // Pattern: referenceNumber/watermarked/temp_image_order_nanoid.jpg
     const watermarkedKey = `${referenceNumber}/watermarked/temp_image_${imageOrder}_${nanoid(6)}.jpg`;
 
+    // Get dynamic bucket name
+    const bucketName = await getDynamicBucketName();
+
     // Upload to S3
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
+        Bucket: bucketName,
         Key: watermarkedKey,
         Body: watermarkResult.imageBuffer,
         ContentType: "image/jpeg",
@@ -82,7 +86,7 @@ export async function uploadWatermarkedImageToS3(
     );
 
     // Generate the public URL
-    const watermarkedUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${watermarkedKey}`;
+    const watermarkedUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${watermarkedKey}`;
 
     console.log(`Uploaded watermarked image to S3: ${watermarkedKey}`);
 
@@ -185,13 +189,16 @@ export async function cleanupWatermarkedImages(
   const errors: string[] = [];
   let deletedCount = 0;
 
+  // Get dynamic bucket name
+  const bucketName = await getDynamicBucketName();
+
   // Delete each watermarked image
   await Promise.all(
     watermarkedKeys.map(async (key) => {
       try {
         await s3Client.send(
           new DeleteObjectCommand({
-            Bucket: process.env.AWS_S3_BUCKET!,
+            Bucket: bucketName,
             Key: key,
           }),
         );
@@ -223,8 +230,11 @@ export async function cleanupAllWatermarkedImagesForReference(
     // List all objects in the watermarked folder
     const { ListObjectsV2Command } = await import("@aws-sdk/client-s3");
 
+    // Get dynamic bucket name
+    const bucketName = await getDynamicBucketName();
+
     const listCommand = new ListObjectsV2Command({
-      Bucket: process.env.AWS_S3_BUCKET!,
+      Bucket: bucketName,
       Prefix: `${referenceNumber}/watermarked/`,
     });
 

@@ -6,6 +6,7 @@ import { s3Client } from "~/server/s3";
 import { createPropertyImage, getPropertyImageById } from "~/server/queries/property_images";
 import type { PropertyImage } from "~/lib/data";
 import { downloadImageAsBuffer, generateEnhancedImageFilename, getFileExtensionFromUrl } from "~/lib/image-utils";
+import { getDynamicBucketName } from "~/lib/s3-bucket";
 
 /**
  * Upload enhanced image to S3 and create database record
@@ -29,12 +30,15 @@ export async function uploadEnhancedImageToS3(
       nanoid(6),
       fileExtension
     );
-    const s3key = `s3://${process.env.AWS_S3_BUCKET}/${imageKey}`;
+    
+    // Get dynamic bucket name
+    const bucketName = await getDynamicBucketName();
+    const s3key = `s3://${bucketName}/${imageKey}`;
 
     // 3. Upload to S3
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
+        Bucket: bucketName,
         Key: imageKey,
         Body: imageBuffer,
         ContentType: `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`,
@@ -42,7 +46,7 @@ export async function uploadEnhancedImageToS3(
     );
 
     // 4. Generate the public URL
-    const imageUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
+    const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
 
     // 5. Create database record with ai_enhanced tag
     const result = await createPropertyImage({
@@ -107,7 +111,10 @@ export async function createEnhancedPropertyImageFromFile(
       nanoid(6),
       fileExtension
     );
-    const s3key = `s3://${process.env.AWS_S3_BUCKET}/${imageKey}`;
+    
+    // Get dynamic bucket name
+    const bucketName = await getDynamicBucketName();
+    const s3key = `s3://${bucketName}/${imageKey}`;
 
     // 2. Convert File to Buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -116,7 +123,7 @@ export async function createEnhancedPropertyImageFromFile(
     // 3. Upload to S3
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
+        Bucket: bucketName,
         Key: imageKey,
         Body: buffer,
         ContentType: file.type,
@@ -124,7 +131,7 @@ export async function createEnhancedPropertyImageFromFile(
     );
 
     // 4. Generate the public URL
-    const imageUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
+    const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
 
     // 5. Create database record with ai_enhanced tag
     const result = await createPropertyImage({

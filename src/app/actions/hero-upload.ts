@@ -6,6 +6,7 @@ import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "~/server/db";
 import { websiteProperties } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
+import { getDynamicBucketName } from "~/lib/s3-bucket";
 
 /**
  * Upload hero background image to S3
@@ -31,6 +32,9 @@ export async function uploadHeroImage(
     // Create the S3 key for hero image
     const imageKey = `hero/background_${timestamp}_${nanoid(6)}.${fileExtension}`;
 
+    // Get dynamic bucket name
+    const bucketName = await getDynamicBucketName();
+
     // Convert Blob to Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -38,7 +42,7 @@ export async function uploadHeroImage(
     // Upload to S3
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
+        Bucket: bucketName,
         Key: imageKey,
         Body: buffer,
         ContentType: file.type || "image/jpeg",
@@ -46,7 +50,7 @@ export async function uploadHeroImage(
     );
 
     // Generate the image URL
-    const imageUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
+    const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
 
     // Update website config with new hero image
     const [existingConfig] = await db
@@ -120,6 +124,9 @@ export async function deleteHeroImage(
     }
 
     if (heroProps.backgroundImage) {
+      // Get dynamic bucket name
+      const bucketName = await getDynamicBucketName();
+      
       // Extract S3 key from URL
       const urlParts = heroProps.backgroundImage.split(".com/");
       const s3Key = urlParts.length > 1 ? urlParts[1] : null;
@@ -128,7 +135,7 @@ export async function deleteHeroImage(
       if (s3Key) {
         await s3Client.send(
           new DeleteObjectCommand({
-            Bucket: process.env.AWS_S3_BUCKET!,
+            Bucket: bucketName,
             Key: s3Key,
           }),
         );

@@ -6,13 +6,13 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { nanoid } from "nanoid";
+import { getDynamicBucketName } from "~/lib/s3-bucket";
 
 // Validate required environment variables
 const requiredEnvVars = {
   AWS_REGION: process.env.AWS_REGION,
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
 };
 
 // Check if any required environment variables are missing
@@ -49,6 +49,9 @@ export async function uploadImageToS3(
       throw new Error("No reference number provided");
     }
 
+    // Get dynamic bucket name based on current user's account
+    const bucketName = await getDynamicBucketName();
+
     // Generate a unique filename
     const fileExtension = file.name.split(".").pop();
     if (!fileExtension) {
@@ -58,7 +61,7 @@ export async function uploadImageToS3(
     // Create the S3 key following the existing structure:
     // bucket/referenceNumber/images/image_filename
     const imageKey = `${referenceNumber}/images/image_${imageOrder}_${nanoid(6)}.${fileExtension}`;
-    const s3key = `s3://${process.env.AWS_S3_BUCKET}/${imageKey}`;
+    const s3key = `s3://${bucketName}/${imageKey}`;
 
     // Convert File to Buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -67,7 +70,7 @@ export async function uploadImageToS3(
     // Upload to S3
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
+        Bucket: bucketName,
         Key: imageKey,
         Body: buffer,
         ContentType: file.type,
@@ -75,7 +78,7 @@ export async function uploadImageToS3(
     );
 
     // Return the image URL and keys
-    const imageUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
+    const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
     return {
       imageUrl,
       s3key,
@@ -111,6 +114,9 @@ export async function uploadDocumentToS3(
       throw new Error("No reference number provided");
     }
 
+    // Get dynamic bucket name based on current user's account
+    const bucketName = await getDynamicBucketName();
+
     // Get file extension
     const fileExtension = file.name.split(".").pop();
     if (!fileExtension) {
@@ -129,7 +135,7 @@ export async function uploadDocumentToS3(
     } else {
       documentKey = `${referenceNumber}/documents/document_${documentOrder}_${nanoid(6)}.${fileExtension}`;
     }
-    const s3key = `s3://${process.env.AWS_S3_BUCKET}/${documentKey}`;
+    const s3key = `s3://${bucketName}/${documentKey}`;
 
     // Convert File to Buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -138,7 +144,7 @@ export async function uploadDocumentToS3(
     // Upload to S3
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
+        Bucket: bucketName,
         Key: documentKey,
         Body: buffer,
         ContentType: file.type,
@@ -146,7 +152,7 @@ export async function uploadDocumentToS3(
     );
 
     // Build the public S3 URL
-    const fileUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${documentKey}`;
+    const fileUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${documentKey}`;
 
     return {
       fileUrl,
@@ -180,7 +186,8 @@ export async function renameS3Folder(
       throw new Error("Both temporary and new reference numbers are required");
     }
 
-    const bucket = process.env.AWS_S3_BUCKET!;
+    // Get dynamic bucket name based on current user's account
+    const bucket = await getDynamicBucketName();
     const results: Array<{
       oldKey: string;
       newKey: string;

@@ -6,6 +6,7 @@ import { getListingDocumentsData } from "~/server/queries/listing";
 import { getSecureSession } from "~/lib/dal";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "~/server/s3";
+import { getDynamicBucketName } from "~/lib/s3-bucket";
 
 export async function POST(
   request: NextRequest,
@@ -164,9 +165,12 @@ export async function DELETE(
 
     // Delete from S3
     try {
+      // Get dynamic bucket name
+      const bucketName = await getDynamicBucketName();
+      
       await s3Client.send(
         new DeleteObjectCommand({
-          Bucket: process.env.AWS_S3_BUCKET!,
+          Bucket: bucketName,
           Key: String(documentKey),
         }),
       );

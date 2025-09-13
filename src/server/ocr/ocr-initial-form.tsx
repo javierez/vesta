@@ -6,6 +6,7 @@ import {
   AnalyzeDocumentCommand,
   type Block,
 } from "@aws-sdk/client-textract";
+import { getDynamicBucketName } from "~/lib/s3-bucket";
 
 // Initialize Textract client using the same AWS configuration as S3
 const textractClient = new TextractClient({
@@ -74,7 +75,7 @@ export async function extractTextFromDocument(
   );
 
   try {
-    const bucket = bucketName ?? process.env.AWS_S3_BUCKET!;
+    const bucket = bucketName ?? await getDynamicBucketName();
     console.log(`📦 [OCR] Using bucket: ${bucket}`);
 
     const command = new DetectDocumentTextCommand({
@@ -174,7 +175,7 @@ export async function analyzeDocumentStructure(
   );
 
   try {
-    const bucket = bucketName ?? process.env.AWS_S3_BUCKET!;
+    const bucket = bucketName ?? await getDynamicBucketName();
 
     const featureTypes = [];
     if (enableForms) featureTypes.push("FORMS");

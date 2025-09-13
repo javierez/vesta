@@ -13,6 +13,7 @@ import {
 } from "~/server/queries/document";
 import type { PropertyImage, Document } from "~/lib/data";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { getDynamicBucketName } from "~/lib/s3-bucket";
 import { and, eq } from "drizzle-orm";
 import { db } from "~/server/db";
 import { propertyImages, documents } from "~/server/db/schema";
@@ -83,10 +84,13 @@ export async function deletePropertyImage(
   "use server";
 
   try {
+    // Get dynamic bucket name
+    const bucketName = await getDynamicBucketName();
+
     // Delete from S3
     await s3Client.send(
       new DeleteObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
+        Bucket: bucketName,
         Key: imageKey,
       }),
     );
@@ -256,10 +260,13 @@ export async function deleteDocument(documentKey: string, docId: bigint) {
   "use server";
 
   try {
+    // Get dynamic bucket name
+    const bucketName = await getDynamicBucketName();
+
     // Delete from S3
     await s3Client.send(
       new DeleteObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
+        Bucket: bucketName,
         Key: documentKey,
       }),
     );
