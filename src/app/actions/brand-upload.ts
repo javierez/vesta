@@ -202,7 +202,13 @@ export async function deleteBrandAsset(
 
     const preferences = account.preferences as AccountPreferences;
 
-    // 2. Delete files from S3 if they exist
+    // 2. Get website config to find transparent logo
+    const [websiteConfig] = await db
+      .select()
+      .from(websiteProperties)
+      .where(eq(websiteProperties.accountId, BigInt(accountId)));
+
+    // 3. Delete files from S3 if they exist
     const deletePromises: Promise<unknown>[] = [];
 
     // Delete original logo (extract key from URL)
@@ -220,22 +226,25 @@ export async function deleteBrandAsset(
       }
     }
 
-    // Delete transparent logo
-    if (preferences?.logoTransparentImageKey) {
-      deletePromises.push(
-        s3Client.send(
-          new DeleteObjectCommand({
-            Bucket: process.env.AWS_S3_BUCKET!,
-            Key: preferences.logoTransparentImageKey,
-          }),
-        ),
-      );
+    // Delete transparent logo from website config
+    if (websiteConfig?.logo) {
+      const transparentKey = extractS3KeyFromUrl(websiteConfig.logo);
+      if (transparentKey) {
+        deletePromises.push(
+          s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: process.env.AWS_S3_BUCKET!,
+              Key: transparentKey,
+            }),
+          ),
+        );
+      }
     }
 
     // Execute all deletions
     await Promise.all(deletePromises);
 
-    // 3. Update database to remove brand data
+    // 4. Update database to remove brand data
     // Keep other preferences but remove brand-related ones
     const cleanedPreferences = { ...preferences };
     delete cleanedPreferences.logoTransparent;
@@ -252,6 +261,17 @@ export async function deleteBrandAsset(
         updatedAt: new Date(),
       })
       .where(eq(accounts.accountId, BigInt(accountId)));
+
+    // 5. Update website config to clear logo
+    if (websiteConfig) {
+      await db
+        .update(websiteProperties)
+        .set({
+          logo: "",
+          updatedAt: new Date(),
+        })
+        .where(eq(websiteProperties.accountId, BigInt(accountId)));
+    }
 
     console.log("Brand asset deleted successfully");
     return { success: true };

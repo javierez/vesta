@@ -172,7 +172,7 @@ export async function middleware(request: NextRequest) {
   // ... public path checks remain the same ...
 
   try {
-    // Direct session check (no HTTP call)
+    // Direct session check (no HTTP call)wh
     const session = await auth.api.getSession({
       headers: request.headers,
     });

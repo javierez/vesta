@@ -72,6 +72,7 @@ export const AccountBranding = () => {
     Record<string, string>
   >({});
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showReplaceDialog, setShowReplaceDialog] = useState(false);
 
   // Load account data on mount
   useEffect(() => {
@@ -332,7 +333,7 @@ export const AccountBranding = () => {
                     className="object-contain"
                   />
 
-                  {/* Hover buttons - same pattern as image-gallery */}
+                  {/* Hover buttons - same pattern as Hero section */}
                   <button
                     type="button"
                     className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
@@ -356,7 +357,7 @@ export const AccountBranding = () => {
 
                   <button
                     type="button"
-                    className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 disabled:opacity-50 group-hover:opacity-100"
+                    className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
                     onClick={() => {
                       const a = document.createElement("a");
                       a.href = brandAsset.logoTransparentUrl;
@@ -368,6 +369,15 @@ export const AccountBranding = () => {
                     aria-label="Descargar logo"
                   >
                     <Download className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
+                    onClick={() => setShowReplaceDialog(true)}
+                    aria-label="Reemplazar logo"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
                   </button>
                 </div>
 
@@ -743,6 +753,29 @@ export const AccountBranding = () => {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Replace Logo Dialog */}
+      <Dialog open={showReplaceDialog} onOpenChange={setShowReplaceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reemplazar Logo</DialogTitle>
+            <DialogDescription>
+              Selecciona un nuevo logo para reemplazar el actual. El sistema procesará automáticamente el fondo y extraerá los colores.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <LogoUpload
+              onUpload={async (file) => {
+                setShowReplaceDialog(false);
+                await handleLogoUpload(file);
+              }}
+              isUploading={isUploading}
+              progress={uploadProgress}
+              className="mx-auto max-w-lg"
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>

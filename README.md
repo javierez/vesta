@@ -199,9 +199,6 @@ revert
 - Boost Efficiency
    - Make use of caché and memoized items
 
-
-## Med Priority
-
 - Add Notifications to DB
 
 - MatchSeeker

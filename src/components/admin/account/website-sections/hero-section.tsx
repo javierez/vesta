@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Home, RefreshCw } from "lucide-react";
+import { Home, RefreshCw, Eye, Trash2, Download } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
   FormControl,
@@ -11,6 +11,20 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { HeroImageUpload } from "~/components/ui/hero-image-upload";
+import { uploadHeroImage, deleteHeroImage } from "~/app/actions/hero-upload";
+import { useToast } from "~/components/hooks/use-toast";
+import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { AlertTriangle } from "lucide-react";
+import Image from "next/image";
 import type { HeroSectionProps } from "../types/website-sections";
 
 export function HeroSection({
@@ -18,7 +32,11 @@ export function HeroSection({
   isActive,
   onUnsavedChanges,
 }: HeroSectionProps) {
-  const [showHeroImageInput, setShowHeroImageInput] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const { toast } = useToast();
 
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
@@ -29,6 +47,74 @@ export function HeroSection({
     });
     return () => subscription.unsubscribe();
   }, [form, onUnsavedChanges]);
+
+  // Handle hero image upload
+  const handleHeroImageUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const accountId = await getCurrentUserAccountIdAction();
+      if (!accountId) {
+        throw new Error("No se pudo obtener el ID de la cuenta");
+      }
+
+      const result = await uploadHeroImage(
+        file,
+        accountId.toString(),
+        file.name,
+      );
+
+      // Update form with new image URL
+      form.setValue("heroProps.backgroundImage", result.imageUrl);
+      onUnsavedChanges(true);
+      setShowUploadDialog(false);
+
+      toast({
+        title: "¡Éxito!",
+        description: "Imagen de fondo actualizada correctamente",
+      });
+    } catch (error) {
+      console.error("Error uploading hero image:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo subir la imagen",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Handle hero image deletion
+  const handleHeroImageDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const accountId = await getCurrentUserAccountIdAction();
+      if (!accountId) {
+        throw new Error("No se pudo obtener el ID de la cuenta");
+      }
+
+      await deleteHeroImage(accountId.toString());
+
+      // Clear the form field
+      form.setValue("heroProps.backgroundImage", "");
+      onUnsavedChanges(true);
+      setShowDeleteConfirmation(false);
+
+      toast({
+        title: "Eliminado",
+        description: "Imagen de fondo eliminada correctamente",
+      });
+    } catch (error) {
+      console.error("Error deleting hero image:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la imagen",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Only render when active section
   if (!isActive) return null;
@@ -78,77 +164,79 @@ export function HeroSection({
           )}
         />
 
-        {/* Background Image Field - PRESERVE complex show/hide logic */}
+        {/* Background Image Field - Updated to match Marca section style */}
         <div>
           <FormLabel>Imagen de Fondo</FormLabel>
-          {form.watch("heroProps.backgroundImage") && !showHeroImageInput ? (
-            <div className="group relative mt-3 inline-block w-full">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={form.watch("heroProps.backgroundImage")}
-                alt="Hero background preview"
-                className="max-h-48 w-full rounded object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                  const nextElement = e.currentTarget
-                    .nextElementSibling as HTMLElement;
-                  if (nextElement) {
-                    nextElement.classList.remove("hidden");
-                  }
-                }}
-              />
-              <p className="hidden text-sm text-red-500">
-                Error al cargar la imagen
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowHeroImageInput(true)}
-                className="absolute inset-0 flex items-center justify-center rounded bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-              >
-                <RefreshCw className="h-6 w-6 text-white" />
-              </button>
+          {form.watch("heroProps.backgroundImage") ? (
+            <div className="mt-3 flex justify-center">
+              <div className="group relative">
+                <div className="relative h-48 w-96 overflow-hidden rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+                  <Image
+                    src={form.watch("heroProps.backgroundImage") ?? ""}
+                    alt="Hero background"
+                    fill
+                    className="object-cover"
+                  />
+
+                  {/* Hover buttons - same pattern as branding */}
+                  <button
+                    type="button"
+                    className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
+                    onClick={() =>
+                      window.open(form.watch("heroProps.backgroundImage"), "_blank")
+                    }
+                    aria-label="Ver imagen"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="absolute right-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-red-500 group-hover:opacity-100"
+                    onClick={() => setShowDeleteConfirmation(true)}
+                    disabled={isDeleting}
+                    aria-label="Eliminar imagen"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
+                    onClick={() => {
+                      const a = document.createElement("a");
+                      a.href = form.watch("heroProps.backgroundImage") ?? "";
+                      a.download = "hero-background.jpg";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }}
+                    aria-label="Descargar imagen"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
+                    onClick={() => setShowUploadDialog(true)}
+                    aria-label="Reemplazar imagen"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
-          ) : !form.watch("heroProps.backgroundImage") &&
-            !showHeroImageInput ? (
+          ) : (
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setShowHeroImageInput(true)}
+              onClick={() => setShowUploadDialog(true)}
               className="mt-3"
             >
               Configurar imagen de fondo
             </Button>
-          ) : (
-            <FormField
-              control={form.control}
-              name="heroProps.backgroundImage"
-              render={({ field }) => (
-                <FormItem className="mt-3">
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="https://ejemplo.com/imagen-hero.jpg"
-                      onBlur={(e) => {
-                        field.onBlur();
-                        if (!e.target.value) {
-                          setShowHeroImageInput(false);
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowHeroImageInput(false)}
-                    className="text-gray-500"
-                  >
-                    Ocultar campo
-                  </Button>
-                </FormItem>
-              )}
-            />
           )}
         </div>
 
@@ -180,6 +268,81 @@ export function HeroSection({
           )}
         />
       </div>
+
+      {/* Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Subir Imagen de Fondo</DialogTitle>
+            <DialogDescription>
+              Selecciona una imagen para usar como fondo de la sección principal
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <HeroImageUpload
+              onUpload={handleHeroImageUpload}
+              isUploading={isUploading}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={showDeleteConfirmation}
+        onOpenChange={setShowDeleteConfirmation}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader className="space-y-4">
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Confirmar Eliminación
+            </DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas eliminar la imagen de fondo?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
+            <p className="text-sm font-medium text-red-800 dark:text-red-200">
+              ⚠️ Esta acción no se puede deshacer
+            </p>
+            <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+              La imagen será eliminada permanentemente del servidor.
+            </p>
+          </div>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirmation(false)}
+              disabled={isDeleting}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                await handleHeroImageDelete();
+              }}
+              disabled={isDeleting}
+              className="w-full sm:w-auto"
+            >
+              {isDeleting ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
