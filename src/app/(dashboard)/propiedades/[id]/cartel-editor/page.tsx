@@ -42,7 +42,7 @@ export default async function CartelEditorPage({ params }: CartelEditorPageProps
         referenceNumber={breadcrumbData.referenceNumber ?? ""}
         documentFolder={{
           name: "Generador de Carteles",
-          propertyId: headerData.propertyId.toString(),
+          propertyId: headerData.listingId.toString(),
         }}
       />
 

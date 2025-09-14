@@ -187,8 +187,8 @@ export const properties = singlestoreTable("properties", {
   referenceNumber: varchar("reference_number", { length: 32 }),
   title: varchar("title", { length: 255 }),
   description: text("description"),
-  propertyType: varchar("property_type", { length: 20 }).default("piso"),
-  propertySubtype: varchar("property_subtype", { length: 50 }),
+  propertyType: varchar("property_type", { length: 20 }).default("piso"), // 'piso' | 'casa' | 'local' | 'garaje' | 'solar'
+  propertySubtype: varchar("property_subtype", { length: 50 }), // For piso: 'Piso' | 'Apartment' | 'Ground floor' // For casa: 'Casa' // For local: 'Otros' | 'Offices' // For garaje: 'Individual' // For solar: 'Suelo residencial'
   formPosition: int("form_position").notNull().default(1),
 
   // Property Specifications
@@ -198,7 +198,7 @@ export const properties = singlestoreTable("properties", {
   yearBuilt: smallint("year_built"),
   cadastralReference: varchar("cadastral_reference", { length: 255 }),
   builtSurfaceArea: decimal("built_surface_area", { precision: 10, scale: 2 }),
-  conservationStatus: smallint("conservation_status").default(1), // 1=Good, 2=Pretty good, 3=Almost new, 4=Needs renovation, 6=Renovated
+  conservationStatus: smallint("conservation_status").default(1), // 1='Buen estado' | 2='A reformar' | 3='Casi nuevo' | 4='Para reformar' | 6='Reformado'
 
   // Location Information
   street: varchar("street", { length: 255 }),
@@ -210,16 +210,16 @@ export const properties = singlestoreTable("properties", {
 
   // Energy and Heating
   energyCertification: text("energy_certification"),
-  energyCertificateStatus: varchar("energy_certificate_status", { length: 20 }), // 'uploaded', 'en_tramite', 'exento'
-  energyConsumptionScale: varchar("energy_consumption_scale", { length: 2 }), // A-G
+  energyCertificateStatus: varchar("energy_certificate_status", { length: 20 }), // 'disponible' | 'en_tramite' | 'pendiente' | 'no_indicado' | 'exento'
+  energyConsumptionScale: varchar("energy_consumption_scale", { length: 2 }), // 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' (A=most efficient, G=least efficient)
   energyConsumptionValue: decimal("energy_consumption_value", {
     precision: 6,
     scale: 2,
   }), // kWh/m² año
-  emissionsScale: varchar("emissions_scale", { length: 2 }), // A-G
+  emissionsScale: varchar("emissions_scale", { length: 2 }), // 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' (A=lowest emissions, G=highest emissions)
   emissionsValue: decimal("emissions_value", { precision: 6, scale: 2 }), // kg CO2/m² año
   hasHeating: boolean("has_heating").default(false),
-  heatingType: varchar("heating_type", { length: 50 }),
+  heatingType: varchar("heating_type", { length: 50 }), // 'Gas natural' | 'Calefacción central' | 'Eléctrica' | 'gas' | 'induccion' | 'vitroceramica' | 'carbon' | 'electrico' | 'mixto'
 
   // Basic Amenities
   hasElevator: boolean("has_elevator").default(false),
@@ -267,7 +267,7 @@ export const properties = singlestoreTable("properties", {
   lastRenovationYear: smallint("last_renovation_year"),
 
   // Kitchen Features
-  kitchenType: varchar("kitchen_type", { length: 50 }),
+  kitchenType: varchar("kitchen_type", { length: 50 }), // 'gas' | 'induccion' | 'vitroceramica' | 'carbon' | 'electrico' | 'mixto'
   hotWaterType: varchar("hot_water_type", { length: 50 }),
   openKitchen: boolean("open_kitchen"),
   frenchKitchen: boolean("french_kitchen"),
@@ -288,10 +288,10 @@ export const properties = singlestoreTable("properties", {
 
   // Interior Features
   builtInWardrobes: boolean("built_in_wardrobes").default(false),
-  mainFloorType: varchar("main_floor_type", { length: 50 }),
+  mainFloorType: varchar("main_floor_type", { length: 50 }), // Floor material type (parquet, ceramic, marble, etc.)
   shutterType: varchar("shutter_type", { length: 50 }),
   carpentryType: varchar("carpentry_type", { length: 50 }),
-  orientation: varchar("orientation", { length: 50 }),
+  orientation: varchar("orientation", { length: 50 }), // 'norte' | 'noreste' | 'este' | 'sureste' | 'sur' | 'suroeste' | 'oeste' | 'noroeste'
   airConditioningType: varchar("air_conditioning_type", { length: 50 }),
   windowType: varchar("window_type", { length: 50 }),
 
@@ -313,6 +313,9 @@ export const properties = singlestoreTable("properties", {
   laundryRoom: boolean("laundry_room"),
   coveredClothesline: boolean("covered_clothesline"),
   fireplace: boolean("fireplace"),
+
+  // Data Processing Fields
+  scrapedText: varchar("scraped_text", { length: 1024 }), // S3 path for property scraped text data
 });
 
 export const propertyImages = singlestoreTable("property_images", {
@@ -343,13 +346,13 @@ export const listings = singlestoreTable("listings", {
   // Basic Information
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(), // FK → properties.property_id
   agentId: varchar("agent_id", { length: 36 }).notNull(), // FK → users.user_id (agent) - Changed to varchar to match users.id
-  listingType: varchar("listing_type", { length: 20 }).notNull(), // e.g. "Sale" or "Rent"
+  listingType: varchar("listing_type", { length: 20 }).notNull(), // 'Sale' | 'Rent' | 'Transfer' | 'RentWithOption' | 'RoomSharing'
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
-  status: varchar("status", { length: 20 }).notNull(), // e.g. "En Venta", "En Alquiler", "Vendido"
+  status: varchar("status", { length: 20 }).notNull(), // 'En Venta' | 'En Alquiler' | 'Vendido' | 'Draft'
 
   // Listing Features
   isFurnished: boolean("is_furnished"),
-  furnitureQuality: varchar("furniture_quality", { length: 50 }),
+  furnitureQuality: varchar("furniture_quality", { length: 50 }), // 'basic' | 'standard' | 'high' | 'luxury' (Básico | Estándar | Alta | Lujo)
   optionalGarage: boolean("optional_garage"),
   optionalGaragePrice: decimal("optional_garage_price", {
     precision: 12,
@@ -381,19 +384,19 @@ export const listings = singlestoreTable("listings", {
   isBankOwned: boolean("is_bank_owned").default(false),
   isActive: boolean("is_active").default(true),
   publishToWebsite: boolean("publish_to_website").default(false), // Controls whether listing appears on company website
-  visibilityMode: smallint("visibility_mode").default(1), // 1=Exact, 2=Street, 3=Zone
+  visibilityMode: smallint("visibility_mode").default(1), // 1=Exact location | 2=Street level | 3=Zone/neighborhood level
 
   // Analytics
   viewCount: int("view_count").default(0),
   inquiryCount: int("inquiry_count").default(0),
 
-  // Portal Publication Fields
-  fotocasa: boolean("fotocasa").default(false),
-  idealista: boolean("idealista").default(false),
-  habitaclia: boolean("habitaclia").default(false),
-  pisoscom: boolean("pisoscom").default(false),
-  yaencontre: boolean("yaencontre").default(false),
-  milanuncios: boolean("milanuncios").default(false),
+  // Portal Publication Fields (Spanish real estate portals)
+  fotocasa: boolean("fotocasa").default(false), // Fotocasa.es publication status
+  idealista: boolean("idealista").default(false), // Idealista.com publication status
+  habitaclia: boolean("habitaclia").default(false), // Habitaclia.com publication status
+  pisoscom: boolean("pisoscom").default(false), // Pisos.com publication status
+  yaencontre: boolean("yaencontre").default(false), // Yaencontre.com publication status
+  milanuncios: boolean("milanuncios").default(false), // Milanuncios.com publication status
 
   // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),

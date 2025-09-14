@@ -66,28 +66,24 @@ export function ImageGallery({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingImages, setPendingImages] = useState<PropertyImage[]>([]);
 
-  // Use the same placeholder image as property-card.tsx
-  const defaultPlaceholder = "/properties/suburban-dream.png";
 
   // State for managing image sources with fallbacks
   const [imageSources, setImageSources] = useState<Record<number, string>>({});
   const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
 
-  // Initialize image sources with fallbacks
+  // Initialize image sources
   React.useEffect(() => {
     const sources: Record<number, string> = {};
     initialImages.forEach((image, index) => {
-      sources[index] = image.imageUrl ?? defaultPlaceholder;
+      if (image.imageUrl) {
+        sources[index] = image.imageUrl;
+      }
     });
     setImageSources(sources);
   }, [initialImages]);
 
   const handleImageError = (index: number) => {
     console.log("Image failed to load:", imageSources[index]);
-    setImageSources((prev) => ({
-      ...prev,
-      [index]: defaultPlaceholder,
-    }));
   };
 
   const handleImageLoad = (index: number) => {
@@ -241,10 +237,12 @@ export function ImageGallery({
       // Add new images to imageSources state
       validImages.forEach((image, index) => {
         const newIndex = images.length + index;
-        setImageSources((prev) => ({
-          ...prev,
-          [newIndex]: image.imageUrl ?? defaultPlaceholder,
-        }));
+        if (image.imageUrl) {
+          setImageSources((prev) => ({
+            ...prev,
+            [newIndex]: image.imageUrl,
+          }));
+        }
       });
 
       // Call the callback for each uploaded image
@@ -372,7 +370,9 @@ export function ImageGallery({
     // Update the imageSources state to match the new order
     const newImageSources: Record<number, string> = {};
     newImages.forEach((image, index) => {
-      newImageSources[index] = image.imageUrl ?? defaultPlaceholder;
+      if (image.imageUrl) {
+        newImageSources[index] = image.imageUrl;
+      }
     });
     setImageSources(newImageSources);
 
@@ -416,7 +416,9 @@ export function ImageGallery({
     // Reset imageSources to original order
     const originalImageSources: Record<number, string> = {};
     initialImages.forEach((image, index) => {
-      originalImageSources[index] = image.imageUrl ?? defaultPlaceholder;
+      if (image.imageUrl) {
+        originalImageSources[index] = image.imageUrl;
+      }
     });
     setImageSources(originalImageSources);
   };
@@ -450,19 +452,20 @@ export function ImageGallery({
             onDrop={(e) => handleDrop(e, idx)}
             onClick={() => isSelectMode && toggleImageSelection(idx)}
           >
-            <Image
-              src={imageSources[idx] ?? defaultPlaceholder}
-              alt={title ?? `Property image ${idx + 1}`}
-              width={300}
-              height={200}
-              className={cn(
-                "h-40 w-full object-cover transition-opacity duration-200",
-                imageSources[idx] === defaultPlaceholder && "grayscale",
-                !image.isActive && "opacity-50"
-              )}
-              onError={() => handleImageError(idx)}
-              onLoad={() => handleImageLoad(idx)}
-            />
+            {imageSources[idx] && (
+              <Image
+                src={imageSources[idx]}
+                alt={title ?? `Property image ${idx + 1}`}
+                width={300}
+                height={200}
+                className={cn(
+                  "h-40 w-full object-cover transition-opacity duration-200",
+                  !image.isActive && "opacity-50"
+                )}
+                onError={() => handleImageError(idx)}
+                onLoad={() => handleImageLoad(idx)}
+              />
+            )}
             {!imageLoaded[idx] && (
               <div className="absolute inset-0 animate-pulse bg-muted" />
             )}
@@ -505,8 +508,8 @@ export function ImageGallery({
                   className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 disabled:opacity-50 group-hover:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
-                    void handleDownload(
-                      imageSources[idx] ?? "",
+                    imageSources[idx] && void handleDownload(
+                      imageSources[idx],
                       `property-image-${idx + 1}.jpg`,
                     );
                   }}
@@ -700,14 +703,14 @@ export function ImageGallery({
               para salir.
             </DialogDescription>
           </DialogHeader>
-          {expandedImage !== null && images[expandedImage] && (
+          {expandedImage !== null && images[expandedImage] && imageSources[expandedImage] && (
             <div className="relative">
               <Image
-                src={imageSources[expandedImage] ?? defaultPlaceholder}
+                src={imageSources[expandedImage]}
                 alt={title ?? `Property image ${expandedImage + 1}`}
                 width={1200}
                 height={800}
-                className={`h-auto max-h-[90vh] w-full rounded-lg object-contain ${imageSources[expandedImage] === defaultPlaceholder ? "grayscale" : ""}`}
+                className="h-auto max-h-[90vh] w-full rounded-lg object-contain"
                 onError={() => handleImageError(expandedImage)}
                 onLoad={() => handleImageLoad(expandedImage)}
               />

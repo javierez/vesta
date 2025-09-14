@@ -25,6 +25,7 @@ interface DraftListing {
   listingId: bigint;
   street: string | null;
   city: string | null;
+  title: string | null;
 }
 
 export default function BorradoresPage() {
@@ -166,7 +167,7 @@ export default function BorradoresPage() {
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-gray-400" />
                         <span className="font-medium">
-                          {listing.street ?? "Sin dirección"}
+                          {listing.street ?? listing.title ?? "Sin dirección"}
                         </span>
                       </div>
                     </TableCell>

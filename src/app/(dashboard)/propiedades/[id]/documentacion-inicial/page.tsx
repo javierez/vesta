@@ -39,7 +39,7 @@ export default async function DocumentacionInicialPage({
         referenceNumber={breadcrumbData.referenceNumber ?? ""}
         documentFolder={{
           name: "Documentación Inicial",
-          propertyId: headerData.propertyId.toString(),
+          propertyId: headerData.listingId.toString(),
         }}
       />
 

@@ -42,7 +42,7 @@ export default async function CertificadoEnergeticoPage({ params }: DocumentPage
         referenceNumber={breadcrumbData.referenceNumber ?? ""}
         documentFolder={{
           name: "Certificado Energético",
-          propertyId: headerData.propertyId.toString(),
+          propertyId: headerData.listingId.toString(),
         }}
       />
 

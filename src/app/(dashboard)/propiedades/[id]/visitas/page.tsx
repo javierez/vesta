@@ -37,7 +37,7 @@ export default async function VisitasPage({ params }: DocumentPageProps) {
         referenceNumber={breadcrumbData.referenceNumber ?? ""}
         documentFolder={{
           name: "Visitas",
-          propertyId: headerData.propertyId.toString(),
+          propertyId: headerData.listingId.toString(),
         }}
       />
 

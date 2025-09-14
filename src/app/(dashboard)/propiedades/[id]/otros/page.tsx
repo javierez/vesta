@@ -37,7 +37,7 @@ export default async function OtrosPage({ params }: DocumentPageProps) {
         referenceNumber={breadcrumbData.referenceNumber ?? ""}
         documentFolder={{
           name: "Otros",
-          propertyId: headerData.propertyId.toString(),
+          propertyId: headerData.listingId.toString(),
         }}
       />
 

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -10,15 +9,13 @@ import {
   Zap,
   Car,
   Package,
-  Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { updateProperty } from "~/server/queries/properties";
-import { createListing, updateListingWithAuth } from "~/server/queries/listing";
 import { formFormatters } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import FormSkeleton from "./form-skeleton";
+import FinalizationPopup from "../finalization-popup";
 
 // Type definitions
 interface ListingDetails {
@@ -85,13 +82,12 @@ const initialFormData: RentPageFormData = {
 export default function RentPage({
   globalFormData,
   onBack,
-  refreshListingDetails,
+  refreshListingDetails: _refreshListingDetails,
 }: RentPageProps) {
-  const router = useRouter();
   const [formData, setFormData] = useState<RentPageFormData>(initialFormData);
   const [propertyType, setPropertyType] = useState<string>("");
   const [isSaleListing, setIsSaleListing] = useState<boolean>(true);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [showFinalizationPopup, setShowFinalizationPopup] = useState<boolean>(false);
 
   const updateFormData = (field: keyof RentPageFormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -135,7 +131,7 @@ export default function RentPage({
 
   const handleNext = () => {
     // Prevent multiple submissions
-    if (isSubmitting) return;
+    if (showFinalizationPopup) return;
 
     // Validate rental price if creating rental listing
     if (
@@ -147,85 +143,12 @@ export default function RentPage({
       return;
     }
 
-    // Set submitting state
-    setIsSubmitting(true);
-
-    // Navigate IMMEDIATELY (optimistic) - finish form instantly!
-    if (globalFormData?.listingDetails?.listingId) {
-      router.push(`/propiedades/${globalFormData.listingDetails.listingId}`);
-    }
-
-    // Save data in background (completely silent)
-    void saveInBackground();
+    // Show finalization popup instead of immediate navigation
+    setShowFinalizationPopup(true);
   };
 
-  // Background save function - completely silent and non-blocking
-  const saveInBackground = async () => {
-    try {
-      // Fire and forget - no await, no blocking!
-      if (globalFormData?.listingDetails?.propertyId) {
-        const listingDetails = globalFormData.listingDetails;
-
-        // Update property form position
-        await updateProperty(Number(listingDetails.propertyId), {
-          formPosition:
-            !listingDetails.formPosition || listingDetails.formPosition < 12
-              ? 12
-              : listingDetails.formPosition,
-        });
-
-        // Refresh global data after successful save
-        refreshListingDetails?.();
-
-        // Update the sale listing status to 'Active'
-        if (listingDetails.listingId) {
-          await updateListingWithAuth(Number(listingDetails.listingId), {
-            status: "Active",
-            internet: formData.internet,
-          });
-        }
-
-        // Only create rental listing if it's a sale property and user wants to duplicate for rent
-        if (
-          isSaleListing &&
-          formData.duplicateForRent &&
-          listingDetails.agentId &&
-          listingDetails.propertyId
-        ) {
-          const rentListingData = {
-            propertyId: BigInt(listingDetails.propertyId),
-            listingType: "Rent" as const,
-            price: formData.rentalPrice.toString(),
-            agentId: listingDetails.agentId?.toString() ?? "",
-            studentFriendly: formData.studentFriendly,
-            petsAllowed: formData.petsAllowed,
-            appliancesIncluded: formData.appliancesIncluded,
-            internet: formData.internet,
-            optionalGaragePrice: formData.optionalGaragePrice.toString(),
-            optionalStorageRoomPrice:
-              formData.optionalStorageRoomPrice.toString(),
-            hasKeys: false,
-            optionalStorageRoom: false,
-            status: "Active" as const,
-            isActive: true,
-            isFeatured: false,
-            isBankOwned: false,
-            publishToWebsite: false,
-            visibilityMode: 1,
-            isFurnished: formData.isFurnished,
-            furnitureQuality: formData.furnitureQuality,
-            viewCount: 0,
-            inquiryCount: 0,
-          };
-
-          await createListing(rentListingData);
-        }
-      }
-    } catch (error) {
-      console.error("Error saving form data:", error);
-      // Silent error - user doesn't know it failed
-      // Could implement retry logic here if needed
-    }
+  const handleClosePopup = () => {
+    setShowFinalizationPopup(false);
   };
 
   if (globalFormData?.listingDetails === null) {
@@ -473,22 +396,15 @@ export default function RentPage({
           </motion.div>
 
           <motion.div
-            whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-            whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+            whileHover={{ scale: showFinalizationPopup ? 1 : 1.02 }}
+            whileTap={{ scale: showFinalizationPopup ? 1 : 0.98 }}
           >
             <Button
               onClick={handleNext}
-              disabled={isSubmitting}
+              disabled={showFinalizationPopup}
               className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-600"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Finalizando...</span>
-                </>
-              ) : (
-                <span>Finalizar</span>
-              )}
+              <span>Finalizar</span>
             </Button>
           </motion.div>
         </motion.div>
@@ -634,25 +550,29 @@ export default function RentPage({
         </motion.div>
 
         <motion.div
-          whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-          whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+          whileHover={{ scale: showFinalizationPopup ? 1 : 1.02 }}
+          whileTap={{ scale: showFinalizationPopup ? 1 : 0.98 }}
         >
           <Button
             onClick={handleNext}
-            disabled={isSubmitting}
+            disabled={showFinalizationPopup}
             className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-600"
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Finalizando...</span>
-              </>
-            ) : (
-              <span>Finalizar</span>
-            )}
+            <span>Finalizar</span>
           </Button>
         </motion.div>
       </motion.div>
+
+      {/* Finalization Popup */}
+      {globalFormData?.listingDetails && (
+        <FinalizationPopup
+          isOpen={showFinalizationPopup}
+          onClose={handleClosePopup}
+          listingDetails={globalFormData.listingDetails}
+          formData={formData}
+          isSaleListing={isSaleListing}
+        />
+      )}
     </motion.div>
   );
 }

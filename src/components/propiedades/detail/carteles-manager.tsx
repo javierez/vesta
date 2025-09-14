@@ -278,7 +278,7 @@ export function CartelesManager({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.location.href = `/propiedades/${propertyId}/cartel-editor`}
+          onClick={() => window.location.href = `/propiedades/${listingId}/cartel-editor`}
           className="h-10 w-10 rounded-full p-0 border-gray-200 hover:border-gray-300 transition-all duration-300"
         >
           <Pencil className="h-4 w-4 text-gray-600" />

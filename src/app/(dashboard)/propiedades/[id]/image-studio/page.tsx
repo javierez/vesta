@@ -42,7 +42,7 @@ export default async function ImageStudioPage({ params }: ImageStudioPageProps) 
         referenceNumber={breadcrumbData.referenceNumber ?? ""}
         documentFolder={{
           name: "Vesta Image Studio",
-          propertyId: headerData.propertyId.toString(),
+          propertyId: headerData.listingId.toString(),
         }}
       />
 

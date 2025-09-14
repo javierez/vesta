@@ -1076,6 +1076,7 @@ export async function getDraftListings(accountId: number) {
         listingId: listings.listingId,
         street: properties.street,
         city: locations.city,
+        title: properties.title,
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
@@ -1175,9 +1176,10 @@ export async function getListingHeaderData(listingId: number) {
   try {
     const [headerData] = await db
       .select({
-        // Only the 8 fields actually displayed in PropertyHeader
+        // Fields actually displayed in PropertyHeader + listingId for breadcrumb
         title: properties.title,
         propertyId: listings.propertyId,
+        listingId: listings.listingId,
         street: properties.street,
         city: locations.city,
         province: locations.province,
