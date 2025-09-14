@@ -508,10 +508,12 @@ export function ImageGallery({
                   className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 disabled:opacity-50 group-hover:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
-                    imageSources[idx] && void handleDownload(
-                      imageSources[idx],
-                      `property-image-${idx + 1}.jpg`,
-                    );
+                    if (imageSources[idx]) {
+                      void handleDownload(
+                        imageSources[idx],
+                        `property-image-${idx + 1}.jpg`,
+                      );
+                    }
                   }}
                   disabled={isDownloading}
                   aria-label="Descargar imagen"
