@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { FloatingLabelInput } from "~/components/ui/floating-label-input";
@@ -117,12 +117,12 @@ export default function FirstPage({
   };
 
   // Update form data helper
-  const updateField = (
+  const updateField = useCallback((
     field: keyof FirstPageFormData,
     value: string | string[],
   ) => {
     updateFormData({ [field]: value });
-  };
+  }, [updateFormData]);
 
   // Initialize form data with defaults if not already set
   useEffect(() => {

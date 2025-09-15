@@ -19,7 +19,7 @@ export class FormSaveService {
     options: SaveOptions = {}
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const promises: Promise<any>[] = [];
+      const promises: Promise<unknown>[] = [];
 
       // 1. Update property if we have propertyId
       if (listingDetails.propertyId) {

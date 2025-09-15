@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface UseFieldTrackerOptions {
-  onFieldChange?: (field: string, value: any, prevValue: any) => void;
+  onFieldChange?: (field: string, value: unknown, prevValue: unknown) => void;
 }
 
-export function useFieldTracker<T extends Record<string, any>>(
+export function useFieldTracker<T extends Record<string, unknown>>(
   initialData: T,
   options?: UseFieldTrackerOptions
 ) {
@@ -27,7 +27,7 @@ export function useFieldTracker<T extends Record<string, any>>(
 
   // Update a single field
   const updateField = useCallback(
-    (field: keyof T, value: any) => {
+    (field: keyof T, value: unknown) => {
       const prevValue = previousDataRef.current[field];
       
       setFormData(prev => {
@@ -123,8 +123,8 @@ export function useFieldTracker<T extends Record<string, any>>(
   }, [formData]);
 
   // Get a comparison of current vs initial
-  const getDiff = useCallback((): { field: string; initial: any; current: any }[] => {
-    const diff: { field: string; initial: any; current: any }[] = [];
+  const getDiff = useCallback((): { field: string; initial: unknown; current: unknown }[] => {
+    const diff: { field: string; initial: unknown; current: unknown }[] = [];
     
     changedFields.forEach(field => {
       diff.push({

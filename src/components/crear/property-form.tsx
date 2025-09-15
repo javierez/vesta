@@ -33,6 +33,106 @@ interface PropertyFormProps {
   listingId: string;
 }
 
+// Interface for listing details data returned from database
+interface ListingDetailsData {
+  // Listing fields
+  listingId?: number;
+  propertyId?: number;
+  agentId?: number;
+  listingType?: string;
+  price?: number;
+  status?: string;
+  isFurnished?: boolean;
+  furnitureQuality?: string;
+  optionalGarage?: boolean;
+  optionalGaragePrice?: number;
+  optionalStorageRoom?: boolean;
+  optionalStorageRoomPrice?: number;
+  hasKeys?: boolean;
+  studentFriendly?: boolean;
+  petsAllowed?: boolean;
+  appliancesIncluded?: boolean;
+  internet?: boolean;
+  
+  // Property fields
+  referenceNumber?: string;
+  title?: string;
+  description?: string;
+  propertyType?: string;
+  propertySubtype?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  totalSurface?: number;
+  usefulSurface?: number;
+  plotSurface?: number;
+  floor?: string;
+  totalFloors?: string;
+  buildYear?: number;
+  condition?: string;
+  energyCertificate?: string;
+  emissions?: string;
+  cadastralReference?: string;
+  
+  // Location fields
+  address?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  neighborhood?: string;
+  latitude?: number;
+  longitude?: number;
+  
+  // Equipment and features
+  heating?: string;
+  airConditioning?: string[];
+  hasElevator?: boolean;
+  hasGarage?: boolean;
+  hasStorageRoom?: boolean;
+  hasGarden?: boolean;
+  hasSwimmingPool?: boolean;
+  hasTerrace?: boolean;
+  hasBalcony?: boolean;
+  
+  // Orientation
+  orientation?: string;
+  views?: string[];
+  luminosity?: string;
+  
+  // Additional features
+  accessibility?: boolean;
+  securitySystem?: boolean;
+  doorman?: boolean;
+  builtInWardrobes?: boolean;
+  
+  // Luxury features
+  luxuryFeatures?: string[];
+  highEndFinishes?: boolean;
+  designerKitchen?: boolean;
+  smartHome?: boolean;
+  
+  // Spaces
+  hasAttic?: boolean;
+  hasBasement?: boolean;
+  hasLaundryRoom?: boolean;
+  hasOffice?: boolean;
+  hasDressingRoom?: boolean;
+  
+  // Materials
+  floorMaterial?: string;
+  wallMaterial?: string;
+  kitchenMaterial?: string;
+  bathroomMaterial?: string;
+  
+  // Description
+  highlights?: string[];
+  
+  // Form meta
+  formPosition?: number;
+  
+  // Allow for additional properties from database
+  [key: string]: unknown;
+}
+
 // Step definitions
 interface Step {
   id: string;
@@ -56,100 +156,100 @@ const steps: Step[] = [
 
 
 // Convert fetched database data to CompleteFormData format
-function convertFetchedDataToFormData(listingDetails: any): CompleteFormData {
+function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null): CompleteFormData {
   if (!listingDetails) return {};
   
   return {
     // Meta data
-    formPosition: listingDetails.formPosition || 1,
+    formPosition: listingDetails.formPosition ?? 1,
     
     // Page 1 - Basic Info & IDs
     propertyId: listingDetails.propertyId,
     listingId: listingDetails.listingId,
-    price: listingDetails.price?.toString() || "",
-    listingType: listingDetails.listingType || "Sale", 
-    propertyType: listingDetails.propertyType || "piso",
-    propertySubtype: listingDetails.propertySubtype || "",
-    agentId: listingDetails.agentId?.toString() || "",
+    price: listingDetails.price?.toString() ?? "",
+    listingType: listingDetails.listingType ?? "Sale", 
+    propertyType: listingDetails.propertyType ?? "piso",
+    propertySubtype: listingDetails.propertySubtype ?? "",
+    agentId: listingDetails.agentId?.toString() ?? "",
     
     // Page 2 - Details  
-    bedrooms: listingDetails.bedrooms || undefined,
-    bathrooms: listingDetails.bathrooms || undefined,
-    totalSurface: listingDetails.totalSurface || undefined,
-    usefulSurface: listingDetails.usefulSurface || undefined,
-    plotSurface: listingDetails.plotSurface || undefined,
-    floor: listingDetails.floor || undefined,
-    totalFloors: listingDetails.totalFloors || undefined,
-    buildYear: listingDetails.buildYear || undefined,
-    condition: listingDetails.condition || undefined,
-    energyCertificate: listingDetails.energyCertificate || undefined,
-    emissions: listingDetails.emissions || undefined,
-    cadastralReference: listingDetails.cadastralReference || "",
+    bedrooms: listingDetails.bedrooms ?? undefined,
+    bathrooms: listingDetails.bathrooms ?? undefined,
+    totalSurface: listingDetails.totalSurface ?? undefined,
+    usefulSurface: listingDetails.usefulSurface ?? undefined,
+    plotSurface: listingDetails.plotSurface ?? undefined,
+    floor: listingDetails.floor ?? undefined,
+    totalFloors: listingDetails.totalFloors ?? undefined,
+    buildYear: listingDetails.buildYear ?? undefined,
+    condition: listingDetails.condition ?? undefined,
+    energyCertificate: listingDetails.energyCertificate ?? undefined,
+    emissions: listingDetails.emissions ?? undefined,
+    cadastralReference: listingDetails.cadastralReference ?? "",
     
     // Page 3 - Address
-    address: listingDetails.address || "",
-    city: listingDetails.city || "",
-    province: listingDetails.province || "",
-    postalCode: listingDetails.postalCode || "",
-    neighborhood: listingDetails.neighborhood || "",
-    latitude: listingDetails.latitude || undefined,
-    longitude: listingDetails.longitude || undefined,
+    address: listingDetails.address ?? "",
+    city: listingDetails.city ?? "",
+    province: listingDetails.province ?? "",
+    postalCode: listingDetails.postalCode ?? "",
+    neighborhood: listingDetails.neighborhood ?? "",
+    latitude: listingDetails.latitude ?? undefined,
+    longitude: listingDetails.longitude ?? undefined,
     
     // Page 4 - Equipment
-    heating: listingDetails.heating || "",
-    airConditioning: listingDetails.airConditioning || [],
-    hasElevator: listingDetails.hasElevator || false,
-    hasGarage: listingDetails.hasGarage || false,
-    hasStorageRoom: listingDetails.hasStorageRoom || false,
-    hasGarden: listingDetails.hasGarden || false,
-    hasSwimmingPool: listingDetails.hasSwimmingPool || false,
-    hasTerrace: listingDetails.hasTerrace || false,
-    hasBalcony: listingDetails.hasBalcony || false,
+    heating: listingDetails.heating ?? "",
+    airConditioning: listingDetails.airConditioning ?? [],
+    hasElevator: listingDetails.hasElevator ?? false,
+    hasGarage: listingDetails.hasGarage ?? false,
+    hasStorageRoom: listingDetails.hasStorageRoom ?? false,
+    hasGarden: listingDetails.hasGarden ?? false,
+    hasSwimmingPool: listingDetails.hasSwimmingPool ?? false,
+    hasTerrace: listingDetails.hasTerrace ?? false,
+    hasBalcony: listingDetails.hasBalcony ?? false,
     
     // Page 5 - Orientation
-    orientation: listingDetails.orientation || "",
-    views: listingDetails.views || [],
-    luminosity: listingDetails.luminosity || "",
+    orientation: listingDetails.orientation ?? "",
+    views: !!listingDetails.views,
+    luminosity: listingDetails.luminosity ?? "",
     
     // Page 6 - Additional
-    accessibility: listingDetails.accessibility || false,
-    securitySystem: listingDetails.securitySystem || false,
-    doorman: listingDetails.doorman || false,
-    builtInWardrobes: listingDetails.builtInWardrobes || false,
+    accessibility: listingDetails.accessibility ?? false,
+    securitySystem: listingDetails.securitySystem ?? false,
+    doorman: listingDetails.doorman ?? false,
+    builtInWardrobes: listingDetails.builtInWardrobes ?? false,
     
     // Page 7 - Luxury
-    luxuryFeatures: listingDetails.luxuryFeatures || [],
-    highEndFinishes: listingDetails.highEndFinishes || false,
-    designerKitchen: listingDetails.designerKitchen || false,
-    smartHome: listingDetails.smartHome || false,
+    luxuryFeatures: listingDetails.luxuryFeatures ?? [],
+    highEndFinishes: listingDetails.highEndFinishes ?? false,
+    designerKitchen: listingDetails.designerKitchen ?? false,
+    smartHome: listingDetails.smartHome ?? false,
     
     // Page 8 - Spaces
-    hasAttic: listingDetails.hasAttic || false,
-    hasBasement: listingDetails.hasBasement || false,
-    hasLaundryRoom: listingDetails.hasLaundryRoom || false,
-    hasOffice: listingDetails.hasOffice || false,
-    hasDressingRoom: listingDetails.hasDressingRoom || false,
+    hasAttic: listingDetails.hasAttic ?? false,
+    hasBasement: listingDetails.hasBasement ?? false,
+    hasLaundryRoom: listingDetails.hasLaundryRoom ?? false,
+    hasOffice: listingDetails.hasOffice ?? false,
+    hasDressingRoom: listingDetails.hasDressingRoom ?? false,
     
     // Page 9 - Materials
-    floorMaterial: listingDetails.floorMaterial || "",
-    wallMaterial: listingDetails.wallMaterial || "",
-    kitchenMaterial: listingDetails.kitchenMaterial || "",
-    bathroomMaterial: listingDetails.bathroomMaterial || "",
+    floorMaterial: listingDetails.floorMaterial ?? "",
+    wallMaterial: listingDetails.wallMaterial ?? "",
+    kitchenMaterial: listingDetails.kitchenMaterial ?? "",
+    bathroomMaterial: listingDetails.bathroomMaterial ?? "",
     
     // Page 10 - Description
-    description: listingDetails.description || "",
-    highlights: listingDetails.highlights || [],
+    description: listingDetails.description ?? "",
+    highlights: listingDetails.highlights ?? [],
     
     // Page 11 - Rent
-    hasKeys: listingDetails.hasKeys || false,
-    studentFriendly: listingDetails.studentFriendly || false,
-    petsAllowed: listingDetails.petsAllowed || false,
-    appliancesIncluded: listingDetails.appliancesIncluded || false,
-    isFurnished: listingDetails.isFurnished || false,
-    furnitureQuality: listingDetails.furnitureQuality || "",
-    optionalGaragePrice: listingDetails.optionalGaragePrice || 0,
-    optionalStorageRoomPrice: listingDetails.optionalStorageRoomPrice || 0,
-    internet: listingDetails.internet || false,
+    hasKeys: listingDetails.hasKeys ?? false,
+    studentFriendly: listingDetails.studentFriendly ?? false,
+    petsAllowed: listingDetails.petsAllowed ?? false,
+    appliancesIncluded: listingDetails.appliancesIncluded ?? false,
+    isFurnished: listingDetails.isFurnished ?? false,
+    furnitureQuality: listingDetails.furnitureQuality ?? "",
+    optionalGaragePrice: listingDetails.optionalGaragePrice ?? 0,
+    optionalStorageRoomPrice: listingDetails.optionalStorageRoomPrice ?? 0,
+    internet: listingDetails.internet ?? false,
   };
 }
 
@@ -217,7 +317,7 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
           ]);
 
         // Set current step based on form position
-        const typedListingDetails = listingDetails as any;
+        const typedListingDetails = listingDetails as ListingDetailsData | null;
         if (typedListingDetails?.formPosition) {
           const stepIndex = Math.max(
             0,
@@ -228,7 +328,7 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
 
         // Convert fetched data to single CompleteFormData and set as local working copy
         setInitialData({
-          fetchedFormData: convertFetchedDataToFormData(listingDetails),
+          fetchedFormData: convertFetchedDataToFormData(typedListingDetails),
           agents: agents.map((agent) => ({
             id: agent.id, // Keep as string - don't convert to Number
             name: agent.name,

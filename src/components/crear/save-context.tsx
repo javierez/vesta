@@ -71,8 +71,8 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
 
   // Notify all registered callbacks about state changes
   const notifyStateUpdate = useCallback((updates: {
-    propertyChanges?: Record<string, any>;
-    listingChanges?: Record<string, any>;
+    propertyChanges?: Record<string, unknown>;
+    listingChanges?: Record<string, unknown>;
   }) => {
     stateUpdateCallbacks.current.forEach(callback => {
       try {
