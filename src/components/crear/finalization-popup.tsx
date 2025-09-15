@@ -85,7 +85,7 @@ export default function FinalizationPopup({
         listingId.toString(),
         completeFormData,
         listingDetails || { 
-          propertyId, 
+          propertyId: typeof propertyId === 'string' ? parseInt(propertyId, 10) : propertyId, 
           listingId, 
           agentId,
           propertyType: completeFormData.propertyType,
