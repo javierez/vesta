@@ -1017,12 +1017,6 @@ export async function getListingDetails(listingId: number, accountId: number) {
         tennisCourt: properties.tennisCourt,
         conservationStatus: properties.conservationStatus,
 
-        // Location fields
-        city: locations.city,
-        province: locations.province,
-        municipality: locations.municipality,
-        neighborhood: locations.neighborhood,
-
         // Agent information - optimized to only needed fields
         agent: {
           id: users.id,

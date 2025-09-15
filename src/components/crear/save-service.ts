@@ -71,65 +71,61 @@ export class FormSaveService {
 
           // Orientation from fifth page
           orientation: formData.orientation,
-          // Map luminosity to bright and exterior
-          bright: Array.isArray(formData.luminosity) 
-            ? formData.luminosity.includes('bright') 
-            : formData.luminosity === 'bright',
-          exterior: Array.isArray(formData.luminosity)
-            ? formData.luminosity.includes('exterior')
-            : formData.luminosity === 'exterior',
+          // Use individual boolean fields directly
+          bright: formData.bright ?? false,
+          exterior: formData.exterior ?? false,
 
           // Additional from sixth page
-          disabledAccessible: formData.accessibility, // Map accessibility to disabledAccessible
-          alarm: formData.securitySystem, // Map securitySystem to alarm
-          securityDoor: formData.securitySystem, // Also map to securityDoor
-          conciergeService: formData.doorman, // Map doorman to conciergeService
-          videoIntercom: formData.videoIntercom, // Map videoIntercom to video_intercom
-          securityGuard: formData.securityGuard, // Map securityGuard to security_guard
-          vpo: formData.vpo, // Map vpo to vpo
-          satelliteDish: formData.satelliteDish, // Map satelliteDish to satellite_dish
-          doubleGlazing: formData.doubleGlazing, // Map doubleGlazing to double_glazing
-          openKitchen: formData.openKitchen, // Map openKitchen to open_kitchen
-          frenchKitchen: formData.frenchKitchen, // Map frenchKitchen to french_kitchen
-          furnishedKitchen: formData.designerKitchen, // Map designerKitchen to furnished_kitchen
-          pantry: formData.pantry, // Map pantry to pantry
-          builtInWardrobes: formData.builtInWardrobes,
+          disabledAccessible: formData.accessibility ?? false, // Map accessibility to disabledAccessible
+          alarm: formData.securitySystem ?? false, // Map securitySystem to alarm
+          securityDoor: formData.securitySystem ?? false, // Also map to securityDoor
+          conciergeService: formData.doorman ?? false, // Map doorman to conciergeService
+          videoIntercom: formData.videoIntercom ?? false, // Map videoIntercom to video_intercom
+          securityGuard: formData.securityGuard ?? false, // Map securityGuard to security_guard
+          vpo: formData.vpo ?? false, // Map vpo to vpo
+          satelliteDish: formData.satelliteDish ?? false, // Map satelliteDish to satellite_dish
+          doubleGlazing: formData.doubleGlazing ?? false, // Map doubleGlazing to double_glazing
+          openKitchen: formData.openKitchen ?? false, // Map openKitchen to open_kitchen
+          frenchKitchen: formData.frenchKitchen ?? false, // Map frenchKitchen to french_kitchen
+          furnishedKitchen: formData.designerKitchen ?? false, // Map designerKitchen to furnished_kitchen
+          pantry: formData.pantry ?? false, // Map pantry to pantry
+          builtInWardrobes: formData.builtInWardrobes ?? false,
 
           // Luxury from seventh page
           // luxuryFeatures: formData.luxuryFeatures, // No DB column - would need JSON field
           // highEndFinishes: formData.highEndFinishes, // No DB column
           // designerKitchen: formData.designerKitchen, // No DB column
-          homeAutomation: formData.smartHome, // Map smartHome to homeAutomation
-          views: formData.views, // Map views to views (boolean)
-          mountainViews: formData.mountainViews,
-          seaViews: formData.seaViews,
-          beachfront: formData.beachfront,
-          jacuzzi: formData.jacuzzi, // Map jacuzzi to jacuzzi
-          hydromassage: formData.hydromassage, // Map hydromassage to hydromassage
-          fireplace: formData.fireplace,
-          garden: formData.hasGarden, // Map hasGarden to garden
-          pool: formData.hasSwimmingPool, // Map hasSwimmingPool to pool
-          musicSystem: formData.musicSystem,
-          gym: formData.gym,
-          sportsArea: formData.sportsArea,
-          childrenArea: formData.childrenArea,
-          suiteBathroom: formData.suiteBathroom,
-          nearbyPublicTransport: formData.nearbyPublicTransport,
-          communityPool: formData.communityPool,
-          privatePool: formData.privatePool,
-          tennisCourt: formData.tennisCourt,
-          coveredClothesline: formData.coveredClothesline,
+          homeAutomation: formData.smartHome ?? false, // Map smartHome to homeAutomation
+          views: Boolean(formData.views) === true ? true : false, // Force boolean conversion
+          mountainViews: formData.mountainViews ?? false,
+          seaViews: formData.seaViews ?? false,
+          beachfront: formData.beachfront ?? false,
+          jacuzzi: formData.jacuzzi ?? false, // Map jacuzzi to jacuzzi
+          hydromassage: formData.hydromassage ?? false, // Map hydromassage to hydromassage
+          fireplace: formData.fireplace ?? false,
+          garden: formData.hasGarden ?? false, // Map hasGarden to garden
+          pool: formData.hasSwimmingPool ?? false, // Map hasSwimmingPool to pool
+          musicSystem: formData.musicSystem ?? false,
+          gym: formData.gym ?? false,
+          sportsArea: formData.sportsArea ?? false,
+          childrenArea: formData.childrenArea ?? false,
+          suiteBathroom: formData.suiteBathroom ?? false,
+          nearbyPublicTransport: formData.nearbyPublicTransport ?? false,
+          communityPool: formData.communityPool ?? false,
+          privatePool: formData.privatePool ?? false,
+          tennisCourt: formData.tennisCourt ?? false,
+          coveredClothesline: formData.coveredClothesline ?? false,
 
           // Spaces from eighth page
           // hasAttic: formData.hasAttic, // No DB column
           // hasBasement: formData.hasBasement, // No DB column
-          laundryRoom: formData.hasLaundryRoom, // Map hasLaundryRoom to laundryRoom
+          laundryRoom: formData.hasLaundryRoom ?? false, // Map hasLaundryRoom to laundryRoom
           // hasOffice: formData.hasOffice, // No DB column
           // hasDressingRoom: formData.hasDressingRoom, // No DB column
           terraceSize: formData.terraceSize,
           balconyCount: formData.balconyCount, // Map balconyCount to balcony_count
           galleryCount: formData.galleryCount,
-          wineCellar: formData.wineCellar,
+          wineCellar: formData.wineCellar ?? false,
           wineCellarSize: formData.wineCellarSize,
           livingRoomSize: formData.livingRoomSize,
 

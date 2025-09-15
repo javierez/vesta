@@ -72,7 +72,11 @@ export default function SeventhPage({
           currentFeatures.splice(index, 1);
         }
       }
-      updateFormData({ luxuryFeatures: currentFeatures });
+      updateFormData({ 
+        luxuryFeatures: currentFeatures,
+        // Also save individual boolean fields for database
+        [field]: value
+      });
     } else if (field === "garden") {
       updateFormData({ hasGarden: value });
     } else if (field === "pool") {

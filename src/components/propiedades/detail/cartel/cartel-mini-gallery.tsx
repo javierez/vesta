@@ -21,7 +21,7 @@ export function CartelMiniGallery({
   onSelectionChange,
 }: CartelMiniGalleryProps) {
   // Use the same placeholder image as image-studio-gallery
-  const defaultPlaceholder = "/properties/suburban-dream.png";
+  const defaultPlaceholder = "";
 
   // State for managing image sources with fallbacks
   const [imageSources, setImageSources] = useState<Record<string, string>>(() => {

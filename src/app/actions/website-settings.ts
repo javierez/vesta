@@ -122,7 +122,7 @@ export async function getWebsiteConfigurationAction(
                 role: "Propietaria",
                 content:
                   "Trabajar con Acropolis Bienes Raíces fue un sueño. Entendieron exactamente lo que estábamos buscando y nos encontraron nuestra casa familiar perfecta dentro de nuestro presupuesto. Todo el proceso fue fluido y sin estrés.",
-                avatar: "/properties/confident-leader.png",
+                avatar: "",
                 rating: 5,
                 is_verified: true,
                 sort_order: 1,
@@ -134,7 +134,7 @@ export async function getWebsiteConfigurationAction(
                 role: "Inversionista Inmobiliario",
                 content:
                   "Como inversionista, aprecio el conocimiento del mercado y la atención al detalle de Acropolis. Me han ayudado a adquirir múltiples propiedades con excelente potencial de retorno de inversión. Su experiencia es realmente invaluable.",
-                avatar: "/properties/confident-leader.png",
+                avatar: "",
                 rating: 5,
                 is_verified: true,
                 sort_order: 2,
@@ -146,7 +146,7 @@ export async function getWebsiteConfigurationAction(
                 role: "Compradora por Primera Vez",
                 content:
                   "Ser compradora de vivienda por primera vez fue intimidante, pero el equipo de Acropolis me guió en cada paso. Fueron pacientes, informativos y me encontraron un maravilloso condominio que se ajustaba a todas mis necesidades.",
-                avatar: "/properties/serene-gaze.png",
+                avatar: "",
                 rating: 5,
                 is_verified: true,
                 sort_order: 3,
@@ -543,7 +543,7 @@ export async function seedTestimonialsAction(
         role: "Propietaria",
         content:
           "Trabajar con Acropolis Bienes Raíces fue un sueño. Entendieron exactamente lo que estábamos buscando y nos encontraron nuestra casa familiar perfecta dentro de nuestro presupuesto. Todo el proceso fue fluido y sin estrés.",
-        avatar: "/properties/confident-leader.png",
+        avatar: "",
         rating: 5,
         isVerified: true,
         sortOrder: 1,
@@ -555,7 +555,7 @@ export async function seedTestimonialsAction(
         role: "Inversionista Inmobiliario",
         content:
           "Como inversionista, aprecio el conocimiento del mercado y la atención al detalle de Acropolis. Me han ayudado a adquirir múltiples propiedades con excelente potencial de retorno de inversión. Su experiencia es realmente invaluable.",
-        avatar: "/properties/confident-leader.png",
+        avatar: "",
         rating: 5,
         isVerified: true,
         sortOrder: 2,
@@ -567,7 +567,7 @@ export async function seedTestimonialsAction(
         role: "Compradora por Primera Vez",
         content:
           "Ser compradora de vivienda por primera vez fue intimidante, pero el equipo de Acropolis me guió en cada paso. Fueron pacientes, informativos y me encontraron un maravilloso condominio que se ajustaba a todas mis necesidades.",
-        avatar: "/properties/serene-gaze.png",
+        avatar: "",
         rating: 5,
         isVerified: true,
         sortOrder: 3,

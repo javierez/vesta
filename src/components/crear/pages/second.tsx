@@ -30,8 +30,8 @@ export default function SecondPage({
   const formData = {
     bedrooms: state.formData.bedrooms || 2,
     bathrooms: state.formData.bathrooms || 1,
-    totalSurface: state.formData.totalSurface || 80,
-    usefulSurface: state.formData.usefulSurface || 85,
+    totalSurface: state.formData.totalSurface || 0,
+    usefulSurface: state.formData.usefulSurface || 0,
     buildYear: state.formData.buildYear || 1980,
     renovationYear: state.formData.renovationYear || 0,
     isRenovated: state.formData.isRenovated || false,
@@ -106,10 +106,7 @@ export default function SecondPage({
         return;
       }
 
-      if (!formData.usefulSurface || formData.usefulSurface === 0) {
-        alert("Por favor, introduce la superficie construida.");
-        return;
-      }
+      // Superficie construida is now optional - users can enter any value or leave it empty
 
       if (!formData.buildYear || formData.buildYear === 0) {
         alert("Por favor, introduce el año de construcción.");
@@ -149,30 +146,30 @@ export default function SecondPage({
         </div>
       )}
 
-      {/* Square Meter - Show for all property types */}
+      {/* Superficie útil - Show for all property types */}
       <div className="space-y-2">
         <FloatingLabelInput
           id="totalSurface"
-          value={formFormatters.formatAreaInput(formData.totalSurface.toString())}
+          value={formData.totalSurface ? formFormatters.formatAreaInput(formData.totalSurface.toString()) : ""}
           onChange={handleTotalSurfaceChange}
           placeholder={
             propertyType === "garage"
               ? "Medidas en metros cuadrados"
-              : "Superficie útil"
+              : "Superficie útil (m²)"
           }
           type="text"
           className="h-10 placeholder:text-gray-400"
         />
       </div>
 
-      {/* Built Surface Area - Only show for piso, casa, local */}
+      {/* Superficie construida - Only show for piso, casa, local */}
       {propertyType !== "solar" && propertyType !== "garage" && (
         <div className="space-y-2">
           <FloatingLabelInput
             id="usefulSurface"
-            value={formFormatters.formatAreaInput(formData.usefulSurface.toString())}
+            value={formData.usefulSurface ? formFormatters.formatAreaInput(formData.usefulSurface.toString()) : ""}
             onChange={handleUsefulSurfaceChange}
-            placeholder="Superficie construida"
+            placeholder="Superficie construida (m²)"
             type="text"
             className="h-10 placeholder:text-gray-400"
           />

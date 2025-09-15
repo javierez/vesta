@@ -412,7 +412,7 @@ export function TestimonialManager({ accountId }: TestimonialManagerProps) {
                               e.target.value,
                             )
                           }
-                          placeholder="/properties/confident-leader.png"
+                          placeholder=""
                         />
                         <Button
                           type="button"
