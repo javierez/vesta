@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { CompassRose } from "../rosa";
 import { useFormContext } from "../form-context";
 
@@ -27,9 +27,9 @@ export default function FifthPage({
 
   // Get current form data from context (like first.tsx pattern)
   const formData = {
-    exterior: state.formData.exterior || false,
-    bright: state.formData.bright || false,
-    orientation: state.formData.orientation || "",
+    exterior: state.formData.exterior ?? false,
+    bright: state.formData.bright ?? false,
+    orientation: state.formData.orientation ?? "",
   };
 
   // Update form data helper (like first.tsx pattern)

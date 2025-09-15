@@ -7,17 +7,6 @@ import { useSearchParams } from "next/navigation";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import { useFormContext } from "../form-context";
 
-interface ListingDetails {
-  propertyId?: number;
-  propertyType?: string;
-  street?: string;
-  addressDetails?: string;
-  postalCode?: string;
-  city?: string;
-  province?: string;
-  municipality?: string;
-  neighborhood?: string;
-}
 
 interface ThirdPageProps {
   listingId: string;
@@ -37,13 +26,13 @@ export default function ThirdPage({
 
   // Get current form data from context (following first.tsx pattern)
   const formData = {
-    address: state.formData.address || "",
-    addressDetails: state.formData.addressDetails || "",
-    postalCode: state.formData.postalCode || "",
-    city: state.formData.city || "",
-    province: state.formData.province || "",
-    municipality: state.formData.municipality || "",
-    neighborhood: state.formData.neighborhood || "",
+    address: state.formData.address ?? "",
+    addressDetails: state.formData.addressDetails ?? "",
+    postalCode: state.formData.postalCode ?? "",
+    city: state.formData.city ?? "",
+    province: state.formData.province ?? "",
+    municipality: state.formData.municipality ?? "",
+    neighborhood: state.formData.neighborhood ?? "",
   };
 
   // Check if method is manual - if so, skip this page

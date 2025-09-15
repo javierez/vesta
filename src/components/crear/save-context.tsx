@@ -214,7 +214,7 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
     const item = retryQueue[0];
     if (!item) return;
     
-    const delay = RETRY_DELAYS[item.retries - 1] || RETRY_DELAYS[RETRY_DELAYS.length - 1];
+    const delay = RETRY_DELAYS[item.retries - 1] ?? RETRY_DELAYS[RETRY_DELAYS.length - 1];
 
     const timer = setTimeout(() => {
       setRetryQueue(prev => prev.slice(1));

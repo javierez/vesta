@@ -917,8 +917,6 @@ export async function getListingDetails(listingId: number, accountId: number) {
         builtInWardrobes: properties.builtInWardrobes,
         
         // Luxury from seventh page - Map form fields to database fields
-        luxuryFeatures: sql<boolean>`(${properties.jacuzzi} OR ${properties.hydromassage} OR ${properties.homeAutomation})`, // Form uses luxuryFeatures, combine multiple luxury fields
-        highEndFinishes: properties.mainFloorType, // Form uses highEndFinishes, use mainFloorType as indicator
         designerKitchen: properties.furnishedKitchen, // Form uses designerKitchen, DB has furnishedKitchen
         smartHome: properties.homeAutomation, // Form uses smartHome, DB has homeAutomation
         
@@ -952,27 +950,21 @@ export async function getListingDetails(listingId: number, accountId: number) {
         emissionsScale: properties.emissionsScale,
         emissionsValue: properties.emissionsValue,
         hasHeating: properties.hasHeating,
-        heatingType: properties.heatingType,
         garageType: properties.garageType,
         garageSpaces: properties.garageSpaces,
         garageInBuilding: properties.garageInBuilding,
         elevatorToGarage: properties.elevatorToGarage,
         garageNumber: properties.garageNumber,
-        disabledAccessible: properties.disabledAccessible,
         vpo: properties.vpo,
         videoIntercom: properties.videoIntercom,
-        conciergeService: properties.conciergeService,
         securityGuard: properties.securityGuard,
         satelliteDish: properties.satelliteDish,
         doubleGlazing: properties.doubleGlazing,
-        alarm: properties.alarm,
-        securityDoor: properties.securityDoor,
         brandNew: properties.brandNew,
         newConstruction: properties.newConstruction,
         underConstruction: properties.underConstruction,
         needsRenovation: properties.needsRenovation,
         lastRenovationYear: properties.lastRenovationYear,
-        kitchenType: properties.kitchenType,
         hotWaterType: properties.hotWaterType,
         openKitchen: properties.openKitchen,
         frenchKitchen: properties.frenchKitchen,
@@ -980,7 +972,6 @@ export async function getListingDetails(listingId: number, accountId: number) {
         pantry: properties.pantry,
         storageRoomSize: properties.storageRoomSize,
         storageRoomNumber: properties.storageRoomNumber,
-        terrace: properties.terrace,
         terraceSize: properties.terraceSize,
         wineCellar: properties.wineCellar,
         wineCellarSize: properties.wineCellarSize,
@@ -988,7 +979,6 @@ export async function getListingDetails(listingId: number, accountId: number) {
         balconyCount: properties.balconyCount,
         galleryCount: properties.galleryCount,
         buildingFloors: properties.buildingFloors,
-        mainFloorType: properties.mainFloorType,
         shutterType: properties.shutterType,
         carpentryType: properties.carpentryType,
         airConditioningType: properties.airConditioningType,
@@ -1002,9 +992,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         hydromassage: properties.hydromassage,
         garden: properties.garden,
         pool: properties.pool,
-        homeAutomation: properties.homeAutomation,
         musicSystem: properties.musicSystem,
-        laundryRoom: properties.laundryRoom,
         coveredClothesline: properties.coveredClothesline,
         fireplace: properties.fireplace,
         gym: properties.gym,
@@ -1012,10 +1000,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         childrenArea: properties.childrenArea,
         suiteBathroom: properties.suiteBathroom,
         nearbyPublicTransport: properties.nearbyPublicTransport,
-        communityPool: properties.communityPool,
-        privatePool: properties.privatePool,
         tennisCourt: properties.tennisCourt,
-        conservationStatus: properties.conservationStatus,
 
         // Agent information - optimized to only needed fields
         agent: {

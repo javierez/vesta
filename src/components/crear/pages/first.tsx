@@ -37,7 +37,7 @@ interface NewContact {
 }
 
 interface FirstPageProps {
-  listingId: string;
+  _listingId?: string; // Optional since it's unused (prefixed with _ to indicate unused)
   onNext: () => void;
   onBack?: () => void;
 }
@@ -52,17 +52,9 @@ interface FirstPageFormData {
   selectedContactIds: string[];
 }
 
-const initialFormData: FirstPageFormData = {
-  price: "",
-  listingType: "Sale",
-  propertyType: "piso",
-  propertySubtype: "",
-  agentId: "",
-  selectedContactIds: [],
-};
 
 export default function FirstPage({
-  listingId,
+  _listingId,
   onNext,
   onBack,
 }: FirstPageProps) {
@@ -116,12 +108,12 @@ export default function FirstPage({
 
   // Get current form data from context
   const formData = {
-    price: state.formData.price || "",
-    listingType: state.formData.listingType || "Sale",
-    propertyType: state.formData.propertyType || "piso",
-    propertySubtype: state.formData.propertySubtype || "",
-    agentId: state.formData.agentId || "",
-    selectedContactIds: state.formData.selectedContactIds || [],
+    price: state.formData.price ?? "",
+    listingType: state.formData.listingType ?? "Sale",
+    propertyType: state.formData.propertyType ?? "piso",
+    propertySubtype: state.formData.propertySubtype ?? "",
+    agentId: state.formData.agentId ?? "",
+    selectedContactIds: state.formData.selectedContactIds ?? [],
   };
 
   // Update form data helper

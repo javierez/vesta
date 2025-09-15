@@ -36,7 +36,7 @@ export default function DescriptionPage({
 
   // Get current form data from context
   const formData = {
-    description: state.formData.description || "",
+    description: state.formData.description ?? "",
   };
 
   // Update form data helper

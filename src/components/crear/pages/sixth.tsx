@@ -42,7 +42,7 @@ export default function SixthPage({
 }: SixthPageProps) {
   const { state, updateFormData } = useFormContext();
   
-  const propertyType = state.formData.propertyType || "";
+  const propertyType = state.formData.propertyType ?? "";
 
   // Get current form data from context (following first.tsx pattern)
   const formData = {
@@ -50,7 +50,7 @@ export default function SixthPage({
     accessibility: state.formData.accessibility ?? false,
     doorman: state.formData.doorman ?? false,
     designerKitchen: state.formData.designerKitchen ?? false,
-    kitchenMaterial: state.formData.kitchenMaterial || "",
+    kitchenMaterial: state.formData.kitchenMaterial ?? "",
     // Additional fields now properly typed in CompleteFormData
     videoIntercom: state.formData.videoIntercom ?? false,
     securityGuard: state.formData.securityGuard ?? false,

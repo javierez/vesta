@@ -26,7 +26,7 @@ export class FormSaveService {
         const propertyUpdateData: Record<string, unknown> = {
           // Basic info from first page
           propertyType: formData.propertyType,
-          propertySubtype: formData.propertySubtype || null,
+          propertySubtype: formData.propertySubtype ?? null,
           
           // Basic info
           title: formData.title,
@@ -130,7 +130,7 @@ export class FormSaveService {
           livingRoomSize: formData.livingRoomSize,
 
           // Materials from nineth page
-          mainFloorType: formData.mainFloorType || formData.floorMaterial, // Use mainFloorType or map from floorMaterial
+          mainFloorType: formData.mainFloorType ?? formData.floorMaterial, // Use mainFloorType or map from floorMaterial
           // wallMaterial: formData.wallMaterial, // No DB column
           kitchenType: formData.kitchenMaterial, // Map kitchenMaterial to kitchenType (though it's more about appliance type)
           // bathroomMaterial: formData.bathroomMaterial, // No DB column
@@ -156,12 +156,12 @@ export class FormSaveService {
         if (formData.address && formData.city && formData.province && formData.municipality && formData.neighborhood) {
           promises.push(updatePropertyLocation(Number(listingDetails.propertyId), {
             street: formData.address,
-            addressDetails: formData.addressDetails || "",
+            addressDetails: formData.addressDetails ?? "",
             city: formData.city,
             province: formData.province,
             municipality: formData.municipality,
             neighborhood: formData.neighborhood,
-            postalCode: formData.postalCode || "",
+            postalCode: formData.postalCode ?? "",
           }));
         }
       }

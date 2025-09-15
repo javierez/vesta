@@ -70,9 +70,12 @@ export default function FinalizationPopup({
         throw new Error("Missing property or listing ID");
       }
 
-      // Save all form data and mark as completed
+      // Save all form data and mark as completed  
+      const listingIdString = String(
+        typeof listingId === 'number' || typeof listingId === 'string' ? listingId : ''
+      );
       const saveResult = await FormSaveService.saveAllFormData(
-        typeof listingId === 'object' ? String(listingId) : String(listingId ?? ''),
+        listingIdString,
         completeFormData,
         listingDetails ?? { 
           propertyId: typeof propertyId === 'string' ? parseInt(propertyId, 10) : propertyId as number | undefined, 
@@ -131,7 +134,9 @@ export default function FinalizationPopup({
 
       // Auto-redirect after 2 seconds
       setTimeout(() => {
-        const idString = typeof listingId === 'object' ? String(listingId) : String(listingId ?? '');
+        const idString = String(
+          typeof listingId === 'number' || typeof listingId === 'string' ? listingId : ''
+        );
         router.push(`/propiedades/${idString}`);
       }, 2000);
     } catch (error) {

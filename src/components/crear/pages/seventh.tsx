@@ -27,7 +27,7 @@ export default function SeventhPage({
 }: SeventhPageProps) {
   const { state, updateFormData } = useFormContext();
   
-  const propertyType = state.formData.propertyType || "";
+  const propertyType = state.formData.propertyType ?? "";
 
   // Get current form data from context
   const formData = {

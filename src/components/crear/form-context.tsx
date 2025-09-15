@@ -269,7 +269,7 @@ export function FormProvider({ children }: FormProviderProps) {
       contacts: data.contacts,
       currentContacts: data.currentContacts,
       // Simple: Set the fetched data as our single local working copy
-      formData: data.fetchedFormData || {},
+      formData: data.fetchedFormData ?? {},
       hasUnsavedChanges: false,
       isLoading: false,
     }));

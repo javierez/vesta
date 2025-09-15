@@ -53,42 +53,6 @@ const steps: Step[] = [
   { id: "rent", title: "Alquiler" },
 ];
 
-// Static form options - memoized to prevent recreation
-const STATIC_FORM_OPTIONS = {
-  heatingOptions: [
-    "Si, Sin especificar",
-    "Gas Individual",
-    "Gasóleo Individual",
-    "Gas Colectivo",
-    "Gasóleo Colectivo",
-    "Eléctrica",
-    "Tarifa Nocturno",
-    "Propano",
-    "Suelo Radiante",
-    "Eléctrica por Acumulador",
-    "Placas Fotovoltaicas",
-    "Biomasa",
-    "Bomba de calor",
-    "Geotermia",
-    "Aerotermia",
-  ],
-  airConditioningOptions: [
-    { value: "central", label: "Central" },
-    { value: "split", label: "Split" },
-    { value: "portatil", label: "Portátil" },
-    { value: "conductos", label: "Conductos" },
-    { value: "cassette", label: "Cassette" },
-    { value: "ventana", label: "Ventana" },
-  ],
-  furnitureQualityOptions: [
-    { value: "basic", label: "Básico", color: "bg-gray-500" },
-    { value: "standard", label: "Estándar", color: "bg-gray-600" },
-    { value: "high", label: "Alta", color: "bg-gray-700" },
-    { value: "luxury", label: "Lujo", color: "bg-gray-900" },
-  ],
-  propertyTypes: ["piso", "casa", "local", "solar", "garage"],
-  listingTypes: ["Sale", "Rent"],
-};
 
 
 // Convert fetched database data to CompleteFormData format

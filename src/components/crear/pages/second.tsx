@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -28,19 +28,18 @@ export default function SecondPage({
   
   // Get current form data from context (direct reading like first.tsx)
   const formData = {
-    bedrooms: state.formData.bedrooms || 2,
-    bathrooms: state.formData.bathrooms || 1,
-    totalSurface: state.formData.totalSurface || 0,
-    usefulSurface: state.formData.usefulSurface || 0,
-    buildYear: state.formData.buildYear || 1980,
-    renovationYear: state.formData.renovationYear || 0,
-    isRenovated: state.formData.isRenovated || false,
-    totalFloors: state.formData.totalFloors || 0,
-    conservationStatus: state.formData.conservationStatus || 3,
+    bedrooms: state.formData.bedrooms ?? 2,
+    bathrooms: state.formData.bathrooms ?? 1,
+    totalSurface: state.formData.totalSurface ?? 0,
+    usefulSurface: state.formData.usefulSurface ?? 0,
+    buildYear: state.formData.buildYear ?? 1980,
+    renovationYear: state.formData.renovationYear ?? 0,
+    isRenovated: state.formData.isRenovated ?? false,
+    totalFloors: state.formData.totalFloors ?? 0,
+    conservationStatus: state.formData.conservationStatus ?? 3,
   };
 
-  const propertyType = state.formData?.propertyType || "";
-  const propertySubtype = state.formData?.propertySubtype || null;
+  const propertyType = state.formData?.propertyType ?? "";
 
   // No useEffect needed - data comes from form context
 
