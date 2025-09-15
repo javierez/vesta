@@ -11,7 +11,7 @@ export async function GET(
     const propertyId = BigInt(id);
 
     const propertyImages = await getPropertyImages(propertyId);
-    const defaultPlaceholder = "/properties/suburban-dream.png";
+    const defaultPlaceholder = "";
 
     // Process images to ensure they have valid URLs and match PropertyImage type
     const processedImages = propertyImages.map((img) => ({

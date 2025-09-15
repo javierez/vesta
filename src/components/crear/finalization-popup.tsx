@@ -7,17 +7,7 @@ import { CheckCircle, Loader2, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { createListing } from "~/server/queries/listing";
 import { FormSaveService } from "./save-service";
-import type { CompleteFormData } from "./form-context";
-
-// Type definitions
-interface ListingDetails {
-  propertyType?: string;
-  listingType?: string;
-  listingId?: number | string;
-  propertyId?: number | string;
-  agentId?: number | string;
-  formPosition?: number;
-}
+import type { CompleteFormData, ListingDetails } from "./form-context";
 
 interface RentFormData {
   studentFriendly: boolean;
@@ -85,11 +75,10 @@ export default function FinalizationPopup({
         listingId.toString(),
         completeFormData,
         listingDetails || { 
-          propertyId: typeof propertyId === 'string' ? parseInt(propertyId, 10) : propertyId, 
-          listingId, 
+          propertyId: typeof propertyId === 'string' ? parseInt(propertyId, 10) : propertyId as number | undefined, 
+          listingType: completeFormData.listingType,
           agentId,
-          propertyType: completeFormData.propertyType,
-          listingType: completeFormData.listingType
+          propertyType: completeFormData.propertyType
         },
         { markAsCompleted: true }
       );

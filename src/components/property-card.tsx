@@ -103,7 +103,7 @@ export const PropertyCard = React.memo(function PropertyCard({
   };
 
   // Get primary image with proper fallback
-  const defaultPlaceholder = "/properties/suburban-dream.png";
+  const defaultPlaceholder = "";
   const [imageSrc, setImageSrc] = useState(
     listing.imageUrl ?? defaultPlaceholder,
   );

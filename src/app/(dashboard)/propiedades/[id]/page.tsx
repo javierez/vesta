@@ -56,7 +56,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     getEnergyCertificate(Number(headerData.propertyId)),
     getPropertyImages(BigInt(headerData.propertyId)),
   ]);
-  const defaultPlaceholder = "/properties/suburban-dream.png";
+  const defaultPlaceholder = "";
 
   // Process images to ensure they have valid URLs and match PropertyImage type
   const processedImages: PropertyImage[] = propertyImages.map((img) => ({

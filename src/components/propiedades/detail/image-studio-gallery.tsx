@@ -52,7 +52,7 @@ export function ImageStudioGallery({
   const animationFrameRef = useRef<number | undefined>(undefined);
 
   // Use the same placeholder image as property-card.tsx
-  const defaultPlaceholder = "/properties/suburban-dream.png";
+  const defaultPlaceholder = "";
 
   // State for managing image sources with fallbacks
   const [imageSources, setImageSources] = useState<Record<string, string>>(() => {

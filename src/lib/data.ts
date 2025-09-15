@@ -364,7 +364,7 @@ export const testimonials = [
     role: "Propietaria",
     content:
       "Trabajar con Acropolis Bienes Raíces fue un sueño. Entendieron exactamente lo que estábamos buscando y nos encontraron nuestra casa familiar perfecta dentro de nuestro presupuesto. Todo el proceso fue fluido y sin estrés.",
-    avatar: "/properties/confident-leader.png",
+    avatar: "",
     rating: 5,
     isVerified: true,
     sortOrder: 1,
@@ -378,7 +378,7 @@ export const testimonials = [
     role: "Inversionista Inmobiliario",
     content:
       "Como inversionista, aprecio el conocimiento del mercado y la atención al detalle de Acropolis. Me han ayudado a adquirir múltiples propiedades con excelente potencial de retorno de inversión. Su experiencia es realmente invaluable.",
-    avatar: "/properties/confident-leader.png",
+    avatar: "",
     rating: 5,
     isVerified: true,
     sortOrder: 2,
@@ -392,7 +392,7 @@ export const testimonials = [
     role: "Compradora por Primera Vez",
     content:
       "Ser compradora de vivienda por primera vez fue intimidante, pero el equipo de Acropolis me guió en cada paso. Fueron pacientes, informativos y me encontraron un maravilloso condominio que se ajustaba a todas mis necesidades.",
-    avatar: "/properties/serene-gaze.png",
+    avatar: "",
     rating: 5,
     isVerified: true,
     sortOrder: 3,
@@ -406,7 +406,7 @@ export const testimonials = [
     role: "Propietario",
     content:
       "Acropolis Bienes Raíces superó todas mis expectativas. Su equipo profesional me ayudó a encontrar la casa perfecta para mi familia en tiempo récord. El proceso fue fluido y sin complicaciones desde el principio hasta el final.",
-    avatar: "/properties/confident-leader.png",
+    avatar: "",
     rating: 5,
     isVerified: true,
     sortOrder: 4,
@@ -420,7 +420,7 @@ export const testimonials = [
     role: "Inversora Inmobiliaria",
     content:
       "Como inversora, valoro enormemente la experiencia y conocimiento del mercado que tiene el equipo de Acropolis. Han sido fundamentales para ampliar mi cartera de propiedades con inversiones rentables.",
-    avatar: "/properties/confident-leader.png",
+    avatar: "",
     rating: 4.5,
     isVerified: true,
     sortOrder: 5,
@@ -434,7 +434,7 @@ export const testimonials = [
     role: "Comprador Primerizo",
     content:
       "Siendo mi primera compra, estaba nervioso por todo el proceso. El equipo de Acropolis me guió paso a paso, explicándome cada detalle y asegurándose de que entendiera todas mis opciones. ¡Ahora soy un orgulloso propietario!",
-    avatar: "/properties/thoughtful-gaze.png",
+    avatar: "",
     rating: 5,
     isVerified: true,
     sortOrder: 6,
@@ -729,7 +729,7 @@ export const websiteConfigs: WebsiteConfig[] = [
     heroProps: {
       title: "Encuentra Tu Casa con Acropolis",
       subtitle: "Permítenos guiarte en tu viaje inmobiliario",
-      backgroundImage: "/properties/sleek-city-tower.png",
+      backgroundImage: "",
       findPropertyButton: "Explorar Propiedades",
       contactButton: "Contáctanos",
     },
@@ -746,7 +746,7 @@ export const websiteConfigs: WebsiteConfig[] = [
         "En Inmobiliaria Acropolis, creemos que encontrar la propiedad perfecta debe ser una experiencia emocionante y gratificante. Con más de 25 años de experiencia en la industria, nuestro dedicado equipo de profesionales está comprometido a proporcionar un servicio y orientación excepcionales a lo largo de tu viaje inmobiliario. Ya sea que estés comprando tu primera casa, vendiendo una propiedad o buscando oportunidades de inversión, tenemos el conocimiento, los recursos y la pasión para ayudarte a lograr tus objetivos inmobiliarios.",
       content2:
         "Nuestro enfoque personalizado y atención al detalle nos distingue en el mercado. Nos enorgullece ofrecer un servicio integral que abarca desde la búsqueda inicial hasta el cierre de la operación, asegurando que cada cliente reciba la atención y el asesoramiento que merece. Nuestro profundo conocimiento del mercado local y nuestras conexiones en la industria nos permiten ofrecer oportunidades exclusivas y negociaciones ventajosas para nuestros clientes.",
-      image: "/properties/thoughtful-man.png",
+      image: "",
       services: [
         {
           title: "Conocimiento local experto",

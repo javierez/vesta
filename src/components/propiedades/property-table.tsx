@@ -66,7 +66,7 @@ export const PropertyTable = React.memo(function PropertyTable({
   accountWebsite,
 }: PropertyTableProps) {
   const router = useRouter();
-  const defaultPlaceholder = "/properties/suburban-dream.png";
+  const defaultPlaceholder = "";
   const [loadedImages, setLoadedImages] = React.useState<Set<string>>(
     new Set(),
   );

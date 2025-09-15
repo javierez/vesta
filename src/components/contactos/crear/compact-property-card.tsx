@@ -62,7 +62,7 @@ export function CompactPropertyCard({
         {/* Image */}
         <div className="relative mr-1.5 h-10 w-14 flex-shrink-0 overflow-hidden rounded">
           <Image
-            src={listing.imageUrl ?? "/properties/suburban-dream.png"}
+            src={listing.imageUrl ?? ""}
             alt={listing.title ?? "Property image"}
             fill
             className="object-cover"
