@@ -376,7 +376,7 @@ export default function RentPage({
           isOpen={showFinalizationPopup}
           onClose={handleClosePopup}
           listingDetails={{
-            listingId: listingId || state.formData.listingId,
+            listingId: listingId ?? state.formData.listingId,
             propertyId: typeof state.formData.propertyId === 'string' 
               ? parseInt(state.formData.propertyId, 10) 
               : state.formData.propertyId,
@@ -547,7 +547,7 @@ export default function RentPage({
         isOpen={showFinalizationPopup}
         onClose={handleClosePopup}
         listingDetails={{
-          listingId: listingId || state.formData.listingId,
+          listingId: listingId ?? state.formData.listingId,
           propertyId: typeof state.formData.propertyId === 'string' 
             ? parseInt(state.formData.propertyId, 10) 
             : state.formData.propertyId,

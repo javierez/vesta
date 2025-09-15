@@ -10,9 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from "~/components/ui/form";
-import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
-import { Label } from "~/components/ui/label";
 import { Slider } from "~/components/ui/slider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -40,8 +38,6 @@ export function WatermarkSection({
 
   const watermarkEnabled = form.watch("watermarkProps.enabled");
   const logoUrl = form.watch("logo"); // Use logo from branding section
-  const position = form.watch("watermarkProps.position");
-  const sizePercentage = form.watch("watermarkProps.sizePercentage");
 
   const positionOptions = [
     { value: "southeast", label: "Esquina Inferior Derecha" },
@@ -112,7 +108,7 @@ export function WatermarkSection({
                       Logo no configurado
                     </h3>
                     <p className="mt-1 text-sm text-yellow-700">
-                      Configura tu logo en la sección "Marca" para usarlo como marca de agua.
+                      Configura tu logo en la sección &quot;Marca&quot; para usarlo como marca de agua.
                     </p>
                   </div>
                 </div>

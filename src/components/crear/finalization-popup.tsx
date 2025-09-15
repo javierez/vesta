@@ -72,9 +72,9 @@ export default function FinalizationPopup({
 
       // Save all form data and mark as completed
       const saveResult = await FormSaveService.saveAllFormData(
-        listingId.toString(),
+        typeof listingId === 'object' ? String(listingId) : String(listingId ?? ''),
         completeFormData,
-        listingDetails || { 
+        listingDetails ?? { 
           propertyId: typeof propertyId === 'string' ? parseInt(propertyId, 10) : propertyId as number | undefined, 
           listingType: completeFormData.listingType,
           agentId,
@@ -84,7 +84,7 @@ export default function FinalizationPopup({
       );
 
       if (!saveResult.success) {
-        throw new Error(saveResult.error || "Error saving form data");
+        throw new Error(saveResult.error ?? "Error saving form data");
       }
 
       // Step 3: Create rental listing if requested (non-blocking)
@@ -131,7 +131,8 @@ export default function FinalizationPopup({
 
       // Auto-redirect after 2 seconds
       setTimeout(() => {
-        router.push(`/propiedades/${listingId}`);
+        const idString = typeof listingId === 'object' ? String(listingId) : String(listingId ?? '');
+        router.push(`/propiedades/${idString}`);
       }, 2000);
     } catch (error) {
       console.error("Error in saveAndFinalize:", error);
