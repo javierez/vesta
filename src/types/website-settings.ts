@@ -208,6 +208,13 @@ export const headPropsSchema = z.object({
   facebookPixel: z.string().optional(),
 });
 
+// Watermark Schema
+export const watermarkPropsSchema = z.object({
+  enabled: z.boolean().default(false),
+  position: z.enum(["southeast", "northeast", "southwest", "northwest", "center"]).default("southeast"),
+  sizePercentage: z.number().min(10).max(50).default(30),
+});
+
 // Metadata Schema
 export const metadataSchema = z.object({
   id: z.string().optional(),
@@ -245,6 +252,7 @@ export const websiteConfigurationSchema = z.object({
   contactProps: contactPropsSchema,
   footerProps: footerPropsSchema,
   headProps: headPropsSchema,
+  watermarkProps: watermarkPropsSchema,
   metadata: metadataSchema,
 });
 
@@ -261,6 +269,7 @@ export type Office = z.infer<typeof officeSchema>;
 export type ContactProps = z.infer<typeof contactPropsSchema>;
 export type FooterProps = z.infer<typeof footerPropsSchema>;
 export type HeadProps = z.infer<typeof headPropsSchema>;
+export type WatermarkProps = z.infer<typeof watermarkPropsSchema>;
 export type Metadata = z.infer<typeof metadataSchema>;
 export type WebsiteConfigurationInput = z.infer<
   typeof websiteConfigurationSchema

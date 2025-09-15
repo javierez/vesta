@@ -12,6 +12,7 @@ import {
   Share2,
   Building,
   Database,
+  Shield,
 } from "lucide-react";
 import type { WebsiteTab } from "~/types/website-settings";
 
@@ -28,6 +29,12 @@ const navigationItems: (WebsiteTab & { color?: string })[] = [
     label: "Marca",
     description: "Logo y favicon",
     icon: Image,
+  },
+  {
+    id: "watermark",
+    label: "Marca de Agua",
+    description: "Configuración de marcas de agua",
+    icon: Shield,
   },
   {
     id: "social",

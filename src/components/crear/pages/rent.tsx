@@ -130,9 +130,6 @@ export default function RentPage({
   );
 
   const handleNext = () => {
-    // Prevent multiple submissions
-    if (showFinalizationPopup) return;
-
     // Validate rental price if creating rental listing
     if (
       isSaleListing &&
@@ -396,18 +393,28 @@ export default function RentPage({
           </motion.div>
 
           <motion.div
-            whileHover={{ scale: showFinalizationPopup ? 1 : 1.02 }}
-            whileTap={{ scale: showFinalizationPopup ? 1 : 0.98 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             <Button
               onClick={handleNext}
-              disabled={showFinalizationPopup}
-              className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-600"
+              className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
             >
               <span>Finalizar</span>
             </Button>
           </motion.div>
         </motion.div>
+
+        {/* Finalization Popup */}
+        {globalFormData?.listingDetails && (
+          <FinalizationPopup
+            isOpen={showFinalizationPopup}
+            onClose={handleClosePopup}
+            listingDetails={globalFormData.listingDetails}
+            formData={formData}
+            isSaleListing={isSaleListing}
+          />
+        )}
       </motion.div>
     );
   }
@@ -550,13 +557,12 @@ export default function RentPage({
         </motion.div>
 
         <motion.div
-          whileHover={{ scale: showFinalizationPopup ? 1 : 1.02 }}
-          whileTap={{ scale: showFinalizationPopup ? 1 : 0.98 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           <Button
             onClick={handleNext}
-            disabled={showFinalizationPopup}
-            className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-600"
+            className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
           >
             <span>Finalizar</span>
           </Button>

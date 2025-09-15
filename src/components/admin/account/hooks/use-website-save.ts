@@ -80,6 +80,9 @@ export function useWebsiteSave(
       case "social":
         sectionData.socialLinks = formData.socialLinks;
         break;
+      case "watermark":
+        sectionData.watermarkProps = formData.watermarkProps;
+        break;
       case "meta":
         console.log(
           "💾 SAVE: Handling meta section with data:",

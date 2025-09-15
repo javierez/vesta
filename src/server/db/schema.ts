@@ -655,6 +655,7 @@ export const websiteProperties = singlestoreTable("website_config", {
   contactProps: text("contact_props"), // JSON containing contact section properties
   footerProps: text("footer_props").notNull(), // JSON containing footer configuration
   headProps: text("head_props").notNull(), // JSON containing head section properties
+  watermarkProps: text("watermark_props").notNull().default('{}'), // JSON containing watermark configuration
   metadata: text("metadata"), // JSON containing metadata configuration
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

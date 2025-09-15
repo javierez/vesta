@@ -13,6 +13,7 @@ import type {
   ContactProps,
   FooterProps,
   HeadProps,
+  WatermarkProps,
 } from "~/types/website-settings";
 
 /**
@@ -199,6 +200,11 @@ export async function getWebsiteConfigurationAction(
             googleAnalytics: "",
             facebookPixel: "",
           },
+          watermarkProps: {
+            enabled: false,
+            position: "southeast",
+            sizePercentage: 30,
+          },
           metadata: {
             id: "",
             account_id: "",
@@ -247,6 +253,7 @@ export async function getWebsiteConfigurationAction(
       contactProps: JSON.parse(config.contactProps ?? "{}") as ContactProps,
       footerProps: JSON.parse(config.footerProps ?? "{}") as FooterProps,
       headProps: JSON.parse(config.headProps ?? "{}") as HeadProps,
+      watermarkProps: JSON.parse(config.watermarkProps ?? "{}") as WatermarkProps,
       metadata: {
         id: config.id?.toString(),
         account_id: config.accountId?.toString(),
@@ -333,6 +340,9 @@ export async function updateWebsiteSectionAction(
     if (section === "head" && data.headProps) {
       updateData.headProps = JSON.stringify(data.headProps);
     }
+    if (section === "watermark" && data.watermarkProps) {
+      updateData.watermarkProps = JSON.stringify(data.watermarkProps);
+    }
     if (section === "social" && data.socialLinks) {
       updateData.socialLinks = JSON.stringify(data.socialLinks);
     }
@@ -369,6 +379,7 @@ export async function updateWebsiteSectionAction(
         contactProps: JSON.stringify(data.contactProps ?? {}),
         footerProps: JSON.stringify(data.footerProps ?? {}),
         headProps: JSON.stringify(data.headProps ?? {}),
+        watermarkProps: JSON.stringify(data.watermarkProps ?? {}),
         metadata:
           typeof data.metadata?.mainpage === "string"
             ? data.metadata.mainpage

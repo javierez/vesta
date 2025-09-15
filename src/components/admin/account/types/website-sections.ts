@@ -43,6 +43,8 @@ export type HeadSectionProps = WebsiteSectionBaseProps;
 
 export type MetaSectionProps = WebsiteSectionBaseProps;
 
+export type WatermarkSectionProps = WebsiteSectionBaseProps;
+
 // Sub-component props
 export interface KPIConfigurationProps {
   form: UseFormReturn<WebsiteConfigurationInput>;

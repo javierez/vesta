@@ -27,6 +27,7 @@ import { FooterSection } from "./website-sections/footer-section";
 import { SocialSection } from "./website-sections/social-section";
 import { HeadSection } from "./website-sections/head-section";
 import { MetaSection } from "./website-sections/meta-section";
+import { WatermarkSection } from "./website-sections/watermark-section";
 
 export function WebsiteConfiguration() {
   const { data: session } = useSession();
@@ -115,6 +116,12 @@ export function WebsiteConfiguration() {
             <BrandingSection
               form={form}
               isActive={activeSection === "branding"}
+              onUnsavedChanges={handleUnsavedChanges}
+            />
+
+            <WatermarkSection
+              form={form}
+              isActive={activeSection === "watermark"}
               onUnsavedChanges={handleUnsavedChanges}
             />
 
