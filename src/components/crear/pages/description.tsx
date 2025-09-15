@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { ChevronLeft, ChevronRight, Wand2, MoreVertical } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { updateProperty } from "~/server/queries/properties";
 import { generatePropertyDescription } from "~/server/openai/property_descriptions";
 import { getListingDetailsWithAuth } from "~/server/queries/listing";
 import {
@@ -12,42 +11,46 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import FormSkeleton from "./form-skeleton";
+import { useFormContext } from "../form-context";
 
-interface ListingDetails {
-  propertyId?: number;
-  description?: string;
-  formPosition?: number;
+// Form data interface for description page
+interface DescriptionPageFormData {
+  description: string;
 }
 
 interface DescriptionPageProps {
   listingId: string;
-  globalFormData: { listingDetails?: ListingDetails };
   onNext: () => void;
   onBack?: () => void;
-  refreshListingDetails?: () => void;
 }
 
 export default function DescriptionPage({
   listingId,
-  globalFormData,
   onNext,
   onBack,
-  refreshListingDetails,
 }: DescriptionPageProps) {
-  const [description, setDescription] = useState("");
+  const { state, updateFormData } = useFormContext();
   const [isGenerating, setIsGenerating] = useState(false);
   const [, setIsSignatureDialogOpen] = useState(false);
   const [saveError] = useState<string | null>(null);
-  const [saving] = useState(false);
 
-  // Use centralized data instead of fetching
-  useEffect(() => {
-    if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails;
-      setDescription(details.description ?? "");
-    }
-  }, [globalFormData?.listingDetails]);
+  // Get current form data from context
+  const formData = {
+    description: state.formData.description || "",
+  };
+
+  // Update form data helper
+  const updateField = (
+    field: keyof DescriptionPageFormData,
+    value: string,
+  ) => {
+    updateFormData({ [field]: value });
+  };
+
+  // Handle description input
+  const handleDescriptionChange = (value: string) => {
+    updateField("description", value);
+  };
 
   const handleGenerateDescription = async () => {
     try {
@@ -64,60 +67,17 @@ export default function DescriptionPage({
       );
 
       const generated = await generatePropertyDescription(propertyData);
-      setDescription(generated);
+      handleDescriptionChange(generated);
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleNext = () => {
-    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    // Navigate IMMEDIATELY - no saves, completely instant!
     onNext();
-
-    // Save data in background (completely silent)
-    saveInBackground();
   };
 
-  // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    if (globalFormData?.listingDetails?.propertyId) {
-      const updateData: Partial<ListingDetails> = {
-        description: description,
-      };
-
-      // Only update formPosition if current position is lower than 11
-      if ((globalFormData.listingDetails.formPosition ?? 0) < 11) {
-        updateData.formPosition = 11;
-      }
-
-      // Debug log
-      console.log("Saving description page data:", updateData);
-
-      updateProperty(
-        Number(globalFormData.listingDetails.propertyId),
-        updateData,
-      )
-        .then(() => {
-          console.log("Description page data saved successfully"); // Debug log
-          // Refresh global data after successful save
-          refreshListingDetails?.();
-        })
-        .catch((error: unknown) => {
-          console.error("Error saving form data:", error);
-          // Silent error - user doesn't know it failed
-          // Could implement retry logic here if needed
-        });
-    } else {
-      console.warn(
-        "No propertyId found in globalFormData.listingDetails for description page",
-      ); // Debug log
-    }
-  };
-
-  if (saving) {
-    return <FormSkeleton />;
-  }
 
   return (
     <motion.div
@@ -143,8 +103,8 @@ export default function DescriptionPage({
       </div>
       <Textarea
         id="description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
+        value={formData.description}
+        onChange={(e) => handleDescriptionChange(e.target.value)}
         className="min-h-[200px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300"
         placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
       />

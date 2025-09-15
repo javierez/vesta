@@ -162,7 +162,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                 alt="Vesta CRM Logo" 
                 width={140} 
                 height={64} 
-                className="h-16 w-36"
+                className="h-16 w-auto max-w-36"
               />
             </div>
             <Button
@@ -414,8 +414,8 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                 src={accountLogo ?? "/logo-transparent.svg"} 
                 alt="Vesta CRM Logo" 
                 width={150} 
-                height={64} 
-                className="h-16 w-42"
+                height={68} 
+                className="h-16 w-auto max-w-42"
               />
             </div>
           </div>

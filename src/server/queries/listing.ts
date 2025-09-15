@@ -870,18 +870,81 @@ export async function getListingDetails(listingId: number, accountId: number) {
         propertyType: properties.propertyType,
         propertySubtype: properties.propertySubtype,
         formPosition: properties.formPosition,
+        
+        // Details from second page - Map form fields to database fields
         bedrooms: properties.bedrooms,
         bathrooms: properties.bathrooms,
-        squareMeter: properties.squareMeter,
-        yearBuilt: properties.yearBuilt,
+        totalSurface: properties.squareMeter, // Form uses totalSurface, DB has squareMeter
+        usefulSurface: properties.builtSurfaceArea, // Form uses usefulSurface, DB has builtSurfaceArea  
+        plotSurface: sql<number>`NULL`, // Not in properties table yet
+        floor: sql<string>`NULL`, // Not in properties table yet  
+        totalFloors: properties.buildingFloors, // Form uses totalFloors, DB has buildingFloors
+        buildYear: properties.yearBuilt, // Form uses buildYear, DB has yearBuilt
+        condition: properties.conservationStatus, // Form uses condition, DB has conservationStatus
+        energyCertificate: properties.energyConsumptionScale, // Form uses energyCertificate, DB has energyConsumptionScale
+        emissions: properties.emissionsScale, // Form uses emissions, DB has emissionsScale
         cadastralReference: properties.cadastralReference,
+        
+        // Address from third page - Map form fields to database fields  
+        address: properties.street, // Form uses address, DB has street
+        city: locations.city,
+        province: locations.province, 
+        postalCode: properties.postalCode,
+        neighborhood: locations.neighborhood,
+        latitude: properties.latitude,
+        longitude: properties.longitude,
+        
+        // Equipment from fourth page - Map form fields to database fields
+        heating: properties.heatingType, // Form uses heating, DB has heatingType
+        airConditioning: properties.airConditioningType, // Form uses airConditioning, DB has airConditioningType
+        hasElevator: properties.hasElevator,
+        hasGarage: properties.hasGarage,
+        hasStorageRoom: properties.hasStorageRoom,
+        hasGarden: properties.garden, // Form uses hasGarden, DB has garden
+        hasSwimmingPool: sql<boolean>`(${properties.pool} OR ${properties.communityPool} OR ${properties.privatePool})`, // Form uses hasSwimmingPool, DB has multiple pool fields
+        hasTerrace: properties.terrace, // Form uses hasTerrace, DB has terrace
+        hasBalcony: sql<boolean>`(${properties.balconyCount} > 0)`, // Form uses hasBalcony, DB has balconyCount
+        
+        // Orientation from fifth page  
+        orientation: properties.orientation,
+        views: properties.views,
+        luminosity: properties.bright, // Form uses luminosity, DB has bright
+        
+        // Additional from sixth page - Map form fields to database fields
+        accessibility: properties.disabledAccessible, // Form uses accessibility, DB has disabledAccessible
+        securitySystem: sql<boolean>`(${properties.alarm} OR ${properties.securityDoor})`, // Form uses securitySystem, DB has multiple security fields
+        doorman: properties.conciergeService, // Form uses doorman, DB has conciergeService
+        builtInWardrobes: properties.builtInWardrobes,
+        
+        // Luxury from seventh page - Map form fields to database fields
+        luxuryFeatures: sql<boolean>`(${properties.jacuzzi} OR ${properties.hydromassage} OR ${properties.homeAutomation})`, // Form uses luxuryFeatures, combine multiple luxury fields
+        highEndFinishes: properties.mainFloorType, // Form uses highEndFinishes, use mainFloorType as indicator
+        designerKitchen: properties.furnishedKitchen, // Form uses designerKitchen, DB has furnishedKitchen
+        smartHome: properties.homeAutomation, // Form uses smartHome, DB has homeAutomation
+        
+        // Spaces from eighth page - Map form fields to database fields
+        hasAttic: sql<boolean>`NULL`, // Not in properties table
+        hasBasement: sql<boolean>`NULL`, // Not in properties table
+        hasLaundryRoom: properties.laundryRoom, // Form uses hasLaundryRoom, DB has laundryRoom
+        hasOffice: sql<boolean>`NULL`, // Not in properties table
+        hasDressingRoom: sql<boolean>`NULL`, // Not in properties table
+        
+        // Materials from ninth page - Map form fields to database fields
+        floorMaterial: properties.mainFloorType, // Form uses floorMaterial, DB has mainFloorType
+        wallMaterial: sql<string>`NULL`, // Not in properties table
+        kitchenMaterial: properties.kitchenType, // Form uses kitchenMaterial, DB has kitchenType
+        bathroomMaterial: sql<string>`NULL`, // Not in properties table
+        
+        // Description from description page
+        highlights: sql<string>`NULL`, // Not in properties table
+        
+        // Legacy fields for backward compatibility
+        yearBuilt: properties.yearBuilt,
+        squareMeter: properties.squareMeter,
         builtSurfaceArea: properties.builtSurfaceArea,
         street: properties.street,
         addressDetails: properties.addressDetails,
-        postalCode: properties.postalCode,
         neighborhoodId: properties.neighborhoodId,
-        latitude: properties.latitude,
-        longitude: properties.longitude,
         energyCertification: properties.energyCertification,
         energyCertificateStatus: properties.energyCertificateStatus,
         energyConsumptionScale: properties.energyConsumptionScale,
@@ -890,9 +953,6 @@ export async function getListingDetails(listingId: number, accountId: number) {
         emissionsValue: properties.emissionsValue,
         hasHeating: properties.hasHeating,
         heatingType: properties.heatingType,
-        hasElevator: properties.hasElevator,
-        hasGarage: properties.hasGarage,
-        hasStorageRoom: properties.hasStorageRoom,
         garageType: properties.garageType,
         garageSpaces: properties.garageSpaces,
         garageInBuilding: properties.garageInBuilding,
@@ -928,16 +988,13 @@ export async function getListingDetails(listingId: number, accountId: number) {
         balconyCount: properties.balconyCount,
         galleryCount: properties.galleryCount,
         buildingFloors: properties.buildingFloors,
-        builtInWardrobes: properties.builtInWardrobes,
         mainFloorType: properties.mainFloorType,
         shutterType: properties.shutterType,
         carpentryType: properties.carpentryType,
-        orientation: properties.orientation,
         airConditioningType: properties.airConditioningType,
         windowType: properties.windowType,
         exterior: properties.exterior,
         bright: properties.bright,
-        views: properties.views,
         mountainViews: properties.mountainViews,
         seaViews: properties.seaViews,
         beachfront: properties.beachfront,

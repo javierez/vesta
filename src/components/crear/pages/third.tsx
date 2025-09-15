@@ -3,12 +3,9 @@ import { Button } from "~/components/ui/button";
 import { FloatingLabelInput } from "~/components/ui/floating-label-input";
 import { ChevronLeft, ChevronRight, Loader } from "lucide-react";
 import { motion } from "framer-motion";
-import {
-  updatePropertyLocation,
-  updateProperty,
-} from "~/server/queries/properties";
 import { useSearchParams } from "next/navigation";
-import FormSkeleton from "./form-skeleton";
+// import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
+import { useFormContext } from "../form-context";
 
 interface ListingDetails {
   propertyId?: number;
@@ -24,44 +21,30 @@ interface ListingDetails {
 
 interface ThirdPageProps {
   listingId: string;
-  globalFormData: { listingDetails?: ListingDetails | null };
   onNext: () => void;
   onBack?: () => void;
-  refreshListingDetails?: () => void;
 }
 
-// Form data interface for third page
-interface ThirdPageFormData {
-  street: string;
-  addressDetails: string;
-  postalCode: string;
-  city: string;
-  province: string;
-  municipality: string;
-  neighborhood: string;
-}
-
-const initialFormData: ThirdPageFormData = {
-  street: "",
-  addressDetails: "",
-  postalCode: "",
-  city: "",
-  province: "",
-  municipality: "",
-  neighborhood: "",
-};
 
 export default function ThirdPage({
-  globalFormData,
   onNext,
   onBack,
-  refreshListingDetails,
 }: ThirdPageProps) {
-  const [formData, setFormData] = useState<ThirdPageFormData>(initialFormData);
-  const [_saveError] = useState<string | null>(null);
+  const { state, updateFormData } = useFormContext();
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const searchParams = useSearchParams();
   const method = searchParams?.get("method");
+
+  // Get current form data from context (following first.tsx pattern)
+  const formData = {
+    address: state.formData.address || "",
+    addressDetails: state.formData.addressDetails || "",
+    postalCode: state.formData.postalCode || "",
+    city: state.formData.city || "",
+    province: state.formData.province || "",
+    municipality: state.formData.municipality || "",
+    neighborhood: state.formData.neighborhood || "",
+  };
 
   // Check if method is manual - if so, skip this page
   useEffect(() => {
@@ -71,33 +54,16 @@ export default function ThirdPage({
     }
   }, [method, onNext]);
 
-  // Use centralized data instead of fetching
-  useEffect(() => {
-    if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails;
+  // No useEffect needed - data comes from form context
 
-      // Pre-populate form with existing data
-      setFormData((prev) => ({
-        ...prev,
-        street: details.street ?? "",
-        addressDetails: details.addressDetails ?? "",
-        postalCode: details.postalCode ?? "",
-        city: details.city ?? "",
-        province: details.province ?? "",
-        municipality: details.municipality ?? "",
-        neighborhood: details.neighborhood ?? "",
-      }));
-    }
-  }, [globalFormData?.listingDetails]);
-
-  const updateFormData = (field: keyof ThirdPageFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Update form data helper (following first.tsx pattern)
+  const updateField = (field: string, value: string) => {
+    updateFormData({ [field]: value });
   };
 
-  const handleInputChange =
-    (field: keyof ThirdPageFormData) => (value: string) => {
-      updateFormData(field, value);
-    };
+  const handleInputChange = (field: string) => (value: string) => {
+    updateField(field, value);
+  };
 
   // Function to get property type text (similar to property-characteristics-form.tsx)
   const getPropertyTypeText = (type: string) => {
@@ -120,19 +86,17 @@ export default function ThirdPage({
   // Function to generate title (similar to property-characteristics-form.tsx)
   const generateTitle = () => {
     const type = getPropertyTypeText(
-      globalFormData?.listingDetails?.propertyType ?? "piso",
+      state.formData?.propertyType ?? "piso",
     );
-    const street =
-      (formData.street || globalFormData?.listingDetails?.street) ?? "";
-    const neighborhood =
-      formData.neighborhood || globalFormData?.listingDetails?.neighborhood
-        ? `(${formData.neighborhood || globalFormData?.listingDetails?.neighborhood})`
-        : "";
+    const street = formData.address ?? "";
+    const neighborhood = formData.neighborhood
+      ? `(${formData.neighborhood})`
+      : "";
     return `${type} en ${street} ${neighborhood}`.trim();
   };
 
   const autoCompleteAddress = async () => {
-    if (!formData.street.trim()) {
+    if (!formData.address.trim()) {
       alert("Por favor, introduce al menos la dirección de la propiedad.");
       return;
     }
@@ -141,7 +105,7 @@ export default function ThirdPage({
       setIsUpdatingAddress(true);
 
       // Use Nominatim to auto-complete missing fields
-      const addressString = [formData.street.trim(), formData.city.trim()]
+      const addressString = [formData.address.trim(), formData.city.trim()]
         .filter(Boolean)
         .join(", ");
 
@@ -178,29 +142,26 @@ export default function ThirdPage({
 
       console.log("Nominatim auto-completion successful:", result);
 
-      // Replace form data with Nominatim results
-      const newFormData = {
-        street: result.address?.road ?? formData.street,
+      // Update form context directly with auto-completed data (simplified)
+      const updatedData = {
+        address: result.address?.road ?? formData.address,
         addressDetails: result.address?.house_number ?? formData.addressDetails,
         postalCode: result.address?.postcode ?? formData.postalCode,
         city: result.address?.city ?? result.address?.town ?? formData.city,
         province: result.address?.state ?? formData.province,
-        municipality:
-          result.address?.city ?? result.address?.town ?? formData.municipality,
-        neighborhood:
-          result.address?.suburb ??
-          result.address?.quarter ??
-          formData.neighborhood,
+        municipality: result.address?.city ?? result.address?.town ?? formData.municipality,
+        neighborhood: result.address?.suburb ?? result.address?.quarter ?? formData.neighborhood,
       };
+      
+      updateFormData(updatedData);
+      
+      // Generate and save title after address is updated
+      const type = getPropertyTypeText(state.formData?.propertyType ?? "piso");
+      const street = updatedData.address ?? "";
+      const neighborhood = updatedData.neighborhood ? `(${updatedData.neighborhood})` : "";
+      const generatedTitle = `${type} en ${street} ${neighborhood}`.trim();
+      updateFormData({ title: generatedTitle });
 
-      setFormData(newFormData);
-
-      // Show success feedback
-
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        // Success message would be hidden here if implemented
-      }, 3000);
     } catch (error) {
       console.error("Error auto-completing address:", error);
       alert(
@@ -213,7 +174,7 @@ export default function ThirdPage({
 
   const handleNext = () => {
     // Validate required fields
-    if (!formData.street.trim()) {
+    if (!formData.address.trim()) {
       alert("Por favor, introduce la calle.");
       return;
     }
@@ -223,72 +184,33 @@ export default function ThirdPage({
       return;
     }
 
-    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    // Generate and save title before navigating
+    const generatedTitle = generateTitle();
+    updateFormData({ title: generatedTitle });
+
+    // Navigate IMMEDIATELY - no saves, completely instant!
     onNext();
-
-    // Save data in background (completely silent)
-    saveInBackground();
   };
 
-  // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    const details = globalFormData?.listingDetails;
-    if (details?.propertyId) {
-      console.log("Saving third page location data"); // Debug log
-      updatePropertyLocation(Number(details.propertyId), {
-        street: formData.street,
-        addressDetails: formData.addressDetails,
-        postalCode: formData.postalCode,
-        city: formData.city,
-        province: formData.province,
-        municipality: formData.municipality,
-        neighborhood: formData.neighborhood,
-      })
-        .then(() => {
-          console.log("Third page location data saved successfully"); // Debug log
-          // After location is saved, generate and save the title
-          const generatedTitle = generateTitle();
-          console.log("Generated title:", generatedTitle); // Debug log
-          return updateProperty(Number(details.propertyId), {
-            title: generatedTitle,
-          });
-        })
-        .then(() => {
-          console.log("Title saved successfully"); // Debug log
-          // Refresh global data after successful save
-          refreshListingDetails?.();
-        })
-        .catch((error: unknown) => {
-          console.error("Error saving form data:", error);
-          // Silent error - user doesn't know it failed
-          // Could implement retry logic here if needed
-        });
-    } else {
-      console.warn(
-        "No propertyId found in globalFormData.listingDetails for location save",
-      ); // Debug log
-    }
-  };
+  // No save function needed - using local state approach
 
   // If method is manual, don't render anything (page will be skipped)
   if (method === "manual") {
     return null;
   }
 
-  // Show loading only if globalFormData is not ready
-  if (!globalFormData?.listingDetails) {
-    return <FormSkeleton />;
-  }
+  // Show loading only if form state is not ready
+  // Main form already handles loading state with spinner
+  // No skeleton needed here
 
   return (
     <div className="space-y-4">
       <h2 className="text-md mb-4 font-medium text-gray-900">Dirección</h2>
 
       <FloatingLabelInput
-        id="street"
-        value={formData.street}
-        onChange={handleInputChange("street")}
+        id="address"
+        value={formData.address}
+        onChange={handleInputChange("address")}
         placeholder="Dirección"
       />
       <FloatingLabelInput
@@ -335,7 +257,7 @@ export default function ThirdPage({
       <div className="flex justify-center pt-2">
         <Button
           onClick={autoCompleteAddress}
-          disabled={isUpdatingAddress || !formData.street.trim()}
+          disabled={isUpdatingAddress || !formData.address.trim()}
           variant="outline"
           className="flex items-center space-x-2"
         >
@@ -352,20 +274,7 @@ export default function ThirdPage({
         </Button>
       </div>
 
-      {/* Save Error Notification */}
-      {_saveError && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="rounded-lg border border-red-200 bg-red-50 p-3"
-        >
-          <div className="flex items-center space-x-2">
-            <div className="h-2 w-2 rounded-full bg-red-500"></div>
-            <p className="text-sm text-red-700">{_saveError}</p>
-          </div>
-        </motion.div>
-      )}
+      {/* No error handling needed in local state approach */}
 
       {/* Navigation Buttons */}
       <motion.div

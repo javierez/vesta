@@ -1,125 +1,60 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { updateProperty } from "~/server/queries/properties";
-import FormSkeleton from "./form-skeleton";
 import { CompassRose } from "../rosa";
-
-interface ListingDetails {
-  propertyId?: number;
-  propertyType?: string;
-  exterior?: boolean;
-  bright?: boolean;
-  orientation?: string;
-  formPosition?: number;
-}
+import { useFormContext } from "../form-context";
 
 interface FifthPageProps {
   listingId: string;
-  globalFormData: { listingDetails?: ListingDetails | null };
   onNext: () => void;
   onBack?: () => void;
-  refreshListingDetails?: () => void;
 }
 
-// Form data interface for fifth page
+// Form data interface for fifth page (matching database schema)
 interface FifthPageFormData {
-  isExterior: boolean;
-  isBright: boolean;
+  exterior: boolean;
+  bright: boolean;
   orientation: string;
 }
 
-const initialFormData: FifthPageFormData = {
-  isExterior: false,
-  isBright: false,
-  orientation: "",
-};
-
 export default function FifthPage({
-  listingId: _listingId,
-  globalFormData,
   onNext,
   onBack,
-  refreshListingDetails,
 }: FifthPageProps) {
-  const [formData, setFormData] = useState<FifthPageFormData>(initialFormData);
-  const [saveError] = useState<string | null>(null);
+  const { state, updateFormData } = useFormContext();
 
-  const updateFormData = (field: keyof FifthPageFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Get current form data from context (like first.tsx pattern)
+  const formData = {
+    exterior: state.formData.exterior || false,
+    bright: state.formData.bright || false,
+    orientation: state.formData.orientation || "",
   };
 
-  // Use centralized data instead of fetching
+  // Update form data helper (like first.tsx pattern)
+  const updateField = (
+    field: keyof FifthPageFormData,
+    value: boolean | string,
+  ) => {
+    updateFormData({ [field]: value });
+  };
+
+  // Handle property type-specific logic
   useEffect(() => {
-    const details = globalFormData?.listingDetails;
-    if (details) {
-      // For solar and garage properties, skip this page entirely
-      if (
-        details.propertyType === "solar" ||
-        details.propertyType === "garage"
-      ) {
-        onNext();
-        return;
-      }
-      // Pre-populate form with existing data for other property types
-      setFormData((prev) => ({
-        ...prev,
-        isExterior: details.exterior ?? false,
-        isBright: details.bright ?? false,
-        orientation: details.orientation ?? "",
-      }));
+    const propertyType = state.formData.propertyType;
+    // For solar and garage properties, skip this page entirely
+    if (propertyType === "solar" || propertyType === "garage") {
+      onNext();
+      return;
     }
-  }, [globalFormData?.listingDetails, onNext]);
+  }, [state.formData.propertyType, onNext]);
 
   const handleNext = () => {
-    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    // Navigate immediately - no saves, completely instant! (like first.tsx)
     onNext();
-
-    // Save data in background (completely silent)
-    saveInBackground();
   };
 
-  // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    const details = globalFormData?.listingDetails;
-    if (details?.propertyId) {
-      const updateData: Partial<ListingDetails> = {
-        exterior: formData.isExterior,
-        bright: formData.isBright,
-        orientation: formData.orientation,
-      };
-
-      // Only update formPosition if current position is lower than 6
-      if ((details.formPosition ?? 0) < 6) {
-        updateData.formPosition = 6;
-      }
-
-      console.log("Saving fifth page data:", updateData); // Debug log
-
-      updateProperty(Number(details.propertyId), updateData)
-        .then(() => {
-          console.log("Fifth page data saved successfully"); // Debug log
-          // Refresh global data after successful save
-          refreshListingDetails?.();
-        })
-        .catch((error: unknown) => {
-          console.error("Error saving form data:", error);
-          // Silent error - user doesn't know it failed
-          // Could implement retry logic here if needed
-        });
-    } else {
-      console.warn(
-        "No propertyId found in globalFormData.listingDetails for fifth page",
-      ); // Debug log
-    }
-  };
-
-  if (globalFormData?.listingDetails === null) {
-    return <FormSkeleton />;
-  }
 
   return (
     <motion.div
@@ -149,9 +84,9 @@ export default function FifthPage({
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => updateFormData("isExterior", !formData.isExterior)}
+          onClick={() => updateField("exterior", !formData.exterior)}
           className={`relative w-full overflow-hidden rounded-lg p-3 transition-all duration-200 ${
-            formData.isExterior
+            formData.exterior
               ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
               : "bg-white text-gray-700 shadow-md"
           } `}
@@ -160,7 +95,7 @@ export default function FifthPage({
             className="absolute inset-0 bg-gray-800"
             initial={{ scale: 0, opacity: 0 }}
             animate={
-              formData.isExterior
+              formData.exterior
                 ? { scale: 1, opacity: 1 }
                 : { scale: 0, opacity: 0 }
             }
@@ -170,7 +105,7 @@ export default function FifthPage({
           <div className="relative z-10 flex items-center space-x-3">
             <span className="text-sm font-medium">Exterior</span>
           </div>
-          {formData.isExterior && (
+          {formData.exterior && (
             <span className="absolute right-2 top-3.5 z-20 flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 bg-white/90">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path
@@ -189,9 +124,9 @@ export default function FifthPage({
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => updateFormData("isBright", !formData.isBright)}
+          onClick={() => updateField("bright", !formData.bright)}
           className={`relative w-full overflow-hidden rounded-lg p-3 transition-all duration-200 ${
-            formData.isBright
+            formData.bright
               ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
               : "bg-white text-gray-700 shadow-md"
           } `}
@@ -200,7 +135,7 @@ export default function FifthPage({
             className="absolute inset-0 bg-gray-800"
             initial={{ scale: 0, opacity: 0 }}
             animate={
-              formData.isBright
+              formData.bright
                 ? { scale: 1, opacity: 1 }
                 : { scale: 0, opacity: 0 }
             }
@@ -210,7 +145,7 @@ export default function FifthPage({
           <div className="relative z-10 flex items-center space-x-3">
             <span className="text-sm font-medium">Luminoso</span>
           </div>
-          {formData.isBright && (
+          {formData.bright && (
             <span className="absolute right-2 top-3.5 z-20 flex h-4 w-4 items-center justify-center rounded-full border border-gray-300 bg-white/90">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path
@@ -232,24 +167,11 @@ export default function FifthPage({
           </Label>
           <CompassRose
             value={formData.orientation}
-            onChange={(value) => updateFormData("orientation", value)}
+            onChange={(value) => updateField("orientation", value)}
           />
         </div>
       </motion.div>
 
-      <AnimatePresence>
-        {saveError && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, scale: 0.95 }}
-            animate={{ opacity: 1, height: "auto", scale: 1 }}
-            exit={{ opacity: 0, height: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-          >
-            {saveError}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <motion.div
         className="flex justify-between border-t pt-4"

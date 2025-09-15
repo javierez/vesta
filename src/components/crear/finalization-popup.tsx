@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, Loader2, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { updateProperty } from "~/server/queries/properties";
-import { createListing, updateListingWithAuth } from "~/server/queries/listing";
+import { createListing } from "~/server/queries/listing";
+import { FormSaveService } from "./save-service";
+import { CompleteFormData } from "./form-context";
 
 // Type definitions
 interface ListingDetails {
@@ -34,8 +35,9 @@ interface RentFormData {
 interface FinalizationPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  listingDetails: ListingDetails;
-  formData: RentFormData;
+  listingDetails?: ListingDetails | null; // Made optional for new architecture
+  formData: RentFormData; // This is specifically for rent data
+  completeFormData: CompleteFormData; // This is the full form data
   isSaleListing: boolean;
 }
 
@@ -46,6 +48,7 @@ export default function FinalizationPopup({
   onClose,
   listingDetails,
   formData,
+  completeFormData,
   isSaleListing,
 }: FinalizationPopupProps) {
   const router = useRouter();
@@ -68,33 +71,45 @@ export default function FinalizationPopup({
       // Brief delay to allow any background operations to complete
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (!listingDetails?.propertyId || !listingDetails?.listingId) {
+      // Get IDs from listingDetails (legacy) or completeFormData (new architecture)
+      const propertyId = listingDetails?.propertyId ?? completeFormData.propertyId;
+      const listingId = listingDetails?.listingId ?? completeFormData.listingId;
+      const agentId = listingDetails?.agentId ?? completeFormData.agentId;
+      
+      if (!propertyId || !listingId) {
         throw new Error("Missing property or listing ID");
       }
 
-      // Step 1: Critical property update - force formPosition to 12
-      await updateProperty(Number(listingDetails.propertyId), {
-        formPosition: 12, // Force to 12, no conditions to avoid race conditions
-      });
+      // Save all form data and mark as completed
+      const saveResult = await FormSaveService.saveAllFormData(
+        listingId.toString(),
+        completeFormData,
+        listingDetails || { 
+          propertyId, 
+          listingId, 
+          agentId,
+          propertyType: completeFormData.propertyType,
+          listingType: completeFormData.listingType
+        },
+        { markAsCompleted: true }
+      );
 
-      // Step 2: Critical listing update - force status to Active
-      await updateListingWithAuth(Number(listingDetails.listingId), {
-        status: "Active", // Force to Active
-        internet: formData.internet,
-      });
+      if (!saveResult.success) {
+        throw new Error(saveResult.error || "Error saving form data");
+      }
 
       // Step 3: Create rental listing if requested (non-blocking)
       if (
         isSaleListing &&
         formData.duplicateForRent &&
-        listingDetails.agentId &&
-        listingDetails.propertyId
+        agentId &&
+        propertyId
       ) {
         const rentListingData = {
-          propertyId: BigInt(listingDetails.propertyId),
+          propertyId: BigInt(propertyId),
           listingType: "Rent" as const,
           price: formData.rentalPrice.toString(),
-          agentId: listingDetails.agentId?.toString() ?? "",
+          agentId: agentId?.toString() ?? "",
           studentFriendly: formData.studentFriendly,
           petsAllowed: formData.petsAllowed,
           appliancesIncluded: formData.appliancesIncluded,
@@ -127,7 +142,7 @@ export default function FinalizationPopup({
 
       // Auto-redirect after 2 seconds
       setTimeout(() => {
-        router.push(`/propiedades/${listingDetails.listingId}`);
+        router.push(`/propiedades/${listingId}`);
       }, 2000);
     } catch (error) {
       console.error("Error in saveAndFinalize:", error);

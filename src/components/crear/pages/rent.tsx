@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -14,41 +14,14 @@ import { motion } from "framer-motion";
 import { formFormatters } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
-import FormSkeleton from "./form-skeleton";
+import { useFormContext } from "../form-context";
 import FinalizationPopup from "../finalization-popup";
 
-// Type definitions
-interface ListingDetails {
-  propertyType?: string;
-  listingType?: string;
-  listingId?: number | string;
-  propertyId?: number | string;
-  agentId?: number | string;
-  formPosition?: number;
-  hasKeys?: boolean;
-  studentFriendly?: boolean;
-  petsAllowed?: boolean;
-  appliancesIncluded?: boolean;
-  isFurnished?: boolean;
-  furnitureQuality?: string;
-  optionalGaragePrice?: number | string;
-  optionalStorageRoomPrice?: number | string;
-  price?: number | string;
-  internet?: boolean;
-  hasGarage?: boolean;
-  hasStorageRoom?: boolean;
-}
-
-interface GlobalFormData {
-  listingDetails?: ListingDetails | null;
-}
 
 interface RentPageProps {
-  listingId?: string; // Made optional since it's unused
-  globalFormData: GlobalFormData;
-  onNext?: () => void; // Made optional since it's unused
+  listingId?: string;
+  onNext?: () => void;
   onBack?: () => void;
-  refreshListingDetails?: () => void;
 }
 
 interface RentPageFormData {
@@ -65,6 +38,7 @@ interface RentPageFormData {
   internet: boolean;
 }
 
+
 const initialFormData: RentPageFormData = {
   hasKeys: false,
   studentFriendly: false,
@@ -80,53 +54,48 @@ const initialFormData: RentPageFormData = {
 };
 
 export default function RentPage({
-  globalFormData,
+  listingId,
   onBack,
-  refreshListingDetails: _refreshListingDetails,
 }: RentPageProps) {
-  const [formData, setFormData] = useState<RentPageFormData>(initialFormData);
-  const [propertyType, setPropertyType] = useState<string>("");
-  const [isSaleListing, setIsSaleListing] = useState<boolean>(true);
+  const { state, updateFormData } = useFormContext();
   const [showFinalizationPopup, setShowFinalizationPopup] = useState<boolean>(false);
 
-  const updateFormData = (field: keyof RentPageFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const propertyType = state.formData.propertyType ?? "";
+  const isSaleListing = state.formData.listingType === "Sale";
+
+  // Get current form data from context with fallbacks (following first.tsx pattern)
+  const formData = {
+    hasKeys: state.formData.hasKeys ?? initialFormData.hasKeys,
+    studentFriendly: state.formData.studentFriendly ?? initialFormData.studentFriendly,
+    petsAllowed: state.formData.petsAllowed ?? initialFormData.petsAllowed,
+    appliancesIncluded: state.formData.appliancesIncluded ?? initialFormData.appliancesIncluded,
+    isFurnished: state.formData.isFurnished ?? initialFormData.isFurnished,
+    furnitureQuality: state.formData.furnitureQuality ?? initialFormData.furnitureQuality,
+    optionalGaragePrice: state.formData.optionalGaragePrice ?? initialFormData.optionalGaragePrice,
+    optionalStorageRoomPrice: state.formData.optionalStorageRoomPrice ?? initialFormData.optionalStorageRoomPrice,
+    rentalPrice: state.formData.rentalPrice ?? initialFormData.rentalPrice,
+    duplicateForRent: state.formData.duplicateForRent ?? initialFormData.duplicateForRent,
+    internet: state.formData.internet ?? initialFormData.internet,
   };
 
-  // Use centralized data instead of fetching
-  useEffect(() => {
-    if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails;
-      setPropertyType(details.propertyType ?? "");
-      setIsSaleListing(details.listingType === "Sale");
-      setFormData((prev) => ({
-        ...prev,
-        hasKeys: details.hasKeys ?? false,
-        studentFriendly: details.studentFriendly ?? false,
-        petsAllowed: details.petsAllowed ?? false,
-        appliancesIncluded: details.appliancesIncluded ?? false,
-        isFurnished: details.isFurnished ?? false,
-        furnitureQuality: details.furnitureQuality ?? "",
-        optionalGaragePrice: Number(details.optionalGaragePrice) || 0,
-        optionalStorageRoomPrice: Number(details.optionalStorageRoomPrice) || 0,
-        rentalPrice: Number(details.price) || 0,
-        internet: details.internet ?? false,
-      }));
-    }
-  }, [globalFormData?.listingDetails]);
+  // Update form data helper (following first.tsx pattern)
+  const updateField = (field: keyof RentPageFormData, value: unknown) => {
+    updateFormData({ [field]: value });
+  };
+
 
   // Handle price input with formatting for garage and storage room
   const handleGaragePriceChange = formFormatters.handleNumericPriceInputChange(
-    (value) => updateFormData("optionalGaragePrice", value),
+    (value) => updateField("optionalGaragePrice", value),
   );
 
   const handleStorageRoomPriceChange =
     formFormatters.handleNumericPriceInputChange((value) =>
-      updateFormData("optionalStorageRoomPrice", value),
+      updateField("optionalStorageRoomPrice", value),
     );
 
   const handleRentalPriceChange = formFormatters.handleNumericPriceInputChange(
-    (value) => updateFormData("rentalPrice", value),
+    (value) => updateField("rentalPrice", value),
   );
 
   const handleNext = () => {
@@ -148,9 +117,6 @@ export default function RentPage({
     setShowFinalizationPopup(false);
   };
 
-  if (globalFormData?.listingDetails === null) {
-    return <FormSkeleton />;
-  }
 
   // If it's a sale listing, show the Apple-like UI
   if (isSaleListing) {
@@ -189,7 +155,7 @@ export default function RentPage({
             <div className="relative flex h-full">
               <button
                 type="button"
-                onClick={() => updateFormData("duplicateForRent", false)}
+                onClick={() => updateField("duplicateForRent", false)}
                 className={cn(
                   "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
                   !formData.duplicateForRent ? "text-white" : "text-gray-400",
@@ -199,7 +165,7 @@ export default function RentPage({
               </button>
               <button
                 type="button"
-                onClick={() => updateFormData("duplicateForRent", true)}
+                onClick={() => updateField("duplicateForRent", true)}
                 className={cn(
                   "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
                   formData.duplicateForRent ? "text-white" : "text-gray-400",
@@ -238,7 +204,7 @@ export default function RentPage({
             {/* Garage Price - Hide for solar and garage properties */}
             {propertyType !== "solar" &&
               propertyType !== "garage" &&
-              globalFormData?.listingDetails?.hasGarage && (
+              Boolean(state.formData.hasGarage) && (
                 <div className="rounded-lg p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <h4 className="text-xs font-medium text-gray-600">
@@ -261,7 +227,7 @@ export default function RentPage({
             {/* Storage Room Price - Hide for solar and garage properties */}
             {propertyType !== "solar" &&
               propertyType !== "garage" &&
-              globalFormData?.listingDetails?.hasStorageRoom && (
+              Boolean(state.formData.hasStorageRoom) && (
                 <div className="rounded-lg p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <h4 className="text-xs font-medium text-gray-600">
@@ -299,7 +265,7 @@ export default function RentPage({
                           id="studentFriendly"
                           checked={formData.studentFriendly}
                           onCheckedChange={(checked) =>
-                            updateFormData("studentFriendly", !!checked)
+                            updateField("studentFriendly", !!checked)
                           }
                         />
                         <Label htmlFor="studentFriendly" className="text-sm">
@@ -323,7 +289,7 @@ export default function RentPage({
                           id="petsAllowed"
                           checked={formData.petsAllowed}
                           onCheckedChange={(checked) =>
-                            updateFormData("petsAllowed", !!checked)
+                            updateField("petsAllowed", !!checked)
                           }
                         />
                         <Label htmlFor="petsAllowed" className="text-sm">
@@ -348,7 +314,7 @@ export default function RentPage({
                         id="appliancesIncluded"
                         checked={formData.appliancesIncluded}
                         onCheckedChange={(checked) =>
-                          updateFormData("appliancesIncluded", !!checked)
+                          updateField("appliancesIncluded", !!checked)
                         }
                       />
                       <Label htmlFor="appliancesIncluded" className="text-sm">
@@ -360,7 +326,7 @@ export default function RentPage({
                         id="internet"
                         checked={formData.internet}
                         onCheckedChange={(checked) =>
-                          updateFormData("internet", !!checked)
+                          updateField("internet", !!checked)
                         }
                       />
                       <Label htmlFor="internet" className="text-sm">
@@ -406,15 +372,20 @@ export default function RentPage({
         </motion.div>
 
         {/* Finalization Popup */}
-        {globalFormData?.listingDetails && (
-          <FinalizationPopup
-            isOpen={showFinalizationPopup}
-            onClose={handleClosePopup}
-            listingDetails={globalFormData.listingDetails}
-            formData={formData}
-            isSaleListing={isSaleListing}
-          />
-        )}
+        <FinalizationPopup
+          isOpen={showFinalizationPopup}
+          onClose={handleClosePopup}
+          listingDetails={{
+            listingId: listingId || state.formData.listingId,
+            propertyId: state.formData.propertyId,
+            agentId: state.formData.agentId,
+            listingType: state.formData.listingType,
+            propertyType: state.formData.propertyType
+          }}
+          formData={formData}
+          completeFormData={state.formData}
+          isSaleListing={isSaleListing}
+        />
       </motion.div>
     );
   }
@@ -462,7 +433,7 @@ export default function RentPage({
                       id="studentFriendly"
                       checked={formData.studentFriendly}
                       onCheckedChange={(checked) =>
-                        updateFormData("studentFriendly", !!checked)
+                        updateField("studentFriendly", !!checked)
                       }
                     />
                     <Label htmlFor="studentFriendly" className="text-sm">
@@ -486,7 +457,7 @@ export default function RentPage({
                       id="petsAllowed"
                       checked={formData.petsAllowed}
                       onCheckedChange={(checked) =>
-                        updateFormData("petsAllowed", !!checked)
+                        updateField("petsAllowed", !!checked)
                       }
                     />
                     <Label htmlFor="petsAllowed" className="text-sm">
@@ -511,7 +482,7 @@ export default function RentPage({
                     id="appliancesIncluded"
                     checked={formData.appliancesIncluded}
                     onCheckedChange={(checked) =>
-                      updateFormData("appliancesIncluded", !!checked)
+                      updateField("appliancesIncluded", !!checked)
                     }
                   />
                   <Label htmlFor="appliancesIncluded" className="text-sm">
@@ -523,7 +494,7 @@ export default function RentPage({
                     id="internet"
                     checked={formData.internet}
                     onCheckedChange={(checked) =>
-                      updateFormData("internet", !!checked)
+                      updateField("internet", !!checked)
                     }
                   />
                   <Label htmlFor="internet" className="text-sm">
@@ -570,15 +541,20 @@ export default function RentPage({
       </motion.div>
 
       {/* Finalization Popup */}
-      {globalFormData?.listingDetails && (
-        <FinalizationPopup
-          isOpen={showFinalizationPopup}
-          onClose={handleClosePopup}
-          listingDetails={globalFormData.listingDetails}
-          formData={formData}
-          isSaleListing={isSaleListing}
-        />
-      )}
+      <FinalizationPopup
+        isOpen={showFinalizationPopup}
+        onClose={handleClosePopup}
+        listingDetails={{
+          listingId: listingId || state.formData.listingId,
+          propertyId: state.formData.propertyId,
+          agentId: state.formData.agentId,
+          listingType: state.formData.listingType,
+          propertyType: state.formData.propertyType
+        }}
+        formData={formData}
+        completeFormData={state.formData}
+        isSaleListing={isSaleListing}
+      />
     </motion.div>
   );
 }

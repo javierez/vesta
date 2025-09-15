@@ -3,267 +3,126 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { updateProperty } from "~/server/queries/properties";
+import { useFormContext } from "../form-context";
 import { formFormatters } from "~/lib/utils";
-import FormSkeleton from "./form-skeleton";
+// import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import { RoomSelector } from "./elements/room_selector";
 import { YearSlider } from "./elements/year_slider";
 import { FloatingLabelInput } from "~/components/ui/floating-label-input";
 import { cn } from "~/lib/utils";
 
-// Type definitions
-interface ListingDetails {
-  propertyType?: string;
-  propertySubtype?: string;
-  propertyId?: number | string;
-  formPosition?: number;
-  builtSurfaceArea?: number | string;
-  squareMeter?: number | string;
-  bedrooms?: number | string;
-  bathrooms?: number | string;
-  yearBuilt?: number | string;
-  lastRenovationYear?: number | string;
-  buildingFloors?: number | string;
-  conservationStatus?: number;
-}
-
-interface GlobalFormData {
-  listingDetails?: ListingDetails | null;
-}
 
 interface SecondPageProps {
-  listingId?: string; // Made optional since it's unused
-  globalFormData: GlobalFormData;
+  listingId?: string;
   onNext: () => void;
   onBack?: () => void;
-  refreshListingDetails?: () => void;
 }
 
-// Form data interface for second page
-interface SecondPageFormData {
-  bedrooms: string;
-  bathrooms: string;
-  squareMeter: string;
-  builtSurfaceArea: string;
-  yearBuilt: string;
-  lastRenovationYear: string;
-  isRenovated: boolean;
-  buildingFloors: string;
-  conservationStatus: number;
-}
-
-const initialFormData: SecondPageFormData = {
-  bedrooms: "2",
-  bathrooms: "1",
-  squareMeter: "80",
-  builtSurfaceArea: "85",
-  yearBuilt: "1980",
-  lastRenovationYear: "",
-  isRenovated: false,
-  buildingFloors: "",
-  conservationStatus: 1,
-};
+// Removed SecondPageFormData interface - using direct global state reading like first.tsx
 
 export default function SecondPage({
-  globalFormData,
   onNext,
   onBack,
-  refreshListingDetails,
 }: SecondPageProps) {
-  const [formData, setFormData] = useState<SecondPageFormData>(initialFormData);
-  const [propertyType, setPropertyType] = useState<string>("");
-  const [propertySubtype, setPropertySubtype] = useState<string>("");
+  const { state, updateFormData } = useFormContext();
+  
+  // Get current form data from context (direct reading like first.tsx)
+  const formData = {
+    bedrooms: state.formData.bedrooms || 2,
+    bathrooms: state.formData.bathrooms || 1,
+    totalSurface: state.formData.totalSurface || 80,
+    usefulSurface: state.formData.usefulSurface || 85,
+    buildYear: state.formData.buildYear || 1980,
+    renovationYear: state.formData.renovationYear || 0,
+    isRenovated: state.formData.isRenovated || false,
+    totalFloors: state.formData.totalFloors || 0,
+    conservationStatus: state.formData.conservationStatus || 3,
+  };
 
-  // Use centralized data instead of fetching
-  useEffect(() => {
-    if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails;
-      setPropertyType(details.propertyType ?? "");
-      setPropertySubtype(details.propertySubtype ?? "");
+  const propertyType = state.formData?.propertyType || "";
+  const propertySubtype = state.formData?.propertySubtype || null;
 
-      // Convert builtSurfaceArea from float to integer for display (similar to price in first.tsx)
-      let displayBuiltSurfaceArea = "";
-      if (details.builtSurfaceArea) {
-        // If builtSurfaceArea is a float (e.g., 89.00), convert to integer
-        const areaValue =
-          typeof details.builtSurfaceArea === "number"
-            ? details.builtSurfaceArea
-            : parseFloat(details.builtSurfaceArea.toString());
-        displayBuiltSurfaceArea = Math.floor(areaValue).toString();
-      }
+  // No useEffect needed - data comes from form context
 
-      // Convert squareMeter from float to integer for display (similar to price in first.tsx)
-      let displaySquareMeter = "";
-      if (details.squareMeter) {
-        // If squareMeter is a float (e.g., 80.00), convert to integer
-        const areaValue =
-          typeof details.squareMeter === "number"
-            ? details.squareMeter
-            : parseFloat(details.squareMeter.toString());
-        displaySquareMeter = Math.floor(areaValue).toString();
-      }
-
-      // Pre-populate form with existing data
-      const isRenovated = Boolean(
-        details.lastRenovationYear &&
-          details.lastRenovationYear !== details.yearBuilt,
-      );
-
-      setFormData((prev) => ({
-        ...prev,
-        bedrooms: details.bedrooms?.toString() ?? "2",
-        bathrooms: details.bathrooms?.toString() ?? "1",
-        squareMeter: displaySquareMeter ?? "80",
-        builtSurfaceArea: displayBuiltSurfaceArea ?? "85",
-        yearBuilt: details.yearBuilt?.toString() ?? "1980",
-        lastRenovationYear:
-          details.lastRenovationYear?.toString() ?? (isRenovated ? "2015" : ""),
-        isRenovated: isRenovated,
-        buildingFloors: details.buildingFloors?.toString() ?? "",
-        conservationStatus: details.conservationStatus ?? 1,
-      }));
-    }
-  }, [globalFormData?.listingDetails]);
-
-  const updateFormData = (
-    field: keyof SecondPageFormData,
+  // Update form data helper (direct like first.tsx)
+  const updateField = (
+    field: keyof typeof formData,
     value: string | number | boolean,
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    updateFormData({ [field]: value });
   };
 
   const handleEventInputChange =
-    (field: keyof SecondPageFormData) =>
+    (field: keyof typeof formData) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateFormData(field, e.target.value);
+      updateField(field, parseInt(e.target.value) || 0);
     };
 
   // Custom handlers for FloatingLabelInput (string-based onChange)
-  const handleSquareMeterStringChange = (value: string) => {
+  const handleTotalSurfaceChange = (value: string) => {
     const numericValue = formFormatters.getNumericArea(value);
-    updateFormData("squareMeter", numericValue);
+    updateField("totalSurface", parseInt(numericValue) || 0);
   };
 
-  const handleBuiltSurfaceAreaStringChange = (value: string) => {
+  const handleUsefulSurfaceChange = (value: string) => {
     const numericValue = formFormatters.getNumericArea(value);
-    updateFormData("builtSurfaceArea", numericValue);
+    updateField("usefulSurface", parseInt(numericValue) || 0);
   };
 
   const handleNext = () => {
     // Validate required fields based on property type
     if (propertyType === "solar") {
       // For solar, only surface is required
-      if (!formData.squareMeter.trim()) {
+      if (!formData.totalSurface || formData.totalSurface === 0) {
         alert("Por favor, introduce la superficie.");
         return;
       }
     } else if (propertyType === "garage") {
       // For garage, surface and year built are required
-      if (!formData.squareMeter.trim()) {
+      if (!formData.totalSurface || formData.totalSurface === 0) {
         alert("Por favor, introduce las medidas.");
         return;
       }
-      if (!formData.yearBuilt.trim()) {
+      if (!formData.buildYear || formData.buildYear === 0) {
         alert("Por favor, introduce el año de construcción.");
         return;
       }
     } else {
       // For other property types (piso, casa, local), validate all required fields
-      if (!formData.bedrooms.trim()) {
+      if (!formData.bedrooms || formData.bedrooms === 0) {
         const fieldName =
           propertyType === "local" ? "espacios" : "habitaciones";
         alert(`Por favor, introduce el número de ${fieldName}.`);
         return;
       }
 
-      if (!formData.bathrooms.trim()) {
+      if (!formData.bathrooms || formData.bathrooms === 0) {
         alert("Por favor, introduce el número de baños.");
         return;
       }
 
-      if (!formData.squareMeter.trim()) {
+      if (!formData.totalSurface || formData.totalSurface === 0) {
         alert("Por favor, introduce la superficie.");
         return;
       }
 
-      if (!formData.builtSurfaceArea.trim()) {
+      if (!formData.usefulSurface || formData.usefulSurface === 0) {
         alert("Por favor, introduce la superficie construida.");
         return;
       }
 
-      if (!formData.yearBuilt.trim()) {
+      if (!formData.buildYear || formData.buildYear === 0) {
         alert("Por favor, introduce el año de construcción.");
         return;
       }
     }
 
-    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    // Navigate immediately - no saves, completely instant!
     onNext();
-
-    // Save data in background (completely silent)
-    void saveInBackground();
   };
 
-  // Background save function - completely silent and non-blocking
-  const saveInBackground = async () => {
-    try {
-      // Fire and forget - no await, no blocking!
-      if (globalFormData?.listingDetails?.propertyId) {
-        const updateData: Record<string, unknown> = {
-          squareMeter: Number(formData.squareMeter),
-          propertySubtype: propertySubtype ?? null,
-        };
-
-        // Only update formPosition if current position is lower than 3
-        const currentFormPosition =
-          globalFormData?.listingDetails?.formPosition ?? 1;
-        if (currentFormPosition < 3) {
-          updateData.formPosition = 3;
-        }
-
-        // Only include fields that are relevant for the property type
-        if (propertyType !== "solar") {
-          updateData.yearBuilt = Number(formData.yearBuilt);
-          updateData.bedrooms = Number(formData.bedrooms);
-          updateData.bathrooms = Number(formData.bathrooms);
-          updateData.builtSurfaceArea = formData.builtSurfaceArea
-            ? Number(formData.builtSurfaceArea)
-            : null;
-          // Set renovation year to construction year if not renovated, otherwise use selected year
-          updateData.lastRenovationYear = formData.isRenovated
-            ? Number(formData.lastRenovationYear)
-            : Number(formData.yearBuilt);
-          updateData.buildingFloors = formData.buildingFloors
-            ? Number(formData.buildingFloors)
-            : undefined;
-        }
-
-        // Add conservation status for all property types
-        updateData.conservationStatus = formData.conservationStatus;
-
-        console.log("Saving second page data:", updateData); // Debug log
-
-        await updateProperty(
-          Number(globalFormData.listingDetails.propertyId),
-          updateData,
-        );
-        console.log("Second page data saved successfully"); // Debug log
-        // Refresh global data after successful save
-        refreshListingDetails?.();
-      } else {
-        console.warn("No propertyId found in globalFormData.listingDetails"); // Debug log
-      }
-    } catch (error) {
-      console.error("Error saving form data:", error);
-      // Silent error - user doesn't know it failed
-      // Could implement retry logic here if needed
-    }
-  };
-
-  // Show loading only if globalFormData is not ready
-  if (!globalFormData?.listingDetails) {
-    return <FormSkeleton />;
-  }
+  // Main form already handles loading state with spinner
+  // No skeleton needed here
 
   return (
     <div className="space-y-6">
@@ -273,8 +132,8 @@ export default function SecondPage({
           <div className="space-y-2">
             <RoomSelector
               type="bedrooms"
-              value={Number(formData.bedrooms) || 0}
-              onChange={(val) => updateFormData("bedrooms", val.toString())}
+              value={formData.bedrooms}
+              onChange={(val) => updateField("bedrooms", val)}
               label={propertyType === "local" ? "Espacios" : "Habitaciones"}
             />
           </div>
@@ -282,8 +141,8 @@ export default function SecondPage({
           <div className="space-y-2">
             <RoomSelector
               type="bathrooms"
-              value={Number(formData.bathrooms) || 0}
-              onChange={(val) => updateFormData("bathrooms", val.toString())}
+              value={formData.bathrooms}
+              onChange={(val) => updateField("bathrooms", val)}
               label="Baños"
             />
           </div>
@@ -293,9 +152,9 @@ export default function SecondPage({
       {/* Square Meter - Show for all property types */}
       <div className="space-y-2">
         <FloatingLabelInput
-          id="squareMeter"
-          value={formFormatters.formatAreaInput(formData.squareMeter)}
-          onChange={handleSquareMeterStringChange}
+          id="totalSurface"
+          value={formFormatters.formatAreaInput(formData.totalSurface.toString())}
+          onChange={handleTotalSurfaceChange}
           placeholder={
             propertyType === "garage"
               ? "Medidas en metros cuadrados"
@@ -310,9 +169,9 @@ export default function SecondPage({
       {propertyType !== "solar" && propertyType !== "garage" && (
         <div className="space-y-2">
           <FloatingLabelInput
-            id="builtSurfaceArea"
-            value={formFormatters.formatAreaInput(formData.builtSurfaceArea)}
-            onChange={handleBuiltSurfaceAreaStringChange}
+            id="usefulSurface"
+            value={formFormatters.formatAreaInput(formData.usefulSurface.toString())}
+            onChange={handleUsefulSurfaceChange}
             placeholder="Superficie construida"
             type="text"
             className="h-10 placeholder:text-gray-400"
@@ -325,8 +184,8 @@ export default function SecondPage({
         <div className="space-y-2">
           <YearSlider
             label="Año de Construcción"
-            value={Number(formData.yearBuilt) || 1980}
-            onChange={(val) => updateFormData("yearBuilt", val.toString())}
+            value={formData.buildYear}
+            onChange={(val) => updateField("buildYear", val)}
             min={1900}
             max={new Date().getFullYear()}
             placeholder="Año de construcción"
@@ -349,9 +208,9 @@ export default function SecondPage({
             <div className="relative flex h-full">
               <button
                 onClick={() => {
-                  updateFormData("isRenovated", false);
+                  updateField("isRenovated", false);
                   // Clear renovation year when "No" is selected
-                  updateFormData("lastRenovationYear", "");
+                  updateField("renovationYear", 0);
                 }}
                 className={cn(
                   "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
@@ -362,10 +221,10 @@ export default function SecondPage({
               </button>
               <button
                 onClick={() => {
-                  updateFormData("isRenovated", true);
+                  updateField("isRenovated", true);
                   // Set default renovation year to 2015 when "Sí" is selected
-                  if (!formData.lastRenovationYear) {
-                    updateFormData("lastRenovationYear", "2015");
+                  if (!formData.renovationYear || formData.renovationYear === 0) {
+                    updateField("renovationYear", 2015);
                   }
                 }}
                 className={cn(
@@ -387,10 +246,8 @@ export default function SecondPage({
             <div className="space-y-2">
               <YearSlider
                 label="Año de Última Reforma"
-                value={Number(formData.lastRenovationYear) || 2015}
-                onChange={(val) =>
-                  updateFormData("lastRenovationYear", val.toString())
-                }
+                value={formData.renovationYear || 2015}
+                onChange={(val) => updateField("renovationYear", val)}
                 min={1900}
                 max={new Date().getFullYear()}
                 placeholder="Año de última reforma"
@@ -422,7 +279,7 @@ export default function SecondPage({
               />
               <div className="relative flex h-full">
                 <button
-                  onClick={() => updateFormData("conservationStatus", 3)}
+                  onClick={() => updateField("conservationStatus", 3)}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
                     formData.conservationStatus === 3
@@ -433,7 +290,7 @@ export default function SecondPage({
                   Nuevo
                 </button>
                 <button
-                  onClick={() => updateFormData("conservationStatus", 6)}
+                  onClick={() => updateField("conservationStatus", 6)}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
                     formData.conservationStatus === 6
@@ -444,7 +301,7 @@ export default function SecondPage({
                   Reformado
                 </button>
                 <button
-                  onClick={() => updateFormData("conservationStatus", 1)}
+                  onClick={() => updateField("conservationStatus", 1)}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
                     formData.conservationStatus === 1
@@ -455,7 +312,7 @@ export default function SecondPage({
                   Bueno
                 </button>
                 <button
-                  onClick={() => updateFormData("conservationStatus", 2)}
+                  onClick={() => updateField("conservationStatus", 2)}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
                     formData.conservationStatus === 2
@@ -466,7 +323,7 @@ export default function SecondPage({
                   Regular
                 </button>
                 <button
-                  onClick={() => updateFormData("conservationStatus", 4)}
+                  onClick={() => updateField("conservationStatus", 4)}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
                     formData.conservationStatus === 4
@@ -482,15 +339,15 @@ export default function SecondPage({
 
           <div className="space-y-2">
             <label
-              htmlFor="buildingFloors"
+              htmlFor="totalFloors"
               className="text-xs font-medium text-gray-600"
             >
               Plantas del Edificio
             </label>
             <Input
-              id="buildingFloors"
-              value={formData.buildingFloors}
-              onChange={handleEventInputChange("buildingFloors")}
+              id="totalFloors"
+              value={formData.totalFloors?.toString() || ""}
+              onChange={handleEventInputChange("totalFloors")}
               placeholder="Número de plantas"
               type="number"
               min="0"

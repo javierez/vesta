@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import {
@@ -16,71 +16,16 @@ import {
   Building2,
   CookingPot,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { updateProperty } from "~/server/queries/properties";
-import FormSkeleton from "./form-skeleton";
+import { motion } from "framer-motion";
+import { useFormContext } from "../form-context";
 
-interface ListingDetails {
-  propertyId?: number;
-  propertyType?: string;
-  securityDoor?: boolean;
-  alarm?: boolean;
-  videoIntercom?: boolean;
-  securityGuard?: boolean;
-  conciergeService?: boolean;
-  vpo?: boolean;
-  disabledAccessible?: boolean;
-  satelliteDish?: boolean;
-  doubleGlazing?: boolean;
-  kitchenType?: string;
-  openKitchen?: boolean;
-  frenchKitchen?: boolean;
-  furnishedKitchen?: boolean;
-  pantry?: boolean;
-  formPosition?: number;
-}
 
 interface SixthPageProps {
   listingId: string;
-  globalFormData: { listingDetails?: ListingDetails | null };
   onNext: () => void;
   onBack?: () => void;
-  refreshListingDetails?: () => void;
 }
 
-interface SixthPageFormData {
-  securityDoor: boolean;
-  alarm: boolean;
-  videoIntercom: boolean;
-  securityGuard: boolean;
-  conciergeService: boolean;
-  vpo: boolean;
-  disabledAccessible: boolean;
-  satelliteDish: boolean;
-  doubleGlazing: boolean;
-  kitchenType: string;
-  openKitchen: boolean;
-  frenchKitchen: boolean;
-  furnishedKitchen: boolean;
-  pantry: boolean;
-}
-
-const initialFormData: SixthPageFormData = {
-  securityDoor: false,
-  alarm: false,
-  videoIntercom: false,
-  securityGuard: false,
-  conciergeService: false,
-  vpo: false,
-  disabledAccessible: false,
-  satelliteDish: false,
-  doubleGlazing: false,
-  kitchenType: "",
-  openKitchen: false,
-  frenchKitchen: false,
-  furnishedKitchen: false,
-  pantry: false,
-};
 
 const kitchenTypeOptions = [
   { value: "gas", label: "Gas" },
@@ -92,106 +37,51 @@ const kitchenTypeOptions = [
 ];
 
 export default function SixthPage({
-  listingId: _listingId,
-  globalFormData,
   onNext,
   onBack,
-  refreshListingDetails,
 }: SixthPageProps) {
-  const [formData, setFormData] = useState<SixthPageFormData>(initialFormData);
-  const [saveError] = useState<string | null>(null);
-  const [propertyType, setPropertyType] = useState<string>("");
+  const { state, updateFormData } = useFormContext();
+  
+  const propertyType = state.formData.propertyType || "";
 
-  const updateFormData = (field: keyof SixthPageFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Get current form data from context (following first.tsx pattern)
+  const formData = {
+    securitySystem: state.formData.securitySystem ?? false,
+    accessibility: state.formData.accessibility ?? false,
+    doorman: state.formData.doorman ?? false,
+    designerKitchen: state.formData.designerKitchen ?? false,
+    kitchenMaterial: state.formData.kitchenMaterial || "",
+    // Additional fields now properly typed in CompleteFormData
+    videoIntercom: state.formData.videoIntercom ?? false,
+    securityGuard: state.formData.securityGuard ?? false,
+    vpo: state.formData.vpo ?? false,
+    satelliteDish: state.formData.satelliteDish ?? false,
+    doubleGlazing: state.formData.doubleGlazing ?? false,
+    openKitchen: state.formData.openKitchen ?? false,
+    frenchKitchen: state.formData.frenchKitchen ?? false,
+    pantry: state.formData.pantry ?? false,
   };
 
-  // Use centralized data instead of fetching
+  // Update form data helper (following first.tsx pattern)
+  const updateField = (field: string, value: unknown) => {
+    updateFormData({ [field]: value });
+  };
+
+
+  // Handle property type-specific logic
   useEffect(() => {
-    const details = globalFormData?.listingDetails;
-    if (details) {
-      setPropertyType(details.propertyType ?? "");
-      // For solar properties, skip this page entirely
-      if (details.propertyType === "solar") {
-        onNext();
-        return;
-      }
-      setFormData((prev) => ({
-        ...prev,
-        securityDoor: details.securityDoor ?? false,
-        alarm: details.alarm ?? false,
-        videoIntercom: details.videoIntercom ?? false,
-        securityGuard: details.securityGuard ?? false,
-        conciergeService: details.conciergeService ?? false,
-        vpo: details.vpo ?? false,
-        disabledAccessible: details.disabledAccessible ?? false,
-        satelliteDish: details.satelliteDish ?? false,
-        doubleGlazing: details.doubleGlazing ?? false,
-        kitchenType: details.kitchenType ?? "",
-        openKitchen: details.openKitchen ?? false,
-        frenchKitchen: details.frenchKitchen ?? false,
-        furnishedKitchen: details.furnishedKitchen ?? false,
-        pantry: details.pantry ?? false,
-      }));
+    // For solar properties, skip this page entirely
+    if (propertyType === "solar") {
+      onNext();
+      return;
     }
-  }, [globalFormData?.listingDetails, onNext]);
+  }, [propertyType, onNext]);
 
   const handleNext = () => {
-    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    // Navigate immediately - no saves, completely instant!
     onNext();
-
-    // Save data in background (completely silent)
-    saveInBackground();
   };
 
-  // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    const details = globalFormData?.listingDetails;
-    if (details?.propertyId) {
-      const updateData: Partial<ListingDetails> = {
-        disabledAccessible: formData.disabledAccessible,
-        vpo: formData.vpo,
-        videoIntercom: formData.videoIntercom,
-        conciergeService: formData.conciergeService,
-        securityGuard: formData.securityGuard,
-        satelliteDish: formData.satelliteDish,
-        doubleGlazing: formData.doubleGlazing,
-        alarm: formData.alarm,
-        securityDoor: formData.securityDoor,
-        kitchenType: formData.kitchenType,
-        openKitchen: formData.openKitchen,
-        frenchKitchen: formData.frenchKitchen,
-        furnishedKitchen: formData.furnishedKitchen,
-        pantry: formData.pantry,
-      };
-      // Only update formPosition if current position is lower than 7
-      if ((details.formPosition ?? 0) < 7) {
-        updateData.formPosition = 7;
-      }
-      console.log("Saving sixth page data:", updateData); // Debug log
-      updateProperty(Number(details.propertyId), updateData)
-        .then(() => {
-          console.log("Sixth page data saved successfully"); // Debug log
-          // Refresh global data after successful save
-          refreshListingDetails?.();
-        })
-        .catch((error: unknown) => {
-          console.error("Error saving form data:", error);
-          // Silent error - user doesn't know it failed
-          // Could implement retry logic here if needed
-        });
-    } else {
-      console.warn(
-        "No propertyId found in globalFormData.listingDetails for sixth page",
-      ); // Debug log
-    }
-  };
-
-  // Show loading only if globalFormData is not ready
-  if (!globalFormData?.listingDetails) {
-    return <FormSkeleton />;
-  }
 
   return (
     <motion.div
@@ -226,26 +116,14 @@ export default function SixthPage({
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="securityDoor"
-                checked={formData.securityDoor}
+                id="securitySystem"
+                checked={formData.securitySystem}
                 onCheckedChange={(checked) =>
-                  updateFormData("securityDoor", !!checked)
+                  updateField("securitySystem", !!checked)
                 }
               />
-              <Label htmlFor="securityDoor" className="text-sm">
+              <Label htmlFor="securitySystem" className="text-sm">
                 Puerta blindada
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="alarm"
-                checked={formData.alarm}
-                onCheckedChange={(checked) =>
-                  updateFormData("alarm", !!checked)
-                }
-              />
-              <Label htmlFor="alarm" className="text-sm">
-                Alarma
               </Label>
             </div>
             <div className="flex items-center space-x-2">
@@ -253,7 +131,7 @@ export default function SixthPage({
                 id="videoIntercom"
                 checked={formData.videoIntercom}
                 onCheckedChange={(checked) =>
-                  updateFormData("videoIntercom", !!checked)
+                  updateField("videoIntercom", !!checked)
                 }
               />
               <Label htmlFor="videoIntercom" className="text-sm">
@@ -265,7 +143,7 @@ export default function SixthPage({
                 id="securityGuard"
                 checked={formData.securityGuard}
                 onCheckedChange={(checked) =>
-                  updateFormData("securityGuard", !!checked)
+                  updateField("securityGuard", !!checked)
                 }
               />
               <Label htmlFor="securityGuard" className="text-sm">
@@ -274,13 +152,13 @@ export default function SixthPage({
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="conciergeService"
-                checked={formData.conciergeService}
+                id="doorman"
+                checked={formData.doorman}
                 onCheckedChange={(checked) =>
-                  updateFormData("conciergeService", !!checked)
+                  updateField("doorman", !!checked)
                 }
               />
-              <Label htmlFor="conciergeService" className="text-sm">
+              <Label htmlFor="doorman" className="text-sm">
                 Conserjería
               </Label>
             </div>
@@ -300,7 +178,7 @@ export default function SixthPage({
               <Checkbox
                 id="vpo"
                 checked={formData.vpo}
-                onCheckedChange={(checked) => updateFormData("vpo", !!checked)}
+                onCheckedChange={(checked) => updateField("vpo", !!checked)}
               />
               <Label htmlFor="vpo" className="text-sm">
                 VPO
@@ -308,13 +186,13 @@ export default function SixthPage({
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="disabledAccessible"
-                checked={formData.disabledAccessible}
+                id="accessibility"
+                checked={formData.accessibility}
                 onCheckedChange={(checked) =>
-                  updateFormData("disabledAccessible", !!checked)
+                  updateField("accessibility", !!checked)
                 }
               />
-              <Label htmlFor="disabledAccessible" className="text-sm">
+              <Label htmlFor="accessibility" className="text-sm">
                 Accesible
               </Label>
             </div>
@@ -325,7 +203,7 @@ export default function SixthPage({
                     id="satelliteDish"
                     checked={formData.satelliteDish}
                     onCheckedChange={(checked) =>
-                      updateFormData("satelliteDish", !!checked)
+                      updateField("satelliteDish", !!checked)
                     }
                   />
                   <Label htmlFor="satelliteDish" className="text-sm">
@@ -337,7 +215,7 @@ export default function SixthPage({
                     id="doubleGlazing"
                     checked={formData.doubleGlazing}
                     onCheckedChange={(checked) =>
-                      updateFormData("doubleGlazing", !!checked)
+                      updateField("doubleGlazing", !!checked)
                     }
                   />
                   <Label htmlFor="doubleGlazing" className="text-sm">
@@ -362,9 +240,9 @@ export default function SixthPage({
                   Tipo de cocina
                 </Label>
                 <Select
-                  value={formData.kitchenType}
+                  value={formData.kitchenMaterial}
                   onValueChange={(value) =>
-                    updateFormData("kitchenType", value)
+                    updateField("kitchenMaterial", value)
                   }
                 >
                   <SelectTrigger className="h-8 text-gray-500">
@@ -384,7 +262,7 @@ export default function SixthPage({
                   id="openKitchen"
                   checked={formData.openKitchen}
                   onCheckedChange={(checked) =>
-                    updateFormData("openKitchen", !!checked)
+                    updateField("openKitchen", !!checked)
                   }
                 />
                 <Label htmlFor="openKitchen" className="text-sm">
@@ -396,7 +274,7 @@ export default function SixthPage({
                   id="frenchKitchen"
                   checked={formData.frenchKitchen}
                   onCheckedChange={(checked) =>
-                    updateFormData("frenchKitchen", !!checked)
+                    updateField("frenchKitchen", !!checked)
                   }
                 />
                 <Label htmlFor="frenchKitchen" className="text-sm">
@@ -405,13 +283,13 @@ export default function SixthPage({
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="furnishedKitchen"
-                  checked={formData.furnishedKitchen}
+                  id="designerKitchen"
+                  checked={formData.designerKitchen}
                   onCheckedChange={(checked) =>
-                    updateFormData("furnishedKitchen", !!checked)
+                    updateField("designerKitchen", !!checked)
                   }
                 />
-                <Label htmlFor="furnishedKitchen" className="text-sm">
+                <Label htmlFor="designerKitchen" className="text-sm">
                   Cocina amueblada
                 </Label>
               </div>
@@ -420,7 +298,7 @@ export default function SixthPage({
                   id="pantry"
                   checked={formData.pantry}
                   onCheckedChange={(checked) =>
-                    updateFormData("pantry", !!checked)
+                    updateField("pantry", !!checked)
                   }
                 />
                 <Label htmlFor="pantry" className="text-sm">
@@ -434,19 +312,6 @@ export default function SixthPage({
         {/* Utilities - Hide for garage properties */}
       </motion.div>
 
-      <AnimatePresence>
-        {saveError && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, scale: 0.95 }}
-            animate={{ opacity: 1, height: "auto", scale: 1 }}
-            exit={{ opacity: 0, height: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-          >
-            {saveError}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <motion.div
         className="flex justify-between border-t pt-4"

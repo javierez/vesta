@@ -1,0 +1,248 @@
+"use client";
+
+import type { CompleteFormData, ListingDetails } from "./form-context";
+import type { Listing } from "~/lib/data";
+import { updateProperty, updatePropertyLocation } from "~/server/queries/properties";
+import { updateListingWithAuth } from "~/server/queries/listing";
+import { updateListingOwnersWithAuth } from "~/server/queries/contact";
+
+export interface SaveOptions {
+  showLoading?: boolean;
+  markAsCompleted?: boolean;
+}
+
+export class FormSaveService {
+  static async saveAllFormData(
+    listingId: string,
+    formData: CompleteFormData,
+    listingDetails: ListingDetails,
+    options: SaveOptions = {}
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const promises: Promise<any>[] = [];
+
+      // 1. Update property if we have propertyId
+      if (listingDetails.propertyId) {
+        const propertyUpdateData: Record<string, unknown> = {
+          // Basic info from first page
+          propertyType: formData.propertyType,
+          propertySubtype: formData.propertySubtype || null,
+          
+          // Basic info
+          title: formData.title,
+          
+          // Details from second page
+          bedrooms: formData.bedrooms,
+          bathrooms: formData.bathrooms,
+          squareMeter: formData.usefulSurface, // Map usefulSurface to squareMeter (living area)
+          builtSurfaceArea: formData.totalSurface, // Map totalSurface to builtSurfaceArea (total built area)
+          // plotSurface: formData.plotSurface, // No DB column exists
+          // floor: formData.floor, // No DB column exists
+          buildingFloors: formData.totalFloors, // Map totalFloors to buildingFloors
+          yearBuilt: formData.buildYear, // Map buildYear to yearBuilt
+          lastRenovationYear: formData.renovationYear, // Map renovationYear to lastRenovationYear
+          needsRenovation: formData.isRenovated ? false : true, // Invert logic: isRenovated -> needsRenovation
+          conservationStatus: formData.conservationStatus,
+          // condition: formData.condition, // No DB column exists (different from conservationStatus)
+          energyConsumptionScale: formData.energyCertificate, // Map energyCertificate to energyConsumptionScale
+          emissionsScale: formData.emissions, // Map emissions to emissionsScale
+          cadastralReference: formData.cadastralReference,
+
+          // Address from third page
+          street: formData.address, // Map address to street
+          // addressDetails: undefined, // Additional address details if needed - not in form interface
+          // city: formData.city, // City is in locations table via neighborhoodId
+          // province: formData.province, // Province is in locations table via neighborhoodId
+          postalCode: formData.postalCode,
+          // neighborhood: formData.neighborhood, // Should be neighborhoodId (FK to locations)
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+
+          // Equipment from fourth page
+          heatingType: formData.heating, // Map heating to heatingType
+          airConditioningType: Array.isArray(formData.airConditioning) 
+            ? formData.airConditioning.join(', ') 
+            : formData.airConditioning, // Convert array to string
+          hasElevator: formData.hasElevator,
+          hasGarage: formData.hasGarage,
+          hasStorageRoom: formData.hasStorageRoom,
+          terrace: formData.hasTerrace, // Map hasTerrace to terrace
+          // balconyCount mapped below from formData.balconyCount
+
+          // Orientation from fifth page
+          orientation: formData.orientation,
+          // Map luminosity to bright and exterior
+          bright: Array.isArray(formData.luminosity) 
+            ? formData.luminosity.includes('bright') 
+            : formData.luminosity === 'bright',
+          exterior: Array.isArray(formData.luminosity)
+            ? formData.luminosity.includes('exterior')
+            : formData.luminosity === 'exterior',
+
+          // Additional from sixth page
+          disabledAccessible: formData.accessibility, // Map accessibility to disabledAccessible
+          alarm: formData.securitySystem, // Map securitySystem to alarm
+          securityDoor: formData.securitySystem, // Also map to securityDoor
+          conciergeService: formData.doorman, // Map doorman to conciergeService
+          videoIntercom: formData.videoIntercom, // Map videoIntercom to video_intercom
+          securityGuard: formData.securityGuard, // Map securityGuard to security_guard
+          vpo: formData.vpo, // Map vpo to vpo
+          satelliteDish: formData.satelliteDish, // Map satelliteDish to satellite_dish
+          doubleGlazing: formData.doubleGlazing, // Map doubleGlazing to double_glazing
+          openKitchen: formData.openKitchen, // Map openKitchen to open_kitchen
+          frenchKitchen: formData.frenchKitchen, // Map frenchKitchen to french_kitchen
+          furnishedKitchen: formData.designerKitchen, // Map designerKitchen to furnished_kitchen
+          pantry: formData.pantry, // Map pantry to pantry
+          builtInWardrobes: formData.builtInWardrobes,
+
+          // Luxury from seventh page
+          // luxuryFeatures: formData.luxuryFeatures, // No DB column - would need JSON field
+          // highEndFinishes: formData.highEndFinishes, // No DB column
+          // designerKitchen: formData.designerKitchen, // No DB column
+          homeAutomation: formData.smartHome, // Map smartHome to homeAutomation
+          views: formData.views, // Map views to views (boolean)
+          mountainViews: formData.mountainViews,
+          seaViews: formData.seaViews,
+          beachfront: formData.beachfront,
+          jacuzzi: formData.jacuzzi, // Map jacuzzi to jacuzzi
+          hydromassage: formData.hydromassage, // Map hydromassage to hydromassage
+          fireplace: formData.fireplace,
+          garden: formData.hasGarden, // Map hasGarden to garden
+          pool: formData.hasSwimmingPool, // Map hasSwimmingPool to pool
+          musicSystem: formData.musicSystem,
+          gym: formData.gym,
+          sportsArea: formData.sportsArea,
+          childrenArea: formData.childrenArea,
+          suiteBathroom: formData.suiteBathroom,
+          nearbyPublicTransport: formData.nearbyPublicTransport,
+          communityPool: formData.communityPool,
+          privatePool: formData.privatePool,
+          tennisCourt: formData.tennisCourt,
+          coveredClothesline: formData.coveredClothesline,
+
+          // Spaces from eighth page
+          // hasAttic: formData.hasAttic, // No DB column
+          // hasBasement: formData.hasBasement, // No DB column
+          laundryRoom: formData.hasLaundryRoom, // Map hasLaundryRoom to laundryRoom
+          // hasOffice: formData.hasOffice, // No DB column
+          // hasDressingRoom: formData.hasDressingRoom, // No DB column
+          terraceSize: formData.terraceSize,
+          balconyCount: formData.balconyCount, // Map balconyCount to balcony_count
+          galleryCount: formData.galleryCount,
+          wineCellar: formData.wineCellar,
+          wineCellarSize: formData.wineCellarSize,
+          livingRoomSize: formData.livingRoomSize,
+
+          // Materials from nineth page
+          mainFloorType: formData.mainFloorType || formData.floorMaterial, // Use mainFloorType or map from floorMaterial
+          // wallMaterial: formData.wallMaterial, // No DB column
+          kitchenType: formData.kitchenMaterial, // Map kitchenMaterial to kitchenType (though it's more about appliance type)
+          // bathroomMaterial: formData.bathroomMaterial, // No DB column
+          shutterType: formData.shutterType,
+          carpentryType: formData.carpentryType,
+          windowType: formData.windowType,
+
+          // Description from description page
+          description: formData.description,
+          // highlights: formData.highlights, // No DB column - would need JSON field
+
+          // Mark as completed if requested
+          ...(options.markAsCompleted && { formPosition: 12 }),
+          
+          // Set property as active
+          isActive: true,
+        };
+
+        // Update property data
+        promises.push(updateProperty(Number(listingDetails.propertyId), propertyUpdateData));
+        
+        // Update property location data to resolve neighborhoodId if we have complete location info
+        if (formData.address && formData.city && formData.province && formData.municipality && formData.neighborhood) {
+          promises.push(updatePropertyLocation(Number(listingDetails.propertyId), {
+            street: formData.address,
+            addressDetails: formData.addressDetails || "",
+            city: formData.city,
+            province: formData.province,
+            municipality: formData.municipality,
+            neighborhood: formData.neighborhood,
+            postalCode: formData.postalCode || "",
+          }));
+        }
+      }
+
+      // 2. Update listing if we have listingId
+      if (listingId) {
+        const listingUpdateData: Partial<Pick<
+          Listing,
+          | "price"
+          | "listingType" 
+          | "agentId"
+          | "studentFriendly"
+          | "petsAllowed"
+          | "appliancesIncluded"
+          | "internet"
+          | "hasKeys"
+          | "isFurnished"
+          | "furnitureQuality"
+          | "optionalGaragePrice"
+          | "optionalStorageRoomPrice"
+          | "status"
+        >> = {};
+
+        // Basic listing data
+        if (formData.price) listingUpdateData.price = formData.price.toString();
+        if (formData.listingType) {
+          listingUpdateData.listingType = formData.listingType as Listing["listingType"];
+        }
+        if (formData.agentId) listingUpdateData.agentId = formData.agentId;
+
+        // Rent-specific data
+        if (formData.studentFriendly !== undefined) listingUpdateData.studentFriendly = formData.studentFriendly;
+        if (formData.petsAllowed !== undefined) listingUpdateData.petsAllowed = formData.petsAllowed;
+        if (formData.appliancesIncluded !== undefined) listingUpdateData.appliancesIncluded = formData.appliancesIncluded;
+        if (formData.internet !== undefined) listingUpdateData.internet = formData.internet;
+        if (formData.hasKeys !== undefined) listingUpdateData.hasKeys = formData.hasKeys;
+        if (formData.isFurnished !== undefined) listingUpdateData.isFurnished = formData.isFurnished;
+        if (formData.furnitureQuality) listingUpdateData.furnitureQuality = formData.furnitureQuality;
+        if (formData.optionalGaragePrice !== undefined) listingUpdateData.optionalGaragePrice = formData.optionalGaragePrice.toString();
+        if (formData.optionalStorageRoomPrice !== undefined) listingUpdateData.optionalStorageRoomPrice = formData.optionalStorageRoomPrice.toString();
+        
+        // Handle rentalPrice (can be same as price field, but also separate if needed)
+        if (formData.rentalPrice !== undefined && formData.listingType === "Rent") {
+          listingUpdateData.price = formData.rentalPrice.toString();
+        }
+        
+        // Note: duplicateForRent doesn't have a DB column - would need to be added to listings table if needed
+
+        // Mark as active if completed
+        if (options.markAsCompleted) {
+          listingUpdateData.status = "Active";
+        }
+
+        promises.push(updateListingWithAuth(Number(listingId), listingUpdateData));
+      }
+
+      // 3. Update listing contacts if we have valid contacts
+      if (listingId && formData.selectedContactIds && formData.selectedContactIds.length > 0) {
+        const validContactIds = formData.selectedContactIds
+          .filter((id) => id && !isNaN(Number(id)))
+          .map((id) => Number(id));
+
+        if (validContactIds.length > 0) {
+          promises.push(updateListingOwnersWithAuth(Number(listingId), validContactIds));
+        }
+      }
+
+      // Execute all save operations
+      await Promise.all(promises);
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error saving form data:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Error al guardar los datos"
+      };
+    }
+  }
+}

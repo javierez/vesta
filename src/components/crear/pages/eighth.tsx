@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -11,151 +11,55 @@ import {
   BedDouble,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { updateProperty } from "~/server/queries/properties";
 import { formFormatters } from "~/lib/utils";
-import FormSkeleton from "./form-skeleton";
-
-// Type definitions
-interface ListingDetails {
-  propertyType?: string;
-  propertyId?: number | string;
-  formPosition?: number;
-  terrace?: boolean;
-  terraceSize?: number;
-  wineCellar?: boolean;
-  wineCellarSize?: number;
-  livingRoomSize?: number;
-  balconyCount?: number;
-  galleryCount?: number;
-  builtInWardrobes?: boolean;
-}
-
-interface GlobalFormData {
-  listingDetails?: ListingDetails | null;
-}
+import { useFormContext } from "../form-context";
 
 interface EighthPageProps {
-  listingId?: string; // Made optional since it's unused
-  globalFormData: GlobalFormData;
+  listingId?: string;
   onNext: () => void;
   onBack?: () => void;
-  refreshListingDetails?: () => void;
 }
-
-interface EighthPageFormData {
-  terrace: boolean;
-  terraceSize: number;
-  wineCellar: boolean;
-  wineCellarSize: number;
-  livingRoomSize: number;
-  balconyCount: number;
-  galleryCount: number;
-  builtInWardrobes: boolean;
-}
-
-const initialFormData: EighthPageFormData = {
-  terrace: false,
-  terraceSize: 0,
-  wineCellar: false,
-  wineCellarSize: 0,
-  livingRoomSize: 0,
-  balconyCount: 0,
-  galleryCount: 0,
-  builtInWardrobes: false,
-};
 
 export default function EighthPage({
-  globalFormData,
   onNext,
   onBack,
-  refreshListingDetails,
 }: EighthPageProps) {
-  const [formData, setFormData] = useState<EighthPageFormData>(initialFormData);
+  const { state, updateFormData } = useFormContext();
 
-  const updateFormData = (field: keyof EighthPageFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Get current form data from context (following first.tsx pattern)
+  const formData = {
+    hasTerrace: state.formData.hasTerrace ?? false,
+    terraceSize: state.formData.terraceSize ?? 0,
+    balconyCount: state.formData.balconyCount ?? 0,
+    galleryCount: state.formData.galleryCount ?? 0,
+    wineCellar: state.formData.wineCellar ?? false,
+    wineCellarSize: state.formData.wineCellarSize ?? 0,
+    livingRoomSize: state.formData.livingRoomSize ?? 0,
+    builtInWardrobes: state.formData.builtInWardrobes ?? false,
   };
 
-  // Use centralized data instead of fetching
+  // Update form data helper (following first.tsx pattern)
+  const updateField = (field: string, value: unknown) => {
+    updateFormData({ [field]: value });
+  };
+
+  // Handle property type-specific logic
   useEffect(() => {
-    if (globalFormData?.listingDetails) {
-      const details = globalFormData.listingDetails;
-      // For garage properties, skip this page entirely
-      if (details.propertyType === "garage") {
-        onNext();
-        return;
-      }
-      setFormData((prev) => ({
-        ...prev,
-        terrace: details.terrace ?? false,
-        terraceSize: details.terraceSize ?? 0,
-        wineCellar: details.wineCellar ?? false,
-        wineCellarSize: details.wineCellarSize ?? 0,
-        livingRoomSize: details.livingRoomSize ?? 0,
-        balconyCount: details.balconyCount ?? 0,
-        galleryCount: details.galleryCount ?? 0,
-        builtInWardrobes: details.builtInWardrobes ?? false,
-      }));
+    // For garage properties, skip this page entirely
+    if (state.formData.propertyType === "garage") {
+      onNext();
+      return;
     }
-  }, [globalFormData?.listingDetails, onNext]);
+  }, [state.formData.propertyType, onNext]);
 
   const handleNext = () => {
-    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    // Add validation like first.tsx
+    // Note: All fields are optional for this page, so no required field validation needed
+    
+    // Navigate immediately - no saves, completely instant!
     onNext();
-
-    // Save data in background (completely silent)
-    void saveInBackground();
   };
 
-  // Background save function - completely silent and non-blocking
-  const saveInBackground = async () => {
-    try {
-      // Fire and forget - no await, no blocking!
-      if (globalFormData?.listingDetails?.propertyId) {
-        const updateData: Record<string, unknown> = {
-          terrace: formData.terrace,
-          terraceSize: formData.terraceSize,
-          wineCellar: formData.wineCellar,
-          wineCellarSize: formData.wineCellarSize,
-          livingRoomSize: formData.livingRoomSize,
-          balconyCount: formData.balconyCount,
-          galleryCount: formData.galleryCount,
-          builtInWardrobes: formData.builtInWardrobes,
-        };
-
-        // Only update formPosition if current position is lower than 9
-        if (
-          globalFormData?.listingDetails &&
-          (!globalFormData.listingDetails.formPosition ||
-            globalFormData.listingDetails.formPosition < 9)
-        ) {
-          updateData.formPosition = 9;
-        }
-
-        console.log("Saving eighth page data:", updateData); // Debug log
-
-        await updateProperty(
-          Number(globalFormData.listingDetails.propertyId),
-          updateData,
-        );
-        console.log("Eighth page data saved successfully"); // Debug log
-        // Refresh global data after successful save
-        refreshListingDetails?.();
-      } else {
-        console.warn(
-          "No propertyId found in globalFormData.listingDetails for eighth page",
-        ); // Debug log
-      }
-    } catch (error) {
-      console.error("Error saving form data:", error);
-      // Silent error - user doesn't know it failed
-      // Could implement retry logic here if needed
-    }
-  };
-
-  if (globalFormData?.listingDetails === null) {
-    return <FormSkeleton />;
-  }
 
   return (
     <motion.div
@@ -193,16 +97,16 @@ export default function EighthPage({
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="terrace"
-                checked={formData.terrace}
+                checked={formData.hasTerrace}
                 onCheckedChange={(checked) =>
-                  updateFormData("terrace", !!checked)
+                  updateField("hasTerrace", !!checked)
                 }
               />
               <Label htmlFor="terrace" className="text-sm">
                 Terraza
               </Label>
             </div>
-            {formData.terrace && (
+            {formData.hasTerrace && (
               <div className="ml-6 space-y-1.5">
                 <Label htmlFor="terraceSize" className="text-sm">
                   Tamaño terraza (m²)
@@ -214,7 +118,7 @@ export default function EighthPage({
                     formData.terraceSize,
                   )}
                   onChange={formFormatters.handleNumberInput((value) =>
-                    updateFormData("terraceSize", value),
+                    updateField("terraceSize", value),
                   )}
                   className="h-8 w-full rounded border border-0 border-gray-300 px-2 text-gray-700 shadow-md"
                   min="0"
@@ -233,7 +137,7 @@ export default function EighthPage({
                   formData.balconyCount,
                 )}
                 onChange={formFormatters.handleNumberInput((value) =>
-                  updateFormData("balconyCount", value),
+                  updateField("balconyCount", value),
                 )}
                 className="h-8 w-full rounded border border-0 border-gray-300 px-2 text-gray-700 shadow-md"
                 min="0"
@@ -251,7 +155,7 @@ export default function EighthPage({
                   formData.galleryCount,
                 )}
                 onChange={formFormatters.handleNumberInput((value) =>
-                  updateFormData("galleryCount", value),
+                  updateField("galleryCount", value),
                 )}
                 className="h-8 w-full rounded border border-0 border-gray-300 px-2 text-gray-700 shadow-md"
                 min="0"
@@ -275,7 +179,7 @@ export default function EighthPage({
                 id="wineCellar"
                 checked={formData.wineCellar}
                 onCheckedChange={(checked) =>
-                  updateFormData("wineCellar", !!checked)
+                  updateField("wineCellar", !!checked)
                 }
               />
               <Label htmlFor="wineCellar" className="text-sm">
@@ -294,7 +198,7 @@ export default function EighthPage({
                     formData.wineCellarSize,
                   )}
                   onChange={formFormatters.handleNumberInput((value) =>
-                    updateFormData("wineCellarSize", value),
+                    updateField("wineCellarSize", value),
                   )}
                   className="h-8 w-full rounded border border-0 border-gray-300 px-2 text-gray-700 shadow-md"
                   min="0"
@@ -323,7 +227,7 @@ export default function EighthPage({
                   formData.livingRoomSize,
                 )}
                 onChange={formFormatters.handleNumberInput((value) =>
-                  updateFormData("livingRoomSize", value),
+                  updateField("livingRoomSize", value),
                 )}
                 className="h-8 w-full rounded border border-0 border-gray-300 px-2 text-gray-700 shadow-md"
                 min="0"
@@ -345,7 +249,7 @@ export default function EighthPage({
                 id="builtInWardrobes"
                 checked={formData.builtInWardrobes}
                 onCheckedChange={(checked) =>
-                  updateFormData("builtInWardrobes", !!checked)
+                  updateField("builtInWardrobes", !!checked)
                 }
               />
               <Label htmlFor="builtInWardrobes" className="text-sm">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import {
@@ -9,26 +9,14 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { ChevronLeft, ChevronRight, Square, Wind } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { updateProperty } from "~/server/queries/properties";
-import FormSkeleton from "./form-skeleton";
+import { motion } from "framer-motion";
+import { useFormContext } from "../form-context";
 
-interface ListingDetails {
-  propertyId?: number;
-  propertyType?: string;
-  mainFloorType?: string;
-  shutterType?: string;
-  carpentryType?: string;
-  windowType?: string;
-  formPosition?: number;
-}
 
 interface NinethPageProps {
   listingId: string;
-  globalFormData: { listingDetails?: ListingDetails | null };
   onNext: () => void;
   onBack?: () => void;
-  refreshListingDetails?: () => void;
 }
 
 interface NinethPageFormData {
@@ -38,97 +26,48 @@ interface NinethPageFormData {
   windowType: string;
 }
 
-const initialFormData: NinethPageFormData = {
-  mainFloorType: "",
-  shutterType: "",
-  carpentryType: "",
-  windowType: "",
-};
-
 export default function NinethPage({
-  listingId: _listingId,
-  globalFormData,
   onNext,
   onBack,
-  refreshListingDetails,
 }: NinethPageProps) {
-  const [formData, setFormData] = useState<NinethPageFormData>(initialFormData);
-  const [saveError] = useState<string | null>(null);
+  const { state, updateFormData } = useFormContext();
 
-  const updateFormData = (field: keyof NinethPageFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Get current form data from context
+  const formData = {
+    mainFloorType: state.formData.mainFloorType ?? "",
+    shutterType: state.formData.shutterType ?? "",
+    carpentryType: state.formData.carpentryType ?? "",
+    windowType: state.formData.windowType ?? "",
   };
 
-  // Use centralized data instead of fetching
+  // Update form data helper
+  const updateField = (
+    field: keyof NinethPageFormData,
+    value: string,
+  ) => {
+    updateFormData({ [field]: value });
+  };
+
+  // Handle property type-specific logic
   useEffect(() => {
-    const details = globalFormData?.listingDetails;
-    if (details) {
-      // For solar and garage properties, skip this page entirely
-      if (
-        details.propertyType === "solar" ||
-        details.propertyType === "garage"
-      ) {
-        onNext();
-        return;
-      }
-      setFormData((prev) => ({
-        ...prev,
-        mainFloorType: details.mainFloorType ?? "",
-        shutterType: details.shutterType ?? "",
-        carpentryType: details.carpentryType ?? "",
-        windowType: details.windowType ?? "",
-      }));
+    // For solar and garage properties, skip this page entirely
+    if (
+      state.formData.propertyType === "solar" ||
+      state.formData.propertyType === "garage"
+    ) {
+      onNext();
+      return;
     }
-  }, [globalFormData?.listingDetails, onNext]);
+  }, [state.formData.propertyType, onNext]);
 
   const handleNext = () => {
-    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    // Validate required fields (if any are required in the future)
+    // Currently all fields are optional for materials and finishes
+    
+    // Navigate IMMEDIATELY - no saves, completely instant!
     onNext();
-
-    // Save data in background (completely silent)
-    saveInBackground();
   };
 
-  // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    const details = globalFormData?.listingDetails;
-    if (details?.propertyId) {
-      const updateData: Partial<ListingDetails> = {
-        mainFloorType: formData.mainFloorType,
-        shutterType: formData.shutterType,
-        carpentryType: formData.carpentryType,
-        windowType: formData.windowType,
-      };
-
-      // Only update formPosition if current position is lower than 10
-      if ((details.formPosition ?? 0) < 10) {
-        updateData.formPosition = 10;
-      }
-
-      console.log("Saving nineth page data:", updateData); // Debug log
-
-      updateProperty(Number(details.propertyId), updateData)
-        .then(() => {
-          console.log("Nineth page data saved successfully"); // Debug log
-          // Refresh global data after successful save
-          refreshListingDetails?.();
-        })
-        .catch((error: unknown) => {
-          console.error("Error saving form data:", error);
-          // Silent error - user doesn't know it failed
-          // Could implement retry logic here if needed
-        });
-    } else {
-      console.warn(
-        "No propertyId found in globalFormData.listingDetails for nineth page",
-      ); // Debug log
-    }
-  };
-
-  if (globalFormData?.listingDetails === null) {
-    return <FormSkeleton />;
-  }
 
   return (
     <motion.div
@@ -169,7 +108,7 @@ export default function NinethPage({
               </Label>
               <Select
                 value={formData.windowType}
-                onValueChange={(value) => updateFormData("windowType", value)}
+                onValueChange={(value) => updateField("windowType", value)}
               >
                 <SelectTrigger className="h-8 text-gray-500">
                   <SelectValue placeholder="Seleccionar tipo" />
@@ -188,9 +127,7 @@ export default function NinethPage({
               </Label>
               <Select
                 value={formData.carpentryType}
-                onValueChange={(value) =>
-                  updateFormData("carpentryType", value)
-                }
+                onValueChange={(value) => updateField("carpentryType", value)}
               >
                 <SelectTrigger className="h-8 text-gray-500">
                   <SelectValue placeholder="Seleccionar tipo" />
@@ -209,7 +146,7 @@ export default function NinethPage({
               </Label>
               <Select
                 value={formData.shutterType}
-                onValueChange={(value) => updateFormData("shutterType", value)}
+                onValueChange={(value) => updateField("shutterType", value)}
               >
                 <SelectTrigger className="h-8 text-gray-500">
                   <SelectValue placeholder="Seleccionar tipo" />
@@ -237,9 +174,7 @@ export default function NinethPage({
               </Label>
               <Select
                 value={formData.mainFloorType}
-                onValueChange={(value) =>
-                  updateFormData("mainFloorType", value)
-                }
+                onValueChange={(value) => updateField("mainFloorType", value)}
               >
                 <SelectTrigger className="h-8 text-gray-500">
                   <SelectValue placeholder="Seleccionar tipo" />
@@ -258,19 +193,6 @@ export default function NinethPage({
         </div>
       </motion.div>
 
-      <AnimatePresence>
-        {saveError && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, scale: 0.95 }}
-            animate={{ opacity: 1, height: "auto", scale: 1 }}
-            exit={{ opacity: 0, height: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-          >
-            {saveError}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <motion.div
         className="flex justify-between border-t pt-4"

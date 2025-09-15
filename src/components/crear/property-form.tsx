@@ -13,7 +13,10 @@ import {
   getAllPotentialOwnersWithAuth,
   getCurrentListingOwnersWithAuth,
 } from "~/server/queries/contact";
+import { FormProvider, useFormContext, type CompleteFormData } from "./form-context";
+import { FormSaveService } from "./save-service";
 import ProgressBar from "./progress-bar";
+import CloseConfirmationDialog from "./close-confirmation-dialog";
 import FirstPage from "./pages/first";
 import SecondPage from "./pages/second";
 import ThirdPage from "./pages/third";
@@ -87,51 +90,158 @@ const STATIC_FORM_OPTIONS = {
   listingTypes: ["Sale", "Rent"],
 };
 
-// Global form data interface
-interface ListingDetails {
-  formPosition?: number;
-  propertyType?: string;
-  propertyId?: number;
-  listingType?: string;
-  agentId?: number | string;
-  price?: number | string;
-  [key: string]: unknown; // Allow other properties
+
+// Convert fetched database data to CompleteFormData format
+function convertFetchedDataToFormData(listingDetails: any): CompleteFormData {
+  if (!listingDetails) return {};
+  
+  return {
+    // Meta data
+    formPosition: listingDetails.formPosition || 1,
+    
+    // Page 1 - Basic Info & IDs
+    propertyId: listingDetails.propertyId,
+    listingId: listingDetails.listingId,
+    price: listingDetails.price?.toString() || "",
+    listingType: listingDetails.listingType || "Sale", 
+    propertyType: listingDetails.propertyType || "piso",
+    propertySubtype: listingDetails.propertySubtype || "",
+    agentId: listingDetails.agentId?.toString() || "",
+    
+    // Page 2 - Details  
+    bedrooms: listingDetails.bedrooms || undefined,
+    bathrooms: listingDetails.bathrooms || undefined,
+    totalSurface: listingDetails.totalSurface || undefined,
+    usefulSurface: listingDetails.usefulSurface || undefined,
+    plotSurface: listingDetails.plotSurface || undefined,
+    floor: listingDetails.floor || undefined,
+    totalFloors: listingDetails.totalFloors || undefined,
+    buildYear: listingDetails.buildYear || undefined,
+    condition: listingDetails.condition || undefined,
+    energyCertificate: listingDetails.energyCertificate || undefined,
+    emissions: listingDetails.emissions || undefined,
+    cadastralReference: listingDetails.cadastralReference || "",
+    
+    // Page 3 - Address
+    address: listingDetails.address || "",
+    city: listingDetails.city || "",
+    province: listingDetails.province || "",
+    postalCode: listingDetails.postalCode || "",
+    neighborhood: listingDetails.neighborhood || "",
+    latitude: listingDetails.latitude || undefined,
+    longitude: listingDetails.longitude || undefined,
+    
+    // Page 4 - Equipment
+    heating: listingDetails.heating || "",
+    airConditioning: listingDetails.airConditioning || [],
+    hasElevator: listingDetails.hasElevator || false,
+    hasGarage: listingDetails.hasGarage || false,
+    hasStorageRoom: listingDetails.hasStorageRoom || false,
+    hasGarden: listingDetails.hasGarden || false,
+    hasSwimmingPool: listingDetails.hasSwimmingPool || false,
+    hasTerrace: listingDetails.hasTerrace || false,
+    hasBalcony: listingDetails.hasBalcony || false,
+    
+    // Page 5 - Orientation
+    orientation: listingDetails.orientation || "",
+    views: listingDetails.views || [],
+    luminosity: listingDetails.luminosity || "",
+    
+    // Page 6 - Additional
+    accessibility: listingDetails.accessibility || false,
+    securitySystem: listingDetails.securitySystem || false,
+    doorman: listingDetails.doorman || false,
+    builtInWardrobes: listingDetails.builtInWardrobes || false,
+    
+    // Page 7 - Luxury
+    luxuryFeatures: listingDetails.luxuryFeatures || [],
+    highEndFinishes: listingDetails.highEndFinishes || false,
+    designerKitchen: listingDetails.designerKitchen || false,
+    smartHome: listingDetails.smartHome || false,
+    
+    // Page 8 - Spaces
+    hasAttic: listingDetails.hasAttic || false,
+    hasBasement: listingDetails.hasBasement || false,
+    hasLaundryRoom: listingDetails.hasLaundryRoom || false,
+    hasOffice: listingDetails.hasOffice || false,
+    hasDressingRoom: listingDetails.hasDressingRoom || false,
+    
+    // Page 9 - Materials
+    floorMaterial: listingDetails.floorMaterial || "",
+    wallMaterial: listingDetails.wallMaterial || "",
+    kitchenMaterial: listingDetails.kitchenMaterial || "",
+    bathroomMaterial: listingDetails.bathroomMaterial || "",
+    
+    // Page 10 - Description
+    description: listingDetails.description || "",
+    highlights: listingDetails.highlights || [],
+    
+    // Page 11 - Rent
+    hasKeys: listingDetails.hasKeys || false,
+    studentFriendly: listingDetails.studentFriendly || false,
+    petsAllowed: listingDetails.petsAllowed || false,
+    appliancesIncluded: listingDetails.appliancesIncluded || false,
+    isFurnished: listingDetails.isFurnished || false,
+    furnitureQuality: listingDetails.furnitureQuality || "",
+    optionalGaragePrice: listingDetails.optionalGaragePrice || 0,
+    optionalStorageRoomPrice: listingDetails.optionalStorageRoomPrice || 0,
+    internet: listingDetails.internet || false,
+  };
 }
 
-interface GlobalFormData {
-  listingDetails?: ListingDetails;
-  agents: Array<{ id: string; name: string }>; // Changed from number to string
-  contacts: Array<{ id: number; name: string }>;
-  currentContacts: string[];
-  staticOptions: typeof STATIC_FORM_OPTIONS;
-}
-
-export default function PropertyForm({ listingId }: PropertyFormProps) {
+// Inner component that uses the form context
+function PropertyFormInner({ listingId }: PropertyFormProps) {
+  const { state, setInitialData, setLoading } = useFormContext();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [saveError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
-  // Centralized data state - passed to all child components
-  const [globalFormData, setGlobalFormData] = useState<GlobalFormData>({
-    listingDetails: undefined,
-    agents: [],
-    contacts: [],
-    currentContacts: [],
-    staticOptions: STATIC_FORM_OPTIONS,
-  });
-
-  // Handle form close
+  // Handle close button click - show confirmation dialog
   const handleCloseForm = () => {
+    setShowCloseConfirmation(true);
+  };
+
+  // Handle save and close action
+  const handleSaveAndClose = async () => {
+    // Save all form data before closing
+    if (state.hasUnsavedChanges) {
+      // Extract basic listing details from form data for save service
+      const listingDetails = {
+        propertyId: parseInt(listingId), // Use listingId from props
+        listingType: state.formData.listingType,
+        propertyType: state.formData.propertyType,
+        agentId: state.formData.agentId,
+        price: state.formData.price,
+      };
+      
+      await FormSaveService.saveAllFormData(
+        listingId,
+        state.formData,
+        listingDetails,
+        { showLoading: false } // Don't show loading for close action
+      );
+    }
+    
     router.push("/propiedades");
+  };
+
+  // Handle discard and close action
+  const handleDiscardAndClose = () => {
+    router.push("/propiedades");
+  };
+
+  // Handle close confirmation dialog close
+  const handleCloseConfirmationDialog = () => {
+    setShowCloseConfirmation(false);
   };
 
   // Pre-fetch ALL data once - no more redundant API calls in child components
   useEffect(() => {
     const fetchAllData = async () => {
       try {
-        setIsLoading(true);
+        setLoading(true);
 
         // Fetch all data in parallel for maximum speed
         const [listingDetails, agents, contacts, currentContacts] =
@@ -143,7 +253,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
           ]);
 
         // Set current step based on form position
-        const typedListingDetails = listingDetails as ListingDetails;
+        const typedListingDetails = listingDetails as any;
         if (typedListingDetails?.formPosition) {
           const stepIndex = Math.max(
             0,
@@ -152,9 +262,9 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
           setCurrentStep(stepIndex);
         }
 
-        // Set global form data
-        setGlobalFormData({
-          listingDetails: listingDetails as ListingDetails,
+        // Convert fetched data to single CompleteFormData and set as local working copy
+        setInitialData({
+          fetchedFormData: convertFetchedDataToFormData(listingDetails),
           agents: agents.map((agent) => ({
             id: agent.id, // Keep as string - don't convert to Number
             name: agent.name,
@@ -166,36 +276,16 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
           currentContacts: currentContacts.map((contact) =>
             contact.id.toString(),
           ),
-          staticOptions: STATIC_FORM_OPTIONS,
         });
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     void fetchAllData();
-  }, [listingId]);
+  }, [listingId, setInitialData, setLoading]);
 
-  // Refresh listing details and current contacts (for saves)
-  const refreshListingDetails = useCallback(async () => {
-    try {
-      const [updatedDetails, currentContacts] = await Promise.all([
-        getListingDetailsWithAuth(Number(listingId)),
-        getCurrentListingOwnersWithAuth(Number(listingId)),
-      ]);
-
-      setGlobalFormData((prev) => ({
-        ...prev,
-        listingDetails: updatedDetails as ListingDetails,
-        currentContacts: currentContacts.map((contact) =>
-          contact.id.toString(),
-        ),
-      }));
-    } catch (error) {
-      console.error("Error refreshing listing details:", error);
-    }
-  }, [listingId]);
 
   // Sync currentStep with formPosition when listingDetails updates
   // useEffect(() => {
@@ -225,9 +315,9 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
   // Memoize skipped steps for current property type
   const skippedSteps = useMemo(() => {
-    const propertyType = globalFormData.listingDetails?.propertyType ?? "";
+    const propertyType = state.formData?.propertyType ?? "";
     return getSkippedSteps(propertyType);
-  }, [globalFormData.listingDetails, getSkippedSteps]);
+  }, [state.formData.propertyType, getSkippedSteps]);
 
   // Get the next non-skipped step
   const getNextNonSkippedStep = useCallback(
@@ -276,7 +366,7 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
 
   const goToStep = useCallback(
     (stepIndex: number) => {
-      const formPosition = globalFormData.listingDetails?.formPosition ?? 1;
+      const formPosition = state.formData?.formPosition ?? 1;
       const currentFormStep = formPosition - 1;
 
       // Only allow navigation to the immediate next step
@@ -292,54 +382,31 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
       // Block forward navigation beyond next step
       // else: do nothing - navigation blocked
     },
-    [currentStep, globalFormData.listingDetails],
+    [currentStep, state.formData.formPosition],
   );
 
-  // Optimistic navigation function - navigate immediately, save in background
+  // Instant navigation function - no saves, just navigate
   const navigateToNextStep = useCallback(() => {
-    // Navigate immediately (optimistic)
+    // Navigate immediately - completely instant
     setDirection("forward");
     const nextStepIndex = getNextNonSkippedStep(currentStep);
     setCurrentStep(nextStepIndex);
-
-    // Update formPosition in globalFormData immediately for instant UI updates
-    const newFormPosition = nextStepIndex + 1;
-    setGlobalFormData((prev) => {
-      const listingDetails = prev.listingDetails;
-      return {
-        ...prev,
-        listingDetails: listingDetails
-          ? {
-              ...listingDetails,
-              formPosition: Math.max(
-                listingDetails.formPosition ?? 1,
-                newFormPosition,
-              ),
-            }
-          : undefined,
-      };
-    });
-
-    // Note: refreshListingDetails() is called by each page's background save
-    // No need to call it here as it can cause navigation conflicts
+    
+    // No save operations - purely local state navigation
   }, [currentStep, getNextNonSkippedStep]);
 
   // Shared props for all form pages - no more individual data fetching!
   const sharedPageProps = useMemo(
     () => ({
       listingId,
-      globalFormData,
       onNext: navigateToNextStep,
       onBack: currentStep > 0 ? prevStep : undefined,
-      refreshListingDetails,
     }),
     [
       listingId,
-      globalFormData,
       navigateToNextStep,
       currentStep,
       prevStep,
-      refreshListingDetails,
     ],
   );
 
@@ -418,13 +485,13 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
             <ProgressBar
               currentStep={currentStep}
               steps={steps}
-              formPosition={globalFormData.listingDetails?.formPosition ?? 1}
+              formPosition={state.formData?.formPosition ?? 1}
               onStepClick={goToStep}
-              propertyType={globalFormData.listingDetails?.propertyType ?? ""}
+              propertyType={state.formData?.propertyType ?? ""}
             />
           </div>
 
-          {isLoading ? (
+          {state.isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center space-x-3">
                 <Loader className="h-6 w-6 animate-spin text-gray-500" />
@@ -470,7 +537,25 @@ export default function PropertyForm({ listingId }: PropertyFormProps) {
             </>
           )}
         </Card>
+
+        {/* Close Confirmation Dialog */}
+        <CloseConfirmationDialog
+          isOpen={showCloseConfirmation}
+          onClose={handleCloseConfirmationDialog}
+          onSaveAndClose={handleSaveAndClose}
+          onDiscardAndClose={handleDiscardAndClose}
+          hasUnsavedChanges={state.hasUnsavedChanges}
+        />
       </div>
     </div>
+  );
+}
+
+// Main component that provides the form context
+export default function PropertyForm({ listingId }: PropertyFormProps) {
+  return (
+    <FormProvider>
+      <PropertyFormInner listingId={listingId} />
+    </FormProvider>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -12,208 +12,94 @@ import {
   Zap,
   WashingMachine,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { updateProperty } from "~/server/queries/properties";
-import FormSkeleton from "./form-skeleton";
-
-interface ListingDetails {
-  propertyId?: number;
-  propertyType?: string;
-  views?: boolean;
-  mountainViews?: boolean;
-  seaViews?: boolean;
-  beachfront?: boolean;
-  jacuzzi?: boolean;
-  hydromassage?: boolean;
-  fireplace?: boolean;
-  garden?: boolean;
-  pool?: boolean;
-  homeAutomation?: boolean;
-  musicSystem?: boolean;
-  laundryRoom?: boolean;
-  coveredClothesline?: boolean;
-  gym?: boolean;
-  sportsArea?: boolean;
-  childrenArea?: boolean;
-  suiteBathroom?: boolean;
-  nearbyPublicTransport?: boolean;
-  communityPool?: boolean;
-  privatePool?: boolean;
-  tennisCourt?: boolean;
-  formPosition?: number;
-}
+import { motion } from "framer-motion";
+import { useFormContext } from "../form-context";
 
 interface SeventhPageProps {
   listingId: string;
-  globalFormData: { listingDetails?: ListingDetails | null };
   onNext: () => void;
   onBack?: () => void;
-  refreshListingDetails?: () => void;
 }
-
-interface SeventhPageFormData {
-  views: boolean;
-  mountainViews: boolean;
-  seaViews: boolean;
-  beachfront: boolean;
-  jacuzzi: boolean;
-  hydromassage: boolean;
-  fireplace: boolean;
-  garden: boolean;
-  pool: boolean;
-  homeAutomation: boolean;
-  musicSystem: boolean;
-  laundryRoom: boolean;
-  coveredClothesline: boolean;
-  gym: boolean;
-  sportsArea: boolean;
-  childrenArea: boolean;
-  suiteBathroom: boolean;
-  nearbyPublicTransport: boolean;
-  communityPool: boolean;
-  privatePool: boolean;
-  tennisCourt: boolean;
-}
-
-const initialFormData: SeventhPageFormData = {
-  views: false,
-  mountainViews: false,
-  seaViews: false,
-  beachfront: false,
-  jacuzzi: false,
-  hydromassage: false,
-  fireplace: false,
-  garden: false,
-  pool: false,
-  homeAutomation: false,
-  musicSystem: false,
-  laundryRoom: false,
-  coveredClothesline: false,
-  gym: false,
-  sportsArea: false,
-  childrenArea: false,
-  suiteBathroom: false,
-  nearbyPublicTransport: false,
-  communityPool: false,
-  privatePool: false,
-  tennisCourt: false,
-};
 
 export default function SeventhPage({
-  listingId: _listingId,
-  globalFormData,
   onNext,
   onBack,
-  refreshListingDetails,
 }: SeventhPageProps) {
-  const [formData, setFormData] =
-    useState<SeventhPageFormData>(initialFormData);
-  const [saveError] = useState<string | null>(null);
-  const [propertyType, setPropertyType] = useState<string>("");
+  const { state, updateFormData } = useFormContext();
+  
+  const propertyType = state.formData.propertyType || "";
 
-  const updateFormData = (field: keyof SeventhPageFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Get current form data from context
+  const formData = {
+    views: !!state.formData.views,
+    mountainViews: !!state.formData.mountainViews,
+    seaViews: !!state.formData.seaViews,
+    beachfront: !!state.formData.beachfront,
+    jacuzzi: Array.isArray(state.formData.luxuryFeatures) && state.formData.luxuryFeatures.includes("jacuzzi") || false,
+    hydromassage: Array.isArray(state.formData.luxuryFeatures) && state.formData.luxuryFeatures.includes("hydromassage") || false,
+    fireplace: !!state.formData.fireplace,
+    garden: !!state.formData.hasGarden,
+    pool: !!state.formData.hasSwimmingPool,
+    homeAutomation: !!state.formData.smartHome,
+    musicSystem: !!state.formData.musicSystem,
+    laundryRoom: !!state.formData.hasLaundryRoom,
+    coveredClothesline: !!state.formData.coveredClothesline,
+    gym: !!state.formData.gym,
+    sportsArea: !!state.formData.sportsArea,
+    childrenArea: !!state.formData.childrenArea,
+    suiteBathroom: !!state.formData.suiteBathroom,
+    nearbyPublicTransport: !!state.formData.nearbyPublicTransport,
+    communityPool: !!state.formData.communityPool,
+    privatePool: !!state.formData.privatePool,
+    tennisCourt: !!state.formData.tennisCourt,
   };
 
-  // Use centralized data instead of fetching
-  useEffect(() => {
-    const details = globalFormData?.listingDetails;
-    if (details) {
-      setPropertyType(details.propertyType ?? "");
-      // For garage properties, skip this page entirely
-      if (details.propertyType === "garage") {
-        onNext();
-        return;
+  // Update form data helper
+  const updateField = (field: string, value: boolean) => {
+    if (field === "jacuzzi" || field === "hydromassage") {
+      // Handle luxury features array
+      const currentFeatures = Array.isArray(state.formData.luxuryFeatures) 
+        ? [...state.formData.luxuryFeatures] 
+        : [];
+      
+      if (value) {
+        if (!currentFeatures.includes(field)) {
+          currentFeatures.push(field);
+        }
+      } else {
+        const index = currentFeatures.indexOf(field);
+        if (index > -1) {
+          currentFeatures.splice(index, 1);
+        }
       }
-      setFormData((prev) => ({
-        ...prev,
-        views: details.views ?? false,
-        mountainViews: details.mountainViews ?? false,
-        seaViews: details.seaViews ?? false,
-        beachfront: details.beachfront ?? false,
-        jacuzzi: details.jacuzzi ?? false,
-        hydromassage: details.hydromassage ?? false,
-        fireplace: details.fireplace ?? false,
-        garden: details.garden ?? false,
-        pool: details.pool ?? false,
-        homeAutomation: details.homeAutomation ?? false,
-        musicSystem: details.musicSystem ?? false,
-        laundryRoom: details.laundryRoom ?? false,
-        coveredClothesline: details.coveredClothesline ?? false,
-        gym: details.gym ?? false,
-        sportsArea: details.sportsArea ?? false,
-        childrenArea: details.childrenArea ?? false,
-        suiteBathroom: details.suiteBathroom ?? false,
-        nearbyPublicTransport: details.nearbyPublicTransport ?? false,
-        communityPool: details.communityPool ?? false,
-        privatePool: details.privatePool ?? false,
-        tennisCourt: details.tennisCourt ?? false,
-      }));
+      updateFormData({ luxuryFeatures: currentFeatures });
+    } else if (field === "garden") {
+      updateFormData({ hasGarden: value });
+    } else if (field === "pool") {
+      updateFormData({ hasSwimmingPool: value });
+    } else if (field === "homeAutomation") {
+      updateFormData({ smartHome: value });
+    } else if (field === "laundryRoom") {
+      updateFormData({ hasLaundryRoom: value });
+    } else {
+      updateFormData({ [field]: value });
     }
-  }, [globalFormData?.listingDetails, onNext]);
+  };
+
+  // Handle property type-specific logic
+  useEffect(() => {
+    // For garage properties, skip this page entirely
+    if (propertyType === "garage") {
+      onNext();
+      return;
+    }
+  }, [propertyType, onNext]);
 
   const handleNext = () => {
-    // Navigate IMMEDIATELY (optimistic) - no waiting!
+    // Navigate IMMEDIATELY - no saves, completely instant!
     onNext();
-
-    // Save data in background (completely silent)
-    saveInBackground();
   };
 
-  // Background save function - completely silent and non-blocking
-  const saveInBackground = () => {
-    // Fire and forget - no await, no blocking!
-    const details = globalFormData?.listingDetails;
-    if (details?.propertyId) {
-      const updateData: Partial<ListingDetails> = {
-        views: formData.views,
-        mountainViews: formData.mountainViews,
-        seaViews: formData.seaViews,
-        beachfront: formData.beachfront,
-        jacuzzi: formData.jacuzzi,
-        hydromassage: formData.hydromassage,
-        garden: formData.garden,
-        pool: formData.pool,
-        homeAutomation: formData.homeAutomation,
-        musicSystem: formData.musicSystem,
-        laundryRoom: formData.laundryRoom,
-        coveredClothesline: formData.coveredClothesline,
-        fireplace: formData.fireplace,
-        gym: formData.gym,
-        sportsArea: formData.sportsArea,
-        childrenArea: formData.childrenArea,
-        suiteBathroom: formData.suiteBathroom,
-        nearbyPublicTransport: formData.nearbyPublicTransport,
-        communityPool: formData.communityPool,
-        privatePool: formData.privatePool,
-        tennisCourt: formData.tennisCourt,
-      };
-      // Only update formPosition if current position is lower than 8
-      if ((details.formPosition ?? 0) < 8) {
-        updateData.formPosition = 8;
-      }
-      console.log("Saving seventh page data:", updateData); // Debug log
-      updateProperty(Number(details.propertyId), updateData)
-        .then(() => {
-          console.log("Seventh page data saved successfully"); // Debug log
-          // Refresh global data after successful save
-          refreshListingDetails?.();
-        })
-        .catch((error: unknown) => {
-          console.error("Error saving form data:", error);
-          // Silent error - user doesn't know it failed
-          // Could implement retry logic here if needed
-        });
-    } else {
-      console.warn(
-        "No propertyId found in globalFormData.listingDetails for seventh page",
-      ); // Debug log
-    }
-  };
-
-  if (!globalFormData?.listingDetails) {
-    return <FormSkeleton />;
-  }
 
   return (
     <motion.div
@@ -251,7 +137,7 @@ export default function SeventhPage({
                 id="views"
                 checked={formData.views}
                 onCheckedChange={(checked) =>
-                  updateFormData("views", !!checked)
+                  updateField("views", !!checked)
                 }
               />
               <Label htmlFor="views" className="text-sm">
@@ -263,7 +149,7 @@ export default function SeventhPage({
                 id="mountainViews"
                 checked={formData.mountainViews}
                 onCheckedChange={(checked) =>
-                  updateFormData("mountainViews", !!checked)
+                  updateField("mountainViews", !!checked)
                 }
               />
               <Label htmlFor="mountainViews" className="text-sm">
@@ -275,7 +161,7 @@ export default function SeventhPage({
                 id="seaViews"
                 checked={formData.seaViews}
                 onCheckedChange={(checked) =>
-                  updateFormData("seaViews", !!checked)
+                  updateField("seaViews", !!checked)
                 }
               />
               <Label htmlFor="seaViews" className="text-sm">
@@ -287,7 +173,7 @@ export default function SeventhPage({
                 id="beachfront"
                 checked={formData.beachfront}
                 onCheckedChange={(checked) =>
-                  updateFormData("beachfront", !!checked)
+                  updateField("beachfront", !!checked)
                 }
               />
               <Label htmlFor="beachfront" className="text-sm">
@@ -310,7 +196,7 @@ export default function SeventhPage({
                   id="jacuzzi"
                   checked={formData.jacuzzi}
                   onCheckedChange={(checked) =>
-                    updateFormData("jacuzzi", !!checked)
+                    updateField("jacuzzi", !!checked)
                   }
                 />
                 <Label htmlFor="jacuzzi" className="text-sm">
@@ -322,7 +208,7 @@ export default function SeventhPage({
                   id="hydromassage"
                   checked={formData.hydromassage}
                   onCheckedChange={(checked) =>
-                    updateFormData("hydromassage", !!checked)
+                    updateField("hydromassage", !!checked)
                   }
                 />
                 <Label htmlFor="hydromassage" className="text-sm">
@@ -334,7 +220,7 @@ export default function SeventhPage({
                   id="fireplace"
                   checked={formData.fireplace}
                   onCheckedChange={(checked) =>
-                    updateFormData("fireplace", !!checked)
+                    updateField("fireplace", !!checked)
                   }
                 />
                 <Label htmlFor="fireplace" className="text-sm">
@@ -346,7 +232,7 @@ export default function SeventhPage({
                   id="suiteBathroom"
                   checked={formData.suiteBathroom}
                   onCheckedChange={(checked) =>
-                    updateFormData("suiteBathroom", !!checked)
+                    updateField("suiteBathroom", !!checked)
                   }
                 />
                 <Label htmlFor="suiteBathroom" className="text-sm">
@@ -370,7 +256,7 @@ export default function SeventhPage({
                   id="garden"
                   checked={formData.garden}
                   onCheckedChange={(checked) =>
-                    updateFormData("garden", !!checked)
+                    updateField("garden", !!checked)
                   }
                 />
                 <Label htmlFor="garden" className="text-sm">
@@ -382,7 +268,7 @@ export default function SeventhPage({
                   id="pool"
                   checked={formData.pool}
                   onCheckedChange={(checked) =>
-                    updateFormData("pool", !!checked)
+                    updateField("pool", !!checked)
                   }
                 />
                 <Label htmlFor="pool" className="text-sm">
@@ -394,7 +280,7 @@ export default function SeventhPage({
                   id="privatePool"
                   checked={formData.privatePool}
                   onCheckedChange={(checked) =>
-                    updateFormData("privatePool", !!checked)
+                    updateField("privatePool", !!checked)
                   }
                 />
                 <Label htmlFor="privatePool" className="text-sm">
@@ -406,7 +292,7 @@ export default function SeventhPage({
                   id="communityPool"
                   checked={formData.communityPool}
                   onCheckedChange={(checked) =>
-                    updateFormData("communityPool", !!checked)
+                    updateField("communityPool", !!checked)
                   }
                 />
                 <Label htmlFor="communityPool" className="text-sm">
@@ -418,7 +304,7 @@ export default function SeventhPage({
                   id="tennisCourt"
                   checked={formData.tennisCourt}
                   onCheckedChange={(checked) =>
-                    updateFormData("tennisCourt", !!checked)
+                    updateField("tennisCourt", !!checked)
                   }
                 />
                 <Label htmlFor="tennisCourt" className="text-sm">
@@ -444,7 +330,7 @@ export default function SeventhPage({
                   id="gym"
                   checked={formData.gym}
                   onCheckedChange={(checked) =>
-                    updateFormData("gym", !!checked)
+                    updateField("gym", !!checked)
                   }
                 />
                 <Label htmlFor="gym" className="text-sm">
@@ -456,7 +342,7 @@ export default function SeventhPage({
                   id="sportsArea"
                   checked={formData.sportsArea}
                   onCheckedChange={(checked) =>
-                    updateFormData("sportsArea", !!checked)
+                    updateField("sportsArea", !!checked)
                   }
                 />
                 <Label htmlFor="sportsArea" className="text-sm">
@@ -468,7 +354,7 @@ export default function SeventhPage({
                   id="childrenArea"
                   checked={formData.childrenArea}
                   onCheckedChange={(checked) =>
-                    updateFormData("childrenArea", !!checked)
+                    updateField("childrenArea", !!checked)
                   }
                 />
                 <Label htmlFor="childrenArea" className="text-sm">
@@ -491,7 +377,7 @@ export default function SeventhPage({
                 id="nearbyPublicTransport"
                 checked={formData.nearbyPublicTransport}
                 onCheckedChange={(checked) =>
-                  updateFormData("nearbyPublicTransport", !!checked)
+                  updateField("nearbyPublicTransport", !!checked)
                 }
               />
               <Label htmlFor="nearbyPublicTransport" className="text-sm">
@@ -514,7 +400,7 @@ export default function SeventhPage({
                   id="homeAutomation"
                   checked={formData.homeAutomation}
                   onCheckedChange={(checked) =>
-                    updateFormData("homeAutomation", !!checked)
+                    updateField("homeAutomation", !!checked)
                   }
                 />
                 <Label htmlFor="homeAutomation" className="text-sm">
@@ -526,7 +412,7 @@ export default function SeventhPage({
                   id="musicSystem"
                   checked={formData.musicSystem}
                   onCheckedChange={(checked) =>
-                    updateFormData("musicSystem", !!checked)
+                    updateField("musicSystem", !!checked)
                   }
                 />
                 <Label htmlFor="musicSystem" className="text-sm">
@@ -550,7 +436,7 @@ export default function SeventhPage({
                   id="laundryRoom"
                   checked={formData.laundryRoom}
                   onCheckedChange={(checked) =>
-                    updateFormData("laundryRoom", !!checked)
+                    updateField("laundryRoom", !!checked)
                   }
                 />
                 <Label htmlFor="laundryRoom" className="text-sm">
@@ -562,7 +448,7 @@ export default function SeventhPage({
                   id="coveredClothesline"
                   checked={formData.coveredClothesline}
                   onCheckedChange={(checked) =>
-                    updateFormData("coveredClothesline", !!checked)
+                    updateField("coveredClothesline", !!checked)
                   }
                 />
                 <Label htmlFor="coveredClothesline" className="text-sm">
@@ -574,19 +460,6 @@ export default function SeventhPage({
         )}
       </motion.div>
 
-      <AnimatePresence>
-        {saveError && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, scale: 0.95 }}
-            animate={{ opacity: 1, height: "auto", scale: 1 }}
-            exit={{ opacity: 0, height: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-          >
-            {saveError}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <motion.div
         className="flex justify-between border-t pt-4"
