@@ -7,7 +7,7 @@ import { CheckCircle, Loader2, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { createListing } from "~/server/queries/listing";
 import { FormSaveService } from "./save-service";
-import { CompleteFormData } from "./form-context";
+import type { CompleteFormData } from "./form-context";
 
 // Type definitions
 interface ListingDetails {
