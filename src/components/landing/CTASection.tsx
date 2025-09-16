@@ -20,9 +20,9 @@ export function CTASection() {
   };
 
   return (
-    <section className="bg-gradient-to-r from-primary to-primary/80 px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+    <section className="bg-gradient-to-r from-amber-400/90 to-rose-400/90 px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
       <div className="mx-auto max-w-4xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        <h2 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
           Transforma tu Negocio Inmobiliario Hoy
         </h2>
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-primary-foreground/90">

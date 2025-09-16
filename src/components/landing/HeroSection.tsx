@@ -43,28 +43,30 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative bg-gradient-to-b from-gray-50 to-white px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+    <section className="relative bg-white px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Text Content */}
-          <div className="flex flex-col justify-center space-y-8">
-            <div className="space-y-4">
+          <div className="flex flex-col justify-center space-y-10">
+            <div className="space-y-6">
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl xl:text-6xl">
-                Gestiona tu Negocio Inmobiliario con Inteligencia
+                Gestiona tu Agencia Inmobiliaria de forma{" "}
+                <span className="bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-transparent">
+                  Inteligente
+                </span>
               </h1>
               <p className="text-xl text-gray-600">
-                El CRM más completo para agentes y agencias inmobiliarias en
-                España. Automatiza, optimiza y crece tu negocio con herramientas
-                impulsadas por IA.
+                El CRM más completo y potente para agentes y agencias inmobiliarias en
+                España. Automatiza, optimiza y crece tu negocio con todas las herramientas disponibles.
               </p>
             </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="flex flex-col gap-6 sm:grid sm:grid-cols-2 sm:gap-4 sm:max-w-md">
               <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
                 <DialogTrigger asChild>
-                  <Button size="lg" className="group">
+                  <Button size="lg" className="group text-lg px-8 py-6">
                     Comenzar Gratis
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
@@ -111,24 +113,24 @@ export function HeroSection() {
                 </DialogContent>
               </Dialog>
 
-              <Button size="lg" variant="outline" className="group">
-                <Play className="mr-2 h-4 w-4" />
+              <Button size="lg" className="group text-lg px-8 py-6 bg-white text-gray-700 hover:bg-gray-50 shadow-sm hover:shadow-md transition-all">
+                <Play className="mr-2 h-5 w-5" />
                 Ver Demo
               </Button>
             </div>
 
             <div className="flex items-center gap-8 text-sm text-gray-600">
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500" />
-                Sin tarjeta de crédito
+                <div className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
+                Configuración rápida
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500" />
-                Configuración en minutos
+                <div className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
+                Aumenta eficiencia y productividad
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500" />
-                Soporte 24/7
+                <div className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
+                Soporte 24h
               </div>
             </div>
           </div>
@@ -161,9 +163,9 @@ export function HeroSection() {
               </video>
 
               {/* Fallback content */}
-              <div className="fallback-content absolute inset-0 flex hidden items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+              <div className="fallback-content absolute inset-0 flex hidden items-center justify-center bg-gradient-to-br from-amber-50/50 to-rose-50/50">
                 <div className="text-center">
-                  <div className="mx-auto mb-4 h-32 w-32 rounded-full bg-primary/20" />
+                  <div className="mx-auto mb-4 h-32 w-32 rounded-full bg-gradient-to-r from-amber-100 to-rose-100" />
                   <p className="text-lg font-medium text-gray-600">
                     Dashboard Preview
                   </p>
@@ -191,8 +193,8 @@ export function HeroSection() {
             </div>
 
             {/* Decorative elements */}
-            <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-primary/10 blur-2xl" />
-            <div className="absolute -bottom-4 -left-4 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
+            <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-r from-amber-200/20 to-rose-200/20 blur-2xl" />
+            <div className="absolute -bottom-4 -left-4 h-32 w-32 rounded-full bg-gradient-to-r from-amber-200/20 to-rose-200/20 blur-3xl" />
           </div>
         </div>
       </div>

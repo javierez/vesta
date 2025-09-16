@@ -3,6 +3,7 @@ import { HeroSection } from "~/components/landing/HeroSection";
 import { FeaturesGrid } from "~/components/landing/FeaturesGrid";
 import { IntegrationsSection } from "~/components/landing/IntegrationsSection";
 import { FutureFeatures } from "~/components/landing/FutureFeatures";
+import { TestimonialsSection } from "~/components/landing/TestimonialsSection";
 import { CTASection } from "~/components/landing/CTASection";
 import { Footer } from "~/components/landing/Footer";
 
@@ -12,8 +13,7 @@ export default function LandingPage() {
       <Navbar />
       <HeroSection />
       <FeaturesGrid />
-      <IntegrationsSection />
-      <FutureFeatures />
+      <TestimonialsSection />
       <CTASection />
       <Footer />
     </div>
