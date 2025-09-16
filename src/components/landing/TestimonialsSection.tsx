@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Star, Quote, ChevronLeft, ChevronRight, MapPin, Building2, TrendingUp } from "lucide-react";
+import { Star, Quote, ChevronLeft, ChevronRight, MapPin, TrendingUp } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 const testimonials = [
@@ -99,7 +99,9 @@ export function TestimonialsSection() {
     setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
   };
 
-  const current = testimonials[currentTestimonial];
+  const current = testimonials[currentTestimonial] ?? testimonials[0];
+  
+  if (!current) return null;
 
   const metricLabels = {
     sales: "Incremento Ventas",
@@ -108,7 +110,7 @@ export function TestimonialsSection() {
   };
 
   return (
-    <section className="bg-gradient-to-b from-white to-amber-50/30 px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+    <section className="bg-gradient-to-b from-white to-amber-50/30 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -116,26 +118,26 @@ export function TestimonialsSection() {
             Lo que dicen nuestros clientes
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
-            Más de 500 profesionales inmobiliarios ya confían en Vesta para hacer crecer su negocio
+            Un grupo selecto de profesionales inmobiliarios ya confía en Vesta para hacer crecer su negocio
           </p>
           
           {/* Trust Indicators */}
-          <div className="flex items-center justify-center gap-8 mt-8">
+          <div className="flex flex-col items-center justify-center gap-6 mt-8 sm:flex-row sm:gap-8">
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">500+</div>
               <div className="text-sm text-gray-600">Agentes activos</div>
             </div>
-            <div className="h-8 w-px bg-gray-200"></div>
+            <div className="hidden h-8 w-px bg-gray-200 sm:block"></div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">4.9/5</div>
               <div className="text-sm text-gray-600">Valoración media</div>
               <div className="flex justify-center mt-1">
-                {[...Array(5)].map((_, i) => (
+                {Array.from({ length: 5 }, (_, i) => (
                   <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
                 ))}
               </div>
             </div>
-            <div className="h-8 w-px bg-gray-200"></div>
+            <div className="hidden h-8 w-px bg-gray-200 sm:block"></div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">98%</div>
               <div className="text-sm text-gray-600">Recomendarían</div>
@@ -159,7 +161,7 @@ export function TestimonialsSection() {
 
                   {/* Testimonial Text */}
                   <blockquote className="text-xl leading-relaxed text-gray-900 mb-8">
-                    "{current.testimonial}"
+                    &ldquo;{current.testimonial}&rdquo;
                   </blockquote>
 
                   {/* Author Info */}
@@ -181,7 +183,7 @@ export function TestimonialsSection() {
                   {/* Rating */}
                   <div className="flex items-center gap-2 mt-4">
                     <div className="flex">
-                      {[...Array(current.rating)].map((_, i) => (
+                      {Array.from({ length: current.rating }, (_, i) => (
                         <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                       ))}
                     </div>
@@ -190,17 +192,17 @@ export function TestimonialsSection() {
                 </div>
 
                 {/* Metrics Sidebar - Right 1/3 */}
-                <div className="bg-gradient-to-br from-amber-50 to-rose-50 p-8 lg:p-12">
-                  <h4 className="font-semibold text-gray-900 mb-6">Resultados obtenidos</h4>
+                <div className="bg-gradient-to-br from-amber-50 to-rose-50 p-6 lg:p-8">
+                  <h4 className="font-semibold text-gray-900 mb-4">Resultados obtenidos</h4>
                   
                   {/* Metric Selector */}
-                  <div className="space-y-3 mb-6">
+                  <div className="space-y-2 mb-4">
                     {(Object.keys(metricLabels) as Array<keyof typeof metricLabels>).map((metric) => (
                       <button
                         key={metric}
                         onClick={() => setSelectedMetric(metric)}
                         className={cn(
-                          "w-full text-left p-3 rounded-lg transition-all",
+                          "w-full text-left p-2.5 rounded-lg transition-all",
                           selectedMetric === metric
                             ? "bg-white shadow-md ring-2 ring-amber-200"
                             : "hover:bg-white/50"
@@ -229,18 +231,18 @@ export function TestimonialsSection() {
             </div>
           </div>
 
-          {/* Navigation Arrows */}
+          {/* Navigation Arrows - Hidden on mobile */}
           <button
             onClick={prevTestimonial}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group"
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group sm:left-4 sm:w-12 sm:h-12"
           >
-            <ChevronLeft className="h-5 w-5 text-gray-600 group-hover:text-gray-900" />
+            <ChevronLeft className="h-4 w-4 text-gray-600 group-hover:text-gray-900 sm:h-5 sm:w-5" />
           </button>
           <button
             onClick={nextTestimonial}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group sm:right-4 sm:w-12 sm:h-12"
           >
-            <ChevronRight className="h-5 w-5 text-gray-600 group-hover:text-gray-900" />
+            <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-gray-900 sm:h-5 sm:w-5" />
           </button>
         </div>
 
@@ -260,47 +262,12 @@ export function TestimonialsSection() {
           ))}
         </div>
 
-        {/* Mini Testimonials Grid */}
-        <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {testimonials.slice(1, 4).map((testimonial, index) => (
-            <div
-              key={testimonial.id}
-              className="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => setCurrentTestimonial(testimonials.findIndex(t => t.id === testimonial.id))}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-100 to-rose-100 flex items-center justify-center">
-                  <span className="text-sm font-bold text-gray-700">{testimonial.avatar}</span>
-                </div>
-                <div>
-                  <div className="font-medium text-gray-900">{testimonial.name}</div>
-                  <div className="text-xs text-gray-600">{testimonial.company}</div>
-                </div>
-              </div>
-              <p className="text-sm text-gray-700 line-clamp-3">"{testimonial.testimonial}"</p>
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-                <div className="flex items-center gap-1 text-green-600">
-                  <TrendingUp className="h-3 w-3" />
-                  <span className="text-xs font-medium">{testimonial.metrics.sales}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
 
         {/* Call to Action */}
-        <div className="mt-16 text-center">
-          <div className="inline-flex items-center gap-3 bg-white rounded-full px-6 py-3 shadow-sm">
-            <Building2 className="h-5 w-5 text-amber-500" />
-            <span className="text-sm font-medium text-gray-700">
-              Únete a más de 500 profesionales inmobiliarios
-            </span>
-          </div>
+        <div className="mt-12 text-center">
+          <button className="px-6 py-3 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium rounded-lg hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg">
+            Ver demo
+          </button>
         </div>
       </div>
     </section>

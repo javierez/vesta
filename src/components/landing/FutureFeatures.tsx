@@ -129,11 +129,11 @@ export function FutureFeatures() {
             Construimos Vesta con feedback de profesionales del sector
             inmobiliario. Tu opinión da forma al futuro de la plataforma.
           </p>
-          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Badge variant="outline" className="px-4 py-2">
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-center sm:gap-6">
+            <Badge variant="outline" className="px-4 py-2 text-center">
               📧 Solicitudes de funciones: ideas@vesta.com
             </Badge>
-            <Badge variant="outline" className="px-4 py-2">
+            <Badge variant="outline" className="px-4 py-2 text-center">
               💬 Programa Beta: Acceso anticipado disponible
             </Badge>
           </div>

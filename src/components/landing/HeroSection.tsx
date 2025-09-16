@@ -64,7 +64,7 @@ export function HeroSection() {
             <div className="flex flex-col gap-6 sm:grid sm:grid-cols-2 sm:gap-4 sm:max-w-md">
               <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
                 <DialogTrigger asChild>
-                  <Button size="lg" className="group text-lg px-8 py-6">
+                  <Button size="lg" className="group text-lg px-8 py-6 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg border-0">
                     Comenzar Gratis
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
@@ -119,7 +119,7 @@ export function HeroSection() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-8 text-sm text-gray-600">
+            <div className="flex flex-col gap-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:gap-8">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
                 Configuración rápida

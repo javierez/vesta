@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ArrowRight, Check } from "lucide-react";
-import Link from "next/link";
 
 export function CTASection() {
   const [email, setEmail] = useState("");
@@ -26,15 +25,14 @@ export function CTASection() {
           Transforma tu Negocio Inmobiliario Hoy
         </h2>
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-primary-foreground/90">
-          Únete a cientos de profesionales inmobiliarios que ya están
-          revolucionando su forma de trabajar con Vesta. Comienza gratis, sin
-          compromiso.
+          Únete al grupo de profesionales inmobiliarios que ya están
+          revolucionando su forma de trabajar con Vesta. Atrévete.
         </p>
 
         {!isSubscribed ? (
           <div className="mt-10">
             <form onSubmit={handleSubmit} className="mx-auto max-w-md">
-              <div className="flex gap-x-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:gap-x-4">
                 <Input
                   type="email"
                   required
@@ -43,7 +41,7 @@ export function CTASection() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="min-w-0 flex-auto bg-white/90 text-gray-900 placeholder:text-gray-500"
                 />
-                <Button type="submit" variant="secondary" className="flex-none">
+                <Button type="submit" variant="secondary" className="flex-none w-full sm:w-auto">
                   Comenzar
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -62,10 +60,7 @@ export function CTASection() {
           </div>
         )}
 
-        <div className="mt-10 flex items-center justify-center gap-x-6">
-          <Button variant="secondary" size="lg" asChild>
-            <Link href="/dashboard">Explorar Demo</Link>
-          </Button>
+        <div className="mt-10 flex items-center justify-center">
           <p className="text-sm leading-6 text-primary-foreground/80">
             ¿Ya tienes cuenta?{" "}
             <button className="font-semibold underline hover:no-underline">
@@ -76,20 +71,20 @@ export function CTASection() {
 
         {/* Social Proof */}
         <div className="mt-16 border-t border-white/20 pt-8">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-            <div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-8">
+            <div className="text-center">
               <div className="text-2xl font-bold text-white">500+</div>
               <div className="text-sm text-primary-foreground/80">
                 Propiedades gestionadas
               </div>
             </div>
-            <div>
+            <div className="text-center">
               <div className="text-2xl font-bold text-white">98%</div>
               <div className="text-sm text-primary-foreground/80">
                 Satisfacción del cliente
               </div>
             </div>
-            <div>
+            <div className="text-center">
               <div className="text-2xl font-bold text-white">24/7</div>
               <div className="text-sm text-primary-foreground/80">
                 Soporte técnico
@@ -100,21 +95,21 @@ export function CTASection() {
 
         {/* Value Propositions */}
         <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex items-center text-sm text-primary-foreground/90">
-            <Check className="mr-2 h-4 w-4 text-green-300" />
-            Publica en todos los portales con un solo clic
+          <div className="flex items-start gap-3 text-sm text-primary-foreground/90">
+            <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-300" />
+            <span>Publica en todos los portales con un solo clic</span>
           </div>
-          <div className="flex items-center text-sm text-primary-foreground/90">
-            <Check className="mr-2 h-4 w-4 text-green-300" />
-            Convierte más leads con seguimiento inteligente
+          <div className="flex items-start gap-3 text-sm text-primary-foreground/90">
+            <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-300" />
+            <span>Convierte más leads con seguimiento inteligente</span>
           </div>
-          <div className="flex items-center text-sm text-primary-foreground/90">
-            <Check className="mr-2 h-4 w-4 text-green-300" />
-            Ahorra tiempo con descripciones generadas por IA
+          <div className="flex items-start gap-3 text-sm text-primary-foreground/90">
+            <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-300" />
+            <span>Ahorra tiempo con descripciones generadas por IA</span>
           </div>
-          <div className="flex items-center text-sm text-primary-foreground/90">
-            <Check className="mr-2 h-4 w-4 text-green-300" />
-            Mantén toda tu información en un solo lugar
+          <div className="flex items-start gap-3 text-sm text-primary-foreground/90">
+            <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-300" />
+            <span>Mantén toda tu información en un solo lugar</span>
           </div>
         </div>
       </div>
