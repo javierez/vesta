@@ -4,11 +4,21 @@ import { MapPin, Pencil, Check, X } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { formatPrice } from "~/lib/utils";
+import { formatPrice, cn } from "~/lib/utils";
 import { useState } from "react";
 import { updatePropertyTitle } from "~/app/actions/property-settings";
 import { toast } from "sonner";
 import { formatListingType } from "../../contactos/contact-config";
+
+const statusColors: Record<string, string> = {
+  Sale: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-200 hover:text-amber-900 hover:border-amber-400 hover:shadow-lg hover:scale-105",
+  Rent: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-200 hover:text-rose-900 hover:border-rose-400 hover:shadow-lg hover:scale-105",
+  Sold: "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-200 hover:text-gray-800 hover:border-gray-400 hover:shadow-lg hover:scale-105",
+  RoomSharing: "bg-gradient-to-r from-amber-50 to-rose-50 text-rose-600 border-rose-200 hover:from-amber-200 hover:to-rose-200 hover:text-rose-900 hover:border-rose-400 hover:shadow-lg hover:scale-105",
+  Transfer: "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-300 hover:text-amber-900 hover:border-amber-500 hover:shadow-lg hover:scale-105",
+  RentWithOption: "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-300 hover:text-rose-900 hover:border-rose-500 hover:shadow-lg hover:scale-105",
+};
+
 interface PropertyHeaderProps {
   title?: string;
   propertyId?: bigint;
@@ -162,7 +172,15 @@ export function PropertyHeader({
               ? "/mes"
               : ""}
           </div>
-          <Badge className="mt-1">{formatListingType(listingType)}</Badge>
+          <Badge
+            variant="secondary"
+            className={cn(
+              "mt-1 font-normal transition-all duration-200 cursor-pointer",
+              statusColors[listingType],
+            )}
+          >
+            {formatListingType(listingType)}
+          </Badge>
         </div>
       </div>
     </div>

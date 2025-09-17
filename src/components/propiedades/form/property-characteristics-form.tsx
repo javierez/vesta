@@ -14,7 +14,12 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { Building2, ChevronDown, Loader2, MoreVertical } from "lucide-react";
+import { 
+  Building2, 
+  ChevronDown, 
+  Loader2, 
+  MoreVertical
+} from "lucide-react";
 import { getAllAgentsWithAuth } from "~/server/queries/listing";
 import {
   getAllPotentialOwnersWithAuth,
@@ -32,6 +37,7 @@ import { updateListingWithAuth } from "~/server/queries/listing";
 import { toast } from "sonner";
 import { PropertyTitle } from "./common/property-title";
 import { ModernSaveIndicator } from "./common/modern-save-indicator";
+import { PropertySummary } from "./common/property-summary";
 import { Separator } from "~/components/ui/separator";
 import Image from "next/image";
 import { generatePropertyDescription } from "~/server/openai/property_descriptions";
@@ -669,6 +675,29 @@ export function PropertyCharacteristicsForm({
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [signature, setSignature] = useState("");
 
+  // State for collapsible sections (all closed by default)
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
+    basicInfo: true,
+    propertyDetails: true,
+    location: true,
+    features: true,
+    contactInfo: true,
+    orientation: true,
+    additionalCharacteristics: true,
+    premiumFeatures: true,
+    additionalSpaces: true,
+    materials: true,
+    description: true,
+    rentalProperties: true,
+  });
+
+  const toggleSection = (section: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   // New community amenity states
   const [gym, setGym] = useState(listing.gym ?? false);
   const [sportsArea, setSportsArea] = useState(listing.sportsArea ?? false);
@@ -856,7 +885,7 @@ export function PropertyCharacteristicsForm({
 
     switch (state) {
       case "modified":
-        return "ring-2 ring-yellow-500/20 shadow-lg shadow-yellow-500/10 border-yellow-500/20";
+        return "ring-2 ring-amber-500/20 shadow-lg shadow-amber-500/10 border-amber-500/20";
       case "saving":
         return "ring-2 ring-amber-500/20 shadow-lg shadow-amber-500/10 border-amber-500/20";
       case "saved":
@@ -872,7 +901,16 @@ export function PropertyCharacteristicsForm({
   const currentListingType = listingTypes[0] ?? "";
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-2">
+      {/* Property Summary */}
+      <PropertySummary
+        listing={listing}
+        selectedOwnerIds={selectedOwnerIds}
+        owners={owners}
+        selectedAgentId={selectedAgentId}
+        agents={agents}
+      />
+
       {/* Basic Information */}
       <Card
         className={cn(
@@ -885,13 +923,30 @@ export function PropertyCharacteristicsForm({
           onSave={() => saveModule("basicInfo")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              RESUMEN DEL INMUEBLE
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("basicInfo")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                RESUMEN DEL INMUEBLE
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.basicInfo && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.basicInfo ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <PropertyTitle
               propertyType={propertyType}
@@ -1204,13 +1259,30 @@ export function PropertyCharacteristicsForm({
           onSave={() => saveModule("propertyDetails")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              DISTRIBUCIÓN Y SUPERFICIE
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("propertyDetails")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                DISTRIBUCIÓN Y SUPERFICIE
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.propertyDetails && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.propertyDetails ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Label htmlFor="bedrooms" className="text-sm">
               Habitaciones
@@ -1356,23 +1428,45 @@ export function PropertyCharacteristicsForm({
           onSave={() => saveModule("location")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold tracking-wide">
-            DIRECCIÓN DEL INMUEBLE
-          </h3>
           <button
-            onClick={() => setIsMapsPopupOpen(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+            type="button"
+            onClick={() => toggleSection("location")}
+            className="group flex flex-1 items-center justify-between"
           >
-            <Image
-              src="https://vesta-configuration-files.s3.amazonaws.com/logos/googlemapsicon.png"
-              alt="Google Maps"
-              width={16}
-              height={16}
-              className="object-contain"
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                DIRECCIÓN DEL INMUEBLE
+              </h3>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMapsPopupOpen(true);
+                }}
+                className="flex h-6 w-6 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+              >
+                <Image
+                  src="https://vesta-configuration-files.s3.amazonaws.com/logos/googlemapsicon.png"
+                  alt="Google Maps"
+                  width={14}
+                  height={14}
+                  className="object-contain"
+                />
+              </button>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.location && "rotate-180",
+              )}
             />
           </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.location ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Label htmlFor="street" className="text-sm">
               Calle
@@ -1479,13 +1573,30 @@ export function PropertyCharacteristicsForm({
           onSave={() => saveModule("features")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              EQUIPAMIENTO Y SERVICIOS
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("features")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                EQUIPAMIENTO Y SERVICIOS
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.features && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.features ? "max-h-0" : "max-h-[5000px]",
+          )}
+        >
           <div className="flex items-center space-x-2">
             <Checkbox
               id="hasElevator"
@@ -1976,13 +2087,30 @@ export function PropertyCharacteristicsForm({
           onSave={() => saveModule("contactInfo")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              DATOS DE CONTACTO
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("contactInfo")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                DATOS DE CONTACTO
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.contactInfo && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.contactInfo ? "max-h-0" : "max-h-[1000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Label htmlFor="owners" className="text-sm">
               Propietarios
@@ -2095,13 +2223,30 @@ export function PropertyCharacteristicsForm({
           onSave={() => saveModule("orientation")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              ORIENTACIÓN Y EXPOSICIÓN
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("orientation")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                ORIENTACIÓN Y EXPOSICIÓN
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.orientation && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.orientation ? "max-h-0" : "max-h-[500px]",
+          )}
+        >
           <div className="flex items-center space-x-2">
             <Checkbox
               id="isExterior"
@@ -2157,30 +2302,33 @@ export function PropertyCharacteristicsForm({
         </div>
       </Card>
 
-      {/* Additional Characteristics and Premium Features */}
-      <div className="col-span-full grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Additional Characteristics */}
-        <Card
-          className={cn(
-            "relative p-4 transition-all duration-500 ease-out",
-            getCardStyles("additionalCharacteristics"),
-          )}
-        >
+      {/* Separator for secondary sections */}
+      <div className="col-span-full">
+        <Separator className="my-3 opacity-50" />
+      </div>
+
+      {/* Additional Characteristics */}
+      <Card
+        className={cn(
+          "relative p-4 transition-all duration-500 ease-out",
+          getCardStyles("additionalCharacteristics"),
+        )}
+      >
           <ModernSaveIndicator
             state={moduleStates.additionalCharacteristics?.saveState ?? "idle"}
             onSave={() => saveModule("additionalCharacteristics")}
           />
-          <div className="flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between">
             <button
               type="button"
               onClick={() =>
                 setShowAdditionalCharacteristics(!showAdditionalCharacteristics)
               }
-              className="group flex items-center justify-between"
+              className="group flex w-full items-center justify-between"
             >
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                  Características adicionales
+                  CARACTERÍSTICAS ADICIONALES
                 </h3>
               </div>
               <ChevronDown
@@ -2425,26 +2573,26 @@ export function PropertyCharacteristicsForm({
           </div>
         </Card>
 
-        {/* Premium Features */}
-        <Card
-          className={cn(
-            "relative p-4 transition-all duration-500 ease-out",
-            getCardStyles("premiumFeatures"),
-          )}
-        >
+          {/* Premium Features */}
+          <Card
+            className={cn(
+              "relative p-4 transition-all duration-500 ease-out",
+              getCardStyles("premiumFeatures"),
+            )}
+          >
           <ModernSaveIndicator
             state={moduleStates.premiumFeatures?.saveState ?? "idle"}
             onSave={() => saveModule("premiumFeatures")}
           />
-          <div className="flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between">
             <button
               type="button"
               onClick={() => setShowPremiumFeatures(!showPremiumFeatures)}
-              className="group flex items-center justify-between"
+              className="group flex w-full items-center justify-between"
             >
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                  Extras de Lujo y Confort
+                  EXTRAS DE LUJO Y CONFORT
                 </h3>
               </div>
               <ChevronDown
@@ -2796,13 +2944,10 @@ export function PropertyCharacteristicsForm({
               </div>
             </div>
           </div>
-        </Card>
-      </div>
+      </Card>
 
-      {/* Additional Spaces and Materials */}
-      <div className="col-span-full grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Additional Spaces */}
-        <Card
+      {/* Additional Spaces */}
+      <Card
           className={cn(
             "relative p-4 transition-all duration-500 ease-out",
             getCardStyles("additionalSpaces"),
@@ -2812,15 +2957,15 @@ export function PropertyCharacteristicsForm({
             state={moduleStates.additionalSpaces?.saveState ?? "idle"}
             onSave={() => saveModule("additionalSpaces")}
           />
-          <div className="flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between">
             <button
               type="button"
               onClick={() => setShowAdditionalSpaces(!showAdditionalSpaces)}
-              className="group flex items-center justify-between"
+              className="group flex w-full items-center justify-between"
             >
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                  Zonas y Espacios Complementarios
+                  ZONAS Y ESPACIOS COMPLEMENTARIOS
                 </h3>
               </div>
               <ChevronDown
@@ -3016,15 +3161,15 @@ export function PropertyCharacteristicsForm({
             state={moduleStates.materials?.saveState ?? "idle"}
             onSave={() => saveModule("materials")}
           />
-          <div className="flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between">
             <button
               type="button"
               onClick={() => setShowMaterials(!showMaterials)}
-              className="group flex items-center justify-between"
+              className="group flex w-full items-center justify-between"
             >
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                  Materiales y acabados
+                  MATERIALES Y ACABADOS
                 </h3>
               </div>
               <ChevronDown
@@ -3156,7 +3301,11 @@ export function PropertyCharacteristicsForm({
               </div>
             </div>
           </div>
-        </Card>
+      </Card>
+
+      {/* Separator before Description */}
+      <div className="col-span-full">
+        <Separator className="my-3 opacity-50" />
       </div>
 
       {/* Description Module */}
