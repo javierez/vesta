@@ -6,14 +6,13 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp, Key, Globe } from "lucide-react";
+import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Comments } from "./comments";
 import { TareasSkeleton, CommentsSkeleton } from "~/components/ui/skeletons";
 import { createTaskWithAuth } from "~/server/queries/task";
 import { getLeadsByListingIdWithAuth } from "~/server/queries/lead";
 import { getDealsByListingIdWithAuth } from "~/server/queries/deal";
-import { toggleListingKeysWithAuth, toggleListingPublishToWebsiteWithAuth, getListingDetailsWithAuth } from "~/server/queries/listing";
 import { useSession } from "~/lib/auth-client";
 import type { CommentWithUser } from "~/types/comments";
 
@@ -147,10 +146,6 @@ export function Tareas({
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasKeys, setHasKeys] = useState<boolean>(false);
-  const [keysLoading, setKeysLoading] = useState(false);
-  const [publishToWebsite, setPublishToWebsite] = useState<boolean>(false);
-  const [websiteLoading, setWebsiteLoading] = useState(false);
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -171,35 +166,6 @@ export function Tareas({
   });
 
 
-  // Fetch initial hasKeys value
-  useEffect(() => {
-    const fetchHasKeys = async () => {
-      try {
-        const listingDetails = await getListingDetailsWithAuth(Number(listingId));
-        setHasKeys((listingDetails as { hasKeys?: boolean }).hasKeys ?? false);
-      } catch (error) {
-        console.error('Error fetching hasKeys value:', error);
-        setHasKeys(false); // Default to false if error
-      }
-    };
-    
-    void fetchHasKeys();
-  }, [listingId]);
-
-  // Fetch initial publishToWebsite value
-  useEffect(() => {
-    const fetchPublishToWebsite = async () => {
-      try {
-        const listingDetails = await getListingDetailsWithAuth(Number(listingId));
-        setPublishToWebsite((listingDetails as { publishToWebsite?: boolean }).publishToWebsite ?? false);
-      } catch (error) {
-        console.error('Error fetching publishToWebsite value:', error);
-        setPublishToWebsite(false); // Default to false if error
-      }
-    };
-    
-    void fetchPublishToWebsite();
-  }, [listingId]);
 
   // Fetch leads and deals for dropdowns when user starts creating a task
   useEffect(() => {
@@ -553,47 +519,6 @@ export function Tareas({
     await onDeleteTask(id);
   };
 
-  const handleToggleKeys = async () => {
-    if (keysLoading) return;
-    
-    setKeysLoading(true);
-    const previousValue = hasKeys;
-    
-    // Optimistic update
-    setHasKeys(!hasKeys);
-    
-    try {
-      const result = await toggleListingKeysWithAuth(Number(listingId));
-      setHasKeys(result.hasKeys);
-    } catch (error) {
-      console.error('Error toggling keys:', error);
-      // Revert optimistic update on error
-      setHasKeys(previousValue);
-    } finally {
-      setKeysLoading(false);
-    }
-  };
-
-  const handleToggleWebsite = async () => {
-    if (websiteLoading) return;
-    
-    setWebsiteLoading(true);
-    const previousValue = publishToWebsite;
-    
-    // Optimistic update
-    setPublishToWebsite(!publishToWebsite);
-    
-    try {
-      const result = await toggleListingPublishToWebsiteWithAuth(Number(listingId));
-      setPublishToWebsite(result.publishToWebsite);
-    } catch (error) {
-      console.error('Error toggling publishToWebsite:', error);
-      // Revert optimistic update on error
-      setPublishToWebsite(previousValue);
-    } finally {
-      setWebsiteLoading(false);
-    }
-  };
 
   const toggleDescriptionExpansion = (taskId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent task toggle
@@ -629,49 +554,6 @@ export function Tareas({
               Borrador guardado
             </div>
           )}
-        </div>
-        
-        {/* Toggle buttons */}
-        <div className="flex items-center gap-3">
-          {/* Keys toggle button */}
-          <Button
-            onClick={handleToggleKeys}
-            disabled={keysLoading}
-            size="sm"
-            variant="ghost"
-            className={`w-10 h-10 rounded-full p-0 transition-all duration-200 ${
-              hasKeys 
-                ? "bg-white hover:bg-gray-50 text-black shadow-xl scale-105" 
-                : "bg-transparent hover:bg-gray-50 text-gray-400 shadow-sm"
-            }`}
-            title={hasKeys ? "Tenemos las llaves" : "No tenemos las llaves"}
-          >
-            {keysLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Key className="h-4 w-4" />
-            )}
-          </Button>
-          
-          {/* Website toggle button */}
-          <Button
-            onClick={handleToggleWebsite}
-            disabled={websiteLoading}
-            size="sm"
-            variant="ghost"
-            className={`w-10 h-10 rounded-full p-0 transition-all duration-200 ${
-              publishToWebsite 
-                ? "bg-white hover:bg-gray-50 text-black shadow-xl scale-105" 
-                : "bg-transparent hover:bg-gray-50 text-gray-400 shadow-sm"
-            }`}
-            title={publishToWebsite ? "Publicar en web" : "No publicar en web"}
-          >
-            {websiteLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Globe className="h-4 w-4" />
-            )}
-          </Button>
         </div>
       </div>
 

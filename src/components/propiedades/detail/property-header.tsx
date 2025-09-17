@@ -127,21 +127,21 @@ export function PropertyHeader({
                 </div>
               </div>
             ) : (
-              <>
-                <h1 className="text-3xl font-bold leading-tight">
+              <h1 className="text-3xl font-bold leading-tight break-words">
+                <span className="inline">
                   {currentTitle}
-                </h1>
+                </span>
                 {propertyId && (
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="ml-2 flex-shrink-0 self-start p-1 opacity-0 transition-opacity group-hover:opacity-100"
+                    className="ml-1 inline-flex p-1 opacity-0 transition-opacity group-hover:opacity-100 align-baseline whitespace-nowrap"
                     onClick={() => setIsEditing(true)}
                   >
                     <Pencil className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 )}
-              </>
+              </h1>
             )}
             {isBankOwned && (
               <Badge variant="secondary" className="bg-amber-500 text-white">

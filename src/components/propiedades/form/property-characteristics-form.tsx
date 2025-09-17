@@ -909,6 +909,7 @@ export function PropertyCharacteristicsForm({
         owners={owners}
         selectedAgentId={selectedAgentId}
         agents={agents}
+        listingId={BigInt(listing.listingId ?? 0)}
       />
 
       {/* Basic Information */}
@@ -1437,12 +1438,12 @@ export function PropertyCharacteristicsForm({
               <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
                 DIRECCIÓN DEL INMUEBLE
               </h3>
-              <button
+              <div
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsMapsPopupOpen(true);
                 }}
-                className="flex h-6 w-6 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                className="flex h-6 w-6 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
               >
                 <Image
                   src="https://vesta-configuration-files.s3.amazonaws.com/logos/googlemapsicon.png"
@@ -1451,7 +1452,7 @@ export function PropertyCharacteristicsForm({
                   height={14}
                   className="object-contain"
                 />
-              </button>
+              </div>
             </div>
             <ChevronDown
               className={cn(
