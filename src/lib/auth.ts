@@ -13,6 +13,8 @@ import {
 import { eq, and } from "drizzle-orm";
 import { ROLE_PERMISSIONS } from "~/lib/permissions";
 import type { Permission } from "~/lib/permissions";
+import { sendEmail, generatePasswordResetEmail } from "~/lib/email";
+import { env } from "~/env";
 
 /**
  * Get user roles from database (with caching)
@@ -81,6 +83,26 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false, // Start with false for development
     autoSignIn: true,
+    sendResetPassword: async ({ user, url, token }, request) => {
+      try {
+        const { html, text } = generatePasswordResetEmail(url, user.email);
+        
+        await sendEmail({
+          to: user.email,
+          subject: "Restablecer tu contraseña - Vesta CRM",
+          html,
+          text,
+        });
+        
+        console.log(`🔐 Password reset email sent to ${user.email}`);
+      } catch (error) {
+        console.error("❌ Failed to send password reset email:", error);
+        throw error;
+      }
+    },
+    onPasswordReset: async ({ user }, request) => {
+      console.log(`✅ Password successfully reset for user: ${user.email}`);
+    },
   },
 
   // Social Providers Configuration (only enable if credentials are provided)

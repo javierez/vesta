@@ -19,6 +19,7 @@ import { Button } from "~/components/ui/button";
 import { formatPrice } from "~/lib/utils";
 import { formatListingType } from "./contactos/contact-config";
 import type { ListingOverview } from "~/types/listing";
+import { PropertyImagePlaceholder } from "./propiedades/PropertyImagePlaceholder";
 
 type Listing = {
   // Listing fields
@@ -157,52 +158,62 @@ export const PropertyCard = React.memo(function PropertyCard({
       >
         <div className="relative aspect-[4/3] overflow-hidden">
           <div className="relative h-full w-full">
-            {/* Skeleton overlay while images load */}
-            {(!imageLoaded || !image2Loaded) && (
-              <Skeleton className="absolute inset-0 z-10" />
+            {/* Show placeholder if no images are available */}
+            {(!listing.imageUrl && !listing.imageUrl2) ? (
+              <PropertyImagePlaceholder 
+                propertyType={listing.propertyType}
+                className="h-full w-full"
+              />
+            ) : (
+              <>
+                {/* Skeleton overlay while images load */}
+                {(!imageLoaded || !image2Loaded) && (
+                  <Skeleton className="absolute inset-0 z-10" />
+                )}
+
+                {/* First Image */}
+                {listing.imageUrl && (
+                  <Image
+                    src={imageSrc}
+                    alt={listing.title ?? "Property image"}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className={cn(
+                      "object-cover transition-opacity duration-300",
+                      isHovered && image2Loaded && listing.imageUrl2 ? "opacity-0" : "opacity-100",
+                      listing.status === "Sold" || listing.status === "Vendido"
+                        ? "grayscale"
+                        : "",
+                    )}
+                    loading="lazy"
+                    onLoad={() => setImageLoaded(true)}
+                    onError={onImageError}
+                    quality={85}
+                  />
+                )}
+
+                {/* Second Image */}
+                {listing.imageUrl2 && (
+                  <Image
+                    src={imageSrc2}
+                    alt={listing.title ?? "Property image"}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className={cn(
+                      "object-cover transition-opacity duration-300",
+                      isHovered && image2Loaded ? "opacity-100" : "opacity-0",
+                      listing.status === "Sold" || listing.status === "Vendido"
+                        ? "grayscale"
+                        : "",
+                    )}
+                    loading="lazy"
+                    onLoad={() => setImage2Loaded(true)}
+                    onError={onImage2Error}
+                    quality={85}
+                  />
+                )}
+              </>
             )}
-
-            {/* First Image */}
-            <Image
-              src={imageSrc}
-              alt={listing.title ?? "Property image"}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className={cn(
-                "object-cover transition-opacity duration-300",
-                isHovered && image2Loaded ? "opacity-0" : "opacity-100",
-                imageSrc === defaultPlaceholder ||
-                  listing.status === "Sold" ||
-                  listing.status === "Vendido"
-                  ? "grayscale"
-                  : "",
-              )}
-              loading="lazy"
-              onLoad={() => setImageLoaded(true)}
-              onError={onImageError}
-              quality={85}
-            />
-
-            {/* Second Image */}
-            <Image
-              src={imageSrc2}
-              alt={listing.title ?? "Property image"}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className={cn(
-                "object-cover transition-opacity duration-300",
-                isHovered && image2Loaded ? "opacity-100" : "opacity-0",
-                imageSrc2 === defaultPlaceholder ||
-                  listing.status === "Sold" ||
-                  listing.status === "Vendido"
-                  ? "grayscale"
-                  : "",
-              )}
-              loading="lazy"
-              onLoad={() => setImage2Loaded(true)}
-              onError={onImage2Error}
-              quality={85}
-            />
           </div>
           {/* Top Left - Property Type */}
           <Badge

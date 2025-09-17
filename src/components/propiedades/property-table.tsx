@@ -29,6 +29,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import type { ListingOverview } from "~/types/listing";
 import { formatListingType } from "../contactos/contact-config";
+import { PropertyImagePlaceholder } from "./PropertyImagePlaceholder";
 
 interface PropertyTableProps {
   listings: ListingOverview[];
@@ -57,8 +58,11 @@ const MIN_COLUMN_WIDTHS = {
 
 const statusColors: Record<string, string> = {
   Sale: "bg-amber-50 text-amber-700 border-amber-200",
-  Rent: "bg-amber-50 text-amber-700 border-amber-200",
-  Sold: "bg-slate-50 text-slate-700 border-slate-200",
+  Rent: "bg-rose-50 text-rose-700 border-rose-200",
+  Sold: "bg-gray-50 text-gray-600 border-gray-200",
+  RoomSharing: "bg-gradient-to-r from-amber-50 to-rose-50 text-rose-600 border-rose-200",
+  Transfer: "bg-amber-100 text-amber-800 border-amber-300",
+  RentWithOption: "bg-rose-100 text-rose-800 border-rose-300",
 };
 
 export const PropertyTable = React.memo(function PropertyTable({
@@ -199,7 +203,7 @@ export const PropertyTable = React.memo(function PropertyTable({
   );
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-lg border">
       <div className="overflow-x-auto">
         <Table ref={tableRef}>
           <TableHeader>
@@ -252,31 +256,40 @@ export const PropertyTable = React.memo(function PropertyTable({
                 >
                   <div className="truncate">
                     <div className="group relative h-[48px] w-[72px] overflow-hidden rounded-md">
-                      {!loadedImages.has(listing.listingId.toString()) && (
-                        <Skeleton className="absolute inset-0 z-10" />
+                      {listing.imageUrl ? (
+                        <>
+                          {!loadedImages.has(listing.listingId.toString()) && (
+                            <Skeleton className="absolute inset-0 z-10" />
+                          )}
+                          <Image
+                            src={listing.imageUrl}
+                            alt={listing.title ?? "Property image"}
+                            fill
+                            priority={true}
+                            quality={30}
+                            sizes="72px"
+                            className={cn(
+                              "object-cover transition-opacity duration-200",
+                              loadedImages.has(listing.listingId.toString())
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
+                            onLoad={() =>
+                              handleImageLoad(listing.listingId.toString())
+                            }
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = defaultPlaceholder;
+                              handleImageLoad(listing.listingId.toString());
+                            }}
+                          />
+                        </>
+                      ) : (
+                        <PropertyImagePlaceholder 
+                          propertyType={listing.propertyType}
+                          className="h-full w-full rounded-md"
+                        />
                       )}
-                      <Image
-                        src={listing.imageUrl ?? defaultPlaceholder}
-                        alt={listing.title ?? "Property image"}
-                        fill
-                        priority={true}
-                        quality={30}
-                        sizes="72px"
-                        className={cn(
-                          "object-cover transition-opacity duration-200",
-                          loadedImages.has(listing.listingId.toString())
-                            ? "opacity-100"
-                            : "opacity-0",
-                        )}
-                        onLoad={() =>
-                          handleImageLoad(listing.listingId.toString())
-                        }
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = defaultPlaceholder;
-                          handleImageLoad(listing.listingId.toString());
-                        }}
-                      />
 
                       {/* Hover overlay with icons */}
                       <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">

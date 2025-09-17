@@ -46,7 +46,7 @@ export const formatListingType = (listingType: string) => {
     rented: "Alquilado",
     RentWithOption: "Alquiler",
     "Alquiler con Opcion a Compra": "Alquiler",
-    RoomSharing: "Compartir habitación",
+    RoomSharing: "Habitación",
     Transfer: "Transferencia",
   };
   return (
