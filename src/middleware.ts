@@ -10,6 +10,23 @@ const publicPaths = [
   "/api/auth",
   "/api/puppet/template",
   "/templates",
+  "/producto/caracteristicas",
+  "/producto/integraciones",
+  "/producto/seguridad",
+  "/producto/api",
+  "/soluciones/equipos-ventas",
+  "/soluciones/equipos-marketing",
+  "/soluciones/servicio-cliente",
+  "/soluciones/pequenas-empresas",
+  "/soluciones/empresas",
+  "/precios",
+  "/recursos/documentacion",
+  "/recursos/blog",
+  "/recursos/soporte",
+  "/empresa/nosotros",
+  "/empresa/carreras",
+  "/empresa/socios",
+  "/empresa/contacto",
 ];
 
 export async function middleware(request: NextRequest) {

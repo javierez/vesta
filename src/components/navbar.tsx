@@ -117,22 +117,22 @@ export default function Navbar({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
               <DropdownMenuItem>
-                <Link href="#features" className="w-full">
+                <Link href="/producto/caracteristicas" className="w-full">
                   Características
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#integrations" className="w-full">
+                <Link href="/producto/integraciones" className="w-full">
                   Integraciones
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#security" className="w-full">
+                <Link href="/producto/seguridad" className="w-full">
                   Seguridad
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#api" className="w-full">
+                <Link href="/producto/api" className="w-full">
                   API y Desarrolladores
                 </Link>
               </DropdownMenuItem>
@@ -148,27 +148,27 @@ export default function Navbar({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
               <DropdownMenuItem>
-                <Link href="#sales-teams" className="w-full">
+                <Link href="/soluciones/equipos-ventas" className="w-full">
                   Equipos de Ventas
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#marketing-teams" className="w-full">
+                <Link href="/soluciones/equipos-marketing" className="w-full">
                   Equipos de Marketing
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#customer-service" className="w-full">
+                <Link href="/soluciones/servicio-cliente" className="w-full">
                   Servicio al Cliente
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#small-business" className="w-full">
+                <Link href="/soluciones/pequenas-empresas" className="w-full">
                   Pequeñas Empresas
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#enterprise" className="w-full">
+                <Link href="/soluciones/empresas" className="w-full">
                   Empresas
                 </Link>
               </DropdownMenuItem>
@@ -176,7 +176,7 @@ export default function Navbar({
           </DropdownMenu>
 
           <Link
-            href="#pricing"
+            href="/precios"
             className="text-sm font-medium transition-colors hover:text-primary"
             aria-label="Precios"
           >
@@ -192,27 +192,17 @@ export default function Navbar({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
               <DropdownMenuItem>
-                <Link href="#documentation" className="w-full">
+                <Link href="/recursos/documentacion" className="w-full">
                   Documentación
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#blog" className="w-full">
+                <Link href="/recursos/blog" className="w-full">
                   Blog
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#academy" className="w-full">
-                  Academia
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="#community" className="w-full">
-                  Comunidad
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="#support" className="w-full">
+                <Link href="/recursos/soporte" className="w-full">
                   Soporte
                 </Link>
               </DropdownMenuItem>
@@ -228,22 +218,22 @@ export default function Navbar({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
               <DropdownMenuItem>
-                <Link href="#about" className="w-full">
+                <Link href="/empresa/nosotros" className="w-full">
                   Acerca de Nosotros
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#careers" className="w-full">
+                <Link href="/empresa/carreras" className="w-full">
                   Carreras
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#partners" className="w-full">
+                <Link href="/empresa/socios" className="w-full">
                   Socios
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="#contact" className="w-full">
+                <Link href="/empresa/contacto" className="w-full">
                   Contacto
                 </Link>
               </DropdownMenuItem>
@@ -340,7 +330,7 @@ export default function Navbar({
                 </h3>
                 <div className="space-y-1">
                   <Link
-                    href="#features"
+                    href="/producto/caracteristicas"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -348,7 +338,7 @@ export default function Navbar({
                     Características
                   </Link>
                   <Link
-                    href="#integrations"
+                    href="/producto/integraciones"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -356,7 +346,7 @@ export default function Navbar({
                     Integraciones
                   </Link>
                   <Link
-                    href="#security"
+                    href="/producto/seguridad"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -364,7 +354,7 @@ export default function Navbar({
                     Seguridad
                   </Link>
                   <Link
-                    href="#api"
+                    href="/producto/api"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -381,7 +371,7 @@ export default function Navbar({
                 </h3>
                 <div className="space-y-1">
                   <Link
-                    href="#sales-teams"
+                    href="/soluciones/equipos-ventas"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -389,7 +379,7 @@ export default function Navbar({
                     Equipos de Ventas
                   </Link>
                   <Link
-                    href="#marketing-teams"
+                    href="/soluciones/equipos-marketing"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -397,7 +387,7 @@ export default function Navbar({
                     Equipos de Marketing
                   </Link>
                   <Link
-                    href="#customer-service"
+                    href="/soluciones/servicio-cliente"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -405,7 +395,7 @@ export default function Navbar({
                     Servicio al Cliente
                   </Link>
                   <Link
-                    href="#small-business"
+                    href="/soluciones/pequenas-empresas"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -413,7 +403,7 @@ export default function Navbar({
                     Pequeñas Empresas
                   </Link>
                   <Link
-                    href="#enterprise"
+                    href="/soluciones/empresas"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -426,7 +416,7 @@ export default function Navbar({
               {/* Precios Link */}
               <div className="space-y-3">
                 <Link
-                  href="#pricing"
+                  href="/precios"
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   onClick={handleMenuClose}
                 >
@@ -442,7 +432,7 @@ export default function Navbar({
                 </h3>
                 <div className="space-y-1">
                   <Link
-                    href="#documentation"
+                    href="/recursos/documentacion"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -450,7 +440,7 @@ export default function Navbar({
                     Documentación
                   </Link>
                   <Link
-                    href="#blog"
+                    href="/recursos/blog"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -458,23 +448,7 @@ export default function Navbar({
                     Blog
                   </Link>
                   <Link
-                    href="#academy"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <GraduationCap className="h-4 w-4" />
-                    Academia
-                  </Link>
-                  <Link
-                    href="#community"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Comunidad
-                  </Link>
-                  <Link
-                    href="#support"
+                    href="/recursos/soporte"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -491,7 +465,7 @@ export default function Navbar({
                 </h3>
                 <div className="space-y-1">
                   <Link
-                    href="#about"
+                    href="/empresa/nosotros"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -499,7 +473,7 @@ export default function Navbar({
                     Acerca de Nosotros
                   </Link>
                   <Link
-                    href="#careers"
+                    href="/empresa/carreras"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -507,7 +481,7 @@ export default function Navbar({
                     Carreras
                   </Link>
                   <Link
-                    href="#partners"
+                    href="/empresa/socios"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >
@@ -515,7 +489,7 @@ export default function Navbar({
                     Socios
                   </Link>
                   <Link
-                    href="#contact"
+                    href="/empresa/contacto"
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     onClick={handleMenuClose}
                   >

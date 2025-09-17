@@ -66,7 +66,6 @@ export function HeroSection() {
                 <DialogTrigger asChild>
                   <Button size="lg" className="group text-lg px-8 py-6 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg border-0">
                     Comenzar Gratis
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
@@ -113,7 +112,7 @@ export function HeroSection() {
                 </DialogContent>
               </Dialog>
 
-              <Button size="lg" className="group text-lg px-8 py-6 bg-white text-gray-700 hover:bg-gray-50 shadow-sm hover:shadow-md transition-all">
+              <Button size="lg" className="group text-lg px-8 py-6 bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg transition-all">
                 <Play className="mr-2 h-5 w-5" />
                 Ver Demo
               </Button>
