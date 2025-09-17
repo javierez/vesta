@@ -9,7 +9,6 @@ import {
   ArrowRight, 
   MessageSquare, 
   Phone,
-  Mail,
   MapPin,
   Clock,
   Users,

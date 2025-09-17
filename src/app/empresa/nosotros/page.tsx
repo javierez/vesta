@@ -11,8 +11,7 @@ import {
   Globe,
   Heart,
   Zap,
-  Shield,
-  TrendingUp
+  Shield
 } from "lucide-react";
 import Navbar from "~/components/navbar";
 

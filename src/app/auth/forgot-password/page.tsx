@@ -95,7 +95,7 @@ const ForgotPasswordPage: FC = () => {
                 </p>
                 <ol className="list-decimal list-inside space-y-2">
                   <li>Revisa tu bandeja de entrada</li>
-                  <li>Busca un email de "Vesta CRM"</li>
+                  <li>Busca un email de &ldquo;Vesta CRM&rdquo;</li>
                   <li>Haz clic en el enlace para restablecer tu contraseña</li>
                   <li>Si no lo encuentras, revisa tu carpeta de spam</li>
                 </ol>

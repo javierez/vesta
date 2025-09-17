@@ -368,7 +368,7 @@ export default function SociosPage() {
               <Card key={testimonial.name} className="hover:shadow-lg transition-all">
                 <CardHeader>
                   <div className="flex items-center gap-1 mb-2">
-                    {[...Array(testimonial.rating)].map((_, i) => (
+                    {[...Array(testimonial.rating) as unknown[]].map((_, i) => (
                       <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                     ))}
                   </div>
@@ -379,7 +379,7 @@ export default function SociosPage() {
                 </CardHeader>
                 <CardContent>
                   <blockquote className="text-gray-700 italic">
-                    "{testimonial.quote}"
+                    &ldquo;{testimonial.quote}&rdquo;
                   </blockquote>
                 </CardContent>
               </Card>
