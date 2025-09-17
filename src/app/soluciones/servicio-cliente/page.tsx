@@ -14,6 +14,7 @@ import {
   Mail,
   Check
 } from "lucide-react";
+import Navbar from "~/components/navbar";
 
 export const metadata: Metadata = {
   title: "Solución para Servicio al Cliente - Vesta",
@@ -63,6 +64,7 @@ export default function ServicioClientePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      <Navbar shortName="Vesta" />
       {/* Hero Section */}
       <section className="relative px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
