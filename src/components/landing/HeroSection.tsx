@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "~/components/ui/button";
-import { ArrowRight, Play, Volume2, VolumeX } from "lucide-react";
+import { Play, Volume2, VolumeX } from "lucide-react";
 import {
   Dialog,
   DialogContent,

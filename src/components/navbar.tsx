@@ -15,7 +15,6 @@ import {
   Code,
   DollarSign,
   FileText,
-  GraduationCap,
   MessageSquare,
   HeadphonesIcon,
   Briefcase,
@@ -97,7 +96,7 @@ export default function Navbar({
         {/* Left section - Logo */}
         <div className="flex-shrink-0">
           <Link
-            href="/dashboard"
+            href="/"
             className="flex items-center gap-2"
             aria-label="Home"
           >

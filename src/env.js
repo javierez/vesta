@@ -34,6 +34,8 @@ export const env = createEnv({
     APPLE_CLIENT_SECRET: z.string().optional(),
     LINKEDIN_CLIENT_ID: z.string().optional(),
     LINKEDIN_CLIENT_SECRET: z.string().optional(),
+    // Email Service Configuration
+    RESEND_API_KEY: z.string().optional(),
   },
 
   /**
@@ -75,6 +77,8 @@ export const env = createEnv({
     APPLE_CLIENT_SECRET: process.env.APPLE_CLIENT_SECRET,
     LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,
     LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET,
+    // Email Service Configuration
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
     // Client variables
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },

@@ -2,7 +2,7 @@ import { type Metadata } from "next";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, TrendingUp, Users, Target, BarChart3, Clock, Zap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Navbar from "~/components/navbar";
 
 export const metadata: Metadata = {

@@ -1,6 +1,6 @@
 import { type Metadata } from "next";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import Link from "next/link";
 import { 
   ArrowRight, 
@@ -199,14 +199,14 @@ export default function PequenasEmpresasPage() {
           <Card className="border-amber-200 bg-amber-50/50">
             <CardHeader>
               <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
+                {[...Array(5) as unknown[]].map((_, i) => (
                   <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" />
                 ))}
               </div>
             </CardHeader>
             <CardContent>
               <blockquote className="text-lg text-gray-700 italic">
-                "{testimonial.quote}"
+                &ldquo;{testimonial.quote}&rdquo;
               </blockquote>
               <div className="mt-6">
                 <div className="font-semibold text-gray-900">{testimonial.author}</div>
