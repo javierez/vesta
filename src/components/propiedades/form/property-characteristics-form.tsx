@@ -33,7 +33,7 @@ import { PropertyCharacteristicsFormSolar } from "./property-characteristics-for
 import { PropertyCharacteristicsFormLocal } from "./property-characteristics-form-local";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProperty } from "~/server/queries/properties";
-import { updateListingWithAuth } from "~/server/queries/listing";
+import { updateListingWithAuth, toggleListingKeysWithAuth, toggleListingPublishToWebsiteWithAuth, getListingDetailsWithAuth } from "~/server/queries/listing";
 import { toast } from "sonner";
 import { PropertyTitle } from "./common/property-title";
 import { ModernSaveIndicator } from "./common/modern-save-indicator";
@@ -726,6 +726,13 @@ export function PropertyCharacteristicsForm({
   const [fridge, setFridge] = useState(listing.fridge ?? false);
   const [tv, setTv] = useState(listing.tv ?? false);
   const [stoneware, setStoneware] = useState(listing.stoneware ?? false);
+  
+  // Toggle button states
+  const [hasKeys, setHasKeys] = useState<boolean>(false);
+  const [keysLoading, setKeysLoading] = useState(false);
+  const [publishToWebsite, setPublishToWebsite] = useState<boolean>(false);
+  const [websiteLoading, setWebsiteLoading] = useState(false);
+  
 
   // Filter owners based on search
   const filteredOwners = owners.filter((owner) =>
@@ -741,50 +748,6 @@ export function PropertyCharacteristicsForm({
     { id: 6, label: "Solar" },
   ];
 
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        const agentsList = await getAllAgentsWithAuth();
-        setAgents(
-          agentsList.map((agent) => ({
-            id: agent.id, // Keep as string
-            name: agent.name,
-          })),
-        );
-      } catch (error) {
-        console.error("Error fetching agents:", error);
-      }
-    };
-    void fetchAgents();
-  }, []);
-
-  useEffect(() => {
-    const fetchOwners = async () => {
-      try {
-        // Get all potential owners for the dropdown
-        const potentialOwners = await getAllPotentialOwnersWithAuth();
-        setOwners(
-          potentialOwners.map((owner) => ({
-            id: Number(owner.id),
-            name: owner.name,
-          })),
-        );
-
-        // Get current owners for this listing
-        if (listing.listingId) {
-          const currentOwners = await getCurrentListingOwnersWithAuth(
-            Number(listing.listingId),
-          );
-          setSelectedOwnerIds(
-            currentOwners.map((owner) => owner.id.toString()),
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching owners:", error);
-      }
-    };
-    void fetchOwners();
-  }, [listing.listingId]);
 
   // Set selectedAgentId when listing agent data is available
   useEffect(() => {
@@ -792,6 +755,108 @@ export function PropertyCharacteristicsForm({
       setSelectedAgentId(listing.agent.id.toString());
     }
   }, [listing.agent?.id]);
+
+  // Comprehensive data fetching - batch all API calls
+  useEffect(() => {
+    const fetchAllFormData = async () => {
+      try {
+        console.log('Fetching all form data in single batch...');
+        
+        // Batch all API calls in parallel for maximum performance
+        const [agentsData, potentialOwnersData, currentOwnersData, listingDetailsData] = await Promise.all([
+          getAllAgentsWithAuth(),
+          getAllPotentialOwnersWithAuth(),
+          listing.listingId ? getCurrentListingOwnersWithAuth(Number(listing.listingId)) : Promise.resolve([]),
+          listing.listingId ? getListingDetailsWithAuth(Number(listing.listingId)) : Promise.resolve(null),
+        ]);
+
+        // Process agents data
+        setAgents(
+          agentsData.map((agent) => ({
+            id: agent.id,
+            name: agent.name,
+          })),
+        );
+
+        // Process owners data
+        setOwners(
+          potentialOwnersData.map((owner) => ({
+            id: Number(owner.id),
+            name: owner.name,
+          })),
+        );
+
+        // Process current listing owners
+        if (currentOwnersData.length > 0) {
+          setSelectedOwnerIds(
+            currentOwnersData.map((owner) => owner.id.toString()),
+          );
+        }
+
+        // Process listing details for toggle states
+        if (listingDetailsData) {
+          const details = listingDetailsData as { hasKeys?: boolean; publishToWebsite?: boolean };
+          setHasKeys(details.hasKeys ?? false);
+          setPublishToWebsite(details.publishToWebsite ?? false);
+        }
+
+        console.log('✅ All form data fetched successfully - Performance optimized!');
+      } catch (error) {
+        console.error('❌ Error fetching form data:', error);
+        // Set fallback values on error
+        setAgents([]);
+        setOwners([]);
+        setSelectedOwnerIds([]);
+        setHasKeys(false);
+        setPublishToWebsite(false);
+      }
+    };
+
+    void fetchAllFormData();
+  }, [listing.listingId]);
+
+  // Toggle handlers
+  const handleToggleKeys = async () => {
+    if (keysLoading) return;
+    
+    setKeysLoading(true);
+    const previousValue = hasKeys;
+    
+    // Optimistic update
+    setHasKeys(!hasKeys);
+    
+    try {
+      const result = await toggleListingKeysWithAuth(Number(listing.listingId));
+      setHasKeys(result.hasKeys);
+    } catch (error) {
+      console.error('Error toggling keys:', error);
+      // Revert optimistic update on error
+      setHasKeys(previousValue);
+    } finally {
+      setKeysLoading(false);
+    }
+  };
+
+  const handleToggleWebsite = async () => {
+    if (websiteLoading) return;
+    
+    setWebsiteLoading(true);
+    const previousValue = publishToWebsite;
+    
+    // Optimistic update
+    setPublishToWebsite(!publishToWebsite);
+    
+    try {
+      const result = await toggleListingPublishToWebsiteWithAuth(Number(listing.listingId));
+      setPublishToWebsite(result.publishToWebsite);
+    } catch (error) {
+      console.error('Error toggling publishToWebsite:', error);
+      // Revert optimistic update on error
+      setPublishToWebsite(previousValue);
+    } finally {
+      setWebsiteLoading(false);
+    }
+  };
 
   const toggleListingType = (type: string) => {
     setListingTypes([type]); // Replace the current type with the new one
@@ -909,7 +974,12 @@ export function PropertyCharacteristicsForm({
         owners={owners}
         selectedAgentId={selectedAgentId}
         agents={agents}
-        listingId={BigInt(listing.listingId ?? 0)}
+        hasKeys={hasKeys}
+        keysLoading={keysLoading}
+        publishToWebsite={publishToWebsite}
+        websiteLoading={websiteLoading}
+        onToggleKeys={handleToggleKeys}
+        onToggleWebsite={handleToggleWebsite}
       />
 
       {/* Basic Information */}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { 
@@ -13,7 +12,6 @@ import {
   Globe,
   Loader2
 } from "lucide-react";
-import { toggleListingKeysWithAuth, toggleListingPublishToWebsiteWithAuth, getListingDetailsWithAuth } from "~/server/queries/listing";
 
 import type { PropertyListing } from "~/types/property-listing";
 
@@ -33,7 +31,12 @@ interface PropertySummaryProps {
   owners: Owner[];
   selectedAgentId: string;
   agents: Agent[];
-  listingId: bigint;
+  hasKeys: boolean;
+  keysLoading: boolean;
+  publishToWebsite: boolean;
+  websiteLoading: boolean;
+  onToggleKeys: () => void;
+  onToggleWebsite: () => void;
 }
 
 export function PropertySummary({
@@ -42,84 +45,13 @@ export function PropertySummary({
   owners,
   selectedAgentId,
   agents,
-  listingId,
+  hasKeys,
+  keysLoading,
+  publishToWebsite,
+  websiteLoading,
+  onToggleKeys,
+  onToggleWebsite,
 }: PropertySummaryProps) {
-  const [hasKeys, setHasKeys] = useState<boolean>(false);
-  const [keysLoading, setKeysLoading] = useState(false);
-  const [publishToWebsite, setPublishToWebsite] = useState<boolean>(false);
-  const [websiteLoading, setWebsiteLoading] = useState(false);
-
-  // Fetch initial hasKeys value
-  useEffect(() => {
-    const fetchHasKeys = async () => {
-      try {
-        const listingDetails = await getListingDetailsWithAuth(Number(listingId));
-        setHasKeys((listingDetails as { hasKeys?: boolean }).hasKeys ?? false);
-      } catch (error) {
-        console.error('Error fetching hasKeys value:', error);
-        setHasKeys(false); // Default to false if error
-      }
-    };
-    
-    void fetchHasKeys();
-  }, [listingId]);
-
-  // Fetch initial publishToWebsite value
-  useEffect(() => {
-    const fetchPublishToWebsite = async () => {
-      try {
-        const listingDetails = await getListingDetailsWithAuth(Number(listingId));
-        setPublishToWebsite((listingDetails as { publishToWebsite?: boolean }).publishToWebsite ?? false);
-      } catch (error) {
-        console.error('Error fetching publishToWebsite value:', error);
-        setPublishToWebsite(false); // Default to false if error
-      }
-    };
-    
-    void fetchPublishToWebsite();
-  }, [listingId]);
-
-  const handleToggleKeys = async () => {
-    if (keysLoading) return;
-    
-    setKeysLoading(true);
-    const previousValue = hasKeys;
-    
-    // Optimistic update
-    setHasKeys(!hasKeys);
-    
-    try {
-      const result = await toggleListingKeysWithAuth(Number(listingId));
-      setHasKeys(result.hasKeys);
-    } catch (error) {
-      console.error('Error toggling keys:', error);
-      // Revert optimistic update on error
-      setHasKeys(previousValue);
-    } finally {
-      setKeysLoading(false);
-    }
-  };
-
-  const handleToggleWebsite = async () => {
-    if (websiteLoading) return;
-    
-    setWebsiteLoading(true);
-    const previousValue = publishToWebsite;
-    
-    // Optimistic update
-    setPublishToWebsite(!publishToWebsite);
-    
-    try {
-      const result = await toggleListingPublishToWebsiteWithAuth(Number(listingId));
-      setPublishToWebsite(result.publishToWebsite);
-    } catch (error) {
-      console.error('Error toggling publishToWebsite:', error);
-      // Revert optimistic update on error
-      setPublishToWebsite(previousValue);
-    } finally {
-      setWebsiteLoading(false);
-    }
-  };
   return (
     <Card className="col-span-full bg-gradient-to-br from-amber-50/50 to-rose-50/50 border-gradient-to-r border-amber-200/30 shadow-lg">
       <div className="p-6">
@@ -132,7 +64,7 @@ export function PropertySummary({
                 <Bed className="h-5 w-5 text-amber-800" />
               </div>
               <p className="text-lg font-bold text-gray-900">
-                {listing.bedrooms || '-'}
+                {listing.bedrooms ?? '-'}
               </p>
             </div>
 
@@ -153,7 +85,7 @@ export function PropertySummary({
               </div>
               <div className="flex items-baseline gap-1">
                 <p className="text-lg font-bold text-gray-900">
-                  {listing.squareMeter || '-'}
+                  {listing.squareMeter ?? '-'}
                 </p>
                 {listing.squareMeter && (
                   <p className="text-xs text-gray-500">m²</p>
@@ -171,7 +103,7 @@ export function PropertySummary({
               </div>
               <p className="text-sm font-medium text-gray-900 truncate max-w-24">
                 {selectedOwnerIds.length > 0 
-                  ? owners.find(o => o.id.toString() === selectedOwnerIds[0])?.name || 'Sin asignar'
+                  ? owners.find(o => o.id.toString() === selectedOwnerIds[0])?.name ?? 'Sin asignar'
                   : 'Sin asignar'}
               </p>
             </div>
@@ -183,7 +115,7 @@ export function PropertySummary({
               </div>
               <p className="text-sm font-medium text-gray-900 truncate max-w-24">
                 {selectedAgentId 
-                  ? agents.find(a => a.id === selectedAgentId)?.name || 'Sin asignar'
+                  ? agents.find(a => a.id === selectedAgentId)?.name ?? 'Sin asignar'
                   : 'Sin asignar'}
               </p>
             </div>
@@ -193,7 +125,7 @@ export function PropertySummary({
           <div className="flex items-center gap-3">
             {/* Keys toggle button */}
             <Button
-              onClick={handleToggleKeys}
+              onClick={onToggleKeys}
               disabled={keysLoading}
               size="sm"
               variant="ghost"
@@ -213,7 +145,7 @@ export function PropertySummary({
             
             {/* Website toggle button */}
             <Button
-              onClick={handleToggleWebsite}
+              onClick={onToggleWebsite}
               disabled={websiteLoading}
               size="sm"
               variant="ghost"
