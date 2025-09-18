@@ -154,10 +154,9 @@ export default function FirstPage({
   };
 
   const handleNext = () => {
-    // Validate required fields
+    // Auto-set price to 0 if blank
     if (!formData.price.trim()) {
-      alert("Por favor, introduce el precio de la propiedad.");
-      return;
+      updateField("price", "0");
     }
 
     if (!formData.agentId) {

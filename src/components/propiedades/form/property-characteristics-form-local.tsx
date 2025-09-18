@@ -416,6 +416,25 @@ export function PropertyCharacteristicsFormLocal({
   const [showAdditionalCharacteristics, setShowAdditionalCharacteristics] =
     useState(false);
   const [showPremiumFeatures, setShowPremiumFeatures] = useState(false);
+
+  // State for collapsible sections (all closed by default)
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
+    basicInfo: true,
+    propertyDetails: true,
+    location: true,
+    features: true,
+    contactInfo: true,
+    orientation: true,
+    description: true,
+    rentalProperties: true,
+  });
+
+  const toggleSection = (section: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
   const [squareMeter, setSquareMeter] = useState(listing.squareMeter ?? 0);
   const [builtSurfaceArea, setBuiltSurfaceArea] = useState(
     listing.builtSurfaceArea ?? 0,
@@ -508,13 +527,30 @@ export function PropertyCharacteristicsFormLocal({
           onSave={() => saveModule("basicInfo")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              INFORMACIÓN BÁSICA
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("basicInfo")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                INFORMACIÓN BÁSICA
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.basicInfo && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.basicInfo ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <PropertyTitle
               propertyType="local"
@@ -777,13 +813,30 @@ export function PropertyCharacteristicsFormLocal({
           onSave={() => saveModule("propertyDetails")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              DETALLES DE LA PROPIEDAD
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("propertyDetails")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                DETALLES DE LA PROPIEDAD
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.propertyDetails && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.propertyDetails ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Label htmlFor="estancias" className="text-sm">
               Estancias
@@ -900,11 +953,30 @@ export function PropertyCharacteristicsFormLocal({
           onSave={() => saveModule("location")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">UBICACIÓN</h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("location")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                UBICACIÓN
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.location && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.location ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Label htmlFor="street" className="text-sm">
               Calle
@@ -1011,13 +1083,30 @@ export function PropertyCharacteristicsFormLocal({
           onSave={() => saveModule("features")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              CARACTERÍSTICAS
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("features")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                CARACTERÍSTICAS
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.features && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.features ? "max-h-0" : "max-h-[5000px]",
+          )}
+        >
           <div className="flex items-center space-x-2">
             <Checkbox
               id="hasElevator"
@@ -1400,13 +1489,30 @@ export function PropertyCharacteristicsFormLocal({
           onSave={() => saveModule("contactInfo")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              INFORMACIÓN DE CONTACTO
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("contactInfo")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                INFORMACIÓN DE CONTACTO
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.contactInfo && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.contactInfo ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Label htmlFor="owners" className="text-sm">
               Propietarios
@@ -1503,13 +1609,30 @@ export function PropertyCharacteristicsFormLocal({
           onSave={() => saveModule("orientation")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              ORIENTACIÓN Y EXPOSICIÓN
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("orientation")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                ORIENTACIÓN Y EXPOSICIÓN
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.orientation && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.orientation ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="flex items-center space-x-2">
             <Checkbox
               id="isExterior"
@@ -2110,11 +2233,30 @@ export function PropertyCharacteristicsFormLocal({
           onSave={() => saveModule("description")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">DESCRIPCIÓN</h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("description")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                DESCRIPCIÓN
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.description && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.description ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Textarea
               id="description"
@@ -2140,13 +2282,30 @@ export function PropertyCharacteristicsFormLocal({
             onSave={() => saveModule("rentalProperties")}
           />
           <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold tracking-wide">
-                PROPIEDADES DEL ALQUILER
-              </h3>
-            </div>
+            <button
+              type="button"
+              onClick={() => toggleSection("rentalProperties")}
+              className="group flex w-full items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                  PROPIEDADES DEL ALQUILER
+                </h3>
+              </div>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                  collapsedSections.rentalProperties && "rotate-180",
+                )}
+              />
+            </button>
           </div>
-          <div className="space-y-3">
+          <div
+            className={cn(
+              "space-y-3 overflow-hidden transition-all duration-200",
+              collapsedSections.rentalProperties ? "max-h-0" : "max-h-[2000px]",
+            )}
+          >
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="appliancesIncluded"

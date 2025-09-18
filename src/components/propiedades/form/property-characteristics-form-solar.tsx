@@ -14,7 +14,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { useState, useEffect } from "react";
-import { Building2, Link } from "lucide-react";
+import { Building2, ChevronDown, Link } from "lucide-react";
 import { getAllAgentsWithAuth } from "~/server/queries/listing";
 import { Textarea } from "~/components/ui/textarea";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -379,6 +379,23 @@ export function PropertyCharacteristicsFormSolar({
   const [_ownerSearch] = useState("");
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
 
+  // State for collapsible sections (all closed by default)
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
+    basicInfo: true,
+    propertyDetails: true,
+    location: true,
+    features: true,
+    description: true,
+    contactInfo: true,
+  });
+
+  const toggleSection = (section: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   const currentListingType = listingType ?? "";
 
   // Filter owners based on search
@@ -456,14 +473,31 @@ export function PropertyCharacteristicsFormSolar({
         />
 
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              INFORMACIÓN BÁSICA
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("basicInfo")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                INFORMACIÓN BÁSICA
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.basicInfo && "rotate-180",
+              )}
+            />
+          </button>
         </div>
 
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.basicInfo ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <PropertyTitle
               propertyType="solar"
@@ -708,12 +742,31 @@ export function PropertyCharacteristicsFormSolar({
         />
 
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">
-            DETALLES DE LA PROPIEDAD
-          </h3>
+          <button
+            type="button"
+            onClick={() => toggleSection("propertyDetails")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                DETALLES DE LA PROPIEDAD
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.propertyDetails && "rotate-180",
+              )}
+            />
+          </button>
         </div>
 
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.propertyDetails ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Label htmlFor="squareMeter" className="text-sm">
               Superficie (m²)
@@ -742,12 +795,31 @@ export function PropertyCharacteristicsFormSolar({
         />
 
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">
-            UBICACIÓN
-          </h3>
+          <button
+            type="button"
+            onClick={() => toggleSection("location")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                UBICACIÓN
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.location && "rotate-180",
+              )}
+            />
+          </button>
         </div>
 
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.location ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Label htmlFor="street" className="text-sm">
               Calle
@@ -855,12 +927,31 @@ export function PropertyCharacteristicsFormSolar({
         />
 
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">
-            CARACTERÍSTICAS
-          </h3>
+          <button
+            type="button"
+            onClick={() => toggleSection("features")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                CARACTERÍSTICAS
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.features && "rotate-180",
+              )}
+            />
+          </button>
         </div>
 
-        <div className="space-y-6">
+        <div
+          className={cn(
+            "space-y-6 overflow-hidden transition-all duration-200",
+            collapsedSections.features ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           {/* Views */}
           <div className="space-y-3">
             <h4 className="text-xs font-medium text-muted-foreground">
@@ -968,12 +1059,31 @@ export function PropertyCharacteristicsFormSolar({
         />
 
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">
-            DESCRIPCIÓN
-          </h3>
+          <button
+            type="button"
+            onClick={() => toggleSection("description")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                DESCRIPCIÓN
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.description && "rotate-180",
+              )}
+            />
+          </button>
         </div>
 
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.description ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Textarea
               id="description"
@@ -998,13 +1108,30 @@ export function PropertyCharacteristicsFormSolar({
           onSave={() => saveModule("contactInfo")}
         />
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">
-              INFORMACIÓN DE CONTACTO
-            </h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => toggleSection("contactInfo")}
+            className="group flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                INFORMACIÓN DE CONTACTO
+              </h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                collapsedSections.contactInfo && "rotate-180",
+              )}
+            />
+          </button>
         </div>
-        <div className="space-y-3">
+        <div
+          className={cn(
+            "space-y-3 overflow-hidden transition-all duration-200",
+            collapsedSections.contactInfo ? "max-h-0" : "max-h-[2000px]",
+          )}
+        >
           <div className="space-y-1.5">
             <Label htmlFor="owners" className="text-sm">
               Propietarios
