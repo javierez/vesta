@@ -64,8 +64,8 @@ export interface CompleteFormData {
   municipality?: string;
   postalCode?: string;
   neighborhood?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | string;
+  longitude?: number | string;
 
   // Page 4 - Equipment
   heating?: string;

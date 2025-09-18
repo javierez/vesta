@@ -55,6 +55,11 @@ interface ListingDetailsData {
   postalCode?: string;
   neighborhood?: string;
   
+  // Cadastral and geographic data
+  latitude?: number;
+  longitude?: number;
+  cadastralReference?: string;
+  
   // Form meta
   formPosition?: number;
   
@@ -109,6 +114,11 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     municipality: listingDetails.municipality ?? "",
     postalCode: listingDetails.postalCode ?? "",
     neighborhood: listingDetails.neighborhood ?? "",
+    
+    // Cadastral and geographic data
+    latitude: listingDetails.latitude ?? undefined,
+    longitude: listingDetails.longitude ?? undefined,
+    cadastralReference: listingDetails.cadastralReference ?? "",
   };
 }
 

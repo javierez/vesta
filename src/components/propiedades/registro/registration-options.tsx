@@ -189,16 +189,6 @@ export function OptionDetails({
         )}
       </div>
 
-      {showStartButton && (
-        <div className="flex flex-col gap-3 pt-4">
-          <button 
-            onClick={onStart}
-            className="w-full px-6 py-3 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium rounded-lg hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg"
-          >
-            Comenzar ahora
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight, Loader } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
+import { retrieveCadastralData } from "~/server/cadastral/retrieve_cadastral";
+import { toast } from "sonner";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import { useFormContext } from "../form-context";
 
@@ -24,6 +26,7 @@ export default function ThirdPage({
 }: ThirdPageProps) {
   const { state, updateFormData } = useFormContext();
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
+  const [isCadastralLoading, setIsCadastralLoading] = useState(false);
   const searchParams = useSearchParams();
   const method = searchParams?.get("method");
 
@@ -86,6 +89,168 @@ export default function ThirdPage({
       ? `(${formData.neighborhood})`
       : "";
     return `${type} en ${street} ${neighborhood}`.trim();
+  };
+
+  // Function to validate cadastral reference format
+  const validateCadastralReference = (reference: string): boolean => {
+    // Spanish cadastral reference format: 20 characters
+    // Example: 1234567CS1234S0001AB
+    const cadastralPattern = /^[0-9]{7}[A-Z]{2}[0-9]{4}[A-Z]{1}[0-9]{4}[A-Z]{2}$/;
+    return cadastralPattern.test(reference.replace(/\s/g, ""));
+  };
+
+  // Function to handle cadastral lookup
+  const handleCadastralLookup = async () => {
+    const reference = formData.cadastralReference.trim();
+    
+    console.log("=== CADASTRAL LOOKUP INITIATED ===");
+    console.log("Input Reference:", reference);
+    console.log("Reference Length:", reference.length);
+    console.log("Current Form State Before Lookup:", {
+      address: formData.address,
+      city: formData.city,
+      province: formData.province,
+      postalCode: formData.postalCode,
+    });
+    
+    if (!reference) {
+      console.warn("❌ Validation Failed: Empty cadastral reference");
+      toast.error("Referencia catastral requerida", {
+        description: "Por favor, introduce una referencia catastral válida",
+      });
+      return;
+    }
+
+    if (!validateCadastralReference(reference)) {
+      console.warn("❌ Validation Failed: Invalid cadastral reference format");
+      console.log("Expected Pattern: 1234567CS1234S0001AB (20 characters)");
+      console.log("Received:", reference);
+      toast.error("Formato inválido", {
+        description: "La referencia catastral debe tener 20 caracteres (ej: 1234567CS1234S0001AB)",
+      });
+      return;
+    }
+
+    console.log("✅ Validation Passed: Cadastral reference format is valid");
+
+    try {
+      setIsCadastralLoading(true);
+      console.log("🔄 Starting cadastral API lookup...");
+
+      // Call the real Spanish Cadastre API
+      console.log("📡 Querying Spanish Cadastre API for reference:", reference);
+      console.log("API Endpoint: https://ovc.catastro.meh.es/OVCServWeb/OVCWcfCallejero/COVCCallejero.svc/json/Consulta_DNPRC");
+      
+      const cadastralData = await retrieveCadastralData(reference);
+      
+      if (!cadastralData) {
+        console.warn("❌ No cadastral data found for reference:", reference);
+        toast.error("Referencia no encontrada", {
+          description: "No se encontraron datos para esta referencia catastral. Verifica que sea correcta.",
+        });
+        return;
+      }
+
+      console.log("✅ Cadastral API Response Received Successfully!");
+      console.log("📋 DETAILED CADASTRAL DATA:");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("🏠 PROPERTY IDENTIFICATION:");
+      console.log("   Cadastral Reference:", reference);
+      console.log("   Property Type:", cadastralData.propertyType);
+      console.log("");
+      console.log("📍 LOCATION DATA:");
+      console.log("   Street:", cadastralData.street);
+      console.log("   Address Details:", cadastralData.addressDetails);
+      console.log("   Postal Code:", cadastralData.postalCode);
+      console.log("   City:", cadastralData.city || "N/A");
+      console.log("   Province:", cadastralData.province || "N/A");
+      console.log("   Municipality:", cadastralData.municipality);
+      console.log("   Neighborhood:", cadastralData.neighborhood);
+      console.log("");
+      console.log("🌍 GEOGRAPHIC COORDINATES:");
+      console.log("   Latitude:", cadastralData.latitude || "N/A");
+      console.log("   Longitude:", cadastralData.longitude || "N/A");
+      console.log("");
+      console.log("📐 PROPERTY DIMENSIONS:");
+      console.log("   Total Surface:", cadastralData.squareMeter, "m²");
+      console.log("   Built Surface:", cadastralData.builtSurfaceArea, "m²");
+      console.log("   Year Built:", cadastralData.yearBuilt);
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      // Update all form data with cadastral information
+      console.log("🔄 Updating Form Context with Cadastral Data...");
+      
+      const formUpdateData = {
+        // Visible address fields
+        address: cadastralData.street,
+        addressDetails: cadastralData.addressDetails,
+        postalCode: cadastralData.postalCode,
+        city: cadastralData.city || "",
+        province: cadastralData.province || "",
+        municipality: cadastralData.municipality,
+        neighborhood: cadastralData.neighborhood,
+        
+        // Hidden fields stored in context - mapped to form field names
+        latitude: cadastralData.latitude || "",
+        longitude: cadastralData.longitude || "",
+        
+        // Map cadastral fields to form field names used by other pages
+        buildYear: cadastralData.yearBuilt,           // second page expects buildYear
+        totalSurface: cadastralData.squareMeter,      // second page expects totalSurface  
+        usefulSurface: cadastralData.builtSurfaceArea, // second page expects usefulSurface
+        propertyType: cadastralData.propertyType,
+      };
+      
+      console.log("📝 FORM UPDATE PAYLOAD:");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("👁️  VISIBLE FIELDS (will appear in UI):");
+      console.log("   address:", formUpdateData.address);
+      console.log("   addressDetails:", formUpdateData.addressDetails);
+      console.log("   postalCode:", formUpdateData.postalCode);
+      console.log("   city:", formUpdateData.city);
+      console.log("   province:", formUpdateData.province);
+      console.log("   municipality:", formUpdateData.municipality);
+      console.log("   neighborhood:", formUpdateData.neighborhood);
+      console.log("");
+      console.log("🔒 HIDDEN FIELDS (stored in context, mapped to form field names):");
+      console.log("   latitude:", formUpdateData.latitude);
+      console.log("   longitude:", formUpdateData.longitude);
+      console.log("   buildYear:", formUpdateData.buildYear, "(mapped from yearBuilt)");
+      console.log("   totalSurface:", formUpdateData.totalSurface, "(mapped from squareMeter)");
+      console.log("   usefulSurface:", formUpdateData.usefulSurface, "(mapped from builtSurfaceArea)");
+      console.log("   propertyType:", formUpdateData.propertyType);
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      
+      updateFormData(formUpdateData);
+      console.log("✅ Form Context Updated Successfully");
+
+      console.log("🎉 CADASTRAL LOOKUP COMPLETED SUCCESSFULLY!");
+      console.log("💡 Note: Property title will be generated when clicking 'Siguiente'");
+      console.log("=== END CADASTRAL LOOKUP ===");
+      
+      toast.success("Datos catastrales cargados", {
+        description: "La información del inmueble se ha completado automáticamente",
+        duration: 4000,
+      });
+
+    } catch (error) {
+      console.error("❌ CADASTRAL LOOKUP FAILED!");
+      console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.error("🚨 Error Details:");
+      console.error("   Reference:", reference);
+      console.error("   Error Type:", error instanceof Error ? error.constructor.name : typeof error);
+      console.error("   Error Message:", error instanceof Error ? error.message : String(error));
+      console.error("   Stack Trace:", error instanceof Error ? error.stack : 'N/A');
+      console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("=== END CADASTRAL LOOKUP (WITH ERROR) ===");
+      toast.error("Error al consultar el catastro", {
+        description: "No se pudo conectar con el servicio. Inténtalo de nuevo.",
+      });
+    } finally {
+      console.log("🔄 Resetting loading state...");
+      setIsCadastralLoading(false);
+      console.log("✅ Loading state reset complete");
+    }
   };
 
   const autoCompleteAddress = async () => {
@@ -210,14 +375,17 @@ export default function ThirdPage({
         {formData.cadastralReference && (
           <button
             type="button"
-            className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground"
+            onClick={handleCadastralLookup}
+            disabled={isCadastralLoading}
+            className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Conectar con Catastro"
           >
             <Image
               src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
               alt="Catastro"
               width={16}
               height={16}
-              className="object-contain"
+              className={`object-contain transition-opacity duration-200 ${isCadastralLoading ? 'opacity-50 animate-pulse' : 'opacity-100'}`}
             />
           </button>
         )}
