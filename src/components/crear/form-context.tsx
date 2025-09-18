@@ -169,7 +169,6 @@ export interface GlobalFormState {
   
   // Supporting data
   agents: Agent[];
-  contacts: Contact[];
   currentContacts: string[];
   
   // Flags
@@ -187,9 +186,9 @@ interface FormContextType {
   setInitialData: (data: {
     fetchedFormData?: CompleteFormData;
     agents: Agent[];
-    contacts: Contact[];
     currentContacts: string[];
   }) => void;
+  updateAgents: (agents: Agent[]) => void;
 }
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
@@ -210,7 +209,6 @@ export function FormProvider({ children }: FormProviderProps) {
   const [state, setState] = useState<GlobalFormState>({
     formData: {}, // Single source of truth for ALL form data
     agents: [],
-    contacts: [],
     currentContacts: [],
     hasUnsavedChanges: false,
     isLoading: true,
@@ -260,18 +258,23 @@ export function FormProvider({ children }: FormProviderProps) {
   const setInitialData = useCallback((data: {
     fetchedFormData?: CompleteFormData;
     agents: Agent[];
-    contacts: Contact[];
     currentContacts: string[];
   }) => {
     setState(prev => ({
       ...prev,
       agents: data.agents,
-      contacts: data.contacts,
       currentContacts: data.currentContacts,
       // Simple: Set the fetched data as our single local working copy
       formData: data.fetchedFormData ?? {},
       hasUnsavedChanges: false,
       isLoading: false,
+    }));
+  }, []);
+
+  const updateAgents = useCallback((agents: Agent[]) => {
+    setState(prev => ({
+      ...prev,
+      agents,
     }));
   }, []);
 
@@ -283,6 +286,7 @@ export function FormProvider({ children }: FormProviderProps) {
     markAsSaved,
     setLoading,
     setInitialData,
+    updateAgents,
   };
 
   return (

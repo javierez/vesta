@@ -4,6 +4,7 @@ import { FloatingLabelInput } from "~/components/ui/floating-label-input";
 import { ChevronLeft, ChevronRight, Loader } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import { useFormContext } from "../form-context";
 
@@ -12,12 +13,14 @@ interface ThirdPageProps {
   listingId: string;
   onNext: () => void;
   onBack?: () => void;
+  nextButtonText?: string;
 }
 
 
 export default function ThirdPage({
   onNext,
   onBack,
+  nextButtonText = "Siguiente",
 }: ThirdPageProps) {
   const { state, updateFormData } = useFormContext();
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
@@ -26,6 +29,7 @@ export default function ThirdPage({
 
   // Get current form data from context (following first.tsx pattern)
   const formData = {
+    cadastralReference: state.formData.cadastralReference ?? "",
     address: state.formData.address ?? "",
     addressDetails: state.formData.addressDetails ?? "",
     postalCode: state.formData.postalCode ?? "",
@@ -65,7 +69,7 @@ export default function ThirdPage({
         return "Local";
       case "solar":
         return "Solar";
-      case "garaje":
+      case "garage":
         return "Garaje";
       default:
         return type;
@@ -196,6 +200,28 @@ export default function ThirdPage({
     <div className="space-y-4">
       <h2 className="text-md mb-4 font-medium text-gray-900">Dirección</h2>
 
+      <div className="relative">
+        <FloatingLabelInput
+          id="cadastralReference"
+          value={formData.cadastralReference}
+          onChange={handleInputChange("cadastralReference")}
+          placeholder="Referencia Catastral"
+        />
+        {formData.cadastralReference && (
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground"
+          >
+            <Image
+              src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
+              alt="Catastro"
+              width={16}
+              height={16}
+              className="object-contain"
+            />
+          </button>
+        )}
+      </div>
       <FloatingLabelInput
         id="address"
         value={formData.address}
@@ -289,7 +315,7 @@ export default function ThirdPage({
             onClick={handleNext}
             className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
           >
-            <span>Siguiente</span>
+            <span>{nextButtonText}</span>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </motion.div>

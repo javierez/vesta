@@ -10,7 +10,6 @@ import {
   getAllAgentsWithAuth,
 } from "~/server/queries/listing";
 import {
-  getAllPotentialOwnersWithAuth,
   getCurrentListingOwnersWithAuth,
 } from "~/server/queries/contact";
 import { FormProvider, useFormContext, type CompleteFormData } from "./form-context";
@@ -255,7 +254,7 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
 
 // Inner component that uses the form context
 function PropertyFormInner({ listingId }: PropertyFormProps) {
-  const { state, setInitialData, setLoading } = useFormContext();
+  const { state, setInitialData, setLoading, updateAgents } = useFormContext();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
@@ -301,20 +300,17 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
     setShowCloseConfirmation(false);
   };
 
-  // Pre-fetch ALL data once - no more redundant API calls in child components
+  // Optimized data fetching - minimal blocking, agents loaded in background
   useEffect(() => {
-    const fetchAllData = async () => {
+    const fetchEssentialData = async () => {
       try {
         setLoading(true);
 
-        // Fetch all data in parallel for maximum speed
-        const [listingDetails, agents, contacts, currentContacts] =
-          await Promise.all([
-            getListingDetailsWithAuth(Number(listingId)),
-            getAllAgentsWithAuth(),
-            getAllPotentialOwnersWithAuth(),
-            getCurrentListingOwnersWithAuth(Number(listingId)),
-          ]);
+        // Fetch only essential data that blocks initial render
+        const [listingDetails, currentContacts] = await Promise.all([
+          getListingDetailsWithAuth(Number(listingId)),
+          getCurrentListingOwnersWithAuth(Number(listingId)),
+        ]);
 
         // Set current step based on form position
         const typedListingDetails = listingDetails as ListingDetailsData | null;
@@ -326,29 +322,44 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
           setCurrentStep(stepIndex);
         }
 
-        // Convert fetched data to single CompleteFormData and set as local working copy
+        // Set initial data without agents (empty array for now)
         setInitialData({
           fetchedFormData: convertFetchedDataToFormData(typedListingDetails),
-          agents: agents.map((agent) => ({
-            id: agent.id, // Keep as string - don't convert to Number
-            name: agent.name,
-          })),
-          contacts: contacts.map((contact) => ({
-            id: Number(contact.id),
-            name: contact.name,
-          })),
+          agents: [], // Will be loaded in background
           currentContacts: currentContacts.map((contact) =>
             contact.id.toString(),
           ),
         });
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching essential data:", error);
       } finally {
         setLoading(false);
       }
     };
-    void fetchAllData();
-  }, [listingId, setInitialData, setLoading]);
+
+    const loadAgentsInBackground = async () => {
+      try {
+        // Load agents after form is already displayed
+        const agents = await getAllAgentsWithAuth();
+        
+        // Update form context with agents
+        updateAgents(agents.map((agent) => ({
+          id: agent.id,
+          name: agent.name,
+        })));
+      } catch (error) {
+        console.error("Error loading agents in background:", error);
+      }
+    };
+
+    // Fetch essential data first
+    void fetchEssentialData();
+    
+    // Load agents in background after a small delay
+    setTimeout(() => {
+      void loadAgentsInBackground();
+    }, 100);
+  }, [listingId, setInitialData, setLoading, updateAgents]);
 
 
   // Sync currentStep with formPosition when listingDetails updates

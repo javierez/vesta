@@ -25,6 +25,7 @@ export function generatePropertyTitle(
       case "solar":
         return "Solar";
       case "garaje":
+      case "garage":
         return "Garaje";
       default:
         return type;

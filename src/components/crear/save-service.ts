@@ -19,10 +19,20 @@ export class FormSaveService {
     options: SaveOptions = {}
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log("=== FormSaveService.saveAllFormData CALLED ===");
+      console.log("listingId:", listingId);
+      console.log("formData received:", formData);
+      console.log("listingDetails received:", listingDetails);
+      console.log("options:", options);
+      
       const promises: Promise<unknown>[] = [];
 
       // 1. Update property if we have propertyId
-      if (listingDetails.propertyId) {
+      console.log("=== CHECKING PROPERTY UPDATE ELIGIBILITY ===");
+      console.log("listingDetails.propertyId:", listingDetails.propertyId);
+      console.log("Is propertyId defined?", listingDetails.propertyId !== undefined);
+      
+      if (listingDetails.propertyId && !isNaN(Number(listingDetails.propertyId))) {
         const propertyUpdateData: Record<string, unknown> = {
           // Basic info from first page
           propertyType: formData.propertyType,
@@ -149,6 +159,11 @@ export class FormSaveService {
           isActive: true,
         };
 
+        console.log("=== PROPERTY UPDATE DATA ===");
+        console.log("propertyId:", listingDetails.propertyId);
+        console.log("propertyUpdateData:", propertyUpdateData);
+        console.log("Property update data keys:", Object.keys(propertyUpdateData));
+
         // Update property data
         promises.push(updateProperty(Number(listingDetails.propertyId), propertyUpdateData));
         
@@ -164,6 +179,10 @@ export class FormSaveService {
             postalCode: formData.postalCode ?? "",
           }));
         }
+      } else {
+        console.log("=== SKIPPING PROPERTY UPDATES ===");
+        console.log("Reason: No valid propertyId available");
+        console.log("Property updates will be skipped, but listing updates will proceed");
       }
 
       // 2. Update listing if we have listingId
@@ -215,6 +234,11 @@ export class FormSaveService {
           listingUpdateData.status = "Active";
         }
 
+        console.log("=== LISTING UPDATE DATA ===" );
+        console.log("listingId:", listingId);
+        console.log("listingUpdateData:", listingUpdateData);
+        console.log("Listing update data keys:", Object.keys(listingUpdateData));
+
         promises.push(updateListingWithAuth(Number(listingId), listingUpdateData));
       }
 
@@ -224,14 +248,22 @@ export class FormSaveService {
           .filter((id) => id && !isNaN(Number(id)))
           .map((id) => Number(id));
 
+        console.log("=== CONTACT UPDATE DATA ===");
+        console.log("Original selectedContactIds:", formData.selectedContactIds);
+        console.log("Valid contact IDs:", validContactIds);
+
         if (validContactIds.length > 0) {
           promises.push(updateListingOwnersWithAuth(Number(listingId), validContactIds));
         }
       }
 
       // Execute all save operations
+      console.log("=== EXECUTING SAVE OPERATIONS ===");
+      console.log("Total promises to execute:", promises.length);
+      
       await Promise.all(promises);
-
+      
+      console.log("=== ALL SAVE OPERATIONS COMPLETED SUCCESSFULLY ===");
       return { success: true };
     } catch (error) {
       console.error("Error saving form data:", error);

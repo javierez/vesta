@@ -52,42 +52,50 @@ export function PropertySummary({
   onToggleKeys,
   onToggleWebsite,
 }: PropertySummaryProps) {
+  const isGarageOrSolar = listing.propertyType === "garage" || listing.propertyType === "solar";
+  const shouldShowBedsAndBaths = !isGarageOrSolar;
+  const areaValue = isGarageOrSolar ? listing.builtSurfaceArea : listing.squareMeter;
+  
   return (
     <Card className="col-span-full bg-gradient-to-br from-amber-50/50 to-rose-50/50 border-gradient-to-r border-amber-200/30 shadow-lg">
       <div className="p-6">
         <div className="flex items-center justify-between">
           {/* Left Section - Property Metrics with natural flow */}
           <div className="flex items-center gap-8">
-            {/* Bedrooms */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
-                <Bed className="h-5 w-5 text-amber-800" />
+            {/* Bedrooms - only show for non-garage/solar properties */}
+            {shouldShowBedsAndBaths && (
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
+                  <Bed className="h-5 w-5 text-amber-800" />
+                </div>
+                <p className="text-lg font-bold text-gray-900">
+                  {listing.bedrooms ?? '-'}
+                </p>
               </div>
-              <p className="text-lg font-bold text-gray-900">
-                {listing.bedrooms ?? '-'}
-              </p>
-            </div>
+            )}
 
-            {/* Bathrooms */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
-                <Bath className="h-5 w-5 text-amber-800" />
+            {/* Bathrooms - only show for non-garage/solar properties */}
+            {shouldShowBedsAndBaths && (
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
+                  <Bath className="h-5 w-5 text-amber-800" />
+                </div>
+                <p className="text-lg font-bold text-gray-900">
+                  {listing.bathrooms ? Math.round(listing.bathrooms) : '-'}
+                </p>
               </div>
-              <p className="text-lg font-bold text-gray-900">
-                {listing.bathrooms ? Math.round(listing.bathrooms) : '-'}
-              </p>
-            </div>
+            )}
 
-            {/* Square Meters */}
+            {/* Area - use buildSurfaceArea for garage/solar, squareMeter for others */}
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
                 <Square className="h-5 w-5 text-amber-800" />
               </div>
               <div className="flex items-baseline gap-1">
                 <p className="text-lg font-bold text-gray-900">
-                  {listing.squareMeter ?? '-'}
+                  {areaValue ?? '-'}
                 </p>
-                {listing.squareMeter && (
+                {areaValue && (
                   <p className="text-xs text-gray-500">m²</p>
                 )}
               </div>

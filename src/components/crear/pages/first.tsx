@@ -17,6 +17,7 @@ import { useFormContext } from "../form-context";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import ContactPopup from "./contact-popup";
 import { Checkbox } from "~/components/ui/checkbox";
+import { searchContactsForFormWithAuth } from "~/server/queries/contact";
 
 // Type definitions
 interface Contact {
@@ -62,7 +63,9 @@ export default function FirstPage({
   const [showListingTypeTooltip, setShowListingTypeTooltip] = useState(false);
   const [contactSearch, setContactSearch] = useState("");
   const [showContactPopup, setShowContactPopup] = useState(false);
-  const [localContacts, setLocalContacts] = useState<Contact[]>([]);
+  const [searchResults, setSearchResults] = useState<Contact[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Fallback price formatting functions in case formFormatters is undefined
   const formatPriceInput = (value: string | number): string => {
@@ -99,12 +102,53 @@ export default function FirstPage({
     };
   }, [showListingTypeTooltip]);
 
-  // Sync local contacts with global data
-  useEffect(() => {
-    if (state.contacts) {
-      setLocalContacts(state.contacts);
+  // Debounced contact search
+  const performContactSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
     }
-  }, [state.contacts]);
+
+    try {
+      setIsSearching(true);
+      const results = await searchContactsForFormWithAuth(query, 6);
+      setSearchResults(results.map(contact => ({
+        id: Number(contact.id),
+        name: contact.name,
+      })));
+    } catch (error) {
+      console.error("Error searching contacts:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Handle search input with debouncing
+  const handleContactSearchChange = useCallback((value: string) => {
+    setContactSearch(value);
+    
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    // Set new timeout for debounced search
+    const timeout = setTimeout(() => {
+      void performContactSearch(value);
+    }, 300);
+    
+    setSearchTimeout(timeout);
+  }, [searchTimeout, performContactSearch]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
 
   // Get current form data from context
   const formData = {
@@ -142,10 +186,8 @@ export default function FirstPage({
     updateField("price", numericValue);
   };
 
-  // Filter contacts based on search (using local contacts for immediate updates)
-  const filteredContacts = localContacts.filter((contact: Contact) =>
-    contact.name.toLowerCase().includes(contactSearch.toLowerCase()),
-  );
+  // Get contacts to display - show search results or empty state
+  const contactsToDisplay = searchResults;
 
   // Update the toggle logic and state management
   const handleListingTypeTab = (type: string) => {
@@ -197,21 +239,21 @@ export default function FirstPage({
       );
     };
 
-    // Immediately add the new contact to local state for instant UI update
+    // Immediately add the new contact to search results for instant UI update
     if (isValidContact(contact)) {
       const newContactForList: Contact = {
         id: Number(contact.contactId),
         name: `${contact.firstName} ${contact.lastName}`,
       };
 
-      setLocalContacts((prev) => [...prev, newContactForList]);
+      setSearchResults((prev) => [newContactForList, ...prev].slice(0, 6));
 
       // Auto-select the new contact in form context
       const currentIds = formData.selectedContactIds;
       updateField("selectedContactIds", [...currentIds, contact.contactId.toString()]);
     }
 
-    // Note: With local state management, no refresh needed
+    // Note: No need to refresh search results
   };
 
   // Main form already handles loading state with spinner
@@ -581,20 +623,28 @@ export default function FirstPage({
 
         {/* Contact Search */}
         <Input
-          placeholder="Buscar contactos..."
+          placeholder="Escribe para buscar contactos..."
           value={contactSearch}
-          onChange={(e) => setContactSearch(e.target.value)}
+          onChange={(e) => handleContactSearchChange(e.target.value)}
           className="h-10 border-0 shadow-md"
         />
 
         {/* Contact List */}
         <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg p-2 shadow-md">
-          {filteredContacts.length === 0 ? (
+          {isSearching ? (
+            <p className="py-3 text-center text-sm text-gray-500">
+              Buscando contactos...
+            </p>
+          ) : contactsToDisplay.length === 0 && contactSearch.trim() ? (
             <p className="py-3 text-center text-sm text-gray-500">
               No se encontraron contactos
             </p>
+          ) : contactsToDisplay.length === 0 ? (
+            <p className="py-3 text-center text-sm text-gray-500">
+              Escribe para buscar contactos
+            </p>
           ) : (
-            filteredContacts.map((contact: Contact) => (
+            contactsToDisplay.map((contact: Contact) => (
               <div
                 key={contact.id}
                 className={cn(

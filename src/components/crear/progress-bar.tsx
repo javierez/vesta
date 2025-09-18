@@ -224,10 +224,10 @@ export default function ProgressBar({
                     <p
                       className={`text-xs font-medium ${
                         isCurrent
-                          ? "text-blue-600"
+                          ? "text-gray-600"
                           : isCompleted
-                            ? "text-gray-700"
-                            : "text-gray-500"
+                            ? "text-gray-500"
+                            : "text-gray-400"
                       }`}
                     >
                       {step.title}

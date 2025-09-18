@@ -606,6 +606,56 @@ export async function createPropertyFromCombined(
   }
 }
 
+// Create a minimal property with listing for quick registration
+export async function createMinimalPropertyWithListing() {
+  try {
+    const { db: secureDb, accountId } = await getSecureDb();
+
+    // Generate a unique reference number
+    const referenceNumber = await generateReferenceNumber();
+
+    // Create minimal property with only required fields
+    const propertyData = {
+      accountId: BigInt(accountId),
+      referenceNumber,
+      propertyType: "piso" as const,
+      formPosition: 1,
+      hasHeating: false,
+      hasElevator: false,
+      hasGarage: false,
+      hasStorageRoom: false,
+      isActive: false, // Start as inactive until completed
+    };
+
+    const [propertyResult] = await secureDb
+      .insert(properties)
+      .values(propertyData)
+      .$returningId();
+
+    if (!propertyResult) throw new Error("Failed to create property");
+
+    // Note: The current user is implicitly used through getSecureDb() for accountId
+    // No need to explicitly get the current user for this minimal creation
+
+    // Create a default listing for the new property
+    const { createDefaultListing } = await import("./listing");
+    const newListing = await createDefaultListing(
+      Number(propertyResult.propertyId),
+    );
+
+    if (!newListing) throw new Error("Failed to create default listing");
+
+    return {
+      propertyId: Number(propertyResult.propertyId),
+      listingId: Number(newListing.listingId),
+      referenceNumber,
+    };
+  } catch (error) {
+    console.error("Error creating minimal property with listing:", error);
+    throw error;
+  }
+}
+
 // Update property location with auto-completion data
 export async function updatePropertyLocation(
   propertyId: number,

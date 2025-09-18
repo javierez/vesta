@@ -28,9 +28,15 @@ export async function getContactsByOrgIdWithAuth(orgId: number) {
   return getContactsByOrgId(orgId, accountId);
 }
 
-export async function searchContactsWithAuth(query: string) {
+export async function searchContactsWithAuth(query: string, limit?: number) {
   const accountId = await getCurrentUserAccountId();
-  return searchContacts(query, accountId);
+  return searchContacts(query, accountId, limit);
+}
+
+// Optimized search for form dropdowns with default limit
+export async function searchContactsForFormWithAuth(query: string, limit = 6) {
+  const accountId = await getCurrentUserAccountId();
+  return searchContacts(query, accountId, limit);
 }
 
 export async function updateContactWithAuth(
@@ -452,23 +458,25 @@ export async function getContactsByOrgId(orgId: number, accountId: number) {
   }
 }
 
-// Search contacts by name or email
-export async function searchContacts(query: string, accountId: number) {
+// Optimized search contacts by name only
+export async function searchContacts(query: string, accountId: number, limit?: number) {
   try {
     const searchResults = await db
-      .select()
+      .select({
+        id: contacts.contactId,
+        name: sql<string>`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
+      })
       .from(contacts)
       .where(
         and(
           eq(contacts.accountId, BigInt(accountId)),
           eq(contacts.isActive, true),
-          or(
-            like(contacts.firstName, `%${query}%`),
-            like(contacts.lastName, `%${query}%`),
-            like(contacts.email, `%${query}%`),
-          ),
+          like(sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`, `%${query}%`),
         ),
-      );
+      )
+      .orderBy(contacts.firstName, contacts.lastName)
+      .limit(limit || 50);
+
     return searchResults;
   } catch (error) {
     console.error("Error searching contacts:", error);
