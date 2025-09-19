@@ -44,11 +44,20 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   }
 
   // Check if this is a draft listing and redirect to edit page
+  console.log("=== PROPERTY PAGE REDIRECT CHECK ===");
+  console.log("listingId:", listingId);
+  console.log("fullListingDetails:", fullListingDetails);
+  console.log("isValidRecord(fullListingDetails):", isValidRecord(fullListingDetails));
+  console.log("fullListingDetails.status:", (fullListingDetails as any)?.status);
+  
   if (
     isValidRecord(fullListingDetails) &&
     fullListingDetails.status === "Draft"
   ) {
+    console.log("REDIRECTING TO CREAR PAGE - Status is Draft");
     redirect(`/propiedades/crear/${listingId}`);
+  } else {
+    console.log("NOT REDIRECTING - Status is not Draft or no valid record");
   }
 
   // Get energy certificate document and images in parallel

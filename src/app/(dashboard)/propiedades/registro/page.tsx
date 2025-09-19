@@ -8,7 +8,8 @@ import {
   OptionDetails,
   type RegistrationOption 
 } from "~/components/propiedades/registro/registration-options";
-import { VoiceRecording } from "~/components/propiedades/registro/voice-recording";
+// import { VoiceRecordingEnhanced } from "~/components/propiedades/registro/voice-recording-enhanced";
+// import type { EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
 import { FileUpload } from "~/components/propiedades/registro/file-upload";
 import { QuickForm } from "~/components/propiedades/registro/quick-form";
 import { CompleteForm } from "~/components/propiedades/registro/complete-form";
@@ -16,6 +17,18 @@ import { CompleteForm } from "~/components/propiedades/registro/complete-form";
 export default function CapturaPage() {
   const router = useRouter();
   const [activeOption, setActiveOption] = useState<string | null>("quick");
+  
+  // // Handle voice recording completion
+  // const handleVoiceProcessingComplete = (extractedData: EnhancedExtractedPropertyData) => {
+  //   console.log("🎉 Voice processing completed with extracted data:", extractedData);
+  //   
+  //   // TODO: Navigate to property creation form with pre-populated data
+  //   // For now, we'll just log the data and show an alert
+  //   alert(`¡Datos extraídos correctamente! Se encontraron ${Object.keys(extractedData).length} campos.`);
+  //   
+  //   // In the future, you can navigate to the form with the data:
+  //   // router.push(`/propiedades/crear?voiceData=${encodeURIComponent(JSON.stringify(extractedData))}`);
+  // };
 
   const options: RegistrationOption[] = [
     {
@@ -48,22 +61,22 @@ export default function CapturaPage() {
       bgActive: "from-amber-50 to-rose-50",
       action: () => console.log("Navigate to long form"),
     },
-    {
-      id: "recording",
-      title: "Grabación de Voz",
-      icon: () => <></>,
-      description: "Habla con nuesetro sistema y la IA registrará la información automáticamente",
-      features: [
-        "Transcripción automática",
-        "Procesamiento con IA",
-        "Extracción de datos",
-        "Ahorra 10 minutos por propiedad",
-      ],
-      additionalInfo: "Dirección, tipo de propiedad, habitaciones, baños, precio y características especiales.",
-      gradient: "from-amber-400 to-rose-400",
-      bgActive: "from-amber-50 to-rose-50",
-      action: () => console.log("Open recording panel"),
-    },
+    // {
+    //   id: "recording",
+    //   title: "Grabación de Voz",
+    //   icon: () => <></>,
+    //   description: "Habla con nuesetro sistema y la IA registrará la información automáticamente",
+    //   features: [
+    //     "Transcripción automática",
+    //     "Procesamiento con IA",
+    //     "Extracción de datos",
+    //     "Ahorra 10 minutos por propiedad",
+    //   ],
+    //   additionalInfo: "Dirección, tipo de propiedad, habitaciones, baños, precio y características especiales.",
+    //   gradient: "from-amber-400 to-rose-400",
+    //   bgActive: "from-amber-50 to-rose-50",
+    //   action: () => console.log("Open recording panel"),
+    // },
     {
       id: "upload",
       title: "Ficha de Encargo",
@@ -135,7 +148,7 @@ export default function CapturaPage() {
                       return selectedOption ? (
                         <OptionDetails 
                           option={selectedOption}
-                          showStartButton={activeOption !== "recording" && activeOption !== "quick"}
+                          showStartButton={/* activeOption !== "recording" && */ activeOption !== "quick"}
                           onStart={() => selectedOption.action()}
                         />
                       ) : null;
@@ -143,7 +156,12 @@ export default function CapturaPage() {
 
                     {/* Visual Preview */}
                     <div className="lg:col-span-2 flex items-center justify-center">
-                      {activeOption === "recording" && <VoiceRecording />}
+                      {/* {activeOption === "recording" && (
+                        <VoiceRecordingEnhanced 
+                          onProcessingComplete={handleVoiceProcessingComplete}
+                          referenceNumber="temp-voice-recording"
+                        />
+                      )} */}
                       {activeOption === "quick" && <QuickForm />}
                       {activeOption === "complete" && <CompleteForm />}
                     </div>

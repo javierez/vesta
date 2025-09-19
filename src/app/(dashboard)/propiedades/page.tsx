@@ -155,7 +155,7 @@ export default function PropertiesPage() {
         <h1 className="text-2xl font-bold">Propiedades</h1>
         <div className="flex gap-2">
           <Button asChild>
-            <Link href="/propiedades/crear">
+            <Link href="/propiedades/registro">
               <Plus className="mr-2 h-4 w-4" />
               Agregar Propiedad
             </Link>

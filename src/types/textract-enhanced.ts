@@ -166,7 +166,7 @@ export interface ExtractedFieldResult {
   value: string | number | boolean;
   originalText: string;
   confidence: number;
-  extractionSource: "form" | "table" | "query" | "regex" | "text";
+  extractionSource: "form" | "table" | "query" | "regex" | "text" | "gpt4" | "voice_pattern";
   fieldType: "string" | "number" | "boolean" | "decimal";
   matched_alias?: string; // Which Spanish term was matched
 }

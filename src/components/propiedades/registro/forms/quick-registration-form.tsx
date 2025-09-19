@@ -14,7 +14,7 @@ import CloseConfirmationDialog from "~/components/crear/close-confirmation-dialo
 import FirstPage from "~/components/crear/pages/first";
 import SecondPage from "~/components/crear/pages/second";
 import ThirdPage from "~/components/crear/pages/third";
-import { FormSaveService } from "~/components/crear/save-service";
+import { saveQuickFormData } from "~/server/queries/forms/quickform/save-quick-form";
 import RegistrationProgressBar from "./registration-progress-bar";
 
 interface QuickRegistrationFormProps {
@@ -269,10 +269,10 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
       
       console.log("Final Listing Details being passed:", listingDetails);
       console.log("Will attempt to update propertyId:", listingDetails.propertyId);
-      console.log("=== CALLING FormSaveService.saveAllFormData ===");
+      console.log("=== CALLING saveQuickFormData ===");
       
-      // Save all form data using the existing save service
-      const result = await FormSaveService.saveAllFormData(
+      // Save all form data using the quick form save function
+      const result = await saveQuickFormData(
         listingId,
         state.formData,
         listingDetails,
@@ -326,7 +326,7 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
       // Last step - save all data and complete registration
       const saved = await saveRegistrationData();
       if (saved) {
-        router.push(`/propiedades/${listingId}`);
+        router.push(`/propiedades`);
       } else {
         // Show error, don't navigate
         alert("Error al guardar el registro. Por favor, inténtalo de nuevo.");

@@ -122,20 +122,8 @@ export async function getListingDetailsWithAuth(listingId: number) {
     `[DEBUG] getListingDetailsWithAuth called with listingId: ${listingId}, accountId: ${accountId}`,
   );
 
-  // Check cache first (5 minute TTL for characteristics data)
-  const cacheKey = cacheKeys.listingDetails(accountId, listingId);
-  const cachedData = cache.get(cacheKey);
-  if (cachedData) {
-    console.log(`[DEBUG] Returning cached data for key: ${cacheKey}`);
-    return cachedData;
-  }
-
-  console.log(
-    `[DEBUG] No cached data, fetching from database for key: ${cacheKey}`,
-  );
-
   try {
-    // Fetch from database and cache result
+    // Fetch directly from database without caching
     const listingDetails = await getListingDetails(listingId, accountId);
     console.log(
       `[DEBUG] Database query returned:`,
@@ -145,8 +133,6 @@ export async function getListingDetailsWithAuth(listingId: number) {
       `[DEBUG] Listing details keys:`,
       Object.keys(listingDetails || {}),
     );
-
-    cache.set(cacheKey, listingDetails, 300000); // 5 minutes
 
     return listingDetails;
   } catch (error) {
