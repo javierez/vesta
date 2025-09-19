@@ -234,7 +234,18 @@ export default function AppointmentForm({
           contactsData = await listContactsWithAuth(1, 10); // page 1, limit 10
         } else {
           // For search, use the optimized search function
-          contactsData = await searchContactsWithAuth(searchQuery.trim());
+          const searchResults = await searchContactsWithAuth(searchQuery.trim());
+          // Transform search results to match Contact interface
+          contactsData = searchResults.map((result) => {
+            const [firstName, ...lastNameParts] = result.name.split(' ');
+            return {
+              contactId: result.id,
+              firstName: firstName || '',
+              lastName: lastNameParts.join(' ') || '',
+              email: null,
+              phone: null,
+            };
+          });
         }
 
         setContacts(contactsData);
