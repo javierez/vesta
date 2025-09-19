@@ -3,6 +3,7 @@ import type { Listing } from "~/lib/data";
 import { updateProperty, updatePropertyLocation } from "~/server/queries/properties";
 import { updateListingWithAuth } from "~/server/queries/listing";
 import { updateListingOwnersWithAuth } from "~/server/queries/contact";
+import { createTaskWithAuth } from "~/server/queries/task";
 
 export interface SaveOptions {
   showLoading?: boolean;
@@ -240,6 +241,35 @@ export async function saveQuickFormData(
       if (validContactIds.length > 0) {
         promises.push(updateListingOwnersWithAuth(Number(listingId), validContactIds));
       }
+    }
+
+    // 4. Create default task for uploading property images when registration is completed
+    if (options.markAsCompleted && formData.agentId) {
+      console.log("=== CREATING DEFAULT IMAGE UPLOAD TASK ===");
+      console.log("Agent ID:", formData.agentId);
+      console.log("Listing ID:", listingId);
+      
+      const imageUploadTask = createTaskWithAuth({
+        userId: formData.agentId,
+        title: "Subir fotos de la propiedad",
+        description: "Cargar y organizar las fotografías del inmueble para mejorar la presentación en portales inmobiliarios y atraer más interesados",
+        dueDate: undefined,
+        dueTime: undefined,
+        completed: false,
+        listingId: BigInt(listingId),
+        listingContactId: undefined,
+        dealId: undefined,
+        appointmentId: undefined,
+        prospectId: undefined,
+        contactId: undefined,
+        isActive: true,
+      }).catch((error) => {
+        // Don't fail the entire operation if task creation fails
+        console.error("Failed to create image upload task:", error);
+        return null;
+      });
+      
+      promises.push(imageUploadTask);
     }
 
     // Execute all save operations

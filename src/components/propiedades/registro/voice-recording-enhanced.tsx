@@ -16,10 +16,13 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import type { EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
+import type { EnhancedExtractedPropertyData, ExtractedFieldResult } from "~/types/textract-enhanced";
+import { VoiceFieldValidationModal } from "~/components/forms/voice";
 
 interface VoiceRecordingEnhancedProps {
   onProcessingComplete: (extractedData: EnhancedExtractedPropertyData) => void;
+  onRetryRecording?: () => void;
+  onManualEntry?: () => void;
   referenceNumber?: string;
   className?: string;
 }
@@ -34,16 +37,18 @@ interface ProcessingState {
 }
 
 const PROCESSING_STEPS: Record<ProcessingStep, { icon: React.ElementType; color: string; label: string }> = {
-  idle: { icon: Mic, color: "text-gray-500", label: "Listo para grabar" },
-  uploading: { icon: Upload, color: "text-blue-500", label: "Subiendo audio" },
-  transcribing: { icon: Headphones, color: "text-purple-500", label: "Transcribiendo" },
+  idle: { icon: Mic, color: "text-amber-600", label: "Listo para grabar" },
+  uploading: { icon: Upload, color: "text-amber-600", label: "Subiendo audio" },
+  transcribing: { icon: Headphones, color: "text-rose-500", label: "Transcribiendo" },
   extracting: { icon: Brain, color: "text-amber-500", label: "Extrayendo datos" },
   complete: { icon: CheckCircle2, color: "text-green-500", label: "Completado" },
   error: { icon: AlertCircle, color: "text-red-500", label: "Error" },
 };
 
 export function VoiceRecordingEnhanced({ 
-  onProcessingComplete, 
+  onProcessingComplete,
+  onRetryRecording,
+  onManualEntry, 
   referenceNumber = "temp",
   className 
 }: VoiceRecordingEnhancedProps) {
@@ -52,20 +57,22 @@ export function VoiceRecordingEnhanced({
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [frequencyData, setFrequencyData] = useState<number[]>(new Array(40).fill(0));
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
+  
+  const waveAnimationRef = useRef<NodeJS.Timeout | null>(null);
   const [processingState, setProcessingState] = useState<ProcessingState>({
     step: "idle",
     progress: 0,
     message: "",
   });
   const [, setExtractedData] = useState<EnhancedExtractedPropertyData | null>(null);
+  const [extractedFields, setExtractedFields] = useState<ExtractedFieldResult[]>([]);
+  const [showValidationModal, setShowValidationModal] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
   const suggestionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const recordingSuggestions = [
@@ -81,6 +88,37 @@ export function VoiceRecordingEnhanced({
     "¿Cuál es la disponibilidad para visitas?",
   ];
 
+  // Simulated waveform animation that mimics natural speech patterns
+  const simulateWaveform = () => {
+    if (!isRecording || isPaused) return;
+
+    const newFrequencyData = Array.from({ length: 40 }, (_, i) => {
+      // Create natural speech-like patterns with varying intensities
+      const baseIntensity = Math.sin(Date.now() * 0.001 + i * 0.3) * 30 + 40;
+      const speechVariation = Math.sin(Date.now() * 0.003 + i * 0.1) * 20;
+      const randomNoise = (Math.random() - 0.5) * 15;
+      
+      // Create occasional "speech bursts" for more realism
+      const burstChance = Math.sin(Date.now() * 0.0008) > 0.7 ? 25 : 0;
+      
+      // Different frequency ranges have different intensities (like human speech)
+      const frequencyMultiplier = i < 10 ? 0.8 : i < 25 ? 1.2 : 0.9;
+      
+      let height = (baseIntensity + speechVariation + randomNoise + burstChance) * frequencyMultiplier;
+      
+      // Ensure realistic bounds
+      height = Math.max(8, Math.min(height, 85));
+      
+      return height;
+    });
+
+    setFrequencyData(newFrequencyData);
+    
+    // Calculate average for audio level and pulse effects
+    const avgLevel = newFrequencyData.reduce((sum, val) => sum + val, 0) / newFrequencyData.length;
+    setAudioLevel(avgLevel / 85); // Normalize to 0-1
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -88,25 +126,8 @@ export function VoiceRecordingEnhanced({
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
-      audioContextRef.current = new AudioContext();
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      source.connect(analyserRef.current);
-      analyserRef.current.fftSize = 256;
-
-      const visualize = () => {
-        if (!analyserRef.current) return;
-        
-        const bufferLength = analyserRef.current.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        analyserRef.current.getByteFrequencyData(dataArray);
-        
-        const average = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
-        setAudioLevel(average / 255);
-        
-        animationFrameRef.current = requestAnimationFrame(visualize);
-      };
-      visualize();
+      // Start simulated waveform animation
+      waveAnimationRef.current = setInterval(simulateWaveform, 50); // 20fps animation
 
       mediaRecorder.ondataavailable = (event) => {
         audioChunksRef.current.push(event.data);
@@ -117,13 +138,12 @@ export function VoiceRecordingEnhanced({
         setAudioBlob(audioBlob);
         stream.getTracks().forEach(track => track.stop());
         
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-        if (audioContextRef.current) {
-          audioContextRef.current.close();
+        // Stop animation
+        if (waveAnimationRef.current) {
+          clearInterval(waveAnimationRef.current);
         }
         setAudioLevel(0);
+        setFrequencyData(new Array(40).fill(8)); // Set to minimum height
       };
 
       mediaRecorder.start();
@@ -149,6 +169,14 @@ export function VoiceRecordingEnhanced({
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
+      
+      // Stop animation
+      if (waveAnimationRef.current) {
+        clearInterval(waveAnimationRef.current);
+      }
+      setFrequencyData(new Array(40).fill(8)); // Set to minimum height
+      setAudioLevel(0);
+      
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
@@ -162,6 +190,10 @@ export function VoiceRecordingEnhanced({
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
+      
+      // Restart animation
+      waveAnimationRef.current = setInterval(simulateWaveform, 50);
+      
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
@@ -176,6 +208,12 @@ export function VoiceRecordingEnhanced({
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
+      
+      // Stop animation
+      if (waveAnimationRef.current) {
+        clearInterval(waveAnimationRef.current);
+      }
+      
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -195,6 +233,10 @@ export function VoiceRecordingEnhanced({
     setCurrentSuggestionIndex(0);
     setProcessingState({ step: "idle", progress: 0, message: "" });
     setExtractedData(null);
+    setAudioLevel(0);
+    setFrequencyData(new Array(40).fill(8)); // Set to minimum height
+    
+    // Clear all timers
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -202,6 +244,10 @@ export function VoiceRecordingEnhanced({
     if (suggestionTimerRef.current) {
       clearInterval(suggestionTimerRef.current);
       suggestionTimerRef.current = null;
+    }
+    if (waveAnimationRef.current) {
+      clearInterval(waveAnimationRef.current);
+      waveAnimationRef.current = null;
     }
   };
 
@@ -245,7 +291,10 @@ export function VoiceRecordingEnhanced({
         message: "Extrayendo información de la propiedad...",
       });
 
-      const result = await processResponse.json() as { propertyData?: EnhancedExtractedPropertyData };
+      const result = await processResponse.json() as { 
+        propertyData?: EnhancedExtractedPropertyData;
+        extractedFields?: ExtractedFieldResult[];
+      };
 
       setProcessingState({
         step: "complete",
@@ -253,10 +302,11 @@ export function VoiceRecordingEnhanced({
         message: "¡Procesamiento completado!",
       });
 
-      if (result.propertyData) {
+      if (result.propertyData && result.extractedFields) {
         setExtractedData(result.propertyData);
-        // Call the parent callback with extracted data
-        onProcessingComplete(result.propertyData);
+        setExtractedFields(result.extractedFields);
+        // Show validation modal instead of directly calling callback
+        setShowValidationModal(true);
       }
 
       // Auto-reset after showing success
@@ -281,6 +331,37 @@ export function VoiceRecordingEnhanced({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Modal handlers
+  const handleModalConfirm = (confirmedData: EnhancedExtractedPropertyData) => {
+    setShowValidationModal(false);
+    onProcessingComplete(confirmedData);
+    
+    // Auto-reset after confirmation
+    setTimeout(() => {
+      resetRecording();
+    }, 1000);
+  };
+
+  const handleModalRetry = () => {
+    setShowValidationModal(false);
+    resetRecording();
+    if (onRetryRecording) {
+      onRetryRecording();
+    }
+  };
+
+  const handleModalManualEntry = () => {
+    setShowValidationModal(false);
+    resetRecording();
+    if (onManualEntry) {
+      onManualEntry();
+    }
+  };
+
+  const handleModalClose = () => {
+    setShowValidationModal(false);
+  };
+
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -288,6 +369,9 @@ export function VoiceRecordingEnhanced({
       }
       if (suggestionTimerRef.current) {
         clearInterval(suggestionTimerRef.current);
+      }
+      if (waveAnimationRef.current) {
+        clearInterval(waveAnimationRef.current);
       }
     };
   }, []);
@@ -303,13 +387,17 @@ export function VoiceRecordingEnhanced({
             <div className={cn(
               "mx-auto w-32 h-32 rounded-full flex items-center justify-center transition-all relative",
               isProcessing 
-                ? "bg-gradient-to-br from-blue-100 to-purple-200" 
+                ? "bg-gradient-to-br from-amber-100 to-rose-100" 
                 : isRecording 
-                ? "bg-gradient-to-br from-red-100 to-red-200 animate-pulse" 
+                ? "bg-gradient-to-br from-red-100 to-red-200" 
                 : audioBlob 
                 ? "bg-gradient-to-br from-green-100 to-green-200"
                 : "bg-gradient-to-br from-amber-100 to-rose-100"
             )}>
+              {/* Pulse effect for high audio levels */}
+              {isRecording && !isPaused && audioLevel > 0.6 && (
+                <div className="absolute inset-0 rounded-full animate-ping bg-amber-400/30 pointer-events-none" />
+              )}
               {isProcessing ? (
                 <>
                   <StepIcon className={cn(
@@ -337,7 +425,7 @@ export function VoiceRecordingEnhanced({
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                 <div 
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-amber-400 to-rose-400 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${processingState.progress}%` }}
                 />
               </div>
@@ -352,31 +440,38 @@ export function VoiceRecordingEnhanced({
             </div>
           )}
 
-          {/* Audio Visualization */}
+          {/* Enhanced Audio Visualization */}
           {isRecording && !isProcessing && (
-            <div className="mb-4 h-20 flex items-center justify-center gap-1">
-              {Array.from({ length: 40 }, (_, i) => {
-                const barHeight = isRecording && !isPaused
-                  ? Math.random() * audioLevel * 100 + 10
-                  : 10;
+            <div className="mb-4 h-20 flex items-end justify-center gap-0.5">
+              {frequencyData.map((height, i) => {
+                const isActive = isRecording && !isPaused;
+                const barHeight = isActive ? height : 8;
+                const delay = i * 20; // Stagger animation for wave effect
+                
                 return (
                   <div
                     key={i}
                     className={cn(
-                      "w-1 bg-gradient-to-t transition-all duration-100",
-                      isRecording && !isPaused
-                        ? "from-rose-400 to-amber-400"
-                        : "from-gray-300 to-gray-400"
+                      "w-1.5 rounded-t-sm transition-all duration-150 ease-out",
+                      isActive
+                        ? "bg-gradient-to-t from-rose-500 via-amber-400 to-yellow-300 shadow-sm"
+                        : "bg-gradient-to-t from-gray-400 to-gray-300"
                     )}
                     style={{
-                      height: `${barHeight}%`,
-                      transform: `scaleY(${isRecording && !isPaused ? 1 : 0.3})`,
+                      height: `${Math.max(barHeight, 8)}%`,
+                      transform: `scaleY(${isActive ? 1 : 0.4})`,
+                      animationDelay: `${delay}ms`,
+                      opacity: isActive ? 0.9 + (height / 500) : 0.6,
+                      boxShadow: isActive && height > 30 
+                        ? `0 0 ${height / 10}px rgba(251, 146, 60, 0.4)` 
+                        : 'none',
                     }}
                   />
                 );
               })}
             </div>
           )}
+
 
           {/* Status Message */}
           {!isProcessing && (
@@ -483,6 +578,16 @@ export function VoiceRecordingEnhanced({
 
         </div>
       </div>
+
+      {/* Voice Field Validation Modal */}
+      <VoiceFieldValidationModal
+        isOpen={showValidationModal}
+        onClose={handleModalClose}
+        extractedFields={extractedFields}
+        onConfirm={handleModalConfirm}
+        onRetry={handleModalRetry}
+        onManualEntry={handleModalManualEntry}
+      />
     </div>
   );
 }

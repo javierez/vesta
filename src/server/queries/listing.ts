@@ -14,7 +14,6 @@ import {
 import { eq, and, ne, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
-import { cache, cacheKeys } from "../../lib/cache";
 
 // Wrapper functions that automatically get accountId from current session
 // These maintain backward compatibility while adding account filtering
