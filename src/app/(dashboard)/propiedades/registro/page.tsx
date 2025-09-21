@@ -115,8 +115,10 @@ export default function CapturaPage() {
     }
   };
 
-  const handleFileUpload = () => {
-    console.log("Handle file upload");
+  const handleFileUpload = async (files: File[]) => {
+    console.log("Handling file upload:", files);
+    // Files are now handled directly by the FileUpload component
+    // which uploads them to the API and shows progress
   };
 
 

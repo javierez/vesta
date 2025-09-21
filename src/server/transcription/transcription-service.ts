@@ -103,35 +103,54 @@ export async function transcribeAudio(
     console.log(`   - Language: ${result.language}`);
     console.log(`   - Duration: ${result.duration || 'unknown'}s`);
     console.log(`   - Segments: ${result.segments?.length || 0}`);
+    
+    // Log the full transcript
+    console.log(`\n📝 [TRANSCRIPTION] Full transcript:`);
+    console.log(`=====================================`);
+    console.log(result.transcript);
+    console.log(`=====================================\n`);
 
     // Validate transcript quality
     if (!result.transcript || result.transcript.length < 10) {
-      throw new Error("Transcripción muy corta o vacía. Por favor, graba de nuevo con más claridad.");
+      console.warn(`⚠️ [TRANSCRIPTION] Transcripción muy corta: ${result.transcript.length} caracteres`);
+      // Devolver resultado con transcripción vacía pero con indicador de error
+      return {
+        ...result,
+        transcript: "", // Transcripción vacía para indicar que no hay contenido válido
+        confidence: 0,
+        error: "Transcripción muy corta o vacía. Por favor, graba de nuevo con más claridad."
+      } as TranscriptionResult & { error?: string };
     }
 
     if (result.confidence < 50) {
-      console.warn(`⚠️ [TRANSCRIPTION] Low confidence: ${result.confidence}%`);
+      console.warn(`⚠️ [TRANSCRIPTION] Confianza baja: ${result.confidence}%`);
     }
 
     return result;
 
   } catch (error) {
-    console.error("❌ [TRANSCRIPTION] Error transcribing audio:", error);
+    console.error("❌ [TRANSCRIPTION] Error al transcribir audio:", error);
+    
+    let errorMessage = "Error al transcribir el audio. Por favor, intenta de nuevo.";
     
     if (error instanceof Error) {
-      // Provide user-friendly error messages in Spanish
+      // Mensajes de error amigables en español
       if (error.message.includes("fetch")) {
-        throw new Error("Error al descargar el audio. Por favor, intenta de nuevo.");
-      }
-      if (error.message.includes("audio")) {
-        throw new Error("Formato de audio no válido. Por favor, graba de nuevo.");
-      }
-      if (error.message.includes("API")) {
-        throw new Error("Error del servicio de transcripción. Por favor, intenta más tarde.");
+        errorMessage = "Error al descargar el audio. Por favor, intenta de nuevo.";
+      } else if (error.message.includes("audio")) {
+        errorMessage = "Formato de audio no válido. Por favor, graba de nuevo.";
+      } else if (error.message.includes("API")) {
+        errorMessage = "Error del servicio de transcripción. Por favor, intenta más tarde.";
       }
     }
     
-    throw new Error("Error al transcribir el audio. Por favor, intenta de nuevo.");
+    // Devolver resultado con error en lugar de lanzar excepción
+    return {
+      transcript: "",
+      confidence: 0,
+      language: "es",
+      error: errorMessage
+    } as TranscriptionResult & { error?: string };
   }
 }
 
@@ -161,6 +180,14 @@ export async function transcribeRealEstateAudio(
 
   // Post-process the transcript for real estate specifics
   const enhancedTranscript = postProcessRealEstateTranscript(result.transcript);
+  
+  // Log the enhanced transcript if it's different
+  if (enhancedTranscript !== result.transcript) {
+    console.log(`\n🏠 [REAL-ESTATE-TRANSCRIPTION] Post-processed transcript:`);
+    console.log(`=====================================`);
+    console.log(enhancedTranscript);
+    console.log(`=====================================\n`);
+  }
   
   return {
     ...result,

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Check, X, Edit3, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Check, Loader2, Plus, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -10,12 +12,26 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
-import { Input } from "~/components/ui/input";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
-import { Card, CardContent } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
+import { Input } from "~/components/ui/input";
+import { cn } from "~/lib/utils";
 import type { ExtractedFieldResult, EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
+import { saveVoiceProperty } from "~/server/queries/forms/voice/save-voice-property";
+import { searchContactsForFormWithAuth } from "~/server/queries/contact";
+import ContactPopup from "~/components/crear/pages/contact-popup";
+
+// Type definitions for contact selection
+interface Contact {
+  id: number;
+  name: string;
+}
+
+interface NewContact {
+  contactId: number | string;
+  firstName: string;
+  lastName: string;
+}
 
 // Spanish field labels mapping
 const FIELD_LABELS: Record<string, string> = {
@@ -54,6 +70,7 @@ const FIELD_LABELS: Record<string, string> = {
   garden: "Jardín",
   gym: "Gimnasio",
   communityPool: "Piscina Comunitaria",
+  privatePool: "Piscina Privada",
 
   // Property Condition
   furnished: "Amueblado",
@@ -65,48 +82,29 @@ const FIELD_LABELS: Record<string, string> = {
   openKitchen: "Cocina Abierta",
   furnishedKitchen: "Cocina Amueblada",
 
-  // Pricing (listings table)
+  // Appliances
+  oven: "Horno",
+  microwave: "Microondas",
+  washingMachine: "Lavadora",
+  fridge: "Frigorífico",
+  tv: "Televisión",
+  dishwasher: "Lavavajillas",
+  stoneware: "Vajilla",
+  appliancesIncluded: "Electrodomésticos Incluidos",
+
+  // Listing Details
   price: "Precio",
   listingType: "Tipo de Operación",
   isFurnished: "Amueblado",
+  hasKeys: "Con Llaves",
+  petsAllowed: "Mascotas Permitidas",
+  studentFriendly: "Para Estudiantes",
+  internet: "Internet",
 
   // Additional
   orientation: "Orientación",
   airConditioningType: "Aire Acondicionado",
-};
-
-// Field categories for better organization
-const FIELD_CATEGORIES = {
-  basic: {
-    label: "Información Básica",
-    fields: ["title", "description", "propertyType", "propertySubtype"],
-    icon: "🏠",
-  },
-  specifications: {
-    label: "Especificaciones",
-    fields: ["bedrooms", "bathrooms", "squareMeter", "builtSurfaceArea", "yearBuilt"],
-    icon: "📐",
-  },
-  location: {
-    label: "Ubicación",
-    fields: ["street", "addressDetails", "postalCode"],
-    icon: "📍",
-  },
-  pricing: {
-    label: "Precio",
-    fields: ["price", "listingType"],
-    icon: "💰",
-  },
-  features: {
-    label: "Características",
-    fields: ["hasElevator", "hasGarage", "hasStorageRoom", "terrace", "pool", "garden", "furnished", "airConditioningType"],
-    icon: "✨",
-  },
-  technical: {
-    label: "Información Técnica",
-    fields: ["energyConsumptionScale", "conservationStatus", "orientation"],
-    icon: "🔧",
-  },
+  heatingType: "Tipo de Calefacción",
 };
 
 interface VoiceFieldValidationModalProps {
@@ -114,8 +112,6 @@ interface VoiceFieldValidationModalProps {
   onClose: () => void;
   extractedFields: ExtractedFieldResult[];
   onConfirm: (confirmedData: EnhancedExtractedPropertyData) => void;
-  onRetry: () => void;
-  onManualEntry: () => void;
 }
 
 export function VoiceFieldValidationModal({
@@ -123,36 +119,111 @@ export function VoiceFieldValidationModal({
   onClose,
   extractedFields,
   onConfirm,
-  onRetry,
-  onManualEntry,
 }: VoiceFieldValidationModalProps) {
-  const [editableFields, setEditableFields] = useState<ExtractedFieldResult[]>(extractedFields);
-  const [showLowConfidence, setShowLowConfidence] = useState(true);
-  const [editingField, setEditingField] = useState<string | null>(null);
+  // Initialize all fields as checked
+  const [checkedFields, setCheckedFields] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  
+  // Contact selection state
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+  const [contactSearch, setContactSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<Contact[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [showContactPopup, setShowContactPopup] = useState(false);
 
-  // Filter fields by confidence
-  const filteredFields = showLowConfidence 
-    ? editableFields 
-    : editableFields.filter(field => field.confidence >= 60);
+  // Initialize checked fields when modal opens or fields change
+  useEffect(() => {
+    if (isOpen && extractedFields.length > 0) {
+      const allFieldIds = extractedFields.map(field => `${field.dbTable}.${field.dbColumn}`);
+      setCheckedFields(new Set(allFieldIds));
+    }
+  }, [isOpen, extractedFields]);
 
-  // Group fields by category
-  const groupedFields = Object.entries(FIELD_CATEGORIES).map(([key, category]) => {
-    const categoryFields = filteredFields.filter(field => 
-      category.fields.includes(field.dbColumn)
-    );
-    return {
-      ...category,
-      key,
-      fields: categoryFields,
+  // Debounced contact search
+  const performContactSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const results = await searchContactsForFormWithAuth(query, 6);
+      setSearchResults(results.map(contact => ({
+        id: Number(contact.id),
+        name: contact.name,
+      })));
+    } catch (error) {
+      console.error("Error searching contacts:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Handle search input with debouncing
+  const handleContactSearchChange = useCallback((value: string) => {
+    setContactSearch(value);
+    
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    // Set new timeout for debounced search
+    const timeout = setTimeout(() => {
+      void performContactSearch(value);
+    }, 300);
+    
+    setSearchTimeout(timeout);
+  }, [searchTimeout, performContactSearch]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
     };
-  }).filter(category => category.fields.length > 0);
+  }, [searchTimeout]);
 
+  // Helper function to toggle contact selection
+  const toggleContact = (contactId: string) => {
+    if (selectedContactIds.includes(contactId)) {
+      setSelectedContactIds(selectedContactIds.filter(id => id !== contactId));
+    } else {
+      setSelectedContactIds([...selectedContactIds, contactId]);
+    }
+  };
 
-  // Get confidence badge variant
-  const getConfidenceBadge = (confidence: number) => {
-    if (confidence >= 80) return "default";
-    if (confidence >= 60) return "secondary";
-    return "destructive";
+  const handleContactCreated = (contact: unknown) => {
+    console.log("New contact created:", contact);
+
+    // Type guard to check if contact has the expected properties
+    const isValidContact = (obj: unknown): obj is NewContact => {
+      return (
+        typeof obj === "object" &&
+        obj !== null &&
+        "contactId" in obj &&
+        "firstName" in obj &&
+        "lastName" in obj
+      );
+    };
+
+    // Immediately add the new contact to search results for instant UI update
+    if (isValidContact(contact)) {
+      const newContactForList: Contact = {
+        id: Number(contact.contactId),
+        name: `${contact.firstName} ${contact.lastName}`,
+      };
+
+      setSearchResults((prev) => [newContactForList, ...prev].slice(0, 6));
+
+      // Auto-select the new contact
+      setSelectedContactIds([...selectedContactIds, contact.contactId.toString()]);
+    }
   };
 
   // Format field value for display
@@ -160,6 +231,7 @@ export function VoiceFieldValidationModal({
     if (typeof field.value === "boolean") {
       return field.value ? "Sí" : "No";
     }
+    
     if (field.dbColumn === "price" && typeof field.value === "number") {
       return field.value.toLocaleString("es-ES", {
         style: "currency",
@@ -167,245 +239,287 @@ export function VoiceFieldValidationModal({
         minimumFractionDigits: 0,
       });
     }
+    
     if ((field.dbColumn === "squareMeter" || field.dbColumn === "builtSurfaceArea") && typeof field.value === "number") {
       return `${field.value} m²`;
     }
+    
+    if (field.dbColumn === "bedrooms" && typeof field.value === "number") {
+      return `${field.value} dormitorio${field.value !== 1 ? 's' : ''}`;
+    }
+    
+    if (field.dbColumn === "bathrooms" && typeof field.value === "number") {
+      return `${field.value} baño${field.value !== 1 ? 's' : ''}`;
+    }
+    
+    if (field.dbColumn === "yearBuilt" && typeof field.value === "number") {
+      return `Año ${field.value}`;
+    }
+    
+    if (field.dbColumn === "listingType" && typeof field.value === "string") {
+      const typeMap: Record<string, string> = {
+        "Sale": "Venta",
+        "Rent": "Alquiler", 
+        "RentWithOption": "Alquiler con Opción",
+        "Transfer": "Traspaso",
+        "RoomSharing": "Compartir Habitación"
+      };
+      return typeMap[field.value] || field.value;
+    }
+    
+    if (field.dbColumn === "propertyType" && typeof field.value === "string") {
+      const typeMap: Record<string, string> = {
+        "piso": "Piso",
+        "casa": "Casa",
+        "chalet": "Chalet",
+        "apartamento": "Apartamento",
+        "local": "Local",
+        "garaje": "Garaje",
+        "estudio": "Estudio",
+        "loft": "Loft",
+        "dúplex": "Dúplex",
+        "ático": "Ático"
+      };
+      return typeMap[field.value] || field.value;
+    }
+    
+    if (field.dbColumn === "energyConsumptionScale" && typeof field.value === "string") {
+      return `Certificado ${field.value}`;
+    }
+    
+    if (field.dbColumn === "conservationStatus" && typeof field.value === "number") {
+      const statusMap: Record<number, string> = {
+        1: "Excelente",
+        2: "Bueno", 
+        3: "Regular",
+        4: "Malo",
+        6: "Obra Nueva"
+      };
+      return statusMap[field.value] || field.value.toString();
+    }
+    
+    if (field.dbColumn === "orientation" && typeof field.value === "string") {
+      const orientationMap: Record<string, string> = {
+        "norte": "Norte",
+        "sur": "Sur",
+        "este": "Este", 
+        "oeste": "Oeste",
+        "noreste": "Noreste",
+        "noroeste": "Noroeste",
+        "sureste": "Sureste",
+        "suroeste": "Suroeste"
+      };
+      return orientationMap[field.value] || field.value;
+    }
+    
     return String(field.value);
   };
 
-  // Handle field edit
-  const handleFieldEdit = (fieldId: string, newValue: string) => {
-    setEditableFields(prev =>
-      prev.map(field => {
-        if (`${field.dbTable}.${field.dbColumn}` === fieldId) {
-          let convertedValue: string | number | boolean = newValue;
-          
-          // Convert based on field type
-          if (field.fieldType === "number") {
-            convertedValue = parseFloat(newValue) || 0;
-          } else if (field.fieldType === "boolean") {
-            convertedValue = newValue.toLowerCase() === "sí" || newValue.toLowerCase() === "si";
-          }
-
-          return {
-            ...field,
-            value: convertedValue,
-          };
-        }
-        return field;
-      })
-    );
+  // Handle checkbox toggle
+  const handleCheckboxChange = (fieldId: string, checked: boolean) => {
+    setCheckedFields(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(fieldId);
+      } else {
+        newSet.delete(fieldId);
+      }
+      return newSet;
+    });
   };
 
-  // Remove field
-  const handleRemoveField = (fieldId: string) => {
-    setEditableFields(prev =>
-      prev.filter(field => `${field.dbTable}.${field.dbColumn}` !== fieldId)
-    );
-  };
-
-  // Build final data object
+  // Build final data object with only checked fields
   const buildConfirmedData = (): EnhancedExtractedPropertyData => {
     const data: EnhancedExtractedPropertyData = {};
-    editableFields.forEach(field => {
-      if (field.dbTable === "properties") {
+    extractedFields.forEach(field => {
+      const fieldId = `${field.dbTable}.${field.dbColumn}`;
+      if (checkedFields.has(fieldId) && field.dbTable === "properties") {
         (data as Record<string, unknown>)[field.dbColumn] = field.value;
       }
     });
     return data;
   };
 
-  // Handle confirm
-  const handleConfirm = () => {
-    const confirmedData = buildConfirmedData();
-    onConfirm(confirmedData);
-  };
-
-  // Statistics
-  const stats = {
-    total: editableFields.length,
-    highConfidence: editableFields.filter(f => f.confidence >= 80).length,
-    mediumConfidence: editableFields.filter(f => f.confidence >= 60 && f.confidence < 80).length,
-    lowConfidence: editableFields.filter(f => f.confidence < 60).length,
-    avgConfidence: editableFields.length > 0 
-      ? Math.round(editableFields.reduce((sum, f) => sum + f.confidence, 0) / editableFields.length)
-      : 0,
+  // Handle confirm and create property
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Validate contact selection
+      if (selectedContactIds.length === 0) {
+        toast.error("Por favor, selecciona al menos un contacto.");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Filter only checked fields
+      const fieldsToSave = extractedFields.filter(field => {
+        const fieldId = `${field.dbTable}.${field.dbColumn}`;
+        return checkedFields.has(fieldId);
+      });
+      
+      // Save property with voice data and contact IDs
+      const result = await saveVoiceProperty(fieldsToSave, selectedContactIds);
+      
+      if (result.success && result.propertyId) {
+        toast.success("Propiedad creada exitosamente");
+        
+        // Call the original onConfirm for compatibility
+        const confirmedData = buildConfirmedData();
+        onConfirm(confirmedData);
+        
+        // Redirect to property detail page
+        if (result.listingId) {
+          router.push(`/propiedades/${result.listingId}`);
+        } else {
+          router.push("/propiedades");
+        }
+      } else {
+        toast.error(result.error || "Error al crear la propiedad");
+      }
+    } catch (error) {
+      console.error("Error creating property:", error);
+      toast.error("Error al crear la propiedad");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-amber-400 to-rose-400 text-white p-2 rounded-lg">
-              🎤
-            </div>
-            <div>
-              <div className="text-xl font-semibold">Datos Extraídos de Grabación</div>
-              <div className="text-sm text-gray-600 font-normal">
-                Revisa y confirma la información detectada automáticamente
-              </div>
-            </div>
+          <DialogTitle className="text-lg font-medium">
+            Campos identificados
           </DialogTitle>
         </DialogHeader>
 
-        {/* Statistics Bar */}
-        <div className="bg-gradient-to-br from-amber-50 to-rose-50 rounded-lg p-4 space-y-3">
+        {/* Contact Selection Section */}
+        <div className="space-y-3 border-b pb-4">
           <div className="flex items-center justify-between">
-            <div className="flex gap-4 text-sm">
-              <span className="font-medium">Total: {stats.total} campos</span>
-              <span className="font-medium">Confianza promedio: {stats.avgConfidence}%</span>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowLowConfidence(!showLowConfidence)}
-                className="h-8 px-3"
-              >
-                {showLowConfidence ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                {showLowConfidence ? "Ocultar baja confianza" : "Mostrar todos"}
-              </Button>
-            </div>
+            <h3 className="text-md font-medium text-gray-900">Contactos</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex h-8 items-center space-x-2"
+              onClick={() => setShowContactPopup(true)}
+            >
+              <Plus className="h-3 w-3" />
+              <span>Agregar</span>
+            </Button>
           </div>
-          <div className="flex gap-2">
-            <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-200">
-              Alta: {stats.highConfidence}
-            </Badge>
-            <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200">
-              Media: {stats.mediumConfidence}
-            </Badge>
-            <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200">
-              Baja: {stats.lowConfidence}
-            </Badge>
+
+          {/* Contact Search */}
+          <Input
+            placeholder="Escribe para buscar contactos..."
+            value={contactSearch}
+            onChange={(e) => handleContactSearchChange(e.target.value)}
+            className="h-10 border-0 shadow-md"
+          />
+
+          {/* Contact List */}
+          <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg p-2 shadow-md">
+            {isSearching ? (
+              <p className="py-3 text-center text-sm text-gray-500">
+                Buscando contactos...
+              </p>
+            ) : searchResults.length === 0 && contactSearch.trim() ? (
+              <p className="py-3 text-center text-sm text-gray-500">
+                No se encontraron contactos
+              </p>
+            ) : searchResults.length === 0 ? (
+              <p className="py-3 text-center text-sm text-gray-500">
+                Escribe para buscar contactos
+              </p>
+            ) : (
+              searchResults.map((contact: Contact) => (
+                <div
+                  key={contact.id}
+                  className={cn(
+                    "flex cursor-pointer items-center space-x-2 rounded-md p-2 transition-colors",
+                    selectedContactIds.includes(contact.id.toString())
+                      ? "bg-gray-100"
+                      : "hover:bg-gray-50",
+                  )}
+                  onClick={() => toggleContact(contact.id.toString())}
+                >
+                  <User className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm font-medium">{contact.name}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        {/* Fields by Category */}
-        <div className="flex-1 overflow-y-auto space-y-4">
-          {groupedFields.length === 0 ? (
-            <div className="text-center py-12">
-              <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-              <p className="text-gray-600">No se encontraron campos que mostrar</p>
-              <p className="text-sm text-gray-500 mt-2">
-                {showLowConfidence ? "No hay campos extraídos" : "Todos los campos tienen baja confianza"}
-              </p>
+        {/* Fields Checklist */}
+        <div className="flex-1 overflow-y-auto py-4">
+          {extractedFields.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              No se encontraron campos
             </div>
           ) : (
-            groupedFields.map((category) => (
-              <Card key={category.key} className="border-gray-200">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">{category.icon}</span>
-                    <h3 className="font-semibold text-gray-900">{category.label}</h3>
-                    <Badge variant="outline" className="ml-auto">
-                      {category.fields.length}
-                    </Badge>
+            <div className="space-y-2">
+              {extractedFields.map((field) => {
+                const fieldId = `${field.dbTable}.${field.dbColumn}`;
+                const isChecked = checkedFields.has(fieldId);
+                
+                return (
+                  <div
+                    key={fieldId}
+                    className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <Checkbox
+                      id={fieldId}
+                      checked={isChecked}
+                      onCheckedChange={(checked) => 
+                        handleCheckboxChange(fieldId, checked as boolean)
+                      }
+                    />
+                    <Label
+                      htmlFor={fieldId}
+                      className="flex-1 flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="text-sm font-normal text-gray-600">
+                        {FIELD_LABELS[field.dbColumn] || field.dbColumn}
+                      </span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {formatFieldValue(field)}
+                      </span>
+                    </Label>
                   </div>
-                  <div className="space-y-3">
-                    {category.fields.map((field) => {
-                      const fieldId = `${field.dbTable}.${field.dbColumn}`;
-                      const isEditing = editingField === fieldId;
-                      return (
-                        <div
-                          key={fieldId}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Label className="text-sm font-medium text-gray-700">
-                                {FIELD_LABELS[field.dbColumn] ?? field.dbColumn}
-                              </Label>
-                              <Badge
-                                variant={getConfidenceBadge(field.confidence)}
-                                className="h-5 text-xs"
-                              >
-                                {Math.round(field.confidence)}%
-                              </Badge>
-                              <Badge variant="outline" className="h-5 text-xs">
-                                {field.extractionSource === "gpt4" ? "IA" : "Patrón"}
-                              </Badge>
-                            </div>
-                            {isEditing ? (
-                              <Input
-                                value={String(field.value)}
-                                onChange={(e) => handleFieldEdit(fieldId, e.target.value)}
-                                onBlur={() => setEditingField(null)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") setEditingField(null);
-                                  if (e.key === "Escape") setEditingField(null);
-                                }}
-                                autoFocus
-                                className="h-8"
-                              />
-                            ) : (
-                              <div className="font-medium text-gray-900">
-                                {formatFieldValue(field)}
-                              </div>
-                            )}
-                            {field.originalText && (
-                              <div className="text-xs text-gray-500 mt-1 truncate">
-                                &quot;{field.originalText}&quot;
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingField(isEditing ? null : fieldId)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveField(fieldId)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                );
+              })}
+            </div>
           )}
         </div>
 
-        <Separator />
-
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <div className="flex gap-2 flex-1">
-            <Button
-              variant="outline"
-              onClick={onRetry}
-              className="flex-1 sm:flex-initial"
-            >
-              🎤 Volver a Grabar
-            </Button>
-            <Button
-              variant="outline"
-              onClick={onManualEntry}
-              className="flex-1 sm:flex-initial"
-            >
-              ✏️ Entrada Manual
-            </Button>
-          </div>
+        <DialogFooter className="pt-4 border-t">
           <Button
             onClick={handleConfirm}
-            disabled={editableFields.length === 0}
-            className="bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white flex-1 sm:flex-initial"
+            disabled={checkedFields.size === 0 || isLoading}
+            className="w-full sm:w-auto"
           >
-            <Check className="h-4 w-4 mr-2" />
-            Confirmar y Continuar ({stats.total} campos)
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creando...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Crear Propiedad
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Contact Creation Popup */}
+      <ContactPopup
+        isOpen={showContactPopup}
+        onClose={() => setShowContactPopup(false)}
+        onContactCreated={handleContactCreated}
+      />
     </Dialog>
   );
 }

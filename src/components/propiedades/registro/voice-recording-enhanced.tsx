@@ -14,7 +14,6 @@ import {
   Brain,
   CheckCircle2,
   AlertCircle,
-  Loader2,
 } from "lucide-react";
 import type { EnhancedExtractedPropertyData, ExtractedFieldResult } from "~/types/textract-enhanced";
 import { VoiceFieldValidationModal } from "~/components/forms/voice";
@@ -271,8 +270,41 @@ export function VoiceRecordingEnhanced({
         body: formData,
       });
 
-      if (!processResponse.ok) {
-        throw new Error("Error processing audio");
+      // Primero obtener el resultado JSON
+      const result = await processResponse.json() as { 
+        propertyData?: EnhancedExtractedPropertyData;
+        extractedFields?: ExtractedFieldResult[];
+        error?: string;
+        errorStep?: string;
+        details?: string;
+      };
+
+      // Verificar si la respuesta no es OK o si hay un error en el resultado
+      if (!processResponse.ok || result.error) {
+        const errorMessage = result.error || "Error al procesar el audio";
+        const errorDetails = result.details || "";
+        
+        console.error("Error del servidor:", errorMessage, errorDetails);
+        
+        // Mostrar error específico según el paso donde falló
+        let userMessage = errorMessage;
+        if (result.errorStep === "transcription") {
+          userMessage = "No se pudo transcribir el audio. " + errorMessage;
+        } else if (result.errorStep === "upload") {
+          userMessage = "Error al subir el archivo. " + errorMessage;
+        } else if (result.errorStep === "extraction") {
+          userMessage = "Error al extraer los datos. " + errorMessage;
+        }
+        
+        setProcessingState({
+          step: "error",
+          progress: 0,
+          message: userMessage,
+          error: errorDetails || errorMessage,
+        });
+        
+        // No lanzar error, simplemente retornar para que el usuario pueda reintentar
+        return;
       }
 
       // Update states as we receive progress
@@ -290,11 +322,6 @@ export function VoiceRecordingEnhanced({
         progress: 75,
         message: "Extrayendo información de la propiedad...",
       });
-
-      const result = await processResponse.json() as { 
-        propertyData?: EnhancedExtractedPropertyData;
-        extractedFields?: ExtractedFieldResult[];
-      };
 
       setProcessingState({
         step: "complete",
@@ -342,24 +369,9 @@ export function VoiceRecordingEnhanced({
     }, 1000);
   };
 
-  const handleModalRetry = () => {
-    setShowValidationModal(false);
-    resetRecording();
-    if (onRetryRecording) {
-      onRetryRecording();
-    }
-  };
-
-  const handleModalManualEntry = () => {
-    setShowValidationModal(false);
-    resetRecording();
-    if (onManualEntry) {
-      onManualEntry();
-    }
-  };
-
   const handleModalClose = () => {
     setShowValidationModal(false);
+    resetRecording();
   };
 
   useEffect(() => {
@@ -399,15 +411,20 @@ export function VoiceRecordingEnhanced({
                 <div className="absolute inset-0 rounded-full animate-ping bg-amber-400/30 pointer-events-none" />
               )}
               {isProcessing ? (
-                <>
+                <div className="relative">
                   <StepIcon className={cn(
-                    "h-16 w-16 transition-colors",
-                    PROCESSING_STEPS[processingState.step].color
+                    "h-16 w-16 transition-all duration-500 z-10 relative",
+                    PROCESSING_STEPS[processingState.step].color,
+                    processingState.step !== "complete" && processingState.step !== "error" && "animate-pulse scale-110"
                   )} />
                   {processingState.step !== "complete" && processingState.step !== "error" && (
-                    <Loader2 className="absolute h-32 w-32 animate-spin text-gray-300" />
+                    <>
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-300/20 to-rose-300/20 animate-pulse" />
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400/30 to-rose-400/30 animate-ping" />
+                      <div className="absolute -inset-2 rounded-full bg-gradient-to-br from-amber-200/10 to-rose-200/10 animate-pulse" style={{ animationDelay: "0.5s" }} />
+                    </>
                   )}
-                </>
+                </div>
               ) : (
                 <Mic className={cn(
                   "h-16 w-16 transition-colors",
@@ -418,20 +435,28 @@ export function VoiceRecordingEnhanced({
           </div>
 
           {/* Timer or Processing Status */}
-          {isProcessing ? (
+          {(isProcessing || processingState.step === "error") ? (
             <div className="mb-6">
-              <div className="text-2xl font-semibold text-gray-900 mb-2">
+              <div className={cn(
+                "text-2xl font-semibold mb-2",
+                processingState.step === "error" ? "text-red-600" : "text-gray-900"
+              )}>
                 {PROCESSING_STEPS[processingState.step].label}
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                <div 
-                  className="bg-gradient-to-r from-amber-400 to-rose-400 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${processingState.progress}%` }}
-                />
-              </div>
-              <p className="text-sm text-gray-600">{processingState.message}</p>
-              {processingState.error && (
-                <p className="text-sm text-red-600 mt-2">{processingState.error}</p>
+              {processingState.step !== "error" && (
+                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                  <div 
+                    className="bg-gradient-to-r from-amber-400 to-rose-400 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${processingState.progress}%` }}
+                  />
+                </div>
+              )}
+              <p className={cn(
+                "text-sm",
+                processingState.step === "error" ? "text-red-600 font-medium" : "text-gray-600"
+              )}>{processingState.message}</p>
+              {processingState.error && processingState.error !== processingState.message && (
+                <p className="text-xs text-red-500 mt-2 italic">{processingState.error}</p>
               )}
             </div>
           ) : (
@@ -566,13 +591,37 @@ export function VoiceRecordingEnhanced({
 
           {/* Retry button for errors */}
           {processingState.step === "error" && (
-            <div className="mt-6">
-              <button
-                onClick={resetRecording}
-                className="px-6 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all"
-              >
-                Intentar de nuevo
-              </button>
+            <div className="mt-6 space-y-3">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-red-800 font-medium mb-1">
+                      No se pudo procesar la grabación
+                    </p>
+                    <p className="text-xs text-red-600">
+                      Intenta grabar de nuevo con voz clara y asegúrate de mencionar los detalles de la propiedad
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={resetRecording}
+                  className="px-6 py-2.5 bg-gradient-to-r from-amber-400 to-rose-400 text-white rounded-full font-medium hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg flex items-center gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Intentar de nuevo
+                </button>
+                {onManualEntry && (
+                  <button
+                    onClick={onManualEntry}
+                    className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-all flex items-center gap-2"
+                  >
+                    Entrada manual
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -585,8 +634,6 @@ export function VoiceRecordingEnhanced({
         onClose={handleModalClose}
         extractedFields={extractedFields}
         onConfirm={handleModalConfirm}
-        onRetry={handleModalRetry}
-        onManualEntry={handleModalManualEntry}
       />
     </div>
   );

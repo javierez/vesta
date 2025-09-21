@@ -6,23 +6,55 @@ import { initializeAccountRoles } from "./account-roles";
 // Create a new account
 export async function createAccount(data: {
   name: string;
+  shortName?: string | null;
+  legalName?: string | null;
+  logo?: string | null;
   email?: string | null;
   phone?: string | null;
   website?: string | null;
   address?: string | null;
+  taxId?: string | null;
+  registryDetails?: string | null;
+  legalEmail?: string | null;
+  jurisdiction?: string | null;
+  privacyEmail?: string | null;
+  dpoEmail?: string | null;
+  portalSettings?: Record<string, unknown> | null;
+  paymentSettings?: Record<string, unknown> | null;
+  preferences?: Record<string, unknown> | null;
   plan?: string | null;
+  subscriptionType?: string | null;
   subscriptionStatus?: string | null;
+  subscriptionStartDate?: Date | null;
+  subscriptionEndDate?: Date | null;
+  status?: string | null;
   isActive?: boolean | null;
 }) {
   try {
     const [result] = await db.insert(accounts).values({
       name: data.name,
+      shortName: data.shortName ?? null,
+      legalName: data.legalName ?? null,
+      logo: data.logo ?? null,
       email: data.email ?? null,
       phone: data.phone ?? null,
       website: data.website ?? null,
       address: data.address ?? null,
+      taxId: data.taxId ?? null,
+      registryDetails: data.registryDetails ?? null,
+      legalEmail: data.legalEmail ?? null,
+      jurisdiction: data.jurisdiction ?? null,
+      privacyEmail: data.privacyEmail ?? null,
+      dpoEmail: data.dpoEmail ?? null,
+      portalSettings: data.portalSettings ?? {},
+      paymentSettings: data.paymentSettings ?? {},
+      preferences: data.preferences ?? {},
       plan: data.plan ?? "basic",
+      subscriptionType: data.subscriptionType ?? null,
       subscriptionStatus: data.subscriptionStatus ?? "active",
+      subscriptionStartDate: data.subscriptionStartDate ?? null,
+      subscriptionEndDate: data.subscriptionEndDate ?? null,
+      status: data.status ?? "active",
       isActive: data.isActive ?? true,
     }).$returningId();
 

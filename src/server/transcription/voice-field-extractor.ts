@@ -49,19 +49,12 @@ export async function extractPropertyDataFromVoice(
 
   // Step 1: Use GPT-4 for intelligent extraction
   const gptExtractedFields = await extractWithGPT4(voiceInput);
-  
-  // Step 2: Apply pattern-based extraction as fallback/enhancement
-  const patternExtractedFields = extractFromVoicePatterns(voiceInput.transcript);
-  
-  // Step 3: Merge and consolidate results
-  const allResults = [...gptExtractedFields, ...patternExtractedFields];
-  const consolidatedResults = consolidateVoiceResults(allResults);
 
-  // Step 4: Separate property and listing data
-  const propertyFields = consolidatedResults.filter(r => r.dbTable === "properties");
-  const listingFields = consolidatedResults.filter(r => r.dbTable === "listings");
+  // Step 2: Separate property and listing data
+  const propertyFields = gptExtractedFields.filter(r => r.dbTable === "properties");
+  const listingFields = gptExtractedFields.filter(r => r.dbTable === "listings");
 
-  // Step 5: Build structured data objects
+  // Step 3: Build structured data objects
   const propertyData: EnhancedExtractedPropertyData = {};
   const listingData: EnhancedExtractedListingData = {};
 
@@ -79,13 +72,13 @@ export async function extractPropertyDataFromVoice(
   };
 
   console.log(`✅ [VOICE-EXTRACTION] Extraction completed:`);
-  console.log(`   - Total fields extracted: ${consolidatedResults.length}`);
+  console.log(`   - Total fields extracted: ${gptExtractedFields.length}`);
   console.log(`   - Property fields: ${propertyFields.length}`);
   console.log(`   - Listing fields: ${listingFields.length}`);
-  console.log(`   - Average confidence: ${(consolidatedResults.reduce((sum, r) => sum + r.confidence, 0) / consolidatedResults.length).toFixed(1)}%`);
+  console.log(`   - Average confidence: ${(gptExtractedFields.reduce((sum, r) => sum + r.confidence, 0) / gptExtractedFields.length).toFixed(1)}%`);
 
   return {
-    extractedFields: consolidatedResults,
+    extractedFields: gptExtractedFields,
     propertyData,
     listingData,
     completeData,
@@ -93,49 +86,140 @@ export async function extractPropertyDataFromVoice(
 }
 
 /**
- * Use GPT-4 for intelligent, context-aware property data extraction
+ * Use GPT-4 with multiple specialized function calls for intelligent, structured property data extraction
  */
 async function extractWithGPT4(voiceInput: VoiceExtractionInput): Promise<ExtractedFieldResult[]> {
-  console.log(`🤖 [GPT4-EXTRACTION] Starting GPT-4 extraction...`);
+  console.log(`🤖 [GPT4-FUNCTION-CALLING] Starting multi-function GPT-4 extraction...`);
 
-  // Build field mappings prompt
-  const fieldMappingsPrompt = ALL_FIELD_MAPPINGS
-    .map(mapping => `- ${mapping.dbColumn} (${mapping.dbTable}): ${mapping.aliases.slice(0, 3).join(", ")}`)
-    .join("\n");
+  // Define multiple extraction functions for different categories
+  const extractionFunctions = [
+    {
+      name: "extract_basic_property_info",
+      description: "Extract basic property information like type, size, rooms, and location",
+      parameters: {
+        type: "object",
+        properties: {
+          property_type: { type: "string", description: "Type of property (piso, casa, chalet, apartamento, local, garaje, estudio, loft, dúplex, ático)" },
+          bedrooms: { type: "integer", minimum: 0, maximum: 10, description: "Number of bedrooms/habitaciones" },
+          bathrooms: { type: "number", minimum: 0, maximum: 10, description: "Number of bathrooms/baños (can be decimal like 1.5)" },
+          square_meter: { type: "number", minimum: 1, maximum: 10000, description: "Total square meters/metros cuadrados" },
+          year_built: { type: "integer", minimum: 1800, maximum: 2030, description: "Year the property was built" },
+          street: { type: "string", description: "Street address/calle where the property is located" },
+          postal_code: { type: "string", pattern: "^\\d{5}$", description: "5-digit postal code" },
+          city: { type: "string", description: "City/ciudad name" },
+          province: { type: "string", description: "Province/provincia name" },
+          orientation: { type: "string", enum: ["norte", "sur", "este", "oeste", "noreste", "noroeste", "sureste", "suroeste"], description: "Property orientation" },
+          original_text: { type: "string", description: "Original text snippet where this information was found" },
+          confidence: { type: "integer", minimum: 1, maximum: 100, description: "Confidence level (1-100)" }
+        },
+        required: ["original_text", "confidence"]
+      }
+    },
+    {
+      name: "extract_listing_details",
+      description: "Extract listing information like price, operation type, and availability",
+      parameters: {
+        type: "object",
+        properties: {
+          listing_type: { type: "string", enum: ["Sale", "Rent", "RentWithOption", "Transfer", "RoomSharing"], description: "Type of listing operation (Sale=venta, Rent=alquiler, RentWithOption=alquiler con opción a compra, Transfer=traspaso, RoomSharing=compartir habitación)" },
+          price: { type: "number", minimum: 0, description: "Price in euros (remove currency symbols)" },
+          is_furnished: { type: "boolean", description: "Whether the property comes furnished/amueblado" },
+          has_keys: { type: "boolean", description: "Whether keys are available/con llaves" },
+          pets_allowed: { type: "boolean", description: "Whether pets are allowed/mascotas permitidas" },
+          student_friendly: { type: "boolean", description: "Whether suitable for students/para estudiantes" },
+          internet: { type: "boolean", description: "Whether internet/WiFi is included" },
+          original_text: { type: "string", description: "Original text snippet where this information was found" },
+          confidence: { type: "integer", minimum: 1, maximum: 100, description: "Confidence level (1-100)" }
+        },
+        required: ["original_text", "confidence"]
+      }
+    },
+    {
+      name: "extract_property_features",
+      description: "Extract property features and amenities like elevator, garage, pool, etc.",
+      parameters: {
+        type: "object",
+        properties: {
+          has_elevator: { type: "boolean", description: "Whether the property has elevator/ascensor - ONLY include if explicitly mentioned" },
+          has_garage: { type: "boolean", description: "Whether the property has garage/parking - ONLY include if explicitly mentioned" },
+          has_storage_room: { type: "boolean", description: "Whether the property has storage room/trastero - ONLY include if explicitly mentioned" },
+          terrace: { type: "boolean", description: "Whether the property has terrace/terraza - ONLY include if explicitly mentioned" },
+          community_pool: { type: "boolean", description: "Whether the property has community pool/piscina comunitaria - ONLY include if explicitly mentioned" },
+          private_pool: { type: "boolean", description: "Whether the property has private pool/piscina privada - ONLY include if explicitly mentioned" },
+          garden: { type: "boolean", description: "Whether the property has garden/jardín - ONLY include if explicitly mentioned" },
+          air_conditioning_type: { type: "string", enum: ["individual", "centralizado", "no"], description: "Type of air conditioning/aire acondicionado" },
+          heating_type: { type: "string", enum: ["individual", "centralizado", "gas", "eléctrico", "no"], description: "Type of heating/calefacción" },
+          energy_consumption_scale: { type: "string", enum: ["A", "B", "C", "D", "E", "F", "G"], description: "Energy efficiency rating/certificado energético" },
+          conservation_status: { type: "integer", enum: [1, 2, 3, 4, 6], description: "Property conservation status (1=excelente, 2=bueno, 3=regular, 4=malo, 6=obra nueva)" },
+          original_text: { type: "string", description: "Original text snippet where this information was found" },
+          confidence: { type: "integer", minimum: 1, maximum: 100, description: "Confidence level (1-100)" }
+        },
+        required: ["original_text", "confidence"]
+      }
+    },
+    {
+      name: "extract_appliances_amenities",
+      description: "Extract information about appliances and additional amenities",
+      parameters: {
+        type: "object",
+        properties: {
+          oven: { type: "boolean", description: "Whether the property has oven/horno - ONLY include if explicitly mentioned" },
+          microwave: { type: "boolean", description: "Whether the property has microwave/microondas - ONLY include if explicitly mentioned" },
+          washing_machine: { type: "boolean", description: "Whether the property has washing machine/lavadora - ONLY include if explicitly mentioned" },
+          fridge: { type: "boolean", description: "Whether the property has fridge/frigorífico - ONLY include if explicitly mentioned" },
+          tv: { type: "boolean", description: "Whether the property has TV/televisión - ONLY include if explicitly mentioned" },
+          dishwasher: { type: "boolean", description: "Whether the property has dishwasher/lavavajillas - ONLY include if explicitly mentioned" },
+          stoneware: { type: "boolean", description: "Whether dishes/vajilla are included - ONLY include if explicitly mentioned" },
+          appliances_included: { type: "boolean", description: "Whether appliances/electrodomésticos are included - ONLY include if explicitly mentioned" },
+          original_text: { type: "string", description: "Original text snippet where this information was found" },
+          confidence: { type: "integer", minimum: 1, maximum: 100, description: "Confidence level (1-100)" }
+        },
+        required: ["original_text", "confidence"]
+      }
+    }
+  ];
 
-  const systemPrompt = `Eres un experto en extracción de datos inmobiliarios. Tu trabajo es extraer información estructurada de descripciones de propiedades en español.
-
-CAMPOS DISPONIBLES:
-${fieldMappingsPrompt}
+  const systemPrompt = `Eres un experto en extracción de datos inmobiliarios. Tu trabajo es extraer información estructurada de descripciones de propiedades en español usando las funciones especializadas disponibles.
 
 REGLAS DE EXTRACCIÓN:
 1. Solo extrae información explícitamente mencionada en el texto
 2. No inventes ni asumas datos que no estén presentes
 3. Convierte valores a los tipos correctos (números, booleanos, texto)
-4. Para precios, quita símbolos de moneda y separadores
-5. Para habitaciones/baños, extrae solo números
-6. Para características booleanas, determina si están presentes (true) o no mencionadas (false)
-7. Asigna una confianza de 1-100 basada en qué tan explícita es la información
+4. Para precios, quita símbolos de moneda y separadores (ej: "€150.000" → 150000)
+5. Para habitaciones/baños, extrae solo números (ej: "tres habitaciones" → 3)
+6. Para características booleanas: SOLO incluye el campo si está explícitamente mencionado (true si presente, false si se menciona que NO está)
+7. NO incluyas campos que no se mencionan en absoluto
+8. Asigna una confianza de 1-100 basada en qué tan explícita es la información
+9. Incluye el texto original exacto donde encontraste cada dato
 
-FORMATO DE RESPUESTA (JSON):
-[
-  {
-    "dbColumn": "campo_base_datos",
-    "dbTable": "properties" | "listings",
-    "value": valor_extraido,
-    "originalText": "texto_original_donde_se_encontro",
-    "confidence": numero_1_100,
-    "reasoning": "breve_explicacion"
-  }
-]`;
+FUNCIONES DISPONIBLES:
+- extract_basic_property_info: información básica (tipo, habitaciones, metros, ubicación)
+- extract_listing_details: detalles del anuncio (precio, tipo operación, disponibilidad)
+- extract_property_features: características de la propiedad (ascensor, garaje, piscina, etc.)
+- extract_appliances_amenities: electrodomésticos y amenidades
 
-  const userPrompt = `Extrae toda la información inmobiliaria posible de esta descripción:
+TIPOS DE OPERACIÓN VÁLIDOS:
+- Sale: para venta
+- Rent: para alquiler
+- RentWithOption: para alquiler con opción a compra
+- Transfer: para traspaso
+- RoomSharing: para compartir habitación
+
+Usa las funciones apropiadas para extraer SOLO los datos que estén explícitamente mencionados en la descripción.`;
+
+  const userPrompt = `Extrae toda la información inmobiliaria posible de esta descripción de voz:
 
 "${voiceInput.transcript}"
 
-Extrae SOLO los datos que estén explícitamente mencionados. Responde únicamente con el JSON de los campos extraídos.`;
+Extrae únicamente los datos que estén claramente mencionados en el texto.`;
 
+  const allExtractedFields: ExtractedFieldResult[] = [];
+
+  // Execute each function call sequentially
+  for (const func of extractionFunctions) {
   try {
+      console.log(`🔍 [GPT4-FUNCTION-CALLING] Executing function: ${func.name}`);
+      
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -143,298 +227,194 @@ Extrae SOLO los datos que estén explícitamente mencionados. Responde únicamen
         { role: "user", content: userPrompt }
       ],
       temperature: 0.1,
-      max_tokens: 2000,
-      response_format: { type: "json_object" }
-    });
-
-    const responseContent = completion.choices[0]?.message?.content;
-    if (!responseContent) {
-      throw new Error("No response from GPT-4");
-    }
-
-    // Parse the JSON response
-    let gptResults: any[];
-    try {
-      const parsed = JSON.parse(responseContent);
-      gptResults = Array.isArray(parsed) ? parsed : parsed.fields || [];
-    } catch (error) {
-      console.error("❌ [GPT4-EXTRACTION] Failed to parse GPT-4 response:", error);
-      return [];
-    }
-
-    const extractedFields: ExtractedFieldResult[] = [];
-
-    for (const result of gptResults) {
-      if (!result.dbColumn || !result.dbTable || result.value === undefined) {
-        continue;
-      }
-
-      // Find the corresponding field mapping for validation
-      const fieldMapping = ALL_FIELD_MAPPINGS.find(
-        mapping => mapping.dbColumn === result.dbColumn && mapping.dbTable === result.dbTable
-      );
-
-      if (!fieldMapping) {
-        console.warn(`⚠️ [GPT4-EXTRACTION] Unknown field: ${result.dbTable}.${result.dbColumn}`);
-        continue;
-      }
-
-      // Apply validation if available
-      const stringValue = String(result.value);
-      if (fieldMapping.validation && !fieldMapping.validation(stringValue)) {
-        console.warn(`⚠️ [GPT4-EXTRACTION] Validation failed for ${result.dbColumn}: ${stringValue}`);
-        continue;
-      }
-
-      // Convert value using converter function
-      let convertedValue: string | number | boolean = result.value;
-      if (fieldMapping.converter) {
-        try {
-          convertedValue = fieldMapping.converter(stringValue);
-        } catch (error) {
-          console.warn(`⚠️ [GPT4-EXTRACTION] Conversion failed for ${result.dbColumn}: ${stringValue}`);
-          convertedValue = result.value;
+        max_tokens: 1500,
+        tools: [
+          {
+            type: "function",
+            function: func
+          }
+        ],
+        tool_choice: {
+          type: "function",
+          function: { name: func.name }
         }
-      }
-
-      // Adjust confidence based on transcript confidence
-      const adjustedConfidence = Math.min(
-        result.confidence || 80,
-        (result.confidence || 80) * (voiceInput.confidence / 100)
-      );
-
-      extractedFields.push({
-        dbColumn: result.dbColumn,
-        dbTable: result.dbTable,
-        value: convertedValue,
-        originalText: result.originalText || "",
-        confidence: adjustedConfidence,
-        extractionSource: "gpt4",
-        fieldType: fieldMapping.dataType,
-        matched_alias: result.reasoning || "GPT-4 extraction",
       });
 
-      console.log(
-        `✅ [GPT4-EXTRACTION] Extracted: ${result.dbColumn} = ${convertedValue} (${adjustedConfidence.toFixed(1)}% confidence)`
-      );
+      const message = completion.choices[0]?.message;
+      if (!message || !message.tool_calls || message.tool_calls.length === 0) {
+        console.warn(`⚠️ [GPT4-FUNCTION-CALLING] No function call returned for ${func.name}`);
+        continue;
+      }
+
+      const functionCall = message.tool_calls[0];
+      if (!functionCall || !functionCall.function) {
+        console.warn(`⚠️ [GPT4-FUNCTION-CALLING] Invalid function call structure for ${func.name}`);
+        continue;
+      }
+
+      if (functionCall.function.name !== func.name) {
+        console.warn(`⚠️ [GPT4-FUNCTION-CALLING] Unexpected function call: ${functionCall.function.name}`);
+        continue;
+      }
+
+      // Parse the function arguments
+      let functionArgs: any;
+        try {
+        functionArgs = JSON.parse(functionCall.function.arguments);
+        } catch (error) {
+        console.error(`❌ [GPT4-FUNCTION-CALLING] Failed to parse function arguments for ${func.name}:`, error);
+        continue;
+      }
+
+      console.log(`✅ [GPT4-FUNCTION-CALLING] ${func.name} executed successfully`);
+
+      // Process the extracted fields from this function
+      const functionFields = processFunctionResults(func.name, functionArgs, voiceInput);
+      allExtractedFields.push(...functionFields);
+
+    } catch (error) {
+      console.error(`❌ [GPT4-FUNCTION-CALLING] Error executing ${func.name}:`, error);
+      continue;
     }
-
-    console.log(`🤖 [GPT4-EXTRACTION] Completed: ${extractedFields.length} fields extracted`);
-    return extractedFields;
-
-  } catch (error) {
-    console.error("❌ [GPT4-EXTRACTION] Error in GPT-4 extraction:", error);
-    return [];
   }
+
+  console.log(`🤖 [GPT4-FUNCTION-CALLING] Multi-function extraction completed: ${allExtractedFields.length} total fields extracted`);
+  return allExtractedFields;
 }
 
 /**
- * Pattern-based extraction adapted from OCR field extractor
- * Serves as fallback and validation for GPT-4 results
+ * Process results from individual function calls and convert to ExtractedFieldResult format
  */
-function extractFromVoicePatterns(transcript: string): ExtractedFieldResult[] {
-  const results: ExtractedFieldResult[] = [];
-  const text = transcript.toLowerCase();
+function processFunctionResults(
+  functionName: string, 
+  functionArgs: any, 
+  voiceInput: VoiceExtractionInput
+): ExtractedFieldResult[] {
+  const extractedFields: ExtractedFieldResult[] = [];
 
-  console.log(`🔍 [PATTERN-EXTRACTION] Processing voice patterns...`);
-
-  // Enhanced patterns for voice transcripts (more natural language)
-  const voicePatterns: Record<string, RegExp[]> = {
-    // Price patterns - more natural speech
-    price: [
-      /(?:precio|cuesta|vale|por)\s+(?:unos?\s+)?(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*(?:euros?|€)/i,
-      /(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*(?:euros?|€)/i,
-      /(?:piden|pido|precio de)\s+(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)/i,
-    ],
-    
-    // Square meters - natural speech
-    squareMeter: [
-      /(?:tiene|son|mide)\s+(?:unos?\s+)?(\d+(?:[.,]\d+)?)\s*(?:metros?\s*cuadrados?|m²|m2)/i,
-      /(\d+(?:[.,]\d+)?)\s*(?:metros?\s*cuadrados?|m²|m2)/i,
-      /superficie\s+de\s+(\d+(?:[.,]\d+)?)/i,
-    ],
-    
-    // Rooms - natural speech
-    bedrooms: [
-      /(?:tiene|son|hay)\s+(\d+)\s*(?:dormitorios?|habitaciones?|cuartos?)/i,
-      /(\d+)\s*(?:dormitorios?|habitaciones?|cuartos?)/i,
-      /(?:de|con)\s+(\d+)\s*(?:habitaciones?|dorm)/i,
-    ],
-    
-    bathrooms: [
-      /(?:tiene|son|hay)\s+(\d+(?:[.,]\d+)?)\s*(?:baños?|aseos?)/i,
-      /(\d+(?:[.,]\d+)?)\s*(?:baños?|aseos?)/i,
-      /(?:de|con)\s+(\d+(?:[.,]\d+)?)\s*baños?/i,
-    ],
-    
-    // Address - more flexible for speech
-    street: [
-      /(?:está en|ubicado en|dirección)\s+([^,\.]+(?:calle|avenida|plaza|paseo)[^,\.]+)/i,
-      /(?:en la|en el|en)\s+(calle|avenida|plaza|paseo)\s+([^,\.]+)/i,
-    ],
-    
-    // Year built
-    yearBuilt: [
-      /(?:construido|edificado|del año|año)\s+(\d{4})/i,
-      /(?:de|del)\s+(\d{4})/i,
-    ],
-    
-    // Property type
-    propertyType: [
-      /(?:es un|se trata de|tipo)\s+(piso|casa|chalet|apartamento|local|garaje|estudio|loft|dúplex|ático)/i,
-      /(piso|casa|chalet|apartamento|local|garaje|estudio|loft|dúplex|ático)/i,
-    ],
-    
-    // Boolean features - natural language detection
-    hasElevator: [
-      /(?:tiene|hay|con)\s+ascensor/i,
-      /ascensor/i,
-    ],
-    
-    hasGarage: [
-      /(?:tiene|hay|con|incluye)\s+(?:garaje|parking|aparcamiento|plaza)/i,
-      /(?:garaje|parking|aparcamiento)/i,
-    ],
-    
-    hasStorageRoom: [
-      /(?:tiene|hay|con|incluye)\s+trastero/i,
-      /trastero/i,
-    ],
-    
-    terrace: [
-      /(?:tiene|hay|con)\s+(?:terraza|balcón)/i,
-      /(?:terraza|balcón)/i,
-    ],
-    
-    pool: [
-      /(?:tiene|hay|con)\s+piscina/i,
-      /piscina/i,
-    ],
-    
-    garden: [
-      /(?:tiene|hay|con)\s+jardín/i,
-      /jardín/i,
-    ],
-    
-    airConditioningType: [
-      /(?:tiene|hay|con)\s+aire\s*acondicionado/i,
-      /aire\s*acondicionado/i,
-    ],
-    
-    furnished: [
-      /(?:está|viene)\s+amueblado/i,
-      /amueblado/i,
-      /con\s+muebles/i,
-    ],
-    
-    // Energy certification
-    energyConsumptionScale: [
-      /(?:certificado|eficiencia)\s+energética?\s+([A-G])/i,
-      /energía\s+([A-G])/i,
-    ],
-    
-    // Orientation
-    orientation: [
-      /orientación?\s+(?:al\s+)?(?:hacia\s+el\s+)?(norte|sur|este|oeste|noreste|noroeste|sureste|suroeste)/i,
-      /(?:hacia\s+el\s+|orientado?\s+al\s+)(norte|sur|este|oeste)/i,
-    ],
+  // Define field mappings for each function
+  const fieldMappings: Record<string, Record<string, { dbColumn: string; dbTable: string }>> = {
+    extract_basic_property_info: {
+      property_type: { dbColumn: "propertyType", dbTable: "properties" },
+      bedrooms: { dbColumn: "bedrooms", dbTable: "properties" },
+      bathrooms: { dbColumn: "bathrooms", dbTable: "properties" },
+      square_meter: { dbColumn: "squareMeter", dbTable: "properties" },
+      year_built: { dbColumn: "yearBuilt", dbTable: "properties" },
+      street: { dbColumn: "street", dbTable: "properties" },
+      postal_code: { dbColumn: "postalCode", dbTable: "properties" },
+      // NOTE: city and province are temporary fields that will be processed via findOrCreateLocation
+      city: { dbColumn: "extractedCity", dbTable: "properties" },
+      province: { dbColumn: "extractedProvince", dbTable: "properties" },
+      orientation: { dbColumn: "orientation", dbTable: "properties" },
+    },
+    extract_listing_details: {
+      listing_type: { dbColumn: "listingType", dbTable: "listings" },
+      price: { dbColumn: "price", dbTable: "listings" },
+      is_furnished: { dbColumn: "isFurnished", dbTable: "listings" },
+      has_keys: { dbColumn: "hasKeys", dbTable: "listings" },
+      pets_allowed: { dbColumn: "petsAllowed", dbTable: "listings" },
+      student_friendly: { dbColumn: "studentFriendly", dbTable: "listings" },
+      internet: { dbColumn: "internet", dbTable: "listings" },
+    },
+    extract_property_features: {
+      has_elevator: { dbColumn: "hasElevator", dbTable: "properties" },
+      has_garage: { dbColumn: "hasGarage", dbTable: "properties" },
+      has_storage_room: { dbColumn: "hasStorageRoom", dbTable: "properties" },
+      terrace: { dbColumn: "terrace", dbTable: "properties" },
+      community_pool: { dbColumn: "communityPool", dbTable: "properties" },
+      private_pool: { dbColumn: "privatePool", dbTable: "properties" },
+      garden: { dbColumn: "garden", dbTable: "properties" },
+      air_conditioning_type: { dbColumn: "airConditioningType", dbTable: "properties" },
+      heating_type: { dbColumn: "heatingType", dbTable: "properties" },
+      energy_consumption_scale: { dbColumn: "energyConsumptionScale", dbTable: "properties" },
+      conservation_status: { dbColumn: "conservationStatus", dbTable: "properties" },
+    },
+    extract_appliances_amenities: {
+      oven: { dbColumn: "oven", dbTable: "listings" },
+      microwave: { dbColumn: "microwave", dbTable: "listings" },
+      washing_machine: { dbColumn: "washingMachine", dbTable: "listings" },
+      fridge: { dbColumn: "fridge", dbTable: "listings" },
+      tv: { dbColumn: "tv", dbTable: "listings" },
+      dishwasher: { dbColumn: "dishwasher", dbTable: "listings" },
+      stoneware: { dbColumn: "stoneware", dbTable: "listings" },
+      appliances_included: { dbColumn: "appliancesIncluded", dbTable: "listings" },
+    }
   };
 
-  // Process each pattern category
-  for (const [category, patterns] of Object.entries(voicePatterns)) {
-    for (const pattern of patterns) {
-      const matches = text.match(pattern);
-      if (matches?.[1]) {
-        const value = matches[1].trim();
+  const currentMapping = fieldMappings[functionName];
+  if (!currentMapping) {
+    console.warn(`⚠️ [GPT4-FUNCTION-CALLING] No field mapping found for function: ${functionName}`);
+    return [];
+  }
 
-        // Find corresponding field mapping
-        const fieldMapping = ALL_FIELD_MAPPINGS.find((mapping) =>
-          mapping.aliases.some((alias) =>
-            alias.toLowerCase().includes(category.toLowerCase()) ||
-            category.toLowerCase().includes(alias.toLowerCase())
-          ) ||
-          mapping.dbColumn === category
-        );
+  // Process each field from the function result
+  for (const [fieldName, fieldValue] of Object.entries(functionArgs)) {
+    if (fieldName === 'original_text' || fieldName === 'confidence' || fieldValue === undefined || fieldValue === null) {
+      continue;
+    }
 
-        if (fieldMapping) {
-          // Apply validation
-          if (fieldMapping.validation && !fieldMapping.validation(value)) {
+    const mapping = currentMapping[fieldName];
+    if (!mapping) {
+      console.warn(`⚠️ [GPT4-FUNCTION-CALLING] No mapping found for field: ${fieldName}`);
+      continue;
+    }
+
+    // Find the corresponding field mapping for validation
+    const fieldMapping = ALL_FIELD_MAPPINGS.find(
+      fm => fm.dbColumn === mapping.dbColumn && fm.dbTable === mapping.dbTable
+    );
+
+    if (!fieldMapping) {
+      console.warn(`⚠️ [GPT4-FUNCTION-CALLING] Unknown field mapping: ${mapping.dbTable}.${mapping.dbColumn}`);
+      continue;
+    }
+
+    // Ensure fieldValue is a valid type
+    if (typeof fieldValue !== 'string' && typeof fieldValue !== 'number' && typeof fieldValue !== 'boolean') {
+      console.warn(`⚠️ [GPT4-FUNCTION-CALLING] Invalid field value type for ${mapping.dbColumn}: ${typeof fieldValue}`);
+      continue;
+    }
+
+    // Apply validation if available
+    const stringValue = String(fieldValue);
+    if (fieldMapping.validation && !fieldMapping.validation(stringValue)) {
+      console.warn(`⚠️ [GPT4-FUNCTION-CALLING] Validation failed for ${mapping.dbColumn}: ${stringValue}`);
             continue;
           }
 
-          // Convert value
-          let convertedValue: string | number | boolean = value;
+    // Convert value using converter function
+    let convertedValue: string | number | boolean = fieldValue as string | number | boolean;
           if (fieldMapping.converter) {
             try {
-              convertedValue = fieldMapping.converter(value);
-            } catch {
-              convertedValue = value;
-            }
-          }
+        const converted = fieldMapping.converter(stringValue);
+        convertedValue = converted as string | number | boolean;
+      } catch (error) {
+        console.warn(`⚠️ [GPT4-FUNCTION-CALLING] Conversion failed for ${mapping.dbColumn}: ${stringValue}`);
+        convertedValue = fieldValue as string | number | boolean;
+      }
+    }
 
-          // Voice patterns get higher confidence than OCR regex patterns
-          const confidence = Math.min(90, 70 + (value.length > 2 ? 15 : 0) + (matches[0].includes("tiene") || matches[0].includes("con") ? 10 : 0));
+    // Adjust confidence based on transcript confidence
+    const adjustedConfidence = Math.min(
+      functionArgs.confidence || 80,
+      (functionArgs.confidence || 80) * (voiceInput.confidence / 100)
+    );
 
-          results.push({
-            dbColumn: fieldMapping.dbColumn,
-            dbTable: fieldMapping.dbTable,
+    extractedFields.push({
+      dbColumn: mapping.dbColumn,
+      dbTable: mapping.dbTable as "properties" | "listings",
             value: convertedValue,
-            originalText: matches[0],
-            confidence,
-            extractionSource: "voice_pattern",
+      originalText: functionArgs.original_text || "",
+      confidence: adjustedConfidence,
+      extractionSource: "gpt4_function_calling",
             fieldType: fieldMapping.dataType,
-            matched_alias: category,
+      matched_alias: `${functionName}:${fieldName}`,
           });
 
           console.log(
-            `✅ [PATTERN-EXTRACTION] Pattern match: "${category}" → ${fieldMapping.dbColumn} (${confidence}% confidence)`
+      `✅ [GPT4-FUNCTION-CALLING] ${functionName}: ${mapping.dbColumn} = ${convertedValue} (${adjustedConfidence.toFixed(1)}% confidence)`
           );
-        }
-      }
-    }
   }
 
-  console.log(`🔍 [PATTERN-EXTRACTION] Completed: ${results.length} fields extracted`);
-  return results;
-}
-
-/**
- * Consolidate and deduplicate extracted fields with enhanced logic for voice
- */
-function consolidateVoiceResults(results: ExtractedFieldResult[]): ExtractedFieldResult[] {
-  const consolidatedMap = new Map<string, ExtractedFieldResult>();
-
-  // Sort by confidence and source priority (GPT-4 > voice_pattern > others)
-  const sortedResults = results.sort((a, b) => {
-    // First sort by source priority
-    const sourceOrder = { gpt4: 3, voice_pattern: 2, regex: 1, text: 0 };
-    const aSourcePriority = sourceOrder[a.extractionSource as keyof typeof sourceOrder] || 0;
-    const bSourcePriority = sourceOrder[b.extractionSource as keyof typeof sourceOrder] || 0;
-    
-    if (aSourcePriority !== bSourcePriority) {
-      return bSourcePriority - aSourcePriority;
-    }
-    
-    // Then by confidence
-    return b.confidence - a.confidence;
-  });
-
-  for (const result of sortedResults) {
-    const key = `${result.dbTable}.${result.dbColumn}`;
-
-    // For voice extraction, be more selective about overwrites
-    const existing = consolidatedMap.get(key);
-    if (!existing || 
-        result.extractionSource === "gpt4" || 
-        (existing.extractionSource !== "gpt4" && result.confidence > existing.confidence + 10)) {
-      consolidatedMap.set(key, result);
-    }
-  }
-
-  const consolidated = Array.from(consolidatedMap.values());
-  console.log(
-    `🔄 [VOICE-EXTRACTION] Consolidated ${results.length} raw results into ${consolidated.length} unique fields`
-  );
-
-  return consolidated;
+  return extractedFields;
 }

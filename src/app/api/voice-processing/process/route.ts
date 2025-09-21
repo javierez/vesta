@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { uploadAudioToS3, validateAudioBlob, getAudioInfo } from "~/lib/audio-upload";
-import { transcribeRealEstateAudio } from "~/server/transcription/transcription-service";
+import { transcribeRealEstateAudio, type TranscriptionResult } from "~/server/transcription/transcription-service";
 import { extractPropertyDataFromVoice } from "~/server/transcription/voice-field-extractor";
 import { getSecureSession } from "~/lib/dal";
 
@@ -62,8 +62,31 @@ export async function POST(request: NextRequest) {
       uploadResult.audioUrl,
       referenceNumber
     );
+    
+    // Verificar si hay error en la transcripción
+    const transcriptionWithError = transcriptionResult as TranscriptionResult & { error?: string };
+    if (transcriptionWithError.error) {
+      console.error("❌ [PROCESS-API] Error en transcripción:", transcriptionWithError.error);
+      return NextResponse.json(
+        {
+          error: transcriptionWithError.error,
+          errorStep: "transcription",
+          details: "No se pudo obtener una transcripción válida del audio"
+        },
+        { status: 400 }
+      );
+    }
+    
     console.log("✅ [PROCESS-API] Step 3/4: Transcription completed");
-    console.log(`📝 [PROCESS-API] Transcript: "${transcriptionResult.transcript.substring(0, 100)}..."`);
+    
+    // Log full transcription result
+    console.log(`\n📝 [PROCESS-API] Full transcription received:`);
+    console.log(`=====================================`);
+    console.log(`Transcript: ${transcriptionResult.transcript}`);
+    console.log(`Confidence: ${transcriptionResult.confidence}%`);
+    console.log(`Language: ${transcriptionResult.language}`);
+    console.log(`Duration: ${transcriptionResult.duration}s`);
+    console.log(`=====================================\n`);
 
     // Step 4: Extract property data
     console.log("🧠 [PROCESS-API] Step 4/4: Extracting property data...");

@@ -10,7 +10,8 @@ import {
   mockUsers,
   contacts as mockContacts,
   listingContacts as mockListingContacts,
-  accounts as mockAccounts,
+  mockAccounts,
+  mockWebsiteConfigs,
 } from "~/lib/data";
 import {
   properties as dbProperties,
@@ -21,6 +22,7 @@ import {
   contacts,
   listingContacts,
   accounts,
+  websiteProperties,
 } from "~/server/db/schema";
 import { createProperty } from "~/server/queries/properties";
 import { createListing } from "~/server/queries/listing";
@@ -113,18 +115,64 @@ async function seedAccounts() {
     for (const account of mockAccounts) {
       await createAccount({
         name: account.name,
+        shortName: account.shortName,
+        legalName: account.legalName,
+        logo: account.logo,
         address: account.address,
         phone: account.phone,
         email: account.email,
         website: account.website,
+        taxId: account.taxId,
+        registryDetails: account.registryDetails,
+        legalEmail: account.legalEmail,
+        jurisdiction: account.jurisdiction,
+        privacyEmail: account.privacyEmail,
+        dpoEmail: account.dpoEmail,
+        portalSettings: account.portalSettings,
+        paymentSettings: account.paymentSettings,
+        preferences: account.preferences,
         plan: account.plan,
+        subscriptionType: account.subscriptionType,
         subscriptionStatus: account.subscriptionStatus,
+        subscriptionStartDate: account.subscriptionStartDate,
+        subscriptionEndDate: account.subscriptionEndDate,
+        status: account.status,
         isActive: account.isActive,
       });
     }
     console.log("Accounts seeded successfully");
   } catch (error) {
     console.error("Error seeding accounts:", error);
+    throw error;
+  }
+}
+
+// Seed website config data
+async function seedWebsiteConfig() {
+  try {
+    for (const config of mockWebsiteConfigs) {
+      await db.insert(websiteProperties).values({
+        accountId: config.accountId,
+        socialLinks: config.socialLinks,
+        seoProps: config.seoProps,
+        logo: config.logo,
+        logotype: config.logo, // Using logo as logotype for now
+        favicon: config.favicon,
+        heroProps: config.heroProps,
+        featuredProps: config.featuredProps,
+        aboutProps: config.aboutProps,
+        propertiesProps: config.propertiesProps,
+        testimonialProps: config.testimonialProps,
+        contactProps: config.contactProps,
+        footerProps: config.footerProps,
+        headProps: config.headProps,
+        watermarkProps: config.watermarkProps,
+        metadata: config.metadata,
+      });
+    }
+    console.log("Website configs seeded successfully");
+  } catch (error) {
+    console.error("Error seeding website configs:", error);
     throw error;
   }
 }
@@ -201,19 +249,14 @@ async function seedContacts() {
   }
 }
 
-// Clear all data from relevant tables
+// Clear only accounts and website_config tables
 async function clearDatabase() {
   try {
-    // Delete in reverse order of dependencies to avoid foreign key constraints
-    await db.delete(listingContacts).where(sql`1=1`);
-    await db.delete(dbListings).where(sql`1=1`);
-    await db.delete(propertyImages).where(sql`1=1`);
-    await db.delete(dbProperties).where(sql`1=1`);
-    await db.delete(contacts).where(sql`1=1`);
-    await db.delete(locations).where(sql`1=1`);
-    await db.delete(users).where(sql`1=1`);
+    // Delete website configs first (depends on accounts)
+    await db.delete(websiteProperties).where(sql`1=1`);
+    // Then delete accounts
     await db.delete(accounts).where(sql`1=1`);
-    console.log("Database cleared successfully");
+    console.log("Accounts and website configs cleared successfully");
   } catch (error) {
     console.error("Error clearing database:", error);
     throw error;
@@ -222,180 +265,16 @@ async function clearDatabase() {
 
 export async function seedDatabase() {
   try {
-    // First clear existing data
+    // First clear existing data from accounts and website_config only
     await clearDatabase();
 
-    // Then seed accounts first (since users depend on accounts)
+    // Seed accounts first
     await seedAccounts();
 
-    // Then seed users
-    await seedUsers();
+    // Then seed website configs (depends on accounts)
+    await seedWebsiteConfig();
 
-    // Then seed contacts
-    await seedContacts();
-
-    // Then seed locations
-    await seedLocations();
-
-    // Then seed properties and listings
-    const createdListings = new Map<bigint, bigint>(); // Map to store propertyId -> listingId
-
-    for (const property of properties) {
-      const dbProperty = toDbProperty(property);
-      // Ensure required fields for createProperty
-      const dbPropertyForCreate = {
-        ...dbProperty,
-        propertyType: property.propertyType,
-        hasHeating: property.hasHeating,
-        hasElevator: property.hasElevator,
-        hasGarage: property.hasGarage,
-        hasStorageRoom: property.hasStorageRoom,
-        isActive: true,
-      } as Omit<
-        DbProperty,
-        | "propertyId"
-        | "referenceNumber"
-        | "formPosition"
-        | "createdAt"
-        | "updatedAt"
-      >;
-      const createdProperty = await createProperty(dbPropertyForCreate);
-
-      // Create a listing for each property
-      if (createdProperty) {
-        // Find the corresponding listing in the mock data
-        const mockListing = mockListings.find(
-          (l: { propertyId: bigint }) => l.propertyId === property.propertyId,
-        );
-
-        if (!mockListing) {
-          console.warn(
-            `No mock listing found for property ${property.propertyId}, using defaults`,
-          );
-        }
-
-        const newListing = await createListing({
-          propertyId: BigInt(createdProperty.propertyId),
-          agentId: mockListing?.agentId ?? "1",
-          listingType: mockListing?.listingType ?? "Sale",
-          price: mockListing?.price ?? property.price ?? "0",
-          status: mockListing?.status ?? "Active",
-          isActive: mockListing?.isActive ?? true,
-          isFeatured: mockListing?.isFeatured ?? false,
-          isBankOwned: mockListing?.isBankOwned ?? false,
-          publishToWebsite: mockListing?.publishToWebsite ?? false,
-          visibilityMode: mockListing?.visibilityMode ?? 1,
-          viewCount: mockListing?.viewCount ?? 0,
-          inquiryCount: mockListing?.inquiryCount ?? 0,
-          isFurnished: mockListing?.isFurnished ?? false,
-          furnitureQuality: mockListing?.furnitureQuality,
-          optionalGarage: mockListing?.optionalGarage ?? false,
-          optionalGaragePrice: mockListing?.optionalGaragePrice,
-          optionalStorageRoom: mockListing?.optionalStorageRoom ?? false,
-          optionalStorageRoomPrice: mockListing?.optionalStorageRoomPrice,
-          hasKeys: mockListing?.hasKeys ?? false,
-          studentFriendly: mockListing?.studentFriendly ?? false,
-          petsAllowed: mockListing?.petsAllowed ?? false,
-          appliancesIncluded: mockListing?.appliancesIncluded ?? false,
-          internet: mockListing?.internet ?? false,
-          oven: mockListing?.oven ?? false,
-          microwave: mockListing?.microwave ?? false,
-          washingMachine: mockListing?.washingMachine ?? false,
-          fridge: mockListing?.fridge ?? false,
-          tv: mockListing?.tv ?? false,
-          stoneware: mockListing?.stoneware ?? false,
-          fotocasa: mockListing?.fotocasa ?? false,
-          idealista: mockListing?.idealista ?? false,
-          habitaclia: mockListing?.habitaclia ?? false,
-          pisoscom: mockListing?.pisoscom ?? false,
-          yaencontre: mockListing?.yaencontre ?? false,
-          milanuncios: mockListing?.milanuncios ?? false,
-        });
-
-        // Store the mapping of property ID to listing ID
-        if (newListing) {
-          createdListings.set(property.propertyId, newListing.listingId);
-        }
-
-        // Create property images for this property
-        try {
-          const propertyImages = mockPropertyImages.filter(
-            (img) => img.referenceNumber === property.referenceNumber,
-          );
-
-          console.log(
-            `Found ${propertyImages.length} images for property ${property.referenceNumber}`,
-          );
-
-          for (const image of propertyImages) {
-            try {
-              await createPropertyImage({
-                propertyId: BigInt(createdProperty.propertyId),
-                referenceNumber: image.referenceNumber,
-                imageUrl: image.imageUrl,
-                isActive: image.isActive,
-                imageKey: image.imageKey,
-                imageTag: image.imageTag,
-                s3key: image.s3key,
-                imageOrder: image.imageOrder,
-              });
-              console.log(
-                `Successfully created image ${image.imageKey} for property ${property.referenceNumber}`,
-              );
-            } catch (imageError) {
-              console.error(
-                `Error creating image ${image.imageKey} for property ${property.referenceNumber}:`,
-                imageError,
-              );
-              // Continue with next image even if one fails
-              continue;
-            }
-          }
-        } catch (propertyImagesError) {
-          console.error(
-            `Error processing images for property ${property.referenceNumber}:`,
-            propertyImagesError,
-          );
-          // Continue with next property even if images fail
-          continue;
-        }
-      }
-    }
-
-    // Finally seed listing contacts with correct listing IDs
-    for (const listingContact of mockListingContacts) {
-      // Find the corresponding property ID from the mock data
-      const mockListing = mockListings.find(
-        (l) => l.listingId === listingContact.listingId,
-      );
-      if (!mockListing) {
-        console.warn(
-          `No mock listing found for listing contact ${listingContact.listingId}, skipping`,
-        );
-        continue;
-      }
-
-      // Get the actual listing ID from our mapping
-      const actualListingId = createdListings.get(mockListing.propertyId);
-      if (!actualListingId) {
-        console.warn(
-          `No actual listing ID found for property ${mockListing.propertyId}, skipping`,
-        );
-        continue;
-      }
-
-      await db.insert(listingContacts).values({
-        listingContactId: listingContact.listingContactId,
-        listingId: actualListingId, // Use the actual listing ID
-        contactId: listingContact.contactId,
-        contactType: listingContact.contactType,
-        createdAt: listingContact.createdAt,
-        updatedAt: listingContact.updatedAt,
-        isActive: listingContact.isActive,
-      });
-    }
-
-    console.log("Database seeding completed successfully");
+    console.log("Accounts and website configs seeded successfully");
   } catch (error) {
     console.error("Error seeding database:", error);
     throw error;
