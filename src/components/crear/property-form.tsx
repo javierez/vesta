@@ -61,13 +61,13 @@ interface ListingDetailsData {
   propertySubtype?: string | null;
   bedrooms?: number | null;
   bathrooms?: string | null;
-  totalSurface?: string | null;
+  totalSurface?: number | null;
   usefulSurface?: string | null;
-  plotSurface?: string | null;
+  plotSurface?: number | null;
   floor?: string | null;
-  totalFloors?: string | null;
+  totalFloors?: number | null;
   buildYear?: number | null;
-  condition?: string | null;
+  condition?: number | null;
   energyCertificate?: string | null;
   emissions?: string | null;
   cadastralReference?: string | null;
@@ -78,52 +78,52 @@ interface ListingDetailsData {
   province?: string | null;
   postalCode?: string | null;
   neighborhood?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
+  latitude?: string | null;
+  longitude?: string | null;
   
   // Equipment and features
-  heating?: string;
-  airConditioning?: string[];
-  hasElevator?: boolean;
-  hasGarage?: boolean;
-  hasStorageRoom?: boolean;
-  hasGarden?: boolean;
-  hasSwimmingPool?: boolean;
-  hasTerrace?: boolean;
-  hasBalcony?: boolean;
+  heating?: string | null;
+  airConditioning?: string | null;
+  hasElevator?: boolean | null;
+  hasGarage?: boolean | null;
+  hasStorageRoom?: boolean | null;
+  hasGarden?: boolean | null;
+  hasSwimmingPool?: boolean | null;
+  hasTerrace?: boolean | null;
+  hasBalcony?: boolean | null;
   
   // Orientation
-  orientation?: string;
-  views?: string[];
-  luminosity?: string;
+  orientation?: string | null;
+  views?: boolean | null;
+  luminosity?: boolean | null;
   
   // Additional features
-  accessibility?: boolean;
-  securitySystem?: boolean;
-  doorman?: boolean;
-  builtInWardrobes?: boolean;
+  accessibility?: boolean | null;
+  securitySystem?: boolean | null;
+  doorman?: boolean | null;
+  builtInWardrobes?: boolean | null;
   
   // Luxury features
-  luxuryFeatures?: string[];
-  highEndFinishes?: boolean;
-  designerKitchen?: boolean;
-  smartHome?: boolean;
+  luxuryFeatures?: string[] | null;
+  highEndFinishes?: boolean | null;
+  designerKitchen?: boolean | null;
+  smartHome?: boolean | null;
   
   // Spaces
-  hasAttic?: boolean;
-  hasBasement?: boolean;
-  hasLaundryRoom?: boolean;
-  hasOffice?: boolean;
-  hasDressingRoom?: boolean;
+  hasAttic?: boolean | null;
+  hasBasement?: boolean | null;
+  hasLaundryRoom?: boolean | null;
+  hasOffice?: boolean | null;
+  hasDressingRoom?: boolean | null;
   
   // Materials
-  floorMaterial?: string;
-  wallMaterial?: string;
-  kitchenMaterial?: string;
-  bathroomMaterial?: string;
+  floorMaterial?: string | null;
+  wallMaterial?: string | null;
+  kitchenMaterial?: string | null;
+  bathroomMaterial?: string | null;
   
   // Description
-  highlights?: string[];
+  highlights?: string | null;
   
   // Form meta
   formPosition?: number;
@@ -174,13 +174,13 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     // Page 2 - Details  
     bedrooms: listingDetails.bedrooms ?? undefined,
     bathrooms: listingDetails.bathrooms ? Number(listingDetails.bathrooms) : undefined,
-    totalSurface: listingDetails.totalSurface ? Number(listingDetails.totalSurface) : undefined,
+    totalSurface: listingDetails.totalSurface ?? undefined,
     usefulSurface: listingDetails.usefulSurface ? Number(listingDetails.usefulSurface) : undefined,
-    plotSurface: listingDetails.plotSurface ? Number(listingDetails.plotSurface) : undefined,
+    plotSurface: listingDetails.plotSurface ?? undefined,
     floor: listingDetails.floor ?? undefined,
-    totalFloors: listingDetails.totalFloors ?? undefined,
+    totalFloors: listingDetails.totalFloors?.toString() ?? undefined,
     buildYear: listingDetails.buildYear ?? undefined,
-    condition: listingDetails.condition ?? undefined,
+    condition: listingDetails.condition?.toString() ?? undefined,
     energyCertificate: listingDetails.energyCertificate ?? undefined,
     emissions: listingDetails.emissions ?? undefined,
     cadastralReference: listingDetails.cadastralReference ?? "",
@@ -191,12 +191,12 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     province: listingDetails.province ?? "",
     postalCode: listingDetails.postalCode ?? "",
     neighborhood: listingDetails.neighborhood ?? "",
-    latitude: listingDetails.latitude ?? undefined,
-    longitude: listingDetails.longitude ?? undefined,
+    latitude: listingDetails.latitude ? Number(listingDetails.latitude) : undefined,
+    longitude: listingDetails.longitude ? Number(listingDetails.longitude) : undefined,
     
     // Page 4 - Equipment
     heating: listingDetails.heating ?? "",
-    airConditioning: listingDetails.airConditioning ?? [],
+    airConditioning: listingDetails.airConditioning ? [listingDetails.airConditioning] : [],
     hasElevator: listingDetails.hasElevator ?? false,
     hasGarage: listingDetails.hasGarage ?? false,
     hasStorageRoom: listingDetails.hasStorageRoom ?? false,
@@ -208,7 +208,7 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     // Page 5 - Orientation
     orientation: listingDetails.orientation ?? "",
     views: !!listingDetails.views,
-    luminosity: listingDetails.luminosity ?? "",
+    luminosity: listingDetails.luminosity ? "good" : "",
     
     // Page 6 - Additional
     accessibility: listingDetails.accessibility ?? false,
@@ -237,7 +237,7 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     
     // Page 10 - Description
     description: listingDetails.description ?? "",
-    highlights: listingDetails.highlights ?? [],
+    highlights: listingDetails.highlights ? [listingDetails.highlights] : [],
     
     // Page 11 - Rent
     hasKeys: listingDetails.hasKeys ?? false,

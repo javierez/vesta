@@ -50,26 +50,26 @@ interface ListingDetailsData {
   propertySubtype?: string | null;
   bedrooms?: number | null;
   bathrooms?: string | null;
-  totalSurface?: string | null;
+  totalSurface?: number | null;
   usefulSurface?: string | null;
-  buildYear?: number;
+  buildYear?: number | null;
   renovationYear?: number;
   isRenovated?: boolean;
   conservationStatus?: number;
   
   // Location fields
-  address?: string;
-  addressDetails?: string;
-  city?: string;
-  province?: string;
-  municipality?: string;
-  postalCode?: string;
-  neighborhood?: string;
+  address?: string | null;
+  addressDetails?: string | null;
+  city?: string | null;
+  province?: string | null;
+  municipality?: string | null;
+  postalCode?: string | null;
+  neighborhood?: string | null;
   
   // Cadastral and geographic data
-  latitude?: number;
-  longitude?: number;
-  cadastralReference?: string;
+  latitude?: string | null;
+  longitude?: string | null;
+  cadastralReference?: string | null;
   
   // Form meta
   formPosition?: number;
@@ -109,9 +109,9 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     
     // Page 2 - Details  
     bedrooms: listingDetails.bedrooms ?? undefined,
-    bathrooms: listingDetails.bathrooms ?? undefined,
+    bathrooms: listingDetails.bathrooms ? Number(listingDetails.bathrooms) : undefined,
     totalSurface: listingDetails.totalSurface ?? undefined,
-    usefulSurface: listingDetails.usefulSurface ?? undefined,
+    usefulSurface: listingDetails.usefulSurface ? Number(listingDetails.usefulSurface) : undefined,
     buildYear: listingDetails.buildYear ?? undefined,
     renovationYear: listingDetails.renovationYear ?? undefined,
     isRenovated: listingDetails.isRenovated ?? false,
@@ -127,8 +127,8 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     neighborhood: listingDetails.neighborhood ?? "",
     
     // Cadastral and geographic data
-    latitude: listingDetails.latitude ?? undefined,
-    longitude: listingDetails.longitude ?? undefined,
+    latitude: listingDetails.latitude ? Number(listingDetails.latitude) : undefined,
+    longitude: listingDetails.longitude ? Number(listingDetails.longitude) : undefined,
     cadastralReference: listingDetails.cadastralReference ?? "",
   };
 }
