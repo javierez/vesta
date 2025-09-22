@@ -48,11 +48,11 @@ export async function transcribeAudio(
     const transcriptionOptions: OpenAI.Audio.Transcriptions.TranscriptionCreateParams = {
       file: audioFile,
       model: "whisper-1",
-      language: options.language || "es", // Spanish by default
+      language: options.language ?? "es", // Spanish by default
       response_format: "verbose_json", // Get detailed response with timestamps
-      temperature: options.temperature || 0.1, // Low temperature for accuracy
+      temperature: options.temperature ?? 0.1, // Low temperature for accuracy
       // Provide context prompt for better Spanish real estate terminology recognition
-      prompt: options.prompt || 
+      prompt: options.prompt ?? 
         "Esta es una descripción de una propiedad inmobiliaria en español. " +
         "Incluye información sobre: precio, ubicación, metros cuadrados, habitaciones, baños, " +
         "características como ascensor, garaje, trastero, orientación, estado de conservación, " +
@@ -64,14 +64,23 @@ export async function transcribeAudio(
     const transcription = await openai.audio.transcriptions.create(transcriptionOptions);
 
     // Extract the main transcript text
-    const transcript = transcription.text || "";
+    const transcript = transcription.text ?? "";
 
     // Calculate overall confidence from segments if available
     let confidence = 85; // Default confidence for Whisper
-    const transcriptionAny = transcription as any;
+    const transcriptionAny = transcription as unknown as {
+      segments?: Array<{
+        text?: string;
+        start?: number;
+        end?: number;
+        avg_logprob?: number;
+      }>;
+      language?: string;
+      duration?: number;
+    };
     if (transcriptionAny.segments && Array.isArray(transcriptionAny.segments)) {
       const segmentConfidences = transcriptionAny.segments
-        .map((seg: any) => seg.avg_logprob ? Math.exp(seg.avg_logprob) * 100 : 85)
+        .map((seg) => seg.avg_logprob ? Math.exp(seg.avg_logprob) * 100 : 85)
         .filter((conf: number) => conf > 0);
       
       if (segmentConfidences.length > 0) {
@@ -81,10 +90,10 @@ export async function transcribeAudio(
 
     // Extract segments for detailed analysis if available
     const segments = transcriptionAny.segments && Array.isArray(transcriptionAny.segments)
-      ? transcriptionAny.segments.map((seg: any) => ({
-          text: seg.text || "",
-          start: seg.start || 0,
-          end: seg.end || 0,
+      ? transcriptionAny.segments.map((seg) => ({
+          text: seg.text ?? "",
+          start: seg.start ?? 0,
+          end: seg.end ?? 0,
           confidence: seg.avg_logprob ? Math.exp(seg.avg_logprob) * 100 : undefined,
         }))
       : undefined;
@@ -92,7 +101,7 @@ export async function transcribeAudio(
     const result: TranscriptionResult = {
       transcript: transcript.trim(),
       confidence: Math.round(confidence),
-      language: transcriptionAny.language || "es",
+      language: transcriptionAny.language ?? "es",
       duration: transcriptionAny.duration,
       segments,
     };
@@ -101,8 +110,8 @@ export async function transcribeAudio(
     console.log(`   - Text length: ${result.transcript.length} characters`);
     console.log(`   - Confidence: ${result.confidence}%`);
     console.log(`   - Language: ${result.language}`);
-    console.log(`   - Duration: ${result.duration || 'unknown'}s`);
-    console.log(`   - Segments: ${result.segments?.length || 0}`);
+    console.log(`   - Duration: ${result.duration ?? 'unknown'}s`);
+    console.log(`   - Segments: ${result.segments?.length ?? 0}`);
     
     // Log the full transcript
     console.log(`\n📝 [TRANSCRIPTION] Full transcript:`);

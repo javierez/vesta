@@ -422,21 +422,21 @@ Extract ONLY explicitly mentioned information. Do not infer or assume missing da
       });
 
       const message = completion.choices[0]?.message;
-      if (!message || !message.tool_calls || message.tool_calls.length === 0) {
+      if (!message?.tool_calls || message.tool_calls.length === 0) {
         console.warn(`⚠️ [GPT4-OCR] No function call returned for ${func.name}`);
         continue;
       }
 
       const functionCall = message.tool_calls[0];
-      if (!functionCall || !functionCall.function) {
+      if (!functionCall?.function) {
         console.warn(`⚠️ [GPT4-OCR] Invalid function call structure for ${func.name}`);
         continue;
       }
 
       // Parse the function arguments
-      let functionArgs: any;
+      let functionArgs: Record<string, unknown>;
       try {
-        functionArgs = JSON.parse(functionCall.function.arguments);
+        functionArgs = JSON.parse(functionCall.function.arguments) as Record<string, unknown>;
       } catch (error) {
         console.error(`❌ [GPT4-OCR] Failed to parse function arguments for ${func.name}:`, error);
         continue;
@@ -463,7 +463,7 @@ Extract ONLY explicitly mentioned information. Do not infer or assume missing da
  */
 function processFunctionResults(
   functionName: string, 
-  functionArgs: any, 
+  functionArgs: Record<string, unknown>, 
   ocrInput: OCRInput
 ): ExtractedFieldResult[] {
   const extractedFields: ExtractedFieldResult[] = [];
@@ -616,8 +616,9 @@ function processFunctionResults(
   // Special handling for contact name parsing
   if (functionName === 'extract_contact_info') {
     // Handle owner name parsing
-    if (functionArgs.owner_name && typeof functionArgs.owner_name === 'string') {
-      const fullName = functionArgs.owner_name.trim();
+    const ownerName = functionArgs.owner_name;
+    if (ownerName && typeof ownerName === 'string') {
+      const fullName = ownerName.trim();
       const nameParts = fullName.split(' ').filter((part: string) => part.length > 0);
       
       if (nameParts.length >= 2) {
@@ -625,16 +626,17 @@ function processFunctionResults(
         const lastName = nameParts.slice(1).join(' ');
         
         // Add firstName and lastName as separate fields
+        const confidence = functionArgs.confidence;
         const adjustedConfidence = Math.min(
-          functionArgs.confidence || 80,
-          (functionArgs.confidence || 80) * (ocrInput.confidence / 100)
+          typeof confidence === 'number' ? confidence : 80,
+          (typeof confidence === 'number' ? confidence : 80) * (ocrInput.confidence / 100)
         );
 
         extractedFields.push({
           dbColumn: "firstName",
           dbTable: "contacts",
-          value: firstName,
-          originalText: functionArgs.original_text || "",
+          value: firstName!,
+          originalText: typeof functionArgs.original_text === 'string' ? functionArgs.original_text : "",
           confidence: adjustedConfidence,
           extractionSource: "gpt4_ocr",
           fieldType: "string",
@@ -645,7 +647,7 @@ function processFunctionResults(
           dbColumn: "lastName", 
           dbTable: "contacts",
           value: lastName,
-          originalText: functionArgs.original_text || "",
+          originalText: typeof functionArgs.original_text === 'string' ? functionArgs.original_text : "",
           confidence: adjustedConfidence,
           extractionSource: "gpt4_ocr",
           fieldType: "string",
@@ -657,17 +659,19 @@ function processFunctionResults(
     }
 
     // Handle agent name parsing
-    if (functionArgs.agent_name && typeof functionArgs.agent_name === 'string') {
-      const fullName = functionArgs.agent_name.trim();
+    const agentName = functionArgs.agent_name;
+    if (agentName && typeof agentName === 'string') {
+      const fullName = agentName.trim();
       const nameParts = fullName.split(' ').filter((part: string) => part.length > 0);
       
       if (nameParts.length >= 2) {
         const firstName = nameParts[0];
         const lastName = nameParts.slice(1).join(' ');
         
+        const confidence = functionArgs.confidence;
         const adjustedConfidence = Math.min(
-          functionArgs.confidence || 80,
-          (functionArgs.confidence || 80) * (ocrInput.confidence / 100)
+          typeof confidence === 'number' ? confidence : 80,
+          (typeof confidence === 'number' ? confidence : 80) * (ocrInput.confidence / 100)
         );
 
         // Note: Agent info would need additional handling in database saver
@@ -718,28 +722,30 @@ function processFunctionResults(
     }
 
     // Convert value using converter function
-    let convertedValue: string | number | boolean = fieldValue as string | number | boolean;
+    let convertedValue: string | number | boolean = typeof fieldValue === 'string' || typeof fieldValue === 'number' || typeof fieldValue === 'boolean' ? fieldValue : stringValue;
     if (fieldMapping.converter) {
       try {
         const converted = fieldMapping.converter(stringValue);
-        convertedValue = converted as string | number | boolean;
+        convertedValue = typeof converted === 'string' || typeof converted === 'number' || typeof converted === 'boolean' ? converted : stringValue;
       } catch (error) {
         console.warn(`⚠️ [GPT4-OCR] Conversion failed for ${mapping.dbColumn}: ${stringValue}`);
-        convertedValue = fieldValue as string | number | boolean;
+        convertedValue = typeof fieldValue === 'string' || typeof fieldValue === 'number' || typeof fieldValue === 'boolean' ? fieldValue : stringValue;
       }
     }
 
     // Adjust confidence based on OCR confidence
+    const confidence = functionArgs.confidence;
+    const baseConfidence = typeof confidence === 'number' ? confidence : 80;
     const adjustedConfidence = Math.min(
-      functionArgs.confidence || 80,
-      (functionArgs.confidence || 80) * (ocrInput.confidence / 100)
+      baseConfidence,
+      baseConfidence * (ocrInput.confidence / 100)
     );
 
     extractedFields.push({
       dbColumn: mapping.dbColumn,
       dbTable: mapping.dbTable as "properties" | "listings" | "contacts",
       value: convertedValue,
-      originalText: functionArgs.original_text || "",
+      originalText: typeof functionArgs.original_text === 'string' ? functionArgs.original_text : "",
       confidence: adjustedConfidence,
       extractionSource: "gpt4_ocr",
       fieldType: fieldMapping.dataType,

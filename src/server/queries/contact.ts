@@ -13,7 +13,7 @@ import { eq, and, or, like, sql, inArray } from "drizzle-orm";
 import type { Contact } from "../../lib/data";
 import { listingContacts } from "../db/schema";
 import { prospectUtils } from "../../lib/utils";
-import { getCurrentUserAccountId } from "../../lib/dal";
+import { getCurrentUserAccountId, UnauthorizedError } from "../../lib/dal";
 
 // Wrapper functions that automatically get accountId from current session
 // These maintain backward compatibility while adding account filtering
@@ -475,7 +475,7 @@ export async function searchContacts(query: string, accountId: number, limit?: n
         ),
       )
       .orderBy(contacts.firstName, contacts.lastName)
-      .limit(limit || 50);
+      .limit(limit ?? 50);
 
     return searchResults;
   } catch (error) {
@@ -1475,8 +1475,18 @@ export async function listContactsOwnerDataWithAuth(
   limit = 100,
   filters?: Parameters<typeof listContactsWithTypes>[3],
 ) {
-  const accountId = await getCurrentUserAccountId();
-  return listContactsOwnerData(accountId, page, limit, filters);
+  try {
+    const accountId = await getCurrentUserAccountId();
+    return listContactsOwnerData(accountId, page, limit, filters);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'UnauthorizedError') {
+      // Authentication failed - let middleware handle redirect
+      throw error;
+    }
+    // Database or other errors
+    console.error("Error in listContactsOwnerDataWithAuth:", error);
+    throw error;
+  }
 }
 
 // Progressive Loading: Buyer Data Query
@@ -1485,8 +1495,18 @@ export async function listContactsBuyerDataWithAuth(
   limit = 100,
   filters?: Parameters<typeof listContactsWithTypes>[3],
 ) {
-  const accountId = await getCurrentUserAccountId();
-  return listContactsBuyerData(accountId, page, limit, filters);
+  try {
+    const accountId = await getCurrentUserAccountId();
+    return listContactsBuyerData(accountId, page, limit, filters);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'UnauthorizedError') {
+      // Authentication failed - let middleware handle redirect
+      throw error;
+    }
+    // Database or other errors
+    console.error("Error in listContactsBuyerDataWithAuth:", error);
+    throw error;
+  }
 }
 
 // Optimized query for owner contacts with only owner listings
@@ -2067,13 +2087,25 @@ export async function listContactsBuyerData(
   }
 }
 
+// Type for contact data returned by the similarity search
+type SimilarContactData = {
+  contactId: bigint;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  additionalInfo: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 // Find contacts with similar names (for OCR duplicate detection)
 export async function findContactBySimilarName(
   firstName: string,
   lastName: string,
   accountId: number,
   similarityThreshold = 0.8,
-): Promise<{ contact: any; similarity: number } | null> {
+): Promise<{ contact: SimilarContactData; similarity: number } | null> {
   try {
     // Get all active contacts for the account
     const allContacts = await db
@@ -2134,7 +2166,7 @@ export async function findContactBySimilarName(
       return maxLength === 0 ? 1 : 1 - matrix[b.length]![a.length]! / maxLength;
     }
 
-    let bestMatch: { contact: any; similarity: number } | null = null;
+    let bestMatch: { contact: SimilarContactData; similarity: number } | null = null;
 
     for (const contact of allContacts) {
       // Calculate similarity for full name

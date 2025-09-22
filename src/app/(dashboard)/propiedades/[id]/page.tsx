@@ -48,11 +48,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   console.log("listingId:", listingId);
   console.log("fullListingDetails:", fullListingDetails);
   console.log("isValidRecord(fullListingDetails):", isValidRecord(fullListingDetails));
-  console.log("fullListingDetails.status:", (fullListingDetails as any)?.status);
+  console.log("fullListingDetails.status:", isValidRecord(fullListingDetails) ? (fullListingDetails as { status?: string }).status : undefined);
   
   if (
     isValidRecord(fullListingDetails) &&
-    fullListingDetails.status === "Draft"
+    (fullListingDetails as { status?: string }).status === "Draft"
   ) {
     console.log("REDIRECTING TO CREAR PAGE - Status is Draft");
     redirect(`/propiedades/crear/${listingId}`);

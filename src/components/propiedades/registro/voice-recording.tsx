@@ -9,7 +9,6 @@ import {
   Square,
   RotateCcw,
   Send,
-  Check,
 } from "lucide-react";
 
 interface VoiceRecordingProps {
@@ -85,7 +84,7 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
           cancelAnimationFrame(animationFrameRef.current);
         }
         if (audioContextRef.current) {
-          audioContextRef.current.close();
+          void audioContextRef.current.close();
         }
         setAudioLevel(0);
       };

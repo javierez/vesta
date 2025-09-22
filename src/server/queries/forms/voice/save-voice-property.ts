@@ -89,7 +89,7 @@ export async function saveVoiceProperty(
       ...propertyData
     } as Parameters<typeof createProperty>[0]);
     
-    if (!newProperty || !newProperty.propertyId) {
+    if (!newProperty?.propertyId) {
       throw new Error("Error al crear la propiedad");
     }
 
@@ -98,24 +98,13 @@ export async function saveVoiceProperty(
     // Extract listing-specific fields
     const listingFields = extractedFields.filter(f => f.dbTable === "listings");
     
-    // Determine listing type and price from extracted fields
-    let listingType = "Sale";
-    let price = "0";
-    
-    const listingTypeField = listingFields.find(f => f.dbColumn === "listingType");
-    if (listingTypeField) {
-      listingType = String(listingTypeField.value);
-    }
-    
-    const priceField = listingFields.find(f => f.dbColumn === "price");
-    if (priceField) {
-      price = String(priceField.value);
-    }
+    // Extract listing type and price from extracted fields (for potential future use)
+    // Currently unused but may be needed for validation or logging
 
     // Create default listing with extracted data
     const newListing = await createDefaultListing(Number(newProperty.propertyId));
     
-    if (!newListing || !newListing.listingId) {
+    if (!newListing?.listingId) {
       console.warn("Warning: Could not create default listing");
     }
 

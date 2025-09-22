@@ -32,6 +32,7 @@ const publicPaths = [
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  console.log(`🔍 Middleware called for: ${pathname}`);
 
   // Allow public paths and static assets
   if (
@@ -42,25 +43,32 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/favicon") ||
     pathname.includes(".")
   ) {
+    console.log(`✅ Allowing public path: ${pathname}`);
     return NextResponse.next();
   }
 
   // Everything else is protected - requires authentication
   // Use cookie-based check to avoid Edge Runtime database issues
   const sessionToken = request.cookies.get("better-auth.session_token");
+  console.log(`🍪 Session token exists: ${!!sessionToken?.value}`);
   
   if (!sessionToken?.value) {
-    // No session token, redirect to signin
-    const signinUrl = new URL("/auth/signin", request.url);
-    return NextResponse.redirect(signinUrl);
+    console.log(`🔄 Redirecting to homepage from: ${pathname}`);
+    // No session token, redirect to homepage
+    const homeUrl = new URL("/", request.url);
+    return NextResponse.redirect(homeUrl);
   }
+
+  console.log(`✅ Session token found, allowing access to: ${pathname}`);
 
   // For authenticated users, let the DAL handle full session validation
   // We just pass through with basic session indication
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-has-session-token", "true");
 
-
+  // If database is unavailable and session validation fails in DAL,
+  // the DAL will return null and trigger UnauthorizedError
+  // We could add additional checks here, but for now let DAL handle it
   return NextResponse.next({
     request: {
       headers: requestHeaders,

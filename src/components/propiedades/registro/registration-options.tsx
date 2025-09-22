@@ -148,7 +148,7 @@ export interface OptionDetailsProps {
 
 export function OptionDetails({ 
   option,
-  onStart 
+  onStart: _onStart 
 }: OptionDetailsProps) {
   return (
     <div className="space-y-6">

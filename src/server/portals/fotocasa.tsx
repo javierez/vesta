@@ -17,6 +17,7 @@ import { env } from "~/env";
 const FOTOCASA_API_KEY = env.FOTOCASA_API_KEY;
 
 // Types
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface ListingDetails {
   propertyId?: bigint;
   referenceNumber?: string;
@@ -210,7 +211,7 @@ export async function buildFotocasaPayload(
     const listing = await getListingDetailsWithAuth(
       listingId,
     );
-    const images = await getPropertyImages(BigInt(listing.propertyId!));
+    const images = await getPropertyImages(BigInt(listing.propertyId));
 
     // NEW: Get account watermark configuration and process images if needed
     const accountId = await getAccountIdForListing(listingId);
@@ -495,10 +496,10 @@ export async function buildFotocasaPayload(
     }
 
     // Home Automation (FeatureId: 142)
-    if ('homeAutomation' in listing && typeof (listing as any).homeAutomation === 'boolean') {
+    if ('homeAutomation' in listing && typeof (listing as Record<string, unknown>).homeAutomation === 'boolean') {
       propertyFeatures.push({
         FeatureId: 142,
-        BoolValue: (listing as any).homeAutomation ?? false,
+        BoolValue: (listing as Record<string, unknown>).homeAutomation as boolean,
       });
     }
 
@@ -610,34 +611,34 @@ export async function buildFotocasaPayload(
     }
 
     // Security Door (FeatureId: 294)
-    if ('securityDoor' in listing && typeof (listing as any).securityDoor === 'boolean') {
+    if ('securityDoor' in listing && typeof (listing as Record<string, unknown>).securityDoor === 'boolean') {
       propertyFeatures.push({
         FeatureId: 294,
-        BoolValue: (listing as any).securityDoor ?? false,
+        BoolValue: (listing as Record<string, unknown>).securityDoor as boolean,
       });
     }
 
     // Alarm (FeatureId: 235)
-    if ('alarm' in listing && typeof (listing as any).alarm === 'boolean') {
+    if ('alarm' in listing && typeof (listing as Record<string, unknown>).alarm === 'boolean') {
       propertyFeatures.push({
         FeatureId: 235,
-        BoolValue: (listing as any).alarm ?? false,
+        BoolValue: (listing as Record<string, unknown>).alarm as boolean,
       });
     }
 
     // Private Pool (FeatureId: 25)
-    if ('privatePool' in listing && typeof (listing as any).privatePool === 'boolean') {
+    if ('privatePool' in listing && typeof (listing as Record<string, unknown>).privatePool === 'boolean') {
       propertyFeatures.push({
         FeatureId: 25,
-        BoolValue: (listing as any).privatePool ?? false,
+        BoolValue: (listing as Record<string, unknown>).privatePool as boolean,
       });
     }
 
     // Community Pool (FeatureId: 300)
-    if ('communityPool' in listing && typeof (listing as any).communityPool === 'boolean') {
+    if ('communityPool' in listing && typeof (listing as Record<string, unknown>).communityPool === 'boolean') {
       propertyFeatures.push({
         FeatureId: 300,
-        BoolValue: (listing as any).communityPool ?? false,
+        BoolValue: (listing as Record<string, unknown>).communityPool as boolean,
       });
     }
 
@@ -718,7 +719,7 @@ export async function buildFotocasaPayload(
     }
 
     // Conservation Status (FeatureId: 249)
-    if ('conservationStatus' in listing && typeof (listing as any).conservationStatus === 'string') {
+    if ('conservationStatus' in listing && typeof (listing as Record<string, unknown>).conservationStatus === 'string') {
       const conservationStatusMap: Record<string, number> = {
         excellent: 1,
         good: 2,
@@ -726,8 +727,8 @@ export async function buildFotocasaPayload(
         poor: 4,
         needs_renovation: 5,
       };
-      const statusValue =
-        conservationStatusMap[(listing as any).conservationStatus] ?? 1;
+      const conservationStatus = (listing as Record<string, unknown>).conservationStatus as string;
+      const statusValue = conservationStatusMap[conservationStatus] ?? 1;
       propertyFeatures.push({
         FeatureId: 249,
         DecimalValue: statusValue,

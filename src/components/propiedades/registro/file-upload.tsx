@@ -45,7 +45,7 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const handleFileUpload = async (files: File[]) => {
+  const handleFileUpload = useCallback(async (files: File[]) => {
     // Add files to state
     const newFiles: UploadedFile[] = files.map((file, index) => ({
       id: `${Date.now()}-${index}`,
@@ -72,7 +72,7 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
       setIsUploading(false);
       setOverallUploadProgress(0);
     }
-  };
+  }, [listingId, onFileUpload]);
 
   // Phase 1: Upload to existing property (original behavior)
   const uploadFilesToExistingProperty = async (files: UploadedFile[]) => {
@@ -297,7 +297,7 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
     if (validFiles.length > 0) {
       void handleFileUpload(validFiles);
     }
-  }, [listingId, handleFileUpload]);
+  }, [handleFileUpload]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -534,6 +534,7 @@ function EnhancedFilePreviewGrid({ files }: FilePreviewGridProps) {
       const previewUrl = URL.createObjectURL(file.file);
       return (
         <div className="relative w-full h-full rounded-xl bg-white shadow-lg border-2 border-amber-200 overflow-y-auto overflow-x-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
             alt={file.file.name}

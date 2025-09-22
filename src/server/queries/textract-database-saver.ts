@@ -231,7 +231,7 @@ export async function saveExtractedDataToDatabase(
 
     // Auto-complete address before saving if we have street data but no cadastral reference
     if (Object.keys(propertyUpdateData).length > 0) {
-      const streetValue = propertyUpdateData.street as string;
+      const streetValue = propertyUpdateData.street!;
       const hasAddressInfo = streetValue && streetValue !== "Dirección a completar";
       const hasCadastralRef = propertyUpdateData.cadastralReference && 
         String(propertyUpdateData.cadastralReference).trim() !== "";
@@ -242,8 +242,8 @@ export async function saveExtractedDataToDatabase(
         
         try {
           // Build city from extracted location data if available
-          const cityToUse = extractedLocationData.city || 
-                           extractedLocationData.municipality || 
+          const cityToUse = extractedLocationData.city ?? 
+                           extractedLocationData.municipality ?? 
                            undefined;
 
           const addressResult = await autoCompleteAddress(streetValue, cityToUse);
@@ -265,7 +265,7 @@ export async function saveExtractedDataToDatabase(
                   city: addressResult.city,
                   province: addressResult.province,
                   municipality: addressResult.municipality,
-                  neighborhood: addressResult.neighborhood || "Unknown",
+                  neighborhood: addressResult.neighborhood ?? "Unknown",
                 });
                 propertyUpdateData.neighborhoodId = BigInt(neighborhoodId);
                 console.log(`🏛️ [DATABASE] Location created/found with neighborhoodId: ${neighborhoodId}`);
@@ -294,11 +294,11 @@ export async function saveExtractedDataToDatabase(
 
     // Generate title if we have property data but no existing title
     if (Object.keys(propertyUpdateData).length > 0 && !propertyUpdateData.title) {
-      const propertyType = (propertyUpdateData.propertyType as string) || "piso";
-      const street = (propertyUpdateData.street as string) || "";
+      const propertyType = propertyUpdateData.propertyType! ?? "piso";
+      const street = propertyUpdateData.street! ?? "";
       
       // Try to get neighborhood from the enriched address data
-      let neighborhood = "";
+      const neighborhood = "";
       if (propertyUpdateData.neighborhoodId) {
         // In a real scenario, you might want to fetch the neighborhood name from the database
         // For now, we'll use empty string and let the address be the main identifier
@@ -403,9 +403,9 @@ export async function saveExtractedDataToDatabase(
 
               // Generate title from cadastral data
               const cadastralTitle = generatePropertyTitle(
-                cadastralData.propertyType || "piso",
-                cadastralData.street || "",
-                cadastralData.neighborhood || ""
+                cadastralData.propertyType ?? "piso",
+                cadastralData.street ?? "",
+                cadastralData.neighborhood ?? ""
               );
               cadastralUpdateData.title = cadastralTitle;
               
@@ -549,8 +549,8 @@ export async function saveExtractedDataToDatabase(
 
         // Check if we have at least a name to create a contact
         if (contactData.firstName || contactData.lastName) {
-          const firstName = contactData.firstName || "Propietario";
-          const lastName = contactData.lastName || "";
+          const firstName = contactData.firstName ?? "Propietario";
+          const lastName = contactData.lastName ?? "";
 
           console.log(`🔍 [DATABASE] Checking for similar contacts: "${firstName} ${lastName}"`);
 
@@ -745,7 +745,7 @@ async function linkContactToListing(
   contactId: number,
   listingId: number,
   contactType: "owner" | "buyer" | "viewer",
-  accountId: number,
+  _accountId: number,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     console.log(`🔗 [DATABASE] Creating contact-listing relationship: contact ${contactId} → listing ${listingId} (${contactType})`);
@@ -812,6 +812,13 @@ export async function getPropertyAndListingIds(documentKey: string): Promise<{
     }
 
     const referenceNumber = match[1];
+    if (!referenceNumber) {
+      console.warn(
+        `⚠️ [DATABASE] Could not extract reference number from match: ${documentKey}`,
+      );
+      return null;
+    }
+    
     console.log(`📋 [DATABASE] Extracted reference number: ${referenceNumber}`);
 
     // Import here to avoid circular dependencies
@@ -823,7 +830,7 @@ export async function getPropertyAndListingIds(documentKey: string): Promise<{
     const [property] = await db
       .select({ propertyId: properties.propertyId })
       .from(properties)
-      .where(eq(properties.referenceNumber, referenceNumber!))
+      .where(eq(properties.referenceNumber, referenceNumber))
       .limit(1);
 
     if (!property) {

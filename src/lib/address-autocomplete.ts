@@ -42,7 +42,7 @@ export async function autoCompleteAddress(
 
     // Build full address string
     const addressParts = [street.trim()];
-    if (city && city.trim()) {
+    if (city?.trim()) {
       addressParts.push(city.trim());
     }
     addressParts.push(country);
@@ -67,7 +67,7 @@ export async function autoCompleteAddress(
     }
 
     const result = nominatimResults[0];
-    if (!result || !result.address) {
+    if (!result?.address) {
       return { 
         success: false, 
         error: "Invalid address data" 

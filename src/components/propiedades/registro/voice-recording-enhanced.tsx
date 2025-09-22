@@ -46,7 +46,7 @@ const PROCESSING_STEPS: Record<ProcessingStep, { icon: React.ElementType; color:
 
 export function VoiceRecordingEnhanced({ 
   onProcessingComplete,
-  onRetryRecording,
+  onRetryRecording: _onRetryRecording,
   onManualEntry, 
   referenceNumber = "temp",
   className 
@@ -281,8 +281,8 @@ export function VoiceRecordingEnhanced({
 
       // Verificar si la respuesta no es OK o si hay un error en el resultado
       if (!processResponse.ok || result.error) {
-        const errorMessage = result.error || "Error al procesar el audio";
-        const errorDetails = result.details || "";
+        const errorMessage = result.error ?? "Error al procesar el audio";
+        const errorDetails = result.details ?? "";
         
         console.error("Error del servidor:", errorMessage, errorDetails);
         

@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        propertyId: propertyId as string,
+        propertyId: propertyId,
         documentsProcessed: documentIds.length,
         processingStatus: "started"
       },

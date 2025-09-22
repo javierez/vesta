@@ -74,9 +74,16 @@ export async function getSecureSession(): Promise<SecureSession | null> {
     }
 
     // Middleware indicates session exists, do full session check in Node.js runtime
-    const session = await auth.api.getSession({
-      headers: headersList,
-    });
+    let session;
+    try {
+      session = await auth.api.getSession({
+        headers: headersList,
+      });
+    } catch (dbError) {
+      // Database connection failed - this should trigger a redirect
+      console.error("Database connection failed during session validation:", dbError);
+      return null;
+    }
 
     if (!session?.user) {
       // If middleware said there's a session token but we can't validate it,
@@ -126,7 +133,7 @@ export async function getCurrentUserAccountId(): Promise<number> {
   const session = await getSecureSession();
 
   if (!session) {
-    throw new Error("No authenticated user session found");
+    throw new UnauthorizedError("No authenticated user session found");
   }
 
   return session.user.accountId;
@@ -140,7 +147,7 @@ export async function getCurrentUser() {
   const session = await getSecureSession();
 
   if (!session) {
-    throw new Error("No authenticated user session found");
+    throw new UnauthorizedError("No authenticated user session found");
   }
 
   return session.user;

@@ -408,13 +408,13 @@ Extrae únicamente los datos que estén claramente mencionados en el texto.`;
       });
 
       const message = completion.choices[0]?.message;
-      if (!message || !message.tool_calls || message.tool_calls.length === 0) {
+      if (!message?.tool_calls || message.tool_calls.length === 0) {
         console.warn(`⚠️ [GPT4-FUNCTION-CALLING] No function call returned for ${func.name}`);
         continue;
       }
 
       const functionCall = message.tool_calls[0];
-      if (!functionCall || !functionCall.function) {
+      if (!functionCall?.function) {
         console.warn(`⚠️ [GPT4-FUNCTION-CALLING] Invalid function call structure for ${func.name}`);
         continue;
       }
@@ -425,9 +425,9 @@ Extrae únicamente los datos que estén claramente mencionados en el texto.`;
       }
 
       // Parse the function arguments
-      let functionArgs: any;
+      let functionArgs: Record<string, unknown>;
         try {
-        functionArgs = JSON.parse(functionCall.function.arguments);
+        functionArgs = JSON.parse(functionCall.function.arguments) as Record<string, unknown>;
         } catch (error) {
         console.error(`❌ [GPT4-FUNCTION-CALLING] Failed to parse function arguments for ${func.name}:`, error);
         continue;
@@ -454,7 +454,7 @@ Extrae únicamente los datos que estén claramente mencionados en el texto.`;
  */
 function processFunctionResults(
   functionName: string, 
-  functionArgs: any, 
+  functionArgs: Record<string, unknown>, 
   voiceInput: VoiceExtractionInput
 ): ExtractedFieldResult[] {
   const extractedFields: ExtractedFieldResult[] = [];
@@ -607,7 +607,7 @@ function processFunctionResults(
 
   // Process each field from the function result
   for (const [fieldName, fieldValue] of Object.entries(functionArgs)) {
-    if (fieldName === 'original_text' || fieldName === 'confidence' || fieldValue === undefined || fieldValue === null) {
+    if (fieldName === 'original_text' || fieldName === 'confidence' || fieldValue == null) {
       continue;
     }
 
@@ -641,28 +641,29 @@ function processFunctionResults(
           }
 
     // Convert value using converter function
-    let convertedValue: string | number | boolean = fieldValue as string | number | boolean;
+    let convertedValue: string | number | boolean = fieldValue;
           if (fieldMapping.converter) {
             try {
         const converted = fieldMapping.converter(stringValue);
-        convertedValue = converted as string | number | boolean;
-      } catch (error) {
+        convertedValue = converted;
+      } catch {
         console.warn(`⚠️ [GPT4-FUNCTION-CALLING] Conversion failed for ${mapping.dbColumn}: ${stringValue}`);
-        convertedValue = fieldValue as string | number | boolean;
+        convertedValue = fieldValue;
       }
     }
 
     // Adjust confidence based on transcript confidence
+    const baseConfidence = (functionArgs.confidence as number) ?? 80;
     const adjustedConfidence = Math.min(
-      functionArgs.confidence || 80,
-      (functionArgs.confidence || 80) * (voiceInput.confidence / 100)
+      baseConfidence,
+      baseConfidence * (voiceInput.confidence / 100)
     );
 
     extractedFields.push({
       dbColumn: mapping.dbColumn,
       dbTable: mapping.dbTable as "properties" | "listings",
             value: convertedValue,
-      originalText: functionArgs.original_text || "",
+      originalText: (functionArgs.original_text as string) ?? "",
       confidence: adjustedConfidence,
       extractionSource: "gpt4_function_calling",
             fieldType: fieldMapping.dataType,
