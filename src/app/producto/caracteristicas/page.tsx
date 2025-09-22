@@ -12,10 +12,7 @@ import {
   Code,
   Check,
   ArrowRight,
-  Building2,
-  BarChart3,
   Zap,
-  Lock,
   Cloud,
   Sparkles
 } from "lucide-react";

@@ -1,21 +1,13 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { createMinimalPropertyWithListing } from "~/server/queries/properties";
-import { extractTextFromDocument } from "~/server/ocr/ocr-initial-form";
-import { extractEnhancedPropertyData } from "~/server/ocr/field-extractor";
-import { saveExtractedDataToDatabase } from "~/server/queries/textract-database-saver";
-import { renameDocumentFolder } from "~/app/actions/upload";
+import { processDocumentInBackgroundEnhanced } from "~/server/ocr/ocr-initial-form";
 import { getDocumentById } from "~/server/queries/document";
 import { getSecureSession } from "~/lib/dal";
-import { db } from "~/server/db";
-import { documents } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
-import type { EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
 
-// Phase 2: Process documents and create property
+// Phase 2: Trigger OCR processing for uploaded documents
 export async function POST(request: NextRequest) {
   try {
-    console.log("🏠 Starting Phase 2: Processing ficha de encargo documents...");
+    console.log("🔍 Starting Phase 2: Triggering OCR processing for ficha de encargo documents...");
     
     // Get current user session
     const session = await getSecureSession();
@@ -23,12 +15,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { tempReferenceNumber, documentIds } = body;
+    const body = await request.json() as { propertyId: string; documentIds: string[] };
+    const { propertyId, documentIds } = body;
 
-    if (!tempReferenceNumber) {
+    if (!propertyId) {
       return NextResponse.json(
-        { error: "Temporary reference number is required" },
+        { error: "Property ID is required" },
         { status: 400 },
       );
     }
@@ -40,132 +32,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`📝 Processing ${documentIds.length} documents with temp reference: ${tempReferenceNumber}`);
+    console.log(`🔍 Processing ${documentIds.length} documents for property: ${propertyId}`);
 
-    // Step 1: Create minimal property and listing
-    console.log("📝 Creating minimal property and listing...");
-    const propertyResult = await createMinimalPropertyWithListing();
-    const { propertyId, listingId, referenceNumber } = propertyResult;
-    
-    console.log(`✅ Property created: ${propertyId}, Listing: ${listingId}, Reference: ${referenceNumber}`);
-
-    // Step 2: Rename S3 folder and update document records
-    console.log("📁 Renaming S3 folder and updating document records...");
-    try {
-      const documentIdsBigInt = documentIds.map((id: string) => BigInt(id));
-      const renamedDocuments = await renameDocumentFolder(
-        tempReferenceNumber,
-        referenceNumber,
-        documentIdsBigInt,
-      );
-      console.log(`✅ Renamed ${renamedDocuments.length} documents`);
-
-      // Update document records with property and listing IDs
-      for (const docId of documentIds) {
-        await db
-          .update(documents)
-          .set({
-            propertyId: BigInt(propertyId),
-            listingId: BigInt(listingId),
-          })
-          .where(eq(documents.docId, BigInt(docId)));
-      }
-      console.log("✅ Updated document records with property and listing IDs");
-
-    } catch (error) {
-      console.error("❌ Error renaming documents:", error);
-      // Continue with processing even if renaming fails
-    }
-
-    // Step 3: Process documents with OCR for data extraction
-    console.log("🔍 Processing documents with OCR...");
-    let extractedData: EnhancedExtractedPropertyData | undefined;
-    
-    // Find the first PDF document for OCR processing
+    // Trigger OCR processing for each document (same as crear workflow)
     for (const docId of documentIds) {
       try {
         const document = await getDocumentById(Number(docId));
         
-        if (document && 
-            (document.fileType === 'application/pdf' || 
-             document.documentKey.toLowerCase().includes('.pdf'))) {
+        if (document) {
+          console.log(`🎯 Triggering OCR for document: ${document.filename}`);
           
-          console.log(`🎯 Processing PDF document: ${document.filename}`);
-          
-          // Use the updated documentKey (after renaming)
-          const s3Key = document.documentKey.replace(tempReferenceNumber, referenceNumber);
-          
-          // Process document with Textract
-          const ocrResult = await extractTextFromDocument(s3Key);
-          
-          if (ocrResult.success) {
-            console.log("✅ OCR processing successful, extracting property data...");
-            
-            // Extract structured data using the field extractor
-            const fieldExtractionResult = await extractEnhancedPropertyData({
-              extractedText: ocrResult.extractedText,
-              detectedFields: ocrResult.detectedFields,
-              blocks: ocrResult.blocks,
-              confidence: ocrResult.confidence,
-            });
-
-            if (fieldExtractionResult.extractedFields.length > 0) {
-              extractedData = fieldExtractionResult.propertyData;
-              console.log("✅ Data extraction successful:", fieldExtractionResult.extractedFields.length, "fields extracted");
-
-              // Step 4: Update property and listing with extracted data
-              console.log("💾 Saving extracted data to property and listing...");
-              const saveResult = await saveExtractedDataToDatabase(
-                Number(propertyId),
-                Number(listingId),
-                Number(session.user.id),
-                fieldExtractionResult.extractedFields,
-                80 // confidence threshold
+          // Use the same enhanced OCR processing as crear workflow
+          // This runs in background and automatically saves results to database
+          void processDocumentInBackgroundEnhanced(document.documentKey)
+            .catch((error) => {
+              console.error(
+                `❌ OCR processing failed for ${document.documentKey}:`,
+                error,
               );
-              
-              if (saveResult.success) {
-                console.log("✅ Property and listing updated with extracted data");
-              } else {
-                console.warn("⚠️ Some fields could not be saved:", saveResult);
-              }
-              
-              // Only process the first PDF found
-              break;
-            } else {
-              console.warn("⚠️ Data extraction failed or returned no data");
-            }
-          } else {
-            console.warn("⚠️ OCR processing failed:", ocrResult.error);
-          }
+              // Don't throw here - OCR failures shouldn't break the response
+            });
+            
+          console.log(`✅ OCR processing started for: ${document.filename}`);
+        } else {
+          console.warn(`⚠️ Document not found with ID: ${docId}`);
         }
-      } catch (ocrError) {
-        console.error("❌ OCR processing error for document:", docId, ocrError);
+      } catch (docError) {
+        console.error("❌ Error processing document:", docId, docError);
         // Continue with other documents if one fails
       }
     }
 
-    if (!extractedData) {
-      console.log("ℹ️ No PDF documents found or processed successfully for OCR");
-    }
+    console.log("🚀 All OCR processing jobs have been queued in background");
 
     return NextResponse.json({
       success: true,
       data: {
-        propertyId,
-        listingId,
-        referenceNumber,
-        extractedData,
-        documentsUploaded: documentIds.length,
+        propertyId: propertyId as string,
+        documentsProcessed: documentIds.length,
+        processingStatus: "started"
       },
-      message: `Property created successfully with ${documentIds.length} documents processed.`,
+      message: `OCR processing started for ${documentIds.length} documents. Results will be automatically saved to the property when ready.`,
     });
 
   } catch (error) {
-    console.error("❌ Error in ficha de encargo processing:", error);
+    console.error("❌ Error in ficha de encargo Phase 2:", error);
     
     return NextResponse.json(
       { 
-        error: error instanceof Error ? error.message : "Failed to process ficha de encargo",
+        error: error instanceof Error ? error.message : "Failed to trigger OCR processing",
         details: error instanceof Error ? error.stack : undefined
       },
       { status: 500 },

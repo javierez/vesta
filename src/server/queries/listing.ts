@@ -117,25 +117,13 @@ export async function toggleListingPublishToWebsiteWithAuth(listingId: number) {
 export async function getListingDetailsWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
 
-  console.log(
-    `[DEBUG] getListingDetailsWithAuth called with listingId: ${listingId}, accountId: ${accountId}`,
-  );
-
   try {
     // Fetch directly from database without caching
     const listingDetails = await getListingDetails(listingId, accountId);
-    console.log(
-      `[DEBUG] Database query returned:`,
-      listingDetails ? "VALID OBJECT" : "NULL/UNDEFINED",
-    );
-    console.log(
-      `[DEBUG] Listing details keys:`,
-      Object.keys(listingDetails || {}),
-    );
 
     return listingDetails;
   } catch (error) {
-    console.error(`[DEBUG] Error in getListingDetailsWithAuth:`, error);
+    console.error(`Error in getListingDetailsWithAuth:`, error);
     throw error;
   }
 }
@@ -802,9 +790,6 @@ export async function getAccountWebsite(accountId: number) {
 // This query is optimized for the property characteristics form
 export async function getListingDetails(listingId: number, accountId: number) {
   try {
-    console.log(
-      `[DEBUG] getListingDetails querying with listingId: ${listingId}, accountId: ${accountId}`,
-    );
 
     const [listingDetails] = await db
       .select({
@@ -1029,24 +1014,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         ),
       );
 
-    console.log(
-      `[DEBUG] Query executed. Result:`,
-      listingDetails ? "FOUND" : "NOT FOUND",
-    );
-    if (listingDetails) {
-      console.log(
-        `[DEBUG] listingDetails has properties:`,
-        Object.keys(listingDetails),
-      );
-      console.log(`[DEBUG] propertyType:`, listingDetails.propertyType);
-      console.log(`[DEBUG] street:`, listingDetails.street);
-      console.log(`[DEBUG] title:`, listingDetails.title);
-    }
-
     if (!listingDetails) {
-      console.log(
-        `[DEBUG] No listing found for listingId: ${listingId}, accountId: ${accountId}`,
-      );
       throw new Error("Listing not found");
     }
 
@@ -1067,7 +1035,7 @@ export async function createDefaultListing(propertyId: number) {
       agentId: "1", // Default agent ID
       listingType: "Sale" as const,
       price: "0", // Default price as string (decimal type)
-      status: "Draft" as const, // Default status in Spanish
+      status: "Active" as const, // Set as active when created
       // All other fields will be null/undefined by default
     };
 

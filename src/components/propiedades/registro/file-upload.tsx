@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { cn } from "~/lib/utils";
-import { Upload, Check, X, FileText, Loader2, AlertCircle, CheckCircle, Brain, Home, Database, CheckCircle2 } from "lucide-react";
+import { Upload, Check, FileText, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -21,15 +21,11 @@ interface UploadedDocument {
   fileType: string;
   fileUrl: string;
   documentKey: string;
+  propertyId?: string;
+  listingId?: string;
+  referenceNumber?: string;
 }
 
-type ProcessingStep = 'uploading' | 'creating-property' | 'processing-ocr' | 'extracting-data' | 'complete';
-
-interface ProcessingStatus {
-  currentStep: ProcessingStep;
-  progress: number;
-  message: string;
-}
 
 interface FileUploadProps {
   onFileUpload?: (files: File[]) => Promise<void>;
@@ -40,10 +36,9 @@ interface FileUploadProps {
 export function FileUpload({ onFileUpload, className, listingId }: FileUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
-  const [tempReferenceNumber, setTempReferenceNumber] = useState<string>("");
+  const [createdPropertyId, setCreatedPropertyId] = useState<string>("");
   const [isDragOver, setIsDragOver] = useState(false);
-  const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
-  const [isProcessingComplete, setIsProcessingComplete] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [showProcessButton, setShowProcessButton] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [overallUploadProgress, setOverallUploadProgress] = useState(0);
@@ -68,8 +63,8 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
       if (listingId) {
         await uploadFilesToExistingProperty(newFiles);
       } else {
-        // Phase 1: Upload to temporary location
-        await uploadFilesToTemporaryLocation(newFiles);
+        // Phase 1: Create property and upload to final location
+        await uploadFilesWithPropertyCreation(newFiles);
         // Call the provided callback if any
         await onFileUpload?.(files);
       }
@@ -122,16 +117,9 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
     }
   };
 
-  // Phase 1: Upload to temporary location (ficha de encargo)
-  const uploadFilesToTemporaryLocation = async (files: UploadedFile[]) => {
+  // Phase 1: Create property and upload files (ficha de encargo)
+  const uploadFilesWithPropertyCreation = async (files: UploadedFile[]) => {
     try {
-      // Generate temporary reference if we don't have one
-      let currentTempRef = tempReferenceNumber;
-      if (!currentTempRef) {
-        currentTempRef = `temp_${Date.now()}`;
-        setTempReferenceNumber(currentTempRef);
-      }
-
       for (let i = 0; i < files.length; i++) {
         const uploadedFile = files[i];
         if (!uploadedFile) continue;
@@ -145,7 +133,6 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
 
           const formData = new FormData();
           formData.append('file', uploadedFile.file);
-          formData.append('referenceNumber', currentTempRef);
           
           setUploadedFiles(prev => prev.map(f => 
             f.id === uploadedFile.id ? { ...f, progress: 60 } : f
@@ -168,12 +155,22 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
               fileType: string;
               fileUrl: string;
               documentKey: string;
+              propertyId?: string;
+              listingId?: string;
             };
+            propertyId: string;
+            listingId: string;
+            referenceNumber: string;
           };
 
           setUploadedFiles(prev => prev.map(f => 
             f.id === uploadedFile.id ? { ...f, status: 'success', progress: 100 } : f
           ));
+
+          // Store property info from first upload
+          if (i === 0) {
+            setCreatedPropertyId(result.propertyId);
+          }
 
           // Add to uploaded documents list
           setUploadedDocuments(prev => [...prev, {
@@ -182,6 +179,7 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
             fileType: result.document.fileType,
             fileUrl: result.document.fileUrl,
             documentKey: result.document.documentKey,
+            propertyId: result.propertyId,
           }]);
 
           // Update overall progress
@@ -219,14 +217,10 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
     }
   };
 
-  // Phase 2: Process documents and create property
+  // Phase 2: Process documents with OCR
   const processDocuments = async () => {
     try {
-      setProcessingStatus({
-        currentStep: 'creating-property',
-        progress: 20,
-        message: 'Creando propiedad...'
-      });
+      setIsProcessing(true);
 
       const response = await fetch('/api/documents/ficha-encargo/process', {
         method: 'POST',
@@ -234,7 +228,7 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          tempReferenceNumber,
+          propertyId: createdPropertyId,
           documentIds: uploadedDocuments.map(doc => doc.docId),
         }),
       });
@@ -244,48 +238,20 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
         throw new Error(errorData.error ?? 'Processing failed');
       }
 
-      setProcessingStatus({
-        currentStep: 'processing-ocr',
-        progress: 60,
-        message: 'Procesando documentos con IA...'
-      });
+      await response.json();
 
-      const result = await response.json() as {
-        data: {
-          propertyId: string;
-          listingId: string;
-          referenceNumber: string;
-          documentsUploaded: number;
-        };
-      };
+      toast.success(`¡OCR iniciado correctamente! Los datos se guardarán automáticamente cuando estén listos.`);
 
-      setProcessingStatus({
-        currentStep: 'extracting-data',
-        progress: 80,
-        message: 'Extrayendo información de la propiedad...'
-      });
-
-      setProcessingStatus({
-        currentStep: 'complete',
-        progress: 100,
-        message: '¡Propiedad creada exitosamente!'
-      });
-
-      setIsProcessingComplete(true);
-
-      toast.success(`¡Propiedad creada exitosamente! ${result.data.documentsUploaded} documentos procesados.`);
-
-      // Navigate to the new property after a short delay
-      setTimeout(() => {
-        router.push(`/propiedades/registro/${result.data.listingId}`);
-      }, 2000);
+      // Navigate to properties list
+      router.push('/propiedades');
 
     } catch (error) {
       console.error('Processing error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error al procesar los documentos';
       
-      setProcessingStatus(null);
       toast.error(`Error: ${errorMessage}`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -329,18 +295,18 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
     });
     
     if (validFiles.length > 0) {
-      handleFileUpload(validFiles);
+      void handleFileUpload(validFiles);
     }
-  }, [listingId]);
+  }, [listingId, handleFileUpload]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const files = Array.from(e.target.files ?? []);
     if (files.length > 0) {
-      handleFileUpload(files);
+      void handleFileUpload(files);
     }
     // Reset input value to allow re-selecting the same file
     e.target.value = '';
@@ -361,19 +327,18 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
             uploadedFiles={uploadedFiles}
             isUploading={isUploading}
             uploadProgress={overallUploadProgress}
-            showProcessButton={showProcessButton}
-            onProcessDocuments={processDocuments}
-            listingId={listingId}
           />
           
           {/* Process Button - positioned under the FileUploadArea in right column */}
-          {!listingId && showProcessButton && !processingStatus && (
+          {!listingId && showProcessButton && (
             <div className="flex justify-end">
               <button
                 onClick={processDocuments}
-                className="px-6 py-2 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium text-sm rounded-lg hover:from-amber-500 hover:to-rose-500 transition-all duration-200 hover:scale-105 shadow-lg"
+                disabled={isProcessing}
+                className="px-6 py-2 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium text-sm rounded-lg hover:from-amber-500 hover:to-rose-500 transition-all duration-200 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
               >
-                Procesar Documentos y Crear Propiedad
+                {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isProcessing ? 'Procesando...' : 'Procesar Documentos y Crear Propiedad'}
               </button>
             </div>
           )}
@@ -381,15 +346,6 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
       </div>
       
       
-      {/* Processing Status */}
-      {processingStatus && (
-        <div className="mt-8">
-          <ProcessingStatusDisplay 
-            status={processingStatus} 
-            isComplete={isProcessingComplete}
-          />
-        </div>
-      )}
 
       
       {/* Hidden file input */}
@@ -453,9 +409,6 @@ interface FileUploadAreaProps {
   uploadedFiles: UploadedFile[];
   isUploading: boolean;
   uploadProgress: number;
-  showProcessButton: boolean;
-  onProcessDocuments: () => void;
-  listingId?: string;
 }
 
 function FileUploadArea({ 
@@ -467,10 +420,7 @@ function FileUploadArea({
   onDrop,
   uploadedFiles,
   isUploading,
-  uploadProgress,
-  showProcessButton,
-  onProcessDocuments,
-  listingId
+  uploadProgress
 }: FileUploadAreaProps) {
   
   // Determine current state
@@ -664,7 +614,7 @@ function EnhancedFilePreviewGrid({ files }: FilePreviewGridProps) {
       {successfulFiles.length === 1 ? (
         // Single file - use full available space with scroll
         <div className="w-full h-full">
-          {renderFilePreview(successfulFiles[0])}
+          {renderFilePreview(successfulFiles[0]!)}
         </div>
       ) : (
         // Multiple files - grid layout with individual scroll areas
@@ -680,122 +630,6 @@ function EnhancedFilePreviewGrid({ files }: FilePreviewGridProps) {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-
-interface ProcessingStatusDisplayProps {
-  status: ProcessingStatus;
-  isComplete: boolean;
-}
-
-function ProcessingStatusDisplay({ status, isComplete }: ProcessingStatusDisplayProps) {
-  const getStepIcon = (step: ProcessingStep) => {
-    switch (step) {
-      case 'uploading':
-        return <Upload className="h-5 w-5 text-blue-500" />;
-      case 'creating-property':
-        return <Home className="h-5 w-5 text-amber-500" />;
-      case 'processing-ocr':
-        return <Brain className="h-5 w-5 text-purple-500" />;
-      case 'extracting-data':
-        return <Database className="h-5 w-5 text-green-500" />;
-      case 'complete':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-    }
-  };
-
-  return (
-    <div className={cn(
-      "bg-white rounded-xl border p-6 transition-all duration-500",
-      isComplete ? "border-green-200 bg-green-50" : "border-blue-200 bg-blue-50"
-    )}>
-      <div className="flex items-center space-x-4">
-        <div className="flex-shrink-0">
-          {status.currentStep === 'complete' ? (
-            getStepIcon(status.currentStep)
-          ) : (
-            <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-          )}
-        </div>
-        
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className={cn(
-              "font-medium",
-              isComplete ? "text-green-800" : "text-blue-800"
-            )}>
-              {status.message}
-            </h4>
-            <span className={cn(
-              "text-sm font-medium",
-              isComplete ? "text-green-600" : "text-blue-600"
-            )}>
-              {status.progress}%
-            </span>
-          </div>
-          
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className={cn(
-                "h-2 rounded-full transition-all duration-500",
-                isComplete ? "bg-green-500" : "bg-blue-500"
-              )}
-              style={{ width: `${status.progress}%` }}
-            />
-          </div>
-
-          {isComplete && (
-            <p className="text-sm text-green-600 mt-2">
-              La propiedad se ha creado correctamente. Serás redirigido al formulario de registro...
-            </p>
-          )}
-        </div>
-      </div>
-      
-      {/* Processing Steps Indicator */}
-      <div className="mt-4 flex items-center justify-between text-xs">
-        <div className={cn(
-          "flex items-center space-x-1",
-          ['uploading', 'creating-property', 'processing-ocr', 'extracting-data', 'complete'].indexOf(status.currentStep) >= 0 
-            ? "text-blue-600" : "text-gray-400"
-        )}>
-          <Upload className="h-3 w-3" />
-          <span>Subir</span>
-        </div>
-        <div className={cn(
-          "flex items-center space-x-1",
-          ['creating-property', 'processing-ocr', 'extracting-data', 'complete'].indexOf(status.currentStep) >= 0 
-            ? "text-amber-600" : "text-gray-400"
-        )}>
-          <Home className="h-3 w-3" />
-          <span>Crear</span>
-        </div>
-        <div className={cn(
-          "flex items-center space-x-1",
-          ['processing-ocr', 'extracting-data', 'complete'].indexOf(status.currentStep) >= 0 
-            ? "text-purple-600" : "text-gray-400"
-        )}>
-          <Brain className="h-3 w-3" />
-          <span>Procesar</span>
-        </div>
-        <div className={cn(
-          "flex items-center space-x-1",
-          ['extracting-data', 'complete'].indexOf(status.currentStep) >= 0 
-            ? "text-green-600" : "text-gray-400"
-        )}>
-          <Database className="h-3 w-3" />
-          <span>Extraer</span>
-        </div>
-        <div className={cn(
-          "flex items-center space-x-1",
-          status.currentStep === 'complete' ? "text-green-600" : "text-gray-400"
-        )}>
-          <CheckCircle className="h-3 w-3" />
-          <span>Completar</span>
-        </div>
-      </div>
     </div>
   );
 }

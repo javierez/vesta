@@ -3,7 +3,7 @@
 import { createMinimalPropertyWithListing } from "~/server/queries/properties";
 import { uploadDocument } from "~/app/actions/upload";
 import { extractTextFromDocument } from "~/server/ocr/ocr-initial-form";
-import { extractEnhancedPropertyData } from "~/server/ocr/field-extractor";
+import { extractEnhancedPropertyDataWithGPT4 } from "~/server/ocr/gpt4-field-extractor";
 import { saveExtractedDataToDatabase } from "~/server/queries/textract-database-saver";
 import { getSecureSession } from "~/lib/dal";
 import type { EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
@@ -88,7 +88,7 @@ export async function createFichaEncargoPropertyAction(
           console.log("✅ OCR processing successful, extracting property data...");
           
           // Extract structured data using the field extractor
-          const fieldExtractionResult = await extractEnhancedPropertyData({
+          const fieldExtractionResult = await extractEnhancedPropertyDataWithGPT4({
             extractedText: ocrResult.extractedText,
             detectedFields: ocrResult.detectedFields,
             blocks: ocrResult.blocks,
@@ -152,7 +152,7 @@ export async function createFichaEncargoPropertyAction(
 
 // Helper function to get processing status
 export async function getFichaEncargoProcessingStatus(
-  referenceNumber: string
+  _referenceNumber: string
 ): Promise<{
   propertyCreated: boolean;
   documentsUploaded: boolean;

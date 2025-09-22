@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { generatePropertyTitle } from "~/components/propiedades/form/common/property-title";
+import { generatePropertyTitle } from "~/lib/property-title";
 
 interface PropertyBreadcrumbProps {
   propertyType: string;

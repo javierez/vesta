@@ -264,7 +264,7 @@ export function VoiceFieldValidationModal({
         "Transfer": "Traspaso",
         "RoomSharing": "Compartir Habitación"
       };
-      return typeMap[field.value] || field.value;
+      return typeMap[field.value] ?? field.value;
     }
     
     if (field.dbColumn === "propertyType" && typeof field.value === "string") {
@@ -280,7 +280,7 @@ export function VoiceFieldValidationModal({
         "dúplex": "Dúplex",
         "ático": "Ático"
       };
-      return typeMap[field.value] || field.value;
+      return typeMap[field.value] ?? field.value;
     }
     
     if (field.dbColumn === "energyConsumptionScale" && typeof field.value === "string") {
@@ -295,7 +295,7 @@ export function VoiceFieldValidationModal({
         4: "Malo",
         6: "Obra Nueva"
       };
-      return statusMap[field.value] || field.value.toString();
+      return statusMap[field.value] ?? field.value.toString();
     }
     
     if (field.dbColumn === "orientation" && typeof field.value === "string") {
@@ -309,7 +309,7 @@ export function VoiceFieldValidationModal({
         "sureste": "Sureste",
         "suroeste": "Suroeste"
       };
-      return orientationMap[field.value] || field.value;
+      return orientationMap[field.value] ?? field.value;
     }
     
     return String(field.value);
@@ -375,7 +375,7 @@ export function VoiceFieldValidationModal({
           router.push("/propiedades");
         }
       } else {
-        toast.error(result.error || "Error al crear la propiedad");
+        toast.error(result.error ?? "Error al crear la propiedad");
       }
     } catch (error) {
       console.error("Error creating property:", error);
@@ -480,7 +480,7 @@ export function VoiceFieldValidationModal({
                       className="flex-1 flex items-center justify-between cursor-pointer"
                     >
                       <span className="text-sm font-normal text-gray-600">
-                        {FIELD_LABELS[field.dbColumn] || field.dbColumn}
+                        {FIELD_LABELS[field.dbColumn] ?? field.dbColumn}
                       </span>
                       <span className="text-sm font-medium text-gray-900">
                         {formatFieldValue(field)}

@@ -1192,10 +1192,44 @@ export const LISTING_FIELD_MAPPINGS: FieldMapping[] = [
   },
 ];
 
+// Contact field mappings for property owners and related contacts
+export const CONTACT_FIELD_MAPPINGS: FieldMapping[] = [
+  // Owner/Contact Information
+  {
+    dbColumn: "firstName",
+    dbTable: "contacts",
+    aliases: ["propietario", "nombre", "titular", "contacto", "cliente"],
+    dataType: "string",
+    category: "contact",
+  },
+  {
+    dbColumn: "lastName", 
+    dbTable: "contacts",
+    aliases: ["apellidos", "apellido", "surname"],
+    dataType: "string",
+    category: "contact",
+  },
+  {
+    dbColumn: "email",
+    dbTable: "contacts",
+    aliases: ["e-mail", "email", "correo", "correo electrónico", "mail"],
+    dataType: "string",
+    category: "contact",
+  },
+  {
+    dbColumn: "phone",
+    dbTable: "contacts", 
+    aliases: ["teléfono", "telefono", "móvil", "movil", "celular", "tel"],
+    dataType: "string",
+    category: "contact",
+  },
+];
+
 // Combined field mappings
 export const ALL_FIELD_MAPPINGS: FieldMapping[] = [
   ...PROPERTY_FIELD_MAPPINGS,
   ...LISTING_FIELD_MAPPINGS,
+  ...CONTACT_FIELD_MAPPINGS,
 ];
 
 // Helper function to get field mapping by database column
@@ -1224,4 +1258,9 @@ export function getPropertyFieldMappings(): FieldMapping[] {
 // Helper function to get all listing field mappings
 export function getListingFieldMappings(): FieldMapping[] {
   return LISTING_FIELD_MAPPINGS;
+}
+
+// Helper function to get all contact field mappings
+export function getContactFieldMappings(): FieldMapping[] {
+  return CONTACT_FIELD_MAPPINGS;
 }

@@ -35,26 +35,26 @@ interface PropertyFormProps {
 // Interface for listing details data returned from database
 interface ListingDetailsData {
   // Listing fields
-  listingId?: number;
-  propertyId?: number;
-  agentId?: number;
+  listingId?: bigint;
+  propertyId?: bigint;
+  agentId?: string;
   listingType?: string;
-  price?: number;
+  price?: string;
   status?: string;
-  isFurnished?: boolean;
-  furnitureQuality?: string;
-  optionalGarage?: boolean;
-  optionalGaragePrice?: number;
-  optionalStorageRoom?: boolean;
-  optionalStorageRoomPrice?: number;
-  hasKeys?: boolean;
-  studentFriendly?: boolean;
-  petsAllowed?: boolean;
-  appliancesIncluded?: boolean;
-  internet?: boolean;
+  isFurnished?: boolean | null;
+  furnitureQuality?: string | null;
+  optionalGarage?: boolean | null;
+  optionalGaragePrice?: string | null;
+  optionalStorageRoom?: boolean | null;
+  optionalStorageRoomPrice?: string | null;
+  hasKeys?: boolean | null;
+  studentFriendly?: boolean | null;
+  petsAllowed?: boolean | null;
+  appliancesIncluded?: boolean | null;
+  internet?: boolean | null;
   
   // Property fields
-  referenceNumber?: string;
+  referenceNumber?: string | null;
   title?: string;
   description?: string;
   propertyType?: string;
@@ -163,8 +163,8 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     formPosition: listingDetails.formPosition ?? 1,
     
     // Page 1 - Basic Info & IDs
-    propertyId: listingDetails.propertyId,
-    listingId: listingDetails.listingId,
+    propertyId: listingDetails.propertyId ? Number(listingDetails.propertyId) : undefined,
+    listingId: listingDetails.listingId ? Number(listingDetails.listingId) : undefined,
     price: listingDetails.price?.toString() ?? "",
     listingType: listingDetails.listingType ?? "Sale", 
     propertyType: listingDetails.propertyType ?? "piso",
@@ -313,7 +313,7 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
         ]);
 
         // Set current step based on form position
-        const typedListingDetails = listingDetails as ListingDetailsData | null;
+        const typedListingDetails = listingDetails;
         if (typedListingDetails?.formPosition) {
           const stepIndex = Math.max(
             0,

@@ -1,5 +1,8 @@
 "use server";
 
+// UNUSED FILE ALERT: This file is not currently used anywhere in the codebase
+// Functions exist but are not imported or called by any other components
+
 import OpenAI from "openai";
 
 // Initialize OpenAI client

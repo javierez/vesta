@@ -9,6 +9,7 @@ import { retrieveCadastralData } from "~/server/cadastral/retrieve_cadastral";
 import { toast } from "sonner";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import { useFormContext } from "../form-context";
+import { generatePropertyTitle } from "~/lib/property-title";
 
 
 interface ThirdPageProps {
@@ -61,35 +62,6 @@ export default function ThirdPage({
     updateField(field, value);
   };
 
-  // Function to get property type text (similar to property-characteristics-form.tsx)
-  const getPropertyTypeText = (type: string) => {
-    switch (type) {
-      case "piso":
-        return "Piso";
-      case "casa":
-        return "Casa";
-      case "local":
-        return "Local";
-      case "solar":
-        return "Solar";
-      case "garage":
-        return "Garaje";
-      default:
-        return type;
-    }
-  };
-
-  // Function to generate title (similar to property-characteristics-form.tsx)
-  const generateTitle = () => {
-    const type = getPropertyTypeText(
-      state.formData?.propertyType ?? "piso",
-    );
-    const street = formData.address ?? "";
-    const neighborhood = formData.neighborhood
-      ? `(${formData.neighborhood})`
-      : "";
-    return `${type} en ${street} ${neighborhood}`.trim();
-  };
 
   // Function to validate cadastral reference format
   const validateCadastralReference = (reference: string): boolean => {
@@ -162,14 +134,14 @@ export default function ThirdPage({
       console.log("   Street:", cadastralData.street);
       console.log("   Address Details:", cadastralData.addressDetails);
       console.log("   Postal Code:", cadastralData.postalCode);
-      console.log("   City:", cadastralData.city || "N/A");
-      console.log("   Province:", cadastralData.province || "N/A");
+      console.log("   City:", cadastralData.city ?? "N/A");
+      console.log("   Province:", cadastralData.province ?? "N/A");
       console.log("   Municipality:", cadastralData.municipality);
       console.log("   Neighborhood:", cadastralData.neighborhood);
       console.log("");
       console.log("🌍 GEOGRAPHIC COORDINATES:");
-      console.log("   Latitude:", cadastralData.latitude || "N/A");
-      console.log("   Longitude:", cadastralData.longitude || "N/A");
+      console.log("   Latitude:", cadastralData.latitude ?? "N/A");
+      console.log("   Longitude:", cadastralData.longitude ?? "N/A");
       console.log("");
       console.log("📐 PROPERTY DIMENSIONS:");
       console.log("   Total Surface:", cadastralData.squareMeter, "m²");
@@ -185,14 +157,14 @@ export default function ThirdPage({
         address: cadastralData.street,
         addressDetails: cadastralData.addressDetails,
         postalCode: cadastralData.postalCode,
-        city: cadastralData.city || "",
-        province: cadastralData.province || "",
+        city: cadastralData.city ?? "",
+        province: cadastralData.province ?? "",
         municipality: cadastralData.municipality,
         neighborhood: cadastralData.neighborhood,
         
         // Hidden fields stored in context - mapped to form field names
-        latitude: cadastralData.latitude || "",
-        longitude: cadastralData.longitude || "",
+        latitude: cadastralData.latitude ?? "",
+        longitude: cadastralData.longitude ?? "",
         
         // Map cadastral fields to form field names used by other pages
         buildYear: cadastralData.yearBuilt,           // second page expects buildYear
@@ -314,10 +286,11 @@ export default function ThirdPage({
       updateFormData(updatedData);
       
       // Generate and save title after address is updated
-      const type = getPropertyTypeText(state.formData?.propertyType ?? "piso");
-      const street = updatedData.address ?? "";
-      const neighborhood = updatedData.neighborhood ? `(${updatedData.neighborhood})` : "";
-      const generatedTitle = `${type} en ${street} ${neighborhood}`.trim();
+      const generatedTitle = generatePropertyTitle(
+        state.formData?.propertyType ?? "piso",
+        updatedData.address ?? "",
+        updatedData.neighborhood ?? ""
+      );
       updateFormData({ title: generatedTitle });
 
     } catch (error) {
@@ -343,7 +316,11 @@ export default function ThirdPage({
     }
 
     // Generate and save title before navigating
-    const generatedTitle = generateTitle();
+    const generatedTitle = generatePropertyTitle(
+      state.formData?.propertyType ?? "piso",
+      formData.address ?? "",
+      formData.neighborhood ?? ""
+    );
     updateFormData({ title: generatedTitle });
 
     // Navigate IMMEDIATELY - no saves, completely instant!

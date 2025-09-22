@@ -1,6 +1,5 @@
 import { type Metadata } from "next";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Navbar from "~/components/navbar";

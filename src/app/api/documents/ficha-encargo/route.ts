@@ -2,11 +2,14 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { uploadDocument } from "~/app/actions/upload";
 import { getSecureSession } from "~/lib/dal";
+import { createMinimalPropertyWithListing } from "~/server/queries/properties";
 
-// Phase 1: Upload files to temporary location only
+// Phase 1: Create property and upload documents to final location
 export async function POST(request: NextRequest) {
   try {
-    // Use optimized DAL function for session retrieval
+    console.log("🏠 Starting Phase 1: Creating property and uploading ficha de encargo documents...");
+    
+    // Get current user session
     const session = await getSecureSession();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,18 +17,10 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const referenceNumber = formData.get("referenceNumber") as string;
 
     if (!file) {
       return NextResponse.json(
         { error: "File is required" },
-        { status: 400 },
-      );
-    }
-
-    if (!referenceNumber) {
-      return NextResponse.json(
-        { error: "Reference number is required" },
         { status: 400 },
       );
     }
@@ -54,22 +49,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upload document to temporary location
-    // No propertyId or listingId yet - will be set in phase 2
+    // Step 1: Create minimal property and listing first (like crear workflow)
+    console.log("📝 Creating minimal property and listing...");
+    const propertyResult = await createMinimalPropertyWithListing();
+    const { propertyId, listingId, referenceNumber } = propertyResult;
+    
+    console.log(`✅ Property created: ${propertyId}, Listing: ${listingId}, Reference: ${referenceNumber}`);
+
+    // Step 2: Upload document directly to final property location (same as crear)
+    console.log(`📁 Uploading document to properties/${referenceNumber}/documents/...`);
     const document = await uploadDocument(
       file,
       session.user.id,
       referenceNumber,
-      1, // documentOrder - will be updated later
+      1, // documentOrder
       "ficha-encargo", // documentTag for ficha de encargo documents
       undefined, // contactId
-      undefined, // listingId - will be set in phase 2
+      BigInt(listingId), // listingId - set from the start
       undefined, // listingContactId
       undefined, // dealId
       undefined, // appointmentId
-      undefined, // propertyId - will be set in phase 2
+      BigInt(propertyId), // propertyId - set from the start
       "initial-docs", // folderType
     );
+
+    console.log(`✅ Document uploaded successfully: ${document.filename}`);
 
     // Convert BigInt values to strings for JSON serialization
     const serializedDocument = {
@@ -86,12 +90,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       document: serializedDocument,
-      message: "Document uploaded successfully to temporary location",
+      propertyId: propertyId.toString(),
+      listingId: listingId.toString(),
+      referenceNumber,
+      message: "Property created and document uploaded successfully",
     });
   } catch (error) {
-    console.error("Error uploading ficha de encargo document:", error);
+    console.error("Error in ficha de encargo Phase 1:", error);
     return NextResponse.json(
-      { error: "Failed to upload document" },
+      { error: "Failed to create property and upload document" },
       { status: 500 },
     );
   }

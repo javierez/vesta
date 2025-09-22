@@ -2,39 +2,12 @@
 
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { generatePropertyTitle } from "~/lib/property-title";
 
 interface PropertyTitleProps {
   propertyType: string;
   street?: string;
   neighborhood?: string;
-}
-
-export function generatePropertyTitle(
-  propertyType: string,
-  street = "",
-  neighborhood = "",
-) {
-  const getPropertyTypeText = (type: string) => {
-    switch (type) {
-      case "piso":
-        return "Piso";
-      case "casa":
-        return "Casa";
-      case "local":
-        return "Local";
-      case "solar":
-        return "Solar";
-      case "garaje":
-      case "garage":
-        return "Garaje";
-      default:
-        return type;
-    }
-  };
-
-  const type = getPropertyTypeText(propertyType);
-  const neighborhoodText = neighborhood ? `(${neighborhood})` : "";
-  return `${type} en ${street} ${neighborhoodText}`.trim();
 }
 
 export function PropertyTitle({

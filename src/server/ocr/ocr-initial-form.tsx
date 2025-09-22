@@ -695,11 +695,11 @@ export async function processDocumentInBackgroundEnhanced(
       `✅ [OCR-ENHANCED] OCR completed (${ocrResult.confidence.toFixed(1)}% confidence)`,
     );
 
-    // Step 2: Enhanced Field Extraction
-    console.log(`🔬 [OCR-ENHANCED] Step 2: Enhanced field extraction...`);
+    // Step 2: Enhanced Field Extraction with GPT-4
+    console.log(`🔬 [OCR-ENHANCED] Step 2: Enhanced GPT-4 field extraction...`);
 
-    const { extractEnhancedPropertyData } = await import("./field-extractor");
-    const extractionResult = await extractEnhancedPropertyData({
+    const { extractEnhancedPropertyDataWithGPT4 } = await import("./gpt4-field-extractor");
+    const extractionResult = await extractEnhancedPropertyDataWithGPT4({
       extractedText: ocrResult.extractedText,
       detectedFields: ocrResult.detectedFields,
       blocks: ocrResult.blocks,
@@ -713,7 +713,7 @@ export async function processDocumentInBackgroundEnhanced(
     );
 
     // Step 3: Confidence Filtering
-    const { filterByConfidence } = await import("./field-extractor");
+    const { filterByConfidence } = await import("./gpt4-field-extractor");
     const confidenceThreshold = 50;
     const highConfidenceFields = await filterByConfidence(
       extractionResult.extractedFields,

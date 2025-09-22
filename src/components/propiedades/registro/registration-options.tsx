@@ -143,13 +143,11 @@ export function RegistrationOptions({
 
 export interface OptionDetailsProps {
   option: RegistrationOption;
-  showStartButton?: boolean;
   onStart?: () => void;
 }
 
 export function OptionDetails({ 
-  option, 
-  showStartButton = true,
+  option,
   onStart 
 }: OptionDetailsProps) {
   return (

@@ -2066,3 +2066,105 @@ export async function listContactsBuyerData(
     throw error;
   }
 }
+
+// Find contacts with similar names (for OCR duplicate detection)
+export async function findContactBySimilarName(
+  firstName: string,
+  lastName: string,
+  accountId: number,
+  similarityThreshold = 0.8,
+): Promise<{ contact: any; similarity: number } | null> {
+  try {
+    // Get all active contacts for the account
+    const allContacts = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        additionalInfo: contacts.additionalInfo,
+        createdAt: contacts.createdAt,
+        updatedAt: contacts.updatedAt,
+      })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true),
+        ),
+      );
+
+    // Simple similarity function
+    function calculateSimilarity(str1: string, str2: string): number {
+      const normalize = (s: string) =>
+        s
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "") // Remove accents
+          .replace(/[^\w\s]/g, "") // Remove punctuation
+          .trim();
+
+      const a = normalize(str1);
+      const b = normalize(str2);
+
+      if (a === b) return 1.0;
+      if (a.includes(b) || b.includes(a)) return 0.8;
+
+      // Simple Levenshtein distance
+      const matrix: number[][] = Array.from({ length: b.length + 1 }, () =>
+        Array.from({ length: a.length + 1 }, () => 0),
+      );
+
+      for (let i = 0; i <= a.length; i++) matrix[0]![i] = i;
+      for (let j = 0; j <= b.length; j++) matrix[j]![0] = j;
+
+      for (let j = 1; j <= b.length; j++) {
+        for (let i = 1; i <= a.length; i++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          matrix[j]![i] = Math.min(
+            matrix[j - 1]![i]! + 1,
+            matrix[j]![i - 1]! + 1,
+            matrix[j - 1]![i - 1]! + cost,
+          );
+        }
+      }
+
+      const maxLength = Math.max(a.length, b.length);
+      return maxLength === 0 ? 1 : 1 - matrix[b.length]![a.length]! / maxLength;
+    }
+
+    let bestMatch: { contact: any; similarity: number } | null = null;
+
+    for (const contact of allContacts) {
+      // Calculate similarity for full name
+      const contactFullName = `${contact.firstName} ${contact.lastName}`;
+      const searchFullName = `${firstName} ${lastName}`;
+      const fullNameSimilarity = calculateSimilarity(contactFullName, searchFullName);
+
+      // Calculate similarity for individual names
+      const firstNameSimilarity = calculateSimilarity(contact.firstName, firstName);
+      const lastNameSimilarity = calculateSimilarity(contact.lastName, lastName);
+
+      // Use the best similarity score
+      const bestSimilarity = Math.max(
+        fullNameSimilarity,
+        (firstNameSimilarity + lastNameSimilarity) / 2,
+      );
+
+      if (bestSimilarity >= similarityThreshold) {
+        if (!bestMatch || bestSimilarity > bestMatch.similarity) {
+          bestMatch = {
+            contact,
+            similarity: bestSimilarity,
+          };
+        }
+      }
+    }
+
+    return bestMatch;
+  } catch (error) {
+    console.error("Error finding similar contacts:", error);
+    return null;
+  }
+}

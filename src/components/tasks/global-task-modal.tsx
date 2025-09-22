@@ -143,17 +143,15 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
     try {
       const contactsData = await searchContactsWithAuth(query);
       // Transform the data to match our interface
-      const formattedContacts: Contact[] = contactsData.map((contact: {
-        contactId: string | number | bigint;
-        firstName: string;
-        lastName: string;
-        email?: string | null;
-      }) => ({
-        contactId: BigInt(contact.contactId),
-        firstName: contact.firstName,
-        lastName: contact.lastName,
-        email: contact.email ?? undefined,
-      }));
+      const formattedContacts: Contact[] = contactsData.map((contact) => {
+        const [firstName, ...lastNameParts] = contact.name.split(' ');
+        return {
+          contactId: contact.id,
+          firstName: firstName ?? '',
+          lastName: lastNameParts.join(' ') ?? '',
+          email: undefined,
+        };
+      });
       setSearchResults(formattedContacts);
     } catch (error) {
       console.error("Error searching contacts:", error);

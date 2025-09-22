@@ -624,7 +624,7 @@ export async function createMinimalPropertyWithListing() {
       hasElevator: false,
       hasGarage: false,
       hasStorageRoom: false,
-      isActive: false, // Start as inactive until completed
+      isActive: true, // Set as active when created
     };
 
     const [propertyResult] = await secureDb

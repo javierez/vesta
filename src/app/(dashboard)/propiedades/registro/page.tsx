@@ -163,7 +163,6 @@ export default function CapturaPage() {
                       return selectedOption ? (
                         <OptionDetails 
                           option={selectedOption}
-                          showStartButton={activeOption !== "recording" && activeOption !== "quick"}
                           onStart={() => selectedOption.action()}
                         />
                       ) : null;

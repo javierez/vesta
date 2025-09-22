@@ -6,6 +6,7 @@ import type {
   CompleteExtractedData,
   EnhancedExtractedPropertyData,
   EnhancedExtractedListingData,
+  EnhancedExtractedContactData,
   FieldMapping,
 } from "~/types/textract-enhanced";
 import { ALL_FIELD_MAPPINGS } from "./field-mapping-config";
@@ -401,6 +402,7 @@ export async function extractEnhancedPropertyData(ocrInput: OCRInput): Promise<{
   extractedFields: ExtractedFieldResult[];
   propertyData: EnhancedExtractedPropertyData;
   listingData: EnhancedExtractedListingData;
+  contactData: EnhancedExtractedContactData;
   completeData: CompleteExtractedData;
 }> {
   console.log(`🚀 [EXTRACTION] Starting enhanced property data extraction...`);
@@ -439,17 +441,21 @@ export async function extractEnhancedPropertyData(ocrInput: OCRInput): Promise<{
   // Consolidate results
   const consolidatedResults = consolidateResults(allResults);
 
-  // Separate property and listing data
+  // Separate property, listing and contact data
   const propertyFields = consolidatedResults.filter(
     (r) => r.dbTable === "properties",
   );
   const listingFields = consolidatedResults.filter(
     (r) => r.dbTable === "listings",
   );
+  const contactFields = consolidatedResults.filter(
+    (r) => r.dbTable === "contacts",
+  );
 
   // Build structured data objects
   const propertyData: EnhancedExtractedPropertyData = {};
   const listingData: EnhancedExtractedListingData = {};
+  const contactData: EnhancedExtractedContactData = {};
 
   for (const field of propertyFields) {
     (propertyData as Record<string, unknown>)[field.dbColumn] = field.value;
@@ -459,15 +465,21 @@ export async function extractEnhancedPropertyData(ocrInput: OCRInput): Promise<{
     (listingData as Record<string, unknown>)[field.dbColumn] = field.value;
   }
 
+  for (const field of contactFields) {
+    (contactData as Record<string, unknown>)[field.dbColumn] = field.value;
+  }
+
   const completeData: CompleteExtractedData = {
     property: propertyData,
     listing: listingData,
+    contact: contactData,
   };
 
   console.log(`✅ [EXTRACTION] Extraction completed:`);
   console.log(`   - Total fields extracted: ${consolidatedResults.length}`);
   console.log(`   - Property fields: ${propertyFields.length}`);
   console.log(`   - Listing fields: ${listingFields.length}`);
+  console.log(`   - Contact fields: ${contactFields.length}`);
   console.log(
     `   - Average confidence: ${(consolidatedResults.reduce((sum, r) => sum + r.confidence, 0) / consolidatedResults.length).toFixed(1)}%`,
   );
@@ -476,6 +488,7 @@ export async function extractEnhancedPropertyData(ocrInput: OCRInput): Promise<{
     extractedFields: consolidatedResults,
     propertyData,
     listingData,
+    contactData,
     completeData,
   };
 }

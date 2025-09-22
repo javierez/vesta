@@ -157,16 +157,17 @@ export interface EnhancedExtractedListingData {
 export interface CompleteExtractedData {
   property: EnhancedExtractedPropertyData;
   listing: EnhancedExtractedListingData;
+  contact: EnhancedExtractedContactData;
 }
 
 // Interface for individual field results with confidence and metadata
 export interface ExtractedFieldResult {
   dbColumn: string;
-  dbTable: "properties" | "listings";
+  dbTable: "properties" | "listings" | "contacts";
   value: string | number | boolean;
   originalText: string;
   confidence: number;
-  extractionSource: "form" | "table" | "query" | "regex" | "text" | "gpt4" | "gpt4_function_calling";
+  extractionSource: "form" | "table" | "query" | "regex" | "text" | "gpt4" | "gpt4_function_calling" | "gpt4_ocr" | "voice_pattern";
   fieldType: "string" | "number" | "boolean" | "decimal";
   matched_alias?: string; // Which Spanish term was matched
 }
@@ -200,6 +201,14 @@ export interface DatabaseSaveResult {
   confidenceThreshold: number;
 }
 
+// Enhanced interface for extracted contact data
+export interface EnhancedExtractedContactData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+}
+
 // Type definitions for field validation
 export type FieldValidator = (value: string) => boolean;
 export type FieldConverter = (value: string) => string | number | boolean;
@@ -207,7 +216,7 @@ export type FieldConverter = (value: string) => string | number | boolean;
 // Interface for field mapping configuration
 export interface FieldMapping {
   dbColumn: string;
-  dbTable: "properties" | "listings";
+  dbTable: "properties" | "listings" | "contacts";
   aliases: string[];
   dataType: "string" | "number" | "boolean" | "decimal";
   validation?: FieldValidator;

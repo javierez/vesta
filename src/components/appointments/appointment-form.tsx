@@ -240,7 +240,7 @@ export default function AppointmentForm({
             const [firstName, ...lastNameParts] = result.name.split(' ');
             return {
               contactId: result.id,
-              firstName: firstName || '',
+              firstName: firstName ?? '',
               lastName: lastNameParts.join(' ') || '',
               email: null,
               phone: null,

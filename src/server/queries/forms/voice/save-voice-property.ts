@@ -4,6 +4,8 @@ import type { ExtractedFieldResult } from "~/types/textract-enhanced";
 import { createProperty } from "~/server/queries/properties";
 import { createDefaultListing } from "~/server/queries/listing";
 import { getCurrentUser } from "~/lib/dal";
+import { generatePropertyTitle } from "~/lib/property-title";
+import { createTaskWithAuth } from "~/server/queries/task";
 
 export interface SaveVoicePropertyResult {
   success: boolean;
@@ -62,12 +64,30 @@ export async function saveVoiceProperty(
       }
     });
 
+    // Generate title from extracted property data
+    const propertyType = propertyData.propertyType as string || "piso";
+    const street = propertyData.street as string || "";
+    const neighborhood = propertyData.neighborhood as string || "";
+    
+    // Auto-generate title using the standard function
+    const generatedTitle = generatePropertyTitle(propertyType, street, neighborhood);
+    propertyData.title = generatedTitle;
+    
     console.log("=== PROPERTY DATA TO CREATE ===");
     console.log("Property data keys:", Object.keys(propertyData));
+    console.log("Generated title:", generatedTitle);
     console.log("Property data:", propertyData);
 
-    // Create the property
-    const newProperty = await createProperty(propertyData);
+    // Create the property - provide required fields with defaults
+    const newProperty = await createProperty({
+      propertyType: "piso",
+      hasHeating: false,
+      hasElevator: false,
+      hasGarage: false,
+      hasStorageRoom: false,
+      isActive: true,
+      ...propertyData
+    } as Parameters<typeof createProperty>[0]);
     
     if (!newProperty || !newProperty.propertyId) {
       throw new Error("Error al crear la propiedad");
@@ -148,6 +168,60 @@ export async function saveVoiceProperty(
         console.error("Error associating contacts with listing:", error);
         // Don't fail the entire operation if contact association fails
       }
+    }
+
+    // Create default tasks when property and listing creation is completed
+    if (newListing?.listingId) {
+      console.log("=== CREATING DEFAULT TASKS ===");
+      console.log("Agent ID:", currentUser.id);
+      console.log("Listing ID:", newListing.listingId);
+      
+      // Task for uploading property images
+      const imageUploadTask = createTaskWithAuth({
+        userId: currentUser.id,
+        title: "Subir fotos de la propiedad",
+        description: "Cargar y organizar las fotografías del inmueble para mejorar la presentación en portales inmobiliarios y atraer más interesados",
+        dueDate: undefined,
+        dueTime: undefined,
+        completed: false,
+        listingId: BigInt(newListing.listingId),
+        listingContactId: undefined,
+        dealId: undefined,
+        appointmentId: undefined,
+        prospectId: undefined,
+        contactId: undefined,
+        isActive: true,
+      }).catch((error) => {
+        // Don't fail the entire operation if task creation fails
+        console.error("Failed to create image upload task:", error);
+        return null;
+      });
+      
+      // Task for completing property information questionnaire
+      const completeInfoTask = createTaskWithAuth({
+        userId: currentUser.id,
+        title: "Completar información del inmueble en el cuestionario",
+        description: "Revisar y completar todos los campos pendientes del cuestionario para tener la información completa del inmueble",
+        dueDate: undefined,
+        dueTime: undefined,
+        completed: false,
+        listingId: BigInt(newListing.listingId),
+        listingContactId: undefined,
+        dealId: undefined,
+        appointmentId: undefined,
+        prospectId: undefined,
+        contactId: undefined,
+        isActive: true,
+      }).catch((error) => {
+        // Don't fail the entire operation if task creation fails
+        console.error("Failed to create complete info task:", error);
+        return null;
+      });
+      
+      // Execute task creation promises (but don't wait for them to complete)
+      Promise.all([imageUploadTask, completeInfoTask]).catch((error) => {
+        console.error("Error creating voice property tasks:", error);
+      });
     }
 
     console.log("=== VOICE PROPERTY CREATION COMPLETED ===");

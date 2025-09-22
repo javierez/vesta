@@ -18,7 +18,7 @@ const FOTOCASA_API_KEY = env.FOTOCASA_API_KEY;
 
 // Types
 interface ListingDetails {
-  propertyId?: number;
+  propertyId?: bigint;
   referenceNumber?: string;
   postalCode?: string;
   addressDetails?: string;
@@ -207,9 +207,9 @@ export async function buildFotocasaPayload(
 ): Promise<{ payload: FotocasaProperty; watermarkedKeys: string[] }> {
   try {
     // Get listing details and property images
-    const listing = (await getListingDetailsWithAuth(
+    const listing = await getListingDetailsWithAuth(
       listingId,
-    )) as ListingDetails;
+    );
     const images = await getPropertyImages(BigInt(listing.propertyId!));
 
     // NEW: Get account watermark configuration and process images if needed
@@ -495,10 +495,10 @@ export async function buildFotocasaPayload(
     }
 
     // Home Automation (FeatureId: 142)
-    if (listing.homeAutomation !== null) {
+    if ('homeAutomation' in listing && typeof (listing as any).homeAutomation === 'boolean') {
       propertyFeatures.push({
         FeatureId: 142,
-        BoolValue: listing.homeAutomation ?? false,
+        BoolValue: (listing as any).homeAutomation ?? false,
       });
     }
 
@@ -610,34 +610,34 @@ export async function buildFotocasaPayload(
     }
 
     // Security Door (FeatureId: 294)
-    if (listing.securityDoor !== null) {
+    if ('securityDoor' in listing && typeof (listing as any).securityDoor === 'boolean') {
       propertyFeatures.push({
         FeatureId: 294,
-        BoolValue: listing.securityDoor ?? false,
+        BoolValue: (listing as any).securityDoor ?? false,
       });
     }
 
     // Alarm (FeatureId: 235)
-    if (listing.alarm !== null) {
+    if ('alarm' in listing && typeof (listing as any).alarm === 'boolean') {
       propertyFeatures.push({
         FeatureId: 235,
-        BoolValue: listing.alarm ?? false,
+        BoolValue: (listing as any).alarm ?? false,
       });
     }
 
     // Private Pool (FeatureId: 25)
-    if (listing.privatePool !== null) {
+    if ('privatePool' in listing && typeof (listing as any).privatePool === 'boolean') {
       propertyFeatures.push({
         FeatureId: 25,
-        BoolValue: listing.privatePool ?? false,
+        BoolValue: (listing as any).privatePool ?? false,
       });
     }
 
     // Community Pool (FeatureId: 300)
-    if (listing.communityPool !== null) {
+    if ('communityPool' in listing && typeof (listing as any).communityPool === 'boolean') {
       propertyFeatures.push({
         FeatureId: 300,
-        BoolValue: listing.communityPool ?? false,
+        BoolValue: (listing as any).communityPool ?? false,
       });
     }
 
@@ -666,10 +666,10 @@ export async function buildFotocasaPayload(
     }
 
     // Laundry Room (FeatureId: 257)
-    if (listing.laundryRoom !== null) {
+    if ('hasLaundryRoom' in listing && listing.hasLaundryRoom !== null) {
       propertyFeatures.push({
         FeatureId: 257,
-        BoolValue: listing.laundryRoom ?? false,
+        BoolValue: listing.hasLaundryRoom ?? false,
       });
     }
 
@@ -718,7 +718,7 @@ export async function buildFotocasaPayload(
     }
 
     // Conservation Status (FeatureId: 249)
-    if (listing.conservationStatus) {
+    if ('conservationStatus' in listing && typeof (listing as any).conservationStatus === 'string') {
       const conservationStatusMap: Record<string, number> = {
         excellent: 1,
         good: 2,
@@ -727,7 +727,7 @@ export async function buildFotocasaPayload(
         needs_renovation: 5,
       };
       const statusValue =
-        conservationStatusMap[listing.conservationStatus] ?? 1;
+        conservationStatusMap[(listing as any).conservationStatus] ?? 1;
       propertyFeatures.push({
         FeatureId: 249,
         DecimalValue: statusValue,

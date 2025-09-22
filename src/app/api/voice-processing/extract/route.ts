@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Extract property data from transcript
     const extractionResult = await extractPropertyDataFromVoice(
-      transcriptionResult as TranscriptionResult,
+      transcriptionResult,
       referenceNumber
     );
 

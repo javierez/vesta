@@ -2,31 +2,19 @@
 
 import { db } from "~/server/db";
 import {
-  properties,
   type Property,
-  propertyImages as mockPropertyImages,
   LEON_NEIGHBORHOODS,
-  listings as mockListings,
   mockUsers,
   contacts as mockContacts,
-  listingContacts as mockListingContacts,
   mockAccounts,
   mockWebsiteConfigs,
 } from "~/lib/data";
 import {
-  properties as dbProperties,
-  listings as dbListings,
-  propertyImages,
-  locations,
   users,
   contacts,
-  listingContacts,
   accounts,
   websiteProperties,
 } from "~/server/db/schema";
-import { createProperty } from "~/server/queries/properties";
-import { createListing } from "~/server/queries/listing";
-import { createPropertyImage } from "~/server/queries/property_images";
 import { createLocation } from "~/server/queries/locations";
 import { createAccount } from "~/server/queries/accounts";
 import { getCurrentUserAccountId } from "~/lib/dal";
@@ -38,6 +26,7 @@ type DbProperty = Omit<Property, "builtInWardrobes"> & {
 };
 
 // Helper function to convert property to DB format
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function toDbProperty(property: Property): Partial<DbProperty> {
   const dbProperty: Partial<DbProperty> = {
     referenceNumber: property.referenceNumber,
@@ -178,6 +167,7 @@ async function seedWebsiteConfig() {
 }
 
 // Seed locations data
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function seedLocations() {
   try {
     for (const location of LEON_NEIGHBORHOODS) {
@@ -198,6 +188,7 @@ async function seedLocations() {
 }
 
 // Seed users data
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function seedUsers() {
   try {
     for (const user of mockUsers) {
@@ -228,6 +219,7 @@ async function seedUsers() {
 }
 
 // Seed contacts data
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function seedContacts() {
   try {
     const accountId = await getCurrentUserAccountId();

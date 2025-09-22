@@ -243,12 +243,13 @@ export async function saveQuickFormData(
       }
     }
 
-    // 4. Create default task for uploading property images when registration is completed
+    // 4. Create default tasks when registration is completed
     if (options.markAsCompleted && formData.agentId) {
-      console.log("=== CREATING DEFAULT IMAGE UPLOAD TASK ===");
+      console.log("=== CREATING DEFAULT TASKS ===");
       console.log("Agent ID:", formData.agentId);
       console.log("Listing ID:", listingId);
       
+      // Task for uploading property images
       const imageUploadTask = createTaskWithAuth({
         userId: formData.agentId,
         title: "Subir fotos de la propiedad",
@@ -269,7 +270,29 @@ export async function saveQuickFormData(
         return null;
       });
       
+      // Task for completing property information questionnaire
+      const completeInfoTask = createTaskWithAuth({
+        userId: formData.agentId,
+        title: "Completar información del inmueble en el cuestionario",
+        description: "Revisar y completar todos los campos pendientes del cuestionario para tener la información completa del inmueble",
+        dueDate: undefined,
+        dueTime: undefined,
+        completed: false,
+        listingId: BigInt(listingId),
+        listingContactId: undefined,
+        dealId: undefined,
+        appointmentId: undefined,
+        prospectId: undefined,
+        contactId: undefined,
+        isActive: true,
+      }).catch((error) => {
+        // Don't fail the entire operation if task creation fails
+        console.error("Failed to create complete info task:", error);
+        return null;
+      });
+      
       promises.push(imageUploadTask);
+      promises.push(completeInfoTask);
     }
 
     // Execute all save operations

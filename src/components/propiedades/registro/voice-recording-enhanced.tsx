@@ -157,7 +157,7 @@ export function VoiceRecordingEnhanced({
       setCurrentSuggestionIndex(0);
       suggestionTimerRef.current = setInterval(() => {
         setCurrentSuggestionIndex(prev => (prev + 1) % recordingSuggestions.length);
-      }, 4000);
+      }, 6000);
     } catch (error) {
       console.error('Error accessing microphone:', error);
       alert('No se pudo acceder al micrófono. Por favor, verifica los permisos.');

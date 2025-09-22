@@ -65,7 +65,6 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
   error?: string;
 }> {
   try {
-    console.log("🔍 Getting account details for accountId:", accountId);
 
     const [account] = await db
       .select()
@@ -73,11 +72,9 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
       .where(eq(accounts.accountId, accountId));
 
     if (!account) {
-      console.log("❌ Account not found");
       return { success: false, error: "Cuenta no encontrada" };
     }
 
-    console.log("✅ Account found:", account.name);
 
     // Parse JSON fields safely
     const portalSettings =
@@ -146,8 +143,6 @@ export async function updateAccountConfigurationAction(
   error?: string;
 }> {
   try {
-    console.log("🔄 Updating account configuration for accountId:", accountId);
-    console.log("📝 Data to update:", data);
 
     // Validate the data
     const validatedData = accountConfigurationSchema.parse(data);
@@ -178,7 +173,6 @@ export async function updateAccountConfigurationAction(
       .set(updateData)
       .where(eq(accounts.accountId, accountId));
 
-    console.log("✅ Account configuration updated successfully");
 
     return { success: true };
   } catch (error) {

@@ -959,7 +959,7 @@ export const mockAccounts: Account[] = [
     plan: "pro",
     subscriptionStatus: "suspended",
     status: "active",
-    subscriptionType: null,
+    subscriptionType: undefined,
     subscriptionStartDate: undefined,
     subscriptionEndDate: undefined,
     taxId: "72465508T",

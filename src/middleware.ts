@@ -59,11 +59,6 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-has-session-token", "true");
 
-  console.log("🚀 Middleware - Edge Runtime compatible (cookie check):", {
-    hasSessionToken: true,
-    timestamp: new Date().toISOString(),
-    path: pathname,
-  });
 
   return NextResponse.next({
     request: {
