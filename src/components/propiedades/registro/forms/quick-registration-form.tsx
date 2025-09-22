@@ -44,14 +44,14 @@ interface ListingDetailsData {
   
   // Property fields
   referenceNumber?: string | null;
-  title?: string;
-  description?: string;
-  propertyType?: string;
-  propertySubtype?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  totalSurface?: number;
-  usefulSurface?: number;
+  title?: string | null;
+  description?: string | null;
+  propertyType?: string | null;
+  propertySubtype?: string | null;
+  bedrooms?: number | null;
+  bathrooms?: string | null;
+  totalSurface?: string | null;
+  usefulSurface?: string | null;
   buildYear?: number;
   renovationYear?: number;
   isRenovated?: boolean;

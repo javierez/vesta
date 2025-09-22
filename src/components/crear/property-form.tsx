@@ -55,31 +55,31 @@ interface ListingDetailsData {
   
   // Property fields
   referenceNumber?: string | null;
-  title?: string;
-  description?: string;
-  propertyType?: string;
-  propertySubtype?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  totalSurface?: number;
-  usefulSurface?: number;
-  plotSurface?: number;
-  floor?: string;
-  totalFloors?: string;
-  buildYear?: number;
-  condition?: string;
-  energyCertificate?: string;
-  emissions?: string;
-  cadastralReference?: string;
+  title?: string | null;
+  description?: string | null;
+  propertyType?: string | null;
+  propertySubtype?: string | null;
+  bedrooms?: number | null;
+  bathrooms?: string | null;
+  totalSurface?: string | null;
+  usefulSurface?: string | null;
+  plotSurface?: string | null;
+  floor?: string | null;
+  totalFloors?: string | null;
+  buildYear?: number | null;
+  condition?: string | null;
+  energyCertificate?: string | null;
+  emissions?: string | null;
+  cadastralReference?: string | null;
   
   // Location fields
-  address?: string;
-  city?: string;
-  province?: string;
-  postalCode?: string;
-  neighborhood?: string;
-  latitude?: number;
-  longitude?: number;
+  address?: string | null;
+  city?: string | null;
+  province?: string | null;
+  postalCode?: string | null;
+  neighborhood?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   
   // Equipment and features
   heating?: string;
@@ -173,10 +173,10 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     
     // Page 2 - Details  
     bedrooms: listingDetails.bedrooms ?? undefined,
-    bathrooms: listingDetails.bathrooms ?? undefined,
-    totalSurface: listingDetails.totalSurface ?? undefined,
-    usefulSurface: listingDetails.usefulSurface ?? undefined,
-    plotSurface: listingDetails.plotSurface ?? undefined,
+    bathrooms: listingDetails.bathrooms ? Number(listingDetails.bathrooms) : undefined,
+    totalSurface: listingDetails.totalSurface ? Number(listingDetails.totalSurface) : undefined,
+    usefulSurface: listingDetails.usefulSurface ? Number(listingDetails.usefulSurface) : undefined,
+    plotSurface: listingDetails.plotSurface ? Number(listingDetails.plotSurface) : undefined,
     floor: listingDetails.floor ?? undefined,
     totalFloors: listingDetails.totalFloors ?? undefined,
     buildYear: listingDetails.buildYear ?? undefined,
@@ -246,8 +246,8 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     appliancesIncluded: listingDetails.appliancesIncluded ?? false,
     isFurnished: listingDetails.isFurnished ?? false,
     furnitureQuality: listingDetails.furnitureQuality ?? "",
-    optionalGaragePrice: listingDetails.optionalGaragePrice ?? 0,
-    optionalStorageRoomPrice: listingDetails.optionalStorageRoomPrice ?? 0,
+    optionalGaragePrice: listingDetails.optionalGaragePrice ? Number(listingDetails.optionalGaragePrice) : 0,
+    optionalStorageRoomPrice: listingDetails.optionalStorageRoomPrice ? Number(listingDetails.optionalStorageRoomPrice) : 0,
     internet: listingDetails.internet ?? false,
   };
 }
