@@ -25,8 +25,9 @@ interface Owner {
   name: string;
 }
 
-interface PropertySummaryProps {
+interface PropertySummaryCardProps {
   listing: PropertyListing;
+  propertyType: string;
   selectedOwnerIds: string[];
   owners: Owner[];
   selectedAgentId: string;
@@ -39,8 +40,9 @@ interface PropertySummaryProps {
   onToggleWebsite: () => void;
 }
 
-export function PropertySummary({
+export function PropertySummaryCard({
   listing,
+  propertyType,
   selectedOwnerIds,
   owners,
   selectedAgentId,
@@ -51,8 +53,8 @@ export function PropertySummary({
   websiteLoading,
   onToggleKeys,
   onToggleWebsite,
-}: PropertySummaryProps) {
-  const isGarageOrSolar = listing.propertyType === "garage" || listing.propertyType === "solar";
+}: PropertySummaryCardProps) {
+  const isGarageOrSolar = propertyType === "garaje" || propertyType === "solar";
   const shouldShowBedsAndBaths = !isGarageOrSolar;
   const areaValue = isGarageOrSolar ? listing.builtSurfaceArea : listing.squareMeter;
   

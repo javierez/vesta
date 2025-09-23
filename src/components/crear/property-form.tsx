@@ -172,8 +172,8 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     agentId: listingDetails.agentId?.toString() ?? "",
     
     // Page 2 - Details  
-    bedrooms: listingDetails.bedrooms ?? undefined,
-    bathrooms: listingDetails.bathrooms ? Number(listingDetails.bathrooms) : undefined,
+    bedrooms: listingDetails.bedrooms ?? 2,
+    bathrooms: listingDetails.bathrooms ? Number(listingDetails.bathrooms) : 1,
     totalSurface: listingDetails.totalSurface ?? undefined,
     usefulSurface: listingDetails.usefulSurface ? Number(listingDetails.usefulSurface) : undefined,
     plotSurface: listingDetails.plotSurface ?? undefined,

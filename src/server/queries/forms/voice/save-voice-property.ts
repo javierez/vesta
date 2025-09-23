@@ -165,12 +165,16 @@ export async function saveVoiceProperty(
       console.log("Agent ID:", currentUser.id);
       console.log("Listing ID:", newListing.listingId);
       
+      // Calculate due date: today + 7 days
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 7);
+      
       // Task for uploading property images
       const imageUploadTask = createTaskWithAuth({
         userId: currentUser.id,
         title: "Subir fotos de la propiedad",
         description: "Cargar y organizar las fotografías del inmueble para mejorar la presentación en portales inmobiliarios y atraer más interesados",
-        dueDate: undefined,
+        dueDate: dueDate,
         dueTime: undefined,
         completed: false,
         listingId: BigInt(newListing.listingId),
@@ -191,7 +195,7 @@ export async function saveVoiceProperty(
         userId: currentUser.id,
         title: "Completar información del inmueble en el cuestionario",
         description: "Revisar y completar todos los campos pendientes del cuestionario para tener la información completa del inmueble",
-        dueDate: undefined,
+        dueDate: dueDate,
         dueTime: undefined,
         completed: false,
         listingId: BigInt(newListing.listingId),

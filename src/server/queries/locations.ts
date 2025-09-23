@@ -13,27 +13,39 @@ interface LocationData {
 }
 
 // Find existing location or create new one and return neighborhood ID
+// Uses only city and neighborhood for lookup to avoid duplicates from province/municipality variations
 export async function findOrCreateLocation(
   locationData: LocationData,
 ): Promise<number> {
   try {
+    // Look for existing location using only city and neighborhood
     const existingLocation = await db
       .select()
       .from(locations)
       .where(
         and(
           eq(locations.city, locationData.city),
-          eq(locations.province, locationData.province),
-          eq(locations.municipality, locationData.municipality),
           eq(locations.neighborhood, locationData.neighborhood),
         ),
       )
       .limit(1);
 
     if (existingLocation.length > 0 && existingLocation[0]) {
+      // Update the existing location with new province/municipality data
+      await db
+        .update(locations)
+        .set({
+          province: locationData.province,
+          municipality: locationData.municipality,
+          updatedAt: new Date(),
+        })
+        .where(eq(locations.neighborhoodId, existingLocation[0].neighborhoodId));
+      
+      console.log("🔄 Updated existing location:", existingLocation[0].neighborhoodId);
       return Number(existingLocation[0].neighborhoodId);
     }
 
+    // Create new location if none found
     await db.insert(locations).values({
       city: locationData.city,
       province: locationData.province,
@@ -42,14 +54,13 @@ export async function findOrCreateLocation(
       isActive: true,
     });
 
+    // Get the newly created location
     const [newLocation] = await db
       .select()
       .from(locations)
       .where(
         and(
           eq(locations.city, locationData.city),
-          eq(locations.province, locationData.province),
-          eq(locations.municipality, locationData.municipality),
           eq(locations.neighborhood, locationData.neighborhood),
         ),
       )
@@ -59,6 +70,7 @@ export async function findOrCreateLocation(
       throw new Error("Failed to create new location");
     }
 
+    console.log("🆕 Created new location:", newLocation.neighborhoodId);
     return Number(newLocation.neighborhoodId);
   } catch (error) {
     throw error;
@@ -210,7 +222,7 @@ export async function getLocationsByMunicipality(municipality: string) {
   }
 }
 
-// Check if location exists
+// Check if location exists (using only city and neighborhood)
 export async function locationExists(
   locationData: LocationData,
 ): Promise<boolean> {
@@ -221,8 +233,6 @@ export async function locationExists(
       .where(
         and(
           eq(locations.city, locationData.city),
-          eq(locations.province, locationData.province),
-          eq(locations.municipality, locationData.municipality),
           eq(locations.neighborhood, locationData.neighborhood),
         ),
       )

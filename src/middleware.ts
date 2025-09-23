@@ -32,7 +32,6 @@ const publicPaths = [
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  console.log(`🔍 Middleware called for: ${pathname}`);
 
   // Allow public paths and static assets
   if (
@@ -50,7 +49,6 @@ export async function middleware(request: NextRequest) {
   // Everything else is protected - requires authentication
   // Use cookie-based check to avoid Edge Runtime database issues
   const sessionToken = request.cookies.get("better-auth.session_token");
-  console.log(`🍪 Session token exists: ${!!sessionToken?.value}`);
   
   if (!sessionToken?.value) {
     console.log(`🔄 Redirecting to homepage from: ${pathname}`);
@@ -59,7 +57,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(homeUrl);
   }
 
-  console.log(`✅ Session token found, allowing access to: ${pathname}`);
 
   // For authenticated users, let the DAL handle full session validation
   // We just pass through with basic session indication

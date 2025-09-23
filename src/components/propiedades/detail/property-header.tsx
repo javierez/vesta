@@ -127,26 +127,28 @@ export function PropertyHeader({
                 </div>
               </div>
             ) : (
-              <h1 className="text-3xl font-bold leading-tight break-words">
-                <span className="inline">
-                  {currentTitle}
-                </span>
-                {propertyId && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="ml-1 inline-flex p-1 opacity-0 transition-opacity group-hover:opacity-100 align-baseline whitespace-nowrap"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <Pencil className="h-4 w-4 text-muted-foreground" />
-                  </Button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-3xl font-bold leading-tight break-words">
+                  <span className="inline">
+                    {currentTitle}
+                  </span>
+                  {propertyId && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="ml-1 inline-flex p-1 opacity-0 transition-opacity group-hover:opacity-100 align-baseline whitespace-nowrap"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  )}
+                </h1>
+                {isBankOwned && (
+                  <Badge variant="secondary" className="bg-amber-500 text-white">
+                    Piso de Banco
+                  </Badge>
                 )}
-              </h1>
-            )}
-            {isBankOwned && (
-              <Badge variant="secondary" className="bg-amber-500 text-white">
-                Piso de Banco
-              </Badge>
+              </div>
             )}
           </div>
           <div className="mt-2">

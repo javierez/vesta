@@ -16,9 +16,7 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { 
   Building2, 
-  ChevronDown, 
-  Loader2, 
-  MoreVertical
+  ChevronDown
 } from "lucide-react";
 import { getAllAgentsWithAuth } from "~/server/queries/listing";
 import {
@@ -26,35 +24,28 @@ import {
   getCurrentListingOwnersWithAuth,
   updateListingOwnersWithAuth,
 } from "~/server/queries/contact";
+import { findOrCreateLocation } from "~/server/queries/locations";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { Textarea } from "~/components/ui/textarea";
-import { PropertyCharacteristicsFormGarage } from "./property-characteristics-form-garage";
-import { PropertyCharacteristicsFormSolar } from "./property-characteristics-form-solar";
-import { PropertyCharacteristicsFormLocal } from "./property-characteristics-form-local";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProperty } from "~/server/queries/properties";
 import { updateListingWithAuth, toggleListingKeysWithAuth, toggleListingPublishToWebsiteWithAuth, getListingDetailsWithAuth } from "~/server/queries/listing";
 import { toast } from "sonner";
 import { PropertyTitle } from "./common/property-title";
 import { ModernSaveIndicator } from "./common/modern-save-indicator";
-import { PropertySummary } from "./common/property-summary";
+import { PropertySummaryCard } from "./cards/property-summary-card";
+import { PropertyDetailsCard } from "./cards/property-details-card";
+import { FeaturesCard } from "./cards/features-card";
+import { PremiumFeaturesCard } from "./cards/premium-features-card";
+import { OrientationCard } from "./cards/orientation-card";
+import { AdditionalCharacteristicsCard } from "./cards/additional-characteristics-card";
+import { AdditionalSpacesCard } from "./cards/additional-spaces-card";
+import { MaterialsCard } from "./cards/materials-card";
+import { RentalPropertiesCard } from "./cards/rental-properties-card";
+import { DescriptionCard } from "./cards/description-card";
 import { Separator } from "~/components/ui/separator";
 import Image from "next/image";
 import { generatePropertyDescription } from "~/server/openai/property_descriptions";
 import { ExternalLinkPopup } from "~/components/ui/external-link-popup";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "~/components/ui/dialog";
 
 import type { PropertyListing } from "~/types/property-listing";
 
@@ -100,14 +91,17 @@ export function PropertyCharacteristicsForm({
 }: PropertyCharacteristicsFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const propertyType =
+  const initialPropertyType =
     searchParams.get("type") ?? listing.propertyType ?? "piso";
+  
+  // Local state to track current property type
+  const [propertyType, setPropertyType] = useState(initialPropertyType);
 
-  // Check if property type has been changed
+  // Check if property type has been changed from the original
   const hasPropertyTypeChanged =
     listing.propertyType &&
-    searchParams.get("type") &&
-    listing.propertyType !== searchParams.get("type");
+    propertyType &&
+    listing.propertyType !== propertyType;
 
   // Module states
   const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>(
@@ -251,18 +245,34 @@ export function PropertyCharacteristicsForm({
           break;
 
         case "location":
+          // Handle location data with proper locations table integration
+          const streetValue = (document.getElementById("street") as HTMLInputElement)?.value;
+          const addressDetailsValue = (document.getElementById("addressDetails") as HTMLInputElement)?.value;
+          const postalCodeValue = (document.getElementById("postalCode") as HTMLInputElement)?.value;
+          
+          // Find or create location in locations table and get neighborhoodId
+          let neighborhoodId: bigint | null = null;
+          
+          if (city && province && municipality && listing.neighborhood) {
+            try {
+              neighborhoodId = BigInt(await findOrCreateLocation({
+                city,
+                province,
+                municipality,
+                neighborhood: listing.neighborhood,
+              }));
+              console.log("🏘️ Created/found location with neighborhoodId:", neighborhoodId);
+            } catch (error) {
+              console.error("Error handling location:", error);
+              // neighborhoodId will remain null if location update fails
+            }
+          }
+
           propertyData = {
-            street: (document.getElementById("street") as HTMLInputElement)
-              ?.value,
-            addressDetails: (
-              document.getElementById("addressDetails") as HTMLInputElement
-            )?.value,
-            postalCode: (
-              document.getElementById("postalCode") as HTMLInputElement
-            )?.value,
-            city,
-            province,
-            municipality,
+            street: streetValue,
+            addressDetails: addressDetailsValue,
+            postalCode: postalCodeValue,
+            ...(neighborhoodId && { neighborhoodId }),
             nearbyPublicTransport,
           };
           break;
@@ -274,11 +284,11 @@ export function PropertyCharacteristicsForm({
             )?.checked,
             hasGarage,
             garageType,
-            garageSpaces,
+            garageSpaces: !isNaN(garageSpaces) ? garageSpaces : 1,
             garageInBuilding,
             garageNumber,
             hasStorageRoom,
-            storageRoomSize,
+            storageRoomSize: !isNaN(storageRoomSize) ? storageRoomSize : 0,
             storageRoomNumber,
             hasHeating: isHeating,
             heatingType,
@@ -287,24 +297,20 @@ export function PropertyCharacteristicsForm({
             isFurnished,
           };
           listingData = {
-            optionalGaragePrice: Math.round(
-              Number(
-                (
-                  document.getElementById(
-                    "optionalGaragePrice",
-                  ) as HTMLInputElement
-                )?.value,
-              ) ?? 0,
-            ),
-            optionalStorageRoomPrice: Math.round(
-              Number(
-                (
-                  document.getElementById(
-                    "optionalStorageRoomPrice",
-                  ) as HTMLInputElement
-                )?.value,
-              ) ?? 0,
-            ),
+            optionalGaragePrice: (() => {
+              const value = (
+                document.getElementById("optionalGaragePrice") as HTMLInputElement
+              )?.value;
+              const num = Number(value);
+              return !isNaN(num) ? Math.round(num) : 0;
+            })(),
+            optionalStorageRoomPrice: (() => {
+              const value = (
+                document.getElementById("optionalStorageRoomPrice") as HTMLInputElement
+              )?.value;
+              const num = Number(value);
+              return !isNaN(num) ? Math.round(num) : 0;
+            })(),
             oven,
             microwave,
             washingMachine,
@@ -425,6 +431,10 @@ export function PropertyCharacteristicsForm({
             studentFriendly,
             petsAllowed,
             appliancesIncluded,
+            rentalPrice,
+          };
+          propertyData = {
+            duplicateForRent,
           };
           break;
       }
@@ -646,8 +656,6 @@ export function PropertyCharacteristicsForm({
   const [municipality, setMunicipality] = useState(listing.municipality ?? "");
   const [showAdditionalCharacteristics, setShowAdditionalCharacteristics] =
     useState(false);
-  const [showPremiumFeatures, setShowPremiumFeatures] = useState(false);
-  const [showAdditionalSpaces, setShowAdditionalSpaces] = useState(false);
   const [showMaterials, setShowMaterials] = useState(false);
   const [optionalGaragePrice, setOptionalGaragePrice] = useState(() => {
     const price = listing.optionalGaragePrice;
@@ -727,6 +735,10 @@ export function PropertyCharacteristicsForm({
   const [tv, setTv] = useState(listing.tv ?? false);
   const [stoneware, setStoneware] = useState(listing.stoneware ?? false);
   
+  // Rental duplicate state
+  const [duplicateForRent, setDuplicateForRent] = useState(false);
+  const [rentalPrice, setRentalPrice] = useState(0);
+  
   // Toggle button states
   const [hasKeys, setHasKeys] = useState<boolean>(false);
   const [keysLoading, setKeysLoading] = useState(false);
@@ -739,14 +751,6 @@ export function PropertyCharacteristicsForm({
     owner.name.toLowerCase().includes(ownerSearch.toLowerCase()),
   );
 
-  const heatingOptions = [
-    { id: 1, label: "Gas natural" },
-    { id: 2, label: "Eléctrico" },
-    { id: 3, label: "Gasóleo" },
-    { id: 4, label: "Butano" },
-    { id: 5, label: "Propano" },
-    { id: 6, label: "Solar" },
-  ];
 
 
   // Set selectedAgentId when listing agent data is available
@@ -889,9 +893,11 @@ export function PropertyCharacteristicsForm({
   };
 
   const handlePropertyTypeChange = (newType: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("type", newType);
-    router.push(`?${params.toString()}`);
+    setPropertyType(newType); // Update local state only, don't change URL
+    // Remove URL update to prevent component re-mounting which causes form switching
+    // const params = new URLSearchParams(searchParams.toString());
+    // params.set("type", newType);
+    // router.push(`?${params.toString()}`);
   };
 
   const handleGenerateDescription = async () => {
@@ -924,28 +930,9 @@ export function PropertyCharacteristicsForm({
     }
   };
 
-  // Add this function to handle signature changes
-  const handleSignatureChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setSignature(e.target.value);
-    updateModuleState("description", true);
-  };
 
-  // If property type is garage, render the garage form
-  if (propertyType === "garaje") {
-    return <PropertyCharacteristicsFormGarage listing={listing} />;
-  }
 
-  // If property type is solar, render the solar form
-  if (propertyType === "solar") {
-    return <PropertyCharacteristicsFormSolar listing={listing} />;
-  }
-
-  // If property type is local, render the local form
-  if (propertyType === "local") {
-    return <PropertyCharacteristicsFormLocal listing={listing} />;
-  }
-
-  const getCardStyles = (moduleName: ModuleName) => {
+  const getCardStyles = (moduleName: string) => {
     const state = moduleStates[moduleName]?.saveState;
 
     switch (state) {
@@ -968,8 +955,9 @@ export function PropertyCharacteristicsForm({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-2">
       {/* Property Summary */}
-      <PropertySummary
+      <PropertySummaryCard
         listing={listing}
+        propertyType={propertyType}
         selectedOwnerIds={selectedOwnerIds}
         owners={owners}
         selectedAgentId={selectedAgentId}
@@ -1170,7 +1158,13 @@ export function PropertyCharacteristicsForm({
                   ? "Piso"
                   : propertyType === "casa"
                     ? "Casa"
-                    : "")
+                    : propertyType === "local"
+                      ? "Otros"
+                      : propertyType === "solar"
+                        ? "Suelo residencial"
+                        : propertyType === "garaje"
+                          ? "Individual"
+                          : "")
               }
               onValueChange={(value) => {
                 // Note: This directly modifies the listing object - consider using state instead
@@ -1298,7 +1292,17 @@ export function PropertyCharacteristicsForm({
               }}
             >
               <Building2 className="mr-1 h-3.5 w-3.5" />
-              Piso de banco
+              {propertyType === "piso" 
+                ? "Piso de banco" 
+                : propertyType === "casa" 
+                  ? "Casa de banco"
+                  : propertyType === "local"
+                    ? "Local de banco"
+                    : propertyType === "garaje"
+                      ? "Garaje de banco"
+                      : propertyType === "solar"
+                        ? "Solar de banco"
+                        : "Propiedad de banco"}
             </Button>
             <Button
               variant={newConstruction ? "default" : "outline"}
@@ -1319,173 +1323,20 @@ export function PropertyCharacteristicsForm({
       </Card>
 
       {/* Property Details */}
-      <Card
-        className={cn(
-          "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("propertyDetails"),
-        )}
-      >
-        <ModernSaveIndicator
-          state={moduleStates.propertyDetails?.saveState ?? "idle"}
-          onSave={() => saveModule("propertyDetails")}
-        />
-        <div className="mb-3 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => toggleSection("propertyDetails")}
-            className="group flex w-full items-center justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                DISTRIBUCIÓN Y SUPERFICIE
-              </h3>
-            </div>
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                collapsedSections.propertyDetails && "rotate-180",
-              )}
-            />
-          </button>
-        </div>
-        <div
-          className={cn(
-            "space-y-3 overflow-hidden transition-all duration-200",
-            collapsedSections.propertyDetails ? "max-h-0" : "max-h-[2000px]",
-          )}
-        >
-          <div className="space-y-1.5">
-            <Label htmlFor="bedrooms" className="text-sm">
-              Habitaciones
-            </Label>
-            <Input
-              id="bedrooms"
-              type="number"
-              defaultValue={listing.bedrooms?.toString() ?? ""}
-              className="h-8 text-gray-500"
-              onChange={() => updateModuleState("propertyDetails", true)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="bathrooms" className="text-sm">
-              Baños
-            </Label>
-            <Input
-              id="bathrooms"
-              type="number"
-              defaultValue={
-                listing.bathrooms ? Math.round(listing.bathrooms) : undefined
-              }
-              className="h-8 text-gray-500"
-              min="0"
-              step="1"
-              onChange={() => updateModuleState("propertyDetails", true)}
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="squareMeter" className="text-sm">
-                Superficie (m²)
-              </Label>
-              <Input
-                id="squareMeter"
-                type="number"
-                defaultValue={listing.squareMeter}
-                className="h-8 text-gray-500"
-                onChange={() => updateModuleState("propertyDetails", true)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="builtSurfaceArea" className="text-sm">
-                Construida (m²)
-              </Label>
-              <Input
-                id="builtSurfaceArea"
-                type="number"
-                defaultValue={
-                  listing.builtSurfaceArea
-                    ? Math.round(listing.builtSurfaceArea)
-                    : undefined
-                }
-                className="h-8 text-gray-500"
-                min="0"
-                step="1"
-                onChange={() => updateModuleState("propertyDetails", true)}
-              />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="yearBuilt" className="text-sm">
-              Año de Construcción
-            </Label>
-            <Input
-              id="yearBuilt"
-              type="number"
-              defaultValue={listing.yearBuilt}
-              className="h-8 text-gray-500"
-              onChange={() => updateModuleState("propertyDetails", true)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="lastRenovationYear" className="text-sm">
-              Año última reforma
-            </Label>
-            <Input
-              id="lastRenovationYear"
-              type="number"
-              value={lastRenovationYear}
-              onChange={(e) => {
-                setLastRenovationYear(e.target.value);
-                updateModuleState("propertyDetails", true);
-              }}
-              className="h-8 text-gray-500"
-              min="1900"
-              max={new Date().getFullYear()}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="buildingFloors" className="text-sm">
-              Plantas edificio
-            </Label>
-            <Input
-              id="buildingFloors"
-              type="number"
-              value={buildingFloors}
-              onChange={(e) => {
-                setBuildingFloors(parseInt(e.target.value));
-                updateModuleState("propertyDetails", true);
-              }}
-              className="h-8 text-gray-500"
-              min="1"
-              step="1"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="conservationStatus" className="text-sm">
-              Estado de conservación
-            </Label>
-            <Select
-              value={listing.conservationStatus?.toString() ?? "1"}
-              onValueChange={(value) => {
-                // Update the listing object directly for now
-                listing.conservationStatus = parseInt(value);
-                updateModuleState("propertyDetails", true);
-              }}
-            >
-              <SelectTrigger className="h-8 text-gray-500">
-                <SelectValue placeholder="Seleccionar estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="3">Nuevo</SelectItem>
-                <SelectItem value="6">Reformado</SelectItem>
-                <SelectItem value="1">Bueno</SelectItem>
-                <SelectItem value="2">Regular</SelectItem>
-                <SelectItem value="4">Reformar</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </Card>
+      <PropertyDetailsCard
+        listing={listing}
+        propertyType={propertyType}
+        lastRenovationYear={lastRenovationYear.toString()}
+        buildingFloors={buildingFloors}
+        collapsedSections={collapsedSections}
+        saveState={moduleStates.propertyDetails?.saveState ?? "idle"}
+        onToggleSection={toggleSection}
+        onSave={() => saveModule("propertyDetails")}
+        onUpdateModule={(hasChanges) => updateModuleState("propertyDetails", hasChanges)}
+        setLastRenovationYear={setLastRenovationYear}
+        setBuildingFloors={setBuildingFloors}
+        getCardStyles={getCardStyles}
+      />
 
       {/* Location */}
       <Card
@@ -1633,518 +1484,62 @@ export function PropertyCharacteristicsForm({
       </Card>
 
       {/* Features */}
-      <Card
-        className={cn(
-          "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("features"),
-        )}
-      >
-        <ModernSaveIndicator
-          state={moduleStates.features?.saveState ?? "idle"}
-          onSave={() => saveModule("features")}
-        />
-        <div className="mb-3 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => toggleSection("features")}
-            className="group flex w-full items-center justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                EQUIPAMIENTO Y SERVICIOS
-              </h3>
-            </div>
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                collapsedSections.features && "rotate-180",
-              )}
-            />
-          </button>
-        </div>
-        <div
-          className={cn(
-            "space-y-3 overflow-hidden transition-all duration-200",
-            collapsedSections.features ? "max-h-0" : "max-h-[5000px]",
-          )}
-        >
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="hasElevator"
-              defaultChecked={listing.hasElevator}
-              onCheckedChange={() => updateModuleState("features", true)}
-            />
-            <Label htmlFor="hasElevator" className="text-sm">
-              Ascensor
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="hasGarage"
-              checked={hasGarage}
-              onCheckedChange={(checked) => {
-                setHasGarage(checked as boolean);
-                if (!checked) {
-                  setGarageType("");
-                  setGarageSpaces(1);
-                  setGarageInBuilding(false);
-                  setGarageNumber("");
-                }
-                updateModuleState("features", true);
-              }}
-            />
-            <Label htmlFor="hasGarage" className="text-sm">
-              Garaje
-            </Label>
-          </div>
-          {hasGarage && (
-            <div className="ml-6 mt-1 space-y-2 border-l-2 pl-3">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label htmlFor="garageType" className="text-xs">
-                    Tipo
-                  </Label>
-                  <Select value={garageType} onValueChange={setGarageType}>
-                    <SelectTrigger className="h-7 text-xs">
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="abierto">Abierto</SelectItem>
-                      <SelectItem value="cerrado">Cerrado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="garageSpaces" className="text-xs">
-                    Plazas
-                  </Label>
-                  <Input
-                    id="garageSpaces"
-                    type="number"
-                    value={garageSpaces}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value) || 1;
-                      setGarageSpaces(value);
-                      updateModuleState("features", true);
-                    }}
-                    className="h-7 text-xs"
-                    min="1"
-                    max="10"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div className="flex items-center space-x-1">
-                  <Checkbox
-                    id="garageInBuilding"
-                    checked={garageInBuilding}
-                    onCheckedChange={(checked) => {
-                      setGarageInBuilding(checked as boolean);
-                      updateModuleState("features", true);
-                    }}
-                    className="h-3 w-3"
-                  />
-                  <Label htmlFor="garageInBuilding" className="text-xs">
-                    En edificio
-                  </Label>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="garageNumber" className="text-xs">
-                    Nº plaza
-                  </Label>
-                  <Input
-                    id="garageNumber"
-                    value={garageNumber}
-                    onChange={(e) => {
-                      setGarageNumber(e.target.value);
-                      updateModuleState("features", true);
-                    }}
-                    className="h-7 text-xs"
-                    placeholder="A-123"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="optionalGaragePrice" className="text-xs">
-                  Precio
-                </Label>
-                <Input
-                  id="optionalGaragePrice"
-                  type="number"
-                  value={Math.round(optionalGaragePrice)}
-                  onChange={(e) => {
-                    const value = Math.round(Number(e.target.value)) || 0;
-                    setOptionalGaragePrice(value);
-                    updateModuleState("features", true);
-                  }}
-                  className="h-7 text-xs"
-                  min="0"
-                  step="1"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-          )}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="hasStorageRoom"
-              checked={hasStorageRoom}
-              onCheckedChange={(checked) => {
-                setHasStorageRoom(checked as boolean);
-                if (!checked) {
-                  setStorageRoomSize(0);
-                  setStorageRoomNumber("");
-                }
-                updateModuleState("features", true);
-              }}
-            />
-            <Label htmlFor="hasStorageRoom" className="text-sm">
-              Trastero
-            </Label>
-          </div>
-          {hasStorageRoom && (
-            <div className="ml-6 mt-1 space-y-2 border-l-2 pl-3">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label htmlFor="storageRoomSize" className="text-xs">
-                    Tamaño (m²)
-                  </Label>
-                  <Input
-                    id="storageRoomSize"
-                    type="number"
-                    value={storageRoomSize}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value) || 0;
-                      setStorageRoomSize(value);
-                      updateModuleState("features", true);
-                    }}
-                    className="h-7 text-xs"
-                    min="0"
-                    step="1"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="storageRoomNumber" className="text-xs">
-                    Nº trastero
-                  </Label>
-                  <Input
-                    id="storageRoomNumber"
-                    value={storageRoomNumber}
-                    onChange={(e) => {
-                      setStorageRoomNumber(e.target.value);
-                      updateModuleState("features", true);
-                    }}
-                    className="h-7 text-xs"
-                    placeholder="T-45"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="optionalStorageRoomPrice" className="text-xs">
-                  Precio
-                </Label>
-                <Input
-                  id="optionalStorageRoomPrice"
-                  type="number"
-                  value={Math.round(optionalStorageRoomPrice)}
-                  onChange={(e) => {
-                    const value = Math.round(Number(e.target.value)) || 0;
-                    setOptionalStorageRoomPrice(value);
-                    updateModuleState("features", true);
-                  }}
-                  className="h-7 text-xs"
-                  min="0"
-                  step="1"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-          )}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="hasHeating"
-              checked={isHeating}
-              onCheckedChange={(checked) => {
-                setIsHeating(!!checked);
-                updateModuleState("features", true);
-              }}
-            />
-            <Label htmlFor="hasHeating" className="text-sm">
-              Calefacción
-            </Label>
-          </div>
-          {isHeating && (
-            <div className="ml-6 mt-2">
-              <Select
-                value={heatingType}
-                onValueChange={(value) => {
-                  setHeatingType(value);
-                  updateModuleState("features", true);
-                }}
-              >
-                <SelectTrigger className="mt-1 h-6 px-2 py-0 text-xs text-gray-500">
-                  <SelectValue placeholder="Seleccionar tipo de calefacción" />
-                </SelectTrigger>
-                <SelectContent>
-                  {heatingOptions.map((option) => (
-                    <SelectItem key={option.id} value={option.id.toString()}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="hasHotWater"
-              checked={isHotWater}
-              onCheckedChange={(checked) => {
-                setIsHotWater(!!checked);
-                if (!checked) {
-                  setHotWaterType("");
-                }
-                updateModuleState("features", true);
-              }}
-            />
-            <Label htmlFor="hasHotWater" className="text-sm">
-              Agua caliente
-            </Label>
-          </div>
-          {isHotWater && (
-            <div className="ml-6 mt-2">
-              <Select
-                value={hotWaterType}
-                onValueChange={(value) => {
-                  setHotWaterType(value);
-                  updateModuleState("features", true);
-                }}
-              >
-                <SelectTrigger className="mt-1 h-6 px-2 py-0 text-xs text-gray-500">
-                  <SelectValue placeholder="Seleccionar tipo de agua caliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {heatingOptions.map((option) => (
-                    <SelectItem key={option.id} value={option.id.toString()}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="hasAirConditioning"
-              checked={isAirConditioning}
-              onCheckedChange={(checked) => {
-                setIsAirConditioning(checked as boolean);
-                if (!checked) {
-                  setAirConditioningType("");
-                }
-                updateModuleState("features", true);
-              }}
-            />
-            <Label htmlFor="hasAirConditioning" className="text-sm">
-              Aire acondicionado
-            </Label>
-          </div>
-          {isAirConditioning && (
-            <div className="ml-6 mt-1">
-              <Select
-                value={airConditioningType}
-                onValueChange={(value) => {
-                  setAirConditioningType(value);
-                  updateModuleState("features", true);
-                }}
-              >
-                <SelectTrigger className="mt-1 h-6 px-2 py-0 text-xs text-gray-500">
-                  <SelectValue placeholder="Seleccionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="central">Central</SelectItem>
-                  <SelectItem value="split">Split</SelectItem>
-                  <SelectItem value="portatil">Portátil</SelectItem>
-                  <SelectItem value="conductos">Conductos</SelectItem>
-                  <SelectItem value="cassette">Cassette</SelectItem>
-                  <SelectItem value="ventana">Ventana</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isFurnished"
-                checked={isFurnished}
-                onCheckedChange={(checked) => {
-                  setIsFurnished(checked as boolean);
-                  updateModuleState("features", true);
-                }}
-              />
-              <Label htmlFor="isFurnished" className="text-sm">
-                Amueblado
-              </Label>
-            </div>
-            {isFurnished && (
-              <div className="ml-4">
-                <RadioGroup
-                  defaultValue={listing.furnitureQuality}
-                  className="flex flex-wrap gap-2"
-                >
-                  <div className="flex items-center space-x-1">
-                    <RadioGroupItem
-                      value="basic"
-                      id="basic"
-                      className="h-3 w-3 text-muted-foreground"
-                    />
-                    <Label
-                      htmlFor="basic"
-                      className="text-xs text-muted-foreground"
-                    >
-                      Básico
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <RadioGroupItem
-                      value="standard"
-                      id="standard"
-                      className="h-3 w-3 text-muted-foreground"
-                    />
-                    <Label
-                      htmlFor="standard"
-                      className="text-xs text-muted-foreground"
-                    >
-                      Estándar
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <RadioGroupItem
-                      value="high"
-                      id="high"
-                      className="h-3 w-3 text-muted-foreground"
-                    />
-                    <Label
-                      htmlFor="high"
-                      className="text-xs text-muted-foreground"
-                    >
-                      Alta
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <RadioGroupItem
-                      value="luxury"
-                      id="luxury"
-                      className="h-3 w-3 text-muted-foreground"
-                    />
-                    <Label
-                      htmlFor="luxury"
-                      className="text-xs text-muted-foreground"
-                    >
-                      Lujo
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            )}
-          </div>
-
-          {/* Appliances - only show when furnished */}
-          {isFurnished && (
-            <div className="space-y-2 border-t border-border pt-3">
-              <h4 className="text-xs font-medium text-muted-foreground">
-                Electrodomésticos incluidos
-              </h4>
-              <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
-                <div className="flex items-center space-x-1">
-                  <Checkbox
-                    id="oven"
-                    checked={oven}
-                    onCheckedChange={(checked) => {
-                      setOven(checked as boolean);
-                      updateModuleState("features", true);
-                    }}
-                    className="no-checkmark h-3 w-3"
-                  />
-                  <Label htmlFor="oven" className="text-xs">
-                    Horno
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Checkbox
-                    id="microwave"
-                    checked={microwave}
-                    onCheckedChange={(checked) => {
-                      setMicrowave(checked as boolean);
-                      updateModuleState("features", true);
-                    }}
-                    className="no-checkmark h-3 w-3"
-                  />
-                  <Label htmlFor="microwave" className="text-xs">
-                    Microondas
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Checkbox
-                    id="washingMachine"
-                    checked={washingMachine}
-                    onCheckedChange={(checked) => {
-                      setWashingMachine(checked as boolean);
-                      updateModuleState("features", true);
-                    }}
-                    className="no-checkmark h-3 w-3"
-                  />
-                  <Label htmlFor="washingMachine" className="text-xs">
-                    Lavadora
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Checkbox
-                    id="fridge"
-                    checked={fridge}
-                    onCheckedChange={(checked) => {
-                      setFridge(checked as boolean);
-                      updateModuleState("features", true);
-                    }}
-                    className="no-checkmark h-3 w-3"
-                  />
-                  <Label htmlFor="fridge" className="text-xs">
-                    Frigorífico
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Checkbox
-                    id="tv"
-                    checked={tv}
-                    onCheckedChange={(checked) => {
-                      setTv(checked as boolean);
-                      updateModuleState("features", true);
-                    }}
-                    className="no-checkmark h-3 w-3"
-                  />
-                  <Label htmlFor="tv" className="text-xs">
-                    Televisión
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Checkbox
-                    id="stoneware"
-                    checked={stoneware}
-                    onCheckedChange={(checked) => {
-                      setStoneware(checked as boolean);
-                      updateModuleState("features", true);
-                    }}
-                    className="no-checkmark h-3 w-3"
-                  />
-                  <Label htmlFor="stoneware" className="text-xs">
-                    Vajilla
-                  </Label>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
+      <FeaturesCard
+        listing={listing}
+        propertyType={propertyType}
+        isFurnished={isFurnished}
+        isHeating={isHeating}
+        heatingType={heatingType}
+        isHotWater={isHotWater}
+        hotWaterType={hotWaterType}
+        isAirConditioning={isAirConditioning}
+        airConditioningType={airConditioningType}
+        hasGarage={hasGarage}
+        garageType={garageType}
+        garageSpaces={garageSpaces}
+        garageInBuilding={garageInBuilding}
+        garageNumber={garageNumber}
+        hasStorageRoom={hasStorageRoom}
+        storageRoomSize={storageRoomSize}
+        storageRoomNumber={storageRoomNumber}
+        optionalGaragePrice={optionalGaragePrice}
+        optionalStorageRoomPrice={optionalStorageRoomPrice}
+        oven={oven}
+        microwave={microwave}
+        washingMachine={washingMachine}
+        fridge={fridge}
+        tv={tv}
+        stoneware={stoneware}
+        collapsedSections={collapsedSections}
+        saveState={moduleStates.features?.saveState ?? "idle"}
+        onToggleSection={toggleSection}
+        onSave={() => saveModule("features")}
+        onUpdateModule={(hasChanges) => updateModuleState("features", hasChanges)}
+        setIsFurnished={setIsFurnished}
+        setIsHeating={setIsHeating}
+        setHeatingType={setHeatingType}
+        setIsHotWater={setIsHotWater}
+        setHotWaterType={setHotWaterType}
+        setIsAirConditioning={setIsAirConditioning}
+        setAirConditioningType={setAirConditioningType}
+        setHasGarage={setHasGarage}
+        setGarageType={setGarageType}
+        setGarageSpaces={setGarageSpaces}
+        setGarageInBuilding={setGarageInBuilding}
+        setGarageNumber={setGarageNumber}
+        setHasStorageRoom={setHasStorageRoom}
+        setStorageRoomSize={setStorageRoomSize}
+        setStorageRoomNumber={setStorageRoomNumber}
+        setOptionalGaragePrice={setOptionalGaragePrice}
+        setOptionalStorageRoomPrice={setOptionalStorageRoomPrice}
+        setOven={setOven}
+        setMicrowave={setMicrowave}
+        setWashingMachine={setWashingMachine}
+        setFridge={setFridge}
+        setTv={setTv}
+        setStoneware={setStoneware}
+        getCardStyles={getCardStyles}
+      />
 
       {/* Contact Information */}
       <Card
@@ -2282,96 +1677,22 @@ export function PropertyCharacteristicsForm({
         </div>
       </Card>
 
-      {/* Exterior and Orientation */}
-      <Card
-        className={cn(
-          "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("orientation"),
-        )}
-      >
-        <ModernSaveIndicator
-          state={moduleStates.orientation?.saveState ?? "idle"}
-          onSave={() => saveModule("orientation")}
-        />
-        <div className="mb-3 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => toggleSection("orientation")}
-            className="group flex w-full items-center justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                ORIENTACIÓN Y EXPOSICIÓN
-              </h3>
-            </div>
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                collapsedSections.orientation && "rotate-180",
-              )}
-            />
-          </button>
-        </div>
-        <div
-          className={cn(
-            "space-y-3 overflow-hidden transition-all duration-200",
-            collapsedSections.orientation ? "max-h-0" : "max-h-[500px]",
-          )}
-        >
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="isExterior"
-              checked={isExterior}
-              onCheckedChange={(checked) => {
-                setIsExterior(checked as boolean);
-                updateModuleState("orientation", true);
-              }}
-            />
-            <Label htmlFor="isExterior" className="text-sm">
-              Exterior
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="isBright"
-              checked={isBright}
-              onCheckedChange={(checked) => {
-                setIsBright(checked as boolean);
-                updateModuleState("orientation", true);
-              }}
-            />
-            <Label htmlFor="isBright" className="text-sm">
-              Luminoso
-            </Label>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="orientation" className="text-sm">
-              Orientación
-            </Label>
-            <Select
-              value={orientation}
-              onValueChange={(value) => {
-                setOrientation(value);
-                updateModuleState("orientation", true);
-              }}
-            >
-              <SelectTrigger className="h-8 text-gray-500">
-                <SelectValue placeholder="Seleccionar orientación" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="norte">Norte</SelectItem>
-                <SelectItem value="sur">Sur</SelectItem>
-                <SelectItem value="este">Este</SelectItem>
-                <SelectItem value="oeste">Oeste</SelectItem>
-                <SelectItem value="noreste">Noreste</SelectItem>
-                <SelectItem value="noroeste">Noroeste</SelectItem>
-                <SelectItem value="sureste">Sureste</SelectItem>
-                <SelectItem value="suroeste">Suroeste</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </Card>
+      {/* Orientation and Exposure */}
+      <OrientationCard
+        isExterior={isExterior}
+        isBright={isBright}
+        orientation={orientation}
+        propertyType={propertyType}
+        collapsedSections={collapsedSections}
+        saveState={moduleStates.orientation?.saveState ?? "idle"}
+        onToggleSection={toggleSection}
+        onSave={() => saveModule("orientation")}
+        onUpdateModule={(hasChanges) => updateModuleState("orientation", hasChanges)}
+        setIsExterior={setIsExterior}
+        setIsBright={setIsBright}
+        setOrientation={setOrientation}
+        getCardStyles={getCardStyles}
+      />
 
       {/* Separator for secondary sections */}
       <div className="col-span-full">
@@ -2379,1000 +1700,141 @@ export function PropertyCharacteristicsForm({
       </div>
 
       {/* Additional Characteristics */}
-      <Card
-        className={cn(
-          "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("additionalCharacteristics"),
-        )}
-      >
-          <ModernSaveIndicator
-            state={moduleStates.additionalCharacteristics?.saveState ?? "idle"}
-            onSave={() => saveModule("additionalCharacteristics")}
-          />
-          <div className="mb-3 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() =>
-                setShowAdditionalCharacteristics(!showAdditionalCharacteristics)
-              }
-              className="group flex w-full items-center justify-between"
-            >
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                  CARACTERÍSTICAS ADICIONALES
-                </h3>
-              </div>
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                  showAdditionalCharacteristics && "rotate-180",
-                )}
-              />
-            </button>
-          </div>
-          <div
-            className={cn(
-              "grid transition-all duration-200 ease-in-out",
-              showAdditionalCharacteristics
-                ? "mt-4 grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0",
-            )}
-          >
-            <div className="overflow-hidden">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  {/* Security Features */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Seguridad
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="securityDoor"
-                        checked={securityDoor}
-                        onCheckedChange={(checked) => {
-                          setSecurityDoor(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="securityDoor" className="text-sm">
-                        Puerta blindada
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="alarm"
-                        checked={alarm}
-                        onCheckedChange={(checked) => {
-                          setAlarm(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="alarm" className="text-sm">
-                        Alarma
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="videoIntercom"
-                        checked={videoIntercom}
-                        onCheckedChange={(checked) => {
-                          setVideoIntercom(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="videoIntercom" className="text-sm">
-                        Videoportero
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="securityGuard"
-                        checked={securityGuard}
-                        onCheckedChange={(checked) => {
-                          setSecurityGuard(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="securityGuard" className="text-sm">
-                        Vigilante
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="conciergeService"
-                        checked={conciergeService}
-                        onCheckedChange={(checked) => {
-                          setConciergeService(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="conciergeService" className="text-sm">
-                        Conserjería
-                      </Label>
-                    </div>
-                  </div>
+      <AdditionalCharacteristicsCard
+        disabledAccessible={disabledAccessible}
+        vpo={vpo}
+        videoIntercom={videoIntercom}
+        conciergeService={conciergeService}
+        securityGuard={securityGuard}
+        satelliteDish={satelliteDish}
+        doubleGlazing={doubleGlazing}
+        alarm={alarm}
+        securityDoor={securityDoor}
+        kitchenType={kitchenType}
+        openKitchen={openKitchen}
+        frenchKitchen={frenchKitchen}
+        furnishedKitchen={furnishedKitchen}
+        pantry={pantry}
+        propertyType={propertyType}
+        showAdditionalCharacteristics={showAdditionalCharacteristics}
+        saveState={moduleStates.additionalCharacteristics?.saveState ?? "idle"}
+        onSave={() => saveModule("additionalCharacteristics")}
+        onUpdateModule={(hasChanges) => updateModuleState("additionalCharacteristics", hasChanges)}
+        setDisabledAccessible={setDisabledAccessible}
+        setVpo={setVpo}
+        setVideoIntercom={setVideoIntercom}
+        setConciergeService={setConciergeService}
+        setSecurityGuard={setSecurityGuard}
+        setSatelliteDish={setSatelliteDish}
+        setDoubleGlazing={setDoubleGlazing}
+        setAlarm={setAlarm}
+        setSecurityDoor={setSecurityDoor}
+        setKitchenType={setKitchenType}
+        setOpenKitchen={setOpenKitchen}
+        setFrenchKitchen={setFrenchKitchen}
+        setFurnishedKitchen={setFurnishedKitchen}
+        setPantry={setPantry}
+        setShowAdditionalCharacteristics={setShowAdditionalCharacteristics}
+        getCardStyles={getCardStyles}
+      />
 
-                  {/* Building Features */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Características del edificio
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="vpo"
-                        checked={vpo}
-                        onCheckedChange={(checked) => {
-                          setVpo(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="vpo" className="text-sm">
-                        VPO
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="disabledAccessible"
-                        checked={disabledAccessible}
-                        onCheckedChange={(checked) => {
-                          setDisabledAccessible(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="disabledAccessible" className="text-sm">
-                        Accesible
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="satelliteDish"
-                        checked={satelliteDish}
-                        onCheckedChange={(checked) => {
-                          setSatelliteDish(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="satelliteDish" className="text-sm">
-                        Antena
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="doubleGlazing"
-                        checked={doubleGlazing}
-                        onCheckedChange={(checked) => {
-                          setDoubleGlazing(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="doubleGlazing" className="text-sm">
-                        Doble acristalamiento
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Kitchen Features */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Cocina
-                    </h4>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="kitchenType" className="text-sm">
-                        Tipo de cocina
-                      </Label>
-                      <Select
-                        value={kitchenType}
-                        onValueChange={(value) => {
-                          setKitchenType(value);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      >
-                        <SelectTrigger className="h-8 text-gray-500">
-                          <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="gas">Gas</SelectItem>
-                          <SelectItem value="induccion">Inducción</SelectItem>
-                          <SelectItem value="vitroceramica">
-                            Vitrocerámica
-                          </SelectItem>
-                          <SelectItem value="carbon">Carbón</SelectItem>
-                          <SelectItem value="electrico">Eléctrico</SelectItem>
-                          <SelectItem value="mixto">Mixto</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="openKitchen"
-                        checked={openKitchen}
-                        onCheckedChange={(checked) => {
-                          setOpenKitchen(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="openKitchen" className="text-sm">
-                        Cocina abierta
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="frenchKitchen"
-                        checked={frenchKitchen}
-                        onCheckedChange={(checked) => {
-                          setFrenchKitchen(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="frenchKitchen" className="text-sm">
-                        Cocina francesa
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="furnishedKitchen"
-                        checked={furnishedKitchen}
-                        onCheckedChange={(checked) => {
-                          setFurnishedKitchen(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="furnishedKitchen" className="text-sm">
-                        Cocina amueblada
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="pantry"
-                        checked={pantry}
-                        onCheckedChange={(checked) => {
-                          setPantry(checked as boolean);
-                          updateModuleState("additionalCharacteristics", true);
-                        }}
-                      />
-                      <Label htmlFor="pantry" className="text-sm">
-                        Despensa
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-          {/* Premium Features */}
-          <Card
-            className={cn(
-              "relative p-4 transition-all duration-500 ease-out",
-              getCardStyles("premiumFeatures"),
-            )}
-          >
-          <ModernSaveIndicator
-            state={moduleStates.premiumFeatures?.saveState ?? "idle"}
-            onSave={() => saveModule("premiumFeatures")}
-          />
-          <div className="mb-3 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setShowPremiumFeatures(!showPremiumFeatures)}
-              className="group flex w-full items-center justify-between"
-            >
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                  EXTRAS DE LUJO Y CONFORT
-                </h3>
-              </div>
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                  showPremiumFeatures && "rotate-180",
-                )}
-              />
-            </button>
-          </div>
-          <div
-            className={cn(
-              "grid transition-all duration-200 ease-in-out",
-              showPremiumFeatures
-                ? "mt-4 grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0",
-            )}
-          >
-            <div className="overflow-hidden">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  {/* Views */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Vistas
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="views"
-                        checked={views}
-                        onCheckedChange={(checked) => {
-                          setViews(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="views" className="text-sm">
-                        Vistas
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="mountainViews"
-                        checked={mountainViews}
-                        onCheckedChange={(checked) => {
-                          setMountainViews(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="mountainViews" className="text-sm">
-                        Vistas montaña
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="seaViews"
-                        checked={seaViews}
-                        onCheckedChange={(checked) => {
-                          setSeaViews(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="seaViews" className="text-sm">
-                        Vistas mar
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="beachfront"
-                        checked={beachfront}
-                        onCheckedChange={(checked) => {
-                          setBeachfront(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="beachfront" className="text-sm">
-                        Primera línea
-                      </Label>
-                    </div>
-                  </div>
-
-                  {/* Wellness */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Bienestar
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="jacuzzi"
-                        checked={jacuzzi}
-                        onCheckedChange={(checked) => {
-                          setJacuzzi(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="jacuzzi" className="text-sm">
-                        Jacuzzi
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="hydromassage"
-                        checked={hydromassage}
-                        onCheckedChange={(checked) => {
-                          setHydromassage(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="hydromassage" className="text-sm">
-                        Hidromasaje
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="fireplace"
-                        checked={fireplace}
-                        onCheckedChange={(checked) => {
-                          setFireplace(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="fireplace" className="text-sm">
-                        Chimenea
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="suiteBathroom"
-                        checked={suiteBathroom}
-                        onCheckedChange={(checked) => {
-                          setSuiteBathroom(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="suiteBathroom" className="text-sm">
-                        Baño en suite
-                      </Label>
-                    </div>
-                  </div>
-
-                  {/* Smart Home */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Domótica
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="homeAutomation"
-                        checked={homeAutomation}
-                        onCheckedChange={(checked) => {
-                          setHomeAutomation(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="homeAutomation" className="text-sm">
-                        Domótica
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="musicSystem"
-                        checked={musicSystem}
-                        onCheckedChange={(checked) => {
-                          setMusicSystem(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="musicSystem" className="text-sm">
-                        Sistema de música
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Outdoor Features */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Exterior
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="garden"
-                        checked={garden}
-                        onCheckedChange={(checked) => {
-                          setGarden(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="garden" className="text-sm">
-                        Jardín
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="pool"
-                        checked={pool}
-                        onCheckedChange={(checked) => {
-                          setPool(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="pool" className="text-sm">
-                        Piscina
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="privatePool"
-                        checked={privatePool}
-                        onCheckedChange={(checked) => {
-                          setPrivatePool(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="privatePool" className="text-sm">
-                        Piscina privada
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="communityPool"
-                        checked={communityPool}
-                        onCheckedChange={(checked) => {
-                          setCommunityPool(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="communityPool" className="text-sm">
-                        Piscina comunitaria
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="tennisCourt"
-                        checked={tennisCourt}
-                        onCheckedChange={(checked) => {
-                          setTennisCourt(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="tennisCourt" className="text-sm">
-                        Pista de tenis
-                      </Label>
-                    </div>
-                  </div>
-
-                  {/* Community Amenities */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Comunitarios
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="gym"
-                        checked={gym}
-                        onCheckedChange={(checked) => {
-                          setGym(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="gym" className="text-sm">
-                        Gimnasio
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="sportsArea"
-                        checked={sportsArea}
-                        onCheckedChange={(checked) => {
-                          setSportsArea(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="sportsArea" className="text-sm">
-                        Zona deportiva
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="childrenArea"
-                        checked={childrenArea}
-                        onCheckedChange={(checked) => {
-                          setChildrenArea(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="childrenArea" className="text-sm">
-                        Zona infantil
-                      </Label>
-                    </div>
-                  </div>
-
-                  {/* Location */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Ubicación
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="nearbyPublicTransport"
-                        checked={nearbyPublicTransport}
-                        onCheckedChange={(checked) => {
-                          setNearbyPublicTransport(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label
-                        htmlFor="nearbyPublicTransport"
-                        className="text-sm"
-                      >
-                        Transporte público cercano
-                      </Label>
-                    </div>
-                  </div>
-
-                  {/* Utility Rooms */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Estancias
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="laundryRoom"
-                        checked={laundryRoom}
-                        onCheckedChange={(checked) => {
-                          setLaundryRoom(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="laundryRoom" className="text-sm">
-                        Lavadero
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="coveredClothesline"
-                        checked={coveredClothesline}
-                        onCheckedChange={(checked) => {
-                          setCoveredClothesline(checked as boolean);
-                          updateModuleState("premiumFeatures", true);
-                        }}
-                      />
-                      <Label htmlFor="coveredClothesline" className="text-sm">
-                        Tendedero cubierto
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-      </Card>
+      {/* Premium Features */}
+      <PremiumFeaturesCard
+        propertyType={propertyType}
+        views={views}
+        mountainViews={mountainViews}
+        seaViews={seaViews}
+        beachfront={beachfront}
+        jacuzzi={jacuzzi}
+        hydromassage={hydromassage}
+        garden={garden}
+        pool={pool}
+        homeAutomation={homeAutomation}
+        musicSystem={musicSystem}
+        laundryRoom={laundryRoom}
+        coveredClothesline={coveredClothesline}
+        fireplace={fireplace}
+        gym={gym}
+        sportsArea={sportsArea}
+        childrenArea={childrenArea}
+        suiteBathroom={suiteBathroom}
+        nearbyPublicTransport={nearbyPublicTransport}
+        communityPool={communityPool}
+        privatePool={privatePool}
+        tennisCourt={tennisCourt}
+        collapsedSections={collapsedSections}
+        saveState={moduleStates.premiumFeatures?.saveState ?? "idle"}
+        onToggleSection={toggleSection}
+        onSave={() => saveModule("premiumFeatures")}
+        onUpdateModule={(hasChanges) => updateModuleState("premiumFeatures", hasChanges)}
+        setViews={setViews}
+        setMountainViews={setMountainViews}
+        setSeaViews={setSeaViews}
+        setBeachfront={setBeachfront}
+        setJacuzzi={setJacuzzi}
+        setHydromassage={setHydromassage}
+        setGarden={setGarden}
+        setPool={setPool}
+        setHomeAutomation={setHomeAutomation}
+        setMusicSystem={setMusicSystem}
+        setLaundryRoom={setLaundryRoom}
+        setCoveredClothesline={setCoveredClothesline}
+        setFireplace={setFireplace}
+        setGym={setGym}
+        setSportsArea={setSportsArea}
+        setChildrenArea={setChildrenArea}
+        setSuiteBathroom={setSuiteBathroom}
+        setNearbyPublicTransport={setNearbyPublicTransport}
+        setCommunityPool={setCommunityPool}
+        setPrivatePool={setPrivatePool}
+        setTennisCourt={setTennisCourt}
+        getCardStyles={getCardStyles}
+      />
 
       {/* Additional Spaces */}
-      <Card
-          className={cn(
-            "relative p-4 transition-all duration-500 ease-out",
-            getCardStyles("additionalSpaces"),
-          )}
-        >
-          <ModernSaveIndicator
-            state={moduleStates.additionalSpaces?.saveState ?? "idle"}
-            onSave={() => saveModule("additionalSpaces")}
-          />
-          <div className="mb-3 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setShowAdditionalSpaces(!showAdditionalSpaces)}
-              className="group flex w-full items-center justify-between"
-            >
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                  ZONAS Y ESPACIOS COMPLEMENTARIOS
-                </h3>
-              </div>
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                  showAdditionalSpaces && "rotate-180",
-                )}
-              />
-            </button>
-          </div>
-          <div
-            className={cn(
-              "grid transition-all duration-200 ease-in-out",
-              showAdditionalSpaces
-                ? "mt-4 grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0",
-            )}
-          >
-            <div className="overflow-hidden">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  {/* Outdoor Spaces */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Espacios exteriores
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="terrace"
-                        checked={terrace}
-                        onCheckedChange={(checked) => {
-                          setTerrace(checked as boolean);
-                          updateModuleState("additionalSpaces", true);
-                        }}
-                      />
-                      <Label htmlFor="terrace" className="text-sm">
-                        Terraza
-                      </Label>
-                    </div>
-                    {terrace && (
-                      <div className="ml-6 space-y-1.5">
-                        <Label htmlFor="terraceSize" className="text-sm">
-                          Tamaño (m²)
-                        </Label>
-                        <Input
-                          id="terraceSize"
-                          type="number"
-                          value={terraceSize}
-                          onChange={(e) => {
-                            setTerraceSize(parseInt(e.target.value));
-                            updateModuleState("additionalSpaces", true);
-                          }}
-                          className="h-8 text-gray-500"
-                          min="0"
-                          step="1"
-                        />
-                      </div>
-                    )}
-                    <div className="space-y-1.5">
-                      <Label htmlFor="balconyCount" className="text-sm">
-                        Nº balcones
-                      </Label>
-                      <Input
-                        id="balconyCount"
-                        type="number"
-                        value={balconyCount}
-                        onChange={(e) => {
-                          setBalconyCount(parseInt(e.target.value));
-                          updateModuleState("additionalSpaces", true);
-                        }}
-                        className="h-8 text-gray-500"
-                        min="0"
-                        step="1"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="galleryCount" className="text-sm">
-                        Nº galerías
-                      </Label>
-                      <Input
-                        id="galleryCount"
-                        type="number"
-                        value={galleryCount}
-                        onChange={(e) => {
-                          setGalleryCount(parseInt(e.target.value));
-                          updateModuleState("additionalSpaces", true);
-                        }}
-                        className="h-8 text-gray-500"
-                        min="0"
-                        step="1"
-                      />
-                    </div>
-                  </div>
+      <AdditionalSpacesCard
+        terrace={terrace}
+        terraceSize={terraceSize}
+        wineCellar={wineCellar}
+        wineCellarSize={wineCellarSize}
+        livingRoomSize={livingRoomSize}
+        balconyCount={balconyCount}
+        galleryCount={galleryCount}
+        builtInWardrobes={builtInWardrobes}
+        propertyType={propertyType}
+        collapsedSections={collapsedSections}
+        saveState={moduleStates.additionalSpaces?.saveState ?? "idle"}
+        onToggleSection={toggleSection}
+        onSave={() => saveModule("additionalSpaces")}
+        onUpdateModule={(hasChanges) => updateModuleState("additionalSpaces", hasChanges)}
+        setTerrace={setTerrace}
+        setTerraceSize={setTerraceSize}
+        setWineCellar={setWineCellar}
+        setWineCellarSize={setWineCellarSize}
+        setLivingRoomSize={setLivingRoomSize}
+        setBalconyCount={setBalconyCount}
+        setGalleryCount={setGalleryCount}
+        setBuiltInWardrobes={setBuiltInWardrobes}
+        getCardStyles={getCardStyles}
+      />
 
-                  {/* Storage Spaces */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Almacenamiento
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="wineCellar"
-                        checked={wineCellar}
-                        onCheckedChange={(checked) => {
-                          setWineCellar(checked as boolean);
-                          updateModuleState("additionalSpaces", true);
-                        }}
-                      />
-                      <Label htmlFor="wineCellar" className="text-sm">
-                        Bodega
-                      </Label>
-                    </div>
-                    {wineCellar && (
-                      <div className="ml-6 space-y-1.5">
-                        <Label htmlFor="wineCellarSize" className="text-sm">
-                          Tamaño (m²)
-                        </Label>
-                        <Input
-                          id="wineCellarSize"
-                          type="number"
-                          value={wineCellarSize}
-                          onChange={(e) => {
-                            setWineCellarSize(parseInt(e.target.value));
-                            updateModuleState("additionalSpaces", true);
-                          }}
-                          className="h-8 text-gray-500"
-                          min="0"
-                          step="1"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Room Sizes */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Dimensiones
-                    </h4>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="livingRoomSize" className="text-sm">
-                        Tamaño salón (m²)
-                      </Label>
-                      <Input
-                        id="livingRoomSize"
-                        type="number"
-                        value={livingRoomSize}
-                        onChange={(e) => {
-                          setLivingRoomSize(parseInt(e.target.value));
-                          updateModuleState("additionalSpaces", true);
-                        }}
-                        className="h-8 text-gray-500"
-                        min="0"
-                        step="1"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Built-in Features */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Empotrados
-                    </h4>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="builtInWardrobes"
-                        checked={builtInWardrobes}
-                        onCheckedChange={(checked) => {
-                          setBuiltInWardrobes(!!checked);
-                          updateModuleState("additionalSpaces", true);
-                        }}
-                      />
-                      <Label htmlFor="builtInWardrobes" className="text-sm">
-                        Armarios empotrados
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Materials and Finishes */}
-        <Card
-          className={cn(
-            "relative p-4 transition-all duration-500 ease-out",
-            getCardStyles("materials"),
-          )}
-        >
-          <ModernSaveIndicator
-            state={moduleStates.materials?.saveState ?? "idle"}
-            onSave={() => saveModule("materials")}
-          />
-          <div className="mb-3 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setShowMaterials(!showMaterials)}
-              className="group flex w-full items-center justify-between"
-            >
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                  MATERIALES Y ACABADOS
-                </h3>
-              </div>
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                  showMaterials && "rotate-180",
-                )}
-              />
-            </button>
-          </div>
-          <div
-            className={cn(
-              "grid transition-all duration-200 ease-in-out",
-              showMaterials
-                ? "mt-4 grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0",
-            )}
-          >
-            <div className="overflow-hidden">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  {/* Windows and Doors */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Ventanas y puertas
-                    </h4>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="windowType" className="text-sm">
-                        Tipo de ventana
-                      </Label>
-                      <Select
-                        value={windowType}
-                        onValueChange={(value) => {
-                          setWindowType(value);
-                          updateModuleState("materials", true);
-                        }}
-                      >
-                        <SelectTrigger className="h-8 text-gray-500">
-                          <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="aluminio">Aluminio</SelectItem>
-                          <SelectItem value="pvc">PVC</SelectItem>
-                          <SelectItem value="madera">Madera</SelectItem>
-                          <SelectItem value="climalit">Climalit</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="carpentryType" className="text-sm">
-                        Tipo de carpintería
-                      </Label>
-                      <Select
-                        value={carpentryType}
-                        onValueChange={(value) => {
-                          setCarpentryType(value);
-                          updateModuleState("materials", true);
-                        }}
-                      >
-                        <SelectTrigger className="h-8 text-gray-500">
-                          <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="aluminio">Aluminio</SelectItem>
-                          <SelectItem value="pvc">PVC</SelectItem>
-                          <SelectItem value="madera">Madera</SelectItem>
-                          <SelectItem value="hierro">Hierro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="shutterType" className="text-sm">
-                        Tipo de persiana
-                      </Label>
-                      <Select
-                        value={shutterType}
-                        onValueChange={(value) => {
-                          setShutterType(value);
-                          updateModuleState("materials", true);
-                        }}
-                      >
-                        <SelectTrigger className="h-8 text-gray-500">
-                          <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="manual">Manual</SelectItem>
-                          <SelectItem value="electrico">Eléctrica</SelectItem>
-                          <SelectItem value="automatica">Automática</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Flooring */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Suelos
-                    </h4>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="mainFloorType" className="text-sm">
-                        Tipo de suelo
-                      </Label>
-                      <Select
-                        value={mainFloorType}
-                        onValueChange={(value) => {
-                          setMainFloorType(value);
-                          updateModuleState("materials", true);
-                        }}
-                      >
-                        <SelectTrigger className="h-8 text-gray-500">
-                          <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="parquet">Parquet</SelectItem>
-                          <SelectItem value="marmol">Mármol</SelectItem>
-                          <SelectItem value="gres">Gres</SelectItem>
-                          <SelectItem value="moqueta">Moqueta</SelectItem>
-                          <SelectItem value="hidraulico">Hidráulico</SelectItem>
-                          <SelectItem value="microcemento">
-                            Microcemento
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-      </Card>
+      <MaterialsCard
+        mainFloorType={mainFloorType}
+        shutterType={shutterType}
+        carpentryType={carpentryType}
+        windowType={windowType}
+        propertyType={propertyType}
+        showMaterials={showMaterials}
+        saveState={moduleStates.materials?.saveState ?? "idle"}
+        onSave={() => saveModule("materials")}
+        onUpdateModule={(hasChanges) => updateModuleState("materials", hasChanges)}
+        setMainFloorType={setMainFloorType}
+        setShutterType={setShutterType}
+        setCarpentryType={setCarpentryType}
+        setWindowType={setWindowType}
+        setShowMaterials={setShowMaterials}
+        getCardStyles={getCardStyles}
+      />
 
       {/* Separator before Description */}
       <div className="col-span-full">
@@ -3380,192 +1842,54 @@ export function PropertyCharacteristicsForm({
       </div>
 
       {/* Description Module */}
-      <Card
-        className={cn(
-          "relative col-span-full p-4 transition-all duration-500 ease-out",
-          getCardStyles("description"),
-        )}
-      >
-        <ModernSaveIndicator
-          state={moduleStates.description?.saveState ?? "idle"}
-          onSave={() => saveModule("description")}
-        />
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold tracking-wide">DESCRIPCIÓN</h3>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsSignatureDialogOpen(true)}>
-                Añadir Firma
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="description" className="text-sm">
-              Descripción
-            </Label>
-            <Textarea
-              id="description"
-              defaultValue={description}
-              className="min-h-[200px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300"
-              placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
-              onChange={() => updateModuleState("description", true)}
-            />
-          </div>
-          <div className="flex justify-center pt-6">
-            <Button
-              type="button"
-              onClick={handleGenerateDescription}
-              disabled={isGenerating}
-              className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando descripción...
-                </>
-              ) : (
-                <>
-                  Asistente de descripción
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      <Dialog
-        open={isSignatureDialogOpen}
-        onOpenChange={setIsSignatureDialogOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Añadir Firma</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Escribe tu firma aquí..."
-              value={signature}
-              onChange={handleSignatureChange}
-              className="min-h-[100px] resize-y"
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsSignatureDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={() => {
-                // Here you can add logic to append the signature to the description
-                const descriptionTextarea = document.getElementById(
-                  "description",
-                ) as HTMLTextAreaElement;
-                if (descriptionTextarea) {
-                  descriptionTextarea.value =
-                    descriptionTextarea.value + "\n\n" + signature;
-                  setDescription(descriptionTextarea.value);
-                  updateModuleState("description", true);
-                }
-                setIsSignatureDialogOpen(false);
-              }}
-            >
-              Añadir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DescriptionCard
+        description={description}
+        isGenerating={isGenerating}
+        signature={signature}
+        isSignatureDialogOpen={isSignatureDialogOpen}
+        saveState={moduleStates.description?.saveState ?? "idle"}
+        onSave={() => saveModule("description")}
+        onUpdateModule={(hasChanges) => updateModuleState("description", hasChanges)}
+        onGenerateDescription={handleGenerateDescription}
+        setSignature={setSignature}
+        setIsSignatureDialogOpen={setIsSignatureDialogOpen}
+        setDescription={setDescription}
+        getCardStyles={getCardStyles}
+      />
 
       {/* Rental Properties Module */}
-      {!(
-        currentListingType === "Sale" || currentListingType === "Transfer"
-      ) && (
-        <Card
-          className={cn(
-            "relative p-4 transition-all duration-500 ease-out",
-            getCardStyles("rentalProperties"),
-          )}
-        >
-          <ModernSaveIndicator
-            state={moduleStates.rentalProperties?.saveState ?? "idle"}
-            onSave={() => saveModule("rentalProperties")}
-          />
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold tracking-wide">
-                PROPIEDADES DEL ALQUILER
-              </h3>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="internet"
-                  checked={internet}
-                  onCheckedChange={(checked) => {
-                    setInternet(checked as boolean);
-                    updateModuleState("rentalProperties", true);
-                  }}
-                />
-                <Label htmlFor="internet" className="text-sm">
-                  Internet
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="studentFriendly"
-                  checked={studentFriendly}
-                  onCheckedChange={(checked) => {
-                    setStudentFriendly(checked as boolean);
-                    updateModuleState("rentalProperties", true);
-                  }}
-                />
-                <Label htmlFor="studentFriendly" className="text-sm">
-                  Admite estudiantes
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="petsAllowed"
-                  checked={petsAllowed}
-                  onCheckedChange={(checked) => {
-                    setPetsAllowed(checked as boolean);
-                    updateModuleState("rentalProperties", true);
-                  }}
-                />
-                <Label htmlFor="petsAllowed" className="text-sm">
-                  Admite mascotas
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="appliancesIncluded"
-                  checked={appliancesIncluded}
-                  onCheckedChange={(checked) => {
-                    setAppliancesIncluded(checked as boolean);
-                    updateModuleState("rentalProperties", true);
-                  }}
-                />
-                <Label htmlFor="appliancesIncluded" className="text-sm">
-                  Incluye electrodomésticos
-                </Label>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
+      <div className="col-span-full">
+        <RentalPropertiesCard
+          listingType={currentListingType}
+          propertyType={propertyType}
+          internet={internet}
+          studentFriendly={studentFriendly}
+          petsAllowed={petsAllowed}
+          appliancesIncluded={appliancesIncluded}
+          duplicateForRent={duplicateForRent}
+          rentalPrice={rentalPrice}
+          collapsedSections={collapsedSections}
+          saveState={moduleStates.rentalProperties?.saveState ?? "idle"}
+          // Listing data for duplication
+          propertyId={listing.propertyId}
+          listingId={listing.listingId}
+          agentId={listing.agent?.id}
+          isFurnished={isFurnished}
+          furnitureQuality={listing.furnitureQuality ?? ""}
+          optionalGaragePrice={optionalGaragePrice}
+          optionalStorageRoomPrice={optionalStorageRoomPrice}
+          onToggleSection={toggleSection}
+          onSave={() => saveModule("rentalProperties")}
+          onUpdateModule={(hasChanges) => updateModuleState("rentalProperties", hasChanges)}
+          setInternet={setInternet}
+          setStudentFriendly={setStudentFriendly}
+          setPetsAllowed={setPetsAllowed}
+          setAppliancesIncluded={setAppliancesIncluded}
+          setDuplicateForRent={setDuplicateForRent}
+          setRentalPrice={setRentalPrice}
+          getCardStyles={getCardStyles}
+        />
+      </div>
       <ExternalLinkPopup
         isOpen={isCatastroPopupOpen}
         onClose={() => setIsCatastroPopupOpen(false)}

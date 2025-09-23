@@ -1,0 +1,232 @@
+
+import React from "react";
+import { Card } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { cn } from "~/lib/utils";
+import { ChevronDown } from "lucide-react";
+import { ModernSaveIndicator } from "../common/modern-save-indicator";
+import type { PropertyListing } from "~/types/property-listing";
+import type { SaveState } from "~/types/save-state";
+
+type ModuleName = "propertyDetails";
+
+interface PropertyDetailsCardProps {
+  listing: PropertyListing;
+  propertyType: string;
+  lastRenovationYear: string;
+  buildingFloors: number;
+  collapsedSections: Record<string, boolean>;
+  saveState: SaveState;
+  onToggleSection: (section: string) => void;
+  onSave: () => Promise<void>;
+  onUpdateModule: (hasChanges: boolean) => void;
+  setLastRenovationYear: (value: string) => void;
+  setBuildingFloors: (value: number) => void;
+  getCardStyles: (moduleName: ModuleName) => string;
+}
+
+export function PropertyDetailsCard({
+  listing,
+  propertyType,
+  lastRenovationYear,
+  buildingFloors,
+  collapsedSections,
+  saveState,
+  onToggleSection,
+  onSave,
+  onUpdateModule,
+  setLastRenovationYear,
+  setBuildingFloors,
+  getCardStyles,
+}: PropertyDetailsCardProps) {
+  return (
+    <Card
+      className={cn(
+        "relative p-4 transition-all duration-500 ease-out",
+        getCardStyles("propertyDetails"),
+      )}
+    >
+      <ModernSaveIndicator
+        state={saveState}
+        onSave={onSave}
+      />
+      <div className="mb-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => onToggleSection("propertyDetails")}
+          className="group flex w-full items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+              DISTRIBUCIÓN Y SUPERFICIE
+            </h3>
+          </div>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform duration-200",
+              collapsedSections.propertyDetails && "rotate-180",
+            )}
+          />
+        </button>
+      </div>
+      <div
+        className={cn(
+          "space-y-3 overflow-hidden transition-all duration-200",
+          collapsedSections.propertyDetails ? "max-h-0" : "max-h-[2000px]",
+        )}
+      >
+        {propertyType !== "garaje" && propertyType !== "solar" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="bedrooms" className="text-sm">
+              {propertyType === "local" ? "Estancias" : "Habitaciones"}
+            </Label>
+            <Input
+              id="bedrooms"
+              type="number"
+              defaultValue={listing.bedrooms?.toString() ?? ""}
+              className="h-8 text-gray-500"
+              onChange={() => onUpdateModule(true)}
+            />
+          </div>
+        )}
+        {propertyType !== "garaje" && propertyType !== "solar" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="bathrooms" className="text-sm">
+              Baños
+            </Label>
+            <Input
+              id="bathrooms"
+              type="number"
+              defaultValue={
+                listing.bathrooms ? Math.round(listing.bathrooms) : undefined
+              }
+              className="h-8 text-gray-500"
+              min="0"
+              step="1"
+              onChange={() => onUpdateModule(true)}
+            />
+          </div>
+        )}
+        {propertyType !== "garaje" && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="squareMeter" className="text-sm">
+                Superficie (m²)
+              </Label>
+              <Input
+                id="squareMeter"
+                type="number"
+                defaultValue={listing.squareMeter}
+                className="h-8 text-gray-500"
+                onChange={() => onUpdateModule(true)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="builtSurfaceArea" className="text-sm">
+                {propertyType === "solar" ? "Edificable (m²)" : "Construida (m²)"}
+              </Label>
+              <Input
+                id="builtSurfaceArea"
+                type="number"
+                defaultValue={
+                  listing.builtSurfaceArea
+                    ? Math.round(listing.builtSurfaceArea)
+                    : undefined
+                }
+                className="h-8 text-gray-500"
+                min="0"
+                step="1"
+                onChange={() => onUpdateModule(true)}
+              />
+            </div>
+          </div>
+        )}
+        {propertyType !== "solar" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="yearBuilt" className="text-sm">
+              Año de Construcción
+            </Label>
+            <Input
+              id="yearBuilt"
+              type="number"
+              defaultValue={listing.yearBuilt}
+              className="h-8 text-gray-500"
+              onChange={() => onUpdateModule(true)}
+            />
+          </div>
+        )}
+        {propertyType !== "garaje" && propertyType !== "solar" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="lastRenovationYear" className="text-sm">
+              Año última reforma
+            </Label>
+            <Input
+              id="lastRenovationYear"
+              type="number"
+              value={lastRenovationYear}
+              onChange={(e) => {
+                setLastRenovationYear(e.target.value);
+                onUpdateModule(true);
+              }}
+              className="h-8 text-gray-500"
+              min="1900"
+              max={new Date().getFullYear()}
+            />
+          </div>
+        )}
+        {propertyType !== "garaje" && propertyType !== "solar" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="buildingFloors" className="text-sm">
+              Plantas edificio
+            </Label>
+            <Input
+              id="buildingFloors"
+              type="number"
+              value={buildingFloors}
+              onChange={(e) => {
+                setBuildingFloors(parseInt(e.target.value));
+                onUpdateModule(true);
+              }}
+              className="h-8 text-gray-500"
+              min="1"
+              step="1"
+            />
+          </div>
+        )}
+        {propertyType !== "solar" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="conservationStatus" className="text-sm">
+              Estado de conservación
+            </Label>
+            <Select
+              value={listing.conservationStatus?.toString() ?? "1"}
+              onValueChange={(value) => {
+                listing.conservationStatus = parseInt(value);
+                onUpdateModule(true);
+              }}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Seleccionar estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">Nuevo</SelectItem>
+                <SelectItem value="6">Reformado</SelectItem>
+                <SelectItem value="1">Bueno</SelectItem>
+                <SelectItem value="2">Regular</SelectItem>
+                <SelectItem value="4">Reformar</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
