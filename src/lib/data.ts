@@ -1050,6 +1050,8 @@ export type Listing = {
   pisoscom?: boolean;
   yaencontre?: boolean;
   milanuncios?: boolean;
+  description?: string;
+  shortDescription?: string;
 };
 
 export type Contact = {

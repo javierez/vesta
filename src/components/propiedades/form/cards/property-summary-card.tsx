@@ -10,7 +10,8 @@ import {
   UserCheck,
   Key,
   Globe,
-  Loader2
+  Loader2,
+  DoorOpen
 } from "lucide-react";
 
 import type { PropertyListing } from "~/types/property-listing";
@@ -56,6 +57,7 @@ export function PropertySummaryCard({
 }: PropertySummaryCardProps) {
   const isGarageOrSolar = propertyType === "garaje" || propertyType === "solar";
   const shouldShowBedsAndBaths = !isGarageOrSolar;
+  const isLocal = propertyType === "local";
   const areaValue = isGarageOrSolar ? listing.builtSurfaceArea : listing.squareMeter;
   
   return (
@@ -68,7 +70,11 @@ export function PropertySummaryCard({
             {shouldShowBedsAndBaths && (
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
-                  <Bed className="h-5 w-5 text-amber-800" />
+                  {isLocal ? (
+                    <DoorOpen className="h-5 w-5 text-amber-800" />
+                  ) : (
+                    <Bed className="h-5 w-5 text-amber-800" />
+                  )}
                 </div>
                 <p className="text-lg font-bold text-gray-900">
                   {listing.bedrooms ?? '-'}

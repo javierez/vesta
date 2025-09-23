@@ -44,20 +44,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   }
 
   // Check if this is a draft listing and redirect to edit page
-  console.log("=== PROPERTY PAGE REDIRECT CHECK ===");
-  console.log("listingId:", listingId);
-  console.log("fullListingDetails:", fullListingDetails);
-  console.log("isValidRecord(fullListingDetails):", isValidRecord(fullListingDetails));
-  console.log("fullListingDetails.status:", isValidRecord(fullListingDetails) ? (fullListingDetails as { status?: string }).status : undefined);
-  
   if (
     isValidRecord(fullListingDetails) &&
     (fullListingDetails as { status?: string }).status === "Draft"
   ) {
-    console.log("REDIRECTING TO CREAR PAGE - Status is Draft");
     redirect(`/propiedades/crear/${listingId}`);
-  } else {
-    console.log("NOT REDIRECTING - Status is not Draft or no valid record");
   }
 
   // Get energy certificate document and images in parallel
@@ -94,6 +85,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
       <PropertyHeader
         title={headerData.title ?? ""}
         propertyId={headerData.propertyId}
+        propertyType={breadcrumbData.propertyType ?? ""}
         street={headerData.street ?? ""}
         city={headerData.city ?? ""}
         province={headerData.province ?? ""}
@@ -101,6 +93,8 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         price={headerData.price}
         listingType={headerData.listingType}
         isBankOwned={headerData.isBankOwned ?? false}
+        neighborhood=""
+        dynamicTitle={true}
       />
 
       {/* Property Tabs - Under Title */}

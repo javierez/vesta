@@ -72,7 +72,7 @@ export async function fetchAccountContext(): Promise<AccountContext | null> {
 
     // Build account context from website configuration
     const accountContext: AccountContext = {
-      agencyName: footerProps.companyName ?? undefined,
+      agencyName: config.accountName ?? footerProps.companyName ?? undefined,
       contactInfo: {
         // Extract contact info from first office if available
         phone: contactProps.offices?.[0]?.phoneNumbers?.main ?? undefined,
@@ -88,7 +88,9 @@ export async function fetchAccountContext(): Promise<AccountContext | null> {
       offices: contactProps.offices ?? [],
     };
 
-    console.log(`Successfully fetched account context for: ${accountContext.agencyName ?? 'Unknown Agency'}`);
+    console.log(`🏢 ACCOUNT CONTEXT: Using account name: ${config.accountName}`);
+    console.log(`🏪 ACCOUNT CONTEXT: Company name fallback: ${footerProps.companyName}`);
+    console.log(`✅ ACCOUNT CONTEXT: Final agency name: ${accountContext.agencyName ?? 'Unknown Agency'}`);
     return accountContext;
 
   } catch (error) {

@@ -5,9 +5,9 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, Lightbulb } from "lucide-react";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
-import { createListing } from "~/server/queries/listing";
+import { createListing, duplicateListingContacts } from "~/server/queries/listing";
 import type { SaveState } from "~/types/save-state";
 
 interface RentalPropertiesCardProps {
@@ -78,6 +78,10 @@ export function RentalPropertiesCard({
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [duplicationError, setDuplicationError] = useState<string | null>(null);
   
+  // Check if rental data is configured but duplicate not created yet
+  const isRentalConfigured = duplicateForRent && rentalPrice > 0;
+  const shouldShowHint = isSale && isRentalConfigured;
+  
   // Handle rental duplication (similar to FinalizationPopup)
   const handleApplyDuplication = async () => {
     if (!propertyId || !agentId) {
@@ -122,6 +126,11 @@ export function RentalPropertiesCard({
       const newListing = await createListing(rentListingData);
       
       if (newListing?.listingId) {
+        // Duplicate listing_contacts from the original listing to the new rental listing
+        if (listingId) {
+          await duplicateListingContacts(Number(listingId), Number(newListing.listingId));
+        }
+        
         // Open new rental listing in new window
         window.open(`/propiedades/${newListing.listingId}`, '_blank');
       }
@@ -324,24 +333,39 @@ export function RentalPropertiesCard({
                 {duplicationError}
               </div>
             )}
-            <Button
-              type="button"
-              onClick={handleApplyDuplication}
-              disabled={isDuplicating || !rentalPrice || rentalPrice <= 0}
-              className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
-            >
-              {isDuplicating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creando duplicado...
-                </>
-              ) : (
-                <>
-                  Crear duplicado para alquiler
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                </>
+            
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                onClick={handleApplyDuplication}
+                disabled={isDuplicating || !rentalPrice || rentalPrice <= 0}
+                className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+              >
+                {isDuplicating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creando duplicado...
+                  </>
+                ) : (
+                  <>
+                    Crear duplicado para alquiler
+                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                  </>
+                )}
+              </Button>
+              
+              {/* Simple lightbulb icon with tooltip */}
+              {shouldShowHint && (
+                <div className="group/hint relative">
+                  <Lightbulb className="h-5 w-5 text-amber-500 animate-pulse cursor-help" />
+                  <div className="absolute -right-4 bottom-full mb-2 w-72 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 shadow-lg opacity-0 pointer-events-none transition-all duration-200 group-hover/hint:opacity-100 group-hover/hint:pointer-events-auto z-50">
+                    <div className="absolute -bottom-1 right-8 h-2 w-2 rotate-45 bg-amber-50 border-b border-r border-amber-200"></div>
+                    <strong className="block mb-1">💡 Recomendación</strong>
+                    <span className="text-justify leading-relaxed">Configura todos los datos del inmueble antes de crear el duplicado para alquiler. Así tendrás toda la información completa en ambos anuncios.</span>
+                  </div>
+                </div>
               )}
-            </Button>
+            </div>
           </div>
         )}
       </div>

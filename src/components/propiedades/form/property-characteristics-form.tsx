@@ -429,7 +429,7 @@ export function PropertyCharacteristicsForm({
             description: (
               document.getElementById("description") as HTMLTextAreaElement
             )?.value,
-            short_description: (  // Database column name uses underscore
+            shortDescription: (  // Use camelCase for TypeScript/Drizzle field name
               document.getElementById("shortDescription") as HTMLTextAreaElement
             )?.value,
           };
@@ -905,8 +905,33 @@ export function PropertyCharacteristicsForm({
     updateModuleState("basicInfo", true);
   };
 
-  const handlePropertyTypeChange = (newType: string) => {
+  const handlePropertyTypeChange = async (newType: string) => {
     setPropertyType(newType); // Update local state only, don't change URL
+    
+    // Generate new title based on the new property type
+    const newTitle = generatePropertyTitle(newType, listing.street, listing.neighborhood);
+    
+    // Update the property title in the database
+    try {
+      const propertyId = Number(listing.propertyId);
+      if (!propertyId) {
+        throw new Error("Property ID is required");
+      }
+      
+      await updateProperty(propertyId, {
+        propertyType: newType,
+        title: newTitle,
+      });
+      
+      // Update local listing data
+      listing.propertyType = newType;
+      
+      toast.success("Tipo de propiedad y título actualizados");
+    } catch (error) {
+      console.error("Error updating property type and title:", error);
+      toast.error("Error al actualizar el tipo de propiedad");
+    }
+    
     // Remove URL update to prevent component re-mounting which causes form switching
     // const params = new URLSearchParams(searchParams.toString());
     // params.set("type", newType);

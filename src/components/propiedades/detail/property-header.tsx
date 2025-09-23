@@ -5,10 +5,11 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { formatPrice, cn } from "~/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { updatePropertyTitle } from "~/app/actions/property-settings";
 import { toast } from "sonner";
 import { formatListingType } from "../../contactos/contact-config";
+import { generatePropertyTitle } from "~/lib/property-title";
 
 const statusColors: Record<string, string> = {
   Sale: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-200 hover:text-amber-900 hover:border-amber-400 hover:shadow-lg hover:scale-105",
@@ -33,12 +34,14 @@ interface PropertyHeaderProps {
   isBankOwned?: boolean;
   isFeatured?: boolean;
   neighborhood?: string;
+  // Optional props for dynamic title generation
+  dynamicTitle?: boolean; // If true, generate title dynamically instead of using title prop
 }
 
 export function PropertyHeader({
   title = "",
   propertyId,
-  propertyType: _propertyType,
+  propertyType,
   street,
   city,
   province,
@@ -48,12 +51,26 @@ export function PropertyHeader({
   listingType,
   isBankOwned = false,
   isFeatured: _isFeatured = false,
-  neighborhood: _neighborhood,
+  neighborhood,
+  dynamicTitle = false,
 }: PropertyHeaderProps) {
+  // Generate dynamic title if enabled, otherwise use provided title
+  const displayTitle = dynamicTitle && propertyType 
+    ? generatePropertyTitle(propertyType, street, neighborhood ?? "")
+    : title;
+    
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(title);
-  const [currentTitle, setCurrentTitle] = useState(title);
+  const [editedTitle, setEditedTitle] = useState(displayTitle);
+  const [currentTitle, setCurrentTitle] = useState(displayTitle);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Update titles when displayTitle changes (for dynamic mode)
+  useEffect(() => {
+    if (!isEditing) {
+      setCurrentTitle(displayTitle);
+      setEditedTitle(displayTitle);
+    }
+  }, [displayTitle, isEditing]);
 
   const handleSave = async () => {
     if (!editedTitle.trim() || !propertyId) return;

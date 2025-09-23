@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "~/server/db";
-import { websiteProperties, users, testimonials } from "~/server/db/schema";
+import { websiteProperties, users, testimonials, accounts } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import type {
   WebsiteConfigurationInput,
@@ -47,15 +47,46 @@ export async function getWebsiteConfigurationAction(
 }> {
   try {
     const [config] = await db
-      .select()
+      .select({
+        id: websiteProperties.id,
+        accountId: websiteProperties.accountId,
+        socialLinks: websiteProperties.socialLinks,
+        seoProps: websiteProperties.seoProps,
+        logo: websiteProperties.logo,
+        favicon: websiteProperties.favicon,
+        logotype: websiteProperties.logotype,
+        heroProps: websiteProperties.heroProps,
+        featuredProps: websiteProperties.featuredProps,
+        aboutProps: websiteProperties.aboutProps,
+        propertiesProps: websiteProperties.propertiesProps,
+        testimonialProps: websiteProperties.testimonialProps,
+        contactProps: websiteProperties.contactProps,
+        footerProps: websiteProperties.footerProps,
+        headProps: websiteProperties.headProps,
+        watermarkProps: websiteProperties.watermarkProps,
+        metadata: websiteProperties.metadata,
+        createdAt: websiteProperties.createdAt,
+        updatedAt: websiteProperties.updatedAt,
+        accountName: accounts.name,
+      })
       .from(websiteProperties)
+      .leftJoin(accounts, eq(websiteProperties.accountId, accounts.accountId))
       .where(eq(websiteProperties.accountId, accountId));
 
     if (!config) {
+      // Get account name even if no website config exists
+      const [account] = await db
+        .select({ name: accounts.name })
+        .from(accounts)
+        .where(eq(accounts.accountId, accountId));
+
+      console.log("🔍 ACTIONS: No config found, using default with account name:", account?.name);
+      
       // Return default configuration if none exists
       return {
         success: true,
         data: {
+          accountName: account?.name ?? "",
           socialLinks: {
             facebook: "",
             instagram: "",
@@ -220,6 +251,7 @@ export async function getWebsiteConfigurationAction(
     console.log("🔍 ACTIONS: Raw config from database:", config);
     console.log("🔍 ACTIONS: config.metadata field (raw):", config.metadata);
     console.log("🔍 ACTIONS: config.logotype field:", config.logotype);
+    console.log("🏢 ACTIONS: Account name:", config.accountName);
 
     // Parse metadata JSON if it exists
     let parsedMetadata = {};
@@ -233,7 +265,9 @@ export async function getWebsiteConfigurationAction(
     }
 
     // Parse JSON fields and construct the configuration
+    console.log("✅ ACTIONS: Adding account name to config:", config.accountName);
     const websiteConfig: WebsiteConfigurationInput = {
+      accountName: config.accountName ?? "",
       socialLinks: JSON.parse(config.socialLinks ?? "{}") as Record<
         string,
         string

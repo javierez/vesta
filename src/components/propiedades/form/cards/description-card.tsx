@@ -1,17 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { Loader2, MoreVertical } from "lucide-react";
+import { Loader2, MoreVertical, MessageSquare, Signature } from "lucide-react";
 import { Textarea } from "~/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "~/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -22,6 +23,8 @@ import {
 } from "~/components/ui/dialog";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import type { SaveState } from "~/types/save-state";
+import { DescriptionFeedbackModal, type DescriptionFeedback } from "./description-feedback-modal";
+import { toast } from "sonner";
 
 interface DescriptionCardProps {
   description: string;
@@ -60,9 +63,42 @@ export function DescriptionCard({
   setShortDescription,
   getCardStyles,
 }: DescriptionCardProps) {
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [lastFeedback, setLastFeedback] = useState<DescriptionFeedback | null>(null);
+
   const handleSignatureChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setSignature(e.target.value);
     onUpdateModule(true);
+  };
+
+  const handleFeedbackSubmit = (feedback: DescriptionFeedback) => {
+    setLastFeedback(feedback);
+    
+    // Apply immediate changes if there's specific feedback
+    if (feedback.shortDescriptionFeedback || feedback.longDescriptionFeedback) {
+      toast.success("Feedback recibido", {
+        description: "Las sugerencias se aplicarán en la próxima generación de descripciones",
+      });
+    }
+
+    // If signature is included, add it to descriptions
+    if (feedback.includeSignature && feedback.signatureText) {
+      const signatureToAdd = `\n\n${feedback.signatureText}`;
+      
+      if (!description.includes(feedback.signatureText)) {
+        setDescription(description + signatureToAdd);
+      }
+      if (!shortDescription.includes(feedback.signatureText)) {
+        setShortDescription(shortDescription + signatureToAdd);
+      }
+      onUpdateModule(true);
+    }
+
+    // Store preferences for future use (could be saved to localStorage or backend)
+    if (feedback.generalInstructions || feedback.avoidMentions || feedback.emphasize) {
+      localStorage.setItem('descriptionPreferences', JSON.stringify(feedback));
+      toast.info("Preferencias guardadas para futuras generaciones");
+    }
   };
 
   return (
@@ -88,8 +124,20 @@ export function DescriptionCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsSignatureDialogOpen(true)}>
-                Añadir Firma
+              <DropdownMenuItem 
+                onClick={() => setIsFeedbackModalOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Dar Feedback y Preferencias
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => setIsSignatureDialogOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Signature className="h-4 w-4" />
+                Añadir Firma Rápida
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -215,6 +263,14 @@ export function DescriptionCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DescriptionFeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        onSubmit={handleFeedbackSubmit}
+        currentDescription={description}
+        currentShortDescription={shortDescription}
+      />
     </>
   );
 }

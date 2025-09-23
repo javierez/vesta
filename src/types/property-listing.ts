@@ -279,6 +279,7 @@ export function convertDbListingToPropertyListing(
     tv: getBoolean(dbListing.tv),
     stoneware: getBoolean(dbListing.stoneware),
     description: (dbListing.description as string) ?? undefined,
+    shortDescription: (dbListing.shortDescription as string) ?? undefined,
     agent:
       dbListing.agent &&
       typeof dbListing.agent === "object" &&

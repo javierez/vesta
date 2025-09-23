@@ -138,6 +138,51 @@ export async function deleteDraftListingWithAuth(listingId: number) {
   return deleteDraftListing(listingId, accountId);
 }
 
+// Duplicate listing_contacts from source listing to target listing
+export async function duplicateListingContacts(sourceListingId: number, targetListingId: number) {
+  try {
+    
+    // Get all listing_contacts from the source listing
+    const sourceContacts = await db
+      .select()
+      .from(listingContacts)
+      .where(
+        and(
+          eq(listingContacts.listingId, BigInt(sourceListingId)),
+          eq(listingContacts.isActive, true)
+        )
+      );
+    
+    if (sourceContacts.length === 0) {
+      console.log("No listing contacts found to duplicate");
+      return [];
+    }
+    
+    // Create new listing_contacts for the target listing
+    const newContactsData = sourceContacts.map(contact => ({
+      listingId: BigInt(targetListingId),
+      contactId: contact.contactId,
+      contactType: contact.contactType,
+      prospectId: contact.prospectId,
+      source: contact.source,
+      status: contact.status,
+      isActive: true,
+    }));
+    
+    // Insert the new listing_contacts
+    const results = await db
+      .insert(listingContacts)
+      .values(newContactsData)
+      .$returningId();
+    
+    console.log(`Duplicated ${results.length} listing contacts from listing ${sourceListingId} to ${targetListingId}`);
+    return results;
+  } catch (error) {
+    console.error("Error duplicating listing contacts:", error);
+    throw error;
+  }
+}
+
 // Create a new listing
 export async function createListing(
   data: Omit<Listing, "listingId" | "createdAt" | "updatedAt">,
@@ -832,11 +877,14 @@ export async function getListingDetails(listingId: number, accountId: number) {
         inquiryCount: listings.inquiryCount,
         createdAt: listings.createdAt,
         updatedAt: listings.updatedAt,
+        
+        // Listing descriptions - From listings table
+        description: listings.description,
+        shortDescription: listings.shortDescription,
 
         // Property fields - All needed for comprehensive form
         referenceNumber: properties.referenceNumber,
         title: properties.title,
-        description: properties.description,
         propertyType: properties.propertyType,
         propertySubtype: properties.propertySubtype,
         formPosition: properties.formPosition,

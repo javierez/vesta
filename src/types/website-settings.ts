@@ -254,6 +254,7 @@ export const websiteConfigurationSchema = z.object({
   headProps: headPropsSchema,
   watermarkProps: watermarkPropsSchema,
   metadata: metadataSchema,
+  accountName: z.string().optional(),
 });
 
 // Types
