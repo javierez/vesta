@@ -45,6 +45,7 @@ import { Separator } from "~/components/ui/separator";
 import Image from "next/image";
 import { generatePropertyDescription, generateShortPropertyDescription } from "~/server/openai/property_descriptions";
 import { ExternalLinkPopup } from "~/components/ui/external-link-popup";
+import { generatePropertyTitle } from "~/lib/property-title";
 
 import type { PropertyListing } from "~/types/property-listing";
 
@@ -195,11 +196,19 @@ export function PropertyCharacteristicsForm({
 
       switch (moduleName) {
         case "basicInfo":
+          // Generate the title based on current propertyType
+          const generatedTitle = generatePropertyTitle(
+            propertyType,
+            listing.street || "",
+            listing.neighborhood || ""
+          );
+
           listingData = {
             listingType: listingTypes[0],
             isBankOwned,
             price: (document.getElementById("price") as HTMLInputElement)
               ?.value,
+            title: generatedTitle, // Include the generated title
           };
           propertyData = {
             propertyType,
@@ -415,21 +424,16 @@ export function PropertyCharacteristicsForm({
           break;
 
         case "description":
-          // Description goes to properties table
-          propertyData = {
-            description: (
-              document.getElementById("description") as HTMLTextAreaElement
-            )?.value,
-          };
-          // Short description goes to listings table
+          // Both description and short description go to listings table only
           listingData = {
             description: (
               document.getElementById("description") as HTMLTextAreaElement
             )?.value,
-            shortDescription: (
+            short_description: (  // Database column name uses underscore
               document.getElementById("shortDescription") as HTMLTextAreaElement
             )?.value,
           };
+          // No propertyData for descriptions - they belong in listings only
           break;
 
         case "rentalProperties":
