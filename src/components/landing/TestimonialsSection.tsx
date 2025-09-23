@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Star, Quote, ChevronLeft, ChevronRight, MapPin, TrendingUp } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { AnimatedCounter } from "~/components/landing/animations";
 
 const testimonials = [
   {
@@ -113,7 +115,13 @@ export function TestimonialsSection() {
     <section className="bg-gradient-to-b from-white to-amber-50/30 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <motion.div
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6 }}
+        >
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             Lo que dicen nuestros clientes
           </h2>
@@ -122,33 +130,99 @@ export function TestimonialsSection() {
           </p>
           
           {/* Trust Indicators */}
-          <div className="flex flex-col items-center justify-center gap-6 mt-8 sm:flex-row sm:gap-8">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">500+</div>
+          <motion.div
+            className="flex flex-col items-center justify-center gap-6 mt-8 sm:flex-row sm:gap-8"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: { staggerChildren: 0.2, delayChildren: 0.3 }
+              }
+            }}
+          >
+            <motion.div
+              className="text-center"
+              variants={{
+                hidden: { opacity: 0, scale: 0.8 },
+                visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } }
+              }}
+            >
+              <AnimatedCounter
+                to={500}
+                suffix="+"
+                className="text-2xl font-bold text-gray-900"
+              />
               <div className="text-sm text-gray-600">Agentes activos</div>
-            </div>
+            </motion.div>
             <div className="hidden h-8 w-px bg-gray-200 sm:block"></div>
-            <div className="text-center">
+            <motion.div
+              className="text-center"
+              variants={{
+                hidden: { opacity: 0, scale: 0.8 },
+                visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } }
+              }}
+            >
               <div className="text-2xl font-bold text-gray-900">4.9/5</div>
               <div className="text-sm text-gray-600">Valoración media</div>
-              <div className="flex justify-center mt-1">
+              <motion.div
+                className="flex justify-center mt-1"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.8, staggerChildren: 0.1 }}
+              >
                 {Array.from({ length: 5 }, (_, i) => (
-                  <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0 }}
+                    whileInView={{ scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.8 + i * 0.1, type: "spring", stiffness: 200 }}
+                  >
+                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                  </motion.div>
                 ))}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
             <div className="hidden h-8 w-px bg-gray-200 sm:block"></div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">98%</div>
+            <motion.div
+              className="text-center"
+              variants={{
+                hidden: { opacity: 0, scale: 0.8 },
+                visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } }
+              }}
+            >
+              <AnimatedCounter
+                to={98}
+                suffix="%"
+                className="text-2xl font-bold text-gray-900"
+              />
               <div className="text-sm text-gray-600">Recomendarían</div>
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
         {/* Main Testimonial Card */}
-        <div className="relative">
+        <motion.div
+          className="relative"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
           <div className="mx-auto max-w-4xl">
-            <div className="overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentTestimonial}
+                className="overflow-hidden rounded-2xl bg-white shadow-2xl"
+                initial={{ opacity: 0, x: 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -100 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+              >
               <div className="grid lg:grid-cols-3">
                 {/* Testimonial Content - Left 2/3 */}
                 <div className="lg:col-span-2 p-8 lg:p-12">
@@ -228,28 +302,45 @@ export function TestimonialsSection() {
                   </div>
                 </div>
               </div>
-            </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
           {/* Navigation Arrows - Hidden on mobile */}
-          <button
+          <motion.button
             onClick={prevTestimonial}
             className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group sm:left-4 sm:w-12 sm:h-12"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1 }}
           >
             <ChevronLeft className="h-4 w-4 text-gray-600 group-hover:text-gray-900 sm:h-5 sm:w-5" />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             onClick={nextTestimonial}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center group sm:right-4 sm:w-12 sm:h-12"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1 }}
           >
             <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-gray-900 sm:h-5 sm:w-5" />
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         {/* Testimonial Indicators */}
-        <div className="flex justify-center gap-2 mt-8">
+        <motion.div
+          className="flex justify-center gap-2 mt-8"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.8 }}
+        >
           {testimonials.map((_, index) => (
-            <button
+            <motion.button
               key={index}
               onClick={() => setCurrentTestimonial(index)}
               className={cn(
@@ -258,17 +349,32 @@ export function TestimonialsSection() {
                   ? "bg-gradient-to-r from-amber-400 to-rose-400 scale-125"
                   : "bg-gray-300 hover:bg-gray-400"
               )}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.9 }}
+              animate={{
+                scale: index === currentTestimonial ? 1.25 : 1
+              }}
+              transition={{ duration: 0.2 }}
             />
           ))}
-        </div>
-
+        </motion.div>
 
         {/* Call to Action */}
-        <div className="mt-12 text-center">
-          <button className="px-6 py-3 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium rounded-lg hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg">
+        <motion.div
+          className="mt-12 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 1 }}
+        >
+          <motion.button
+            className="px-6 py-3 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium rounded-lg hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
             Ver demo
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       </div>
     </section>
   );

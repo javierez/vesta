@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Play, Volume2, VolumeX } from "lucide-react";
+import { motion } from "framer-motion";
+import { StaggerContainer } from "~/components/landing/animations";
 import {
   Dialog,
   DialogContent,
@@ -47,21 +49,46 @@ export function HeroSection() {
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Text Content */}
-          <div className="flex flex-col justify-center space-y-10">
-            <div className="space-y-6">
+          <motion.div
+            className="flex flex-col justify-center space-y-10"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          >
+            <motion.div
+              className="space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl xl:text-6xl">
                 Gestiona tu Agencia Inmobiliaria de forma{" "}
-                <span className="bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-transparent">
+                <motion.span
+                  className="bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-transparent"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                >
                   Inteligente
-                </span>
+                </motion.span>
               </h1>
-              <p className="text-xl text-gray-600">
+              <motion.p
+                className="text-xl text-gray-600"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
                 El CRM más completo y potente para agentes y agencias inmobiliarias en
                 España. Automatiza, optimiza y crece tu negocio con todas las herramientas disponibles.
-              </p>
-            </div>
+              </motion.p>
+            </motion.div>
 
-            <div className="flex flex-col gap-6 sm:grid sm:grid-cols-2 sm:gap-4 sm:max-w-md">
+            <motion.div
+              className="flex flex-col gap-6 sm:grid sm:grid-cols-2 sm:gap-4 sm:max-w-md"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+            >
               <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
                 <DialogTrigger asChild>
                   <Button size="lg" className="group text-lg px-8 py-6 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg border-0">
@@ -116,26 +143,58 @@ export function HeroSection() {
                 <Play className="mr-2 h-5 w-5" />
                 Ver Demo
               </Button>
-            </div>
+            </motion.div>
 
-            <div className="flex flex-col gap-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:gap-8">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
+            <StaggerContainer className="flex flex-col gap-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:gap-8">
+              <motion.div
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.8 }}
+              >
+                <motion.div
+                  className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                />
                 Configuración rápida
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
+              </motion.div>
+              <motion.div
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.9 }}
+              >
+                <motion.div
+                  className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, delay: 0.3 }}
+                />
                 Aumenta eficiencia y productividad
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
+              </motion.div>
+              <motion.div
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 1 }}
+              >
+                <motion.div
+                  className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, delay: 0.6 }}
+                />
                 Soporte 24h
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            </StaggerContainer>
+          </motion.div>
 
           {/* Hero Video/Dashboard Preview */}
-          <div className="group relative">
+          <motion.div
+            className="group relative"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+          >
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-2xl">
               <video
                 ref={videoRef}
@@ -192,9 +251,17 @@ export function HeroSection() {
             </div>
 
             {/* Decorative elements */}
-            <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-r from-amber-200/20 to-rose-200/20 blur-2xl" />
-            <div className="absolute -bottom-4 -left-4 h-32 w-32 rounded-full bg-gradient-to-r from-amber-200/20 to-rose-200/20 blur-3xl" />
-          </div>
+            <motion.div
+              className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-r from-amber-200/20 to-rose-200/20 blur-2xl"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              className="absolute -bottom-4 -left-4 h-32 w-32 rounded-full bg-gradient-to-r from-amber-200/20 to-rose-200/20 blur-3xl"
+              animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.7, 0.5] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            />
+          </motion.div>
         </div>
       </div>
     </section>

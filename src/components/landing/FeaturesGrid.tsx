@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "~/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2,
   Users,
@@ -165,23 +166,57 @@ export function FeaturesGrid() {
   return (
     <section className="bg-white px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="text-center mb-12">
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6 }}
+        >
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             Todo lo que necesitas para triunfar
           </h2>
           <p className="mt-4 text-lg text-gray-600">
             Herramientas profesionales diseñadas específicamente para el sector inmobiliario español
           </p>
-        </div>
+        </motion.div>
 
         {/* Feature Tabs */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 mb-8">
+        <motion.div
+          className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 mb-8"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+        >
           {features.map((feature) => {
             const Icon = feature.icon;
             const isActive = activeFeature === feature.id;
-            
+
             return (
-              <button
+              <motion.button
+                variants={{
+                  hidden: { opacity: 0, scale: 0.8 },
+                  visible: {
+                    opacity: 1,
+                    scale: 1,
+                    transition: {
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20
+                    }
+                  }
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 key={feature.id}
                 onClick={() => toggleFeature(feature.id)}
                 className={cn(
@@ -215,14 +250,21 @@ export function FeaturesGrid() {
                 >
                   {feature.title}
                 </span>
-              </button>
+              </motion.button>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* Expanded Content */}
+        <AnimatePresence mode="wait">
         {activeFeature === "properties" && (
-          <div className="animate-in slide-in-from-top-4 duration-300">
+          <motion.div
+            key="properties"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg p-8">
               <div className="grid gap-8 lg:grid-cols-3">
                 {/* Description and Features - Left Column */}
@@ -408,12 +450,18 @@ export function FeaturesGrid() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
-        
+
         {/* CRM de Contactos Preview */}
         {activeFeature === "crm" && (
-          <div className="animate-in slide-in-from-top-4 duration-300">
+          <motion.div
+            key="crm"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg p-8">
               <div className="grid gap-8 lg:grid-cols-3">
                 {/* Description and Features - Left Column */}
@@ -583,12 +631,18 @@ export function FeaturesGrid() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Publicación Multi-Portal Preview */}
         {activeFeature === "portals" && (
-          <div className="animate-in slide-in-from-top-4 duration-300">
+          <motion.div
+            key="portals"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg p-8">
               <div className="grid gap-8 lg:grid-cols-3">
                 {/* Description and Features - Left Column */}
@@ -684,12 +738,18 @@ export function FeaturesGrid() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Calendario Integrado Preview */}
         {activeFeature === "calendar" && (
-          <div className="animate-in slide-in-from-top-4 duration-300">
+          <motion.div
+            key="calendar"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg p-8">
               <div className="grid gap-8 lg:grid-cols-3">
                 {/* Description and Features - Left Column */}
@@ -787,12 +847,18 @@ export function FeaturesGrid() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Descripciones con IA Preview */}
         {activeFeature === "ai" && (
-          <div className="animate-in slide-in-from-top-4 duration-300">
+          <motion.div
+            key="ai"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg p-8">
               <div className="grid gap-8 lg:grid-cols-3">
                 {/* Description and Features - Left Column */}
@@ -887,12 +953,18 @@ export function FeaturesGrid() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Procesamiento de Documentos Preview */}
         {activeFeature === "docs" && (
-          <div className="animate-in slide-in-from-top-4 duration-300">
+          <motion.div
+            key="docs"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg p-8">
               <div className="grid gap-8 lg:grid-cols-3">
                 {/* Description and Features - Left Column */}
@@ -998,8 +1070,9 @@ export function FeaturesGrid() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
     </section>
   );
