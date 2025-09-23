@@ -145,6 +145,7 @@ export interface PropertyListing {
 
   // Content
   description?: string;
+  shortDescription?: string;
 
   // Relationships
   agent?: {

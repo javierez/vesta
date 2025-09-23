@@ -42,7 +42,6 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/favicon") ||
     pathname.includes(".")
   ) {
-    console.log(`✅ Allowing public path: ${pathname}`);
     return NextResponse.next();
   }
 

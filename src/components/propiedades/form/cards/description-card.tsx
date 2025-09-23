@@ -25,31 +25,39 @@ import type { SaveState } from "~/types/save-state";
 
 interface DescriptionCardProps {
   description: string;
+  shortDescription: string;
   isGenerating: boolean;
+  isGeneratingShort: boolean;
   signature: string;
   isSignatureDialogOpen: boolean;
   saveState: SaveState;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   onGenerateDescription: () => Promise<void>;
+  onGenerateShortDescription: () => Promise<void>;
   setSignature: (value: string) => void;
   setIsSignatureDialogOpen: (value: boolean) => void;
   setDescription: (value: string) => void;
+  setShortDescription: (value: string) => void;
   getCardStyles: (moduleName: string) => string;
 }
 
 export function DescriptionCard({
   description,
+  shortDescription,
   isGenerating,
+  isGeneratingShort,
   signature,
   isSignatureDialogOpen,
   saveState,
   onSave,
   onUpdateModule,
   onGenerateDescription,
+  onGenerateShortDescription,
   setSignature,
   setIsSignatureDialogOpen,
   setDescription,
+  setShortDescription,
   getCardStyles,
 }: DescriptionCardProps) {
   const handleSignatureChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -86,38 +94,80 @@ export function DescriptionCard({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="description" className="text-sm">
-              Descripción
-            </Label>
-            <Textarea
-              id="description"
-              defaultValue={description}
-              className="min-h-[200px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300"
-              placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
-              onChange={() => onUpdateModule(true)}
-            />
+        <div className="space-y-6">
+          {/* Short Description Section */}
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="shortDescription" className="text-sm">
+                Descripción Corta
+              </Label>
+              <div className="group relative">
+                <Textarea
+                  id="shortDescription"
+                  defaultValue={shortDescription}
+                  className="min-h-[80px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300 pr-32"
+                  placeholder="Breve resumen de la propiedad para carteles y vistas previas (máximo 200 caracteres)"
+                  maxLength={200}
+                  onChange={(e) => {
+                    setShortDescription(e.target.value);
+                    onUpdateModule(true);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={onGenerateShortDescription}
+                  disabled={isGeneratingShort}
+                  className="absolute bottom-2 right-2 h-8 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-gradient-to-r from-amber-400 to-rose-400 px-2 text-xs font-medium text-white rounded shadow-sm hover:from-amber-500 hover:to-rose-500 hover:shadow-md disabled:opacity-50 flex items-center"
+                >
+                  {isGeneratingShort ? (
+                    <>
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      Generando...
+                    </>
+                  ) : (
+                    "Generar descripción corta"
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-center pt-6">
-            <Button
-              type="button"
-              onClick={onGenerateDescription}
-              disabled={isGenerating}
-              className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando descripción...
-                </>
-              ) : (
-                <>
-                  Asistente de descripción
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                </>
-              )}
-            </Button>
+
+          <div className="border-t border-gray-100" />
+
+          {/* Full Description Section */}
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="description" className="text-sm">
+                Descripción Completa
+              </Label>
+              <div className="group relative">
+                <Textarea
+                  id="description"
+                  defaultValue={description}
+                  className="min-h-[200px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300 pr-32"
+                  placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    onUpdateModule(true);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={onGenerateDescription}
+                  disabled={isGenerating}
+                  className="absolute bottom-2 right-2 h-8 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-gradient-to-r from-amber-400 to-rose-400 px-2 text-xs font-medium text-white rounded shadow-sm hover:from-amber-500 hover:to-rose-500 hover:shadow-md disabled:opacity-50 flex items-center"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      Generando...
+                    </>
+                  ) : (
+                    "Generar descripción completa"
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </Card>

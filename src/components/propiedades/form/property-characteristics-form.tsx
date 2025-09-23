@@ -25,7 +25,6 @@ import {
   updateListingOwnersWithAuth,
 } from "~/server/queries/contact";
 import { findOrCreateLocation } from "~/server/queries/locations";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProperty } from "~/server/queries/properties";
 import { updateListingWithAuth, toggleListingKeysWithAuth, toggleListingPublishToWebsiteWithAuth, getListingDetailsWithAuth } from "~/server/queries/listing";
@@ -44,7 +43,7 @@ import { RentalPropertiesCard } from "./cards/rental-properties-card";
 import { DescriptionCard } from "./cards/description-card";
 import { Separator } from "~/components/ui/separator";
 import Image from "next/image";
-import { generatePropertyDescription } from "~/server/openai/property_descriptions";
+import { generatePropertyDescription, generateShortPropertyDescription } from "~/server/openai/property_descriptions";
 import { ExternalLinkPopup } from "~/components/ui/external-link-popup";
 
 import type { PropertyListing } from "~/types/property-listing";
@@ -236,9 +235,7 @@ export function PropertyCharacteristicsForm({
             yearBuilt: Number(
               (document.getElementById("yearBuilt") as HTMLInputElement)?.value,
             ),
-            lastRenovationYear: lastRenovationYear
-              ? Math.min(Math.max(Number(lastRenovationYear), -32768), 32767)
-              : null,
+            lastRenovationYear: lastRenovationYear || null,
             buildingFloors: buildingFloors,
             conservationStatus: listing.conservationStatus ?? 1,
           };
@@ -418,9 +415,19 @@ export function PropertyCharacteristicsForm({
           break;
 
         case "description":
+          // Description goes to properties table
           propertyData = {
             description: (
               document.getElementById("description") as HTMLTextAreaElement
+            )?.value,
+          };
+          // Short description goes to listings table
+          listingData = {
+            description: (
+              document.getElementById("description") as HTMLTextAreaElement
+            )?.value,
+            shortDescription: (
+              document.getElementById("shortDescription") as HTMLTextAreaElement
             )?.value,
           };
           break;
@@ -677,7 +684,9 @@ export function PropertyCharacteristicsForm({
     listing.newConstruction ?? false,
   );
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingShort, setIsGeneratingShort] = useState(false);
   const [description, setDescription] = useState(listing.description ?? "");
+  const [shortDescription, setShortDescription] = useState(listing.shortDescription ?? "");
   const [isCatastroPopupOpen, setIsCatastroPopupOpen] = useState(false);
   const [isMapsPopupOpen, setIsMapsPopupOpen] = useState(false);
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
@@ -905,9 +914,7 @@ export function PropertyCharacteristicsForm({
       setIsGenerating(true);
       const listingWithNumberTypes = {
         ...listing,
-        lastRenovationYear: lastRenovationYear
-          ? Number(lastRenovationYear)
-          : undefined,
+        lastRenovationYear: lastRenovationYear ? String(lastRenovationYear) : undefined,
       };
       const generatedDescription = await generatePropertyDescription(
         listingWithNumberTypes,
@@ -930,7 +937,48 @@ export function PropertyCharacteristicsForm({
     }
   };
 
-
+  const handleGenerateShortDescription = async () => {
+    try {
+      setIsGeneratingShort(true);
+      
+      // Check if we have a full description to summarize
+      if (!description || description.trim() === "") {
+        // If no full description exists, generate it first
+        await handleGenerateDescription();
+      }
+      
+      // Now generate short description based on the full description
+      if (description && description.trim() !== "") {
+        const listingWithStringTypes = {
+          ...listing,
+          lastRenovationYear: lastRenovationYear ? String(lastRenovationYear) : undefined,
+        };
+        
+        const generatedShortDescription = await generateShortPropertyDescription(
+          description,
+          listingWithStringTypes
+        );
+        
+        setShortDescription(generatedShortDescription);
+        
+        // Update the textarea value
+        const shortDescTextarea = document.getElementById(
+          "shortDescription",
+        ) as HTMLTextAreaElement;
+        if (shortDescTextarea) {
+          shortDescTextarea.value = generatedShortDescription;
+          // Trigger the change event to mark the module as modified
+          updateModuleState("description", true);
+        }
+      } else {
+        console.error("No full description available to summarize");
+      }
+    } catch (error) {
+      console.error("Error generating short description:", error);
+    } finally {
+      setIsGeneratingShort(false);
+    }
+  };
 
   const getCardStyles = (moduleName: string) => {
     const state = moduleStates[moduleName]?.saveState;
@@ -1844,16 +1892,20 @@ export function PropertyCharacteristicsForm({
       {/* Description Module */}
       <DescriptionCard
         description={description}
+        shortDescription={shortDescription}
         isGenerating={isGenerating}
+        isGeneratingShort={isGeneratingShort}
         signature={signature}
         isSignatureDialogOpen={isSignatureDialogOpen}
         saveState={moduleStates.description?.saveState ?? "idle"}
         onSave={() => saveModule("description")}
         onUpdateModule={(hasChanges) => updateModuleState("description", hasChanges)}
         onGenerateDescription={handleGenerateDescription}
+        onGenerateShortDescription={handleGenerateShortDescription}
         setSignature={setSignature}
         setIsSignatureDialogOpen={setIsSignatureDialogOpen}
         setDescription={setDescription}
+        setShortDescription={setShortDescription}
         getCardStyles={getCardStyles}
       />
 

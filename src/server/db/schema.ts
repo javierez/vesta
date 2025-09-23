@@ -350,6 +350,10 @@ export const listings = singlestoreTable("listings", {
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
   status: varchar("status", { length: 20 }).notNull(), // 'En Venta' | 'En Alquiler' | 'Vendido' | 'Draft'
 
+  // Listing-specific descriptions
+  description: text("description"), // Full listing description (can differ from property description)
+  shortDescription: varchar("short_description", { length: 500 }), // Brief summary for listing cards/previews
+
   // Listing Features
   isFurnished: boolean("is_furnished"),
   furnitureQuality: varchar("furniture_quality", { length: 50 }), // 'basic' | 'standard' | 'high' | 'luxury' (Básico | Estándar | Alta | Lujo)
