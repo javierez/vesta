@@ -362,8 +362,8 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
       verbosity: "balanced"
     };
 
-    // Merge user config with defaults
-    const _finalConfig = { ...defaultConfig, ...aiConfig };
+    // Merge user config with defaults (currently unused)
+    // const finalConfig = { ...defaultConfig, ...aiConfig };
 
     // Call OpenAI API with all customizable parameters
     const completion = await openai.chat.completions.create({

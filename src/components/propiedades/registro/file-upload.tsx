@@ -45,42 +45,42 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Phase 1: Upload to existing property (original behavior)
-  const uploadFilesToExistingProperty = async (files: UploadedFile[]) => {
-    for (const uploadedFile of files) {
-      try {
-        setUploadedFiles(prev => prev.map(f => 
-          f.id === uploadedFile.id ? { ...f, status: 'uploading', progress: 50 } : f
-        ));
-
-        const formData = new FormData();
-        formData.append('file', uploadedFile.file);
-        formData.append('listingId', listingId!.toString());
-
-        const response = await fetch('/api/documents/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Upload failed: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        
-        setUploadedFiles(prev => prev.map(f => 
-          f.id === uploadedFile.id ? { ...f, status: 'success', progress: 100, url: result.url } : f
-        ));
-      } catch (error) {
-        console.error('Upload error:', error);
-        setUploadedFiles(prev => prev.map(f => 
-          f.id === uploadedFile.id ? { ...f, status: 'error', progress: 0 } : f
-        ));
-      }
-    }
-  };
-
   const handleFileUpload = useCallback(async (files: File[]) => {
+    // Phase 1: Upload to existing property (original behavior)
+    const uploadFilesToExistingProperty = async (files: UploadedFile[]) => {
+      for (const uploadedFile of files) {
+        try {
+          setUploadedFiles(prev => prev.map(f => 
+            f.id === uploadedFile.id ? { ...f, status: 'uploading', progress: 50 } : f
+          ));
+
+          const formData = new FormData();
+          formData.append('file', uploadedFile.file);
+          formData.append('listingId', listingId!.toString());
+
+          const response = await fetch('/api/documents/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`);
+          }
+
+          const result = await response.json() as { url: string };
+          
+          setUploadedFiles(prev => prev.map(f => 
+            f.id === uploadedFile.id ? { ...f, status: 'success', progress: 100, url: result.url } : f
+          ));
+        } catch (error) {
+          console.error('Upload error:', error);
+          setUploadedFiles(prev => prev.map(f => 
+            f.id === uploadedFile.id ? { ...f, status: 'error', progress: 0 } : f
+          ));
+        }
+      }
+    };
+
     // Add files to state
     const newFiles: UploadedFile[] = files.map((file, index) => ({
       id: `${Date.now()}-${index}`,
@@ -107,7 +107,7 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
       setIsUploading(false);
       setOverallUploadProgress(0);
     }
-  }, [listingId, onFileUpload, uploadFilesToExistingProperty]);
+  }, [listingId, onFileUpload]);
 
   // Phase 1: Create property and upload files (ficha de encargo)
   const uploadFilesWithPropertyCreation = async (files: UploadedFile[]) => {

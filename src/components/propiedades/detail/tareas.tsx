@@ -523,10 +523,10 @@ export function Tareas({
     setNewTask({
       title: task.title,
       description: task.description,
-      dueDate: dueDateString as string,
-      dueTime: dueTimeString as string,
-      contactId: task.relatedContact?.contactId.toString() || "",
-      appointmentId: task.appointmentId?.toString() || "",
+      dueDate: dueDateString!,
+      dueTime: dueTimeString!,
+      contactId: task.relatedContact?.contactId.toString() ?? "",
+      appointmentId: task.appointmentId?.toString() ?? "",
       agentId: task.userId,
     });
   };
@@ -594,7 +594,7 @@ export function Tareas({
 
     try {
       const savedTask = await updateTaskWithAuth(
-        Number(editingTask.taskId || editingTask.id),
+        Number(editingTask.taskId ?? editingTask.id),
         {
           title: newTask.title,
           description: newTask.description,

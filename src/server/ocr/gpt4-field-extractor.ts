@@ -669,10 +669,11 @@ function processFunctionResults(
         const lastName = nameParts.slice(1).join(' ');
         
         const confidence = functionArgs.confidence;
-        const _adjustedConfidence = Math.min(
-          typeof confidence === 'number' ? confidence : 80,
-          (typeof confidence === 'number' ? confidence : 80) * (ocrInput.confidence / 100)
-        );
+        // Adjusted confidence calculation (currently unused)
+        // const adjustedConfidence = Math.min(
+        //   typeof confidence === 'number' ? confidence : 80,
+        //   (typeof confidence === 'number' ? confidence : 80) * (ocrInput.confidence / 100)
+        // );
 
         // Note: Agent info would need additional handling in database saver
         // For now, we'll create separate agent fields that can be processed later
@@ -727,7 +728,7 @@ function processFunctionResults(
       try {
         const converted = fieldMapping.converter(stringValue);
         convertedValue = typeof converted === 'string' || typeof converted === 'number' || typeof converted === 'boolean' ? converted : stringValue;
-      } catch (_error) {
+      } catch {
         console.warn(`⚠️ [GPT4-OCR] Conversion failed for ${mapping.dbColumn}: ${stringValue}`);
         convertedValue = typeof fieldValue === 'string' || typeof fieldValue === 'number' || typeof fieldValue === 'boolean' ? fieldValue : stringValue;
       }
