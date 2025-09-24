@@ -45,6 +45,41 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
+  // Phase 1: Upload to existing property (original behavior)
+  const uploadFilesToExistingProperty = async (files: UploadedFile[]) => {
+    for (const uploadedFile of files) {
+      try {
+        setUploadedFiles(prev => prev.map(f => 
+          f.id === uploadedFile.id ? { ...f, status: 'uploading', progress: 50 } : f
+        ));
+
+        const formData = new FormData();
+        formData.append('file', uploadedFile.file);
+        formData.append('listingId', listingId!.toString());
+
+        const response = await fetch('/api/documents/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        setUploadedFiles(prev => prev.map(f => 
+          f.id === uploadedFile.id ? { ...f, status: 'success', progress: 100, url: result.url } : f
+        ));
+      } catch (error) {
+        console.error('Upload error:', error);
+        setUploadedFiles(prev => prev.map(f => 
+          f.id === uploadedFile.id ? { ...f, status: 'error', progress: 0 } : f
+        ));
+      }
+    }
+  };
+
   const handleFileUpload = useCallback(async (files: File[]) => {
     // Add files to state
     const newFiles: UploadedFile[] = files.map((file, index) => ({
@@ -73,49 +108,6 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
       setOverallUploadProgress(0);
     }
   }, [listingId, onFileUpload, uploadFilesToExistingProperty]);
-
-  // Phase 1: Upload to existing property (original behavior)
-  const uploadFilesToExistingProperty = async (files: UploadedFile[]) => {
-    for (const uploadedFile of files) {
-      try {
-        setUploadedFiles(prev => prev.map(f => 
-          f.id === uploadedFile.id ? { ...f, status: 'uploading', progress: 50 } : f
-        ));
-
-        const formData = new FormData();
-        formData.append('file', uploadedFile.file);
-        formData.append('folderType', 'initial-docs');
-        
-        const response = await fetch(`/api/properties/${listingId}/documents`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json() as { error?: string };
-          throw new Error(errorData.error ?? 'Upload failed');
-        }
-
-        setUploadedFiles(prev => prev.map(f => 
-          f.id === uploadedFile.id ? { ...f, status: 'success', progress: 100 } : f
-        ));
-
-        toast.success(`${uploadedFile.file.name} subido correctamente`);
-      } catch (error) {
-        console.error('Upload error:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Error al subir el archivo';
-        setUploadedFiles(prev => prev.map(f => 
-          f.id === uploadedFile.id ? { 
-            ...f, 
-            status: 'error', 
-            progress: 0,
-            error: errorMessage
-          } : f
-        ));
-        toast.error(`Error al subir ${uploadedFile.file.name}: ${errorMessage}`);
-      }
-    }
-  };
 
   // Phase 1: Create property and upload files (ficha de encargo)
   const uploadFilesWithPropertyCreation = async (files: UploadedFile[]) => {
