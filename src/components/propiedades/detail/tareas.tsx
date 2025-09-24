@@ -517,14 +517,14 @@ export function Tareas({
     setIsAdding(true);
     
     // Pre-fill form with task data
-    const dueDateString = task.dueDate ? task.dueDate.toISOString().split('T')[0] : "";
-    const dueTimeString = task.dueDate ? task.dueDate.toTimeString().slice(0, 5) : "";
+    const dueDateString: string = task.dueDate?.toISOString().split('T')[0] ?? "";
+    const dueTimeString: string = task.dueDate?.toTimeString().slice(0, 5) ?? "";
     
     setNewTask({
       title: task.title,
       description: task.description,
-      dueDate: dueDateString!,
-      dueTime: dueTimeString!,
+      dueDate: dueDateString,
+      dueTime: dueTimeString,
       contactId: task.relatedContact?.contactId.toString() ?? "",
       appointmentId: task.appointmentId?.toString() ?? "",
       agentId: task.userId,

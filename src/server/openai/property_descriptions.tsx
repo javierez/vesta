@@ -239,7 +239,7 @@ interface AIConfig {
 
 export async function generatePropertyDescription(
   listing: PropertyListing,
-  aiConfig: AIConfig = {}
+  _aiConfig: AIConfig = {}
 ) {
   try {
     if (!listing) {
@@ -351,16 +351,16 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
     - Highlight what makes this location special and desirable for potential buyers/renters
     - Make the neighborhood sound attractive and appealing` : "- Focus on the property's features and benefits since no neighborhood information is available"}`;
 
-    // Set default AI configuration values
-    const defaultConfig: Required<AIConfig> = {
-      temperature: 0.5,
-      topP: 0.9,
-      frequencyPenalty: 0.0,
-      presencePenalty: 0.0,
-      maxTokens: 500,
-      reasoningEffort: "medium",
-      verbosity: "balanced"
-    };
+    // Set default AI configuration values (currently unused)
+    // const defaultConfig: Required<AIConfig> = {
+    //   temperature: 0.5,
+    //   topP: 0.9,
+    //   frequencyPenalty: 0.0,
+    //   presencePenalty: 0.0,
+    //   maxTokens: 500,
+    //   reasoningEffort: "medium",
+    //   verbosity: "balanced"
+    // };
 
     // Merge user config with defaults (currently unused)
     // const finalConfig = { ...defaultConfig, ...aiConfig };

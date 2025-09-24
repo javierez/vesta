@@ -668,8 +668,8 @@ function processFunctionResults(
         const firstName = nameParts[0];
         const lastName = nameParts.slice(1).join(' ');
         
-        const confidence = functionArgs.confidence;
         // Adjusted confidence calculation (currently unused)
+        // const confidence = functionArgs.confidence;
         // const adjustedConfidence = Math.min(
         //   typeof confidence === 'number' ? confidence : 80,
         //   (typeof confidence === 'number' ? confidence : 80) * (ocrInput.confidence / 100)
