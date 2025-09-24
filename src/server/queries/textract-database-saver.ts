@@ -8,7 +8,6 @@ import { updateProperty } from "./properties";
 import { updateListing } from "./listing";
 import { findOrCreateLocation } from "./locations";
 import { createContact, findContactBySimilarName } from "./contact";
-import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
 import { retrieveCadastralData } from "../cadastral/retrieve_cadastral";
 import { generatePropertyTitle } from "~/lib/property-title";
 import { getCurrentUser } from "~/lib/dal";

@@ -198,9 +198,9 @@ interface CounterProps {
 }
 
 export const AnimatedCounter = ({
-  from = 0,
+  from: _from = 0,
   to,
-  duration = 2,
+  duration: _duration = 2,
   prefix = "",
   suffix = "",
   className = ""

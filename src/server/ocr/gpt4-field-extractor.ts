@@ -669,7 +669,7 @@ function processFunctionResults(
         const lastName = nameParts.slice(1).join(' ');
         
         const confidence = functionArgs.confidence;
-        const adjustedConfidence = Math.min(
+        const _adjustedConfidence = Math.min(
           typeof confidence === 'number' ? confidence : 80,
           (typeof confidence === 'number' ? confidence : 80) * (ocrInput.confidence / 100)
         );
@@ -727,7 +727,7 @@ function processFunctionResults(
       try {
         const converted = fieldMapping.converter(stringValue);
         convertedValue = typeof converted === 'string' || typeof converted === 'number' || typeof converted === 'boolean' ? converted : stringValue;
-      } catch (error) {
+      } catch (_error) {
         console.warn(`⚠️ [GPT4-OCR] Conversion failed for ${mapping.dbColumn}: ${stringValue}`);
         convertedValue = typeof fieldValue === 'string' || typeof fieldValue === 'number' || typeof fieldValue === 'boolean' ? fieldValue : stringValue;
       }

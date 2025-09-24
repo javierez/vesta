@@ -199,8 +199,8 @@ export function PropertyCharacteristicsForm({
           // Generate the title based on current propertyType
           const generatedTitle = generatePropertyTitle(
             propertyType,
-            listing.street || "",
-            listing.neighborhood || ""
+            listing.street ?? "",
+            listing.neighborhood ?? ""
           );
 
           listingData = {
@@ -1206,8 +1206,8 @@ export function PropertyCharacteristicsForm({
             </Label>
             <Select
               value={propertyType}
-              onValueChange={(value) => {
-                handlePropertyTypeChange(value);
+              onValueChange={async (value) => {
+                await handlePropertyTypeChange(value);
                 updateModuleState("basicInfo", true);
               }}
             >

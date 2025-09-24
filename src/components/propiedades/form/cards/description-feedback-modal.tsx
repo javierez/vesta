@@ -118,7 +118,7 @@ export function DescriptionFeedbackModal({
                   </Label>
                   {currentShortDescription && (
                     <div className="bg-gray-50 p-3 rounded-md mb-2 text-xs text-gray-600 italic">
-                      Actual: "{currentShortDescription.substring(0, 100)}..."
+                      Actual: &quot;{currentShortDescription.substring(0, 100)}...&quot;
                     </div>
                   )}
                   <Textarea
@@ -135,7 +135,7 @@ export function DescriptionFeedbackModal({
                   </Label>
                   {currentDescription && (
                     <div className="bg-gray-50 p-3 rounded-md mb-2 text-xs text-gray-600 italic">
-                      Actual: "{currentDescription.substring(0, 150)}..."
+                      Actual: &quot;{currentDescription.substring(0, 150)}...&quot;
                     </div>
                   )}
                   <Textarea

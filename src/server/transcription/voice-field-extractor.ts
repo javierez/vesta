@@ -6,7 +6,6 @@ import type {
   CompleteExtractedData,
   EnhancedExtractedPropertyData,
   EnhancedExtractedListingData,
-  FieldMapping,
 } from "~/types/textract-enhanced";
 import { ALL_FIELD_MAPPINGS } from "~/server/ocr/field-mapping-config";
 import type { TranscriptionResult } from "./transcription-service";

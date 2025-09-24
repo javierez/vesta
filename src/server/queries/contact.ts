@@ -13,7 +13,7 @@ import { eq, and, or, like, sql, inArray } from "drizzle-orm";
 import type { Contact } from "../../lib/data";
 import { listingContacts } from "../db/schema";
 import { prospectUtils } from "../../lib/utils";
-import { getCurrentUserAccountId, UnauthorizedError } from "../../lib/dal";
+import { getCurrentUserAccountId } from "../../lib/dal";
 
 // Wrapper functions that automatically get accountId from current session
 // These maintain backward compatibility while adding account filtering

@@ -6,11 +6,11 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp, Edit } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Comments } from "./comments";
 import { TareasSkeleton, CommentsSkeleton } from "~/components/ui/skeletons";
-import { createTaskWithAuth } from "~/server/queries/task";
+import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
 import { getLeadsByListingIdWithAuth } from "~/server/queries/lead";
 import { getDealsByListingIdWithAuth } from "~/server/queries/deal";
 import { useSession } from "~/lib/auth-client";
@@ -133,6 +133,7 @@ export function Tareas({
 }: TareasProps) {
   const { data: session } = useSession();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -511,6 +512,150 @@ export function Tareas({
     }
   };
 
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsAdding(true);
+    
+    // Pre-fill form with task data
+    const dueDateString = task.dueDate ? task.dueDate.toISOString().split('T')[0] : "";
+    const dueTimeString = task.dueDate ? task.dueDate.toTimeString().slice(0, 5) : "";
+    
+    setNewTask({
+      title: task.title,
+      description: task.description,
+      dueDate: dueDateString as string,
+      dueTime: dueTimeString as string,
+      contactId: task.relatedContact?.contactId.toString() || "",
+      appointmentId: task.appointmentId?.toString() || "",
+      agentId: task.userId,
+    });
+  };
+
+  const handleUpdateTask = async () => {
+    if (!editingTask || !newTask.title.trim() || !newTask.description.trim()) return;
+    if (isSaving) return;
+
+    setSaveError(null);
+    setIsSaving(true);
+
+    let relatedContact;
+    let relatedAppointment;
+    let leadId: bigint | undefined;
+    let dealId: bigint | undefined;
+    
+    // Get related contact and determine lead/deal relationship
+    if (newTask.contactId) {
+      const selectedContact = contacts.find(c => c.contactId.toString() === newTask.contactId);
+      if (selectedContact) {
+        relatedContact = {
+          contactId: selectedContact.contactId,
+          name: selectedContact.name,
+          email: selectedContact.email
+        };
+        
+        // Set the appropriate lead or deal ID based on contact source
+        if (selectedContact.source === 'lead') {
+          leadId = selectedContact.sourceId;
+        } else if (selectedContact.source === 'deal') {
+          dealId = selectedContact.sourceId;
+        }
+      }
+    }
+    
+    // Get appointment info if selected
+    if (newTask.appointmentId) {
+      const appointment = appointments.find(a => a.appointmentId.toString() === newTask.appointmentId);
+      if (appointment) {
+        relatedAppointment = {
+          appointmentId: appointment.appointmentId,
+          datetimeStart: appointment.datetimeStart,
+          type: appointment.type
+        };
+      }
+    }
+
+    // Create updated task object
+    const updatedTask: Task = {
+      ...editingTask,
+      title: newTask.title,
+      description: newTask.description,
+      dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
+      userId: newTask.agentId,
+      leadId: leadId,
+      dealId: dealId,
+      appointmentId: newTask.appointmentId ? BigInt(newTask.appointmentId) : undefined,
+      relatedContact,
+      relatedAppointment,
+      updatedAt: new Date(),
+    };
+
+    // Set saving state
+    setTaskStates(prev => ({ ...prev, [editingTask.id]: 'saving' }));
+
+    try {
+      const savedTask = await updateTaskWithAuth(
+        Number(editingTask.taskId || editingTask.id),
+        {
+          title: newTask.title,
+          description: newTask.description,
+          dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
+          dueTime: newTask.dueDate ? (newTask.dueTime || "00:00") : undefined,
+          userId: newTask.agentId,
+          listingContactId: leadId ? BigInt(leadId) : undefined,
+          dealId: dealId ? BigInt(dealId) : undefined,
+          appointmentId: newTask.appointmentId ? BigInt(newTask.appointmentId) : undefined,
+        }
+      );
+      
+      if (!savedTask) {
+        throw new Error('Failed to update task');
+      }
+      
+      // Update the task in the parent component
+      onUpdateTaskAfterSave(editingTask.id, updatedTask);
+      setTaskStates(prev => ({ ...prev, [editingTask.id]: 'saved' }));
+      
+      // Clear form and editing state
+      setNewTask({ 
+        title: "", 
+        description: "", 
+        dueDate: "", 
+        dueTime: "",
+        contactId: "", 
+        appointmentId: "",
+        agentId: ""
+      });
+      setEditingTask(null);
+      setIsAdding(false);
+      
+      // Clear success state after 2 seconds
+      setTimeout(() => {
+        setTaskStates(prev => {
+          const newStates = { ...prev };
+          delete newStates[editingTask.id];
+          return newStates;
+        });
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error updating task:', error);
+      setTaskStates(prev => ({ ...prev, [editingTask.id]: 'error' }));
+      setSaveError(error instanceof Error ? error.message : 'Failed to update task');
+      
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        setSaveError(null);
+        setTaskStates(prev => {
+          const newStates = { ...prev };
+          delete newStates[editingTask.id];
+          return newStates;
+        });
+      }, 5000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleToggleCompleted = async (id: string) => {
     await onToggleCompleted(id);
   };
@@ -544,7 +689,10 @@ export function Tareas({
     <div className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2">
+          <Button onClick={() => {
+            setEditingTask(null);
+            setIsAdding(true);
+          }} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Nueva Tarea
           </Button>
@@ -562,18 +710,28 @@ export function Tareas({
           <CardContent className="space-y-4 pt-4 md:pt-6 px-4 md:px-6" onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              void handleAddTask();
+              if (editingTask) {
+                void handleUpdateTask();
+              } else {
+                void handleAddTask();
+              }
             } else if (e.key === 'Escape') {
               e.preventDefault();
               setIsAdding(false);
+              setEditingTask(null);
               setSaveError(null);
             }
           }}>
-            <Input
-              placeholder="Título de la tarea"
-              value={newTask.title}
-              onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-            />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">
+                {editingTask ? 'Editando tarea' : 'Nueva tarea'}
+              </Label>
+              <Input
+                placeholder="Título de la tarea"
+                value={newTask.title}
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+              />
+            </div>
             <div className="relative">
               <Textarea
                 placeholder="Descripción de la tarea"
@@ -701,23 +859,24 @@ export function Tareas({
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Button 
-                  onClick={handleAddTask} 
+                  onClick={editingTask ? handleUpdateTask : handleAddTask} 
                   disabled={isSaving || !newTask.title.trim() || !newTask.description.trim()}
                   className="flex items-center gap-2 w-full sm:w-auto"
                 >
                   {isSaving ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Guardando...
+                      {editingTask ? 'Actualizando...' : 'Guardando...'}
                     </>
                   ) : (
-                    'Guardar'
+                    editingTask ? 'Actualizar' : 'Guardar'
                   )}
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => {
                     setIsAdding(false);
+                    setEditingTask(null);
                     setSaveError(null);
                   }}
                   disabled={isSaving}
@@ -799,7 +958,7 @@ export function Tareas({
               return (
                 <div 
                   key={task.id} 
-                  className={`relative cursor-pointer p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 ${
+                  className={`group relative cursor-pointer p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 ${
                     task.completed ? 'bg-gray-50/50 opacity-75' : 'bg-white'
                   } ${taskStates[task.id] === 'saving' ? 'opacity-70' : ''}`}
                   onClick={() => handleToggleCompleted(task.id)}
@@ -901,8 +1060,20 @@ export function Tareas({
                     )}
                   </div>
                   
-                  {/* Delete button - bottom right */}
-                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2">
+                  {/* Action buttons - bottom right */}
+                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditTask(task);
+                      }}
+                      className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors duration-200 rounded-lg"
+                      title="Editar tarea"
+                    >
+                      <Edit className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -911,6 +1082,7 @@ export function Tareas({
                         void handleDeleteTask(task.taskId?.toString() ?? task.id);
                       }}
                       className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded-lg"
+                      title="Eliminar tarea"
                     >
                       <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     </Button>

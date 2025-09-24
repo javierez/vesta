@@ -64,7 +64,7 @@ export function DescriptionCard({
   getCardStyles,
 }: DescriptionCardProps) {
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
-  const [lastFeedback, setLastFeedback] = useState<DescriptionFeedback | null>(null);
+  const [_lastFeedback, setLastFeedback] = useState<DescriptionFeedback | null>(null);
 
   const handleSignatureChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setSignature(e.target.value);

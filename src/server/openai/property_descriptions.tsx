@@ -2,7 +2,7 @@
 
 import OpenAI from "openai";
 import { fetchAccountContext, formatAccountContextForPrompt } from "./account-context";
-import { getRelevantFields, getPropertyTypeDisplayName, type PropertyType, type TypedPropertyListing } from "~/types/property-types";
+import { getRelevantFields, getPropertyTypeDisplayName, type PropertyType } from "~/types/property-types";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -16,7 +16,7 @@ const EXAMPLES_FILE_ID = process.env.OPENAI_EXAMPLES_FILE_ID; // Set this after 
  * Utility function to upload examples file to OpenAI
  * Run this once to set up the examples file
  */
-export async function uploadExamplesFile(fileContent: string, fileName: string = "property-examples.txt") {
+export async function uploadExamplesFile(fileContent: string, fileName = "property-examples.txt") {
   try {
     const file = await openai.files.create({
       file: new File([fileContent], fileName, { type: 'text/plain' }),
@@ -37,7 +37,7 @@ export async function uploadExamplesFile(fileContent: string, fileName: string =
  */
 async function searchNeighborhoodInfo(neighborhood: string, city?: string, street?: string): Promise<string | null> {
   try {
-    const searchQuery = `${street ? `${street} ` : ''}${neighborhood} ${city || ''} neighborhood amenities restaurants parks attractions`.trim();
+    const searchQuery = `${street ? `${street} ` : ''}${neighborhood} ${city ?? ''} neighborhood amenities restaurants parks attractions`.trim();
     
     // Use OpenAI's web search capability through a separate API call
     const searchResponse = await openai.chat.completions.create({
@@ -64,7 +64,7 @@ async function searchNeighborhoodInfo(neighborhood: string, city?: string, stree
       ],
     });
 
-    return searchResponse.choices[0]?.message?.content || null;
+    return searchResponse.choices[0]?.message?.content ?? null;
   } catch (error) {
     console.error("Error searching neighborhood info:", error);
     return null;
@@ -255,9 +255,9 @@ export async function generatePropertyDescription(
     // Search for neighborhood information if available
     let neighborhoodInfo = null;
     if (relevantListing.neighborhood || relevantListing.city) {
-      console.log(`Searching for neighborhood info: ${relevantListing.street || ''} ${relevantListing.neighborhood || relevantListing.city}`);
+      console.log(`Searching for neighborhood info: ${relevantListing.street ?? ''} ${relevantListing.neighborhood ?? relevantListing.city}`);
       neighborhoodInfo = await searchNeighborhoodInfo(
-        relevantListing.neighborhood || relevantListing.city || '', 
+        relevantListing.neighborhood ?? relevantListing.city ?? '', 
         relevantListing.city,
         relevantListing.street
       );
@@ -307,9 +307,9 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
     Property Type: ${propertyTypeDisplay}
 
     Property Specifications:
-    ${relevantListing.propertyType !== 'garaje' ? `Size: ${relevantListing.squareMeter || 'N/A'}m²` : `Built Area: ${relevantListing.builtSurfaceArea || 'N/A'}m²`}
-    ${relevantListing.propertyType !== 'garaje' && relevantListing.propertyType !== 'solar' ? `Bedrooms: ${relevantListing.bedrooms || 'N/A'}` : ''}
-    ${relevantListing.propertyType !== 'garaje' && relevantListing.propertyType !== 'solar' ? `Bathrooms: ${relevantListing.bathrooms || 'N/A'}` : ''}
+    ${relevantListing.propertyType !== 'garaje' ? `Size: ${relevantListing.squareMeter ?? 'N/A'}m²` : `Built Area: ${relevantListing.builtSurfaceArea ?? 'N/A'}m²`}
+    ${relevantListing.propertyType !== 'garaje' && relevantListing.propertyType !== 'solar' ? `Bedrooms: ${relevantListing.bedrooms ?? 'N/A'}` : ''}
+    ${relevantListing.propertyType !== 'garaje' && relevantListing.propertyType !== 'solar' ? `Bathrooms: ${relevantListing.bathrooms ?? 'N/A'}` : ''}
 
     Complete Property Data (filtered for relevance):
     ${JSON.stringify(relevantListing, null, 2)}
@@ -363,7 +363,7 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
     };
 
     // Merge user config with defaults
-    const finalConfig = { ...defaultConfig, ...aiConfig };
+    const _finalConfig = { ...defaultConfig, ...aiConfig };
 
     // Call OpenAI API with all customizable parameters
     const completion = await openai.chat.completions.create({
@@ -424,7 +424,7 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
  */
 export async function generateShortPropertyDescription(
   fullDescription: string,
-  listing?: PropertyListing
+  _listing?: PropertyListing
 ): Promise<string> {
   try {
     if (!fullDescription) {

@@ -45,7 +45,7 @@ interface BasicInfoCardProps {
 export function BasicInfoCard({
   listing,
   propertyType,
-  hasPropertyTypeChanged,
+  hasPropertyTypeChanged: _hasPropertyTypeChanged,
   listingTypes,
   isBankOwned,
   newConstruction,

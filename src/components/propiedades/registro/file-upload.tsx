@@ -72,7 +72,7 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
       setIsUploading(false);
       setOverallUploadProgress(0);
     }
-  }, [listingId, onFileUpload]);
+  }, [listingId, onFileUpload, uploadFilesToExistingProperty]);
 
   // Phase 1: Upload to existing property (original behavior)
   const uploadFilesToExistingProperty = async (files: UploadedFile[]) => {
