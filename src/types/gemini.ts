@@ -30,23 +30,16 @@ export const RENOVATION_PROMPTS: Record<RenovationType, string> = {
   living_room: "PRECISION REQUIRED: Generate a high-fidelity living room renovation. PRESERVE STRUCTURAL POSITIONS: Wall locations, door/window openings, ceiling height, built-ins locations. MANDATORY WALL TRANSFORMATIONS: MUST completely change all wall colors, paint, and finishes from original - make walls dramatically different. MUST add/change accent walls with new colors or materials. FULL RENOVATION REQUIRED: Completely different furniture (different styles, colors, arrangements from original), dramatic wall color changes, new flooring, updated lighting fixtures, new window treatments, contemporary decor. FURNITURE MANDATE: Sofas, chairs, tables, storage - all must be completely different styles and colors from original. REMOVE ALL PERSONAL ITEMS: Remove photos, books, personal artwork, cultural symbols, memorabilia. TRANSFORM APPEARANCE: Every surface and furniture piece must look completely renovated.",
   bedroom: "PRECISION REQUIRED: Generate a high-fidelity bedroom renovation. PRESERVE STRUCTURAL POSITIONS: Wall locations, door/window openings, ceiling height, built-in locations. MANDATORY WALL TRANSFORMATIONS: MUST completely change all wall colors, paint, and finishes from original - make walls dramatically different. MUST add/change accent walls with new colors or materials. FULL RENOVATION REQUIRED: Completely different furniture (different bed style, nightstands, dressers - all different colors and styles from original), dramatic wall color changes, new flooring, updated lighting fixtures, new window treatments, contemporary bedding and decor. FURNITURE MANDATE: All bedroom furniture must be completely different styles and colors from original. REMOVE ALL PERSONAL ITEMS: Remove clothing, photos, personal artwork, cultural symbols. TRANSFORM APPEARANCE: Every surface and furniture piece must look completely renovated.",
   generic: `
-    PRECISION REQUIRED: Generate a high-fidelity renovation maintaining exact structural positioning.
+    Generate a renovation of the given image maintaining exact structural positioning PRECISION REQUIRED.
 
     PRESERVE STRUCTURAL POSITIONS EXACTLY:
-    - Wall locations and dimensions (but CHANGE their appearance completely)
+    - Wall locations and dimensions (but CHANGE their appearance and materials completely)
     - Door openings (but update door styles/materials/colors)
     - Window openings (but update window frames/treatments)
     - Ceiling height (but change ceiling finishes/treatments)
     - Floor plan layout (but completely change flooring materials)
     - Built-in structural elements (but update their finishes)
 
-    MANDATORY WALL TRANSFORMATIONS:
-    - MUST change wall colors/paint completely from original
-    - MUST update wall textures and finishes dramatically
-    - MUST add/change accent walls with new materials or colors
-    - MUST update all trim and moldings to match new style
-    - Transform every wall surface while keeping structural positions
-    - Make walls look completely different from the original image
 
     MANDATORY COMPLETE TRANSFORMATIONS:
     - FURNITURE: Replace ALL furniture with completely different styles, colors, and arrangements - no piece should look similar to original
@@ -59,9 +52,6 @@ export const RENOVATION_PROMPTS: Record<RenovationType, string> = {
     REMOVE PERSONAL ITEMS:
     Remove all personal belongings, family photos, flags, religious items, personal decorations, personal artwork, cultural symbols, memorabilia, and any items that reflect current occupant preferences. Replace with neutral, contemporary decor appropriate for the space.
     
-    FURNITURE TRANSFORMATION REQUIREMENT:
-    Every piece of furniture must be completely different from the original - different style, color, shape, and arrangement. Do not keep any furniture that looks similar to the original image.
-
     NO HALLUCINATIONS:
     Do not add/remove/move rooms, windows, doors, or structural openings. Maintain photorealistic accuracy that respects the original space's positioning constraints.
   `

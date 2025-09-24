@@ -48,7 +48,7 @@ class GeminiClient {
    * Generate renovation image using Gemini API
    * Uses the gemini-2.5-flash-image-preview model for image editing
    */
-  async renovateImage(imageBase64: string, roomType?: RenovationType, style: RenovationStyle = 'scandinavian'): Promise<GeminiRenovationResponse> {
+  async renovateImage(imageBase64: string, roomType?: RenovationType, style: RenovationStyle = 'modern'): Promise<GeminiRenovationResponse> {
     try {
       // Auto-detect room type if not provided
       const detectedRoomType = roomType ?? this.detectRoomType(imageBase64);
@@ -177,7 +177,7 @@ export const geminiClient = {
   },
   
   // Proxy methods to the actual client
-  renovateImage: (imageBase64: string, roomType?: RenovationType, style: RenovationStyle = 'scandinavian') => 
+  renovateImage: (imageBase64: string, roomType?: RenovationType, style: RenovationStyle = 'modern') => 
     geminiClient.instance.renovateImage(imageBase64, roomType, style),
     
   validateImageInput: (imageBase64: string) =>

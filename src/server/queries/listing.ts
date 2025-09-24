@@ -1223,6 +1223,7 @@ export async function getListingHeaderData(listingId: number) {
         postalCode: properties.postalCode,
         price: listings.price,
         listingType: listings.listingType,
+        status: listings.status,
         isBankOwned: listings.isBankOwned,
       })
       .from(listings)

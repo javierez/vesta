@@ -49,12 +49,14 @@ export default async function CartelEditorPage({ params }: CartelEditorPageProps
       <PropertyHeader
         title={headerData.title ?? ""}
         propertyId={headerData.propertyId}
+        listingId={headerData.listingId}
         street={headerData.street ?? ""}
         city={headerData.city ?? ""}
         province={headerData.province ?? ""}
         postalCode={headerData.postalCode ?? ""}
         price={headerData.price}
         listingType={headerData.listingType}
+        status={headerData.status}
         isBankOwned={headerData.isBankOwned ?? false}
       />
 

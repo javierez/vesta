@@ -7,6 +7,7 @@ import { Input } from "~/components/ui/input";
 import { formatPrice, cn } from "~/lib/utils";
 import { useState, useEffect } from "react";
 import { updatePropertyTitle } from "~/app/actions/property-settings";
+import { updateListingStatus } from "~/app/actions/listing-settings";
 import { toast } from "sonner";
 import { formatListingType } from "../../contactos/contact-config";
 import { generatePropertyTitle } from "~/lib/property-title";
@@ -23,6 +24,7 @@ const statusColors: Record<string, string> = {
 interface PropertyHeaderProps {
   title?: string;
   propertyId?: bigint;
+  listingId?: bigint; // Add listingId for status updates
   propertyType?: string;
   street: string;
   city: string;
@@ -31,6 +33,7 @@ interface PropertyHeaderProps {
   referenceNumber?: string;
   price: string;
   listingType: string;
+  status?: string; // 'En Venta' | 'En Alquiler' | 'Vendido' | 'Draft'
   isBankOwned?: boolean;
   isFeatured?: boolean;
   neighborhood?: string;
@@ -41,6 +44,7 @@ interface PropertyHeaderProps {
 export function PropertyHeader({
   title = "",
   propertyId,
+  listingId,
   propertyType,
   street,
   city,
@@ -49,6 +53,7 @@ export function PropertyHeader({
   referenceNumber: _referenceNumber,
   price,
   listingType,
+  status,
   isBankOwned = false,
   isFeatured: _isFeatured = false,
   neighborhood,
@@ -63,6 +68,10 @@ export function PropertyHeader({
   const [editedTitle, setEditedTitle] = useState(displayTitle);
   const [currentTitle, setCurrentTitle] = useState(displayTitle);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Status toggle state
+  const [currentStatus, setCurrentStatus] = useState(status);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // Update titles when displayTitle changes (for dynamic mode)
   useEffect(() => {
@@ -101,17 +110,101 @@ export function PropertyHeader({
     setIsEditing(false);
   };
 
+  // Toggle logic function - only changes status, listingType stays constant
+  const getToggledStatus = (type: string, currentStat: string | undefined) => {
+    // Determine if we're currently in "active" or "completed" state
+    const isCompleted = currentStat === 'Vendido' || currentStat === 'Alquilado';
+    
+    if (isCompleted) {
+      // Toggle back to active state
+      if (currentStat === 'Alquilado') {
+        return {
+          status: 'En Alquiler',
+          displayText: 'Alquiler'
+        };
+      } else {
+        return {
+          status: 'En Venta', 
+          displayText: 'Venta'
+        };
+      }
+    } else {
+      // Toggle to completed state
+      if (type === 'Rent' || type === 'RentWithOption' || type === 'RoomSharing') {
+        return {
+          status: 'Alquilado',
+          displayText: 'Alquilado'
+        };
+      } else {
+        return {
+          status: 'Vendido',
+          displayText: 'Vendido'
+        };
+      }
+    }
+  };
+
+  // Helper function to get display text based on listingType + status combination
+  const getDisplayText = (type: string, stat: string | undefined) => {
+    // For completed states, show the completion status
+    if (stat === 'Alquilado') {
+      return 'Alquilado';
+    } else if (stat === 'Vendido') {
+      return 'Vendido';
+    } else {
+      // For active states, show based on listingType
+      return formatListingType(type);
+    }
+  };
+
+  const handleStatusToggle = async () => {
+    if (!listingId || isUpdatingStatus) return;
+
+    const toggledState = getToggledStatus(listingType, currentStatus);
+    
+    // Optimistic update
+    setCurrentStatus(toggledState.status);
+    setIsUpdatingStatus(true);
+
+    try {
+      const result = await updateListingStatus(
+        listingId,
+        toggledState.status
+      );
+
+      if (result.success) {
+        toast.success(
+          `Estado actualizado a ${toggledState.displayText}`,
+          {
+            description: "El cambio se ha guardado correctamente"
+          }
+        );
+      } else {
+        // Rollback on error
+        setCurrentStatus(status);
+        toast.error(result.error ?? "Error al actualizar el estado");
+      }
+    } catch (error) {
+      // Rollback on error
+      setCurrentStatus(status);
+      console.error("Error updating status:", error);
+      toast.error("Error al actualizar el estado");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   return (
-    <div className="mb-6 py-3">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
+    <div className="mb-4 py-2 sm:mb-6 sm:py-3">
+      <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0 flex-1">
           <div className="group flex items-start gap-2">
             {isEditing ? (
               <div className="flex w-full max-w-4xl flex-col gap-3">
                 <Input
                   value={editedTitle}
                   onChange={(e) => setEditedTitle(e.target.value)}
-                  className="h-auto w-full border border-input bg-background px-3 py-2 text-3xl font-bold focus-visible:ring-2 focus-visible:ring-ring"
+                  className="h-auto w-full border border-input bg-background px-3 py-2 text-xl font-bold sm:text-2xl md:text-3xl focus-visible:ring-2 focus-visible:ring-ring"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       void handleSave();
@@ -122,12 +215,13 @@ export function PropertyHeader({
                   disabled={isLoading}
                   autoFocus
                 />
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <Button
                     size="sm"
                     variant="default"
                     onClick={handleSave}
                     disabled={isLoading || !editedTitle.trim()}
+                    className="w-full sm:w-auto"
                   >
                     <Check className="mr-1 h-4 w-4" />
                     Guardar
@@ -137,6 +231,7 @@ export function PropertyHeader({
                     variant="outline"
                     onClick={handleCancel}
                     disabled={isLoading}
+                    className="w-full sm:w-auto"
                   >
                     <X className="mr-1 h-4 w-4" />
                     Cancelar
@@ -144,27 +239,30 @@ export function PropertyHeader({
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-3xl font-bold leading-tight break-words">
-                  <span className="inline">
-                    {currentTitle}
-                  </span>
-                  {propertyId && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="ml-1 inline-flex p-1 opacity-0 transition-opacity group-hover:opacity-100 align-baseline whitespace-nowrap"
-                      onClick={() => setIsEditing(true)}
-                    >
-                      <Pencil className="h-4 w-4 text-muted-foreground" />
-                    </Button>
+              <div className="flex min-w-0 flex-1 items-start gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl font-bold leading-tight break-words min-w-0 sm:text-2xl md:text-3xl">
+                    <span className="inline break-words">
+                      {currentTitle}
+                    </span>
+                    {propertyId && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="ml-2 sm:ml-3 inline-flex p-1.5 sm:p-2 opacity-0 transition-opacity group-hover:opacity-100 align-baseline whitespace-nowrap rounded-full min-h-[44px] min-w-[44px]"
+                        onClick={() => setIsEditing(true)}
+                        aria-label="Editar título"
+                      >
+                        <Pencil className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                      </Button>
+                    )}
+                  </h1>
+                  {isBankOwned && (
+                    <Badge variant="secondary" className="bg-amber-500 text-white text-xs sm:text-sm flex-shrink-0">
+                      Piso de Banco
+                    </Badge>
                   )}
-                </h1>
-                {isBankOwned && (
-                  <Badge variant="secondary" className="bg-amber-500 text-white">
-                    Piso de Banco
-                  </Badge>
-                )}
+                </div>
               </div>
             )}
           </div>
@@ -175,30 +273,43 @@ export function PropertyHeader({
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center text-muted-foreground transition-colors hover:text-primary"
+              className="group inline-flex items-center text-sm sm:text-base text-muted-foreground transition-colors hover:text-primary break-words"
             >
-              <MapPin className="mr-1 h-4 w-4 transition-transform group-hover:scale-110" />
-              <span className="group-hover:underline">
+              <MapPin className="mr-1 h-4 w-4 flex-shrink-0 transition-transform group-hover:scale-110" />
+              <span className="group-hover:underline break-words">
                 {street}, {city}, {province} {postalCode}
               </span>
             </a>
           </div>
         </div>
-        <div className="flex flex-col md:items-end">
-          <div className="text-3xl font-bold">
+        <div className="flex flex-col items-start mt-2 sm:items-end sm:mt-0 md:flex-shrink-0">
+          <div 
+            className={cn(
+              "text-xl font-bold sm:text-2xl md:text-3xl break-words transition-colors",
+              listingId ? "cursor-pointer hover:text-primary" : "",
+              isUpdatingStatus && "opacity-50",
+              (currentStatus === 'Vendido' || currentStatus === 'Alquilado') && "line-through decoration-2"
+            )}
+            onClick={listingId ? handleStatusToggle : undefined}
+            title={listingId ? "Haz clic para cambiar el estado" : undefined}
+          >
             {formatPrice(price)}€
-            {["Rent", "RentWithOption", "RoomSharing"].includes(listingType)
+            {(["Rent", "RentWithOption", "RoomSharing"].includes(listingType) || currentStatus === 'Alquilado')
               ? "/mes"
               : ""}
           </div>
           <Badge
             variant="secondary"
             className={cn(
-              "mt-1 font-normal transition-all duration-200 cursor-pointer",
+              "mt-1 font-normal transition-all duration-200 text-xs sm:text-sm flex-shrink-0",
               statusColors[listingType],
+              listingId ? "cursor-pointer hover:scale-105" : "",
+              isUpdatingStatus && "opacity-50"
             )}
+            onClick={listingId ? handleStatusToggle : undefined}
+            title={listingId ? "Haz clic para cambiar el estado" : undefined}
           >
-            {formatListingType(listingType)}
+            {getDisplayText(listingType, currentStatus)}
           </Badge>
         </div>
       </div>

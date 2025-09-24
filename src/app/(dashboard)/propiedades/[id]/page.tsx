@@ -85,6 +85,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
       <PropertyHeader
         title={headerData.title ?? ""}
         propertyId={headerData.propertyId}
+        listingId={headerData.listingId}
         propertyType={breadcrumbData.propertyType ?? ""}
         street={headerData.street ?? ""}
         city={headerData.city ?? ""}
@@ -92,6 +93,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         postalCode={headerData.postalCode ?? ""}
         price={headerData.price}
         listingType={headerData.listingType}
+        status={headerData.status}
         isBankOwned={headerData.isBankOwned ?? false}
         neighborhood=""
         dynamicTitle={true}
