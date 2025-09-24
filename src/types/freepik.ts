@@ -9,14 +9,14 @@ export interface FreepikEnhanceRequest {
 
 export interface FreepikEnhanceResponse {
   taskId: string;
-  status: 'IN_PROGRESS' | 'SUCCESS' | 'FAILED';
+  status: 'CREATED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   generated?: string[];  // Enhanced image URLs
   error?: string;
 }
 
 export interface FreepikTaskStatus {
   id: string;
-  status: 'IN_PROGRESS' | 'SUCCESS' | 'FAILED' | 'COMPLETED';
+  status: 'CREATED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   progress?: number;
   result?: {
     generated: string[];

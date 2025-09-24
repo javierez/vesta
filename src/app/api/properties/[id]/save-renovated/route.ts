@@ -1,10 +1,11 @@
 import type { NextRequest } from "next/server";
 import { getSecureSession } from "~/lib/dal";
-import { uploadEnhancedImageToS3 } from "~/app/actions/enhance-image";
+import { uploadRenovatedImageToS3 } from "~/app/actions/renovate-image";
 import { getListingHeaderData } from "~/server/queries/listing";
+import type { RenovationType } from "~/types/gemini";
 
 /**
- * POST: Save enhanced image to S3 and database when user confirms
+ * POST: Save renovated image to S3 and database when user confirms
  */
 export async function POST(
   request: NextRequest,
@@ -17,25 +18,34 @@ export async function POST(
     const session = await getSecureSession();
     
     if (!session?.user?.id) {
-      console.error('Unauthorized access to save enhanced image');
+      console.error('Unauthorized access to save renovated image');
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 2. Get request data
     const data = await request.json() as { 
-      enhancedImageUrl: string; 
+      renovatedImageBase64: string; 
       referenceNumber: string; 
       currentImageOrder: string; 
+      renovationType?: RenovationType;
     };
     const propertyId = BigInt(resolvedParams.id);
 
-    if (!data.enhancedImageUrl || !data.referenceNumber || !data.currentImageOrder) {
-      console.error('Missing required fields for enhanced image save');
+    if (!data.renovatedImageBase64 || !data.referenceNumber || !data.currentImageOrder) {
+      console.error('Missing required fields for renovated image save');
       return Response.json(
-        { error: "enhancedImageUrl, referenceNumber, and currentImageOrder are required" },
+        { error: "renovatedImageBase64, referenceNumber, and currentImageOrder are required" },
         { status: 400 }
       );
     }
+
+    console.log('Saving renovated image:', {
+      propertyId: propertyId.toString(),
+      referenceNumber: data.referenceNumber,
+      currentImageOrder: data.currentImageOrder,
+      renovationType: data.renovationType ?? 'generic',
+      imageDataLength: data.renovatedImageBase64.length
+    });
 
     // 3. Validate property ownership
     const propertyData = await getListingHeaderData(parseInt(resolvedParams.id));
@@ -47,15 +57,16 @@ export async function POST(
       );
     }
 
-    // 4. Save enhanced image to S3 and database
+    // 4. Save renovated image to S3 and database
     const newImageOrder = parseInt(data.currentImageOrder) + 1;
     
     try {
-      const propertyImage = await uploadEnhancedImageToS3(
-        data.enhancedImageUrl,
+      const propertyImage = await uploadRenovatedImageToS3(
+        data.renovatedImageBase64,
         propertyId,
         data.referenceNumber,
-        newImageOrder
+        newImageOrder,
+        data.renovationType
       );
 
       return Response.json({
@@ -65,20 +76,20 @@ export async function POST(
           propertyImageId: propertyImage.propertyImageId.toString(),
           propertyId: propertyImage.propertyId.toString(),
         },
-        message: "Enhanced image saved successfully"
+        message: "Renovated image saved successfully"
       });
     } catch (uploadError) {
-      console.error('Error saving enhanced image to S3/DB:', uploadError);
+      console.error('Error saving renovated image to S3/DB:', uploadError);
       return Response.json(
-        { error: "Failed to save enhanced image to S3 or database" },
+        { error: "Failed to save renovated image to S3 or database" },
         { status: 500 }
       );
     }
 
   } catch (error) {
-    console.error("Save enhanced image API error:", error);
+    console.error("Save renovated image API error:", error);
     return Response.json(
-      { error: "Failed to save enhanced image" },
+      { error: "Failed to save renovated image" },
       { status: 500 }
     );
   }

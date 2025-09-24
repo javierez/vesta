@@ -78,9 +78,6 @@ export function ToolConfirmationModal({ isOpen, tool, onConfirm, onCancel }: Too
               <p className="text-sm text-gray-700 mb-2">
                 ¿Estás seguro que deseas proceder con esta operación?
               </p>
-              <p className="text-xs text-gray-600">
-                {tool.description}
-              </p>
             </div>
           </div>
 

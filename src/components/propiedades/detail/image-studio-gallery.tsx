@@ -51,15 +51,16 @@ export function ImageStudioGallery({
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
 
-  // Use the same placeholder image as property-card.tsx
-  const defaultPlaceholder = "";
+  // Use a proper placeholder image or null for empty sources
+  const defaultPlaceholder = "/placeholder-image.jpg"; // This should be a real image or use null
 
   // State for managing image sources with fallbacks
-  const [imageSources, setImageSources] = useState<Record<string, string>>(() => {
-    const sources: Record<string, string> = {};
+  const [imageSources, setImageSources] = useState<Record<string, string | null>>(() => {
+    const sources: Record<string, string | null> = {};
     images.forEach((image) => {
       const key = image.propertyImageId.toString();
-      sources[key] = image.imageUrl ?? defaultPlaceholder;
+      // Only set the image if it has a valid URL, otherwise use null
+      sources[key] = image.imageUrl && image.imageUrl.trim() !== "" ? image.imageUrl : null;
     });
     return sources;
   });
@@ -153,7 +154,7 @@ export function ImageStudioGallery({
   const handleImageError = (imageId: string) => {
     setImageSources((prev) => ({
       ...prev,
-      [imageId]: defaultPlaceholder,
+      [imageId]: null, // Set to null instead of empty string
     }));
   };
 
@@ -232,19 +233,26 @@ export function ImageStudioGallery({
                     onClick={() => handleThumbnailClick(index)}
                     aria-label={`Ver imagen ${index + 1}`}
                   >
-                    <Image
-                      src={imageSources[imageId] ?? defaultPlaceholder}
-                      alt={`${title} - Miniatura ${index + 1}`}
-                      fill
-                      className={cn(
-                        "object-cover transition-all duration-200",
-                        imageSources[imageId] === defaultPlaceholder && "grayscale",
-                        !image.isActive && "opacity-70"
-                      )}
-                      loading="lazy"
-                      onError={() => handleImageError(imageId)}
-                      onLoad={() => handleImageLoad(imageId)}
-                    />
+                    {imageSources[imageId] ? (
+                      <Image
+                        src={imageSources[imageId]}
+                        alt={`${title} - Miniatura ${index + 1}`}
+                        fill
+                        className={cn(
+                          "object-cover transition-all duration-200",
+                          !image.isActive && "opacity-70"
+                        )}
+                        loading="lazy"
+                        onError={() => handleImageError(imageId)}
+                        onLoad={() => handleImageLoad(imageId)}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
                     {!imageLoaded[imageId] && (
                       <div className="absolute inset-0 animate-pulse bg-gray-200" />
                     )}
@@ -295,20 +303,27 @@ export function ImageStudioGallery({
                     : "opacity-0 scale-105 pointer-events-none"
                 )}
               >
-                <Image
-                  src={imageSources[imageId] ?? defaultPlaceholder}
-                  alt={title ?? `Property image ${index + 1}`}
-                  fill
-                  className={cn(
-                    "transition-all duration-500",
-                    imageOrientation === 'horizontal' ? "object-cover" : "object-contain",
-                    imageSources[imageId] === defaultPlaceholder && "grayscale",
-                    !image.isActive && "opacity-70"
-                  )}
-                  priority={index === 0}
-                  onError={() => handleImageError(imageId)}
-                  onLoad={() => handleImageLoad(imageId)}
-                />
+                {imageSources[imageId] ? (
+                  <Image
+                    src={imageSources[imageId]}
+                    alt={title ?? `Property image ${index + 1}`}
+                    fill
+                    className={cn(
+                      "transition-all duration-500",
+                      imageOrientation === 'horizontal' ? "object-cover" : "object-contain",
+                      !image.isActive && "opacity-70"
+                    )}
+                    priority={index === 0}
+                    onError={() => handleImageError(imageId)}
+                    onLoad={() => handleImageLoad(imageId)}
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                    <svg className="w-16 h-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
                 {!imageLoaded[imageId] && (
                   <div className="absolute inset-0 animate-pulse bg-gray-200" />
                 )}
@@ -480,19 +495,26 @@ export function ImageStudioGallery({
                   onClick={() => handleThumbnailClick(index)}
                   aria-label={`Ver imagen ${index + 1}`}
                 >
-                  <Image
-                    src={imageSources[imageId] ?? defaultPlaceholder}
-                    alt={`${title} - Miniatura ${index + 1}`}
-                    fill
-                    className={cn(
-                      "object-cover transition-all duration-200",
-                      imageSources[imageId] === defaultPlaceholder && "grayscale",
-                      !image.isActive && "opacity-70"
-                    )}
-                    loading="lazy"
-                    onError={() => handleImageError(imageId)}
-                    onLoad={() => handleImageLoad(imageId)}
-                  />
+                  {imageSources[imageId] ? (
+                    <Image
+                      src={imageSources[imageId]}
+                      alt={`${title} - Miniatura ${index + 1}`}
+                      fill
+                      className={cn(
+                        "object-cover transition-all duration-200",
+                        !image.isActive && "opacity-70"
+                      )}
+                      loading="lazy"
+                      onError={() => handleImageError(imageId)}
+                      onLoad={() => handleImageLoad(imageId)}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  )}
                   {!imageLoaded[imageId] && (
                     <div className="absolute inset-0 animate-pulse bg-gray-200" />
                   )}
@@ -524,20 +546,27 @@ export function ImageStudioGallery({
                   : "opacity-0 scale-105 pointer-events-none z-0"
               )}
             >
-              <Image
-                src={imageSources[imageId] ?? defaultPlaceholder}
-                alt={title ?? `Property image ${index + 1}`}
-                fill
-                className={cn(
-                  "transition-all duration-500",
-                  imageOrientation === 'horizontal' ? "object-cover" : "object-contain",
-                  imageSources[imageId] === defaultPlaceholder && "grayscale",
-                  !image.isActive && "opacity-70"
-                )}
-                priority={index === 0}
-                onError={() => handleImageError(imageId)}
-                onLoad={() => handleImageLoad(imageId)}
-              />
+              {imageSources[imageId] ? (
+                <Image
+                  src={imageSources[imageId]}
+                  alt={title ?? `Property image ${index + 1}`}
+                  fill
+                  className={cn(
+                    "transition-all duration-500",
+                    imageOrientation === 'horizontal' ? "object-cover" : "object-contain",
+                    !image.isActive && "opacity-70"
+                  )}
+                  priority={index === 0}
+                  onError={() => handleImageError(imageId)}
+                  onLoad={() => handleImageLoad(imageId)}
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                  <svg className="w-16 h-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              )}
               {!imageLoaded[imageId] && (
                 <div className="absolute inset-0 animate-pulse bg-gray-200" />
               )}

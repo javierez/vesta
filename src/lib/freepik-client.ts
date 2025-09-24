@@ -35,22 +35,40 @@ class FreepikClient {
    * Always uses Light preset settings for cost optimization
    */
   async enhance(imageBase64: string): Promise<FreepikEnhanceResponse> {
+    const requestBody = {
+      image: imageBase64,
+      sharpen: LIGHT_ENHANCEMENT_SETTINGS.sharpen,
+      smart_grain: LIGHT_ENHANCEMENT_SETTINGS.smartGrain,
+      ultra_detail: LIGHT_ENHANCEMENT_SETTINGS.ultraDetail,
+    };
+
+    console.log('Freepik API request details:', {
+      url: this.baseUrl,
+      headers: {
+        'x-freepik-api-key': this.apiKey ? `${this.apiKey.substring(0, 8)}...` : 'MISSING',
+        'Content-Type': 'application/json',
+      },
+      bodySize: JSON.stringify(requestBody).length,
+      imageDataLength: imageBase64.length,
+      imageDataPrefix: imageBase64.substring(0, 50) + '...',
+      settings: {
+        sharpen: LIGHT_ENHANCEMENT_SETTINGS.sharpen,
+        smart_grain: LIGHT_ENHANCEMENT_SETTINGS.smartGrain,
+        ultra_detail: LIGHT_ENHANCEMENT_SETTINGS.ultraDetail,
+      }
+    });
+
     const response = await this.fetchWithRetry('', {
       method: 'POST',
       headers: {
         'x-freepik-api-key': this.apiKey,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        image: imageBase64,
-        sharpen: LIGHT_ENHANCEMENT_SETTINGS.sharpen,
-        smart_grain: LIGHT_ENHANCEMENT_SETTINGS.smartGrain,
-        ultra_detail: LIGHT_ENHANCEMENT_SETTINGS.ultraDetail,
-      }),
+      body: JSON.stringify(requestBody),
     }) as {
       data: {
         task_id: string;
-        status: 'IN_PROGRESS' | 'SUCCESS' | 'FAILED';
+        status: 'CREATED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
         generated?: string[];
         error?: string;
       };
@@ -75,7 +93,7 @@ class FreepikClient {
       },
     }) as {
       data: {
-        status: 'IN_PROGRESS' | 'SUCCESS' | 'FAILED' | 'COMPLETED';
+        status: 'CREATED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
         progress?: number;
         generated?: string[]; // Freepik returns images directly here
         error?: string;
@@ -120,11 +138,22 @@ class FreepikClient {
           // Try to get error message from response
           let errorMessage = `API error: ${response.status}`;
           try {
-            const errorData = await response.json() as { error?: string };
+            const errorData = await response.json() as { error?: string; message?: string; details?: string };
+            console.error('Freepik API error details:', {
+              status: response.status,
+              statusText: response.statusText,
+              errorData
+            });
+            
             if (errorData.error) {
               errorMessage = `API error: ${response.status} - ${errorData.error}`;
+            } else if (errorData.message) {
+              errorMessage = `API error: ${response.status} - ${errorData.message}`;
+            } else if (errorData.details) {
+              errorMessage = `API error: ${response.status} - ${errorData.details}`;
             }
-          } catch {
+          } catch (parseError) {
+            console.error('Failed to parse Freepik error response:', parseError);
             // If we can't parse the error response, use the status code
           }
           

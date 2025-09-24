@@ -5,6 +5,7 @@ import { Info, Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { ToolConfirmationModal } from "./tool-confirmation-modal";
 import type { EnhancementStatus, PropertyImage } from "~/types/freepik";
+import type { RenovationStatus } from "~/types/gemini";
 
 interface ImageStudioToolsProps {
   onEnhanceImage: () => Promise<void>;
@@ -13,6 +14,9 @@ interface ImageStudioToolsProps {
   _enhancementError: string | null;
   selectedImage?: PropertyImage;
   isComparisonVisible?: boolean;
+  // Renovation functionality
+  onRenovateImage?: () => Promise<void>;
+  renovationStatus?: RenovationStatus;
 }
 
 export function ImageStudioTools({
@@ -22,6 +26,8 @@ export function ImageStudioTools({
   _enhancementError,
   selectedImage,
   isComparisonVisible,
+  onRenovateImage,
+  renovationStatus = 'idle',
 }: ImageStudioToolsProps) {
   const [showDescriptions, setShowDescriptions] = useState<Record<string, boolean>>({
     quality: false,
@@ -85,7 +91,6 @@ export function ImageStudioTools({
           return;
         }
         
-        
         try {
           await onEnhanceImage();
           
@@ -94,6 +99,32 @@ export function ImageStudioTools({
           
         } catch (error) {
           console.error('Enhancement failed:', error);
+          // Only flip card back on error
+          setFlippedCards(prev => ({
+            ...prev,
+            [currentTool.id]: false
+          }));
+        }
+      } else if (currentTool.id === 'reform') {
+        // Handle renovation with Gemini
+        if (!selectedImage) {
+          console.error('No image selected for renovation');
+          return;
+        }
+        
+        if (!onRenovateImage) {
+          console.error('Renovation handler not provided');
+          return;
+        }
+        
+        try {
+          await onRenovateImage();
+          
+          // Wait for the comparison modal to open before flipping card back
+          // The callback will be triggered from the parent component
+          
+        } catch (error) {
+          console.error('Renovation failed:', error);
           // Only flip card back on error
           setFlippedCards(prev => ({
             ...prev,
@@ -114,12 +145,13 @@ export function ImageStudioTools({
     }
   };
 
-  // Handle comparison modal opening - flip quality card back when comparison becomes visible
+  // Handle comparison modal opening - flip cards back when comparison becomes visible
   useEffect(() => {
     if (isComparisonVisible) {
       setFlippedCards(prev => ({
         ...prev,
-        quality: false
+        quality: false,
+        reform: false
       }));
     }
   }, [isComparisonVisible]);
@@ -128,8 +160,8 @@ export function ImageStudioTools({
     {
       id: "quality",
       title: "Mejorar Calidad",
-      description: "Mejora la imagen con IA hasta 16x más resolución",
-      price: "€1.00",
+      description: "Hasta 16x más resolución",
+      price: "€0.12",
       priceDescription: "por imagen mejorada",
       icon: (
         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,23 +214,28 @@ export function ImageStudioTools({
           <div key={tool.id} className={`relative transition-all duration-300 ${showDescriptions[tool.id] ? 'h-40' : 'h-32'}`} style={{ perspective: "1000px" }}>
             <div
               className={cn(
-                "relative w-full h-full transition-transform duration-500 cursor-pointer",
+                "relative w-full h-full transition-transform duration-500",
+                tool.id === 'remove' ? 'cursor-not-allowed' : 'cursor-pointer',
                 flippedCards[tool.id] && "[transform:rotateY(180deg)]"
               )}
               style={{ transformStyle: "preserve-3d" }}
-              onClick={() => toggleCard(tool.id)}
+              onClick={() => {
+                if (tool.id === 'remove') return; // Don't allow flipping inactive cards
+                toggleCard(tool.id);
+              }}
             >
               {/* Front of card */}
               <div 
-                className="absolute inset-0 group overflow-hidden rounded-xl backdrop-blur-sm p-4 transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-amber-500/20 text-center bg-white/70"
+                className={cn(
+                  "absolute inset-0 group overflow-hidden rounded-xl backdrop-blur-sm p-4 transition-all duration-300 shadow-lg shadow-gray-200/50 text-center bg-white/70",
+                  tool.id === 'remove' 
+                    ? 'opacity-60' 
+                    : 'hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/20'
+                )}
                 style={{ backfaceVisibility: "hidden" }}
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-rose-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 
-                {/* Green dot for available functionality */}
-                {tool.id === 'quality' && (
-                  <div className="absolute top-2 left-2 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full shadow-md z-20" />
-                )}
                 
                 {/* Info toggle button */}
                 <button
@@ -222,12 +259,24 @@ export function ImageStudioTools({
                 </button>
 
                 <div className="relative z-10 h-full flex flex-col justify-center">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center mb-3 mx-auto">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 mx-auto ${
+                    tool.id === 'remove' 
+                      ? 'bg-gray-300' 
+                      : 'bg-gradient-to-r from-amber-400 to-rose-400'
+                  }`}>
                     {tool.icon}
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">{tool.title}</h4>
+                  <h4 className={`font-semibold mb-2 ${
+                    tool.id === 'remove' 
+                      ? 'text-gray-500' 
+                      : 'text-gray-900'
+                  }`}>{tool.title}</h4>
                   <div className={`transition-all duration-300 ${showDescriptions[tool.id] ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0'} overflow-hidden`}>
-                    <p className="text-xs text-gray-600 leading-relaxed">
+                    <p className={`text-xs leading-relaxed ${
+                      tool.id === 'remove' 
+                        ? 'text-gray-400' 
+                        : 'text-gray-600'
+                    }`}>
                       {tool.description}
                     </p>
                   </div>
@@ -241,8 +290,9 @@ export function ImageStudioTools({
                 onClick={() => toggleCard(tool.id)}
               >
                 <div className="relative z-10 flex flex-col justify-center items-center h-full">
-                  {tool.id === 'quality' && enhancementStatus === 'processing' ? (
-                    // Show processing state for quality tool
+                  {(tool.id === 'quality' && enhancementStatus === 'processing') || 
+                   (tool.id === 'reform' && renovationStatus === 'processing') ? (
+                    // Show processing state for quality and reform tools
                     <div className="flex flex-col items-center space-y-3">
                       <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center">
                         <Loader2 className="w-4 h-4 text-white animate-spin" />
@@ -251,7 +301,7 @@ export function ImageStudioTools({
                         <div className="bg-gradient-to-r from-amber-400 to-rose-400 h-2 rounded-full animate-pulse w-full opacity-75"></div>
                       </div>
                       <div className="text-xs text-gray-600">
-                        Procesando con IA...
+                        {tool.id === 'reform' ? 'Renovando con IA...' : 'Procesando con IA...'}
                       </div>
                     </div>
                   ) : (
@@ -259,9 +309,14 @@ export function ImageStudioTools({
                     <>
                       <button 
                         className={cn(
-                          "w-20 h-20 rounded-xl bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center mb-2 hover:from-amber-500 hover:to-rose-500 transition-all duration-200 shadow-xl hover:shadow-2xl hover:scale-105 relative overflow-hidden group",
+                          "w-20 h-20 rounded-xl flex items-center justify-center mb-2 transition-all duration-200 shadow-xl relative overflow-hidden group",
+                          tool.id === 'remove' 
+                            ? "bg-gray-300 cursor-not-allowed opacity-50" 
+                            : "bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 hover:shadow-2xl hover:scale-105",
                           tool.id === 'quality' && !selectedImage && "opacity-50 cursor-not-allowed",
-                          tool.id === 'quality' && selectedImage && "animate-pulse-glow"
+                          tool.id === 'quality' && selectedImage && "animate-pulse-glow",
+                          tool.id === 'reform' && !selectedImage && "opacity-50 cursor-not-allowed",
+                          tool.id === 'reform' && selectedImage && "animate-pulse-glow"
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -271,19 +326,41 @@ export function ImageStudioTools({
                             return;
                           }
                           
+                          if (tool.id === 'reform' && !selectedImage) {
+                            // Don't open modal if no image is selected for renovation
+                            return;
+                          }
+                          
+                          if (tool.id === 'remove') {
+                            // Don't open modal for inactive remove tool
+                            return;
+                          }
+                          
                           openConfirmModal(tool);
                         }}
-                        disabled={tool.id === 'quality' && !selectedImage}
+                        disabled={
+                          (tool.id === 'quality' && !selectedImage) || 
+                          (tool.id === 'reform' && (!selectedImage || !onRenovateImage)) || 
+                          tool.id === 'remove'
+                        }
                       >
                         <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
                         <svg className="w-6 h-6 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
                       </button>
-                      <div className="text-lg font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent mb-1">
+                      <div className={`text-lg font-bold mb-1 ${
+                        tool.id === 'remove' 
+                          ? 'text-gray-400' 
+                          : 'bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent'
+                      }`}>
                         {tool.price}
                       </div>
-                      <p className="text-xs text-gray-700 font-medium">
+                      <p className={`text-xs font-medium ${
+                        tool.id === 'remove' 
+                          ? 'text-gray-400' 
+                          : 'text-gray-700'
+                      }`}>
                         {tool.priceDescription}
                       </p>
                     </>

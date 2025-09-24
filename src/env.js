@@ -30,6 +30,8 @@ export const env = createEnv({
     // OAuth Providers
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
+    // Google Gemini API
+    GOOGLE_GEMINI_API_KEY: z.string(),
     APPLE_CLIENT_ID: z.string().optional(),
     APPLE_CLIENT_SECRET: z.string().optional(),
     LINKEDIN_CLIENT_ID: z.string().optional(),
@@ -73,6 +75,8 @@ export const env = createEnv({
     // OAuth Providers
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    // Google Gemini API
+    GOOGLE_GEMINI_API_KEY: process.env.GOOGLE_GEMINI_API_KEY,
     APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID,
     APPLE_CLIENT_SECRET: process.env.APPLE_CLIENT_SECRET,
     LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,

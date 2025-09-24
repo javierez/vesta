@@ -17,7 +17,11 @@ export async function imageUrlToBase64(imageUrl: string): Promise<string> {
     // Convert to base64
     const base64 = buffer.toString('base64');
     
-    return base64;
+    // Get content type from response headers
+    const contentType = response.headers.get('content-type') ?? 'image/jpeg';
+    
+    // Return data URL format that Freepik expects
+    return `data:${contentType};base64,${base64}`;
   } catch (error) {
     console.error('Error converting image URL to base64:', error);
     throw new Error(`Failed to process image from URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -118,4 +122,91 @@ export function estimateProcessingTime(imageSizeInMB: number): number {
   const baseTime = 30;
   const additionalTime = imageSizeInMB * 10;
   return Math.min(baseTime + additionalTime, 180); // Cap at 3 minutes
+}
+
+/**
+ * Convert base64 string to Buffer for Gemini image processing
+ * Handles both data URL format and clean base64
+ */
+export function base64ToBuffer(base64String: string): Buffer {
+  try {
+    // Remove data URL prefix if present
+    const cleanBase64 = base64String.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
+    return Buffer.from(cleanBase64, 'base64');
+  } catch (error) {
+    console.error('Error converting base64 to buffer:', error);
+    throw new Error(`Failed to process base64 image data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Generate a filename for renovated images
+ * Following the existing naming pattern but with "renovated" prefix
+ */
+export function generateRenovatedImageFilename(
+  referenceNumber: string,
+  originalImageOrder: number,
+  nanoid: string,
+  fileExtension = 'jpg'
+): string {
+  return `${referenceNumber}/images/renovated_${originalImageOrder}_${nanoid}.${fileExtension}`;
+}
+
+/**
+ * Validate base64 image format for Gemini API
+ * Gemini accepts various formats but has specific requirements
+ */
+export function validateGeminiImageFormat(base64Image: string): { valid: boolean; error?: string } {
+  try {
+    if (!base64Image || typeof base64Image !== 'string') {
+      return { valid: false, error: 'Invalid image data format' };
+    }
+
+    // Remove data URL prefix if present for validation
+    const cleanBase64 = base64Image.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
+    
+    // Check base64 format
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleanBase64)) {
+      return { valid: false, error: 'Invalid base64 format' };
+    }
+
+    // Check size limits (Gemini supports up to 20MB)
+    if (!validateImageSize(base64Image, 20)) {
+      const sizeMB = getImageSizeInMB(base64Image);
+      return { valid: false, error: `Image too large (${sizeMB.toFixed(2)}MB). Maximum size is 20MB` };
+    }
+
+    return { valid: true };
+    
+  } catch {
+    return { valid: false, error: 'Failed to validate image format' };
+  }
+}
+
+/**
+ * Estimate Gemini processing time (typically much faster than Freepik)
+ * Returns estimated time in seconds
+ */
+export function estimateGeminiProcessingTime(imageSizeInMB: number): number {
+  // Gemini is much faster - base time of 3 seconds + 1 second per MB
+  const baseTime = 3;
+  const additionalTime = imageSizeInMB * 1;
+  return Math.min(baseTime + additionalTime, 30); // Cap at 30 seconds
+}
+
+/**
+ * Convert a data URL to just the base64 part (for Gemini API)
+ * Gemini expects clean base64 without the data URL prefix
+ */
+export function extractBase64FromDataUrl(dataUrl: string): string {
+  return dataUrl.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
+}
+
+/**
+ * Create a data URL from base64 and mime type
+ * Useful for displaying Gemini-generated images
+ */
+export function createDataUrl(base64: string, mimeType = 'image/jpeg'): string {
+  const cleanBase64 = extractBase64FromDataUrl(base64); // In case it's already a data URL
+  return `data:${mimeType};base64,${cleanBase64}`;
 }

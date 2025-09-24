@@ -1,5 +1,4 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 import { getSecureSession } from "~/lib/dal";
 import { freepikClient } from "~/lib/freepik-client";
 import { imageUrlToBase64, validateImageSize, getImageSizeInMB } from "~/lib/image-utils";
@@ -20,7 +19,7 @@ export async function POST(
     
     if (!session?.user?.id) {
       console.error('Unauthorized access to enhancement API');
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 2. Get request data
@@ -29,7 +28,7 @@ export async function POST(
 
     if (!data.imageUrl || !data.referenceNumber || data.currentImageOrder === undefined) {
       console.error('Missing required fields for enhancement');
-      return NextResponse.json(
+      return Response.json(
         { error: "imageUrl, referenceNumber, and currentImageOrder are required" },
         { status: 400 }
       );
@@ -39,7 +38,7 @@ export async function POST(
     const propertyData = await getListingHeaderData(parseInt(resolvedParams.id));
     if (!propertyData) {
       console.error('Property not found for enhancement');
-      return NextResponse.json(
+      return Response.json(
         { error: "Property not found" },
         { status: 404 }
       );
@@ -52,7 +51,7 @@ export async function POST(
     if (!validateImageSize(imageBase64, 10)) {
       const sizeMB = getImageSizeInMB(imageBase64);
       console.error('Image too large for enhancement:', `${sizeMB.toFixed(2)}MB`);
-      return NextResponse.json(
+      return Response.json(
         { error: `Image too large (${sizeMB.toFixed(2)}MB). Maximum size is 10MB` },
         { status: 400 }
       );
@@ -62,7 +61,7 @@ export async function POST(
     const result = await freepikClient.enhance(imageBase64);
 
     // 6. Return task information for polling
-    return NextResponse.json({
+    return Response.json({
       success: true,
       taskId: result.taskId,
       status: result.status,
@@ -77,20 +76,20 @@ export async function POST(
     // Return specific error messages for common issues
     if (error instanceof Error) {
       if (error.message.includes('fetch')) {
-        return NextResponse.json(
+        return Response.json(
           { error: "Failed to download image. Please check the image URL." },
           { status: 400 }
         );
       }
       if (error.message.includes('API error')) {
-        return NextResponse.json(
+        return Response.json(
           { error: "Enhancement service temporarily unavailable. Please try again." },
           { status: 503 }
         );
       }
     }
     
-    return NextResponse.json(
+    return Response.json(
       { error: "Failed to start image enhancement" },
       { status: 500 }
     );
@@ -108,7 +107,7 @@ export async function GET(
     // 1. Use optimized DAL function for authentication
     const session = await getSecureSession();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 2. Get query parameters
@@ -118,7 +117,7 @@ export async function GET(
     const currentImageOrder = searchParams.get('currentImageOrder');
 
     if (!taskId || !referenceNumber || !currentImageOrder) {
-      return NextResponse.json(
+      return Response.json(
         { error: "taskId, referenceNumber, and currentImageOrder are required" },
         { status: 400 }
       );
@@ -128,8 +127,8 @@ export async function GET(
     const status = await freepikClient.checkStatus(taskId);
 
     // 4. If still processing, return status
-    if (status.status === 'IN_PROGRESS') {
-      return NextResponse.json({ 
+    if (status.status === 'IN_PROGRESS' || status.status === 'CREATED') {
+      return Response.json({ 
         status: 'IN_PROGRESS',
         progress: status.progress ?? 0,
       });
@@ -137,7 +136,7 @@ export async function GET(
 
     // 5. If failed, return error
     if (status.status === 'FAILED') {
-      return NextResponse.json({
+      return Response.json({
         status: 'FAILED',
         error: status.error ?? 'Enhancement failed',
       });
@@ -148,7 +147,7 @@ export async function GET(
       const enhancedImageUrl = status.result.generated[0];
       
       // Return the temporary Freepik URL and metadata needed for saving later
-      return NextResponse.json({
+      return Response.json({
         status: 'SUCCESS',
         enhancedImageUrl: enhancedImageUrl, // Freepik's temporary URL
         referenceNumber: referenceNumber,
@@ -157,14 +156,14 @@ export async function GET(
     }
 
     // 7. Unexpected status
-    return NextResponse.json({
+    return Response.json({
       status: status.status,
       error: "Unexpected enhancement status",
     });
 
   } catch (error) {
     console.error("Enhancement status check error:", error);
-    return NextResponse.json(
+    return Response.json(
       { error: "Failed to check enhancement status" },
       { status: 500 }
     );
