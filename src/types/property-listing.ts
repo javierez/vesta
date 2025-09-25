@@ -8,6 +8,7 @@ export interface PropertyListing {
   propertyType?: string;
   propertySubtype?: string;
   listingType?: string;
+  status?: string;
   price?: number | string;
   cadastralReference?: string;
 
@@ -179,6 +180,7 @@ export function convertDbListingToPropertyListing(
     propertyType: (dbListing.propertyType as string) ?? undefined,
     propertySubtype: (dbListing.propertySubtype as string) ?? undefined,
     listingType: (dbListing.listingType as string) ?? undefined,
+    status: (dbListing.status as string) ?? undefined,
     price: (dbListing.price as string | number) ?? undefined,
     cadastralReference: (dbListing.cadastralReference as string) ?? undefined,
     isBankOwned: (dbListing.isBankOwned as boolean) ?? undefined,

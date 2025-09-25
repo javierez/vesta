@@ -31,27 +31,28 @@ export function PropertyFilter({ view, agents = [] }: PropertyFilterProps) {
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [propertyFilters, setPropertyFilters] = useState({
-    listingType: [] as string[],
+    status: [] as string[],
     type: [] as string[],
   });
   const [agentFilters, setAgentFilters] = useState<string[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
   >({
-    listingType: true,
+    status: true,
     type: true,
     agent: true,
   });
 
   // Initialize filters from URL on mount
   useEffect(() => {
-    const listingType = searchParams.get("listingType");
+    const status = searchParams.get("status");
     const type = searchParams.get("type");
     const agent = searchParams.get("agent");
     const q = searchParams.get("q");
 
     setPropertyFilters({
-      listingType: listingType ? listingType.split(",") : [],
+      // Default to showing 'En Venta' and 'En Alquiler' if no status filter in URL
+      status: status ? status.split(",") : ["for-sale", "for-rent"],
       type: type ? type.split(",") : [],
     });
     setAgentFilters(agent ? agent.split(",") : []);
@@ -72,11 +73,11 @@ export function PropertyFilter({ view, agents = [] }: PropertyFilterProps) {
       params.delete("q");
     }
 
-    // Update listingType
-    if (newPropertyFilters.listingType.length > 0) {
-      params.set("listingType", newPropertyFilters.listingType.join(","));
+    // Update status
+    if (newPropertyFilters.status.length > 0) {
+      params.set("status", newPropertyFilters.status.join(","));
     } else {
-      params.delete("listingType");
+      params.delete("status");
     }
 
     // Update type
@@ -130,7 +131,7 @@ export function PropertyFilter({ view, agents = [] }: PropertyFilterProps) {
 
   const clearPropertyFilters = () => {
     const newFilters = {
-      listingType: [],
+      status: [],
       type: [],
     };
     setPropertyFilters(newFilters);
@@ -147,10 +148,20 @@ export function PropertyFilter({ view, agents = [] }: PropertyFilterProps) {
     updateUrlParams(propertyFilters, agentFilters, value);
   };
 
-  const activePropertyFiltersCount = Object.values(propertyFilters).reduce(
-    (acc, curr) => acc + curr.length,
-    0,
-  );
+  // Check if current filters are the default ones
+  const isDefaultStatusFilter = 
+    propertyFilters.status.length === 2 &&
+    propertyFilters.status.includes("for-sale") &&
+    propertyFilters.status.includes("for-rent") &&
+    propertyFilters.type.length === 0;
+
+  // Only count as active filters if they differ from defaults
+  const activePropertyFiltersCount = isDefaultStatusFilter
+    ? 0
+    : Object.values(propertyFilters).reduce(
+        (acc, curr) => acc + curr.length,
+        0,
+      );
 
   const FilterOption = ({
     value,
@@ -311,21 +322,31 @@ export function PropertyFilter({ view, agents = [] }: PropertyFilterProps) {
             <div className="flex flex-col">
               <ScrollArea className="h-[400px]">
                 <div className="space-y-6 p-4">
-                  <FilterCategory title="Estado" category="listingType">
+                  <FilterCategory title="Estado" category="status">
                     <FilterOption
-                      value="Sale"
+                      value="for-sale"
                       label="En Venta"
-                      category="listingType"
+                      category="status"
                     />
                     <FilterOption
-                      value="Rent"
+                      value="for-rent"
                       label="En Alquiler"
-                      category="listingType"
+                      category="status"
                     />
                     <FilterOption
-                      value="Sold"
+                      value="sold"
                       label="Vendido"
-                      category="listingType"
+                      category="status"
+                    />
+                    <FilterOption
+                      value="rented"
+                      label="Alquilado"
+                      category="status"
+                    />
+                    <FilterOption
+                      value="discarded"
+                      label="Descartado"
+                      category="status"
                     />
                   </FilterCategory>
 

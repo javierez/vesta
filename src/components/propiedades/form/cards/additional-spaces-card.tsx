@@ -146,7 +146,8 @@ export function AdditionalSpacesCard({
                       type="number"
                       value={terraceSize}
                       onChange={(e) => {
-                        setTerraceSize(parseInt(e.target.value));
+                        const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
+                        setTerraceSize(value);
                         onUpdateModule(true);
                       }}
                       className="h-8 text-gray-500"
@@ -164,7 +165,8 @@ export function AdditionalSpacesCard({
                     type="number"
                     value={balconyCount}
                     onChange={(e) => {
-                      setBalconyCount(parseInt(e.target.value));
+                      const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
+                      setBalconyCount(value);
                       onUpdateModule(true);
                     }}
                     className="h-8 text-gray-500"
@@ -181,7 +183,8 @@ export function AdditionalSpacesCard({
                     type="number"
                     value={galleryCount}
                     onChange={(e) => {
-                      setGalleryCount(parseInt(e.target.value));
+                      const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
+                      setGalleryCount(value);
                       onUpdateModule(true);
                     }}
                     className="h-8 text-gray-500"
@@ -219,7 +222,8 @@ export function AdditionalSpacesCard({
                       type="number"
                       value={wineCellarSize}
                       onChange={(e) => {
-                        setWineCellarSize(parseInt(e.target.value));
+                        const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
+                        setWineCellarSize(value);
                         onUpdateModule(true);
                       }}
                       className="h-8 text-gray-500"
@@ -246,7 +250,8 @@ export function AdditionalSpacesCard({
                     type="number"
                     value={livingRoomSize}
                     onChange={(e) => {
-                      setLivingRoomSize(parseInt(e.target.value));
+                      const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
+                      setLivingRoomSize(value);
                       onUpdateModule(true);
                     }}
                     className="h-8 text-gray-500"

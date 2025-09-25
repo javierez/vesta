@@ -108,7 +108,7 @@ export default function FinalizationPopup({
           optionalStorageRoomPrice: formData.optionalStorageRoomPrice.toString(),
           hasKeys: false,
           optionalStorageRoom: false,
-          status: "Active" as const,
+          status: "En Alquiler" as const,
           isActive: true,
           isFeatured: false,
           isBankOwned: false,

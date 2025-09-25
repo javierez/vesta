@@ -25,12 +25,13 @@ export default function PropertiesPage() {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [listings, setListings] = useState<ListingOverview[]>([]);
-  const [currentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   // Removed unused variable: totalCount
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [accountWebsite, setAccountWebsite] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [prefetchedPages, setPrefetchedPages] = useState<Set<number>>(new Set());
 
   const view = (searchParams.get("view") ?? "table") as "grid" | "table";
 
@@ -60,18 +61,24 @@ export default function PropertiesPage() {
         const page = Number(searchParams.get("page") ?? 1);
         // Get all filter parameters from URL
         const filters: Record<string, unknown> = {};
+        // Check if status is explicitly in the URL
+        let hasStatusParam = false;
+        
         for (const [key, value] of searchParams.entries()) {
           if (key === "page") continue;
           if (key === "q") {
             filters.searchQuery = value;
           } else if (key === "status") {
-            // Map status to listingType
+            hasStatusParam = true;
+            // Map status values from URL to database status
             const statusMap: Record<string, string> = {
               "for-sale": "En Venta",
               "for-rent": "En Alquiler",
               sold: "Vendido",
+              rented: "Alquilado",
+              discarded: "Descartado",
             };
-            filters.listingType = value
+            filters.status = value
               .split(",")
               .map((v) => statusMap[v] ?? v);
           } else if (key === "type") {
@@ -105,12 +112,20 @@ export default function PropertiesPage() {
           }
         }
 
+        // If no status filter was provided in URL, don't set it (backend will use default)
+        // This allows the backend to apply the default filter without showing filter badges
+        if (!hasStatusParam) {
+          // Don't set filters.status - let the backend apply the default
+        }
+
         const result = await listListingsWithAuth(
           page,
           ITEMS_PER_PAGE,
           filters,
           view,
         );
+        
+        setCurrentPage(page);
 
         console.log("Raw result from listListingsWithAuth:", result);
         console.log("Number of listings:", result.listings.length);
@@ -147,6 +162,90 @@ export default function PropertiesPage() {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
     router.push(`/propiedades?${params.toString()}`);
+  };
+
+  // Smart prefetching function
+  const prefetchPage = async (pageNum: number) => {
+    if (prefetchedPages.has(pageNum) || pageNum < 1 || pageNum > totalPages) {
+      return;
+    }
+
+    try {
+      setPrefetchedPages(prev => new Set(prev).add(pageNum));
+      
+      // Get current filters
+      const filters: Record<string, unknown> = {};
+      let hasStatusParam = false;
+      
+      for (const [key, value] of searchParams.entries()) {
+        if (key === "page") continue;
+        if (key === "q") {
+          filters.searchQuery = value;
+        } else if (key === "status") {
+          hasStatusParam = true;
+          const statusMap: Record<string, string> = {
+            "for-sale": "En Venta",
+            "for-rent": "En Alquiler",
+            sold: "Vendido",
+            rented: "Alquilado",
+            discarded: "Descartado",
+          };
+          filters.status = value
+            .split(",")
+            .map((v) => statusMap[v] ?? v);
+        } else if (key === "type") {
+          filters.propertyType = value.split(",");
+        } else if (key === "agent") {
+          filters.agentId = value.split(",");
+        } else if (
+          [
+            "minPrice",
+            "maxPrice",
+            "bedrooms",
+            "minBathrooms",
+            "maxBathrooms",
+            "minSquareMeter",
+            "maxSquareMeter",
+          ].includes(key)
+        ) {
+          filters[key] = Number(value);
+        } else if (
+          [
+            "hasGarage",
+            "hasElevator",
+            "hasStorageRoom",
+            "brandNew",
+            "needsRenovation",
+          ].includes(key)
+        ) {
+          filters[key] = value === "true";
+        } else {
+          filters[key] = value;
+        }
+      }
+
+      if (!hasStatusParam) {
+        // Apply default filter if no status param
+      }
+
+      // Prefetch in background
+      await listListingsWithAuth(
+        pageNum,
+        ITEMS_PER_PAGE,
+        filters,
+        view,
+      );
+      
+      console.log(`Prefetched page ${pageNum}`);
+    } catch (error) {
+      console.error(`Error prefetching page ${pageNum}:`, error);
+      // Remove from prefetched set if failed
+      setPrefetchedPages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(pageNum);
+        return newSet;
+      });
+    }
   };
 
   return (
@@ -191,7 +290,14 @@ export default function PropertiesPage() {
           accountWebsite={accountWebsite}
         />
       ) : (
-        <PropertyTable listings={listings} accountWebsite={accountWebsite} />
+        <PropertyTable 
+          listings={listings} 
+          accountWebsite={accountWebsite}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          onPrefetchPage={prefetchPage}
+        />
       )}
     </div>
   );

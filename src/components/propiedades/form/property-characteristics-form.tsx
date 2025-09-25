@@ -46,6 +46,8 @@ import Image from "next/image";
 import { generatePropertyDescription, generateShortPropertyDescription } from "~/server/openai/property_descriptions";
 import { ExternalLinkPopup } from "~/components/ui/external-link-popup";
 import { generatePropertyTitle } from "~/lib/property-title";
+import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-modal";
+import { deletePropertyWithAuth, deleteListingWithAuth, discardListingWithAuth, recoverListingWithAuth } from "~/server/queries/listing";
 
 import type { PropertyListing } from "~/types/property-listing";
 
@@ -208,7 +210,6 @@ export function PropertyCharacteristicsForm({
             isBankOwned,
             price: (document.getElementById("price") as HTMLInputElement)
               ?.value,
-            title: generatedTitle, // Include the generated title
           };
           propertyData = {
             propertyType,
@@ -217,6 +218,7 @@ export function PropertyCharacteristicsForm({
               document.getElementById("cadastralReference") as HTMLInputElement
             )?.value,
             newConstruction,
+            title: generatedTitle, // Move title to propertyData since it belongs in properties table
           };
           break;
 
@@ -695,6 +697,12 @@ export function PropertyCharacteristicsForm({
   const [isMapsPopupOpen, setIsMapsPopupOpen] = useState(false);
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [signature, setSignature] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteListingModalOpen, setIsDeleteListingModalOpen] = useState(false);
+  const [isDeletingListing, setIsDeletingListing] = useState(false);
+  const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
+  const [isDiscarding, setIsDiscarding] = useState(false);
 
   // State for collapsible sections (all closed by default)
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
@@ -1006,6 +1014,114 @@ export function PropertyCharacteristicsForm({
       console.error("Error generating short description:", error);
     } finally {
       setIsGeneratingShort(false);
+    }
+  };
+
+  const handleDeleteProperty = async () => {
+    if (!listing.propertyId) {
+      toast.error("No se pudo encontrar la propiedad a eliminar");
+      return;
+    }
+
+    setIsDeleting(true);
+    
+    try {
+      const result = await deletePropertyWithAuth(Number(listing.propertyId));
+      
+      if (result.success) {
+        toast.success(result.message);
+        // Redirect to properties list after successful deletion
+        router.push("/propiedades");
+      } else {
+        toast.error("Error al eliminar la propiedad");
+      }
+    } catch (error) {
+      console.error("Error deleting property:", error);
+      toast.error("Error al eliminar la propiedad");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
+  const handleDeleteListing = async () => {
+    if (!listing.listingId) {
+      toast.error("No se pudo encontrar el anuncio a eliminar");
+      return;
+    }
+
+    setIsDeletingListing(true);
+    
+    try {
+      const result = await deleteListingWithAuth(Number(listing.listingId));
+      
+      if (result.success) {
+        toast.success(result.message);
+        // Redirect to properties list after successful deletion
+        router.push("/propiedades");
+      } else {
+        toast.error("Error al eliminar el anuncio");
+      }
+    } catch (error) {
+      console.error("Error deleting listing:", error);
+      toast.error("Error al eliminar el anuncio");
+    } finally {
+      setIsDeletingListing(false);
+      setIsDeleteListingModalOpen(false);
+    }
+  };
+
+  const handleDiscardListing = async () => {
+    if (!listing.listingId) {
+      toast.error("No se pudo encontrar el anuncio a descartar");
+      return;
+    }
+
+    setIsDiscarding(true);
+    
+    try {
+      const result = await discardListingWithAuth(Number(listing.listingId));
+      
+      if (result.success) {
+        toast.success(result.message);
+        // Reload the page to reflect the updated status
+        window.location.reload();
+      } else {
+        toast.error("Error al descartar el anuncio");
+      }
+    } catch (error) {
+      console.error("Error discarding listing:", error);
+      toast.error("Error al descartar el anuncio");
+    } finally {
+      setIsDiscarding(false);
+      setIsDiscardModalOpen(false);
+    }
+  };
+
+  const handleRecoverListing = async () => {
+    if (!listing.listingId) {
+      toast.error("No se pudo encontrar el anuncio a recuperar");
+      return;
+    }
+
+    setIsDiscarding(true);
+    
+    try {
+      const result = await recoverListingWithAuth(Number(listing.listingId));
+      
+      if (result.success) {
+        toast.success(result.message);
+        // Reload the page to reflect the updated status
+        window.location.reload();
+      } else {
+        toast.error("Error al recuperar el anuncio");
+      }
+    } catch (error) {
+      console.error("Error recovering listing:", error);
+      toast.error("Error al recuperar el anuncio");
+    } finally {
+      setIsDiscarding(false);
+      setIsDiscardModalOpen(false);
     }
   };
 
@@ -1971,6 +2087,35 @@ export function PropertyCharacteristicsForm({
           getCardStyles={getCardStyles}
         />
       </div>
+      
+      {/* Action Buttons - Discard, Delete Listing, and Delete Property */}
+      <div className="col-span-full mt-6">
+        <div className="flex justify-center gap-4 flex-wrap">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsDiscardModalOpen(true)}
+            className="text-gray-600 hover:text-gray-800"
+          >
+            {listing.status === "Descartado" ? "Recuperar Anuncio" : "Descartar Anuncio"}
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => setIsDeleteListingModalOpen(true)}
+            className="bg-white hover:bg-red-50 border-2 border-red-500 border-dashed text-red-600 hover:text-red-700"
+          >
+            Borrar Anuncio
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => setIsDeleteModalOpen(true)}
+          >
+            Eliminar Propiedad
+          </Button>
+        </div>
+      </div>
       <ExternalLinkPopup
         isOpen={isCatastroPopupOpen}
         onClose={() => setIsCatastroPopupOpen(false)}
@@ -1982,6 +2127,37 @@ export function PropertyCharacteristicsForm({
         onClose={() => setIsMapsPopupOpen(false)}
         url={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${listing.street}, ${city}`)}`}
         title="Google Maps Location"
+      />
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteProperty}
+        title="¿Eliminar propiedad?"
+        description="Esta acción eliminará permanentemente la propiedad, todos sus anuncios, imágenes y contactos asociados. No se puede deshacer."
+        isDeleting={isDeleting}
+      />
+      <DeleteConfirmationModal
+        isOpen={isDeleteListingModalOpen}
+        onClose={() => setIsDeleteListingModalOpen(false)}
+        onConfirm={handleDeleteListing}
+        title="¿Eliminar anuncio?"
+        description="Esta acción eliminará el anuncio y sus contactos asociados. La propiedad se mantendrá intacta y podrás crear nuevos anuncios para ella."
+        isDeleting={isDeletingListing}
+      />
+      <DeleteConfirmationModal
+        isOpen={isDiscardModalOpen}
+        onClose={() => setIsDiscardModalOpen(false)}
+        onConfirm={listing.status === "Descartado" ? handleRecoverListing : handleDiscardListing}
+        title={listing.status === "Descartado" ? "¿Recuperar anuncio?" : "¿Descartar anuncio?"}
+        description={
+          listing.status === "Descartado" 
+            ? "Esta acción reactivará el anuncio y lo volverá a hacer disponible."
+            : "Esta acción marcará el anuncio como descartado. Podrás reactivarlo más tarde si es necesario. No se eliminarán datos."
+        }
+        confirmText={listing.status === "Descartado" ? "Recuperar" : "Descartar"}
+        loadingText={listing.status === "Descartado" ? "Recuperando..." : "Descartando..."}
+        variant={listing.status === "Descartado" ? "default" : "destructive"}
+        isDeleting={isDiscarding}
       />
     </div>
   );

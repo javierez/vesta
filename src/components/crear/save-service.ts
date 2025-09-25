@@ -229,9 +229,18 @@ export class FormSaveService {
         
         // Note: duplicateForRent doesn't have a DB column - would need to be added to listings table if needed
 
-        // Mark as active if completed
+        // Mark as active if completed - use Spanish status values
         if (options.markAsCompleted) {
-          listingUpdateData.status = "Active";
+          // Determine correct Spanish status based on listing type
+          const listingType = formData.listingType || listingDetails.listingType;
+          if (listingType === "Sale") {
+            listingUpdateData.status = "En Venta";
+          } else if (listingType === "Rent" || listingType === "RentWithOption" || listingType === "RoomSharing") {
+            listingUpdateData.status = "En Alquiler";
+          } else {
+            // Default fallback
+            listingUpdateData.status = "En Venta";
+          }
         }
 
         console.log("=== LISTING UPDATE DATA ===" );

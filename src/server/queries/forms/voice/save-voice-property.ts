@@ -129,7 +129,17 @@ export async function saveVoiceProperty(
       // Set the agent to current user and ensure listing is active
       listingUpdateData.agentId = currentUser.id;
       listingUpdateData.isActive = true; // Ensure listing is active
-      listingUpdateData.status = "Active"; // Set status to Active
+      
+      // Set Spanish status based on listing type
+      const listingType = listingUpdateData.listingType || "Sale";
+      if (listingType === "Sale") {
+        listingUpdateData.status = "En Venta";
+      } else if (listingType === "Rent" || listingType === "RentWithOption" || listingType === "RoomSharing") {
+        listingUpdateData.status = "En Alquiler";
+      } else {
+        // Default fallback
+        listingUpdateData.status = "En Venta";
+      }
       
       if (Object.keys(listingUpdateData).length > 0) {
         await updateListingWithAuth(Number(newListing.listingId), listingUpdateData);

@@ -68,18 +68,19 @@ export function PropertyHeader({
   const [editedTitle, setEditedTitle] = useState(displayTitle);
   const [currentTitle, setCurrentTitle] = useState(displayTitle);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasBeenUpdated, setHasBeenUpdated] = useState(false);
   
   // Status toggle state
   const [currentStatus, setCurrentStatus] = useState(status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  // Update titles when displayTitle changes (for dynamic mode)
+  // Update titles when displayTitle changes (for dynamic mode) but only if we haven't manually updated the title
   useEffect(() => {
-    if (!isEditing) {
+    if (!isEditing && !hasBeenUpdated) {
       setCurrentTitle(displayTitle);
       setEditedTitle(displayTitle);
     }
-  }, [displayTitle, isEditing]);
+  }, [displayTitle, isEditing, hasBeenUpdated]);
 
   const handleSave = async () => {
     if (!editedTitle.trim() || !propertyId) return;
@@ -90,6 +91,7 @@ export function PropertyHeader({
 
       if (result.success) {
         setCurrentTitle(result.title!);
+        setHasBeenUpdated(true); // Mark that we've manually updated the title
         setIsEditing(false);
         toast.success("Título actualizado correctamente");
       } else {

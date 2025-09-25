@@ -1017,7 +1017,7 @@ export type Listing = {
   agentId: string; // Changed from bigint to match users.id type
   listingType: "Sale" | "Rent" | "Sold";
   price: string;
-  status: "Active" | "Pending" | "Resolved";
+  status: "En Venta" | "En Alquiler" | "Vendido" | "Alquilado" | "Descartado" | "Draft";
   isFeatured: boolean;
   isBankOwned: boolean;
   publishToWebsite: boolean;
@@ -1459,7 +1459,7 @@ export const listings: Listing[] = [
     agentId: "1",
     listingType: "Sale",
     price: "1250000.00",
-    status: "Active",
+    status: "En Venta",
     isFeatured: true,
     isBankOwned: false,
     publishToWebsite: false,
@@ -1498,7 +1498,7 @@ export const listings: Listing[] = [
     agentId: "2",
     listingType: "Rent",
     price: "350000.00",
-    status: "Active",
+    status: "En Venta",
     isFeatured: true,
     isBankOwned: false,
     publishToWebsite: false,
@@ -1537,7 +1537,7 @@ export const listings: Listing[] = [
     agentId: "1",
     listingType: "Sold",
     price: "450000.00",
-    status: "Active",
+    status: "En Venta",
     isFeatured: false,
     isBankOwned: false,
     publishToWebsite: false,

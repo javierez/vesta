@@ -29,7 +29,7 @@ export type ListingOverview = {
   title?: string | null;
   propertyId?: bigint;
   agentId?: string;
-  status?: string;
+  status: string; // Now always included in queries
   isActive?: boolean | null;
   isFeatured?: boolean | null;
   isBankOwned?: boolean | null;

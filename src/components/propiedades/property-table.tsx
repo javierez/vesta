@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -19,6 +19,8 @@ import {
   Building2,
   Share2,
   MessageCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
@@ -34,6 +36,10 @@ import { PropertyImagePlaceholder } from "./PropertyImagePlaceholder";
 interface PropertyTableProps {
   listings: ListingOverview[];
   accountWebsite?: string | null;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  onPrefetchPage?: (page: number) => Promise<void>;
 }
 
 // Default column widths (in pixels)
@@ -56,28 +62,39 @@ const MIN_COLUMN_WIDTHS = {
   caracteristicas: 150,
 } as const;
 
-const statusColors: Record<string, string> = {
-  Sale: "bg-amber-50 text-amber-700 border-amber-200",
-  Rent: "bg-rose-50 text-rose-700 border-rose-200",
-  Sold: "bg-gray-50 text-gray-600 border-gray-200",
-  RoomSharing: "bg-gradient-to-r from-amber-50 to-rose-50 text-rose-600 border-rose-200",
-  Transfer: "bg-amber-100 text-amber-800 border-amber-300",
-  RentWithOption: "bg-rose-100 text-rose-800 border-rose-300",
-};
+// Valid status values with their corresponding colors
+const statusColors = {
+  "En Venta": "bg-amber-50 text-amber-700 border-amber-200",
+  "En Alquiler": "bg-rose-50 text-rose-700 border-rose-200", 
+  "Vendido": "bg-gray-50 text-gray-600 border-amber-200",
+  "Alquilado": "bg-gray-50 text-gray-600 border-rose-200", 
+  "Descartado": "bg-gray-50 text-gray-600 border-gray-200",
+} as const;
+
+// Valid status type
+type ValidStatus = keyof typeof statusColors;
 
 export const PropertyTable = React.memo(function PropertyTable({
   listings,
   accountWebsite,
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange,
+  onPrefetchPage,
 }: PropertyTableProps) {
   const router = useRouter();
   const defaultPlaceholder = "";
   const [loadedImages, setLoadedImages] = React.useState<Set<string>>(
     new Set(),
   );
+  const [visibleRows, setVisibleRows] = React.useState<Set<string>>(
+    new Set(),
+  );
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const handleResizeStart = useCallback(
     (column: string, e: React.MouseEvent) => {
@@ -135,6 +152,108 @@ export const PropertyTable = React.memo(function PropertyTable({
   const handleImageLoad = React.useCallback((listingId: string) => {
     setLoadedImages((prev) => new Set(prev).add(listingId));
   }, []);
+
+  // Intersection Observer for lazy loading
+  const observeRow = useCallback((element: HTMLElement | null, listingId: string) => {
+    if (!element || !observerRef.current) return;
+    
+    // Add dataset to track which listing this element represents
+    element.dataset.listingId = listingId;
+    observerRef.current.observe(element);
+  }, []);
+
+  // Initialize Intersection Observer
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const listingId = entry.target.getAttribute('data-listing-id');
+          if (!listingId) return;
+          
+          if (entry.isIntersecting) {
+            setVisibleRows((prev) => new Set(prev).add(listingId));
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '100px', // Start loading images 100px before they come into view
+        threshold: 0.1,
+      }
+    );
+
+    // Clean up observer on unmount
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Initialize visible rows for first few items (above fold)
+  useEffect(() => {
+    const initialVisibleIds = listings.slice(0, 5).map(l => l.listingId.toString());
+    setVisibleRows(new Set(initialVisibleIds));
+  }, [listings]);
+
+  // Smart prefetching - preload next page when user is near the end
+  useEffect(() => {
+    if (!onPrefetchPage || currentPage >= totalPages) return;
+    
+    let hasTriggeredPrefetch = false;
+    
+    const prefetchNextPage = () => {
+      if (hasTriggeredPrefetch) return;
+      
+      // Prefetch next page when user scrolls to 80% of current content
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      if (scrollY + windowHeight >= documentHeight * 0.8) {
+        hasTriggeredPrefetch = true;
+        console.log(`Triggering prefetch for page ${currentPage + 1}`);
+        onPrefetchPage(currentPage + 1).catch(console.error);
+      }
+    };
+
+    const handleScroll = () => {
+      requestAnimationFrame(prefetchNextPage);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentPage, totalPages, onPrefetchPage]);
+
+  // Prefetch adjacent pages on component mount
+  useEffect(() => {
+    if (!onPrefetchPage) return;
+    
+    const prefetchAdjacentPages = async () => {
+      const pagesToPrefetch = [];
+      
+      // Prefetch next page
+      if (currentPage < totalPages) {
+        pagesToPrefetch.push(currentPage + 1);
+      }
+      
+      // Prefetch previous page 
+      if (currentPage > 1) {
+        pagesToPrefetch.push(currentPage - 1);
+      }
+      
+      // Prefetch in background without blocking UI
+      pagesToPrefetch.forEach(page => {
+        setTimeout(() => {
+          onPrefetchPage(page).catch(() => {
+            // Silently handle prefetch errors
+          });
+        }, 1000); // Wait 1 second after initial load
+      });
+    };
+    
+    prefetchAdjacentPages();
+  }, [currentPage, totalPages, onPrefetchPage]);
 
   const handleWhatsAppClick = React.useCallback(
     (listing: ListingOverview, e: React.MouseEvent) => {
@@ -202,6 +321,97 @@ export const PropertyTable = React.memo(function PropertyTable({
     />
   );
 
+  // Pagination controls component
+  const PaginationControls = () => {
+    if (!onPageChange || totalPages <= 1) return null;
+    
+    const canGoPrevious = currentPage > 1;
+    const canGoNext = currentPage < totalPages;
+    
+    return (
+      <div className="flex items-center justify-between border-t bg-white px-4 py-3 sm:px-6">
+        <div className="flex flex-1 justify-between sm:hidden">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={!canGoPrevious}
+          >
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={!canGoNext}
+          >
+            Siguiente
+          </Button>
+        </div>
+        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-center">
+          <div>
+            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={!canGoPrevious}
+              >
+                <span className="sr-only">Previous</span>
+                <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+              </Button>
+              
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 7) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 4) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 3) {
+                  pageNum = totalPages - 6 + i;
+                } else {
+                  pageNum = currentPage - 3 + i;
+                }
+                
+                const isCurrentPage = pageNum === currentPage;
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={isCurrentPage ? "default" : "ghost"}
+                    size="sm"
+                    className={cn(
+                      "relative inline-flex items-center px-4 py-2 text-sm font-semibold",
+                      isCurrentPage
+                        ? "z-10 bg-primary text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        : "text-gray-900 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                    )}
+                    onClick={() => onPageChange(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={!canGoNext}
+              >
+                <span className="sr-only">Next</span>
+                <ChevronRight className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="rounded-lg border">
       <div className="overflow-x-auto">
@@ -244,9 +454,14 @@ export const PropertyTable = React.memo(function PropertyTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {listings.map((listing) => (
+            {listings.map((listing) => {
+              const listingId = listing.listingId.toString();
+              const isVisible = visibleRows.has(listingId);
+              
+              return (
               <TableRow
-                key={listing.listingId.toString()}
+                key={listingId}
+                ref={(el) => observeRow(el, listingId)}
                 className="cursor-pointer transition-colors hover:bg-muted/50"
                 onClick={() => router.push(`/propiedades/${listing.listingId}`)}
               >
@@ -256,62 +471,64 @@ export const PropertyTable = React.memo(function PropertyTable({
                 >
                   <div className="truncate">
                     <div className="group relative h-[48px] w-[72px] overflow-hidden rounded-md">
-                      {listing.imageUrl ? (
+                      {isVisible && listing.imageUrl ? (
                         <>
-                          {!loadedImages.has(listing.listingId.toString()) && (
+                          {!loadedImages.has(listingId) && (
                             <Skeleton className="absolute inset-0 z-10" />
                           )}
                           <Image
                             src={listing.imageUrl}
                             alt={listing.title ?? "Property image"}
                             fill
-                            priority={true}
+                            priority={false}
                             quality={30}
                             sizes="72px"
                             className={cn(
                               "object-cover transition-opacity duration-200",
-                              loadedImages.has(listing.listingId.toString())
+                              loadedImages.has(listingId)
                                 ? "opacity-100"
                                 : "opacity-0",
                             )}
-                            onLoad={() =>
-                              handleImageLoad(listing.listingId.toString())
-                            }
+                            onLoad={() => handleImageLoad(listingId)}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.src = defaultPlaceholder;
-                              handleImageLoad(listing.listingId.toString());
+                              handleImageLoad(listingId);
                             }}
                           />
                         </>
-                      ) : (
+                      ) : isVisible ? (
                         <PropertyImagePlaceholder 
                           propertyType={listing.propertyType}
                           className="h-full w-full rounded-md"
                         />
+                      ) : (
+                        <Skeleton className="h-full w-full rounded-md" />
                       )}
 
-                      {/* Hover overlay with icons */}
-                      <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
-                          onClick={(e) => handleWhatsAppClick(listing, e)}
-                          title="Compartir por WhatsApp"
-                        >
-                          <MessageCircle className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
-                          onClick={(e) => handleShareClick(listing, e)}
-                          title="Compartir enlace"
-                        >
-                          <Share2 className="h-3 w-3" />
-                        </Button>
-                      </div>
+                      {/* Hover overlay with icons - only render when visible */}
+                      {isVisible && (
+                        <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
+                            onClick={(e) => handleWhatsAppClick(listing, e)}
+                            title="Compartir por WhatsApp"
+                          >
+                            <MessageCircle className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
+                            onClick={(e) => handleShareClick(listing, e)}
+                            title="Compartir enlace"
+                          >
+                            <Share2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </TableCell>
@@ -393,11 +610,11 @@ export const PropertyTable = React.memo(function PropertyTable({
                       variant="secondary"
                       className={cn(
                         "font-normal",
-                        statusColors[listing.listingType],
+                        statusColors[listing.status as ValidStatus] || "bg-gray-50 text-gray-600 border-gray-200",
                       )}
                     >
                       <span className="truncate">
-                        {formatListingType(listing.listingType)}
+                        {listing.status}
                       </span>
                     </Badge>
                   </div>
@@ -447,10 +664,12 @@ export const PropertyTable = React.memo(function PropertyTable({
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            );
+            })}
           </TableBody>
         </Table>
       </div>
+      <PaginationControls />
     </div>
   );
 });

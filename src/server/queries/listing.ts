@@ -386,7 +386,7 @@ export async function listListings(
   page = 1,
   limit = 10,
   filters?: {
-    status?: "Active" | "Pending" | "Sold";
+    status?: "En Venta" | "En Alquiler" | "Vendido" | "Alquilado" | "Descartado" | "Draft";
     listingType?: "Sale" | "Rent";
     agentId?: string[];
     propertyId?: number;
@@ -421,16 +421,22 @@ export async function listListings(
     // Build the where conditions array
     const whereConditions = [];
     if (filters) {
-      if (filters.status) {
-        whereConditions.push(sql`${listings.status} IN (${filters.status})`);
+      if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
+        // Properly format the status values for SQL IN clause
+        const statusList = filters.status.map(s => `'${s}'`).join(',');
+        whereConditions.push(sql`${listings.status} IN (${sql.raw(statusList)})`);
       }
-      if (filters.listingType) {
+      if (filters.listingType && Array.isArray(filters.listingType) && filters.listingType.length > 0) {
+        // Properly format the listing types for SQL IN clause
+        const typeList = filters.listingType.map(t => `'${t}'`).join(',');
         whereConditions.push(
-          sql`${listings.listingType} IN (${filters.listingType})`,
+          sql`${listings.listingType} IN (${sql.raw(typeList)})`,
         );
       }
       if (filters.agentId && filters.agentId.length > 0) {
-        whereConditions.push(sql`${listings.agentId} IN (${filters.agentId})`);
+        // Properly format the agent IDs for SQL IN clause
+        const agentList = filters.agentId.map(id => `'${id}'`).join(',');
+        whereConditions.push(sql`${listings.agentId} IN (${sql.raw(agentList)})`);
       }
       if (filters.propertyId) {
         whereConditions.push(
@@ -457,13 +463,17 @@ export async function listListings(
         );
       }
       if (filters.propertyType && filters.propertyType.length > 0) {
+        // Properly format the property types for SQL IN clause
+        const propTypeList = filters.propertyType.map(t => `'${t}'`).join(',');
         whereConditions.push(
-          sql`${properties.propertyType} IN (${filters.propertyType})`,
+          sql`${properties.propertyType} IN (${sql.raw(propTypeList)})`,
         );
       }
       if (filters.propertySubtype && filters.propertySubtype.length > 0) {
+        // Properly format the property subtypes for SQL IN clause
+        const subTypeList = filters.propertySubtype.map(t => `'${t}'`).join(',');
         whereConditions.push(
-          sql`${properties.propertySubtype} IN (${filters.propertySubtype})`,
+          sql`${properties.propertySubtype} IN (${sql.raw(subTypeList)})`,
         );
       }
       if (filters.bedrooms) {
@@ -536,6 +546,11 @@ export async function listListings(
       whereConditions.push(eq(listings.isActive, true));
     }
 
+    // Default status filter: if no status filter is explicitly provided, show only En Venta and En Alquiler
+    if (!filters?.status) {
+      whereConditions.push(sql`${listings.status} IN ('En Venta', 'En Alquiler')`);
+    }
+
     // Always filter for non-Draft status listings and account
     whereConditions.push(ne(listings.status, "Draft"));
     whereConditions.push(eq(listings.accountId, BigInt(accountId)));
@@ -549,6 +564,7 @@ export async function listListings(
             agentName: users.name,
             price: listings.price,
             listingType: listings.listingType,
+            status: listings.status,
             referenceNumber: properties.referenceNumber,
             title: properties.title,
             propertyType: properties.propertyType,
@@ -567,6 +583,7 @@ export async function listListings(
             agentName: users.name,
             price: listings.price,
             listingType: listings.listingType,
+            status: listings.status,
             isBankOwned: listings.isBankOwned,
             referenceNumber: properties.referenceNumber,
             propertyType: properties.propertyType,
@@ -658,7 +675,7 @@ export async function listListings(
 
     // Apply pagination and sorting
     const allListings = await filteredQuery
-      .orderBy(sql`${listings.isFeatured} DESC, ${listings.createdAt} DESC`)
+      .orderBy(sql`${properties.createdAt} DESC`)
       .limit(limit)
       .offset(offset);
 
@@ -684,7 +701,7 @@ export async function listListings(
 export async function listListingsCompact(
   accountId: number,
   filters?: {
-    status?: "Active" | "Pending" | "Sold";
+    status?: "En Venta" | "En Alquiler" | "Vendido" | "Alquilado" | "Descartado" | "Draft";
     listingType?: "Sale" | "Rent";
     propertyType?: string[];
     searchQuery?: string;
@@ -697,17 +714,23 @@ export async function listListingsCompact(
     const whereConditions = [];
 
     if (filters) {
-      if (filters.status) {
-        whereConditions.push(sql`${listings.status} IN (${filters.status})`);
+      if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
+        // Properly format the status values for SQL IN clause
+        const statusList = filters.status.map(s => `'${s}'`).join(',');
+        whereConditions.push(sql`${listings.status} IN (${sql.raw(statusList)})`);
       }
-      if (filters.listingType) {
+      if (filters.listingType && Array.isArray(filters.listingType) && filters.listingType.length > 0) {
+        // Properly format the listing types for SQL IN clause
+        const typeList = filters.listingType.map(t => `'${t}'`).join(',');
         whereConditions.push(
-          sql`${listings.listingType} IN (${filters.listingType})`,
+          sql`${listings.listingType} IN (${sql.raw(typeList)})`,
         );
       }
       if (filters.propertyType && filters.propertyType.length > 0) {
+        // Properly format the property types for SQL IN clause
+        const propTypeList = filters.propertyType.map(t => `'${t}'`).join(',');
         whereConditions.push(
-          sql`${properties.propertyType} IN (${filters.propertyType})`,
+          sql`${properties.propertyType} IN (${sql.raw(propTypeList)})`,
         );
       }
       if (filters.searchQuery) {
@@ -1083,7 +1106,7 @@ export async function createDefaultListing(propertyId: number) {
       agentId: "1", // Default agent ID
       listingType: "Sale" as const,
       price: "0", // Default price as string (decimal type)
-      status: "Active" as const, // Set as active when created
+      status: "Draft" as const, // Set as draft when created - will be activated when form is completed
       // All other fields will be null/undefined by default
     };
 
@@ -1170,6 +1193,238 @@ export async function deleteDraftListing(listingId: number, accountId: number) {
     return { success: true, message: "Borrador eliminado correctamente" };
   } catch (error) {
     console.error("Error deleting draft listing:", error);
+    throw error;
+  }
+}
+
+// Discard listing - sets status to "Descartado", keeps all data intact
+export async function discardListingWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return discardListing(listingId, accountId);
+}
+
+export async function discardListing(listingId: number, accountId: number) {
+  try {
+    // First verify the listing belongs to this account
+    const [listing] = await db
+      .select()
+      .from(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!listing) {
+      throw new Error("Listing not found or access denied");
+    }
+
+    // Update the listing status to "Descartado"
+    await db
+      .update(listings)
+      .set({ status: "Descartado" })
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    return { 
+      success: true, 
+      message: "Anuncio descartado correctamente. Puedes reactivarlo más tarde si es necesario."
+    };
+  } catch (error) {
+    console.error("Error discarding listing:", error);
+    throw error;
+  }
+}
+
+// Recover listing - sets status back to active based on listing type
+export async function recoverListingWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return recoverListing(listingId, accountId);
+}
+
+export async function recoverListing(listingId: number, accountId: number) {
+  try {
+    // First verify the listing belongs to this account and get its type
+    const [listing] = await db
+      .select()
+      .from(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!listing) {
+      throw new Error("Listing not found or access denied");
+    }
+
+    // Determine the appropriate active status based on listing type
+    let newStatus: string;
+    const listingType = listing.listingType;
+    
+    if (listingType === "Rent" || listingType === "RentWithOption" || listingType === "RoomSharing") {
+      newStatus = "En Alquiler";
+    } else if (listingType === "Sale" || listingType === "Transfer") {
+      newStatus = "En Venta";
+    } else {
+      // Fallback - use En Venta as default
+      newStatus = "En Venta";
+    }
+
+    // Update the listing status to the appropriate active status
+    await db
+      .update(listings)
+      .set({ status: newStatus })
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    return { 
+      success: true, 
+      message: `Anuncio recuperado correctamente. Estado cambiado a "${newStatus}".`
+    };
+  } catch (error) {
+    console.error("Error recovering listing:", error);
+    throw error;
+  }
+}
+
+// Delete listing only - deletes listing and associated contacts, keeps property intact
+export async function deleteListingWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return deleteListingOnly(listingId, accountId);
+}
+
+export async function deleteListingOnly(listingId: number, accountId: number) {
+  try {
+    // First verify the listing belongs to this account
+    const [listing] = await db
+      .select()
+      .from(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!listing) {
+      throw new Error("Listing not found or access denied");
+    }
+
+    // 1. Delete listing_contacts for this listing
+    await db
+      .delete(listingContacts)
+      .where(eq(listingContacts.listingId, BigInt(listingId)));
+
+    // 2. Delete the listing itself
+    await db
+      .delete(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    return { 
+      success: true, 
+      message: "Anuncio eliminado correctamente. La propiedad se mantiene intacta."
+    };
+  } catch (error) {
+    console.error("Error deleting listing:", error);
+    throw error;
+  }
+}
+
+// Complete property deletion - deletes property and all related data
+export async function deletePropertyWithAuth(propertyId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return deleteProperty(propertyId, accountId);
+}
+
+export async function deleteProperty(propertyId: number, accountId: number) {
+  try {
+    // First verify the property belongs to this account
+    const [property] = await db
+      .select()
+      .from(properties)
+      .where(
+        and(
+          eq(properties.propertyId, BigInt(propertyId)),
+          eq(properties.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!property) {
+      throw new Error("Property not found or access denied");
+    }
+
+    // Get all listings for this property to get their IDs
+    const propertyListings = await db
+      .select({ listingId: listings.listingId })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.propertyId, BigInt(propertyId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    // Start transaction-like cleanup (SingleStore doesn't support full transactions)
+    
+    // 1. Delete listing_contacts for all listings of this property
+    if (propertyListings.length > 0) {
+      const listingIds = propertyListings.map(l => l.listingId);
+      
+      for (const listingId of listingIds) {
+        await db
+          .delete(listingContacts)
+          .where(eq(listingContacts.listingId, listingId));
+      }
+    }
+
+    // 2. Delete all property_images for this property
+    await db
+      .delete(propertyImages)
+      .where(eq(propertyImages.propertyId, BigInt(propertyId)));
+
+    // 3. Delete all listings for this property
+    await db
+      .delete(listings)
+      .where(
+        and(
+          eq(listings.propertyId, BigInt(propertyId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    // 4. Finally delete the property itself
+    await db
+      .delete(properties)
+      .where(
+        and(
+          eq(properties.propertyId, BigInt(propertyId)),
+          eq(properties.accountId, BigInt(accountId)),
+        ),
+      );
+
+    return { 
+      success: true, 
+      message: "Propiedad y todos sus datos relacionados eliminados correctamente",
+      deletedListings: propertyListings.length
+    };
+  } catch (error) {
+    console.error("Error deleting property:", error);
     throw error;
   }
 }

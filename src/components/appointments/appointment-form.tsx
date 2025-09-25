@@ -305,12 +305,12 @@ export default function AppointmentForm({
         if (needsAllListings) {
           // For initial data, we need all listings to find the match
           listingsData = await listListingsCompactWithAuth({
-            status: "Active",
+            // Get all non-draft listings (backend will handle default filtering)
           });
         } else if (isInitialLoad) {
           // For initial load on step 2, get last 10 listings
           listingsData = await listListingsCompactWithAuth({
-            status: "Active",
+            // Get recent listings (backend will handle default filtering)
             page: 1,
             limit: 10,
           });
@@ -318,7 +318,7 @@ export default function AppointmentForm({
         } else {
           // For search, use optimized search with query
           listingsData = await listListingsCompactWithAuth({
-            status: "Active",
+            // Search all non-draft listings
             searchQuery: listingSearchQuery.trim(),
           });
         }

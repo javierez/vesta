@@ -47,8 +47,9 @@ export async function updatePropertyTitle(
       .set({ title: trimmedTitle })
       .where(eq(properties.propertyId, propertyId));
 
-    // Revalidate the property page to show the updated title
+    // Revalidate the property pages to show the updated title
     revalidatePath(`/propiedades/${propertyId}`);
+    revalidatePath(`/propiedades`); // Also revalidate the main properties list
 
     return { success: true, title: trimmedTitle };
   } catch (error) {
