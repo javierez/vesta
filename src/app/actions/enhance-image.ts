@@ -134,6 +134,16 @@ export async function createEnhancedPropertyImageFromFile(
     const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
 
     // 5. Create database record with ai_enhanced tag
+    console.log('🚀 Creating enhanced property image database record:', {
+      propertyId: propertyId.toString(),
+      referenceNumber,
+      imageUrl,
+      imageKey,
+      s3key,
+      imageOrder,
+      imageTag: 'ai_enhanced'
+    });
+
     const result = await createPropertyImage({
       propertyId,
       referenceNumber,
@@ -145,13 +155,31 @@ export async function createEnhancedPropertyImageFromFile(
       imageTag: 'ai_enhanced', // Mark as AI enhanced
     });
 
+    console.log('✅ Database record created:', result ? {
+      propertyImageId: result.propertyImageId.toString(),
+      success: true
+    } : { success: false });
+
     if (!result) {
+      console.error('❌ Failed to create enhanced property image record');
       throw new Error("Failed to create enhanced property image record");
     }
 
     // 6. Fetch the complete image record
+    console.log('📖 Fetching complete image record with ID:', result.propertyImageId.toString());
     const propertyImage = await getPropertyImageById(result.propertyImageId);
+    
+    console.log('📋 Fetched property image:', propertyImage ? {
+      propertyImageId: propertyImage.propertyImageId.toString(),
+      propertyId: propertyImage.propertyId.toString(),
+      referenceNumber: propertyImage.referenceNumber,
+      imageUrl: propertyImage.imageUrl,
+      imageOrder: propertyImage.imageOrder,
+      imageTag: propertyImage.imageTag
+    } : { found: false });
+
     if (!propertyImage) {
+      console.error('❌ Failed to fetch created enhanced property image');
       throw new Error("Failed to fetch created enhanced property image");
     }
 

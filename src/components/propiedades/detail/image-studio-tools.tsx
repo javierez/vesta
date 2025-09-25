@@ -197,7 +197,7 @@ export function ImageStudioTools({
       id: "reform",
       title: "Reforma",
       description: "Simula reformas y renovaciones",
-      price: "€0.50",
+      price: "€0.15",
       priceDescription: "por habitación reformada",
       icon: (
         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

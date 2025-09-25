@@ -210,3 +210,66 @@ export function createDataUrl(base64: string, mimeType = 'image/jpeg'): string {
   const cleanBase64 = extractBase64FromDataUrl(base64); // In case it's already a data URL
   return `data:${mimeType};base64,${cleanBase64}`;
 }
+
+/**
+ * Generate a thumbnail URL from the original image URL
+ * Uses Next.js built-in image optimization when possible
+ */
+export function getThumbnailUrl(
+  originalUrl: string, 
+  options: {
+    width?: number;
+    height?: number;
+    quality?: number;
+  } = {}
+): string {
+  const { width = 150, height = 100, quality = 75 } = options;
+
+  // For S3 URLs, we'll rely on Next.js Image component optimization
+  // The actual optimization happens when the image is requested with specific dimensions
+  if (originalUrl.includes('amazonaws.com') || originalUrl.includes('s3.')) {
+    // Return original URL - Next.js Image component will handle the optimization
+    return originalUrl;
+  }
+
+  // For external URLs that support query parameter resizing
+  if (originalUrl.includes('cloudinary.com')) {
+    return originalUrl.replace('/upload/', `/upload/w_${width},h_${height},c_fill,q_${quality}/`);
+  }
+
+  if (originalUrl.includes('imagekit.io')) {
+    const separator = originalUrl.includes('?') ? '&' : '?';
+    return `${originalUrl}${separator}tr=w-${width},h-${height},c-at_max,q-${quality}`;
+  }
+
+  // Fallback to original URL
+  return originalUrl;
+}
+
+/**
+ * Get optimal image sizes for different use cases
+ */
+export const ImageSizes = {
+  THUMBNAIL: { width: 128, height: 96, quality: 75 },
+  CARD: { width: 300, height: 200, quality: 80 },
+  GALLERY_MAIN: { width: 800, height: 600, quality: 85 },
+  FULLSCREEN: { width: 1920, height: 1080, quality: 90 },
+} as const;
+
+/**
+ * Generate sizes attribute for responsive images
+ */
+export function getImageSizes(usage: 'thumbnail' | 'card' | 'gallery' | 'fullscreen'): string {
+  switch (usage) {
+    case 'thumbnail':
+      return '128px';
+    case 'card':
+      return '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
+    case 'gallery':
+      return '(max-width: 768px) 100vw, 800px';
+    case 'fullscreen':
+      return '100vw';
+    default:
+      return '100vw';
+  }
+}

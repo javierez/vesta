@@ -8,6 +8,7 @@ import { useImageEnhancement } from "~/hooks/use-image-enhancement";
 import { useImageRenovation } from "~/hooks/use-image-renovation";
 import type { PropertyImage } from "~/lib/data";
 import { toast } from "sonner";
+import { ProcessingOverlay } from "./processing-overlay";
 
 interface ImageStudioClientWrapperProps {
   images: PropertyImage[];
@@ -43,15 +44,29 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
   } = useImageEnhancement({
     propertyId,
     onSuccess: (newImage) => {
+      console.log('🎉 Enhancement success - adding new image to gallery:', {
+        newImageId: newImage.propertyImageId.toString(),
+        imageOrder: newImage.imageOrder,
+        currentImagesCount: allImages.length
+      });
+
       // Add the new image to the gallery (this happens after user confirms save)
       setAllImages(currentImages => {
         const newImages = [...currentImages, newImage];
-        return newImages.sort((a, b) => a.imageOrder - b.imageOrder);
+        const sortedImages = newImages.sort((a, b) => a.imageOrder - b.imageOrder);
+        console.log('📸 Updated gallery images:', sortedImages.map(img => ({
+          id: img.propertyImageId.toString(),
+          order: img.imageOrder,
+          tag: img.imageTag
+        })));
+        return sortedImages;
       });
 
       // Hide comparison slider and reset
       setIsComparisonVisible(false);
       resetEnhancement();
+      
+      console.log('✅ Enhancement complete - mini gallery should now be visible');
     },
     onComparisonReady: () => {
       // Show comparison slider when enhancement completes
@@ -77,16 +92,30 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
   } = useImageRenovation({
     propertyId,
     onSuccess: (newImage) => {
+      console.log('🎉 Renovation success - adding new image to gallery:', {
+        newImageId: newImage.propertyImageId.toString(),
+        imageOrder: newImage.imageOrder,
+        currentImagesCount: allImages.length
+      });
+
       // Add the new renovated image to the gallery
       setAllImages(currentImages => {
         const newImages = [...currentImages, newImage];
-        return newImages.sort((a, b) => a.imageOrder - b.imageOrder);
+        const sortedImages = newImages.sort((a, b) => a.imageOrder - b.imageOrder);
+        console.log('📸 Updated gallery images:', sortedImages.map(img => ({
+          id: img.propertyImageId.toString(),
+          order: img.imageOrder,
+          tag: img.imageTag
+        })));
+        return sortedImages;
       });
 
       // Hide comparison slider and reset
       setIsComparisonVisible(false);
       setIsRenovationComparison(false);
       resetRenovation();
+      
+      console.log('✅ Renovation complete - mini gallery should now be visible');
     },
     onComparisonReady: () => {
       // Show comparison slider when renovation completes
@@ -203,19 +232,35 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
   }, [resetRenovation]);
 
 
+  // Determine if AI is processing
+  const isProcessing = enhancementStatus === 'processing' || renovationStatus === 'processing';
+  const processingType = renovationStatus === 'processing' ? 'renovación' : 'mejora';
+
+  // Debug mini gallery visibility
+  const shouldShowMiniGallery = enhancementStatus !== 'processing' && renovationStatus !== 'processing' && !isComparisonVisible;
+  console.log('🔍 Mini gallery visibility check:', {
+    enhancementStatus,
+    renovationStatus,
+    isComparisonVisible,
+    shouldShow: shouldShowMiniGallery,
+    imagesCount: allImages.length
+  });
+
   return (
     <>
       <div className="space-y-16">
-        {/* Image Selection (thumbnails only) */}
-        <section className="animate-in slide-in-from-bottom-8 duration-700 delay-300">
-          <ImageStudioGallery
-            images={allImages}
-            title={title}
-            showOnlyThumbnails={true}
-            selectedIndex={selectedIndex}
-            onImageSelect={setSelectedIndex}
-          />
-        </section>
+        {/* Image Selection (thumbnails only) - Hidden when AI is processing or during comparison */}
+        {shouldShowMiniGallery && (
+          <section className="animate-in slide-in-from-bottom-8 duration-700 delay-300">
+            <ImageStudioGallery
+              images={allImages}
+              title={title}
+              showOnlyThumbnails={true}
+              selectedIndex={selectedIndex}
+              onImageSelect={setSelectedIndex}
+            />
+          </section>
+        )}
         
         {/* Tools Section */}
         <ImageStudioTools 
@@ -230,7 +275,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
         />
         
         {/* Results Section (big image) */}
-        <section className="animate-in slide-in-from-bottom-8 duration-700 delay-500">
+        <section className="animate-in slide-in-from-bottom-8 duration-700 delay-500" id="main-image-section">
           <ImageStudioGallery
             images={allImages}
             title={title}
@@ -245,6 +290,12 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
           />
         </section>
       </div>
+
+      {/* AI Processing Overlay */}
+      <ProcessingOverlay 
+        isVisible={isProcessing}
+        processingType={processingType}
+      />
     </>
   );
 }

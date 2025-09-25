@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { getSecureSession } from "~/lib/dal";
 import { uploadEnhancedImageToS3 } from "~/app/actions/enhance-image";
 import { getListingHeaderData } from "~/server/queries/listing";
+import { getPropertyImagesByReference } from "~/server/queries/property_images";
 
 /**
  * POST: Save enhanced image to S3 and database when user confirms
@@ -47,16 +48,57 @@ export async function POST(
       );
     }
 
-    // 4. Save enhanced image to S3 and database
+    // 4. Find the original image to get the correct propertyId
+    const propertyImages = await getPropertyImagesByReference(data.referenceNumber);
+    const originalImage = propertyImages.find(img => img.imageOrder === parseInt(data.currentImageOrder));
+    
+    if (!originalImage) {
+      console.error('Original image not found:', {
+        referenceNumber: data.referenceNumber,
+        imageOrder: data.currentImageOrder
+      });
+      return Response.json(
+        { error: "Original image not found" },
+        { status: 404 }
+      );
+    }
+
+    // Use the propertyId from the original image, not from URL
+    const correctPropertyId = originalImage.propertyId;
+    
+    console.log('Found original image:', {
+      originalImageId: originalImage.propertyImageId.toString(),
+      originalPropertyId: originalImage.propertyId.toString(),
+      urlPropertyId: propertyId.toString(),
+      usingCorrectPropertyId: correctPropertyId.toString()
+    });
+
+    // 5. Save enhanced image to S3 and database using correct propertyId
     const newImageOrder = parseInt(data.currentImageOrder) + 1;
+    
+    console.log('🎯 Enhanced image save API - Starting process:', {
+      correctPropertyId: correctPropertyId.toString(),
+      referenceNumber: data.referenceNumber,
+      currentImageOrder: data.currentImageOrder,
+      newImageOrder,
+      enhancedImageUrl: data.enhancedImageUrl.substring(0, 100) + '...'
+    });
     
     try {
       const propertyImage = await uploadEnhancedImageToS3(
         data.enhancedImageUrl,
-        propertyId,
+        correctPropertyId,
         data.referenceNumber,
         newImageOrder
       );
+
+      console.log('🎉 Enhanced image successfully saved:', {
+        propertyImageId: propertyImage.propertyImageId.toString(),
+        propertyId: propertyImage.propertyId.toString(),
+        referenceNumber: propertyImage.referenceNumber,
+        imageOrder: propertyImage.imageOrder,
+        imageTag: propertyImage.imageTag
+      });
 
       return Response.json({
         success: true,

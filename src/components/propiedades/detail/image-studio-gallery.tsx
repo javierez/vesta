@@ -237,11 +237,14 @@ export function ImageStudioGallery({
                       <Image
                         src={imageSources[imageId]}
                         alt={`${title} - Miniatura ${index + 1}`}
-                        fill
+                        width={128}
+                        height={96}
                         className={cn(
-                          "object-cover transition-all duration-200",
+                          "object-cover transition-all duration-200 w-full h-full",
                           !image.isActive && "opacity-70"
                         )}
+                        sizes="128px"
+                        quality={75}
                         loading="lazy"
                         onError={() => handleImageError(imageId)}
                         onLoad={() => handleImageLoad(imageId)}
@@ -354,7 +357,7 @@ export function ImageStudioGallery({
                 priority
               />
               {/* Enhanced image label */}
-              <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1 rounded-lg text-sm font-medium shadow-lg">
+              <div className="absolute top-4 left-4 bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1 rounded-lg text-sm font-medium shadow-lg">
                 Mejorada con IA
               </div>
             </div>
@@ -499,11 +502,14 @@ export function ImageStudioGallery({
                     <Image
                       src={imageSources[imageId]}
                       alt={`${title} - Miniatura ${index + 1}`}
-                      fill
+                      width={128}
+                      height={96}
                       className={cn(
-                        "object-cover transition-all duration-200",
+                        "object-cover transition-all duration-200 w-full h-full",
                         !image.isActive && "opacity-70"
                       )}
+                      sizes="128px"
+                      quality={75}
                       loading="lazy"
                       onError={() => handleImageError(imageId)}
                       onLoad={() => handleImageLoad(imageId)}

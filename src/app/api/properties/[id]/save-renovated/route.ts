@@ -86,6 +86,15 @@ export async function POST(
     // 5. Save renovated image to S3 and database using correct propertyId
     const newImageOrder = parseInt(data.currentImageOrder) + 1;
     
+    console.log('🎯 Renovated image save API - Starting process:', {
+      correctPropertyId: correctPropertyId.toString(),
+      referenceNumber: data.referenceNumber,
+      currentImageOrder: data.currentImageOrder,
+      newImageOrder,
+      renovationType: data.renovationType ?? 'generic',
+      imageDataLength: data.renovatedImageBase64.length
+    });
+    
     try {
       const propertyImage = await uploadRenovatedImageToS3(
         data.renovatedImageBase64,
@@ -94,6 +103,14 @@ export async function POST(
         newImageOrder,
         data.renovationType
       );
+
+      console.log('🎉 Renovated image successfully saved:', {
+        propertyImageId: propertyImage.propertyImageId.toString(),
+        propertyId: propertyImage.propertyId.toString(),
+        referenceNumber: propertyImage.referenceNumber,
+        imageOrder: propertyImage.imageOrder,
+        imageTag: propertyImage.imageTag
+      });
 
       return Response.json({
         success: true,

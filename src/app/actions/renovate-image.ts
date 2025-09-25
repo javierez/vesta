@@ -146,6 +146,17 @@ export async function createRenovatedPropertyImageFromBuffer(
     const imageTag = renovationType ? `ai_renovated_${renovationType}` : 'ai_renovated';
 
     // 5. Create database record with ai_renovated tag
+    console.log('🚀 Creating renovated property image database record:', {
+      propertyId: propertyId.toString(),
+      referenceNumber,
+      imageUrl,
+      imageKey,
+      s3key,
+      imageOrder,
+      imageTag,
+      renovationType: renovationType ?? 'generic'
+    });
+
     const result = await createPropertyImage({
       propertyId,
       referenceNumber,
@@ -157,13 +168,31 @@ export async function createRenovatedPropertyImageFromBuffer(
       imageTag, // Mark as AI renovated
     });
 
+    console.log('✅ Database record created:', result ? {
+      propertyImageId: result.propertyImageId.toString(),
+      success: true
+    } : { success: false });
+
     if (!result) {
+      console.error('❌ Failed to create renovated property image record');
       throw new Error("Failed to create renovated property image record");
     }
 
     // 6. Fetch the complete image record
+    console.log('📖 Fetching complete image record with ID:', result.propertyImageId.toString());
     const propertyImage = await getPropertyImageById(result.propertyImageId);
+    
+    console.log('📋 Fetched property image:', propertyImage ? {
+      propertyImageId: propertyImage.propertyImageId.toString(),
+      propertyId: propertyImage.propertyId.toString(),
+      referenceNumber: propertyImage.referenceNumber,
+      imageUrl: propertyImage.imageUrl,
+      imageOrder: propertyImage.imageOrder,
+      imageTag: propertyImage.imageTag
+    } : { found: false });
+
     if (!propertyImage) {
+      console.error('❌ Failed to fetch created renovated property image');
       throw new Error("Failed to fetch created renovated property image");
     }
 
