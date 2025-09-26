@@ -8,13 +8,38 @@ export async function createPropertyImage(
   data: Omit<PropertyImage, "propertyImageId" | "createdAt" | "updatedAt">,
 ) {
   try {
+    console.log('🔍 createPropertyImage called with:', {
+      propertyId: data.propertyId?.toString() ?? 'undefined',
+      referenceNumber: data.referenceNumber,
+      imageOrder: data.imageOrder,
+      imageTag: data.imageTag,
+      originImageId: (data as any).originImageId?.toString() ?? 'undefined',
+      hasOriginImageId: 'originImageId' in data,
+      dataKeys: Object.keys(data)
+    });
+
     const [propertyImage] = await db
       .insert(propertyImages)
       .values(data)
       .$returningId();
+    
+    console.log('✅ createPropertyImage success:', {
+      propertyImageId: propertyImage?.propertyImageId?.toString() ?? 'null',
+      success: !!propertyImage
+    });
+    
     return propertyImage;
   } catch (error) {
-    console.error("Error creating property image:", error);
+    console.error("❌ Error creating property image:", {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      data: {
+        propertyId: data.propertyId?.toString() ?? 'undefined',
+        referenceNumber: data.referenceNumber,
+        imageOrder: data.imageOrder,
+        originImageId: (data as any).originImageId?.toString() ?? 'undefined'
+      }
+    });
     throw error;
   }
 }

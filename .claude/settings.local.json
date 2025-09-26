@@ -26,7 +26,8 @@
       "Bash(sed:*)",
       "Read(///**)",
       "Read(//var/folders/zk/slrtmhdd7kd3g8n3jb1bd1700000gn/T/TemporaryItems/NSIRD_screencaptureui_24AczA/**)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "Bash(npm --silent run dev --dry-run)"
     ],
     "deny": [],
     "ask": []

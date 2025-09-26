@@ -50,7 +50,7 @@ export async function uploadEnhancedImageToS3(
     const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
 
     // 5. Create database record with ai_enhanced tag
-    const result = await createPropertyImage({
+    const imageData = {
       propertyId,
       referenceNumber,
       imageUrl,
@@ -59,8 +59,14 @@ export async function uploadEnhancedImageToS3(
       s3key,
       imageOrder,
       imageTag: 'ai_enhanced', // Mark as AI enhanced for future reference
-      originImageId, // Track which image this was enhanced from
-    });
+    } as any;
+
+    // Only include originImageId if it's provided (for backward compatibility)
+    if (originImageId !== undefined) {
+      imageData.originImageId = originImageId;
+    }
+
+    const result = await createPropertyImage(imageData);
 
     if (!result) {
       throw new Error("Failed to create enhanced property image record");
@@ -147,7 +153,7 @@ export async function createEnhancedPropertyImageFromFile(
       imageTag: 'ai_enhanced'
     });
 
-    const result = await createPropertyImage({
+    const imageData = {
       propertyId,
       referenceNumber,
       imageUrl,
@@ -156,8 +162,14 @@ export async function createEnhancedPropertyImageFromFile(
       s3key,
       imageOrder,
       imageTag: 'ai_enhanced', // Mark as AI enhanced
-      originImageId, // Track which image this was enhanced from
-    });
+    } as any;
+
+    // Only include originImageId if it's provided (for backward compatibility)
+    if (originImageId !== undefined) {
+      imageData.originImageId = originImageId;
+    }
+
+    const result = await createPropertyImage(imageData);
 
     console.log('✅ Database record created:', result ? {
       propertyImageId: result.propertyImageId.toString(),

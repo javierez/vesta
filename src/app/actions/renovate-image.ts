@@ -22,10 +22,22 @@ export async function uploadRenovatedImageToS3(
   originImageId?: bigint,
 ): Promise<PropertyImage> {
   try {
+    console.log('🔄 Starting uploadRenovatedImageToS3:', {
+      base64Length: renovatedImageBase64.length,
+      propertyId: propertyId.toString(),
+      referenceNumber,
+      imageOrder,
+      renovationType,
+      originImageId: originImageId?.toString() ?? 'undefined'
+    });
+
     // 1. Convert base64 to buffer
+    console.log('📊 Converting base64 to buffer...');
     const imageBuffer = base64ToBuffer(renovatedImageBase64);
+    console.log('✅ Buffer created, size:', imageBuffer.length);
     
     // 2. Generate the S3 key for the renovated image
+    console.log('🔑 Generating S3 key...');
     const fileExtension = 'jpg'; // Gemini typically returns JPEG
     const imageKey = generateRenovatedImageFilename(
       referenceNumber,
@@ -33,12 +45,16 @@ export async function uploadRenovatedImageToS3(
       nanoid(6),
       fileExtension
     );
+    console.log('✅ S3 key generated:', imageKey);
     
     // Get dynamic bucket name
+    console.log('🪣 Getting bucket name...');
     const bucketName = await getDynamicBucketName();
     const s3key = `s3://${bucketName}/${imageKey}`;
+    console.log('✅ Bucket info:', { bucketName, s3key });
 
     // 3. Upload to S3
+    console.log('📤 Uploading to S3...');
     await s3Client.send(
       new PutObjectCommand({
         Bucket: bucketName,
@@ -47,15 +63,19 @@ export async function uploadRenovatedImageToS3(
         ContentType: 'image/jpeg',
       }),
     );
+    console.log('✅ Successfully uploaded to S3');
 
     // 4. Generate the public URL
     const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
+    console.log('🔗 Public URL generated:', imageUrl);
 
     // 5. Create image tag with renovation type
     const imageTag = renovationType ? `ai_renovated_${renovationType}` : 'ai_renovated';
+    console.log('🏷️ Image tag:', imageTag);
 
     // 6. Create database record with ai_renovated tag
-    const result = await createPropertyImage({
+    console.log('💾 Creating database record...');
+    const imageData = {
       propertyId,
       referenceNumber,
       imageUrl,
@@ -64,10 +84,25 @@ export async function uploadRenovatedImageToS3(
       s3key,
       imageOrder,
       imageTag, // Mark as AI renovated with type for future reference
-      originImageId, // Track which image this was renovated from
+    } as any;
+
+    // Only include originImageId if it's provided (for backward compatibility)
+    if (originImageId !== undefined) {
+      console.log('🔗 Including originImageId:', originImageId.toString());
+      imageData.originImageId = originImageId;
+    }
+
+    console.log('📝 Image data to insert:', {
+      ...imageData,
+      propertyId: imageData.propertyId.toString(),
+      originImageId: imageData.originImageId?.toString() ?? 'not provided'
     });
 
+    const result = await createPropertyImage(imageData);
+    console.log('✅ Database record created:', result ? 'success' : 'failed');
+
     if (!result) {
+      console.error('❌ Database insert returned null/undefined');
       throw new Error("Failed to create renovated property image record");
     }
 
@@ -90,7 +125,7 @@ export async function uploadRenovatedImageToS3(
       s3key: propertyImage.s3key,
       imageOrder: propertyImage.imageOrder,
       imageTag: propertyImage.imageTag ?? undefined,
-      originImageId: propertyImage.originImageId,
+      originImageId: propertyImage.originImageId ?? undefined,
     };
 
     console.log('Successfully uploaded renovated image:', {
@@ -102,7 +137,16 @@ export async function uploadRenovatedImageToS3(
 
     return typedPropertyImage;
   } catch (error) {
-    console.error("Error uploading renovated image to S3:", error);
+    console.error('❌ CRITICAL ERROR in uploadRenovatedImageToS3:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack',
+      propertyId: propertyId?.toString(),
+      referenceNumber,
+      imageOrder,
+      renovationType,
+      originImageId: originImageId?.toString()
+    });
     throw new Error(`Failed to upload renovated image: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -161,7 +205,7 @@ export async function createRenovatedPropertyImageFromBuffer(
       renovationType: renovationType ?? 'generic'
     });
 
-    const result = await createPropertyImage({
+    const imageData = {
       propertyId,
       referenceNumber,
       imageUrl,
@@ -170,8 +214,14 @@ export async function createRenovatedPropertyImageFromBuffer(
       s3key,
       imageOrder,
       imageTag, // Mark as AI renovated
-      originImageId, // Track which image this was renovated from
-    });
+    } as any;
+
+    // Only include originImageId if it's provided (for backward compatibility)
+    if (originImageId !== undefined) {
+      imageData.originImageId = originImageId;
+    }
+
+    const result = await createPropertyImage(imageData);
 
     console.log('✅ Database record created:', result ? {
       propertyImageId: result.propertyImageId.toString(),
@@ -214,7 +264,7 @@ export async function createRenovatedPropertyImageFromBuffer(
       s3key: propertyImage.s3key,
       imageOrder: propertyImage.imageOrder,
       imageTag: propertyImage.imageTag ?? undefined,
-      originImageId: propertyImage.originImageId,
+      originImageId: propertyImage.originImageId ?? undefined,
     };
 
     return typedPropertyImage;

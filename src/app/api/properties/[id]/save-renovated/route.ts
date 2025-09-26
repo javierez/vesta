@@ -96,6 +96,15 @@ export async function POST(
     });
     
     try {
+      console.log('📤 Calling uploadRenovatedImageToS3 with:', {
+        base64Length: data.renovatedImageBase64.length,
+        correctPropertyId: correctPropertyId.toString(),
+        referenceNumber: data.referenceNumber,
+        newImageOrder,
+        renovationType: data.renovationType,
+        originImageId: originalImage.propertyImageId?.toString() ?? 'undefined'
+      });
+
       const propertyImage = await uploadRenovatedImageToS3(
         data.renovatedImageBase64,
         correctPropertyId,
@@ -113,17 +122,33 @@ export async function POST(
         imageTag: propertyImage.imageTag
       });
 
+      // Convert BigInt values to strings for JSON serialization
+      const serializedPropertyImage = {
+        ...propertyImage,
+        propertyImageId: propertyImage.propertyImageId.toString(),
+        propertyId: propertyImage.propertyId.toString(),
+        originImageId: propertyImage.originImageId ? propertyImage.originImageId.toString() : undefined
+      };
+
       return Response.json({
         success: true,
-        propertyImage: {
-          ...propertyImage,
-          propertyImageId: propertyImage.propertyImageId.toString(),
-          propertyId: propertyImage.propertyId.toString(),
-        },
+        propertyImage: serializedPropertyImage,
         message: "Renovated image saved successfully"
       });
     } catch (uploadError) {
-      console.error('Error saving renovated image to S3/DB:', uploadError);
+      console.error('❌ DETAILED ERROR saving renovated image to S3/DB:', {
+        error: uploadError,
+        message: uploadError instanceof Error ? uploadError.message : 'Unknown error',
+        stack: uploadError instanceof Error ? uploadError.stack : 'No stack trace',
+        data: {
+          base64Length: data.renovatedImageBase64?.length ?? 0,
+          referenceNumber: data.referenceNumber,
+          currentImageOrder: data.currentImageOrder,
+          newImageOrder,
+          correctPropertyId: correctPropertyId?.toString() ?? 'undefined',
+          originImageId: originalImage?.propertyImageId?.toString() ?? 'undefined'
+        }
+      });
       return Response.json(
         { error: "Failed to save renovated image to S3 or database" },
         { status: 500 }

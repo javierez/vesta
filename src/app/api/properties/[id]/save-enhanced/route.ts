@@ -101,13 +101,17 @@ export async function POST(
         imageTag: propertyImage.imageTag
       });
 
+      // Convert BigInt values to strings for JSON serialization
+      const serializedPropertyImage = {
+        ...propertyImage,
+        propertyImageId: propertyImage.propertyImageId.toString(),
+        propertyId: propertyImage.propertyId.toString(),
+        originImageId: propertyImage.originImageId ? propertyImage.originImageId.toString() : undefined
+      };
+
       return Response.json({
         success: true,
-        propertyImage: {
-          ...propertyImage,
-          propertyImageId: propertyImage.propertyImageId.toString(),
-          propertyId: propertyImage.propertyId.toString(),
-        },
+        propertyImage: serializedPropertyImage,
         message: "Enhanced image saved successfully"
       });
     } catch (uploadError) {
