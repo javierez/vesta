@@ -131,7 +131,7 @@ export async function saveVoiceProperty(
       listingUpdateData.isActive = true; // Ensure listing is active
       
       // Set Spanish status based on listing type
-      const listingType = listingUpdateData.listingType || "Sale";
+      const listingType = listingUpdateData.listingType ?? "Sale";
       if (listingType === "Sale") {
         listingUpdateData.status = "En Venta";
       } else if (listingType === "Rent" || listingType === "RentWithOption" || listingType === "RoomSharing") {

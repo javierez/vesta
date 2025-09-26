@@ -81,10 +81,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
   // Image renovation hook
   const {
     status: renovationStatus,
-    error: _renovationError,
-    originalImageUrl: _renovationOriginalImageUrl,
     renovatedImageUrl,
-    renovatedPropertyImage: _renovatedPropertyImage,
     renovationMetadata,
     renovate,
     saveRenovated,

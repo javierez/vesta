@@ -51,9 +51,6 @@ export function ImageStudioGallery({
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
 
-  // Use a proper placeholder image or null for empty sources
-  const defaultPlaceholder = "/placeholder-image.jpg"; // This should be a real image or use null
-
   // State for managing image sources with fallbacks
   const [imageSources, setImageSources] = useState<Record<string, string | null>>(() => {
     const sources: Record<string, string | null> = {};

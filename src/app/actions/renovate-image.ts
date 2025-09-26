@@ -75,7 +75,7 @@ export async function uploadRenovatedImageToS3(
 
     // 6. Create database record with ai_renovated tag
     console.log('💾 Creating database record...');
-    const imageData = {
+    const imageData: Omit<PropertyImage, "propertyImageId" | "createdAt" | "updatedAt"> = {
       propertyId,
       referenceNumber,
       imageUrl,
@@ -84,13 +84,8 @@ export async function uploadRenovatedImageToS3(
       s3key,
       imageOrder,
       imageTag, // Mark as AI renovated with type for future reference
-    } as any;
-
-    // Only include originImageId if it's provided (for backward compatibility)
-    if (originImageId !== undefined) {
-      console.log('🔗 Including originImageId:', originImageId.toString());
-      imageData.originImageId = originImageId;
-    }
+      ...(originImageId !== undefined && { originImageId }),
+    };
 
     console.log('📝 Image data to insert:', {
       ...imageData,
@@ -205,7 +200,7 @@ export async function createRenovatedPropertyImageFromBuffer(
       renovationType: renovationType ?? 'generic'
     });
 
-    const imageData = {
+    const imageData: Omit<PropertyImage, "propertyImageId" | "createdAt" | "updatedAt"> = {
       propertyId,
       referenceNumber,
       imageUrl,
@@ -214,12 +209,8 @@ export async function createRenovatedPropertyImageFromBuffer(
       s3key,
       imageOrder,
       imageTag, // Mark as AI renovated
-    } as any;
-
-    // Only include originImageId if it's provided (for backward compatibility)
-    if (originImageId !== undefined) {
-      imageData.originImageId = originImageId;
-    }
+      ...(originImageId !== undefined && { originImageId }),
+    };
 
     const result = await createPropertyImage(imageData);
 

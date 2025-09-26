@@ -43,9 +43,9 @@ export async function saveQuickFormData(
     
     // Generate title if not provided - use form data for more accurate title
     if (!formData.title && (formData.propertyType || formData.address)) {
-      const propertyType = formData.propertyType || listingDetails.propertyType || "piso";
-      const street = formData.address || "";
-      const neighborhood = formData.neighborhood || "";
+      const propertyType = formData.propertyType ?? listingDetails.propertyType ?? "piso";
+      const street = formData.address ?? "";
+      const neighborhood = formData.neighborhood ?? "";
       
       formData.title = generatePropertyTitle(propertyType, street, neighborhood);
       console.log("Generated title:", formData.title);
@@ -56,7 +56,7 @@ export async function saveQuickFormData(
     if (listingDetails.propertyId && !isNaN(Number(listingDetails.propertyId))) {
       const propertyUpdateData: Record<string, unknown> = {
         // Basic info from first page  
-        propertyType: formData.propertyType || listingDetails.propertyType || "piso",
+        propertyType: formData.propertyType ?? listingDetails.propertyType ?? "piso",
         propertySubtype: formData.propertySubtype ?? null,
         
         // Basic info
@@ -236,7 +236,7 @@ export async function saveQuickFormData(
       // Mark as active if completed - use Spanish status values
       if (options.markAsCompleted) {
         // Determine correct Spanish status based on listing type
-        const listingType = formData.listingType || listingDetails.listingType;
+        const listingType = formData.listingType ?? listingDetails.listingType;
         if (listingType === "Sale") {
           listingUpdateData.status = "En Venta";
         } else if (listingType === "Rent" || listingType === "RentWithOption" || listingType === "RoomSharing") {

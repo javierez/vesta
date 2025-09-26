@@ -13,7 +13,7 @@ export async function createPropertyImage(
       referenceNumber: data.referenceNumber,
       imageOrder: data.imageOrder,
       imageTag: data.imageTag,
-      originImageId: (data as any).originImageId?.toString() ?? 'undefined',
+      originImageId: data.originImageId?.toString() ?? 'undefined',
       hasOriginImageId: 'originImageId' in data,
       dataKeys: Object.keys(data)
     });
@@ -37,7 +37,7 @@ export async function createPropertyImage(
         propertyId: data.propertyId?.toString() ?? 'undefined',
         referenceNumber: data.referenceNumber,
         imageOrder: data.imageOrder,
-        originImageId: (data as any).originImageId?.toString() ?? 'undefined'
+        originImageId: data.originImageId?.toString() ?? 'undefined'
       }
     });
     throw error;

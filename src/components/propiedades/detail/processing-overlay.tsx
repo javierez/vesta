@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface ProcessingOverlayProps {
   isVisible: boolean;
@@ -16,7 +16,7 @@ const motivationalMessages = [
   "Convierte cada propiedad en el hogar de sus sueños"
 ];
 
-export function ProcessingOverlay({ isVisible, processingType }: ProcessingOverlayProps) {
+export function ProcessingOverlay({ isVisible }: ProcessingOverlayProps) {
   const [randomMessage] = useState(() => 
     motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)]
   );

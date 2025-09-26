@@ -232,7 +232,7 @@ export class FormSaveService {
         // Mark as active if completed - use Spanish status values
         if (options.markAsCompleted) {
           // Determine correct Spanish status based on listing type
-          const listingType = formData.listingType || listingDetails.listingType;
+          const listingType = formData.listingType ?? listingDetails.listingType;
           if (listingType === "Sale") {
             listingUpdateData.status = "En Venta";
           } else if (listingType === "Rent" || listingType === "RentWithOption" || listingType === "RoomSharing") {

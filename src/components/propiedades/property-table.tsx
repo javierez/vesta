@@ -30,7 +30,6 @@ import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import type { ListingOverview } from "~/types/listing";
-import { formatListingType } from "../contactos/contact-config";
 import { PropertyImagePlaceholder } from "./PropertyImagePlaceholder";
 
 interface PropertyTableProps {
@@ -252,7 +251,7 @@ export const PropertyTable = React.memo(function PropertyTable({
       });
     };
     
-    prefetchAdjacentPages();
+    void prefetchAdjacentPages();
   }, [currentPage, totalPages, onPrefetchPage]);
 
   const handleWhatsAppClick = React.useCallback(
