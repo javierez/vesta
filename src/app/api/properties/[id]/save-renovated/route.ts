@@ -101,7 +101,8 @@ export async function POST(
         correctPropertyId,
         data.referenceNumber,
         newImageOrder,
-        data.renovationType
+        data.renovationType,
+        originalImage.propertyImageId // Pass the original image ID to track the relationship
       );
 
       console.log('🎉 Renovated image successfully saved:', {

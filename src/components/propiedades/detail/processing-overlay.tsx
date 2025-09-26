@@ -76,7 +76,6 @@ export function ProcessingOverlay({ isVisible, processingType }: ProcessingOverl
                 </motion.div>
               </div>
             </motion.div>
-          )}
         </motion.div>
       )}
     </AnimatePresence>

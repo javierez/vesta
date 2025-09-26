@@ -332,6 +332,7 @@ export const propertyImages = singlestoreTable("property_images", {
   imageTag: varchar("image_tag", { length: 255 }),
   s3key: varchar("s3key", { length: 2048 }).notNull(),
   imageOrder: int("image_order").default(0).notNull(),
+  originImageId: bigint("origin_image_id", { mode: "bigint" }),
 });
 
 export const listings = singlestoreTable("listings", {

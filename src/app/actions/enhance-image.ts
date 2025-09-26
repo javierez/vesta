@@ -17,6 +17,7 @@ export async function uploadEnhancedImageToS3(
   propertyId: bigint,
   referenceNumber: string,
   imageOrder: number,
+  originImageId?: bigint,
 ): Promise<PropertyImage> {
   try {
     // 1. Download the enhanced image from Freepik's CDN
@@ -58,6 +59,7 @@ export async function uploadEnhancedImageToS3(
       s3key,
       imageOrder,
       imageTag: 'ai_enhanced', // Mark as AI enhanced for future reference
+      originImageId, // Track which image this was enhanced from
     });
 
     if (!result) {
@@ -101,6 +103,7 @@ export async function createEnhancedPropertyImageFromFile(
   propertyId: bigint,
   referenceNumber: string,
   imageOrder: number,
+  originImageId?: bigint,
 ): Promise<PropertyImage> {
   try {
     // 1. Generate the S3 key for the enhanced image
@@ -153,6 +156,7 @@ export async function createEnhancedPropertyImageFromFile(
       s3key,
       imageOrder,
       imageTag: 'ai_enhanced', // Mark as AI enhanced
+      originImageId, // Track which image this was enhanced from
     });
 
     console.log('✅ Database record created:', result ? {

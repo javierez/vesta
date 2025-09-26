@@ -19,6 +19,7 @@ export async function uploadRenovatedImageToS3(
   referenceNumber: string,
   imageOrder: number,
   renovationType?: RenovationType,
+  originImageId?: bigint,
 ): Promise<PropertyImage> {
   try {
     // 1. Convert base64 to buffer
@@ -63,6 +64,7 @@ export async function uploadRenovatedImageToS3(
       s3key,
       imageOrder,
       imageTag, // Mark as AI renovated with type for future reference
+      originImageId, // Track which image this was renovated from
     });
 
     if (!result) {
@@ -88,6 +90,7 @@ export async function uploadRenovatedImageToS3(
       s3key: propertyImage.s3key,
       imageOrder: propertyImage.imageOrder,
       imageTag: propertyImage.imageTag ?? undefined,
+      originImageId: propertyImage.originImageId,
     };
 
     console.log('Successfully uploaded renovated image:', {
@@ -114,6 +117,7 @@ export async function createRenovatedPropertyImageFromBuffer(
   referenceNumber: string,
   imageOrder: number,
   renovationType?: RenovationType,
+  originImageId?: bigint,
 ): Promise<PropertyImage> {
   try {
     // 1. Generate the S3 key for the renovated image
@@ -166,6 +170,7 @@ export async function createRenovatedPropertyImageFromBuffer(
       s3key,
       imageOrder,
       imageTag, // Mark as AI renovated
+      originImageId, // Track which image this was renovated from
     });
 
     console.log('✅ Database record created:', result ? {
@@ -209,6 +214,7 @@ export async function createRenovatedPropertyImageFromBuffer(
       s3key: propertyImage.s3key,
       imageOrder: propertyImage.imageOrder,
       imageTag: propertyImage.imageTag ?? undefined,
+      originImageId: propertyImage.originImageId,
     };
 
     return typedPropertyImage;

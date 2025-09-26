@@ -89,7 +89,8 @@ export async function POST(
         data.enhancedImageUrl,
         correctPropertyId,
         data.referenceNumber,
-        newImageOrder
+        newImageOrder,
+        originalImage.propertyImageId // Pass the original image ID to track the relationship
       );
 
       console.log('🎉 Enhanced image successfully saved:', {

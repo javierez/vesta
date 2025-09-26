@@ -14,6 +14,7 @@ export type PropertyImage = {
   imageTag?: string;
   s3key: string;
   imageOrder: number;
+  originImageId?: bigint;
 };
 
 export type Location = {
