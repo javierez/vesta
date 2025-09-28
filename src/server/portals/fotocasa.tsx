@@ -880,7 +880,7 @@ export async function buildFotocasaPayload(
       watermarkedKeys,
     };
   } catch (error) {
-    // console.error("Error building Fotocasa payload:", error);
+    console.error("Error building Fotocasa payload:", error);
     throw error;
   }
 }
@@ -905,7 +905,7 @@ export async function publishToFotocasa(
     );
 
     // Log the payload for debugging
-    // console.log("Fotocasa Payload:", JSON.stringify(payload, null, 2));
+    console.log("Fotocasa POST Payload:", JSON.stringify(payload, null, 2));
 
     // Make the API call to Fotocasa
     const response = await fetch(
@@ -923,7 +923,7 @@ export async function publishToFotocasa(
     const responseData = (await response.json()) as unknown;
 
     // Log the response for debugging
-    // console.log("Fotocasa API Response:", responseData);
+    console.log("Fotocasa POST API Response:", responseData);
 
     // Check if the request was successful
     if (
@@ -967,7 +967,7 @@ export async function publishToFotocasa(
       };
     }
   } catch (error) {
-    // console.error("Error publishing to Fotocasa:", error);
+    console.error("Error publishing to Fotocasa:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -995,8 +995,8 @@ export async function updateFotocasa(
     );
 
     // Log the payload for debugging
-    // console.log("Fotocasa Update Payload:", JSON.stringify(payload, null, 2));
-    // console.log(`Updating listing ${listingId} on Fotocasa`);
+    console.log("Fotocasa PUT Update Payload:", JSON.stringify(payload, null, 2));
+    console.log(`Updating listing ${listingId} on Fotocasa`);
 
     // Make the PUT API call to Fotocasa
     // According to Fotocasa API docs: PUT api/property (no URI parameters)
@@ -1015,7 +1015,7 @@ export async function updateFotocasa(
     const responseData = (await response.json()) as unknown;
 
     // Log the response for debugging
-    // console.log("Fotocasa Update API Response:", responseData);
+    console.log("Fotocasa PUT Update API Response:", responseData);
 
     // Check if the request was successful
     if (
@@ -1059,7 +1059,7 @@ export async function updateFotocasa(
       };
     }
   } catch (error) {
-    // console.error("Error updating on Fotocasa:", error);
+    console.error("Error updating on Fotocasa:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -1076,9 +1076,9 @@ export async function deleteFromFotocasa(
     const externalId = listingId.toString();
     const base64ExternalId = Buffer.from(externalId).toString("base64");
 
-    // console.log(
-    //   `Deleting listing ${listingId} from Fotocasa (base64: ${base64ExternalId})`,
-    // );
+    console.log(
+      `Deleting listing ${listingId} from Fotocasa (base64: ${base64ExternalId})`,
+    );
 
     // Make the DELETE API call to Fotocasa
     const response = await fetch(
@@ -1092,11 +1092,11 @@ export async function deleteFromFotocasa(
     );
 
     // Log the response for debugging
-    // console.log("Fotocasa DELETE API Response status:", response.status);
+    console.log("Fotocasa DELETE API Response status:", response.status);
 
     // Check if the request was successful
     if (response.ok) {
-      // console.log("Successfully deleted from Fotocasa");
+      console.log("Successfully deleted from Fotocasa");
       return {
         success: true,
         response: { status: response.status },
@@ -1112,7 +1112,7 @@ export async function deleteFromFotocasa(
         };
       }
 
-      // console.error("Failed to delete from Fotocasa:", responseData);
+      console.error("Failed to delete from Fotocasa:", responseData);
       return {
         success: false,
         error:
@@ -1123,7 +1123,7 @@ export async function deleteFromFotocasa(
       };
     }
   } catch (error) {
-    // console.error("Error deleting from Fotocasa:", error);
+    console.error("Error deleting from Fotocasa:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

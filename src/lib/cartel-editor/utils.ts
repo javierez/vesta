@@ -70,23 +70,50 @@ export const mapDatabasePropertyType = (dbType?: string): "piso" | "casa" | "loc
 
 // Parse contact data with error handling
 export const parseContactData = (databaseContactProps?: string): ContactOffice[] => {
-  if (!databaseContactProps) return [];
+  console.log("🎯 [parseContactData] Input:", {
+    hasData: !!databaseContactProps,
+    type: typeof databaseContactProps,
+    length: databaseContactProps?.length,
+    first200Chars: databaseContactProps?.substring?.(0, 200),
+  });
+  
+  if (!databaseContactProps) {
+    console.log("⚠️ [parseContactData] No contact props provided, returning empty array");
+    return [];
+  }
   
   try {
-    // Handle double-escaped JSON from database
-    let cleanedJson = databaseContactProps;
-    if (cleanedJson.includes('""')) {
-      // Replace double quotes with single quotes
-      cleanedJson = cleanedJson.replace(/""/g, '"');
-    }
-    
-    console.log("🔄 Parsing contact props:", cleanedJson);
-    const parsed = JSON.parse(cleanedJson) as {offices?: ContactOffice[]};
-    console.log("✅ Parsed contact data:", parsed);
+    // First try to parse directly (most common case)
+    console.log("🔄 [parseContactData] Attempting direct parse");
+    const parsed = JSON.parse(databaseContactProps) as {offices?: ContactOffice[]};
+    console.log("✅ [parseContactData] Successfully parsed:", {
+      hasOffices: !!parsed.offices,
+      officeCount: parsed.offices?.length ?? 0,
+      firstOffice: parsed.offices?.[0],
+    });
     return parsed.offices ?? [];
-  } catch (error) {
-    console.error("❌ Error parsing contact props:", error);
-    console.error("Raw contact props:", databaseContactProps);
-    return [];
+  } catch (firstError) {
+    console.log("⚠️ [parseContactData] Direct parse failed, trying to handle escaped JSON");
+    
+    try {
+      // If direct parse fails, try handling escaped JSON
+      // This handles cases where the JSON might be double-escaped from the database
+      const unescaped = JSON.parse(databaseContactProps) as string;
+      console.log("🔧 [parseContactData] Unescaped to:", unescaped.substring(0, 200));
+      
+      const parsed = JSON.parse(unescaped) as {offices?: ContactOffice[]};
+      console.log("✅ [parseContactData] Successfully parsed after unescaping:", {
+        hasOffices: !!parsed.offices,
+        officeCount: parsed.offices?.length ?? 0,
+        firstOffice: parsed.offices?.[0],
+      });
+      return parsed.offices ?? [];
+    } catch (secondError) {
+      console.error("❌ [parseContactData] All parsing attempts failed");
+      console.error("First error:", firstError);
+      console.error("Second error:", secondError);
+      console.error("Raw contact props that failed:", databaseContactProps);
+      return [];
+    }
   }
 };

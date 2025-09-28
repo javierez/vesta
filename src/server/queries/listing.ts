@@ -1600,6 +1600,10 @@ export async function getListingDocumentsData(listingId: number) {
 // Ultra-lightweight query for CartelEditor component - only listing type and property type needed
 export async function getListingCartelData(listingId: number) {
   const accountId = await getCurrentUserAccountId();
+  console.log("📊 [getListingCartelData] Starting fetch for:", {
+    listingId,
+    accountId,
+  });
 
   try {
     const [cartelData] = await db
@@ -1612,6 +1616,8 @@ export async function getListingCartelData(listingId: number) {
         bathrooms: properties.bathrooms,
         squareMeter: properties.squareMeter,
         contactProps: websiteProperties.contactProps,
+        watermarkProps: websiteProperties.watermarkProps,
+        logoUrl: websiteProperties.logo,
         website: accounts.website,
         preferences: accounts.preferences,
       })
@@ -1627,6 +1633,15 @@ export async function getListingCartelData(listingId: number) {
           eq(listings.isActive, true),
         ),
       );
+      
+    console.log("📊 [getListingCartelData] Raw query result:", {
+      hasCartelData: !!cartelData,
+      contactPropsRaw: cartelData?.contactProps,
+      contactPropsType: typeof cartelData?.contactProps,
+      contactPropsLength: cartelData?.contactProps?.length,
+      contactPropsFirstChars: cartelData?.contactProps?.substring?.(0, 100),
+      website: cartelData?.website,
+    });
 
     if (!cartelData) {
       throw new Error("Listing not found");

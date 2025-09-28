@@ -326,24 +326,32 @@ export const AccountBranding = () => {
             <div className="flex justify-center">
               <div className="group relative">
                 <div className="relative h-64 w-64 overflow-hidden rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-                  <Image
-                    src={brandAsset.logoTransparentUrl}
-                    alt="Logo sin fondo"
-                    fill
-                    className="object-contain"
-                  />
+                  {brandAsset.logoTransparentUrl && brandAsset.logoTransparentUrl !== "" ? (
+                    <Image
+                      src={brandAsset.logoTransparentUrl}
+                      alt="Logo sin fondo"
+                      fill
+                      className="object-contain"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-gray-400">
+                      <span>Logo no disponible</span>
+                    </div>
+                  )}
 
                   {/* Hover buttons - same pattern as Hero section */}
-                  <button
-                    type="button"
-                    className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
-                    onClick={() =>
-                      window.open(brandAsset.logoOriginalUrl, "_blank")
-                    }
-                    aria-label="Ver original"
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                  </button>
+                  {brandAsset.logoOriginalUrl && brandAsset.logoOriginalUrl !== "" && (
+                    <button
+                      type="button"
+                      className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
+                      onClick={() =>
+                        window.open(brandAsset.logoOriginalUrl, "_blank")
+                      }
+                      aria-label="Ver original"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -355,21 +363,23 @@ export const AccountBranding = () => {
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
 
-                  <button
-                    type="button"
-                    className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
-                    onClick={() => {
-                      const a = document.createElement("a");
-                      a.href = brandAsset.logoTransparentUrl;
-                      a.download = "logo-transparente.png";
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                    }}
-                    aria-label="Descargar logo"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                  </button>
+                  {brandAsset.logoTransparentUrl && brandAsset.logoTransparentUrl !== "" && (
+                    <button
+                      type="button"
+                      className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
+                      onClick={() => {
+                        const a = document.createElement("a");
+                        a.href = brandAsset.logoTransparentUrl;
+                        a.download = "logo-transparente.png";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }}
+                      aria-label="Descargar logo"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </button>
+                  )}
 
                   <button
                     type="button"

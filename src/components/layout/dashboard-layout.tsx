@@ -94,15 +94,29 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
-  const { hasRoleId } = useUserRole();
+  const { hasRoleId, userRoles, roles, loading: roleLoading } = useUserRole();
+
+  // Debug logging
+  useEffect(() => {
+    console.log("=== Role Debug Info ===");
+    console.log("Session user ID:", session?.user?.id);
+    console.log("Roles (string array):", roles);
+    console.log("User roles (legacy number array):", userRoles);
+    console.log("Has role ID 2:", hasRoleId(2));
+    console.log("Has role ID 3:", hasRoleId(3));
+    console.log("Role loading state:", roleLoading);
+    console.log("=======================");
+  }, [session, roles, userRoles, roleLoading, hasRoleId]);
 
   // Build navigation based on user role
   const navigation = [...baseNavigation];
   if (hasRoleId(2)) {
+    console.log("Adding admin navigation for role ID 2");
     navigation.push(...adminNavigation);
   }
   // Add account admin navigation for role ID 3
   if (hasRoleId(3)) {
+    console.log("Adding account-admin navigation for role ID 3");
     navigation.push(...accountAdminNavigation);
   }
 

@@ -31,6 +31,8 @@ export interface CartelEditorClientProps {
   databaseSquareMeter?: number; // Optional database square meters
   databaseContactProps?: string; // Optional database contact props JSON
   databaseWebsite?: string; // Optional database website
+  databaseWatermarkProps?: string; // Optional database watermark props JSON
+  databaseLogoUrl?: string; // Optional database logo URL
   accountPreferences?: string; // Optional account preferences JSON
 }
 

@@ -62,7 +62,9 @@ export function UserRoleProvider({ children }: { children: ReactNode }) {
         // Handle legacy roles API
         if (legacyResponse.ok) {
           const roles = (await legacyResponse.json()) as { roleId: string }[];
+          console.log("Fetched roles from API:", roles);
           const roleIds = roles.map((role) => Number(role.roleId));
+          console.log("Converted role IDs:", roleIds);
           setLegacyRoles(roleIds);
         }
 

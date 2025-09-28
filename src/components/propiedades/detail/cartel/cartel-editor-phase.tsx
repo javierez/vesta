@@ -27,6 +27,8 @@ export async function CartelEditorPhase1({
   let databaseSquareMeter: number | undefined;
   let databaseContactProps: string | undefined;
   let databaseWebsite: string | undefined;
+  let databaseWatermarkProps: string | undefined;
+  let databaseLogoUrl: string | undefined;
   let accountPreferences: string | undefined;
   
   try {
@@ -62,10 +64,26 @@ export async function CartelEditorPhase1({
       databaseSquareMeter = cartelData.squareMeter;
     }
     if (cartelData.contactProps) {
+      console.log("📞 [CartelEditorPhase1] Contact props from DB:", {
+        raw: cartelData.contactProps,
+        type: typeof cartelData.contactProps,
+        length: cartelData.contactProps?.length,
+        first100Chars: cartelData.contactProps?.substring?.(0, 100),
+      });
       databaseContactProps = cartelData.contactProps;
+    } else {
+      console.log("⚠️ [CartelEditorPhase1] No contact props found in database");
     }
     if (cartelData.website) {
       databaseWebsite = cartelData.website;
+    }
+    if (cartelData.watermarkProps) {
+      console.log("🖼️ [CartelEditorPhase1] Watermark props from DB:", cartelData.watermarkProps);
+      databaseWatermarkProps = cartelData.watermarkProps;
+    }
+    if (cartelData.logoUrl) {
+      console.log("🎨 [CartelEditorPhase1] Logo URL from DB:", cartelData.logoUrl);
+      databaseLogoUrl = cartelData.logoUrl;
     }
     if (cartelData.preferences) {
       accountPreferences = typeof cartelData.preferences === 'string' 
@@ -110,6 +128,8 @@ export async function CartelEditorPhase1({
       databaseSquareMeter={databaseSquareMeter}
       databaseContactProps={databaseContactProps}
       databaseWebsite={databaseWebsite}
+      databaseWatermarkProps={databaseWatermarkProps}
+      databaseLogoUrl={databaseLogoUrl}
       accountPreferences={accountPreferences}
     />
   );

@@ -60,7 +60,7 @@ import { SavedConfigurations } from "./saved-configurations";
 import { getListingCartelSaveData } from "~/server/queries/listing";
 
 
-export function CartelEditorClient({ images = [], databaseListingType, databasePropertyType, accountColorPalette = [], databaseCity, databaseNeighborhood, databaseBedrooms, databaseBathrooms, databaseSquareMeter, databaseContactProps, databaseWebsite, accountPreferences }: CartelEditorClientProps) {
+export function CartelEditorClient({ images = [], databaseListingType, databasePropertyType, accountColorPalette = [], databaseCity, databaseNeighborhood, databaseBedrooms, databaseBathrooms, databaseSquareMeter, databaseContactProps, databaseWebsite, databaseWatermarkProps, databaseLogoUrl, accountPreferences }: CartelEditorClientProps) {
   // Get listing ID from URL
   const params = useParams();
   const listingId = params.id ? parseInt(params.id as string, 10) : null;
@@ -161,18 +161,9 @@ export function CartelEditorClient({ images = [], databaseListingType, databaseP
       // Use selected images if available
       const selectedImages = images.slice(0, 4).map(img => img.imageUrl).filter(Boolean);
       
-      // Extract logo URL from account preferences
-      let logoUrl: string | undefined = undefined;
-      try {
-        if (accountPreferences) {
-          const preferences = typeof accountPreferences === 'string' 
-            ? JSON.parse(accountPreferences) as {logoTransparent?: string}
-            : accountPreferences as {logoTransparent?: string};
-          logoUrl = preferences?.logoTransparent;
-        }
-      } catch (error) {
-        console.warn('Error parsing account preferences for logo:', error);
-      }
+      // Use logo URL directly from database (logo field IS the watermark)
+      let logoUrl: string | undefined = databaseLogoUrl;
+      console.log('🖼️ Logo URL from database:', logoUrl);
       
       return {
         ...baseData,
