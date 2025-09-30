@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { PropertyTabs } from "~/components/propiedades/detail/property-tabs";
-import { getPropertyImages } from "~/server/queries/property_images";
+import { getPropertyImages, getPropertyImagesCount } from "~/server/queries/property_images";
 import {
   getListingDetailsWithAuth,
   getListingBreadcrumbData,
@@ -51,10 +51,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     redirect(`/propiedades/crear/${listingId}`);
   }
 
-  // Get energy certificate document and images in parallel
-  const [energyCertificate, propertyImages] = await Promise.all([
+  // Get energy certificate, images, and image count in parallel
+  const [energyCertificate, propertyImages, imageCount] = await Promise.all([
     getEnergyCertificate(Number(headerData.propertyId)),
     getPropertyImages(BigInt(headerData.propertyId)),
+    getPropertyImagesCount(BigInt(headerData.propertyId)),
   ]);
   const defaultPlaceholder = "";
 
@@ -97,6 +98,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         isBankOwned={headerData.isBankOwned ?? false}
         neighborhood=""
         dynamicTitle={true}
+        listing={isValidRecord(fullListingDetails) ? { ...fullListingDetails, imageCount } : undefined}
       />
 
       {/* Property Tabs - Under Title */}

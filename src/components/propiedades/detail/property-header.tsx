@@ -11,6 +11,8 @@ import { updateListingStatus } from "~/app/actions/listing-settings";
 import { toast } from "sonner";
 import { formatListingType } from "../../contactos/contact-config";
 import { generatePropertyTitle } from "~/lib/property-title";
+import { CompletionTrackerModal } from "../completion-tracker-modal";
+import { calculateCompletion } from "~/lib/property-completion-tracker";
 
 const statusColors: Record<string, string> = {
   Sale: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-200 hover:text-amber-900 hover:border-amber-400 hover:shadow-lg hover:scale-105",
@@ -39,6 +41,8 @@ interface PropertyHeaderProps {
   neighborhood?: string;
   // Optional props for dynamic title generation
   dynamicTitle?: boolean; // If true, generate title dynamically instead of using title prop
+  // Full listing object for completion tracking
+  listing?: any;
 }
 
 export function PropertyHeader({
@@ -58,6 +62,7 @@ export function PropertyHeader({
   isFeatured: _isFeatured = false,
   neighborhood,
   dynamicTitle = false,
+  listing,
 }: PropertyHeaderProps) {
   // Generate dynamic title if enabled, otherwise use provided title
   const displayTitle = dynamicTitle && propertyType 
@@ -73,6 +78,24 @@ export function PropertyHeader({
   // Status toggle state
   const [currentStatus, setCurrentStatus] = useState(status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Completion tracker modal state
+  const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+
+  // Calculate completion percentage from listing data
+  const completion = listing ? calculateCompletion(listing) : null;
+  const completionPercentage = completion?.overallPercentage ?? 0;
+
+  // Determine color based on mandatory fields completion (green when all mandatory are complete)
+  const completionColor =
+    completion?.canPublishToPortals ? "#10b981" : // green - all mandatory complete
+    completionPercentage >= 50 ? "#f59e0b" : // amber
+    "#ef4444"; // red
+
+  // Calculate circle dash properties for SVG
+  const radius = 8;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference - (completionPercentage / 100) * circumference;
 
   // Update titles when displayTitle changes (for dynamic mode) but only if we haven't manually updated the title
   useEffect(() => {
@@ -285,7 +308,7 @@ export function PropertyHeader({
           </div>
         </div>
         <div className="flex flex-col items-start mt-2 sm:items-end sm:mt-0 md:flex-shrink-0">
-          <div 
+          <div
             className={cn(
               "text-xl font-bold sm:text-2xl md:text-3xl break-words transition-colors",
               listingId ? "cursor-pointer hover:text-primary" : "",
@@ -300,21 +323,58 @@ export function PropertyHeader({
               ? "/mes"
               : ""}
           </div>
-          <Badge
-            variant="secondary"
-            className={cn(
-              "mt-1 font-normal transition-all duration-200 text-xs sm:text-sm flex-shrink-0",
-              statusColors[listingType],
-              listingId ? "cursor-pointer hover:scale-105" : "",
-              isUpdatingStatus && "opacity-50"
-            )}
-            onClick={listingId ? handleStatusToggle : undefined}
-            title={listingId ? "Haz clic para cambiar el estado" : undefined}
-          >
-            {getDisplayText(listingType, currentStatus)}
-          </Badge>
+          <div className="flex items-center gap-2 mt-1">
+            {/* Completion Tracker Button */}
+            <button
+              onClick={() => {
+                setIsCompletionModalOpen(!isCompletionModalOpen);
+              }}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-accent transition-colors"
+              title="Ver estado de registro"
+            >
+              {/* Circular progress ring - dynamic percentage */}
+              <svg width="20" height="20" className="transform -rotate-90">
+                <circle cx="10" cy="10" r="8" fill="none" stroke="#e5e7eb" strokeWidth="2"/>
+                <circle
+                  cx="10"
+                  cy="10"
+                  r="8"
+                  fill="none"
+                  stroke={completionColor}
+                  strokeWidth="2"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={dashOffset}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className="text-xs font-medium text-muted-foreground">{completionPercentage}%</span>
+            </button>
+
+            <Badge
+              variant="secondary"
+              className={cn(
+                "font-normal transition-all duration-200 text-xs sm:text-sm flex-shrink-0",
+                statusColors[listingType],
+                listingId ? "cursor-pointer hover:scale-105" : "",
+                isUpdatingStatus && "opacity-50"
+              )}
+              onClick={listingId ? handleStatusToggle : undefined}
+              title={listingId ? "Haz clic para cambiar el estado" : undefined}
+            >
+              {getDisplayText(listingType, currentStatus)}
+            </Badge>
+          </div>
         </div>
       </div>
+
+      {/* Completion Tracker Modal */}
+      {listing && (
+        <CompletionTrackerModal
+          listing={listing}
+          isOpen={isCompletionModalOpen}
+          onClose={() => setIsCompletionModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

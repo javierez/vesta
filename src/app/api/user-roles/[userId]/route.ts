@@ -31,16 +31,14 @@ export async function GET(
     }
 
     const userRoles = await getUserRoles(userId);
-    console.log("Raw user roles from DB for user", userId, ":", userRoles);
-    
+
     // Convert BigInt values to strings for JSON serialization
     const serializedRoles = userRoles.map((role) => ({
       ...role,
       userRoleId: role.userRoleId.toString(),
       roleId: role.roleId.toString(),
     }));
-    
-    console.log("Serialized roles being returned:", serializedRoles);
+
     return NextResponse.json(serializedRoles);
   } catch (error) {
     console.error("Error fetching user roles:", error);

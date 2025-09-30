@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { propertyImages } from "../db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
 import type { PropertyImage } from "../../lib/data";
 
 // Create a new property image
@@ -96,6 +96,26 @@ export async function getPropertyImages(propertyId: bigint, isActive = true) {
   } catch (error) {
     console.error("Error getting property images:", error);
     throw error;
+  }
+}
+
+// Get count of images for a property (optimized query)
+export async function getPropertyImagesCount(propertyId: bigint, isActive = true) {
+  try {
+    const conditions = [eq(propertyImages.propertyId, propertyId)];
+    if (isActive !== undefined) {
+      conditions.push(eq(propertyImages.isActive, isActive));
+    }
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(propertyImages)
+      .where(and(...conditions));
+
+    return result[0]?.count ?? 0;
+  } catch (error) {
+    console.error("Error getting property images count:", error);
+    return 0;
   }
 }
 
