@@ -9,7 +9,7 @@ export interface FieldRule {
   fieldPath: string; // Path in listing object
   importance: "mandatory" | "nth"; // Field importance category
   category: string; // Card/module name
-  validator: (value: any, listing?: any) => boolean;
+  validator: (value: unknown, listing?: Record<string, unknown>) => boolean;
 }
 
 export const fieldRules: FieldRule[] = [
@@ -30,7 +30,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "listingType",
     importance: "mandatory",
     category: "Información Básica",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "propertyType",
@@ -38,7 +38,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "propertyType",
     importance: "mandatory",
     category: "Información Básica",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "squareMeter",
@@ -70,7 +70,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "street",
     importance: "mandatory",
     category: "Dirección",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "city",
@@ -78,7 +78,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "city",
     importance: "mandatory",
     category: "Dirección",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "province",
@@ -86,7 +86,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "province",
     importance: "mandatory",
     category: "Dirección",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "postalCode",
@@ -94,7 +94,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "postalCode",
     importance: "mandatory",
     category: "Dirección",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "description",
@@ -102,7 +102,11 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "description",
     importance: "mandatory",
     category: "Descripción",
-    validator: (v) => !!v && v.trim().length >= 20,
+    validator: (v) => {
+      if (!v) return false;
+      if (typeof v === 'string') return v.trim().length >= 20;
+      return false;
+    },
   },
   {
     id: "images",
@@ -122,7 +126,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "title",
     importance: "nth",
     category: "Información Básica",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "shortDescription",
@@ -130,7 +134,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "shortDescription",
     importance: "nth",
     category: "Descripción",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "propertySubtype",
@@ -138,7 +142,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "propertySubtype",
     importance: "nth",
     category: "Información Básica",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "yearBuilt",
@@ -186,7 +190,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "cadastralReference",
     importance: "nth",
     category: "Información Básica",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "newConstruction",
@@ -202,7 +206,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "neighborhood",
     importance: "nth",
     category: "Dirección",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "municipality",
@@ -210,7 +214,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "municipality",
     importance: "nth",
     category: "Dirección",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "addressDetails",
@@ -218,7 +222,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "addressDetails",
     importance: "nth",
     category: "Dirección",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "hasElevator",
@@ -242,7 +246,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "garageType",
     importance: "nth",
     category: "Características",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "garageSpaces",
@@ -282,7 +286,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "heatingType",
     importance: "nth",
     category: "Características",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "hotWaterType",
@@ -290,7 +294,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "hotWaterType",
     importance: "nth",
     category: "Características",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "airConditioningType",
@@ -298,7 +302,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "airConditioningType",
     importance: "nth",
     category: "Características",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "isFurnished",
@@ -330,7 +334,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "orientation",
     importance: "nth",
     category: "Orientación",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "disabledAccessible",
@@ -370,7 +374,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "kitchenType",
     importance: "nth",
     category: "Características Adicionales",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
     id: "views",
@@ -450,7 +454,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "mainFloorType",
     importance: "nth",
     category: "Materiales",
-    validator: (v) => !!v && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
 ];
 
@@ -473,7 +477,7 @@ export interface CompletionResult {
   canPublishToPortals: boolean;
 }
 
-export function calculateCompletion(listing: any): CompletionResult {
+export function calculateCompletion(listing: Record<string, unknown>): CompletionResult {
   const mandatory = {
     completed: [] as Array<FieldRule & { isCompleted: boolean }>,
     pending: [] as Array<FieldRule & { isCompleted: boolean }>,

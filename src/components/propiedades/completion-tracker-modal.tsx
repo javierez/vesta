@@ -1,7 +1,6 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
-import { Progress } from "~/components/ui/progress";
 import { CheckCircle2, AlertCircle, ChevronDown } from "lucide-react";
 import { calculateCompletion, type FieldRule } from "~/lib/property-completion-tracker";
 import { cn } from "~/lib/utils";
@@ -9,8 +8,13 @@ import { useState, useEffect } from "react";
 import { Card } from "~/components/ui/card";
 import { getPropertyImageCount } from "~/app/actions/property-images";
 
+interface PropertyListing {
+  propertyId?: bigint | number | string;
+  [key: string]: unknown;
+}
+
 interface CompletionTrackerModalProps {
-  listing: any;
+  listing: PropertyListing;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -21,7 +25,6 @@ export function CompletionTrackerModal({
   onClose,
 }: CompletionTrackerModalProps) {
   const [imageCount, setImageCount] = useState(0);
-  const [isLoadingImages, setIsLoadingImages] = useState(true);
 
   const [expandedSections, setExpandedSections] = useState({
     mandatory: true,
@@ -31,36 +34,29 @@ export function CompletionTrackerModal({
   // Fetch property images when modal opens
   useEffect(() => {
     if (isOpen && listing?.propertyId) {
-      setIsLoadingImages(true);
-      getPropertyImageCount(BigInt(listing.propertyId))
+      // Convert propertyId to bigint if necessary
+      const propertyId = typeof listing.propertyId === 'bigint' 
+        ? listing.propertyId 
+        : BigInt(String(listing.propertyId));
+        
+      getPropertyImageCount(propertyId)
         .then((count) => {
           setImageCount(count);
         })
         .catch((error) => {
           console.error("Error fetching images:", error);
           setImageCount(0);
-        })
-        .finally(() => {
-          setIsLoadingImages(false);
         });
     }
   }, [isOpen, listing?.propertyId]);
 
   // Calculate completion with image count
-  const listingWithImages = {
+  const listingWithImages: Record<string, unknown> = {
     ...listing,
     imageCount,
   };
 
   const completion = calculateCompletion(listingWithImages);
-
-  // Determine progress bar gradient - green when all mandatory fields complete
-  const progressGradient =
-    completion.canPublishToPortals
-      ? "bg-gradient-to-r from-emerald-400 to-green-500"
-      : completion.overallPercentage >= 50
-        ? "bg-gradient-to-r from-amber-400 to-orange-500"
-        : "bg-gradient-to-r from-rose-400 to-pink-500";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -159,7 +155,6 @@ function FieldSection({
   title,
   subtitle,
   data,
-  color,
   expanded,
   onToggle,
 }: FieldSectionProps) {

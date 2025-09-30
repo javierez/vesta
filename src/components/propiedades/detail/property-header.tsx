@@ -42,7 +42,7 @@ interface PropertyHeaderProps {
   // Optional props for dynamic title generation
   dynamicTitle?: boolean; // If true, generate title dynamically instead of using title prop
   // Full listing object for completion tracking
-  listing?: any;
+  listing?: Record<string, unknown>;
 }
 
 export function PropertyHeader({
@@ -370,7 +370,7 @@ export function PropertyHeader({
       {/* Completion Tracker Modal */}
       {listing && (
         <CompletionTrackerModal
-          listing={listing}
+          listing={listing as { propertyId?: bigint | number | string; [key: string]: unknown }}
           isOpen={isCompletionModalOpen}
           onClose={() => setIsCompletionModalOpen(false)}
         />
