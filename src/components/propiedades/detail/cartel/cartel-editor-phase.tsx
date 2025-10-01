@@ -128,7 +128,7 @@ export async function CartelEditorPhase1({
       databaseSquareMeter={databaseSquareMeter}
       databaseContactProps={databaseContactProps}
       databaseWebsite={databaseWebsite}
-      databaseWatermarkProps={databaseWatermarkProps}
+      _databaseWatermarkProps={databaseWatermarkProps}
       databaseLogoUrl={databaseLogoUrl}
       accountPreferences={accountPreferences}
     />

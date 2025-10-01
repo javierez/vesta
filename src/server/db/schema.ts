@@ -722,6 +722,7 @@ export const feedback = singlestoreTable("feedback", {
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   feedbackComment: text("feedback_comment").notNull(),
   scale: smallint("scale").notNull(), // 1-4 scale rating
+  url: varchar("url", { length: 2048 }), // URL where feedback was submitted
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

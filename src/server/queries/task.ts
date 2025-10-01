@@ -12,7 +12,7 @@ import {
 } from "../db/schema";
 import { eq, and, or, sql, isNotNull, asc, lte } from "drizzle-orm";
 import type { Task } from "../../lib/data";
-import { getCurrentUserAccountId } from "../../lib/dal";
+import { getCurrentUserAccountId, getSecureSession } from "../../lib/dal";
 
 // Wrapper functions that automatically get accountId from current session
 export async function createTaskWithAuth(
@@ -113,6 +113,57 @@ export async function listTasksWithAuth(
 export async function getMostUrgentTasksWithAuth(limit = 10, daysAhead = 30) {
   const accountId = await getCurrentUserAccountId();
   return getMostUrgentTasks(accountId, limit, daysAhead);
+}
+
+export async function createAppointmentTaskWithAuth(
+  contactId: bigint,
+  contactName: string,
+  notes?: string,
+  selectedListingsCount: number = 0
+) {
+  try {
+    // Get current user for task assignment
+    const accountId = await getCurrentUserAccountId();
+    
+    // We need to get the current user's ID, but we need to fetch it from the database
+    // Let's use the session to get the user ID directly
+    const session = await getSecureSession();
+    if (!session?.user?.id) {
+      throw new Error("No authenticated user found");
+    }
+    
+    // Calculate due date (3 days from now)
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 3);
+    
+    // Prepare task description
+    let description = `Configurar cita para mostrar propiedades a ${contactName}`;
+    
+    if (selectedListingsCount > 0) {
+      description += `\n\nPropiedades de interés: ${selectedListingsCount} propiedades seleccionadas`;
+    }
+    
+    if (notes?.trim()) {
+      description += `\n\nNotas del contacto: ${notes.trim()}`;
+    }
+    
+    // Create the task using the existing createTask function
+    const taskData = {
+      userId: session.user.id,
+      title: "Configurar cita para ver propiedades",
+      description,
+      dueDate,
+      completed: false,
+      contactId,
+      isActive: true,
+    };
+    
+    const newTask = await createTask(taskData, accountId);
+    return newTask;
+  } catch (error) {
+    console.error("Error creating appointment task:", error);
+    throw error;
+  }
 }
 
 // Create a new task

@@ -546,11 +546,9 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
           </button>
 
           <div className="mb-4">
-            <h1 className="mb-3 mt-2 bg-gradient-to-r from-gray-700 to-yellow-800 bg-clip-text text-center text-4xl font-bold tracking-tight text-transparent">
-              ALTA NUEVO INMUEBLE
+            <h1 className="mb-8 text-center text-2xl font-semibold text-gray-900">
+              REGISTRO DE INMUEBLE
             </h1>
-
-            <div className="mx-auto mb-4 h-1 w-24 rounded-full bg-gradient-to-r from-gray-700 to-yellow-800"></div>
 
             <p className="mb-8 text-center text-sm tracking-tight text-gray-500">
               Completa la información del inmueble paso a paso

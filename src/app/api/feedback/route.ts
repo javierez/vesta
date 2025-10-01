@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the request body
-    const body = await request.json() as { scale?: unknown; feedbackComment?: unknown };
-    const { scale, feedbackComment } = body;
+    const body = await request.json() as { scale?: unknown; feedbackComment?: unknown; url?: unknown };
+    const { scale, feedbackComment, url } = body;
 
     // Validate input
     if (!scale || !feedbackComment) {
@@ -42,6 +42,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate URL if provided
+    if (url !== undefined && typeof url !== "string") {
+      return NextResponse.json(
+        { error: "La URL debe ser una cadena de texto" },
+        { status: 400 }
+      );
+    }
+
     // Get accountId from session (assuming it's available in the session)
     const accountId = session.user.accountId;
     
@@ -58,6 +66,7 @@ export async function POST(request: NextRequest) {
       accountId: BigInt(accountId),
       feedbackComment: feedbackComment.trim(),
       scale: scale,
+      url: url || null,
     });
 
     return NextResponse.json(

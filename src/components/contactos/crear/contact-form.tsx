@@ -20,6 +20,7 @@ import {
   createContact,
   createContactWithListings,
 } from "~/server/queries/contact";
+import { createAppointmentTaskAction } from "~/app/actions/create-appointment-task";
 import { listListingsCompactWithAuth } from "~/server/queries/listing";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
@@ -120,6 +121,7 @@ export default function ContactForm() {
   const [formData, setFormData] = useState<ContactFormData>(initialFormData);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     listingType: [] as string[],
@@ -287,6 +289,31 @@ export default function ContactForm() {
         console.log("Contact created with listings:", newContact);
       }
 
+      // If contact is a demandante (buyer), automatically create appointment task
+      if (newContact?.contactId && formData.contactType === "buyer") {
+        try {
+          setIsCreatingTask(true);
+          const contactName = `${formData.firstName} ${formData.lastName}`.trim();
+          const taskResult = await createAppointmentTaskAction(
+            newContact.contactId,
+            contactName,
+            formData.notes.trim(),
+            formData.selectedListings
+          );
+          
+          if (taskResult.success) {
+            console.log("Appointment task created:", taskResult.task);
+          } else {
+            console.error("Failed to create appointment task:", taskResult.error);
+          }
+        } catch (taskError) {
+          console.error("Error creating appointment task:", taskError);
+          // Don't block the flow if task creation fails
+        } finally {
+          setIsCreatingTask(false);
+        }
+      }
+
       // Redirect to contact detail page
       if (newContact?.contactId) {
         router.push(`/contactos/${newContact.contactId}`);
@@ -298,6 +325,7 @@ export default function ContactForm() {
       alert("Error al crear el contacto. Por favor, inténtalo de nuevo.");
     } finally {
       setIsCreating(false);
+      setIsCreatingTask(false);
       setShowOwnershipDialog(false);
       setOwnershipAction(null);
     }
@@ -394,8 +422,8 @@ export default function ContactForm() {
     switch (step.id) {
       case "personal":
         return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-8">
+            <div className="grid grid-cols-2 gap-6">
               <FloatingLabelInput
                 id="firstName"
                 value={formData.firstName}
@@ -412,7 +440,7 @@ export default function ContactForm() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <FloatingLabelInput
                 id="email"
                 type="email"
@@ -429,21 +457,18 @@ export default function ContactForm() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notas adicionales</Label>
+            <div className="space-y-3">
+              <Label htmlFor="notes" className="text-base font-medium text-gray-900">Notas adicionales</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={handleEventInputChange("notes")}
                 placeholder="Información adicional sobre el contacto..."
                 rows={4}
-                className="resize-none"
+                className="resize-none border-gray-200 focus:border-amber-300 focus:ring-amber-200"
               />
             </div>
 
-            <div className="mt-4 text-xs text-gray-500">
-              * Campos obligatorios. Debe introducir al menos email o teléfono.
-            </div>
           </div>
         );
 
@@ -451,12 +476,12 @@ export default function ContactForm() {
         return (
           <div className="space-y-6">
             {/* Contact Type Selection */}
-            <div className="space-y-2">
-              <Label>Relación con las propiedades</Label>
-              <div className="relative h-10 max-w-md flex-1 rounded-lg bg-gray-100 p-1">
+            <div className="space-y-3">
+              <Label className="text-base font-medium text-gray-900">Relación con las propiedades</Label>
+              <div className="relative h-12 max-w-md flex-1 rounded-xl bg-gradient-to-r from-amber-100 to-rose-100 p-1 shadow-inner">
                 {formData.contactType && (
                   <motion.div
-                    className="absolute left-1 top-1 h-8 rounded-md bg-white shadow-sm"
+                    className="absolute left-1 top-1 h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 shadow-lg"
                     animate={{
                       width: "calc(50% - 4px)",
                       x: formData.contactType === "owner" ? "0%" : "100%",
@@ -469,10 +494,10 @@ export default function ContactForm() {
                     type="button"
                     onClick={() => updateFormData("contactType", "owner")}
                     className={cn(
-                      "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                      "relative z-10 flex-1 rounded-lg text-sm font-medium transition-colors duration-200",
                       formData.contactType === "owner"
-                        ? "text-gray-900"
-                        : "text-gray-600",
+                        ? "text-white"
+                        : "text-gray-700",
                     )}
                   >
                     Propietario
@@ -481,10 +506,10 @@ export default function ContactForm() {
                     type="button"
                     onClick={() => updateFormData("contactType", "buyer")}
                     className={cn(
-                      "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                      "relative z-10 flex-1 rounded-lg text-sm font-medium transition-colors duration-200",
                       formData.contactType === "buyer"
-                        ? "text-gray-900"
-                        : "text-gray-600",
+                        ? "text-white"
+                        : "text-gray-700",
                     )}
                   >
                     Demandante
@@ -507,15 +532,14 @@ export default function ContactForm() {
                 </div>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="border-amber-200 hover:border-amber-300 hover:bg-amber-50">
                       <Filter className="mr-2 h-4 w-4" />
                       Filtros
                       {filters.listingType.length +
                         filters.propertyType.length >
                         0 && (
                         <Badge
-                          variant="secondary"
-                          className="ml-2 rounded-sm px-1 font-normal"
+                          className="ml-2 rounded-sm px-1 font-normal bg-gradient-to-r from-amber-400 to-rose-400 text-white"
                         >
                           {filters.listingType.length +
                             filters.propertyType.length}
@@ -645,22 +669,22 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen p-4">
       <div className="mx-auto max-w-2xl">
-        <Card className="p-6">
-          <div className="mb-6">
-            <h1 className="mb-6 text-center text-xl font-semibold text-gray-900">
+        <Card className="shadow-xl border-0 bg-white p-8">
+          <div className="mb-8">
+            <h1 className="mb-8 text-center text-2xl font-semibold text-gray-900">
               CREAR NUEVO CONTACTO
             </h1>
 
             {/* Progress indicator */}
-            <div className="mb-6 flex items-center justify-center">
+            <div className="mb-8 flex items-center justify-center">
               {steps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                    className={`flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
                       index <= currentStep
-                        ? "border-transparent bg-gradient-to-r from-blue-400 to-yellow-300 text-white shadow-lg"
+                        ? "border-transparent bg-gradient-to-r from-amber-400 to-rose-400 text-white shadow-lg scale-110"
                         : "border-2 border-gray-300 bg-gray-100 text-gray-400"
                     }`}
                   >
@@ -668,9 +692,9 @@ export default function ContactForm() {
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`mx-2 h-0.5 w-16 ${
+                      className={`mx-3 h-1 w-16 rounded-full transition-all duration-300 ${
                         index < currentStep
-                          ? "bg-gradient-to-r from-blue-400 to-yellow-300"
+                          ? "bg-gradient-to-r from-amber-400 to-rose-400 shadow-sm"
                           : "bg-gray-200"
                       }`}
                     />
@@ -680,8 +704,8 @@ export default function ContactForm() {
             </div>
           </div>
 
-          <div className="mb-6">
-            <h2 className="mb-4 text-lg font-medium text-gray-900">
+          <div className="mb-8">
+            <h2 className="mb-6 text-xl font-medium text-gray-900 text-center">
               {steps[currentStep]?.title}
             </h2>
             <AnimatePresence mode="wait">
@@ -697,26 +721,30 @@ export default function ContactForm() {
             </AnimatePresence>
           </div>
 
-          <div className="flex justify-between border-t pt-4">
+          <div className="flex justify-between border-t border-gray-100 pt-6 mt-8">
             <Button
               variant="outline"
               onClick={prevStep}
-              disabled={currentStep === 0 || isCreating}
-              className="flex h-10 items-center space-x-2"
+              disabled={currentStep === 0 || isCreating || isCreatingTask}
+              className="flex h-12 items-center space-x-2 px-6 border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-all duration-200"
             >
               <ChevronLeft className="h-4 w-4" />
-              <span>Anterior </span>
+              <span>Anterior</span>
             </Button>
 
             <Button
               onClick={nextStep}
-              disabled={isCreating}
-              className="flex h-10 items-center space-x-2"
+              disabled={isCreating || isCreatingTask}
+              className="flex h-12 items-center space-x-2 px-6 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white font-medium transition-all duration-200 hover:scale-105 shadow-lg"
             >
-              {isCreating ? (
+              {(isCreating || isCreatingTask) ? (
                 <>
                   <Loader className="h-4 w-4 animate-spin" />
-                  <span>Creando contacto...</span>
+                  <span>
+                    {isCreating && !isCreatingTask && "Creando contacto..."}
+                    {isCreating && isCreatingTask && "Creando contacto..."}
+                    {!isCreating && isCreatingTask && "Creando tarea de seguimiento..."}
+                  </span>
                 </>
               ) : (
                 <>

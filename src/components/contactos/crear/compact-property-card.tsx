@@ -39,10 +39,10 @@ export function CompactPropertyCard({
     <Card
       key={listing.listingId.toString()}
       className={cn(
-        "cursor-pointer overflow-hidden border transition-all duration-200 hover:shadow-md",
+        "cursor-pointer overflow-hidden border-0 transition-all duration-200 hover:shadow-md",
         isSelected
-          ? "border-amber-300 bg-amber-50/50 shadow-sm"
-          : "border-gray-200 hover:border-gray-300",
+          ? "bg-amber-50/50 shadow-sm"
+          : "hover:bg-gray-50",
       )}
       onClick={() => onClick(listing.listingId, !isSelected)}
     >

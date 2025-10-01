@@ -38,6 +38,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         body: JSON.stringify({
           scale: rating,
           feedbackComment: comment.trim(),
+          url: window.location.pathname + window.location.search,
         }),
       });
 

@@ -26,11 +26,13 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Edit,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { ContactComments } from "./contact-comments";
 import {
   createTaskWithAuth,
+  updateTaskWithAuth,
 } from "~/server/queries/task";
 import { getContactListingsForTasksWithAuth } from "~/server/queries/user-comments";
 import { useSession } from "~/lib/auth-client";
@@ -126,6 +128,7 @@ export function ContactTareas({
 }: ContactTareasProps) {
   const { data: session } = useSession();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -340,6 +343,115 @@ export function ContactTareas({
     }
   };
 
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsAdding(true);
+    
+    // Pre-fill form with task data
+    const dueDateString: string = task.dueDate?.toISOString().split('T')[0] ?? "";
+    const dueTimeString: string = task.dueDate?.toTimeString().slice(0, 5) ?? "";
+    
+    setNewTask({
+      title: task.title,
+      description: task.description,
+      dueDate: dueDateString,
+      dueTime: dueTimeString,
+      agentId: task.userId,
+    });
+    
+    // Set the selected listing if the task has one
+    if (task.listingId) {
+      setSelectedListingId(task.listingId.toString());
+    } else {
+      setSelectedListingId('');
+    }
+  };
+
+  const handleUpdateTask = async () => {
+    if (!editingTask || !newTask.title.trim() || !newTask.description.trim()) return;
+    if (isSaving) return;
+
+    setSaveError(null);
+    setIsSaving(true);
+
+    // Create updated task object
+    const updatedTask: Task = {
+      ...editingTask,
+      title: newTask.title,
+      description: newTask.description,
+      dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
+      userId: newTask.agentId,
+      listingId: selectedListingId ? BigInt(selectedListingId) : undefined,
+      updatedAt: new Date(),
+    };
+
+    // Set saving state
+    setTaskStates(prev => ({ ...prev, [editingTask.id]: 'saving' }));
+
+    try {
+      const savedTask = await updateTaskWithAuth(
+        Number(editingTask.taskId ?? editingTask.id),
+        {
+          title: newTask.title,
+          description: newTask.description,
+          dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
+          dueTime: newTask.dueDate ? (newTask.dueTime || "00:00") : undefined,
+          userId: newTask.agentId,
+          contactId,
+          listingId: selectedListingId ? BigInt(selectedListingId) : undefined,
+          listingContactId: selectedListingId ? 
+            BigInt(contactListings.find(l => l.listingId.toString() === selectedListingId)?.listingContactId ?? 0) : undefined,
+        }
+      );
+      
+      if (!savedTask) {
+        throw new Error('Failed to update task');
+      }
+      
+      // Update the task in the parent component
+      onUpdateTaskAfterSave(editingTask.id, updatedTask);
+      setTaskStates(prev => ({ ...prev, [editingTask.id]: 'saved' }));
+      
+      // Clear form and editing state
+      setNewTask({ 
+        title: "", 
+        description: "", 
+        dueDate: "", 
+        dueTime: "",
+        agentId: ""
+      });
+      setSelectedListingId('');
+      setEditingTask(null);
+      setIsAdding(false);
+      
+      // Clear success state after 2 seconds
+      setTimeout(() => {
+        setTaskStates(prev => {
+          const newStates = { ...prev };
+          delete newStates[editingTask.id];
+          return newStates;
+        });
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error updating task:', error);
+      setTaskStates(prev => ({ ...prev, [editingTask.id]: 'error' }));
+      setSaveError(error instanceof Error ? error.message : 'Failed to update task');
+      
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        setSaveError(null);
+        setTaskStates(prev => {
+          const newStates = { ...prev };
+          delete newStates[editingTask.id];
+          return newStates;
+        });
+      }, 5000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleToggleCompleted = async (id: string) => {
     await onToggleCompleted(id);
   };
@@ -361,7 +473,10 @@ export function ContactTareas({
       <div className="flex items-center justify-between">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
           <Button
-            onClick={() => setIsAdding(true)}
+            onClick={() => {
+              setEditingTask(null);
+              setIsAdding(true);
+            }}
             className="flex items-center gap-2"
             title="Nota: Actualmente las tareas solo se pueden crear desde propiedades"
           >
@@ -384,21 +499,31 @@ export function ContactTareas({
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
-                void handleAddTask();
+                if (editingTask) {
+                  void handleUpdateTask();
+                } else {
+                  void handleAddTask();
+                }
               } else if (e.key === "Escape") {
                 e.preventDefault();
                 setIsAdding(false);
+                setEditingTask(null);
                 setSaveError(null);
               }
             }}
           >
-            <Input
-              placeholder="Título de la tarea"
-              value={newTask.title}
-              onChange={(e) =>
-                setNewTask({ ...newTask, title: e.target.value })
-              }
-            />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">
+                {editingTask ? 'Editando tarea' : 'Nueva tarea'}
+              </Label>
+              <Input
+                placeholder="Título de la tarea"
+                value={newTask.title}
+                onChange={(e) =>
+                  setNewTask({ ...newTask, title: e.target.value })
+                }
+              />
+            </div>
             <div className="relative">
               <Textarea
                 placeholder="Descripción de la tarea"
@@ -534,7 +659,7 @@ export function ContactTareas({
               </div>
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                 <Button
-                  onClick={handleAddTask}
+                  onClick={editingTask ? handleUpdateTask : handleAddTask}
                   disabled={
                     isSaving ||
                     !newTask.title.trim() ||
@@ -545,16 +670,17 @@ export function ContactTareas({
                   {isSaving ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Guardando...
+                      {editingTask ? 'Actualizando...' : 'Guardando...'}
                     </>
                   ) : (
-                    "Guardar"
+                    editingTask ? 'Actualizar' : 'Guardar'
                   )}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
                     setIsAdding(false);
+                    setEditingTask(null);
                     setSaveError(null);
                   }}
                   disabled={isSaving}
@@ -656,7 +782,7 @@ export function ContactTareas({
               return (
                 <div
                   key={task.id}
-                  className={`relative cursor-pointer rounded-xl border border-gray-200 p-3 transition-all duration-200 hover:border-gray-300 hover:shadow-sm sm:p-4 ${
+                  className={`group relative cursor-pointer rounded-xl border border-gray-200 p-3 transition-all duration-200 hover:border-gray-300 hover:shadow-sm sm:p-4 ${
                     task.completed ? "bg-gray-50/50 opacity-75" : "bg-white"
                   } ${taskStates[task.id] === "saving" ? "opacity-70" : ""}`}
                   onClick={() => handleToggleCompleted(task.id)}
@@ -787,8 +913,20 @@ export function ContactTareas({
                     )}
                   </div>
 
-                  {/* Delete button - bottom right */}
-                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2">
+                  {/* Action buttons - bottom right */}
+                  <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 sm:bottom-2 sm:right-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditTask(task);
+                      }}
+                      className="h-6 w-6 rounded-lg p-0 text-gray-400 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-500 sm:h-7 sm:w-7"
+                      title="Editar tarea"
+                    >
+                      <Edit className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -797,6 +935,7 @@ export function ContactTareas({
                         void handleDeleteTask(task.id);
                       }}
                       className="h-6 w-6 rounded-lg p-0 text-gray-400 transition-colors duration-200 hover:bg-red-50 hover:text-red-500 sm:h-7 sm:w-7"
+                      title="Eliminar tarea"
                     >
                       <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     </Button>
