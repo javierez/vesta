@@ -132,57 +132,74 @@ export function NotaEncargoDocument({ data }: Props) {
   }, [session?.user?.id]);
 
   return (
-    <div className="bg-white text-black font-sans print:w-[210mm] print:h-[297mm] print:m-0 print:p-[20mm] print:text-[11pt] print:leading-[1.4]">
-      <div className="nota-encargo-document max-w-[794px] mx-auto px-10 py-8 min-h-[1123px] font-sans text-[11pt] leading-[1.4]">
+    <div className="bg-white text-black font-sans print:w-[210mm] print:h-[297mm] print:m-0 print:p-0 print:text-[11pt] print:leading-[1.4]">
+      <div className="nota-encargo-document max-w-[794px] mx-auto px-10 py-8 min-h-[1123px] font-sans text-[11pt] leading-[1.4] print:px-[5mm] print:py-0 print:mx-0 print:max-w-none print:-mt-[10mm]">
         {/* Header Section */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-4 mb-5">
+        <div className="text-center mb-6 print:mb-2">
+          {/* Logo Section */}
+          <div className="flex items-center justify-center gap-6 mb-6 p-2 print:mb-2 print:p-0">
             {brandLogo && (
-              <img 
-                src={brandLogo} 
-                alt="Logo de la agencia" 
-                className="h-20 w-auto"
-              />
-            )}
-            <img 
-              src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo_api.png" 
-              alt="API Logo" 
-              className="h-12 w-auto"
-            />
-          </div>
-          <div className="text-[14pt] font-bold mb-2">AGENCIA DE LA PROPIEDAD INMOBILIARIA</div>
-          <div className="text-[11pt] mb-1">{agentName}</div>
-          {collegiateNumber && accountType !== "company" && (
-            <div className="text-[11pt] mb-1">Nº Colegiado: {collegiateNumber}</div>
-          )}
-          <div className="text-[11pt] mb-1">
-            {accountType === "company" ? "C.I.F" : "N.I.F"}: {taxId}
-          </div>
-          
-          <div className="text-[10pt] my-4 italic">
-            COMPRA - VENTA, ALQUILER Y PERMUTAS DE PISOS - CHALETS - GARAJES - LOCALES – TERRENOS Y SOLARES
-          </div>
-          
-          <div className="text-[10pt] my-4 italic">
-            VALORACIONES Y TASACIONES
-          </div>
-          
-          <div className="text-[10pt] my-4">
-            <strong>OFICINAS:</strong><br />
-            {offices.map((office, index) => (
-              <div key={index}>
-                {office.address}, {office.postalCode} {office.city} (Tel: {office.phone})
+              <div className="flex-shrink-0">
+                <img 
+                  src={brandLogo} 
+                  alt="Logo de la agencia" 
+                  className="h-20 w-auto drop-shadow-sm"
+                />
               </div>
-            ))}
+            )}
+            <div className="flex-shrink-0">
+              <img 
+                src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo_api.png" 
+                alt="API Logo" 
+                className="h-12 w-auto drop-shadow-sm"
+              />
+            </div>
           </div>
           
-          <div className="text-[11pt] mb-1">{website}</div>
+          {/* Agency Title */}
+          <div className="mb-4 pb-3 border-b border-gray-200 print:mb-3 print:pb-2">
+            <div className="text-[16pt] font-bold text-gray-800 mb-3 tracking-wide">
+              AGENCIA DE LA PROPIEDAD INMOBILIARIA
+            </div>
+            <div className="text-[13pt] font-semibold text-gray-700 mb-2">{agentName}</div>
+            {collegiateNumber && accountType !== "company" && (
+              <div className="text-[11pt] text-gray-600 mb-1">Nº Colegiado: {collegiateNumber}</div>
+            )}
+            <div className="text-[11pt] text-gray-600">
+              {accountType === "company" ? "C.I.F" : "N.I.F"}: {taxId}
+            </div>
+          </div>
+          
+          {/* Services Section */}
+          <div className="mb-4 space-y-2 print:mb-3">
+            <div className="text-[11pt] font-medium text-gray-700 italic">
+              COMPRA - VENTA, ALQUILER Y PERMUTAS DE PISOS - CHALETS - GARAJES - LOCALES – TERRENOS Y SOLARES
+            </div>
+            <div className="text-[10pt] font-medium text-gray-700 italic">
+              VALORACIONES Y TASACIONES
+            </div>
+          </div>
+          
+          {/* Offices Section */}
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 print:mb-3 print:p-2">
+            <div className="text-[11pt] font-semibold text-gray-800 mb-3">OFICINAS</div>
+            <div className="space-y-1">
+              {offices.map((office, index) => (
+                <div key={index} className="text-[10pt] text-gray-700">
+                  {office.address}, {office.postalCode} {office.city} <span className="font-medium">(Tel: {office.phone})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Website */}
+          <div className="text-[11pt] font-medium text-blue-700">{website}</div>
         </div>
         
-        <div className="border-t-2 border-black my-6"></div>
+        <div className="border-t-2 border-black my-4 print:my-3"></div>
         
         {/* Document Title */}
-        <div className="text-center my-8 py-3 border-y-2 border-gray-300">
+        <div className="text-center my-6 py-2 border-y-2 border-gray-300 print:my-4 print:py-1">
           <div className="text-[16pt] font-bold mb-2">
             NOTA DE ENCARGO
           </div>
@@ -191,7 +208,7 @@ export function NotaEncargoDocument({ data }: Props) {
           </div>
         </div>
         
-        <div className="border-t-2 border-black my-6"></div>
+        <div className="border-t-2 border-black my-4 print:my-3"></div>
         
         {/* Client Data Section */}
         <div className="my-6">
@@ -268,12 +285,12 @@ export function NotaEncargoDocument({ data }: Props) {
             </div>
             
             <div className="flex">
-              <span className="font-bold min-w-[140px]">EL PROPIETARIO / A O REPRESENTANTE DE LA PARTE VENDEDORA, ENTREGA LAS LLAVES DE LA FINCA DESCRITA:</span>
+              <span className="font-bold min-w-[140px]">El propietario/a o representante de la parte vendedora, entrega las llaves de la finca descrita:</span>
               <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.keyDelivery}</span>
             </div>
             
             <div className="flex">
-              <span className="font-bold min-w-[140px]">AUTORIZACIÓN PARA REALIZAR VISITAS:</span>
+              <span className="font-bold min-w-[140px]">Autorización para realizar visitas:</span>
               <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.allowVisits}</span>
             </div>
           </div>
@@ -325,7 +342,7 @@ export function NotaEncargoDocument({ data }: Props) {
           <div className="my-6">
             <div className="font-bold mb-3">4º - OTRAS AGENCIAS</div>
             <div className="text-justify mb-3 leading-relaxed">
-              "EL CLIENTE", <span className="font-bold">{data.hasOtherAgency ? '[SÍ]' : '[NO]'}</span> <strong>(1)</strong>, tiene encomendada, la venta del mencionado inmueble a otra Agencia de la Propiedad Inmobiliaria.
+              "EL CLIENTE", <span className="font-bold">{data.hasOtherAgency ? '[SÍ]' : '[NO]'}</span>, tiene encomendada, la venta del mencionado inmueble a otra Agencia de la Propiedad Inmobiliaria.
             </div>
           </div>
           
@@ -393,10 +410,6 @@ export function NotaEncargoDocument({ data }: Props) {
           </div>
         </div>
         
-        {/* Legal Notation */}
-        <div className="mt-8 text-[10pt] text-right text-gray-600">
-          <strong>(1)</strong> Tachar lo que no proceda
-        </div>
       </div>
     </div>
   );
