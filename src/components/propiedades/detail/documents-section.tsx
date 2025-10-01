@@ -28,7 +28,7 @@ interface DocumentsSectionProps {
 export function DocumentsSection({ listing, folderType }: DocumentsSectionProps) {
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleDocumentsUploaded = useCallback((newDocuments: Document[]) => {
+  const handleDocumentsUploaded = useCallback((_newDocuments: Document[]) => {
     // Trigger a refresh of the documents list
     setRefreshKey(prev => prev + 1);
   }, []);

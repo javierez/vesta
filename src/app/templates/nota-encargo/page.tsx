@@ -62,18 +62,22 @@ export default function NotaEncargoTemplate() {
   
   // Get data from URL parameters
   const dataParam = searchParams.get('data');
-  let data: NotaEncargoData;
+  let data: NotaEncargoData | null = null;
 
   try {
-    data = dataParam ? JSON.parse(dataParam) : null;
+    data = dataParam ? JSON.parse(dataParam) as NotaEncargoData : null;
   } catch (error) {
     console.error('Failed to parse nota encargo data:', error);
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-600">Error: Invalid data format</div>
-      </div>
-    );
   }
+
+  // Signal to Puppeteer that the template is ready - always call hooks before early returns
+  useEffect(() => {
+    if (data) {
+      // Set a flag that Puppeteer can check
+      (window as unknown as Record<string, unknown>).notaEncargoReady = true;
+      console.log('Nota encargo template ready signal set');
+    }
+  }, [data]);
 
   if (!data) {
     return (
@@ -82,14 +86,6 @@ export default function NotaEncargoTemplate() {
       </div>
     );
   }
-
-  // Signal to Puppeteer that the template is ready
-  useEffect(() => {
-    // Set a flag that Puppeteer can check
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).notaEncargoReady = true;
-    console.log('Nota encargo template ready signal set');
-  }, []);
 
   return (
     <div className="min-h-screen bg-white">

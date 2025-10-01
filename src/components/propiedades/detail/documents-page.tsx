@@ -11,7 +11,6 @@ import {
   FolderIcon,
   X,
 } from "lucide-react";
-import { cn } from "~/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -241,7 +240,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
                   No hay documentos en esta carpeta
                 </p>
                 <p className="mt-1 text-sm text-gray-400">
-                  Usa el botón de "Subir Documentos" para agregar archivos
+                  Usa el botón de &quot;Subir Documentos&quot; para agregar archivos
                 </p>
               </div>
             )}

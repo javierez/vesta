@@ -60,7 +60,7 @@ import { SavedConfigurations } from "./saved-configurations";
 import { getListingCartelSaveData } from "~/server/queries/listing";
 
 
-export function CartelEditorClient({ images = [], databaseListingType, databasePropertyType, accountColorPalette = [], databaseCity, databaseNeighborhood, databaseBedrooms, databaseBathrooms, databaseSquareMeter, databaseContactProps, databaseWebsite, databaseWatermarkProps, databaseLogoUrl, accountPreferences }: CartelEditorClientProps) {
+export function CartelEditorClient({ images = [], databaseListingType, databasePropertyType, accountColorPalette = [], databaseCity, databaseNeighborhood, databaseBedrooms, databaseBathrooms, databaseSquareMeter, databaseContactProps, databaseWebsite, _databaseWatermarkProps, databaseLogoUrl, accountPreferences }: CartelEditorClientProps) {
   // Get listing ID from URL
   const params = useParams();
   const listingId = params.id ? parseInt(params.id as string, 10) : null;
