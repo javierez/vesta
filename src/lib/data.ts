@@ -639,9 +639,11 @@ export type Account = {
   phone?: string;
   email?: string;
   website?: string;
-  portalSettings?: Record<string, unknown>;
+  accountType?: "company" | "person"; // New field
+  portalSettings?: Record<string, unknown>; // Includes API keys
   paymentSettings?: Record<string, unknown>;
   preferences?: Record<string, unknown>;
+  terms?: Record<string, unknown>;
   plan: string;
   subscriptionStatus: string;
   createdAt: Date;
@@ -655,6 +657,7 @@ export type Account = {
   legalName?: string;
   dpoEmail?: string;
   taxId?: string;
+  collegiateNumber?: string; // Professional collegiate number (API registration)
   registryDetails?: string;
   legalEmail?: string;
   jurisdiction?: string;
@@ -947,6 +950,7 @@ export const mockAccounts: Account[] = [
     phone: "636036116",
     email: "acropolisinmobiliaria@yahoo.es",
     website: "https://www.inmobiliariaacropolis.es/",
+    accountType: "company", // New field - default to company for existing account
     portalSettings: {
       fotocasa: { enabled: false },
       general: { watermarkEnabled: true },
@@ -956,6 +960,13 @@ export const mockAccounts: Account[] = [
     preferences: {
       brandingUpdatedAt: "2025-09-14T22:17:01.505Z",
       colorPalette: ["#dd7a26", "#744314", "#f6ecda", "#a19484", "#2D3748", "#4A5568"],
+    },
+    terms: {
+      commission: 3.5,
+      min_commission: 2000,
+      duration: 12,
+      exclusivity: true,
+      communications: false,
     },
     plan: "pro",
     subscriptionStatus: "suspended",

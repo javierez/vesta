@@ -5,6 +5,7 @@ import { getPropertyImages } from "../queries/property_images";
 import {
   getAccountWatermarkConfig,
   getAccountIdForListing,
+  getAccountFotocasaApiKey,
 } from "../queries/accounts";
 import {
   processAndUploadWatermarkedImages,
@@ -12,9 +13,6 @@ import {
 } from "../utils/watermarked-upload";
 import { POSITION_MAPPING } from "~/types/watermark";
 import type { WatermarkConfig } from "~/types/watermark";
-import { env } from "~/env";
-
-const FOTOCASA_API_KEY = env.FOTOCASA_API_KEY;
 
 // Types
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -897,6 +895,19 @@ export async function publishToFotocasa(
   response?: unknown;
 }> {
   try {
+    // Get account ID for the listing
+    const accountId = await getAccountIdForListing(listingId);
+    if (!accountId) {
+      throw new Error(`No account found for listing ${listingId}`);
+    }
+
+    // Get account-specific API key
+    const apiKey = await getAccountFotocasaApiKey(accountId);
+    if (!apiKey) {
+      throw new Error(`No Fotocasa API key configured for account ${accountId}. Please configure the API key in portal settings.`);
+    }
+    const FOTOCASA_API_KEY = apiKey;
+
     // Build the payload
     const { payload, watermarkedKeys } = await buildFotocasaPayload(
       listingId,
@@ -987,6 +998,19 @@ export async function updateFotocasa(
   response?: unknown;
 }> {
   try {
+    // Get account ID for the listing
+    const accountId = await getAccountIdForListing(listingId);
+    if (!accountId) {
+      throw new Error(`No account found for listing ${listingId}`);
+    }
+
+    // Get account-specific API key
+    const apiKey = await getAccountFotocasaApiKey(accountId);
+    if (!apiKey) {
+      throw new Error(`No Fotocasa API key configured for account ${accountId}. Please configure the API key in portal settings.`);
+    }
+    const FOTOCASA_API_KEY = apiKey;
+
     // Build the payload (same as create operation)
     const { payload, watermarkedKeys } = await buildFotocasaPayload(
       listingId,
@@ -1072,6 +1096,19 @@ export async function deleteFromFotocasa(
   listingId: number,
 ): Promise<{ success: boolean; error?: string; response?: unknown }> {
   try {
+    // Get account ID for the listing
+    const accountId = await getAccountIdForListing(listingId);
+    if (!accountId) {
+      throw new Error(`No account found for listing ${listingId}`);
+    }
+
+    // Get account-specific API key
+    const apiKey = await getAccountFotocasaApiKey(accountId);
+    if (!apiKey) {
+      throw new Error(`No Fotocasa API key configured for account ${accountId}. Please configure the API key in portal settings.`);
+    }
+    const FOTOCASA_API_KEY = apiKey;
+
     // Convert listingId to base64 encoded string
     const externalId = listingId.toString();
     const base64ExternalId = Buffer.from(externalId).toString("base64");

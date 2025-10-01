@@ -25,17 +25,21 @@ export const accounts = singlestoreTable("accounts", {
   phone: varchar("phone", { length: 20 }),
   email: varchar("email", { length: 255 }),
   website: varchar("website", { length: 255 }),
+  // Account type - company or person
+  accountType: varchar("account_type", { length: 20 }).default("company"), // company or person
   // Legal information fields
   taxId: varchar("tax_id", { length: 50 }), // Tax identification number (CIF/NIF)
+  collegiateNumber: varchar("collegiate_number", { length: 50 }), // Professional collegiate number (API registration)
   registryDetails: text("registry_details"), // Commercial registry information
   legalEmail: varchar("legal_email", { length: 255 }), // Legal contact email address
   jurisdiction: varchar("jurisdiction", { length: 255 }), // Legal jurisdiction and applicable courts
   privacyEmail: varchar("privacy_email", { length: 255 }), // Privacy/GDPR contact email address
   dpoEmail: varchar("dpo_email", { length: 255 }), // Data Protection Officer email address
   // Settings JSON fields for flexible configuration
-  portalSettings: json("portal_settings").default({}), // Fotocasa, Idealista, etc.
+  portalSettings: json("portal_settings").default({}), // Fotocasa, Idealista, etc. (includes API keys)
   paymentSettings: json("payment_settings").default({}), // Stripe, PayPal, etc.
   preferences: json("preferences").default({}), // General account preferences
+  terms: json("terms").default({}), // Terms and conditions configuration
   // Subscription/billing info
   plan: varchar("plan", { length: 50 }).default("basic"), // basic, pro, enterprise
   subscriptionType: varchar("subscription_type", { length: 100 }), // More detailed subscription type

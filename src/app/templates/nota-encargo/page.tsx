@@ -12,6 +12,7 @@ interface NotaEncargoData {
     agentNIF: string;
     website: string;
     email: string;
+    logo?: string;
     offices: Array<{
       address: string;
       city: string;

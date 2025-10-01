@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import puppeteer from "puppeteer";
+import { getAccountTransparentLogo } from "~/server/queries/accounts";
+import { getCurrentUserAccountId } from "~/lib/dal";
 
 interface NotaEncargoData {
   documentNumber: string;
@@ -9,6 +11,7 @@ interface NotaEncargoData {
     agentNIF: string;
     website: string;
     email: string;
+    logo?: string;
     offices: Array<{
       address: string;
       city: string;
@@ -70,6 +73,19 @@ export async function POST(request: NextRequest) {
 
     console.log("🚀 Starting Nota de Encargo PDF generation with Puppeteer...");
 
+    // Get current user's account ID and transparent logo
+    const accountId = await getCurrentUserAccountId();
+    const transparentLogo = await getAccountTransparentLogo(accountId);
+    
+    // Add transparent logo to the data
+    const dataWithLogo = {
+      ...data,
+      agency: {
+        ...data.agency,
+        logo: transparentLogo
+      }
+    };
+
     // Launch browser with optimized settings for PDF generation
     const browser = await puppeteer.launch({
       headless: true,
@@ -98,7 +114,7 @@ export async function POST(request: NextRequest) {
     const templateUrl = new URL("/templates/nota-encargo", baseUrl);
 
     // Pass configuration as URL parameters
-    templateUrl.searchParams.set("data", JSON.stringify(data));
+    templateUrl.searchParams.set("data", JSON.stringify(dataWithLogo));
 
     console.log("📄 Navigating to nota encargo template URL:", templateUrl.toString());
 
@@ -168,7 +184,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="nota-encargo-${data.documentNumber}-${Date.now()}.pdf"`,
+        "Content-Disposition": `attachment; filename="nota-encargo-${dataWithLogo.documentNumber}-${Date.now()}.pdf"`,
       },
     });
   } catch (error) {

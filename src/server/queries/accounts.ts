@@ -13,6 +13,7 @@ export async function createAccount(data: {
   phone?: string | null;
   website?: string | null;
   address?: string | null;
+  accountType?: "company" | "person" | null;
   taxId?: string | null;
   registryDetails?: string | null;
   legalEmail?: string | null;
@@ -40,6 +41,7 @@ export async function createAccount(data: {
       phone: data.phone ?? null,
       website: data.website ?? null,
       address: data.address ?? null,
+      accountType: data.accountType ?? "company",
       taxId: data.taxId ?? null,
       registryDetails: data.registryDetails ?? null,
       legalEmail: data.legalEmail ?? null,
@@ -482,5 +484,69 @@ export async function getAccountColorPalette(accountId: number | bigint) {
   } catch (error) {
     console.error("Error getting account color palette:", error);
     return [];
+  }
+}
+
+// Get Fotocasa API key from account portal settings
+export async function getAccountFotocasaApiKey(accountId: number | bigint): Promise<string | null> {
+  try {
+    const account = await getAccountById(accountId);
+    
+    if (!account) {
+      console.warn(`Account not found for ID: ${accountId}`);
+      return null;
+    }
+
+    // Extract API key from portal settings
+    const portalSettings = (account.portalSettings as Record<string, unknown>) ?? {};
+    const fotocasa = (portalSettings.fotocasa as Record<string, unknown>) ?? {};
+    const apiKey = fotocasa.api_key as string | undefined;
+    
+    if (!apiKey) {
+      console.warn(`No Fotocasa API key found for account: ${accountId}`);
+      return null;
+    }
+    
+    console.log("Retrieved Fotocasa API key for account:", {
+      accountId: accountId.toString(),
+      hasApiKey: true,
+    });
+
+    return apiKey;
+  } catch (error) {
+    console.error("Error getting Fotocasa API key:", error);
+    return null;
+  }
+}
+
+// Get Idealista API key from account portal settings
+export async function getAccountIdealistaApiKey(accountId: number | bigint): Promise<string | null> {
+  try {
+    const account = await getAccountById(accountId);
+    
+    if (!account) {
+      console.warn(`Account not found for ID: ${accountId}`);
+      return null;
+    }
+
+    // Extract API key from portal settings
+    const portalSettings = (account.portalSettings as Record<string, unknown>) ?? {};
+    const idealista = (portalSettings.idealista as Record<string, unknown>) ?? {};
+    const apiKey = idealista.api_key as string | undefined;
+    
+    if (!apiKey) {
+      console.warn(`No Idealista API key found for account: ${accountId}`);
+      return null;
+    }
+    
+    console.log("Retrieved Idealista API key for account:", {
+      accountId: accountId.toString(),
+      hasApiKey: true,
+    });
+
+    return apiKey;
+  } catch (error) {
+    console.error("Error getting Idealista API key:", error);
+    return null;
   }
 }

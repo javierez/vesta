@@ -21,8 +21,6 @@ export const env = createEnv({
     AWS_SECRET_ACCESS_KEY: z.string(),
     AWS_REGION: z.string(),
     AWS_S3_BUCKET: z.string(),
-    // Fotocasa Configuration
-    FOTOCASA_API_KEY: z.string(),
     // BetterAuth Configuration
     BETTER_AUTH_SECRET: z.string().min(32).optional(),
     BETTER_AUTH_URL: z.string().url().optional(),
@@ -66,8 +64,6 @@ export const env = createEnv({
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_REGION: process.env.AWS_REGION,
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
-    // Fotocasa Configuration
-    FOTOCASA_API_KEY: process.env.FOTOCASA_API_KEY,
     // BetterAuth Configuration
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,

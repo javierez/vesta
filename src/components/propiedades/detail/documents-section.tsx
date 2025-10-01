@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { DocumentUploadCard } from "./document-upload-card";
-import { HojaEncargoButton } from "./hoja-encargo-button";
+import { HojaEncargoButton } from "./initial_docs/hoja-encargo-button";
 import { DocumentsPage } from "./documents-page";
 
 interface Document {

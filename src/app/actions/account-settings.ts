@@ -44,6 +44,7 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
     email: string | null;
     website: string | null;
     taxId: string | null;
+    collegiateNumber: string | null;
     registryDetails: string | null;
     legalEmail: string | null;
     jurisdiction: string | null;
@@ -52,6 +53,7 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
     portalSettings: Record<string, unknown>;
     paymentSettings: Record<string, unknown>;
     preferences: Record<string, unknown>;
+    terms: Record<string, unknown>;
     plan: string;
     subscriptionType: string | null;
     subscriptionStatus: string;
@@ -92,6 +94,11 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
         ? (JSON.parse(account.preferences) as Record<string, unknown>)
         : ((account.preferences ?? {}) as Record<string, unknown>);
 
+    const terms =
+      typeof account.terms === "string"
+        ? (JSON.parse(account.terms) as Record<string, unknown>)
+        : ((account.terms ?? {}) as Record<string, unknown>);
+
     const accountData = {
       accountId: account.accountId.toString(),
       name: account.name,
@@ -103,6 +110,7 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
       email: account.email,
       website: account.website,
       taxId: account.taxId,
+      collegiateNumber: account.collegiateNumber,
       registryDetails: account.registryDetails,
       legalEmail: account.legalEmail,
       jurisdiction: account.jurisdiction,
@@ -111,6 +119,7 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
       portalSettings,
       paymentSettings,
       preferences,
+      terms,
       plan: account.plan ?? "basic",
       subscriptionType: account.subscriptionType,
       subscriptionStatus: account.subscriptionStatus ?? "active",
@@ -158,12 +167,14 @@ export async function updateAccountConfigurationAction(
       email: validatedData.email ?? null,
       website: validatedData.website ?? null,
       taxId: validatedData.taxId ?? null,
+      collegiateNumber: validatedData.collegiateNumber ?? null,
       registryDetails: validatedData.registryDetails ?? null,
       legalEmail: validatedData.legalEmail ?? null,
       jurisdiction: validatedData.jurisdiction ?? null,
       privacyEmail: validatedData.privacyEmail ?? null,
       dpoEmail: validatedData.dpoEmail ?? null,
       preferences: validatedData.preferences ?? {},
+      terms: validatedData.terms ?? {},
       updatedAt: new Date(),
     };
 

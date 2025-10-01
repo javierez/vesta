@@ -16,6 +16,7 @@ export const accountConfigurationSchema = z.object({
 
   // Legal Information
   taxId: z.string().optional(),
+  collegiateNumber: z.string().optional(),
   registryDetails: z.string().optional(),
   legalEmail: z.string().email("Email inválido").optional().or(z.literal("")),
   jurisdiction: z.string().optional(),
@@ -24,6 +25,13 @@ export const accountConfigurationSchema = z.object({
 
   // Settings
   preferences: z.record(z.any()).optional(),
+  terms: z.object({
+    commission: z.number().min(0).max(100).optional(),
+    min_commission: z.number().min(0).optional(),
+    duration: z.number().min(1).optional(),
+    exclusivity: z.boolean().optional(),
+    communications: z.boolean().optional(),
+  }).optional(),
 });
 
 export type AccountConfigurationInput = z.infer<

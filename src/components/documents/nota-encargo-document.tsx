@@ -1,6 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getBrandAsset } from "~/app/actions/brand-upload";
+import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
+import { getAgentNameAction, getOfficeInfoAction } from "~/app/actions/agent-info";
+import { useSession } from "~/lib/auth-client";
 
 interface NotaEncargoData {
   documentNumber: string;
@@ -10,6 +14,8 @@ interface NotaEncargoData {
     agentNIF: string;
     website: string;
     email: string;
+    logo?: string;
+    accountId?: string;
     offices: Array<{
       address: string;
       city: string;
@@ -60,6 +66,106 @@ interface Props {
 }
 
 export function NotaEncargoDocument({ data }: Props) {
+  const [brandLogo, setBrandLogo] = useState<string | null>(null);
+  const [agentName, setAgentName] = useState<string>(data.agency.agentName);
+  const [collegiateNumber, setCollegiateNumber] = useState<string>(data.agency.collegiateNumber);
+  const [accountType, setAccountType] = useState<string | null>(null);
+  const [taxId, setTaxId] = useState<string>(data.agency.agentNIF);
+  const [offices, setOffices] = useState<Array<{address: string; city: string; postalCode: string; phone: string}>>(data.agency.offices);
+  const [website, setWebsite] = useState<string>(data.agency.website);
+  const { data: session } = useSession();
+  
+  console.log("🔍 NOTA: NotaEncargoDocument rendered with data:", {
+    documentNumber: data.documentNumber,
+    agentName: data.agency.agentName,
+    accountId: data.agency.accountId,
+    hasAccountId: !!data.agency.accountId,
+    sessionUserId: session?.user?.id
+  });
+
+  // Fetch brand logo and agent name
+  useEffect(() => {
+    const fetchBrandData = async () => {
+      try {
+        console.log("🔍 NOTA: Attempting to fetch brand data");
+        
+        if (session?.user?.id) {
+          console.log("🔍 NOTA: Getting account ID for user:", session.user.id);
+          const userAccountId = await getCurrentUserAccountIdAction();
+          
+          if (userAccountId) {
+            const accountIdStr = userAccountId.toString();
+            console.log("🔍 NOTA: Got account ID:", accountIdStr);
+            
+            // Fetch brand logo
+            console.log("🔍 NOTA: Calling getBrandAsset with:", accountIdStr);
+            const brandAsset = await getBrandAsset(accountIdStr);
+            console.log("🔍 NOTA: getBrandAsset result:", brandAsset);
+            
+            if (brandAsset && brandAsset.logoTransparentUrl) {
+              console.log("🔍 NOTA: Setting brand logo to:", brandAsset.logoTransparentUrl);
+              setBrandLogo(brandAsset.logoTransparentUrl);
+            } else {
+              console.log("🔍 NOTA: No logoTransparentUrl found in brand asset");
+            }
+            
+            // Fetch agent name based on account type
+            console.log("🔍 NOTA: Calling getAgentNameAction with:", userAccountId);
+            const agentNameResult = await getAgentNameAction(BigInt(userAccountId));
+            console.log("🔍 NOTA: getAgentNameAction result:", agentNameResult);
+            
+            if (agentNameResult.success && agentNameResult.agentName) {
+              console.log("🔍 NOTA: Setting agent name to:", agentNameResult.agentName);
+              setAgentName(agentNameResult.agentName);
+              
+              if (agentNameResult.accountType) {
+                console.log("🔍 NOTA: Setting account type to:", agentNameResult.accountType);
+                setAccountType(agentNameResult.accountType);
+              }
+              
+              if (agentNameResult.collegiateNumber) {
+                console.log("🔍 NOTA: Setting collegiate number to:", agentNameResult.collegiateNumber);
+                setCollegiateNumber(agentNameResult.collegiateNumber);
+              }
+              
+              if (agentNameResult.taxId) {
+                console.log("🔍 NOTA: Setting tax ID to:", agentNameResult.taxId);
+                setTaxId(agentNameResult.taxId);
+              }
+              
+              if (agentNameResult.website) {
+                console.log("🔍 NOTA: Setting website to:", agentNameResult.website);
+                setWebsite(agentNameResult.website);
+              }
+            } else {
+              console.log("🔍 NOTA: No agent name found, using default");
+            }
+            
+            // Fetch office information
+            console.log("🔍 NOTA: Calling getOfficeInfoAction with:", userAccountId);
+            const officeInfoResult = await getOfficeInfoAction(BigInt(userAccountId));
+            console.log("🔍 NOTA: getOfficeInfoAction result:", officeInfoResult);
+            
+            if (officeInfoResult.success && officeInfoResult.offices) {
+              console.log("🔍 NOTA: Setting offices to:", officeInfoResult.offices);
+              setOffices(officeInfoResult.offices);
+            } else {
+              console.log("🔍 NOTA: No office info found, using default");
+            }
+          } else {
+            console.log("🔍 NOTA: No account ID found for user");
+          }
+        } else {
+          console.log("🔍 NOTA: No session user ID");
+        }
+      } catch (error) {
+        console.error("🔍 NOTA: Error fetching brand data:", error);
+      }
+    };
+
+    void fetchBrandData();
+  }, [session?.user?.id]);
+
   return (
     <div className="bg-white text-black font-sans">
       <style jsx>{`
@@ -93,6 +199,29 @@ export function NotaEncargoDocument({ data }: Props) {
         .header-section {
           text-align: center;
           margin-bottom: 30px;
+        }
+        
+        .logo-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 15px;
+          margin-bottom: 20px;
+        }
+        
+        .agency-logo {
+          height: 60px;
+          width: auto;
+        }
+        
+        .vesta-logo {
+          height: 80px;
+          width: auto;
+        }
+        
+        .api-logo {
+          height: 40px;
+          width: auto;
         }
         
         .agency-title {
@@ -237,10 +366,35 @@ export function NotaEncargoDocument({ data }: Props) {
       <div className="nota-encargo-document">
         {/* Header Section */}
         <div className="header-section">
+          <div className="logo-container">
+            {data.agency.logo && (
+              <img 
+                src={data.agency.logo} 
+                alt="Logo de la agencia" 
+                className="agency-logo"
+              />
+            )}
+            <img 
+              src={brandLogo ?? "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo-transparent.svg"} 
+              alt="Brand Logo" 
+              className="vesta-logo"
+              onLoad={() => console.log("🔍 NOTA: Brand logo loaded successfully:", brandLogo ?? "fallback")}
+              onError={() => console.log("🔍 NOTA: Brand logo failed to load:", brandLogo ?? "fallback")}
+            />
+            <img 
+              src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo_api.png" 
+              alt="API Logo" 
+              className="api-logo"
+            />
+          </div>
           <div className="agency-title">AGENCIA DE LA PROPIEDAD INMOBILIARIA</div>
-          <div className="agent-info">{data.agency.agentName}</div>
-          <div className="agent-info">Nº Colegiado: {data.agency.collegiateNumber}</div>
-          <div className="agent-info">N.I.F: {data.agency.agentNIF}</div>
+          <div className="agent-info">{agentName}</div>
+          {collegiateNumber && accountType !== "company" && (
+            <div className="agent-info">Nº Colegiado: {collegiateNumber}</div>
+          )}
+          <div className="agent-info">
+            {accountType === "company" ? "C.I.F" : "N.I.F"}: {taxId}
+          </div>
           
           <div className="services-line">
             Servicios: Compra-venta, alquiler y permutas de pisos, chalets, garajes, locales, terrenos y solares
@@ -248,14 +402,14 @@ export function NotaEncargoDocument({ data }: Props) {
           
           <div className="offices-section">
             <strong>OFICINAS:</strong><br />
-            {data.agency.offices.map((office, index) => (
+            {offices.map((office, index) => (
               <div key={index}>
                 {office.address}, {office.postalCode} {office.city} (Tel: {office.phone})
               </div>
             ))}
           </div>
           
-          <div className="agent-info">Website: {data.agency.website}</div>
+          <div className="agent-info">{website}</div>
         </div>
         
         <div className="separator"></div>
@@ -309,7 +463,7 @@ export function NotaEncargoDocument({ data }: Props) {
         
         {/* Power Section */}
         <div className="power-section">
-          EL CLIENTE da poder a <strong>{data.agency.agentName}</strong>, A.P.I., N.I.F <strong>{data.agency.agentNIF}</strong>, 
+          EL CLIENTE da poder a <strong>{agentName}</strong>, A.P.I., {accountType === "company" ? "C.I.F" : "N.I.F"} <strong>{taxId}</strong>, 
           domiciliada en las direcciones reseñadas, para que intervenga en la operación que se describe.
         </div>
         
@@ -481,7 +635,7 @@ export function NotaEncargoDocument({ data }: Props) {
             
             <div className="signature-block">
               <div style={{ marginBottom: '60px', fontWeight: 'bold' }}>
-                Dª. {data.agency.agentName}<br />
+                Dª. {agentName}<br />
                 (Agente)
               </div>
               <div className="signature-line"></div>

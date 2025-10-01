@@ -17,6 +17,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { Switch } from "~/components/ui/switch";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import {
   Building,
@@ -96,12 +97,20 @@ export function AccountConfiguration() {
       email: "",
       website: "",
       taxId: "",
+      collegiateNumber: "",
       registryDetails: "",
       legalEmail: "",
       jurisdiction: "",
       privacyEmail: "",
       dpoEmail: "",
       preferences: {},
+      terms: {
+        commission: 0,
+        min_commission: 0,
+        duration: 12,
+        exclusivity: false,
+        communications: false,
+      },
     },
   });
 
@@ -133,12 +142,20 @@ export function AccountConfiguration() {
             email: data.email ?? "",
             website: data.website ?? "",
             taxId: data.taxId ?? "",
+            collegiateNumber: data.collegiateNumber ?? "",
             registryDetails: data.registryDetails ?? "",
             legalEmail: data.legalEmail ?? "",
             jurisdiction: data.jurisdiction ?? "",
             privacyEmail: data.privacyEmail ?? "",
             dpoEmail: data.dpoEmail ?? "",
             preferences: data.preferences ?? {},
+            terms: data.terms ?? {
+              commission: 0,
+              min_commission: 0,
+              duration: 12,
+              exclusivity: false,
+              communications: false,
+            },
           });
         }
       } catch (error) {
@@ -539,6 +556,22 @@ export function AccountConfiguration() {
 
                   <FormField
                     control={form.control}
+                    name="collegiateNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número de Colegiado</FormLabel>
+                        <FormDescription>
+                          Número de colegiado API (Agente de la Propiedad Inmobiliaria)
+                        </FormDescription>
+                        <FormControl>
+                          <Input {...field} placeholder="API-12345" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="jurisdiction"
                     render={({ field }) => (
                       <FormItem>
@@ -636,15 +669,139 @@ export function AccountConfiguration() {
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="mb-2 text-sm font-medium text-gray-900">
-                      Configuraciones Avanzadas
+                <div className="space-y-6">
+                  <div className="rounded-lg border border-gray-200 p-6">
+                    <h3 className="mb-4 text-lg font-medium text-gray-900">
+                      Términos por Defecto
                     </h3>
-                    <p className="text-sm text-gray-600">
-                      Las preferencias adicionales se pueden configurar
-                      contactando con soporte técnico.
+                    <p className="mb-6 text-sm text-gray-600">
+                      Configuración de términos y condiciones para contratos
                     </p>
+                    
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="terms.commission"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Comisión (%)</FormLabel>
+                              <FormDescription>
+                                Porcentaje de comisión por defecto
+                              </FormDescription>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.1"
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                  value={field.value || 0}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="terms.min_commission"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Comisión Mínima (€)</FormLabel>
+                              <FormDescription>
+                                Cantidad mínima de comisión
+                              </FormDescription>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  value={field.value || 0}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="terms.duration"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Duración (meses)</FormLabel>
+                            <FormDescription>
+                              Duración por defecto del contrato en meses
+                            </FormDescription>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="1"
+                                step="1"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 12)}
+                                value={field.value || 12}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="terms.exclusivity"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">
+                                  Exclusividad
+                                </FormLabel>
+                                <FormDescription>
+                                  Contrato de exclusividad por defecto
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="terms.communications"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">
+                                  Comunicaciones
+                                </FormLabel>
+                                <FormDescription>
+                                  Permitir comunicaciones comerciales por defecto
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
