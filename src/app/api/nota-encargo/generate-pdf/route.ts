@@ -187,15 +187,15 @@ export async function POST(request: NextRequest) {
 
     console.log("🎨 Template loaded, generating PDF...");
 
-    // Generate PDF with optimized settings and top/bottom margins only
+    // Generate PDF with optimized settings and minimal top margin
     const pdfBuffer = await page.pdf({
       format: "A4",
       landscape: false, // Always portrait for legal documents
       printBackground: true,
       margin: {
-        top: "20mm",
+        top: "5mm",
         right: "0mm", 
-        bottom: "20mm",
+        bottom: "10mm",
         left: "0mm",
       },
       preferCSSPageSize: true,

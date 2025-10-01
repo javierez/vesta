@@ -133,7 +133,7 @@ export function NotaEncargoDocument({ data }: Props) {
 
   return (
     <div className="bg-white text-black font-sans print:w-[210mm] print:h-[297mm] print:m-0 print:p-0 print:text-[11pt] print:leading-[1.4]">
-      <div className="nota-encargo-document max-w-[794px] mx-auto px-10 py-8 min-h-[1123px] font-sans text-[11pt] leading-[1.4] print:px-[5mm] print:py-0 print:mx-0 print:max-w-none print:-mt-[10mm]">
+      <div className="nota-encargo-document max-w-[794px] mx-auto px-10 py-8 min-h-[1123px] font-sans text-[11pt] leading-[1.4] print:px-[10mm] print:pt-[2mm] print:pb-[10mm] print:mx-0 print:max-w-none print:min-h-0">
         {/* Header Section */}
         <div className="text-center mb-6 print:mb-2">
           {/* Logo Section */}
@@ -171,12 +171,11 @@ export function NotaEncargoDocument({ data }: Props) {
           </div>
           
           {/* Services Section */}
-          <div className="mb-4 space-y-2 print:mb-3">
-            <div className="text-[11pt] font-medium text-gray-700 italic">
-              COMPRA - VENTA, ALQUILER Y PERMUTAS DE PISOS - CHALETS - GARAJES - LOCALES – TERRENOS Y SOLARES
-            </div>
-            <div className="text-[10pt] font-medium text-gray-700 italic">
-              VALORACIONES Y TASACIONES
+          <div className="mb-4 print:mb-3">
+            <div className="text-[10pt] text-gray-600 leading-relaxed space-y-1">
+              <div>Compra • Venta • Alquiler • Permutas</div>
+              <div>Pisos • Chalets • Garajes • Locales • Terrenos y solares</div>
+              <div>Valoraciones y tasaciones</div>
             </div>
           </div>
           
@@ -378,7 +377,7 @@ export function NotaEncargoDocument({ data }: Props) {
         
         {/* Observations Section */}
         <div className="my-8">
-          <div className="font-bold mb-4 text-[13pt] border-b border-gray-300 pb-2">OBSERVACIONES:</div>
+          <div className="font-bold text-[13pt] border-b border-gray-300 pb-2">OBSERVACIONES:</div>
           <div className="min-h-[80px] border-b border-black mb-3 pb-2">
             {data.observations}
           </div>

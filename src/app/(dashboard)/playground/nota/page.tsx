@@ -192,9 +192,9 @@ export default function NotaEncargoPlayground() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
+    <div className="min-h-screen bg-gray-100 p-8 print:p-0 print:m-0 print:bg-white">
+      <div className="max-w-4xl mx-auto print:max-w-none print:mx-0">
+        <div className="mb-6 print:hidden">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Playground - Nota de Encargo
           </h1>
@@ -203,7 +203,7 @@ export default function NotaEncargoPlayground() {
           </p>
         </div>
         
-        <div className="bg-white shadow-lg">
+        <div className="bg-white shadow-lg print:shadow-none">
           <NotaEncargoDocument data={displayData} />
         </div>
         
