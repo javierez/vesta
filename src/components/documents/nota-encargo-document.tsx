@@ -325,7 +325,7 @@ export function NotaEncargoDocument({ data }: Props) {
           <div className="my-6">
             <div className="font-bold mb-3">4º - OTRAS AGENCIAS</div>
             <div className="text-justify mb-3 leading-relaxed">
-              "EL CLIENTE", {data.hasOtherAgency ? 'SÍ' : 'NO'} <span className="line-through">{data.hasOtherAgency ? 'NO' : 'SÍ'}</span> <strong>(1)</strong>, tiene encomendada, la venta del mencionado inmueble a otra Agencia de la Propiedad Inmobiliaria.
+              "EL CLIENTE", <span className="font-bold">{data.hasOtherAgency ? '[SÍ]' : '[NO]'}</span> <strong>(1)</strong>, tiene encomendada, la venta del mencionado inmueble a otra Agencia de la Propiedad Inmobiliaria.
             </div>
           </div>
           
@@ -342,7 +342,7 @@ export function NotaEncargoDocument({ data }: Props) {
               "De conformidad con lo establecido en el REGLAMENTO (UE) 2016/679 de protección de datos de carácter personal, le informamos que los datos que usted nos facilite serán incorporados al sistema de tratamiento titularidad de {agentName} con {accountType === 'company' ? 'C.I.F' : 'N.I.F'} {taxId}, con domicilio en las direcciones reseñadas, correo electrónico: {data.agency.email}, con el fin de prestarle el servicio solicitado. Los datos proporcionados se conservarán mientras se mantenga la relación comercial durante los años necesarios para cumplir con las obligaciones legales. Los datos no se cederán a terceros, salvo en los casos que exista una obligación legal. Usted tiene derecho a obtener confirmación sobre si en {agentName} estamos tratando sus datos personales, por tanto tiene derecho a acceder a sus datos personales, rectificar los datos inexactos o solicitar su supresión cuando los datos no sean necesarios."
             </div>
             <div className="text-justify mb-3 leading-relaxed">
-              Así mismo solicito su autorización para ofrecerle productos y servicios relacionados con los solicitados y fidelizarle como cliente. {data.gdprConsent ? 'SÍ' : 'NO'} <span className="line-through">{data.gdprConsent ? 'NO' : 'SÍ'}</span>.
+              Así mismo solicito su autorización para ofrecerle productos y servicios relacionados con los solicitados y fidelizarle como cliente. <span className="font-bold">{data.gdprConsent ? '[SÍ]' : '[NO]'}</span>.
             </div>
           </div>
           
