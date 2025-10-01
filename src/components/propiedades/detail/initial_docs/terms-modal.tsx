@@ -25,6 +25,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
 import { Button } from "~/components/ui/button";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import { getAccountDetailsAction, getCurrentUserAccountId } from "~/app/actions/account-settings";
 import { useSession } from "~/lib/auth-client";
 
@@ -34,6 +35,8 @@ const termsSchema = z.object({
   duration: z.number().min(1),
   exclusivity: z.boolean(),
   communications: z.boolean(),
+  allowSignage: z.boolean(),
+  allowVisits: z.boolean(),
 });
 
 type TermsFormData = z.infer<typeof termsSchema>;
@@ -58,6 +61,8 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
       duration: 12,
       exclusivity: false,
       communications: false,
+      allowSignage: true,
+      allowVisits: true,
     },
   });
 
@@ -94,6 +99,8 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
           duration: (terms.duration as number) ?? 12,
           exclusivity: (terms.exclusivity as boolean) ?? false,
           communications: (terms.communications as boolean) ?? false,
+          allowSignage: (terms.allowSignage as boolean) ?? true,
+          allowVisits: (terms.allowVisits as boolean) ?? true,
         });
       }
     } catch (error) {
@@ -158,6 +165,8 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-4 pr-4">
               <FormField
                 control={form.control}
                 name="commission"
@@ -272,6 +281,50 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="allowSignage"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel>Colocación de cartel</FormLabel>
+                      <FormDescription>
+                        Autorizar la colocación de cartel publicitario
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="allowVisits"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel>Autorización para visitas</FormLabel>
+                      <FormDescription>
+                        Autorizar visitas de posibles compradores
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+                </div>
+              </ScrollArea>
 
               {error && (
                 <div className="text-red-600 text-sm p-3 bg-red-50 rounded-lg">

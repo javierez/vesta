@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
 import puppeteer from "puppeteer";
-import { getAccountTransparentLogo } from "~/server/queries/accounts";
 import { getCurrentUserAccountId } from "~/lib/dal";
 
 interface NotaEncargoData {
@@ -73,18 +72,31 @@ export async function POST(request: NextRequest) {
 
     console.log("🚀 Starting Nota de Encargo PDF generation with Puppeteer...");
 
-    // Get current user's account ID and transparent logo
+    // Get current user's account ID and regular logo
     const accountId = await getCurrentUserAccountId();
-    const transparentLogo = await getAccountTransparentLogo(accountId);
+    const { getAccountById } = await import("~/server/queries/accounts");
+    const account = await getAccountById(accountId);
+    const logo = account?.logo;
     
-    // Add transparent logo to the data
+    console.log("📊 PDF Generation - Logo info:", {
+      accountId: accountId.toString(),
+      logo,
+      hasLogo: !!logo
+    });
+    
+    // Add logo to the data
     const dataWithLogo = {
       ...data,
       agency: {
         ...data.agency,
-        logo: transparentLogo
+        logo: logo
       }
     };
+    
+    console.log("📊 PDF Generation - Data with logo:", {
+      agencyLogo: dataWithLogo.agency.logo,
+      agencyName: dataWithLogo.agency.agentName
+    });
 
     // Launch browser with optimized settings for PDF generation
     const browser = await puppeteer.launch({
@@ -144,6 +156,20 @@ export async function POST(request: NextRequest) {
       throw new Error("Nota encargo document container not found after 10 seconds");
     }
 
+    // Wait for images to load
+    try {
+      await page.waitForFunction(
+        () => {
+          const images = Array.from(document.querySelectorAll('img'));
+          return images.every(img => img.complete);
+        },
+        { timeout: 10000 }
+      );
+      console.log("✅ All images loaded successfully");
+    } catch {
+      console.warn("⚠️ Image loading timeout, proceeding anyway...");
+    }
+
     // Wait for the template ready signal
     try {
       await page.waitForFunction(
@@ -161,16 +187,16 @@ export async function POST(request: NextRequest) {
 
     console.log("🎨 Template loaded, generating PDF...");
 
-    // Generate PDF with optimized settings
+    // Generate PDF with optimized settings and top/bottom margins only
     const pdfBuffer = await page.pdf({
       format: "A4",
       landscape: false, // Always portrait for legal documents
       printBackground: true,
       margin: {
-        top: "0px",
-        right: "0px",
-        bottom: "0px",
-        left: "0px",
+        top: "20mm",
+        right: "0mm", 
+        bottom: "20mm",
+        left: "0mm",
       },
       preferCSSPageSize: true,
     });

@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NotaEncargoDocument } from '~/components/documents/nota-encargo-document';
 import { toast } from 'sonner';
 import { Loader2, Download, FileText } from 'lucide-react';
+import { getNotaEncargoData } from '~/server/queries/nota-encargo';
+import { transformToNotaEncargoPDF } from '~/lib/nota-encargo-helpers';
+import { cn } from '~/lib/utils';
 
 // Mock data for the document
 const mockData = {
@@ -92,6 +95,54 @@ const mockData = {
 export default function NotaEncargoPlayground() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastGeneratedPdf, setLastGeneratedPdf] = useState<string | null>(null);
+  const [displayData, setDisplayData] = useState(mockData);
+  const [isLoading, setIsLoading] = useState(false);
+  const [useRealData, setUseRealData] = useState(false);
+  
+  // Specific listing ID you want to test with
+  const testListingId = BigInt(2251799813685252);
+  
+  // Sample terms for testing
+  const sampleTerms = {
+    commission: 3.5,
+    min_commission: 2000,
+    duration: 12,
+    exclusivity: true,
+    communications: false,
+    allowSignage: true,
+    allowVisits: true,
+  };
+
+  // Load real data when requested
+  const loadRealData = async () => {
+    setIsLoading(true);
+    try {
+      console.log("🔄 Loading real data for listing:", testListingId);
+      const rawData = await getNotaEncargoData(testListingId);
+      
+      if (rawData) {
+        const realData = transformToNotaEncargoPDF(rawData, sampleTerms);
+        setDisplayData(realData);
+        setUseRealData(true);
+        toast.success("Datos reales cargados correctamente");
+        console.log("✅ Real data loaded:", realData);
+      } else {
+        toast.error("No se pudieron cargar los datos reales");
+      }
+    } catch (error) {
+      console.error("❌ Error loading real data:", error);
+      toast.error("Error al cargar los datos reales");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Switch back to mock data
+  const loadMockData = () => {
+    setDisplayData(mockData);
+    setUseRealData(false);
+    toast.success("Datos de ejemplo cargados");
+  };
 
   // Generate PDF using Puppeteer
   const generatePDF = async () => {
@@ -104,7 +155,7 @@ export default function NotaEncargoPlayground() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          data: mockData,
+          data: displayData,
         }),
       });
 
@@ -153,17 +204,65 @@ export default function NotaEncargoPlayground() {
         </div>
         
         <div className="bg-white shadow-lg">
-          <NotaEncargoDocument data={mockData} />
+          <NotaEncargoDocument data={displayData} />
         </div>
         
-        <div className="mt-6 flex gap-4">
-          <button 
-            onClick={() => window.print()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
-          >
-            <FileText className="h-4 w-4" />
-            Imprimir Documento
-          </button>
+        <div className="mt-6 space-y-4">
+          {/* Data Source Controls */}
+          <div className="bg-white p-4 rounded-lg shadow border">
+            <h3 className="text-sm font-medium text-gray-900 mb-3">Fuente de Datos</h3>
+            <div className="flex gap-4">
+              <button 
+                onClick={loadMockData}
+                disabled={isLoading}
+                className={cn(
+                  "px-4 py-2 text-sm rounded-md flex items-center gap-2 transition-colors",
+                  !useRealData 
+                    ? "bg-blue-600 text-white" 
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                )}
+              >
+                Datos de Ejemplo
+              </button>
+              
+              <button 
+                onClick={loadRealData}
+                disabled={isLoading}
+                className={cn(
+                  "px-4 py-2 text-sm rounded-md flex items-center gap-2 transition-colors",
+                  useRealData 
+                    ? "bg-green-600 text-white" 
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                )}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Cargando...
+                  </>
+                ) : (
+                  <>
+                    Datos Reales (ID: {testListingId.toString()})
+                  </>
+                )}
+              </button>
+            </div>
+            {useRealData && (
+              <p className="text-xs text-green-600 mt-2">
+                ✅ Mostrando datos reales de la propiedad {testListingId.toString()}
+              </p>
+            )}
+          </div>
+          
+          {/* Action Controls */}
+          <div className="flex gap-4">
+            <button 
+              onClick={() => window.print()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Imprimir Documento
+            </button>
           
           <button 
             onClick={generatePDF}
@@ -192,6 +291,7 @@ export default function NotaEncargoPlayground() {
               Abrir Último PDF
             </button>
           )}
+          </div>
         </div>
       </div>
     </div>

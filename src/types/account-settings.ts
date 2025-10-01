@@ -31,6 +31,8 @@ export const accountConfigurationSchema = z.object({
     duration: z.number().min(1).optional(),
     exclusivity: z.boolean().optional(),
     communications: z.boolean().optional(),
+    allowSignage: z.boolean().optional(),
+    allowVisits: z.boolean().optional(),
   }).optional(),
 });
 

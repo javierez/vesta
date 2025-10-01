@@ -421,6 +421,7 @@ export const contacts = singlestoreTable("contacts", {
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),
+  nif: varchar("nif", { length: 20 }), // Spanish NIF/DNI/NIE identification number
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 20 }),
   additionalInfo: json("additional_info").default({}),

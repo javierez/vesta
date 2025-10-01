@@ -53,6 +53,7 @@ export function DocumentsSection({ listing, folderType }: DocumentsSectionProps)
             <h4 className="font-medium text-gray-900 mb-3">Generar Documentos</h4>
             <HojaEncargoButton 
               propertyId={listing.propertyId}
+              onDocumentGenerated={handleDocumentsUploaded}
             />
           </div>
         </div>
