@@ -30,6 +30,9 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
     setIsSubmitting(true);
     try {
+      const currentUrl = window.location.pathname + window.location.search;
+      console.log("Sending feedback with URL:", currentUrl);
+      
       const response = await fetch("/api/feedback", {
         method: "POST",
         headers: {
@@ -38,7 +41,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         body: JSON.stringify({
           scale: rating,
           feedbackComment: comment.trim(),
-          url: window.location.pathname + window.location.search,
+          url: currentUrl,
         }),
       });
 

@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
     // Get the request body
     const body = await request.json() as { scale?: unknown; feedbackComment?: unknown; url?: unknown };
     const { scale, feedbackComment, url } = body;
+    
+    console.log("Received feedback data:", { scale, feedbackComment, url });
 
     // Validate input
     if (!scale || !feedbackComment) {
@@ -61,13 +63,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert feedback into database
-    await db.insert(feedback).values({
+    const feedbackData = {
       userId: session.user.id,
       accountId: BigInt(accountId),
       feedbackComment: feedbackComment.trim(),
       scale: scale,
-      url: url || null,
-    });
+      url: (url && url.trim() !== '') ? url.trim() : null,
+    };
+    
+    console.log("Inserting feedback data:", feedbackData);
+    
+    await db.insert(feedback).values(feedbackData);
 
     return NextResponse.json(
       { message: "Feedback enviado correctamente" },

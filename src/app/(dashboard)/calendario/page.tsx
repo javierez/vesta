@@ -368,7 +368,6 @@ export default function AppointmentsPage() {
               <div className="p-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium">Agentes</h4>
                     {selectedAgents.length > 0 && (
                       <Button
                         variant="ghost"

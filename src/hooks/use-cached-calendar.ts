@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { getAppointmentsByDateRangeAction } from "~/server/actions/appointments";
 
 // Re-export types from use-appointments for compatibility
@@ -48,7 +48,7 @@ interface RawAppointment {
   agentLastName: string | null;
 }
 
-interface UseCachedCalendarReturn {
+interface UseSimpleCalendarReturn {
   appointments: CalendarEvent[];
   loading: boolean;
   error: string | null;
@@ -57,46 +57,12 @@ interface UseCachedCalendarReturn {
   addOptimisticEvent: (event: Partial<CalendarEvent>) => bigint;
   removeOptimisticEvent: (tempId: bigint) => void;
   updateOptimisticEvent: (tempId: bigint, updates: Partial<CalendarEvent>) => void;
-  clearCache: () => void;
-  getCacheStats: () => CacheStats;
-}
-
-interface WeekCache {
-  appointments: CalendarEvent[];
-  optimisticEvents: CalendarEvent[];
-  timestamp: number;
-  lastRefresh: number;
-  isStale: boolean;
-}
-
-interface CacheStats {
-  totalWeeks: number;
-  oldestWeek: string | null;
-  newestWeek: string | null;
-  totalEvents: number;
-  optimisticEvents: number;
-}
-
-interface PrefetchRequest {
-  weekKey: string;
-  priority: number;
-  startDate: Date;
-  endDate: Date;
 }
 
 // Constants
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-const BACKGROUND_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
-const MAX_CONCURRENT_REQUESTS = 2;
-const LRU_MAX_WEEKS = 26; // 6 months worth of weeks
 const AUTO_CLEANUP_TIMEOUT = 30 * 1000; // 30 seconds for optimistic events
 
 // Utility functions
-function getWeekKey(date: Date): string {
-  const monday = getMonday(date);
-  return `${monday.getFullYear()}-W${String(getWeekNumber(monday)).padStart(2, '0')}`;
-}
-
 function getMonday(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
@@ -106,14 +72,19 @@ function getMonday(date: Date): Date {
   return d;
 }
 
-function getWeekNumber(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+function get4WeekRange(currentWeekStart: Date): { startDate: Date; endDate: Date } {
+  // 2 weeks before current week
+  const startDate = new Date(currentWeekStart);
+  startDate.setDate(startDate.getDate() - 14);
+  startDate.setHours(0, 0, 0, 0);
+  
+  // 2 weeks after current week (so 4 weeks total: 2 before + current + 2 after)
+  const endDate = new Date(currentWeekStart);
+  endDate.setDate(endDate.getDate() + 21);
+  endDate.setHours(23, 59, 59, 999);
+  
+  return { startDate, endDate };
 }
-
 
 function generateTempId(): bigint {
   return BigInt(-Date.now());
@@ -172,268 +143,95 @@ function mergeAndSortEvents(serverEvents: CalendarEvent[], optimisticEvents: Cal
   return allEvents.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 }
 
-// Main hook
-export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarReturn {
-  // Cache storage
-  const cacheRef = useRef<Map<string, WeekCache>>(new Map());
-  const accessOrderRef = useRef<string[]>([]);
-  
+// Main simplified hook
+export function useSimpleCalendar(currentWeekStart: Date): UseSimpleCalendarReturn {
   // State
+  const [appointments, setAppointments] = useState<CalendarEvent[]>([]);
+  const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Prefetch management
-  const prefetchQueueRef = useRef<PrefetchRequest[]>([]);
-  const activeFetchesRef = useRef<Set<string>>(new Set());
-  const prefetchTimeoutRef = useRef<number | undefined>(undefined);
-  
-  // Background refresh
-  const refreshIntervalRef = useRef<number | undefined>(undefined);
-  
-  const currentWeekKey = useMemo(() => getWeekKey(currentWeekStart), [currentWeekStart]);
+  const [loadedRange, setLoadedRange] = useState<{ startDate: Date; endDate: Date } | null>(null);
 
-  // Cache management functions
-  const updateAccessOrder = useCallback((weekKey: string) => {
-    const index = accessOrderRef.current.indexOf(weekKey);
-    if (index > -1) {
-      accessOrderRef.current.splice(index, 1);
-    }
-    accessOrderRef.current.push(weekKey);
-    
-    // LRU eviction
-    while (accessOrderRef.current.length > LRU_MAX_WEEKS) {
-      const oldestKey = accessOrderRef.current.shift();
-      if (oldestKey) {
-        cacheRef.current.delete(oldestKey);
-      }
-    }
-  }, []);
+  // Calculate 4-week range
+  const currentRange = useMemo(() => get4WeekRange(currentWeekStart), [currentWeekStart]);
 
-  const isCacheStale = useCallback((cache: WeekCache): boolean => {
-    return Date.now() - cache.timestamp > CACHE_TTL;
-  }, []);
+  // Check if current week is within loaded range
+  const isWithinLoadedRange = useMemo(() => {
+    if (!loadedRange) return false;
+    return currentRange.startDate >= loadedRange.startDate && currentRange.endDate <= loadedRange.endDate;
+  }, [currentRange, loadedRange]);
 
-  const shouldBackgroundRefresh = useCallback((cache: WeekCache): boolean => {
-    return Date.now() - cache.lastRefresh > BACKGROUND_REFRESH_INTERVAL;
-  }, []);
+  // Fetch 4 weeks of data
+  const fetch4Weeks = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-  // Fetch data for a specific week
-  const fetchWeekData = useCallback(async (weekKey: string, startDate: Date, isBackground = false): Promise<void> => {
-    if (activeFetchesRef.current.has(weekKey)) {
-      return; // Already fetching
-    }
-
-    activeFetchesRef.current.add(weekKey);
-    
     try {
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 7);
-      endDate.setHours(23, 59, 59, 999);
-
-      const result = await getAppointmentsByDateRangeAction(startDate, endDate);
+      const result = await getAppointmentsByDateRangeAction(currentRange.startDate, currentRange.endDate);
 
       if (result.success) {
         const calendarEvents = result.appointments.map(transformToCalendarEvent);
-        const now = Date.now();
-        
-        const existingCache = cacheRef.current.get(weekKey);
-        const optimisticEvents = existingCache?.optimisticEvents ?? [];
-
-        cacheRef.current.set(weekKey, {
-          appointments: calendarEvents,
-          optimisticEvents,
-          timestamp: now,
-          lastRefresh: now,
-          isStale: false,
-        });
-
-        updateAccessOrder(weekKey);
-        
-        // Trigger re-render if this is for the current week
-        if (weekKey === currentWeekKey) {
-        }
-        
-        if (!isBackground && weekKey === currentWeekKey) {
-          setError(null);
-        }
+        setAppointments(calendarEvents);
+        setLoadedRange(currentRange);
       } else {
-        if (!isBackground) {
-          setError(result.error ?? "Error desconocido");
-        }
+        setError(result.error ?? "Error desconocido");
+        setAppointments([]);
       }
     } catch (err) {
-      console.error(`Error fetching week ${weekKey}:`, err);
-      if (!isBackground) {
-        setError("Error al cargar las citas");
-      }
+      setError("Error al cargar las citas");
+      setAppointments([]);
+      console.error("Error fetching 4-week appointments:", err);
     } finally {
-      activeFetchesRef.current.delete(weekKey);
+      setLoading(false);
     }
-  }, [currentWeekKey, updateAccessOrder]);
-
-  // Progressive prefetching
-  const schedulePrefetch = useCallback(() => {
-    if (prefetchTimeoutRef.current) {
-      clearTimeout(prefetchTimeoutRef.current);
-    }
-
-    prefetchTimeoutRef.current = setTimeout(() => {
-      const phases = [
-        { range: 1, priority: 1 }, // Adjacent weeks
-        { range: 4, priority: 2 }, // ±4 weeks  
-        { range: 8, priority: 3 }, // ±8 weeks
-        { range: 12, priority: 4 }, // ±12 weeks
-      ];
-
-      const requests: PrefetchRequest[] = [];
-      const currentStart = getMonday(currentWeekStart);
-
-      for (const phase of phases) {
-        for (let offset = -phase.range; offset <= phase.range; offset += 7) {
-          if (offset === 0) continue; // Skip current week
-          
-          const weekStart = new Date(currentStart);
-          weekStart.setDate(currentStart.getDate() + offset);
-          const weekKey = getWeekKey(weekStart);
-          
-          const existingCache = cacheRef.current.get(weekKey);
-          if (!existingCache || isCacheStale(existingCache)) {
-            requests.push({
-              weekKey,
-              priority: phase.priority,
-              startDate: weekStart,
-              endDate: new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000),
-            });
-          }
-        }
-      }
-
-      // Sort by priority and add to queue
-      requests.sort((a, b) => a.priority - b.priority);
-      prefetchQueueRef.current = requests;
-      
-      // Start processing queue
-      processPrefetchQueue();
-    }, 100) as unknown as number; // Small delay to batch multiple navigation events
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentWeekStart, isCacheStale]);
-
-  const processPrefetchQueue = useCallback(() => {
-    const activeCount = activeFetchesRef.current.size;
-    
-    while (activeCount < MAX_CONCURRENT_REQUESTS && prefetchQueueRef.current.length > 0) {
-      const request = prefetchQueueRef.current.shift();
-      if (request && !activeFetchesRef.current.has(request.weekKey)) {
-        void fetchWeekData(request.weekKey, request.startDate, true);
-      }
-    }
-    
-    // Schedule next processing if queue not empty
-    if (prefetchQueueRef.current.length > 0) {
-      setTimeout(() => processPrefetchQueue(), 1000);
-    }
-  }, [fetchWeekData]);
-
-  // Background refresh of current week
-  const scheduleBackgroundRefresh = useCallback(() => {
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-    }
-
-    refreshIntervalRef.current = setInterval(() => {
-      const cache = cacheRef.current.get(currentWeekKey);
-      if (cache && shouldBackgroundRefresh(cache)) {
-        void fetchWeekData(currentWeekKey, currentWeekStart, true);
-      }
-    }, BACKGROUND_REFRESH_INTERVAL) as unknown as number;
-  }, [currentWeekKey, currentWeekStart, fetchWeekData, shouldBackgroundRefresh]);
-
-  // Get current week's appointments
-  const appointments = useMemo(() => {
-    const cache = cacheRef.current.get(currentWeekKey);
-    if (!cache) return [];
-    
-    return mergeAndSortEvents(cache.appointments, cache.optimisticEvents);
-  }, [currentWeekKey]);
-
-  // Check if current week is loading
-  const isCurrentWeekLoading = useMemo(() => {
-    const cache = cacheRef.current.get(currentWeekKey);
-    return !cache && loading;
-  }, [currentWeekKey, loading]);
+  }, [currentRange]);
 
   // Optimistic event management
-  const removeOptimisticEvent = useCallback((tempId: bigint) => {
-    for (const [weekKey, cache] of cacheRef.current.entries()) {
-      const index = cache.optimisticEvents.findIndex(event => event.appointmentId === tempId);
-      if (index > -1) {
-        cache.optimisticEvents.splice(index, 1);
-        
-        // Trigger re-render if this affects the current week
-        if (weekKey === currentWeekKey) {
-        }
-        break;
-      }
-    }
-  }, [currentWeekKey]);
-
   const addOptimisticEvent = useCallback((eventData: Partial<CalendarEvent>): bigint => {
     const tempId = generateTempId();
     const optimisticEvent = transformToOptimisticEvent(eventData, tempId);
     
-    // Determine which week this event belongs to
-    const eventWeekKey = getWeekKey(optimisticEvent.startTime);
+    setOptimisticEvents(prev => [...prev, optimisticEvent]);
     
-    const cache = cacheRef.current.get(eventWeekKey);
-    if (cache) {
-      cache.optimisticEvents.push(optimisticEvent);
-    } else {
-      // Create cache entry for this week if it doesn't exist
-      cacheRef.current.set(eventWeekKey, {
-        appointments: [],
-        optimisticEvents: [optimisticEvent],
-        timestamp: Date.now(),
-        lastRefresh: 0,
-        isStale: true,
-      });
-    }
-    
-    // Trigger re-render if this affects the current week
-    if (eventWeekKey === currentWeekKey) {
-    }
-    
-    // Auto-cleanup
+    // Auto-cleanup after timeout
     setTimeout(() => {
-      removeOptimisticEvent(tempId);
-    }, AUTO_CLEANUP_TIMEOUT) as unknown as number;
+      setOptimisticEvents(prev => prev.filter(event => event.appointmentId !== tempId));
+    }, AUTO_CLEANUP_TIMEOUT);
     
     return tempId;
-  }, [currentWeekKey, removeOptimisticEvent]);
+  }, []);
+
+  const removeOptimisticEvent = useCallback((tempId: bigint) => {
+    setOptimisticEvents(prev => prev.filter(event => event.appointmentId !== tempId));
+  }, []);
 
   const updateOptimisticEvent = useCallback((tempId: bigint, updates: Partial<CalendarEvent>) => {
-    for (const [weekKey, cache] of cacheRef.current.entries()) {
-      const event = cache.optimisticEvents.find(event => event.appointmentId === tempId);
-      if (event) {
-        Object.assign(event, updates);
-        
-        // Trigger re-render if this affects the current week
-        if (weekKey === currentWeekKey) {
-        }
-        break;
+    setOptimisticEvents(prev => prev.map(event => {
+      if (event.appointmentId === tempId) {
+        return { ...event, ...updates };
       }
-    }
-  }, [currentWeekKey]);
+      return event;
+    }));
+  }, []);
 
-  // Public API methods
+  // Merge server events with optimistic events
+  const mergedAppointments = useMemo(() => {
+    return mergeAndSortEvents(appointments, optimisticEvents);
+  }, [appointments, optimisticEvents]);
+
+  // Fetch data when range changes or on initial load
+  useEffect(() => {
+    if (!isWithinLoadedRange) {
+      void fetch4Weeks();
+    }
+  }, [isWithinLoadedRange, fetch4Weeks]);
+
+  // Refetch function
   const refetch = useCallback(async () => {
-    setLoading(true);
-    try {
-      await fetchWeekData(currentWeekKey, currentWeekStart);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentWeekKey, currentWeekStart, fetchWeekData]);
+    await fetch4Weeks();
+  }, [fetch4Weeks]);
 
+  // Custom date range fetch
   const fetchByDateRange = useCallback(async (startDate: Date, endDate: Date) => {
     setLoading(true);
     setError(null);
@@ -443,121 +241,55 @@ export function useCachedCalendar(currentWeekStart: Date): UseCachedCalendarRetu
 
       if (result.success) {
         const calendarEvents = result.appointments.map(transformToCalendarEvent);
-        
-        // Update cache for the requested range
-        const weekKey = getWeekKey(startDate);
-        const now = Date.now();
-        
-        cacheRef.current.set(weekKey, {
-          appointments: calendarEvents,
-          optimisticEvents: cacheRef.current.get(weekKey)?.optimisticEvents ?? [],
-          timestamp: now,
-          lastRefresh: now,
-          isStale: false,
-        });
-
-        updateAccessOrder(weekKey);
-        
-        // Trigger re-render if this affects the current week
-        if (weekKey === currentWeekKey) {
-        }
+        setAppointments(calendarEvents);
+        setLoadedRange({ startDate, endDate });
       } else {
         setError(result.error ?? "Error desconocido");
+        setAppointments([]);
       }
     } catch (err) {
       setError("Error al cargar las citas por rango de fechas");
+      setAppointments([]);
       console.error("Error fetching appointments by date range:", err);
     } finally {
       setLoading(false);
     }
-  }, [updateAccessOrder, currentWeekKey]);
-
-  const clearCache = useCallback(() => {
-    cacheRef.current.clear();
-    accessOrderRef.current.length = 0;
-    prefetchQueueRef.current.length = 0;
-    activeFetchesRef.current.clear();
   }, []);
-
-  const getCacheStats = useCallback((): CacheStats => {
-    const weeks = Array.from(cacheRef.current.keys()).sort();
-    let totalEvents = 0;
-    let optimisticCount = 0;
-    
-    for (const cache of cacheRef.current.values()) {
-      totalEvents += cache.appointments.length;
-      optimisticCount += cache.optimisticEvents.length;
-    }
-    
-    return {
-      totalWeeks: weeks.length,
-      oldestWeek: weeks[0] ?? null,
-      newestWeek: weeks[weeks.length - 1] ?? null,
-      totalEvents,
-      optimisticEvents: optimisticCount,
-    };
-  }, []);
-
-  // Initialize and manage current week
-  useEffect(() => {
-    const cache = cacheRef.current.get(currentWeekKey);
-    
-    if (!cache || isCacheStale(cache)) {
-      setLoading(true);
-      void fetchWeekData(currentWeekKey, currentWeekStart).finally(() => {
-        setLoading(false);
-      });
-    } else {
-      setLoading(false);
-      updateAccessOrder(currentWeekKey);
-    }
-    
-    // Start background processes
-    schedulePrefetch();
-    scheduleBackgroundRefresh();
-    
-    // Cleanup
-    return () => {
-      if (prefetchTimeoutRef.current) {
-        clearTimeout(prefetchTimeoutRef.current);
-      }
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
-    };
-  }, [currentWeekKey, currentWeekStart, fetchWeekData, isCacheStale, schedulePrefetch, scheduleBackgroundRefresh, updateAccessOrder]);
 
   return {
-    appointments,
-    loading: isCurrentWeekLoading,
+    appointments: mergedAppointments,
+    loading,
     error,
     refetch,
     fetchByDateRange,
     addOptimisticEvent,
     removeOptimisticEvent,
     updateOptimisticEvent,
-    clearCache,
-    getCacheStats,
   };
 }
 
 // Convenience hooks for backwards compatibility
-export function useWeeklyAppointments(weekStart: Date): UseCachedCalendarReturn {
-  return useCachedCalendar(weekStart);
+export function useWeeklyAppointments(weekStart: Date): UseSimpleCalendarReturn {
+  return useSimpleCalendar(weekStart);
 }
 
 // Additional hooks for full compatibility with use-appointments.ts
-export function useAppointments(): UseCachedCalendarReturn {
+export function useAppointments(): UseSimpleCalendarReturn {
   // Use current date as baseline for full appointments view
   const today = new Date();
   const monday = getMonday(today);
-  return useCachedCalendar(monday);
+  return useSimpleCalendar(monday);
 }
 
-export function useTodayAppointments(): UseCachedCalendarReturn {
+export function useTodayAppointments(): UseSimpleCalendarReturn {
   const today = new Date();
   const monday = getMonday(today);
-  return useCachedCalendar(monday);
+  return useSimpleCalendar(monday);
+}
+
+// Alias for the main hook to maintain compatibility
+export function useCachedCalendar(currentWeekStart: Date): UseSimpleCalendarReturn {
+  return useSimpleCalendar(currentWeekStart);
 }
 
 // Utility functions that were in the original hook
@@ -619,3 +351,6 @@ export function isAppointmentToday(appointment: CalendarEvent): boolean {
     today.getFullYear() === appointmentDate.getFullYear()
   );
 }
+
+// For backwards compatibility, export return type with old name
+export type UseCachedCalendarReturn = UseSimpleCalendarReturn;
