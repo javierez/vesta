@@ -142,60 +142,60 @@ export default function CalendarEvent({
       style={style}
       onClick={handleClick}
     >
-      {/* Always show: Event type and contact name */}
-      <div className="flex items-center gap-1 truncate text-xs font-medium leading-tight">
-        {typeConfig.icon}
-        <span>
-          {event.type} {event.contactName}
-        </span>
-      </div>
-
-      {/* Show time if height > 50px */}
-      {showDetails && (
-        <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
-          <Clock className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate">
-            {formatTime(event.startTime)} - {formatTime(event.endTime)}
+        {/* Always show: Event type and contact name */}
+        <div className="flex items-center gap-1 truncate text-xs font-medium leading-tight">
+          {typeConfig.icon}
+          <span>
+            {event.type} {event.contactName}
           </span>
         </div>
-      )}
 
-      {/* Show address if height > 80px and address exists */}
-      {showExtended && event.propertyAddress && (
-        <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
-          <MapPin className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate">{event.propertyAddress}</span>
-        </div>
-      )}
+        {/* Show time if height > 50px */}
+        {showDetails && (
+          <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
+            <Clock className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">
+              {formatTime(event.startTime)} - {formatTime(event.endTime)}
+            </span>
+          </div>
+        )}
 
-      {/* Show trip time if height > 80px and trip time exists */}
-      {showExtended && event.tripTimeMinutes && (
-        <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
-          <Car className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate">
-            {formatTripTime(event.tripTimeMinutes)}
-          </span>
-        </div>
-      )}
+        {/* Show address if height > 80px and address exists */}
+        {showExtended && event.propertyAddress && (
+          <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{event.propertyAddress}</span>
+          </div>
+        )}
 
-      {/* Show notes if height > 120px and notes exist */}
-      {showFull && event.notes && (
-        <div className="mt-1 line-clamp-2 text-xs opacity-75">
-          {event.notes}
-        </div>
-      )}
+        {/* Show trip time if height > 80px and trip time exists */}
+        {showExtended && event.tripTimeMinutes && (
+          <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
+            <Car className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">
+              {formatTripTime(event.tripTimeMinutes)}
+            </span>
+          </div>
+        )}
 
-      {/* Status indicator for non-scheduled appointments */}
-      {event.status !== "Scheduled" && (
-        <div className="absolute right-1 top-1">
-          <div
-            className={cn(
-              "h-2 w-2 rounded-full bg-white",
-              event.status === "Completed" ? "bg-opacity-0" : "bg-opacity-80",
-            )}
-          />
-        </div>
-      )}
+        {/* Show notes if height > 120px and notes exist */}
+        {showFull && event.notes && (
+          <div className="mt-1 line-clamp-2 text-xs opacity-75">
+            {event.notes}
+          </div>
+        )}
+
+        {/* Status indicator for non-scheduled appointments */}
+        {event.status !== "Scheduled" && (
+          <div className="absolute right-1 top-1">
+            <div
+              className={cn(
+                "h-2 w-2 rounded-full bg-white",
+                event.status === "Completed" ? "bg-opacity-0" : "bg-opacity-80",
+              )}
+            />
+          </div>
+        )}
     </div>
   );
 }
