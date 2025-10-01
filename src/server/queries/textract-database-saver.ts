@@ -13,7 +13,7 @@ import { generatePropertyTitle } from "~/lib/property-title";
 import { getCurrentUser } from "~/lib/dal";
 import { autoCompleteAddress } from "~/lib/address-autocomplete";
 import type { Property, Listing } from "~/lib/data";
-import { createTaskWithAuth } from "~/server/queries/task";
+import { createPropertyTasksAsync } from "~/server/actions/property-tasks";
 
 type DbProperty = Omit<Property, "builtInWardrobes"> & {
   builtInWardrobes?: boolean;
@@ -660,55 +660,10 @@ export async function saveExtractedDataToDatabase(
       console.log("Agent ID:", currentUser.id);
       console.log("Listing ID:", listingId);
       
-      // Calculate due date: today + 7 days
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 7);
-      
-      // Task for uploading property images
-      const imageUploadTask = createTaskWithAuth({
+      // Create tasks asynchronously (don't wait for completion)
+      await createPropertyTasksAsync({
         userId: currentUser.id,
-        title: "Subir fotos de la propiedad",
-        description: "Cargar y organizar las fotografías del inmueble para mejorar la presentación en portales inmobiliarios y atraer más interesados",
-        dueDate: dueDate,
-        dueTime: undefined,
-        completed: false,
         listingId: BigInt(listingId),
-        listingContactId: undefined,
-        dealId: undefined,
-        appointmentId: undefined,
-        prospectId: undefined,
-        contactId: undefined,
-        isActive: true,
-      }).catch((error) => {
-        // Don't fail the entire operation if task creation fails
-        console.error("Failed to create image upload task:", error);
-        return null;
-      });
-      
-      // Task for completing property information questionnaire
-      const completeInfoTask = createTaskWithAuth({
-        userId: currentUser.id,
-        title: "Completar información del inmueble en el cuestionario",
-        description: "Revisar y completar todos los campos pendientes del cuestionario para tener la información completa del inmueble",
-        dueDate: dueDate,
-        dueTime: undefined,
-        completed: false,
-        listingId: BigInt(listingId),
-        listingContactId: undefined,
-        dealId: undefined,
-        appointmentId: undefined,
-        prospectId: undefined,
-        contactId: undefined,
-        isActive: true,
-      }).catch((error) => {
-        // Don't fail the entire operation if task creation fails
-        console.error("Failed to create complete info task:", error);
-        return null;
-      });
-      
-      // Execute task creation promises (but don't wait for them to complete)
-      Promise.all([imageUploadTask, completeInfoTask]).catch((error) => {
-        console.error("Error creating OCR property tasks:", error);
       });
     }
 

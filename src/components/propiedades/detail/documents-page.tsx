@@ -6,7 +6,6 @@ import { Button } from "~/components/ui/button";
 import {
   FileText,
   Download,
-  Upload,
   Calendar,
   MoreVertical,
   FolderIcon,
@@ -45,8 +44,6 @@ interface DocumentsPageProps {
 }
 
 export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
-  const [isUploading, setIsUploading] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -83,72 +80,6 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
 
     void fetchDocuments();
   }, [listing.listingId, apiFolderType]);
-
-  const handleFiles = async (files: FileList) => {
-    if (!files || files.length === 0) return;
-
-    setIsUploading(true);
-
-    try {
-      // Upload all files
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("folderType", apiFolderType);
-
-        const response = await fetch(
-          `/api/properties/${listing.listingId}/documents`,
-          {
-            method: "POST",
-            body: formData,
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
-
-        return response.json() as Promise<Document>;
-      });
-
-      const uploadedDocuments = await Promise.all(uploadPromises);
-
-      // Add new documents to the state
-      setDocuments((prev) => [...uploadedDocuments, ...prev]);
-    } catch (error) {
-      console.error("Error uploading files:", error);
-      // You might want to show a toast notification here
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      void handleFiles(files);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-
-    const files = e.dataTransfer.files;
-    if (files) {
-      void handleFiles(files);
-    }
-  };
 
   const handleDownload = (document: Document) => {
     // Open the document URL in a new tab for download
@@ -239,24 +170,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
   };
 
   return (
-    <div
-      className={cn("relative pb-16", isDragOver && "bg-blue-50/50")}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {/* Drag overlay */}
-      {isDragOver && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/80">
-          <div className="text-center">
-            <Upload className="mx-auto mb-2 h-12 w-12 text-blue-500" />
-            <p className="text-lg font-medium text-blue-900">
-              Suelta los archivos aquí
-            </p>
-            <p className="text-sm text-blue-700">Se subirán automáticamente</p>
-          </div>
-        </div>
-      )}
+    <div className="relative">
 
       {/* Documents list - clean, no titles */}
       <div className="space-y-3">
@@ -327,37 +241,12 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
                   No hay documentos en esta carpeta
                 </p>
                 <p className="mt-1 text-sm text-gray-400">
-                  Sube el primer documento usando el botón &quot;Subir&quot; o
-                  arrastrando archivos a la pantalla
+                  Usa el botón de "Subir Documentos" para agregar archivos
                 </p>
               </div>
             )}
           </>
         )}
-      </div>
-
-      {/* Upload button - positioned at bottom right */}
-      <div className="mt-6 flex justify-end">
-        <input
-          type="file"
-          multiple
-          className="hidden"
-          id="file-upload"
-          onChange={handleFileUpload}
-          disabled={isUploading}
-        />
-        <label htmlFor="file-upload" className="cursor-pointer">
-          <Button
-            disabled={isUploading}
-            className="bg-gray-900 text-white hover:bg-gray-800"
-            asChild
-          >
-            <span>
-              <Upload className="mr-2 h-4 w-4" />
-              {isUploading ? "Subiendo..." : "Subir"}
-            </span>
-          </Button>
-        </label>
       </div>
 
       {/* Delete confirmation dialog */}

@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { formatPrice, cn } from "~/lib/utils";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { updatePropertyTitle } from "~/app/actions/property-settings";
 import { updateListingStatus } from "~/app/actions/listing-settings";
 import { toast } from "sonner";
@@ -81,6 +82,10 @@ export function PropertyHeader({
 
   // Completion tracker modal state
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+  
+  // Check if we're on the main property page (not a sub-page)
+  const pathname = usePathname();
+  const isMainPropertyPage = pathname ? /^\/propiedades\/\d+\/?$/.test(pathname) : false;
 
   // Calculate completion percentage from listing data
   const completion = listing ? calculateCompletion(listing) : null;
@@ -324,31 +329,33 @@ export function PropertyHeader({
               : ""}
           </div>
           <div className="flex items-center gap-2 mt-1">
-            {/* Completion Tracker Button */}
-            <button
-              onClick={() => {
-                setIsCompletionModalOpen(!isCompletionModalOpen);
-              }}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-accent transition-colors"
-              title="Ver estado de registro"
-            >
-              {/* Circular progress ring - dynamic percentage */}
-              <svg width="20" height="20" className="transform -rotate-90">
-                <circle cx="10" cy="10" r="8" fill="none" stroke="#e5e7eb" strokeWidth="2"/>
-                <circle
-                  cx="10"
-                  cy="10"
-                  r="8"
-                  fill="none"
-                  stroke={completionColor}
-                  strokeWidth="2"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={dashOffset}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="text-xs font-medium text-muted-foreground">{completionPercentage}%</span>
-            </button>
+            {/* Completion Tracker Button - only show on main property page */}
+            {isMainPropertyPage && (
+              <button
+                onClick={() => {
+                  setIsCompletionModalOpen(!isCompletionModalOpen);
+                }}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-accent transition-colors"
+                title="Ver estado de registro"
+              >
+                {/* Circular progress ring - dynamic percentage */}
+                <svg width="20" height="20" className="transform -rotate-90">
+                  <circle cx="10" cy="10" r="8" fill="none" stroke="#e5e7eb" strokeWidth="2"/>
+                  <circle
+                    cx="10"
+                    cy="10"
+                    r="8"
+                    fill="none"
+                    stroke={completionColor}
+                    strokeWidth="2"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={dashOffset}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="text-xs font-medium text-muted-foreground">{completionPercentage}%</span>
+              </button>
+            )}
 
             <Badge
               variant="secondary"
@@ -367,8 +374,8 @@ export function PropertyHeader({
         </div>
       </div>
 
-      {/* Completion Tracker Modal */}
-      {listing && (
+      {/* Completion Tracker Modal - only show on main property page */}
+      {listing && isMainPropertyPage && (
         <CompletionTrackerModal
           listing={listing as { propertyId?: bigint | number | string; [key: string]: unknown }}
           isOpen={isCompletionModalOpen}

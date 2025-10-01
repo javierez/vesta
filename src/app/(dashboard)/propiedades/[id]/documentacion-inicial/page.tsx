@@ -6,7 +6,7 @@ import {
 } from "~/server/queries/listing";
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
-import { DocumentsPage } from "~/components/propiedades/detail/documents-page";
+import { DocumentsSection } from "~/components/propiedades/detail/documents-section";
 
 interface DocumentPageProps {
   params: Promise<{
@@ -58,7 +58,17 @@ export default async function DocumentacionInicialPage({
         isBankOwned={headerData.isBankOwned ?? false}
       />
 
-      <DocumentsPage
+      {/* Section header */}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          Documentación Inicial
+        </h3>
+        <p className="text-gray-600">
+          Gestiona todos los documentos iniciales de la propiedad y genera la hoja de encargo.
+        </p>
+      </div>
+
+      <DocumentsSection
         listing={documentsData}
         folderType="documentacion-inicial"
       />

@@ -3,8 +3,8 @@ import type { Listing } from "~/lib/data";
 import { updateProperty, updatePropertyLocation } from "~/server/queries/properties";
 import { updateListingWithAuth } from "~/server/queries/listing";
 import { updateListingOwnersWithAuth } from "~/server/queries/contact";
-import { createTaskWithAuth } from "~/server/queries/task";
 import { generatePropertyTitle } from "~/lib/property-title";
+import { createPropertyTasks } from "~/server/actions/property-tasks";
 
 export interface SaveOptions {
   showLoading?: boolean;
@@ -276,54 +276,11 @@ export async function saveQuickFormData(
       console.log("Agent ID:", formData.agentId);
       console.log("Listing ID:", listingId);
       
-      // Calculate due date: today + 7 days
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 7);
-      
-      // Task for uploading property images
-      const imageUploadTask = createTaskWithAuth({
+      const tasksPromise = createPropertyTasks({
         userId: formData.agentId,
-        title: "Subir fotos de la propiedad",
-        description: "Cargar y organizar las fotografías del inmueble para mejorar la presentación en portales inmobiliarios y atraer más interesados",
-        dueDate: dueDate,
-        dueTime: undefined,
-        completed: false,
         listingId: BigInt(listingId),
-        listingContactId: undefined,
-        dealId: undefined,
-        appointmentId: undefined,
-        prospectId: undefined,
-        contactId: undefined,
-        isActive: true,
-      }).catch((error) => {
-        // Don't fail the entire operation if task creation fails
-        console.error("Failed to create image upload task:", error);
-        return null;
       });
-      
-      // Task for completing property information questionnaire
-      const completeInfoTask = createTaskWithAuth({
-        userId: formData.agentId,
-        title: "Completar información del inmueble en el cuestionario",
-        description: "Revisar y completar todos los campos pendientes del cuestionario para tener la información completa del inmueble",
-        dueDate: dueDate,
-        dueTime: undefined,
-        completed: false,
-        listingId: BigInt(listingId),
-        listingContactId: undefined,
-        dealId: undefined,
-        appointmentId: undefined,
-        prospectId: undefined,
-        contactId: undefined,
-        isActive: true,
-      }).catch((error) => {
-        // Don't fail the entire operation if task creation fails
-        console.error("Failed to create complete info task:", error);
-        return null;
-      });
-      
-      promises.push(imageUploadTask);
-      promises.push(completeInfoTask);
+      promises.push(tasksPromise);
     }
 
     // Execute all save operations
