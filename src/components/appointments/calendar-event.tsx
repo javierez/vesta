@@ -128,20 +128,66 @@ export default function CalendarEvent({
     onClick?.(event);
   };
 
+  // Calculate travel time block height (1px per minute on calendar)
+  const travelTimeHeight = event.tripTimeMinutes || 0;
+
   return (
-    <div
-      className={cn(
-        "calendar-event absolute left-0.5 right-0.5 cursor-pointer overflow-hidden rounded-md px-2 py-1 transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1",
-        typeConfig.color,
-        typeConfig.textColor,
-        statusConfig,
-        isSelected && "ring-2 ring-black ring-offset-1",
-        optimisticStyles,
-        className,
+    <>
+      {/* Travel Time Block - positioned above appointment */}
+      {travelTimeHeight > 0 && (
+        <div
+          className={cn(
+            "absolute left-0.5 right-0.5 pointer-events-none rounded-t-md border-l-2 border-r-2 border-t-2",
+            typeConfig.color,
+            "opacity-30"
+          )}
+          style={{
+            top: `${parseInt(style.top) - travelTimeHeight}px`,
+            height: `${travelTimeHeight}px`,
+            background: `linear-gradient(to bottom, 
+              rgba(255, 255, 255, 0.3), 
+              rgba(255, 255, 255, 0.1)
+            )`,
+            borderColor: 'currentColor',
+          }}
+        >
+          {/* Travel icon and subtle pattern for blocks tall enough */}
+          {travelTimeHeight >= 15 && (
+            <div className="flex items-center justify-center h-full">
+              <Car className="h-3 w-3 opacity-60" />
+            </div>
+          )}
+          {/* Subtle diagonal lines pattern */}
+          <div 
+            className="absolute inset-0 opacity-20"
+            style={{
+              background: `repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 3px,
+                currentColor 3px,
+                currentColor 4px
+              )`
+            }}
+          />
+        </div>
       )}
-      style={style}
-      onClick={handleClick}
-    >
+      
+      {/* Main Appointment Block */}
+      <div
+        className={cn(
+          "calendar-event absolute left-0.5 right-0.5 cursor-pointer overflow-hidden px-2 py-1 transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1",
+          travelTimeHeight > 0 ? "" : "rounded-md", // No rounding if travel blocks exist (they handle the rounding)
+          typeConfig.color,
+          typeConfig.textColor,
+          statusConfig,
+          isSelected && "ring-2 ring-black ring-offset-1",
+          optimisticStyles,
+          className,
+        )}
+        style={style}
+        onClick={handleClick}
+      >
         {/* Always show: Event type and contact name */}
         <div className="flex items-center gap-1 truncate text-xs font-medium leading-tight">
           {typeConfig.icon}
@@ -196,7 +242,48 @@ export default function CalendarEvent({
             />
           </div>
         )}
-    </div>
+      </div>
+      
+      {/* Return Travel Time Block - positioned below appointment */}
+      {travelTimeHeight > 0 && (
+        <div
+          className={cn(
+            "absolute left-0.5 right-0.5 pointer-events-none rounded-b-md border-l-2 border-r-2 border-b-2",
+            typeConfig.color,
+            "opacity-30"
+          )}
+          style={{
+            top: `${parseInt(style.top) + parseInt(style.height)}px`,
+            height: `${travelTimeHeight}px`,
+            background: `linear-gradient(to top, 
+              rgba(255, 255, 255, 0.3), 
+              rgba(255, 255, 255, 0.1)
+            )`,
+            borderColor: 'currentColor',
+          }}
+        >
+          {/* Travel icon for blocks tall enough */}
+          {travelTimeHeight >= 15 && (
+            <div className="flex items-center justify-center h-full">
+              <Car className="h-3 w-3 opacity-60" />
+            </div>
+          )}
+          {/* Subtle diagonal lines pattern - opposite direction */}
+          <div 
+            className="absolute inset-0 opacity-20"
+            style={{
+              background: `repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 3px,
+                currentColor 3px,
+                currentColor 4px
+              )`
+            }}
+          />
+        </div>
+      )}
+    </>
   );
 }
 

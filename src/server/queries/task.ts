@@ -913,6 +913,11 @@ export async function getMostUrgentTasks(accountId: number, limit = 10, daysAhea
         userName: users.name,
         userFirstName: users.firstName,
         userLastName: users.lastName,
+        // Contact information
+        contactFirstName: contacts.firstName,
+        contactLastName: contacts.lastName,
+        // Property information
+        propertyTitle: properties.title,
       })
       .from(tasks)
       .innerJoin(users, eq(tasks.userId, users.id))

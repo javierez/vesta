@@ -14,8 +14,6 @@ import {
   Check,
   Trash2,
   Loader2,
-  ChevronDown,
-  ChevronUp,
   Home,
   Users,
   PenTool,
@@ -23,6 +21,7 @@ import {
   Train,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import type {
   UrgentTask,
   TodayAppointment,
@@ -50,7 +49,6 @@ export default function WorkQueueCard({
   onDaysChange,
 }: WorkQueueCardProps) {
   const [taskStates, setTaskStates] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
-  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   const [selectedDays, setSelectedDays] = useState(7);
   const [optimisticTasks, setOptimisticTasks] = useState<DetailedTask[]>([]);
 
@@ -331,13 +329,6 @@ export default function WorkQueueCard({
     }
   };
 
-  const toggleDescriptionExpansion = (taskId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpandedDescriptions(prev => ({
-      ...prev,
-      [taskId]: !prev[taskId]
-    }));
-  };
 
   // Legacy handler for old task format
   const handleCompleteTask = async (taskId: bigint) => {
@@ -438,42 +429,40 @@ export default function WorkQueueCard({
                           )}
                         </div>
                         
-                        <div className="ml-4.5 sm:ml-6 mb-2">
-                          {(() => {
-                            const isExpanded = expandedDescriptions[taskIdStr];
-                            const isLongDescription = task.description.length > 80;
-                            const displayText = isExpanded || !isLongDescription 
-                              ? task.description 
-                              : task.description.substring(0, 80) + '...';
-                            
-                            return (
-                              <div className="group">
-                                <p className={`text-xs leading-tight ${task.completed ?? false ? 'line-through text-gray-400' : 'text-gray-600'}`}>
-                                  {displayText}
-                                </p>
-                                {isLongDescription && (
-                                  <button
-                                    onClick={(e) => toggleDescriptionExpansion(taskIdStr, e)}
-                                    className={`text-xs mt-0.5 flex items-center gap-1 transition-colors ${
-                                      task.completed ?? false ? 'text-gray-400 hover:text-gray-500' : 'text-gray-500 hover:text-gray-700'
-                                    }`}
-                                  >
-                                    {isExpanded ? (
-                                      <>
-                                        <span>Ver menos</span>
-                                        <ChevronUp className="h-2.5 w-2.5" />
-                                      </>
-                                    ) : (
-                                      <>
-                                        <span>Ver más</span>
-                                        <ChevronDown className="h-2.5 w-2.5" />
-                                      </>
-                                    )}
-                                  </button>
-                                )}
-                              </div>
-                            );
-                          })()}
+                        <div className="ml-4.5 sm:ml-6 mb-2 space-y-1.5">
+                          {/* Property Link */}
+                          {task.listingId && task.propertyTitle && (
+                            <Link 
+                              href={`/propiedades/${task.listingId}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
+                                task.completed ?? false 
+                                  ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60' 
+                                  : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
+                              }`}
+                            >
+                              <Home className="h-3.5 w-3.5 opacity-60" />
+                              <span className="truncate max-w-32">{task.propertyTitle}</span>
+                            </Link>
+                          )}
+                          
+                          {/* Contact Link */}
+                          {task.contactId && (task.contactFirstName || task.contactLastName) && (
+                            <Link 
+                              href={`/contactos/${task.contactId}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
+                                task.completed ?? false 
+                                  ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60' 
+                                  : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
+                              }`}
+                            >
+                              <User className="h-3.5 w-3.5 opacity-60" />
+                              <span className="truncate max-w-32">
+                                {`${task.contactFirstName ?? ''} ${task.contactLastName ?? ''}`.trim()}
+                              </span>
+                            </Link>
+                          )}
                         </div>
                       </div>
                       
@@ -530,7 +519,7 @@ export default function WorkQueueCard({
                         </div>
 
                         <p className="line-clamp-2 text-sm font-medium text-gray-900">
-                          {task.description}
+                          {task.title}
                         </p>
 
                         <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
