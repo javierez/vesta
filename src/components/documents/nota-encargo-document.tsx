@@ -141,13 +141,13 @@ export function NotaEncargoDocument({ data }: Props) {
               <img 
                 src={brandLogo} 
                 alt="Logo de la agencia" 
-                className="h-12 w-auto"
+                className="h-20 w-auto"
               />
             )}
             <img 
               src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo_api.png" 
               alt="API Logo" 
-              className="h-8 w-auto"
+              className="h-12 w-auto"
             />
           </div>
           <div className="text-[14pt] font-bold mb-2">AGENCIA DE LA PROPIEDAD INMOBILIARIA</div>
@@ -179,50 +179,56 @@ export function NotaEncargoDocument({ data }: Props) {
           <div className="text-[11pt] mb-1">{website}</div>
         </div>
         
-        <div className="border-t-2 border-black my-5"></div>
+        <div className="border-t-2 border-black my-6"></div>
         
         {/* Document Title */}
-        <div className="text-center text-[14pt] font-bold my-5">
-          NOTA DE ENCARGO<br />
-          <div className="text-[12pt] mt-2">
+        <div className="text-center my-8 py-3 border-y-2 border-gray-300">
+          <div className="text-[16pt] font-bold mb-2">
+            NOTA DE ENCARGO
+          </div>
+          <div className="text-[12pt] font-medium">
             Nº Nota: {data.documentNumber}
           </div>
         </div>
         
-        <div className="border-t-2 border-black my-5"></div>
+        <div className="border-t-2 border-black my-6"></div>
         
         {/* Client Data Section */}
         <div className="my-6">
-          <div className="font-bold mb-4">DATOS DEL CLIENTE Y OPERACIÓN:</div>
-          
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">Nombre Completo:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.fullName}</span>
+          <div className="font-bold mb-4 text-[13pt] border-b border-gray-300 pb-2">
+            DATOS DEL CLIENTE Y OPERACIÓN:
           </div>
           
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">Vecino/a de:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.city}</span>
-          </div>
-          
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">Domicilio:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.address}</span>
-          </div>
-          
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">Distrito Postal:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.postalCode}</span>
-          </div>
-          
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">N.I.F.:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.nif}</span>
-          </div>
-          
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">Teléfono:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.phone}</span>
+          <div className="space-y-3">
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">Nombre Completo:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.fullName}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">Vecino/a de:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.city}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">Domicilio:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.address}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">Distrito Postal:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.postalCode}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">N.I.F.:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.nif}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">Teléfono:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.client.phone}</span>
+            </div>
           </div>
         </div>
         
@@ -234,160 +240,162 @@ export function NotaEncargoDocument({ data }: Props) {
         </div>
         
         {/* Operation Section */}
-        <div className="my-5">
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">Operación:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.operation.type}</span>
+        <div className="my-6">
+          <div className="space-y-3">
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">Operación:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.operation.type}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">Descripciones:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.description}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">Condiciones / Precio:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.operation.price}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">Autorización colocación de cartel:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.allowSignage}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">Certificación eficiencia energética:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.energyCertificate}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">EL PROPIETARIO / A O REPRESENTANTE DE LA PARTE VENDEDORA, ENTREGA LAS LLAVES DE LA FINCA DESCRITA:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.keyDelivery}</span>
+            </div>
+            
+            <div className="flex">
+              <span className="font-bold min-w-[140px]">AUTORIZACIÓN PARA REALIZAR VISITAS:</span>
+              <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.allowVisits}</span>
+            </div>
           </div>
           
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">Descripciones:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.description}</span>
-          </div>
-          
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">Condiciones / Precio:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.operation.price}</span>
-          </div>
-          
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">Autorización colocación de cartel:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.allowSignage}</span>
-          </div>
-          
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">Certificación eficiencia energética:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.energyCertificate}</span>
-          </div>
-          
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">EL PROPIETARIO / A O REPRESENTANTE DE LA PARTE VENDEDORA, ENTREGA LAS LLAVES DE LA FINCA DESCRITA:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.keyDelivery}</span>
-          </div>
-          
-          <div className="flex my-2">
-            <span className="font-bold min-w-[140px]">AUTORIZACIÓN PARA REALIZAR VISITAS:</span>
-            <span className="flex-1 border-b border-black pb-0.5 ml-2">{data.property.allowVisits}</span>
-          </div>
-          
-          <div className="mt-2 text-[11pt] text-justify">
+          <div className="mt-4 p-3 bg-gray-50 border-l-4 border-gray-400 text-justify italic">
             El autorizante permitirá el acceso a la finca al personal de <strong>{agentName}</strong> y a todas las personas que les acompañen, con el fin de poder realizar las oportunas visitas a la finca objeto de la venta.
           </div>
         </div>
         
         {/* Clauses Section */}
         <div className="mt-8">
-          <div className="font-bold text-[12pt] mb-5">
+          <div className="font-bold text-[13pt] mb-6 border-b border-gray-300 pb-2">
             CLÁUSULAS PRINCIPALES:
           </div>
           
-          <div className="my-5">
-            <div className="font-bold mb-2">1º - AUTORIZACIÓN AL AGENTE</div>
-            <div className="text-justify mb-3">
+          <div className="my-6">
+            <div className="font-bold mb-3">1º - AUTORIZACIÓN AL AGENTE</div>
+            <div className="text-justify mb-3 leading-relaxed">
               "EL CLIENTE", que actúa como propietario, autoriza de manera expresa a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, a percibir cantidades a cuenta, sobre el precio de la operación anteriormente reseñada. De igual modo también autoriza a firmar contratos de compromiso, con posibles demandantes del inmueble descrito.
             </div>
-            <div className="text-justify mb-3">
+            <div className="text-justify mb-3 leading-relaxed">
               En el caso de que la presente NOTA DE ENCARGO, no la pudiese firmar el titular del Inmueble objeto de la operación descrita, la persona que firme la presente nota, se hace responsable solidario, junto con la persona física o jurídica a la que representa, de las obligaciones que para "EL CLIENTE", se refleja en este contrato.
             </div>
           </div>
           
-          <div className="my-5">
-            <div className="font-bold mb-2">2º - COMISIONES Y PAGOS</div>
-            <div className="text-justify mb-3">
+          <div className="my-6">
+            <div className="font-bold mb-3">2º - COMISIONES Y PAGOS</div>
+            <div className="text-justify mb-3 leading-relaxed">
               <strong>A)</strong> De las cantidades recibidas, sobre el precio de la operación, "EL CLIENTE", abonará el <strong>{data.commission.percentage}% + I.V.A.</strong> con un mínimo de <strong>{data.commission.minimum} €</strong>, como honorarios a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, siendo autorizada expresamente a que sean satisfechos reteniéndolos de las cantidades recibidas a cuenta del precio en el momento de otorgarse el contrato de compraventa.
             </div>
-            <div className="text-justify mb-3">
+            <div className="text-justify mb-3 leading-relaxed">
               <strong>B)</strong> La cantidad o cantidades recibidas como señal a cuenta por la compraventa, quedarán en depósito de {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong> hasta la firma de las Escrituras públicas de Compraventa.
             </div>
-            <div className="text-justify mb-3">
+            <div className="text-justify mb-3 leading-relaxed">
               <strong>C)</strong> En el supuesto de que {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, intervenga o redacte contratos de compra venta u otra documentación, sobre la compra venta del / los inmueble/s descrito/s en esta nota de encargo, llegándose a señalizar la compra y si finalmente no se llevara a cabo la venta por incumplimiento de cualquiera de las partes, "EL CLIENTE", estará obligado a abonar a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong> la cantidad del 100% de la comisión, más IVA, como intermediación, gastos de gestión, redacción de contratos, etc.
             </div>
           </div>
           
-          <div className="my-5">
-            <div className="font-bold mb-2">3º - DURACIÓN</div>
-            <div className="text-justify mb-3">
+          <div className="my-6">
+            <div className="font-bold mb-3">3º - DURACIÓN</div>
+            <div className="text-justify mb-3 leading-relaxed">
               <strong>A)</strong> El encargo de esta operación tiene una duración de <strong>{data.duration.months === 12 ? 'doce' : data.duration.months} meses</strong> prorrogables, por el mismo período de tiempo, por ambas partes, transcurrido este plazo sin haberse llevado a cabo, de no mediar denuncia expresa, a no ser que "EL CLIENTE" anteriormente reseñado, con anterioridad a la finalización del plazo comunique por escrito a este despacho su finalización.
             </div>
-            <div className="text-justify mb-3">
+            <div className="text-justify mb-3 leading-relaxed">
               <strong>B)</strong> No obstante: si con posterioridad a la finalización del plazo estipulado para este encargo, se llegase a realizar la operación encomendada con alguna persona física o jurídica a la que la agencia de {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, le hubiera enseñado o informado del inmueble descrito durante el tiempo vigente de esta Nota de Encargo y se hicieran gestiones en beneficio de la citada operación, "EL CLIENTE" estará obligado a abonar los honorarios descritos en la cláusula segunda, apartado A), de la presente NOTA DE ENCARGO a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>.
             </div>
           </div>
           
-          <div className="my-5">
-            <div className="font-bold mb-2">4º - OTRAS AGENCIAS</div>
-            <div className="text-justify mb-3">
+          <div className="my-6">
+            <div className="font-bold mb-3">4º - OTRAS AGENCIAS</div>
+            <div className="text-justify mb-3 leading-relaxed">
               "EL CLIENTE", {data.hasOtherAgency ? 'SÍ' : 'NO'} <span className="line-through">{data.hasOtherAgency ? 'NO' : 'SÍ'}</span> <strong>(1)</strong>, tiene encomendada, la venta del mencionado inmueble a otra Agencia de la Propiedad Inmobiliaria.
             </div>
           </div>
           
-          <div className="my-5">
-            <div className="font-bold mb-2">5º - CARGAS, GRAVÁMENES Y LIMITACIONES</div>
-            <div className="text-justify mb-3">
+          <div className="my-6">
+            <div className="font-bold mb-3">5º - CARGAS, GRAVÁMENES Y LIMITACIONES</div>
+            <div className="text-justify mb-3 leading-relaxed">
               El autorizante se compromete a otorgar la Escritura Pública de Compraventa libre de cargas, gravámenes, limitaciones, censos, arrendamientos y ocupantes.
             </div>
           </div>
           
-          <div className="my-5">
-            <div className="font-bold mb-2">6º - PROTECCIÓN DE DATOS</div>
-            <div className="text-justify mb-3">
+          <div className="my-6">
+            <div className="font-bold mb-3">6º - PROTECCIÓN DE DATOS</div>
+            <div className="text-justify mb-3 leading-relaxed">
               "De conformidad con lo establecido en el REGLAMENTO (UE) 2016/679 de protección de datos de carácter personal, le informamos que los datos que usted nos facilite serán incorporados al sistema de tratamiento titularidad de {agentName} con {accountType === 'company' ? 'C.I.F' : 'N.I.F'} {taxId}, con domicilio en las direcciones reseñadas, correo electrónico: {data.agency.email}, con el fin de prestarle el servicio solicitado. Los datos proporcionados se conservarán mientras se mantenga la relación comercial durante los años necesarios para cumplir con las obligaciones legales. Los datos no se cederán a terceros, salvo en los casos que exista una obligación legal. Usted tiene derecho a obtener confirmación sobre si en {agentName} estamos tratando sus datos personales, por tanto tiene derecho a acceder a sus datos personales, rectificar los datos inexactos o solicitar su supresión cuando los datos no sean necesarios."
             </div>
-            <div className="text-justify mb-3">
+            <div className="text-justify mb-3 leading-relaxed">
               Así mismo solicito su autorización para ofrecerle productos y servicios relacionados con los solicitados y fidelizarle como cliente. {data.gdprConsent ? 'SÍ' : 'NO'} <span className="line-through">{data.gdprConsent ? 'NO' : 'SÍ'}</span>.
             </div>
           </div>
           
-          <div className="my-5">
-            <div className="font-bold mb-2">7º - JURISDICCIÓN</div>
-            <div className="text-justify mb-3">
+          <div className="my-6">
+            <div className="font-bold mb-3">7º - JURISDICCIÓN</div>
+            <div className="text-justify mb-3 leading-relaxed">
               Las partes, para dirimir cualquier conflicto o controversia que pudiera suscitarse en relación a la interpretación y aplicación de la presente Nota de Encargo, acuerdan someterse al Fuero y Jurisdicción de los Tribunales de <strong>{data.jurisdiction.city}</strong>, con renuncia a su propio fuero si lo tuvieran.
             </div>
           </div>
         </div>
         
         {/* Agency Acceptance Clause */}
-        <div className="my-8 text-justify">
+        <div className="my-8 p-4 bg-gray-50 border-l-4 border-gray-400 text-justify italic leading-relaxed">
           La Agencia que suscribe acepta el encargo que recibe y se obliga a realizarlo con toda eficacia, honorabilidad, reserva y legalidad.
         </div>
         
         {/* Observations Section */}
         <div className="my-8">
-          <div className="font-bold mb-4">OBSERVACIONES:</div>
-          <div className="min-h-[80px] border-b border-black mb-2 pb-2">
+          <div className="font-bold mb-4 text-[13pt] border-b border-gray-300 pb-2">OBSERVACIONES:</div>
+          <div className="min-h-[80px] border-b border-black mb-3 pb-2">
             {data.observations}
           </div>
-          <div className="border-b border-black h-5 mb-2"></div>
-          <div className="border-b border-black h-5 mb-5"></div>
+          <div className="border-b border-black h-5 mb-3"></div>
+          <div className="border-b border-black h-5 mb-6"></div>
         </div>
         
         {/* Signature Section */}
-        <div className="mt-12">
-          <div className="mb-10">
+        <div className="mt-16 pt-6 border-t border-gray-300">
+          <div className="mb-12 text-center font-medium">
             Y para que conste y surta efecto, se firma en <strong>{data.signatures.location}</strong>, a <strong>{data.signatures.date}</strong>
           </div>
           
-          <div className="flex justify-between mt-10">
-            <div className="text-center w-48">
-              <div className="mb-15 font-bold">EL CLIENTE</div>
-              <div className="border-b border-black w-48 h-px my-15"></div>
-              <div>Firma</div>
+          <div className="flex justify-between mt-16 px-8">
+            <div className="text-center w-56">
+              <div className="mb-20 font-bold text-[12pt]">EL CLIENTE</div>
+              <div className="border-b-2 border-black w-full h-px mb-2"></div>
+              <div className="text-sm text-gray-600">Firma</div>
             </div>
             
-            <div className="text-center w-48">
-              <div className="mb-15 font-bold">
+            <div className="text-center w-56">
+              <div className="mb-20 font-bold text-[12pt]">
                 {accountType === 'company' ? agentName : 'Dª. ' + agentName}<br />
-                (Agente)
+                <span className="text-sm font-normal">(Agente)</span>
               </div>
-              <div className="border-b border-black w-48 h-px my-15"></div>
-              <div>Firma</div>
+              <div className="border-b-2 border-black w-full h-px mb-2"></div>
+              <div className="text-sm text-gray-600">Firma</div>
             </div>
           </div>
         </div>
         
         {/* Legal Notation */}
-        <div className="mt-5 text-[10pt] text-right">
-          <strong>(1)</strong>Tachar lo que no proceda
+        <div className="mt-8 text-[10pt] text-right text-gray-600">
+          <strong>(1)</strong> Tachar lo que no proceda
         </div>
       </div>
     </div>

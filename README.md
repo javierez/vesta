@@ -148,45 +148,6 @@ revert
 
 # TODOs: 
 
-## High Priority
-
-
-
-## Mid-High Priority
-
-### Performance Optimizations
-   - 🚧 Query management (optimized queries with reduced fields)
-   - Caché optmization (unstable caché)
-   - 🚧 Database hosted in EU
-   - Indexing in database
-   - 🚧 N+1 queries
-   - 🚧 Complex Aggregations in queries
-   - 🚧 Invalidate user caché (the auth caching system has invalidateUserCache(userId, accountId) ready but no triggers when user roles change. When you build role management features, add invalidateUserCache() calls to any functions that modify the userRoles table to clear cached permissions immediately. This ensures users see role changes instantly while maintaining cache performance for unchanged users)
-
-
-### Webpage
-- Connect Webpage to Webapp
-- Automatic Domain
-
-
-
-
-## Mid Priority
-### Restricted actions (on default)
-   - Role 1 can view only their own tasks and calendar appointments
-   - Role 2 can filter by agent for viewing tasks and appoinments
-   - Role 3 no restrictions
-
-   - Role 1 cannot edit and delete properties, contacts.
-   - Role 2 can edit and delete properties, contacts, etc.
-   - Role 3 no restrictions
-
-   - Role 1 cannot use the image studio
-   - Role 2 can use image studio
-
-   (...)
-
-
 - Cartelería
    - Guardar configuración de plantilla asignada a tipos de plantilla
 

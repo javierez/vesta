@@ -225,7 +225,7 @@ src/
 
 ## 🔄 **Processing Flow**
 
-1. **User Records**: 5-minute voice message describing property
+1. **User Records**: max 5-minute voice message describing property
 2. **Upload**: Audio blob uploaded to S3 with reference number
 3. **Transcribe**: OpenAI Whisper converts speech to text
 4. **Extract**: GPT-4 analyzes text and extracts property data
@@ -250,18 +250,8 @@ src/
 - Retry mechanisms for API failures
 - User-friendly error messages with recovery options
 
-## 📊 **Success Metrics**
 
-- **Accuracy Rate**: >90% for core property fields
-- **Processing Time**: <2 minutes end-to-end
-- **User Adoption**: >60% of properties use voice input
-- **Cost Efficiency**: <$0.10 per property processed
-- **User Satisfaction**: >4.5/5 rating for voice feature
 
-## 🔮 **Future Enhancements**
 
-- **Multi-language Support**: Expand beyond Spanish
-- **Real-time Processing**: Live transcription during recording
-- **Voice Commands**: Navigate forms using voice
-- **Quality Scoring**: AI-powered recording quality assessment
-- **Batch Processing**: Handle multiple recordings simultaneously
+
+NOTE: don't do changes in the UI in @voice
