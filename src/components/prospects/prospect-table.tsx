@@ -887,7 +887,7 @@ export function ProspectTable({
                                     "Completar datos",
                                     "Visita o llaves pendiente", 
                                     "Valoración pendiente",
-                                    "Firma pendiente",
+                                    "Firma encargo pendiente",
                                   ].map((status) => (
                                     <DropdownMenuItem
                                       key={status}

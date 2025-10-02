@@ -196,7 +196,7 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       };
     }
 
-    // Lead status is already set to "Visita Pendiente" during creation
+    // Lead status is already set to "Cita Pendiente" during creation
     // No need to update it again
 
     // NEW: Sync to Google Calendar after successful appointment creation

@@ -219,6 +219,7 @@ export async function getMatchesForProspects(
         // Property fields
         propertyId: properties.propertyId,
         propertyType: properties.propertyType,
+        propertyTitle: properties.title,
         propertyBedrooms: properties.bedrooms,
         propertyBathrooms: properties.bathrooms,
         propertySquareMeters: properties.squareMeter,
@@ -555,6 +556,7 @@ export async function getMatchesForProspects(
           properties: {
             id: result.propertyId,
             propertyType: result.propertyType,
+            title: result.propertyTitle,
             bedrooms: result.propertyBedrooms,
             bathrooms: result.propertyBathrooms
               ? parseFloat(result.propertyBathrooms)
@@ -583,9 +585,76 @@ export async function getMatchesForProspects(
         isCrossAccount:
           result.listingAccountId.toString() !== accountId.toString(),
         canContact: result.listingAccountId.toString() === accountId.toString(),
+        // Initialize lead info - will be populated in batch query below
+        hasExistingLead: false,
+        existingLead: undefined,
       };
 
       processedMatches.push(prospectMatch);
+    }
+
+    // BATCH QUERY: Check for existing leads for all matches
+    if (processedMatches.length > 0) {
+      console.log("🔍 Checking for existing leads for", processedMatches.length, "matches");
+      
+      // Get all prospect-listing pairs to check
+      const matchPairs = processedMatches.map(match => ({
+        prospectId: match.prospectId,
+        listingId: match.listingId,
+      }));
+
+      // Query all existing leads in batch
+      const existingLeads = await db
+        .select({
+          prospectId: listingContacts.prospectId,
+          listingId: listingContacts.listingId,
+          listingContactId: listingContacts.listingContactId,
+          status: listingContacts.status,
+          createdAt: listingContacts.createdAt,
+        })
+        .from(listingContacts)
+        .innerJoin(prospects, eq(listingContacts.prospectId, prospects.id))
+        .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+        .where(
+          and(
+            eq(listingContacts.contactType, "buyer"),
+            eq(listingContacts.isActive, true),
+            eq(contacts.accountId, accountId),
+            or(
+              ...matchPairs.map(pair => 
+                and(
+                  eq(listingContacts.prospectId, pair.prospectId),
+                  eq(listingContacts.listingId, pair.listingId)
+                )
+              )
+            )
+          ),
+        );
+
+      console.log("📊 Found", existingLeads.length, "existing leads");
+
+      // Create a map for quick lookup
+      const leadMap = new Map(
+        existingLeads.map(lead => [
+          `${lead.prospectId.toString()}-${lead.listingId.toString()}`,
+          lead,
+        ])
+      );
+
+      // Update matches with lead information
+      processedMatches.forEach(match => {
+        const key = `${match.prospectId.toString()}-${match.listingId.toString()}`;
+        const existingLead = leadMap.get(key);
+        
+        if (existingLead) {
+          match.hasExistingLead = true;
+          match.existingLead = {
+            listingContactId: existingLead.listingContactId,
+            status: existingLead.status ?? "Cita Pendiente",
+            createdAt: existingLead.createdAt,
+          };
+        }
+      });
     }
 
     // PAGINATION: Apply offset and limit
@@ -647,12 +716,56 @@ export async function saveMatchWithAuth(
 }
 
 export async function dismissMatchWithAuth(
-  _prospectId: bigint,
-  _listingId: bigint,
+  prospectId: bigint,
+  listingId: bigint,
 ) {
-  // TODO: Implement dismissing match logic
-  // This would create a dismissed match record to exclude from future results
-  return { success: true, message: "Match dismissed successfully" };
+  console.log("🗑️ Dismissing lead for match:", { prospectId, listingId });
+  const accountId = await getCurrentUserAccountId();
+  
+  try {
+    // Find the existing lead (listing_contact with buyer type) for this prospect-listing pair
+    const [existingLead] = await db
+      .select({ 
+        listingContactId: listingContacts.listingContactId,
+        contactId: listingContacts.contactId,
+      })
+      .from(listingContacts)
+      .innerJoin(prospects, eq(listingContacts.prospectId, prospects.id))
+      .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(prospects.id, prospectId),
+          eq(listingContacts.listingId, listingId),
+          eq(listingContacts.contactType, "buyer"),
+          eq(listingContacts.isActive, true),
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!existingLead) {
+      return { 
+        success: false, 
+        message: "No se encontró ningún lead para descartar" 
+      };
+    }
+
+    // Delete the listing_contact record (this removes the lead)
+    await db
+      .delete(listingContacts)
+      .where(eq(listingContacts.listingContactId, existingLead.listingContactId));
+
+    console.log("✅ Lead dismissed successfully:", existingLead.listingContactId);
+    return { 
+      success: true, 
+      message: "Lead descartado exitosamente" 
+    };
+  } catch (error) {
+    console.error("❌ Error dismissing lead:", error);
+    return { 
+      success: false, 
+      message: error instanceof Error ? error.message : "Error al descartar lead" 
+    };
+  }
 }
 
 export async function contactMatchWithAuth(
@@ -662,4 +775,114 @@ export async function contactMatchWithAuth(
   // TODO: Implement contact logic
   // This would create a contact request or initiate contact
   return { success: true, message: "Contact initiated successfully" };
+}
+
+// Create a lead from a prospect-listing match
+export async function createLeadFromMatchWithAuth(
+  prospectId: bigint,
+  listingId: bigint,
+) {
+  console.log("🔐 Creating lead from match:", { prospectId, listingId });
+  const accountId = await getCurrentUserAccountId();
+  
+  try {
+    // Get the prospect's contact ID
+    const [prospect] = await db
+      .select({ contactId: prospects.contactId })
+      .from(prospects)
+      .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(prospects.id, prospectId),
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
+      );
+
+    if (!prospect) {
+      throw new Error("Prospect not found or access denied");
+    }
+
+    // Check if lead already exists
+    const [existingLead] = await db
+      .select({ listingContactId: listingContacts.listingContactId })
+      .from(listingContacts)
+      .where(
+        and(
+          eq(listingContacts.contactId, prospect.contactId),
+          eq(listingContacts.listingId, listingId),
+          eq(listingContacts.contactType, "buyer"),
+          eq(listingContacts.isActive, true),
+        ),
+      );
+
+    if (existingLead) {
+      return { 
+        success: false, 
+        message: "Ya existe un lead para esta combinación de prospecto y propiedad" 
+      };
+    }
+
+    // Create the lead
+    const leadData = {
+      contactId: prospect.contactId,
+      listingId: listingId,
+      contactType: "buyer" as const,
+      prospectId: prospectId,
+      source: "Buscador",
+      status: "Cita Pendiente",
+      isActive: true,
+    };
+
+    const [result] = await db.insert(listingContacts).values(leadData).$returningId();
+    
+    if (!result) {
+      throw new Error("Failed to create lead");
+    }
+
+    console.log("✅ Lead created successfully:", result);
+    return { 
+      success: true, 
+      message: "Lead creado exitosamente",
+      leadId: result.listingContactId,
+    };
+  } catch (error) {
+    console.error("❌ Error creating lead from match:", error);
+    return { 
+      success: false, 
+      message: error instanceof Error ? error.message : "Error creating lead" 
+    };
+  }
+}
+
+// Check if a lead already exists for a prospect-listing pair
+export async function getExistingLeadForMatch(
+  prospectId: bigint,
+  listingId: bigint,
+  accountId: bigint,
+) {
+  try {
+    const [existingLead] = await db
+      .select({
+        listingContactId: listingContacts.listingContactId,
+        status: listingContacts.status,
+        createdAt: listingContacts.createdAt,
+      })
+      .from(listingContacts)
+      .innerJoin(prospects, eq(listingContacts.prospectId, prospects.id))
+      .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(prospects.id, prospectId),
+          eq(listingContacts.listingId, listingId),
+          eq(listingContacts.contactType, "buyer"),
+          eq(listingContacts.isActive, true),
+          eq(contacts.accountId, accountId),
+        ),
+      );
+
+    return existingLead || null;
+  } catch (error) {
+    console.error("Error checking existing lead:", error);
+    return null;
+  }
 }

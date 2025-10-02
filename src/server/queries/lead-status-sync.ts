@@ -92,7 +92,7 @@ export async function findOrCreateLeadForAppointment(
       listingId,
       prospectId,
       contactType: "buyer",
-      status: "Visita Pendiente", // Set correct status immediately for appointment-created leads
+      status: "Cita Pendiente", // Set correct status immediately for appointment-created leads
       source: APPOINTMENT_LEAD_SOURCE,
       isActive: true,
     });
@@ -160,7 +160,7 @@ export async function updateLeadStatusFromVisitOutcome(
 ): Promise<void> {
   try {
     const newStatus: LeadStatus =
-      visitOutcome === "offer_made" ? "Oferta Presentada" : "Info Solicitada";
+      visitOutcome === "offer_made" ? "Oferta Pendiente" : "Cita Pendiente";
 
     // PATTERN: Use auth wrapper for updates (see lead.ts)
     await updateLeadWithAuth(Number(listingContactId), {

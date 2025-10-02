@@ -59,6 +59,14 @@ export interface ProspectMatch {
   // Cross-account privacy
   isCrossAccount: boolean;
   canContact: boolean;
+
+  // Lead information
+  existingLead?: {
+    listingContactId: bigint;
+    status: string;
+    createdAt: Date;
+  };
+  hasExistingLead: boolean;
 }
 
 // Filtering options
@@ -141,7 +149,7 @@ export interface MatchActionResult {
 }
 
 // Actions available for each match
-export type MatchAction = "save" | "dismiss" | "contact" | "request-contact";
+export type MatchAction = "save" | "dismiss" | "contact" | "request-contact" | "create-lead";
 
 // Match preferences for user settings
 export interface MatchPreferences {

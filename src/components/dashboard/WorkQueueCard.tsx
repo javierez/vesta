@@ -19,9 +19,6 @@ import {
   PenTool,
   Handshake,
   Train,
-  UserPlus,
-  X,
-  Phone,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -390,14 +387,18 @@ export default function WorkQueueCard({
                   return (
                     <div 
                       key={taskIdStr} 
-                      className={`group relative cursor-pointer p-2 sm:p-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ${
+                      className={`relative cursor-pointer p-2 sm:p-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ${
                         task.completed ?? false ? 'bg-gray-50/50 opacity-75' : 'bg-white'
                       } ${taskStates[taskIdStr] === 'saving' ? 'opacity-70' : ''}`}
                       onClick={() => handleToggleCompleted(task.taskId, task.completed ?? false)}
                     >
                       <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 flex items-center gap-1.5">
                         {task.dueDate && (
-                          <span className="text-xs text-amber-600 bg-amber-50 px-1 py-0.5 rounded-full font-normal text-xs leading-none border-amber-200 border whitespace-nowrap">
+                          <span className={`text-xs px-1 py-0.5 rounded-full font-normal text-xs leading-none border whitespace-nowrap ${
+                            getRemainingTime(task.dueDate)?.includes('vencido') || getRemainingTime(task.dueDate) === 'Vencido'
+                              ? 'text-rose-600 bg-rose-50 border-rose-200'
+                              : 'text-amber-600 bg-amber-50 border-amber-200'
+                          }`}>
                             {getRemainingTime(task.dueDate)}
                           </span>
                         )}
@@ -421,7 +422,7 @@ export default function WorkQueueCard({
                           </div>
                           
                           <h3 className={`font-bold text-sm leading-tight ${task.completed ?? false ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                            {task.title}
+                            {task.title.length > 40 ? `${task.title.substring(0, 40)}...` : task.title}
                           </h3>
                           
                           {taskStates[taskIdStr] === 'saving' && (
@@ -432,90 +433,40 @@ export default function WorkQueueCard({
                           )}
                         </div>
                         
-                        <div className="ml-4.5 sm:ml-6 mb-2">
-                          <div className="flex items-center justify-between">
-                            {/* Links Section */}
-                            <div className="flex flex-wrap gap-1.5">
-                              {/* Property Link */}
-                              {task.listingId && task.propertyTitle && (
-                                <Link 
-                                  href={`/propiedades/${task.listingId}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
-                                    task.completed ?? false 
-                                      ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60' 
-                                      : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
-                                  }`}
-                                >
-                                  <Home className="h-3.5 w-3.5 opacity-60" />
-                                  <span className="truncate max-w-32">{task.propertyTitle}</span>
-                                </Link>
-                              )}
-                              
-                              {/* Contact Link */}
-                              {task.contactId && (task.contactFirstName ?? task.contactLastName) && (
-                                <Link 
-                                  href={`/contactos/${task.contactId}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
-                                    task.completed ?? false 
-                                      ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60' 
-                                      : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
-                                  }`}
-                                >
-                                  <User className="h-3.5 w-3.5 opacity-60" />
-                                  <span className="truncate max-w-32">
-                                    {`${task.contactFirstName ?? ''} ${task.contactLastName ?? ''}`.trim()}
-                                  </span>
-                                </Link>
-                              )}
-                            </div>
-                            
-                            {/* Hover Action Buttons */}
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Mock create lead functionality
-                                  console.log('Create lead for task:', task.taskId);
-                                }}
-                                className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                title="Crear lead"
-                              >
-                                <UserPlus className="h-3.5 w-3.5" />
-                              </Button>
-                              
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Mock contact functionality
-                                  console.log('Contact for task:', task.taskId);
-                                }}
-                                className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                title="Contactar"
-                              >
-                                <Phone className="h-3.5 w-3.5" />
-                              </Button>
-                              
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Mock discard functionality
-                                  console.log('Discard task:', task.taskId);
-                                }}
-                                className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                title="Descartar"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </div>
+                        <div className="ml-4.5 sm:ml-6 mb-2 space-y-1.5">
+                          {/* Property Link */}
+                          {task.listingId && task.propertyTitle && (
+                            <Link 
+                              href={`/propiedades/${task.listingId}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
+                                task.completed ?? false 
+                                  ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60' 
+                                  : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
+                              }`}
+                            >
+                              <Home className="h-3.5 w-3.5 opacity-60" />
+                              <span className="truncate max-w-32">{task.propertyTitle}</span>
+                            </Link>
+                          )}
+                          
+                          {/* Contact Link */}
+                          {task.contactId && (task.contactFirstName ?? task.contactLastName) && (
+                            <Link 
+                              href={`/contactos/${task.contactId}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
+                                task.completed ?? false 
+                                  ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60' 
+                                  : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
+                              }`}
+                            >
+                              <User className="h-3.5 w-3.5 opacity-60" />
+                              <span className="truncate max-w-32">
+                                {`${task.contactFirstName ?? ''} ${task.contactLastName ?? ''}`.trim()}
+                              </span>
+                            </Link>
+                          )}
                         </div>
                       </div>
                       

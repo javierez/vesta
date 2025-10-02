@@ -15,6 +15,7 @@ import {
   saveMatchWithAuth,
   dismissMatchWithAuth,
   contactMatchWithAuth,
+  createLeadFromMatchWithAuth,
 } from "~/server/queries/connection-matches";
 import type {
   MatchResults,
@@ -191,6 +192,12 @@ export function ConexionesPotenciales({
             match.listingId,
           );
           break;
+        case "create-lead":
+          result = await createLeadFromMatchWithAuth(
+            match.prospectId,
+            match.listingId,
+          );
+          break;
         default:
           throw new Error(`Acción no soportada: ${String(action)}`);
       }
@@ -201,9 +208,10 @@ export function ConexionesPotenciales({
           result.message || `Acción ${action} completada exitosamente`,
         );
 
-        // Optionally refresh matches to reflect changes
-        if (action === "dismiss") {
+        // Refresh matches to reflect changes
+        if (action === "dismiss" || action === "create-lead") {
           void fetchMatches();
+          void fetchExternalMatches();
         }
       } else {
         throw new Error(
@@ -212,8 +220,16 @@ export function ConexionesPotenciales({
       }
     } catch (err) {
       console.error(`Error executing action ${action}:`, err);
+      const actionMessages: Record<string, string> = {
+        save: "guardar",
+        dismiss: "descartar", 
+        contact: "contactar",
+        "request-contact": "contactar",
+        "create-lead": "crear lead para",
+      };
+      
       setError(
-        `Error al ${action === "save" ? "guardar" : action === "dismiss" ? "descartar" : "contactar"} la coincidencia`,
+        `Error al ${actionMessages[action] || action} la coincidencia`,
       );
     } finally {
       setActionLoading(null);

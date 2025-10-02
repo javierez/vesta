@@ -41,7 +41,7 @@ export const MatchCard = React.memo(function MatchCard({
     null,
   );
 
-  const { listing, matchType, toleranceReasons, isCrossAccount, canContact } =
+  const { listing, matchType, toleranceReasons, isCrossAccount, canContact, hasExistingLead, existingLead } =
     match;
 
   // Debug logs
@@ -82,6 +82,17 @@ export const MatchCard = React.memo(function MatchCard({
   };
 
   const getMatchTypeBadge = () => {
+    // Show lead status if lead exists
+    if (hasExistingLead) {
+      return (
+        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+          <CheckCircle className="mr-1 h-3 w-3" />
+          Lead Creado
+        </Badge>
+      );
+    }
+    
+    // Otherwise show match type
     if (matchType === "strict") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
@@ -114,10 +125,17 @@ export const MatchCard = React.memo(function MatchCard({
     <Card className="overflow-hidden border-0 shadow-md transition-all hover:shadow-lg">
       {/* Centered Content */}
       <div className="p-2 text-center">
-        {/* First Row - Price and Property Labels - Centered */}
+        {/* First Row - Property Title (Highest Importance) */}
+        <div className="mt-2 mb-2">
+          <h3 className="text-lg font-bold text-gray-900 leading-tight line-clamp-2">
+            {listing.properties.title || "Propiedad sin título"}
+          </h3>
+        </div>
+        
+        {/* Second Row - Price and Property Labels */}
         <div className="flex items-center justify-center gap-2 mb-1">
-          {/* Price - Most Important */}
-          <p className="text-base font-bold">
+          {/* Price */}
+          <p className="text-base font-semibold text-gray-800">
             {formatPrice(listing.listings.price)}€
             {listing.listings.listingType === "Rent" ? "/mes" : ""}
           </p>
@@ -141,13 +159,6 @@ export const MatchCard = React.memo(function MatchCard({
               </Badge>
             )}
           </div>
-        </div>
-        
-        {/* Second Row - Property Title */}
-        <div className="mb-1">
-          <p className="text-sm font-medium text-gray-700 truncate">
-            {listing.properties.title || "Propiedad sin título"}
-          </p>
         </div>
         
         {/* Third Row - Match Type */}
@@ -219,42 +230,43 @@ export const MatchCard = React.memo(function MatchCard({
           {showActions && (
             <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/20 backdrop-blur-sm opacity-0 transition-all duration-300 group-hover:opacity-100 rounded-md">
               <button
-                className="h-8 w-8 rounded-full bg-white/95 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center border border-gray-100"
+                className={`h-8 w-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center border ${
+                  hasExistingLead 
+                    ? "bg-blue-100 border-blue-200 cursor-not-allowed" 
+                    : "bg-white/95 hover:bg-white border-gray-100"
+                }`}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  void handleAction("contact");
+                  if (!hasExistingLead) {
+                    void handleAction("create-lead");
+                  }
                 }}
-                disabled={isActionLoading !== null}
-                title="Contactar"
+                disabled={isActionLoading !== null || hasExistingLead}
+                title={hasExistingLead ? "Lead ya existe" : "Crear Lead"}
               >
-                <Mail className="h-3.5 w-3.5 text-gray-600" />
+                <LinkIcon className={`h-3.5 w-3.5 ${
+                  hasExistingLead ? "text-blue-600" : "text-gray-600"
+                }`} />
               </button>
               
               <button
-                className="h-8 w-8 rounded-full bg-white/95 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center border border-gray-100"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('📝 Creating lead for match');
-                }}
-                disabled={isActionLoading !== null}
-                title="Crear Lead"
-              >
-                <LinkIcon className="h-3.5 w-3.5 text-gray-600" />
-              </button>
-              
-              <button
-                className="h-8 w-8 rounded-full bg-white/95 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center border border-gray-100"
+                className={`h-8 w-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center border ${
+                  hasExistingLead 
+                    ? "bg-red-100 border-red-200 hover:bg-red-200" 
+                    : "bg-white/95 hover:bg-white border-gray-100"
+                }`}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   void handleAction("dismiss");
                 }}
                 disabled={isActionLoading !== null}
-                title="Descartar"
+                title={hasExistingLead ? "Eliminar Lead" : "Descartar"}
               >
-                <X className="h-3.5 w-3.5 text-gray-600" />
+                <X className={`h-3.5 w-3.5 ${
+                  hasExistingLead ? "text-red-600" : "text-gray-600"
+                }`} />
               </button>
             </div>
           )}
