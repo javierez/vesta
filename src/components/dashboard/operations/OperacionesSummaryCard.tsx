@@ -47,7 +47,7 @@ export default function OperacionesSummaryCard({
         return "Finalizado";
       case "archived":
         return "Archivado";
-      // Listing statuses that get mixed into prospects data
+      // Original listing statuses (for fallback)
       case "preparation":
         return "En preparación";
       case "valuation":
@@ -56,6 +56,15 @@ export default function OperacionesSummaryCard({
         return "Listo para firma";
       case "active":
         return "En búsqueda";
+      // New prospect statuses for listings (already in Spanish)
+      case "completar datos":
+        return "Completar datos";
+      case "visita o llaves pendiente":
+        return "Visita o llaves pendiente";
+      case "valoración pendiente":
+        return "Valoración pendiente";
+      case "firma pendiente":
+        return "Firma pendiente";
       default:
         return dbStatus;
     }
@@ -79,12 +88,17 @@ export default function OperacionesSummaryCard({
       labelPlural: "Demandas",
       data: transformProspectsData(activeData.prospects),
       statusColors: {
-        "En búsqueda": "bg-blue-100 text-blue-800",
-        "En preparación": "bg-yellow-100 text-yellow-800",
-        "En valoración": "bg-orange-100 text-orange-800",
-        "Listo para firma": "bg-purple-100 text-purple-800",
-        Finalizado: "bg-green-100 text-green-800",
-        Archivado: "bg-gray-100 text-gray-800",
+        "En búsqueda": "bg-slate-100 text-slate-700",
+        "En preparación": "bg-amber-50 text-amber-700",
+        "En valoración": "bg-rose-50 text-rose-700",
+        "Listo para firma": "bg-slate-200 text-slate-700",
+        Finalizado: "bg-gray-100 text-gray-700",
+        Archivado: "bg-gray-50 text-gray-500",
+        // New listing prospect statuses
+        "Completar datos": "bg-rose-100 text-rose-700",
+        "Visita o llaves pendiente": "bg-amber-100 text-amber-700",
+        "Valoración pendiente": "bg-slate-100 text-slate-700",
+        "Firma pendiente": "bg-gray-100 text-gray-700",
       },
     },
     {

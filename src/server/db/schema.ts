@@ -354,6 +354,7 @@ export const listings = singlestoreTable("listings", {
   listingType: varchar("listing_type", { length: 20 }).notNull(), // 'Sale' | 'Rent' | 'Sold' | 'Transfer' | 'RentWithOption' | 'RoomSharing'
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
   status: varchar("status", { length: 20 }).notNull(), // 'En Venta' | 'En Alquiler' | 'Vendido' | 'Alquilado' | 'Descartado' | 'Draft'
+  prospectStatus: varchar("prospect_status", { length: 50 }), // Prospect workflow status: 'En búsqueda' | 'En preparación' | 'Finalizado' | 'Archivado'
 
   // Listing-specific descriptions
   description: text("description"), // Full listing description (can differ from property description)

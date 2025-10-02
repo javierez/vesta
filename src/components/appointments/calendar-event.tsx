@@ -131,53 +131,48 @@ export default function CalendarEvent({
   // Calculate travel time block height (1px per minute on calendar)
   const travelTimeHeight = event.tripTimeMinutes || 0;
 
+  // Get the base color for fading travel blocks
+  const getBaseColor = () => {
+    switch (event.type) {
+      case 'Visita': return '59, 130, 246'; // blue-500 RGB
+      case 'Reunión': return '147, 51, 234'; // purple-500 RGB
+      case 'Firma': return '34, 197, 94'; // green-500 RGB
+      case 'Cierre': return '234, 179, 8'; // yellow-500 RGB
+      case 'Viaje': return '16, 185, 129'; // emerald-500 RGB
+      default: return '107, 114, 128'; // gray-500 RGB
+    }
+  };
+  const baseColorRGB = getBaseColor();
+
   return (
     <>
       {/* Travel Time Block - positioned above appointment */}
       {travelTimeHeight > 0 && (
         <div
-          className={cn(
-            "absolute left-0.5 right-0.5 pointer-events-none rounded-t-md border-l-2 border-r-2 border-t-2",
-            typeConfig.color,
-            "opacity-30"
-          )}
+          className="absolute left-0.5 right-0.5 pointer-events-none rounded-t-lg backdrop-blur-sm"
           style={{
             top: `${parseInt(style.top) - travelTimeHeight}px`,
             height: `${travelTimeHeight}px`,
             background: `linear-gradient(to bottom, 
-              rgba(255, 255, 255, 0.3), 
-              rgba(255, 255, 255, 0.1)
+              rgba(${baseColorRGB}, 0.12), 
+              rgba(${baseColorRGB}, 0.25)
             )`,
-            borderColor: 'currentColor',
           }}
         >
-          {/* Travel icon and subtle pattern for blocks tall enough */}
-          {travelTimeHeight >= 15 && (
-            <div className="flex items-center justify-center h-full">
-              <Car className="h-3 w-3 opacity-60" />
+          {/* Subtle travel indicator */}
+          {travelTimeHeight >= 12 && (
+            <div className="absolute top-1 right-2">
+              <Car className="h-2.5 w-2.5" style={{ color: `rgba(${baseColorRGB}, 0.5)` }} />
             </div>
           )}
-          {/* Subtle diagonal lines pattern */}
-          <div 
-            className="absolute inset-0 opacity-20"
-            style={{
-              background: `repeating-linear-gradient(
-                45deg,
-                transparent,
-                transparent 3px,
-                currentColor 3px,
-                currentColor 4px
-              )`
-            }}
-          />
         </div>
       )}
       
       {/* Main Appointment Block */}
       <div
         className={cn(
-          "calendar-event absolute left-0.5 right-0.5 cursor-pointer overflow-hidden px-2 py-1 transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1",
-          travelTimeHeight > 0 ? "" : "rounded-md", // No rounding if travel blocks exist (they handle the rounding)
+          "calendar-event absolute left-0.5 right-0.5 cursor-pointer overflow-hidden px-2 py-1 transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1 shadow-sm",
+          travelTimeHeight > 0 ? "" : "rounded-lg", // No rounding if travel blocks exist (they handle the rounding)
           typeConfig.color,
           typeConfig.textColor,
           statusConfig,
@@ -247,40 +242,22 @@ export default function CalendarEvent({
       {/* Return Travel Time Block - positioned below appointment */}
       {travelTimeHeight > 0 && (
         <div
-          className={cn(
-            "absolute left-0.5 right-0.5 pointer-events-none rounded-b-md border-l-2 border-r-2 border-b-2",
-            typeConfig.color,
-            "opacity-30"
-          )}
+          className="absolute left-0.5 right-0.5 pointer-events-none rounded-b-lg backdrop-blur-sm"
           style={{
             top: `${parseInt(style.top) + parseInt(style.height)}px`,
             height: `${travelTimeHeight}px`,
             background: `linear-gradient(to top, 
-              rgba(255, 255, 255, 0.3), 
-              rgba(255, 255, 255, 0.1)
+              rgba(${baseColorRGB}, 0.12), 
+              rgba(${baseColorRGB}, 0.25)
             )`,
-            borderColor: 'currentColor',
           }}
         >
-          {/* Travel icon for blocks tall enough */}
-          {travelTimeHeight >= 15 && (
-            <div className="flex items-center justify-center h-full">
-              <Car className="h-3 w-3 opacity-60" />
+          {/* Subtle travel indicator */}
+          {travelTimeHeight >= 12 && (
+            <div className="absolute bottom-1 right-2">
+              <Car className="h-2.5 w-2.5" style={{ color: `rgba(${baseColorRGB}, 0.5)` }} />
             </div>
           )}
-          {/* Subtle diagonal lines pattern - opposite direction */}
-          <div 
-            className="absolute inset-0 opacity-20"
-            style={{
-              background: `repeating-linear-gradient(
-                -45deg,
-                transparent,
-                transparent 3px,
-                currentColor 3px,
-                currentColor 4px
-              )`
-            }}
-          />
         </div>
       )}
     </>

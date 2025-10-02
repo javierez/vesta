@@ -548,6 +548,7 @@ export async function getMatchesForProspects(
             listingType: result.listingType,
             price: result.listingPrice,
             status: result.listingStatus,
+            prospectStatus: null, // This field is not available in connection-matches query
             createdAt: result.listingCreatedAt,
             updatedAt: result.listingUpdatedAt,
           },

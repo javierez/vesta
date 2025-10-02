@@ -18,6 +18,7 @@ export type ListingWithDetails = {
     listingType: string;
     price: string;
     status: string;
+    prospectStatus: string | null;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -52,6 +53,7 @@ export async function getAllListingsWithAuth(): Promise<ListingWithDetails[]> {
         listingType: listings.listingType,
         price: listings.price,
         status: listings.status,
+        prospectStatus: listings.prospectStatus,
         listingCreatedAt: listings.createdAt,
         listingUpdatedAt: listings.updatedAt,
 
@@ -106,6 +108,7 @@ export async function getAllListingsWithAuth(): Promise<ListingWithDetails[]> {
           listingType: item.listingType,
           price: item.price,
           status: item.status,
+          prospectStatus: item.prospectStatus,
           createdAt: item.listingCreatedAt,
           updatedAt: item.listingUpdatedAt,
         },
@@ -138,7 +141,7 @@ export async function getAllListingsWithAuth(): Promise<ListingWithDetails[]> {
 // Update listing status (similar to prospects)
 export async function updateListingWithAuth(
   listingId: bigint,
-  data: { status?: string },
+  data: { status?: string; prospectStatus?: string },
 ) {
   try {
     const accountId = await getCurrentUserAccountId();

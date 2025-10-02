@@ -242,7 +242,10 @@ export function ProspectTable({
           : null,
         status: optimisticStatus
           ? getListingStatus(optimisticStatus)
-          : getListingStatus(listing.listings.status),
+          : getListingStatus(
+              listing.listings.prospectStatus,
+              listing.listings.status,
+            ),
         location: listing.locations.neighborhood || "Sin especificar",
         summary: createListingSummary(listing),
         createdAt: listing.listings.createdAt,
@@ -300,8 +303,19 @@ export function ProspectTable({
     return baseType;
   };
 
-  const getListingStatus = (status: string) => {
-    switch (status) {
+  const getListingStatus = (
+    prospectStatus: string | null | undefined,
+    fallbackStatus?: string,
+  ) => {
+    // If we have a prospect status, use it directly (it's already in Spanish)
+    if (prospectStatus) {
+      return prospectStatus;
+    }
+
+    // Fall back to the original status mapping
+    if (!fallbackStatus) return "En búsqueda";
+
+    switch (fallbackStatus) {
       case "Preparation":
         return "En preparación";
       case "Valuation":
@@ -311,7 +325,7 @@ export function ProspectTable({
       case "Active":
         return "En búsqueda";
       default:
-        return status;
+        return fallbackStatus;
     }
   };
 
@@ -554,22 +568,18 @@ export function ProspectTable({
           return false;
       } else {
         const listing = operation.rawData as ListingWithDetails;
-        // Map display statuses to database statuses
-        const mappedStatuses = filterValues.map((status) => {
-          switch (status) {
-            case "En preparación":
-              return "Preparation";
-            case "En valoración":
-              return "Valuation";
-            case "Listo para firma":
-              return "Presign";
-            case "En búsqueda":
-              return "Active";
-            default:
-              return status;
-          }
-        });
-        if (!mappedStatuses.includes(listing.listings.status)) return false;
+        // Check prospect status first, fall back to mapped regular status
+        if (listing.listings.prospectStatus) {
+          // If we have a prospect status, check against it directly
+          if (!filterValues.includes(listing.listings.prospectStatus)) return false;
+        } else {
+          // Fall back to mapping regular status to display status for comparison
+          const displayStatus = getListingStatus(
+            listing.listings.prospectStatus,
+            listing.listings.status,
+          );
+          if (!filterValues.includes(displayStatus)) return false;
+        }
       }
     }
 
@@ -620,7 +630,7 @@ export function ProspectTable({
       if (operationType === "prospect") {
         await updateProspectWithAuth(numericId, { status: newStatus });
       } else if (operationType === "listing") {
-        await updateListingWithAuth(numericId, { status: newStatus });
+        await updateListingWithAuth(numericId, { prospectStatus: newStatus });
       }
 
       // Clear optimistic status after successful update
@@ -872,12 +882,12 @@ export function ProspectTable({
                                       {getStatusDisplay(status)}
                                     </DropdownMenuItem>
                                   ))
-                                : // Listing status options
+                                : // Listing status options (custom for listings)
                                   [
-                                    "Preparation",
-                                    "Valuation",
-                                    "Presign",
-                                    "Active",
+                                    "Completar datos",
+                                    "Visita o llaves pendiente", 
+                                    "Valoración pendiente",
+                                    "Firma pendiente",
                                   ].map((status) => (
                                     <DropdownMenuItem
                                       key={status}
@@ -890,7 +900,7 @@ export function ProspectTable({
                                       }
                                       disabled={updatingStatus === operation.id}
                                     >
-                                      {getListingStatus(status)}
+                                      {status}
                                     </DropdownMenuItem>
                                   ))}
                             </DropdownMenuContent>

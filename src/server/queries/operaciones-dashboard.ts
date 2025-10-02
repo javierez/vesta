@@ -85,10 +85,10 @@ export async function getOperacionesSummary(
       .where(eq(contacts.accountId, accountId))
       .groupBy(prospects.status, prospects.listingType);
 
-    // Get active listings summary by status and listing type (to include in prospects/demanda count)
+    // Get active listings summary by prospect_status and listing type (to include in prospects/demanda count)
     const listingsData = await db
       .select({
-        status: listings.status,
+        status: sql<string>`COALESCE(${listings.prospectStatus}, ${listings.status})`,
         listingType: listings.listingType,
         count: sql<number>`COUNT(*)`,
       })
@@ -100,7 +100,7 @@ export async function getOperacionesSummary(
           ne(listings.status, "Draft"),
         ),
       )
-      .groupBy(listings.status, listings.listingType);
+      .groupBy(sql`COALESCE(${listings.prospectStatus}, ${listings.status})`, listings.listingType);
 
     // Get leads summary by status and listing type (through listings)
     const leadsData = await db

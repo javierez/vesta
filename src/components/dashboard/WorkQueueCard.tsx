@@ -447,7 +447,7 @@ export default function WorkQueueCard({
                           )}
                           
                           {/* Contact Link */}
-                          {task.contactId && (task.contactFirstName || task.contactLastName) && (
+                          {task.contactId && (task.contactFirstName ?? task.contactLastName) && (
                             <Link 
                               href={`/contactos/${task.contactId}`}
                               onClick={(e) => e.stopPropagation()}
@@ -519,7 +519,7 @@ export default function WorkQueueCard({
                         </div>
 
                         <p className="line-clamp-2 text-sm font-medium text-gray-900">
-                          {task.title}
+                          {task.description}
                         </p>
 
                         <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
