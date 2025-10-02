@@ -634,12 +634,14 @@ export async function getMatchesForProspects(
       console.log("📊 Found", existingLeads.length, "existing leads");
 
       // Create a map for quick lookup
-      const leadMap = new Map(
-        existingLeads.map(lead => [
-          `${lead.prospectId.toString()}-${lead.listingId.toString()}`,
-          lead,
-        ])
-      );
+      const leadMap = new Map<string, typeof existingLeads[0]>();
+      
+      existingLeads.forEach(lead => {
+        if (lead.prospectId !== null && lead.listingId !== null) {
+          const key = `${lead.prospectId.toString()}-${lead.listingId.toString()}`;
+          leadMap.set(key, lead);
+        }
+      });
 
       // Update matches with lead information
       processedMatches.forEach(match => {

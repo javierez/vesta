@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import { ImageGallery } from "./image-gallery";
+import { MediaManager } from "./media/media-manager";
 import { PortalSelection } from "./portal-selection";
 import { DocumentsManager } from "./documents-manager";
 import { CartelesManager } from "./carteles-manager";
@@ -427,7 +427,7 @@ export function PropertyTabs({
 
       <TabsContent value="imagenes" className="mt-6">
         <div className="mx-auto max-w-3xl">
-          <ImageGallery
+          <MediaManager
             images={tabData.images ?? images}
             title={listing.title ?? ""}
             propertyId={BigInt(listing.propertyId)}
