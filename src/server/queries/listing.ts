@@ -791,6 +791,8 @@ export async function listListingsCompact(
           eq(propertyImages.propertyId, properties.propertyId),
           eq(propertyImages.isActive, true),
           eq(propertyImages.imageOrder, 1),
+          // Only get actual images, not videos, YouTube links, or virtual tours
+          sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
         ),
       );
 

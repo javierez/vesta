@@ -470,7 +470,9 @@ export const PropertyTable = React.memo(function PropertyTable({
                 >
                   <div className="truncate">
                     <div className="group relative h-[48px] w-[72px] overflow-hidden rounded-md">
-                      {isVisible && listing.imageUrl ? (
+                      {isVisible && listing.imageUrl && 
+                       !listing.imageUrl.includes('youtube.com') && 
+                       !listing.imageUrl.includes('youtu.be') ? (
                         <>
                           {!loadedImages.has(listingId) && (
                             <Skeleton className="absolute inset-0 z-10" />

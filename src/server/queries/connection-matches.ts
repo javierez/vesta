@@ -882,7 +882,7 @@ export async function getExistingLeadForMatch(
         ),
       );
 
-    return existingLead || null;
+    return existingLead ?? null;
   } catch (error) {
     console.error("Error checking existing lead:", error);
     return null;

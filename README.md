@@ -149,13 +149,14 @@ revert
 # TODOs: 
 
 - Cartelería
-   - Guardar configuración de plantilla asignada a tipos de plantilla
+   - Check saving configuration of templates
 
 - Webpage
    - Add SEO to the page
-
+   - Add slider
+   
 - Webscraping
-   - Recover code and connect to database
+   - Re-learn how to use it
 
 - Boost Efficiency
    - Make use of caché and memoized items

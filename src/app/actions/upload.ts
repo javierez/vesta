@@ -300,7 +300,7 @@ export async function addVirtualTourLink(
     }
 
     // Common virtual tour platforms validation
-    const supportedPlatforms = [
+    const _supportedPlatforms = [
       'matterport.com',
       'kuula.co',
       '360cities.net',
@@ -320,7 +320,7 @@ export async function addVirtualTourLink(
       
       if (hostname.includes('matterport.com')) {
         platform = 'matterport';
-        const match = tourUrl.match(/m=([^&]+)/);
+        const match = /m=([^&]+)/.exec(tourUrl);
         tourId = match?.[1] ?? Date.now().toString();
       } else if (hostname.includes('kuula.co')) {
         platform = 'kuula';

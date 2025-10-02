@@ -119,7 +119,7 @@ export async function createAppointmentTaskWithAuth(
   contactId: bigint,
   contactName: string,
   notes?: string,
-  selectedListingsCount: number = 0
+  selectedListingsCount = 0
 ) {
   try {
     // Get current user for task assignment

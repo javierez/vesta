@@ -105,11 +105,15 @@ export const PropertyCard = React.memo(function PropertyCard({
 
   // Get primary image with proper fallback
   const defaultPlaceholder = "";
+  const isValidImageUrl = (url: string | null | undefined): boolean => {
+    if (!url) return false;
+    return !url.includes('youtube.com') && !url.includes('youtu.be');
+  };
   const [imageSrc, setImageSrc] = useState(
-    listing.imageUrl ?? defaultPlaceholder,
+    isValidImageUrl(listing.imageUrl) ? listing.imageUrl : defaultPlaceholder,
   );
   const [imageSrc2, setImageSrc2] = useState(
-    listing.imageUrl2 ?? defaultPlaceholder,
+    isValidImageUrl(listing.imageUrl2) ? listing.imageUrl2 : defaultPlaceholder,
   );
 
   const onImageError = () => {
@@ -158,8 +162,8 @@ export const PropertyCard = React.memo(function PropertyCard({
       >
         <div className="relative aspect-[4/3] overflow-hidden">
           <div className="relative h-full w-full">
-            {/* Show placeholder if no images are available */}
-            {(!listing.imageUrl && !listing.imageUrl2) ? (
+            {/* Show placeholder if no valid images are available */}
+            {(!isValidImageUrl(listing.imageUrl) && !isValidImageUrl(listing.imageUrl2)) ? (
               <PropertyImagePlaceholder 
                 propertyType={listing.propertyType}
                 className="h-full w-full"
@@ -172,7 +176,7 @@ export const PropertyCard = React.memo(function PropertyCard({
                 )}
 
                 {/* First Image */}
-                {listing.imageUrl && (
+                {isValidImageUrl(listing.imageUrl) && imageSrc && (
                   <Image
                     src={imageSrc}
                     alt={listing.title ?? "Property image"}
@@ -193,7 +197,7 @@ export const PropertyCard = React.memo(function PropertyCard({
                 )}
 
                 {/* Second Image */}
-                {listing.imageUrl2 && (
+                {isValidImageUrl(listing.imageUrl2) && imageSrc2 && (
                   <Image
                     src={imageSrc2}
                     alt={listing.title ?? "Property image"}

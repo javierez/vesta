@@ -7,7 +7,7 @@ export async function createAppointmentTaskAction(
   contactId: bigint,
   contactName: string,
   notes?: string,
-  selectedListingsCount: number = 0
+  _selectedListingsCount = 0
 ) {
   try {
     // Get current user for task assignment
