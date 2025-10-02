@@ -14,7 +14,7 @@ interface DocumentPageProps {
   }>;
 }
 
-export default async function VisitasPage({ params }: DocumentPageProps) {
+export default async function PlanosPage({ params }: DocumentPageProps) {
   const unwrappedParams = await params;
   const listingId = parseInt(unwrappedParams.id);
 
@@ -36,7 +36,7 @@ export default async function VisitasPage({ params }: DocumentPageProps) {
         street={breadcrumbData.street ?? ""}
         referenceNumber={breadcrumbData.referenceNumber ?? ""}
         documentFolder={{
-          name: "Visitas",
+          name: "Planos",
           propertyId: headerData.listingId.toString(),
         }}
       />
@@ -59,16 +59,16 @@ export default async function VisitasPage({ params }: DocumentPageProps) {
       {/* Section header */}
       <div className="mb-6">
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          Visitas
+          Planos
         </h3>
         <p className="text-gray-600">
-          Gestiona los reportes de visitas de la propiedad.
+          Gestiona todos los planos de la propiedad.
         </p>
       </div>
 
       <DocumentsSection
         listing={documentsData}
-        folderType="visitas"
+        folderType="planos"
       />
     </div>
   );

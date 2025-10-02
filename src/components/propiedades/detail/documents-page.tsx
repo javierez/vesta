@@ -39,7 +39,7 @@ interface DocumentsPageProps {
     street?: string | null;
     city?: string | null;
   };
-  folderType: "documentacion-inicial" | "visitas" | "otros";
+  folderType: "documentacion-inicial" | "visitas" | "otros" | "planos";
 }
 
 export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
@@ -54,6 +54,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     "documentacion-inicial": "initial-docs",
     visitas: "visitas",
     otros: "others",
+    planos: "planos",
   } as const;
 
   const apiFolderType = folderTypeMap[folderType];

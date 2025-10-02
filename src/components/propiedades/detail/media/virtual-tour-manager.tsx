@@ -378,13 +378,34 @@ export function VirtualTourManager({
             >
               {/* Mock Preview Content */}
               <div className="relative h-40 w-full">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <Glasses className="h-12 w-12 text-blue-600 mx-auto mb-2" />
-                    <div className="text-xs text-blue-700 font-medium">Tour Virtual</div>
+                {/* 360° Circle Pattern - positioned higher */}
+                <div className="absolute inset-0 flex items-center justify-center -mt-4">
+                  <div className="relative">
+                    {/* Outer circle representing 360° view */}
+                    <div className="w-20 h-20 border-2 border-dashed border-blue-300 rounded-full flex items-center justify-center">
+                      {/* Inner content */}
+                      <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                        <Glasses className="h-6 w-6 text-white" />
+                      </div>
+                    </div>
+                    
+                    {/* Four directional indicators around the circle */}
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-blue-400 rounded-full" />
+                    <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 w-2 h-2 bg-blue-400 rounded-full" />
+                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-blue-400 rounded-full" />
+                    <div className="absolute top-1/2 -left-1 transform -translate-y-1/2 w-2 h-2 bg-blue-400 rounded-full" />
                   </div>
                 </div>
-                {/* Overlay on hover */}
+                
+                {/* Label - positioned at bottom with more space */}
+                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
+                  <div className="text-center">
+                    <div className="text-xs font-medium text-blue-700">Tour Virtual</div>
+                    <div className="text-xs text-blue-500">360°</div>
+                  </div>
+                </div>
+                
+                {/* Simple hover overlay */}
                 <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
                   <span className="text-white text-sm font-medium bg-black/60 px-2 py-1 rounded">
                     Ver tour

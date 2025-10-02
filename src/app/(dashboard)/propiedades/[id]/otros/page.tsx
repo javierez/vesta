@@ -6,7 +6,7 @@ import {
 } from "~/server/queries/listing";
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
-import { DocumentsPage } from "~/components/propiedades/detail/documents-page";
+import { DocumentsSection } from "~/components/propiedades/detail/documents-section";
 
 interface DocumentPageProps {
   params: Promise<{
@@ -56,7 +56,20 @@ export default async function OtrosPage({ params }: DocumentPageProps) {
         isBankOwned={headerData.isBankOwned ?? false}
       />
 
-      <DocumentsPage listing={documentsData} folderType="otros" />
+      {/* Section header */}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          Otros
+        </h3>
+        <p className="text-gray-600">
+          Gestiona otros documentos de la propiedad.
+        </p>
+      </div>
+
+      <DocumentsSection
+        listing={documentsData}
+        folderType="otros"
+      />
     </div>
   );
 }

@@ -321,11 +321,11 @@ export async function addVirtualTourLink(
       if (hostname.includes('matterport.com')) {
         platform = 'matterport';
         const match = tourUrl.match(/m=([^&]+)/);
-        tourId = match ? match[1] : Date.now().toString();
+        tourId = match?.[1] ?? Date.now().toString();
       } else if (hostname.includes('kuula.co')) {
         platform = 'kuula';
         const pathParts = url.pathname.split('/');
-        tourId = pathParts[pathParts.length - 1] || Date.now().toString();
+        tourId = pathParts[pathParts.length - 1] ?? Date.now().toString();
       } else {
         // Generic platform - use hash of URL
         platform = 'generic';

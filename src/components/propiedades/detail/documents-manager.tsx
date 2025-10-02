@@ -49,6 +49,12 @@ export function DocumentsManager({
       documents: [],
     },
     {
+      id: "planos",
+      name: "Planos",
+      description: "Planos de la propiedad",
+      documents: [],
+    },
+    {
       id: "certificado-energetico",
       name: "Certificado Energético",
       description: "Certificado y consumos",

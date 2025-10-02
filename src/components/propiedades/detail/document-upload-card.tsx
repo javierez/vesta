@@ -16,7 +16,7 @@ interface Document {
 
 interface DocumentUploadCardProps {
   listingId: bigint;
-  folderType: "documentacion-inicial" | "visitas" | "otros";
+  folderType: "documentacion-inicial" | "visitas" | "otros" | "planos";
   onDocumentsUploaded: (documents: Document[]) => void;
   className?: string;
 }
@@ -36,6 +36,7 @@ export function DocumentUploadCard({
     "documentacion-inicial": "initial-docs",
     visitas: "visitas",
     otros: "others",
+    planos: "planos",
   } as const;
 
   const apiFolderType = folderTypeMap[folderType];
