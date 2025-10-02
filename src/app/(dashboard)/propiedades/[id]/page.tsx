@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { PropertyTabs } from "~/components/propiedades/detail/property-tabs";
-import { getPropertyImages, getPropertyImagesCount } from "~/server/queries/property_images";
+import { getPropertyImages, getPropertyImagesCount, getPropertyVideos, getPropertyYouTubeLinks, getPropertyVirtualTours } from "~/server/queries/property_images";
 import {
   getListingDetailsWithAuth,
   getListingBreadcrumbData,
@@ -51,10 +51,13 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     redirect(`/propiedades/crear/${listingId}`);
   }
 
-  // Get energy certificate, images, and image count in parallel
-  const [energyCertificate, propertyImages, imageCount] = await Promise.all([
+  // Get energy certificate, images, videos, YouTube links, virtual tours, and image count in parallel
+  const [energyCertificate, propertyImages, propertyVideos, propertyYouTubeLinks, propertyVirtualTours, imageCount] = await Promise.all([
     getEnergyCertificate(Number(headerData.propertyId)),
     getPropertyImages(BigInt(headerData.propertyId)),
+    getPropertyVideos(BigInt(headerData.propertyId)),
+    getPropertyYouTubeLinks(BigInt(headerData.propertyId)),
+    getPropertyVirtualTours(BigInt(headerData.propertyId)),
     getPropertyImagesCount(BigInt(headerData.propertyId)),
   ]);
   const defaultPlaceholder = "";
@@ -72,6 +75,55 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     imageTag: img.imageTag ?? undefined,
     s3key: img.s3key,
     imageOrder: img.imageOrder,
+    originImageId: img.originImageId ?? undefined,
+  }));
+
+  // Process videos to ensure they have valid URLs and match PropertyImage type
+  const processedVideos: PropertyImage[] = propertyVideos.map((video) => ({
+    propertyImageId: video.propertyImageId,
+    propertyId: video.propertyId,
+    referenceNumber: video.referenceNumber,
+    imageUrl: video.imageUrl ?? defaultPlaceholder,
+    isActive: video.isActive ?? true,
+    createdAt: video.createdAt,
+    updatedAt: video.updatedAt,
+    imageKey: video.imageKey,
+    imageTag: video.imageTag ?? undefined,
+    s3key: video.s3key,
+    imageOrder: video.imageOrder,
+    originImageId: video.originImageId ?? undefined,
+  }));
+
+  // Process YouTube links to ensure they have valid URLs and match PropertyImage type
+  const processedYouTubeLinks: PropertyImage[] = propertyYouTubeLinks.map((link) => ({
+    propertyImageId: link.propertyImageId,
+    propertyId: link.propertyId,
+    referenceNumber: link.referenceNumber,
+    imageUrl: link.imageUrl ?? defaultPlaceholder,
+    isActive: link.isActive ?? true,
+    createdAt: link.createdAt,
+    updatedAt: link.updatedAt,
+    imageKey: link.imageKey,
+    imageTag: link.imageTag ?? undefined,
+    s3key: link.s3key,
+    imageOrder: link.imageOrder,
+    originImageId: link.originImageId ?? undefined,
+  }));
+
+  // Process virtual tours to ensure they have valid URLs and match PropertyImage type
+  const processedVirtualTours: PropertyImage[] = propertyVirtualTours.map((tour) => ({
+    propertyImageId: tour.propertyImageId,
+    propertyId: tour.propertyId,
+    referenceNumber: tour.referenceNumber,
+    imageUrl: tour.imageUrl ?? defaultPlaceholder,
+    isActive: tour.isActive ?? true,
+    createdAt: tour.createdAt,
+    updatedAt: tour.updatedAt,
+    imageKey: tour.imageKey,
+    imageTag: tour.imageTag ?? undefined,
+    s3key: tour.s3key,
+    imageOrder: tour.imageOrder,
+    originImageId: tour.originImageId ?? undefined,
   }));
 
   return (
@@ -111,6 +163,9 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               : undefined
           }
           images={processedImages}
+          videos={processedVideos}
+          youtubeLinks={processedYouTubeLinks}
+          virtualTours={processedVirtualTours}
           energyCertificate={energyCertificate}
         />
       </div>

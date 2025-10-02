@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import { MediaManager } from "./media/media-manager";
+import { MediaManager, type MediaType } from "./media/media-manager";
 import { PortalSelection } from "./portal-selection";
 import { DocumentsManager } from "./documents-manager";
 import { CartelesManager } from "./carteles-manager";
@@ -78,6 +78,9 @@ interface PropertyTabsProps {
     agentId?: string | null; // Changed from bigint to match users.id type
   };
   images: PropertyImage[];
+  videos: PropertyImage[];
+  youtubeLinks: PropertyImage[];
+  virtualTours: PropertyImage[];
   energyCertificate?: {
     docId: bigint;
     documentKey: string;
@@ -90,13 +93,20 @@ export function PropertyTabs({
   listing,
   convertedListing,
   images,
+  videos,
+  youtubeLinks,
+  virtualTours,
   energyCertificate,
 }: PropertyTabsProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("general");
+  const [selectedMediaType, setSelectedMediaType] = useState<MediaType>("images");
   const [tabData, setTabData] = useState<{
     images: PropertyImage[] | null;
+    videos: PropertyImage[] | null;
+    youtubeLinks: PropertyImage[] | null;
+    virtualTours: PropertyImage[] | null;
     convertedListing: PropertyListing | null | undefined;
     energyCertificate: {
       docId: bigint;
@@ -109,6 +119,9 @@ export function PropertyTabs({
     carteles: Cartel[] | null;
   }>({
     images: images ?? null,
+    videos: videos ?? null,
+    youtubeLinks: youtubeLinks ?? null,
+    virtualTours: virtualTours ?? null,
     convertedListing: convertedListing ?? null,
     energyCertificate: energyCertificate ?? null,
     tasks: null,
@@ -355,6 +368,7 @@ export function PropertyTabs({
     }
   }, [listing.listingId]); // Removed tabData.carteles dependency to prevent infinite loop
 
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
@@ -429,20 +443,50 @@ export function PropertyTabs({
         <div className="mx-auto max-w-3xl">
           <MediaManager
             images={tabData.images ?? images}
+            videos={tabData.videos ?? []}
+            youtubeLinks={tabData.youtubeLinks ?? []}
+            virtualTours={tabData.virtualTours ?? virtualTours}
             title={listing.title ?? ""}
             propertyId={BigInt(listing.propertyId)}
             referenceNumber={listing.referenceNumber ?? ""}
+            onImageUploaded={(image) => {
+              setTabData((prev) => ({
+                ...prev,
+                images: prev.images ? [...prev.images, image] : [image]
+              }));
+            }}
+            onVideoUploaded={(video) => {
+              setTabData((prev) => ({
+                ...prev,
+                videos: prev.videos ? [...prev.videos, video] : [video]
+              }));
+            }}
+            onYouTubeLinkAdded={(link) => {
+              setTabData((prev) => ({
+                ...prev,
+                youtubeLinks: prev.youtubeLinks ? [...prev.youtubeLinks, link] : [link]
+              }));
+            }}
+            onVirtualTourAdded={(tour) => {
+              setTabData((prev) => ({
+                ...prev,
+                virtualTours: prev.virtualTours ? [...prev.virtualTours, tour] : [tour]
+              }));
+            }}
+            onMediaTypeChange={setSelectedMediaType}
           />
-          <div className="flex justify-center pt-6">
-            <button
-              type="button"
-              onClick={() => router.push(`/propiedades/${listing.listingId}/image-studio`)}
-              className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95"
-            >
-              Vesta Image Studio
-              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-            </button>
-          </div>
+          {selectedMediaType === "images" && (
+            <div className="flex justify-center pt-6">
+              <button
+                type="button"
+                onClick={() => router.push(`/propiedades/${listing.listingId}/image-studio`)}
+                className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95"
+              >
+                Vesta Image Studio
+                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+              </button>
+            </div>
+          )}
         </div>
       </TabsContent>
 

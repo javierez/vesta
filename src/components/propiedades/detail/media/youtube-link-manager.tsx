@@ -11,7 +11,6 @@ import {
   Square,
   Eye,
   EyeOff,
-  Glasses,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -19,7 +18,7 @@ import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
 import type { PropertyImage } from "~/lib/data";
 import {
-  addVirtualTourLink,
+  addYouTubeLink,
   deletePropertyImage,
   updateImageOrders,
   togglePropertyImageVisibility,
@@ -32,101 +31,114 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import Image from "next/image";
 
-interface VirtualTourManagerProps {
-  virtualTours: PropertyImage[];
+interface YouTubeLinkManagerProps {
+  youtubeLinks: PropertyImage[];
   propertyId: bigint;
   referenceNumber: string;
-  onVirtualTourAdded?: (tour: PropertyImage) => void;
+  onYouTubeLinkAdded?: (link: PropertyImage) => void;
 }
 
-export function VirtualTourManager({
-  virtualTours: initialVirtualTours,
+// Helper function to extract video ID from YouTube URL
+const extractVideoId = (url: string): string | null => {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2] && match[2].length === 11 ? match[2] : null;
+};
+
+// Helper function to get YouTube thumbnail URL
+const getYouTubeThumbnail = (videoId: string): string => {
+  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+};
+
+export function YouTubeLinkManager({
+  youtubeLinks: initialYouTubeLinks,
   propertyId,
   referenceNumber,
-  onVirtualTourAdded,
-}: VirtualTourManagerProps) {
-  const [virtualTours, setVirtualTours] = useState<PropertyImage[]>(initialVirtualTours);
+  onYouTubeLinkAdded,
+}: YouTubeLinkManagerProps) {
+  const [youtubeLinks, setYoutubeLinks] = useState<PropertyImage[]>(initialYouTubeLinks);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingTour, setEditingTour] = useState<PropertyImage | null>(null);
-  const [tourUrl, setTourUrl] = useState("");
+  const [editingLink, setEditingLink] = useState<PropertyImage | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tourToDelete, setTourToDelete] = useState<number | null>(null);
+  const [linkToDelete, setLinkToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [selectedTours, setSelectedTours] = useState<Set<number>>(new Set());
+  const [selectedLinks, setSelectedLinks] = useState<Set<number>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(new Set());
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [pendingTours, setPendingTours] = useState<PropertyImage[]>([]);
+  const [pendingLinks, setPendingLinks] = useState<PropertyImage[]>([]);
 
-  const handleAddVirtualTour = async () => {
-    if (!tourUrl.trim()) return;
+  const handleAddYouTubeLink = async () => {
+    if (!youtubeUrl.trim()) return;
 
     setIsSubmitting(true);
     try {
-      const newTour = await addVirtualTourLink(tourUrl, propertyId, referenceNumber);
-      setVirtualTours((prev) => [...prev, newTour]);
-      onVirtualTourAdded?.(newTour);
-      setTourUrl("");
+      const newLink = await addYouTubeLink(youtubeUrl, propertyId, referenceNumber);
+      setYoutubeLinks((prev) => [...prev, newLink]);
+      onYouTubeLinkAdded?.(newLink);
+      setYoutubeUrl("");
       setIsAddDialogOpen(false);
     } catch (error) {
-      console.error("Error adding virtual tour:", error);
-      alert(error instanceof Error ? error.message : "Error adding virtual tour");
+      console.error("Error adding YouTube link:", error);
+      alert(error instanceof Error ? error.message : "Error adding YouTube link");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleEditTour = (tour: PropertyImage) => {
-    setEditingTour(tour);
-    setTourUrl(tour.imageUrl);
+  const handleEditLink = (link: PropertyImage) => {
+    setEditingLink(link);
+    setYoutubeUrl(link.imageUrl);
   };
 
-  const handleUpdateTour = async () => {
-    if (!editingTour || !tourUrl.trim()) return;
+  const handleUpdateLink = async () => {
+    if (!editingLink || !youtubeUrl.trim()) return;
 
     setIsSubmitting(true);
     try {
-      const newTour = await addVirtualTourLink(tourUrl, propertyId, referenceNumber);
-      // Delete the old tour
-      await deletePropertyImage(editingTour.imageKey, propertyId);
+      const newLink = await addYouTubeLink(youtubeUrl, propertyId, referenceNumber);
+      // Delete the old link
+      await deletePropertyImage(editingLink.imageKey, propertyId);
       // Update the list
-      setVirtualTours((prev) =>
-        prev.map((tour) =>
-          tour.propertyImageId === editingTour.propertyImageId ? newTour : tour
+      setYoutubeLinks((prev) =>
+        prev.map((link) =>
+          link.propertyImageId === editingLink.propertyImageId ? newLink : link
         )
       );
-      setEditingTour(null);
-      setTourUrl("");
+      setEditingLink(null);
+      setYoutubeUrl("");
     } catch (error) {
-      console.error("Error updating virtual tour:", error);
-      alert(error instanceof Error ? error.message : "Error updating virtual tour");
+      console.error("Error updating YouTube link:", error);
+      alert(error instanceof Error ? error.message : "Error updating YouTube link");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleRemoveTour = async (index: number) => {
-    const tourToRemove = virtualTours[index];
-    if (!tourToRemove) return;
+  const handleRemoveLink = async (index: number) => {
+    const linkToRemove = youtubeLinks[index];
+    if (!linkToRemove) return;
 
     setIsDeleting(true);
     try {
-      await deletePropertyImage(tourToRemove.imageKey, propertyId);
-      setVirtualTours(virtualTours.filter((_, i) => i !== index));
+      await deletePropertyImage(linkToRemove.imageKey, propertyId);
+      setYoutubeLinks(youtubeLinks.filter((_, i) => i !== index));
     } catch (error) {
-      console.error("Error deleting virtual tour:", error);
+      console.error("Error deleting YouTube link:", error);
     } finally {
       setIsDeleting(false);
-      setTourToDelete(null);
+      setLinkToDelete(null);
     }
   };
 
-  const toggleTourSelection = (index: number) => {
-    setSelectedTours((prev) => {
+  const toggleLinkSelection = (index: number) => {
+    setSelectedLinks((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(index)) {
         newSet.delete(index);
@@ -138,46 +150,46 @@ export function VirtualTourManager({
   };
 
   const handleBulkDelete = async () => {
-    const selectedToursList = Array.from(selectedTours);
+    const selectedLinksList = Array.from(selectedLinks);
     setIsDeleting(true);
     try {
-      for (const index of selectedToursList) {
-        const tour = virtualTours[index];
-        if (tour) {
-          await deletePropertyImage(tour.imageKey, propertyId);
+      for (const index of selectedLinksList) {
+        const link = youtubeLinks[index];
+        if (link) {
+          await deletePropertyImage(link.imageKey, propertyId);
         }
       }
-      setVirtualTours(virtualTours.filter((_, i) => !selectedTours.has(i)));
+      setYoutubeLinks(youtubeLinks.filter((_, i) => !selectedLinks.has(i)));
     } catch (error) {
-      console.error("Error deleting virtual tours:", error);
+      console.error("Error deleting YouTube links:", error);
     } finally {
       setIsDeleting(false);
-      setSelectedTours(new Set());
+      setSelectedLinks(new Set());
       setIsSelectMode(false);
     }
   };
 
   const handleToggleVisibility = async (index: number) => {
-    const tour = virtualTours[index];
-    if (!tour) return;
+    const link = youtubeLinks[index];
+    if (!link) return;
 
-    const newActiveStatus = !tour.isActive;
+    const newActiveStatus = !link.isActive;
 
     setIsTogglingVisibility((prev) => new Set([...prev, index]));
 
-    setVirtualTours((prev) =>
-      prev.map((tr, i) =>
-        i === index ? { ...tr, isActive: newActiveStatus } : tr
+    setYoutubeLinks((prev) =>
+      prev.map((lnk, i) =>
+        i === index ? { ...lnk, isActive: newActiveStatus } : lnk
       )
     );
 
     try {
-      await togglePropertyImageVisibility(tour.propertyImageId, newActiveStatus);
+      await togglePropertyImageVisibility(link.propertyImageId, newActiveStatus);
     } catch (error) {
-      console.error("Error toggling virtual tour visibility:", error);
-      setVirtualTours((prev) =>
-        prev.map((tr, i) =>
-          i === index ? { ...tr, isActive: !newActiveStatus } : tr
+      console.error("Error toggling YouTube link visibility:", error);
+      setYoutubeLinks((prev) =>
+        prev.map((lnk, i) =>
+          i === index ? { ...lnk, isActive: !newActiveStatus } : lnk
         )
       );
     } finally {
@@ -227,59 +239,65 @@ export function VirtualTourManager({
       return;
     }
 
-    const newTours = [...virtualTours];
-    const draggedTour = newTours[draggedIndex];
+    const newLinks = [...youtubeLinks];
+    const draggedLink = newLinks[draggedIndex];
 
-    if (!draggedTour) return;
+    if (!draggedLink) return;
 
-    newTours.splice(draggedIndex, 1);
-    newTours.splice(dropIndex, 0, draggedTour);
+    newLinks.splice(draggedIndex, 1);
+    newLinks.splice(dropIndex, 0, draggedLink);
 
-    setVirtualTours(newTours);
-    setPendingTours(newTours);
+    setYoutubeLinks(newLinks);
+    setPendingLinks(newLinks);
     setHasUnsavedChanges(true);
 
     setDraggedIndex(null);
   };
 
   const handleSaveOrder = async () => {
-    if (!hasUnsavedChanges || pendingTours.length === 0) return;
+    if (!hasUnsavedChanges || pendingLinks.length === 0) return;
 
     setIsUpdatingOrder(true);
 
     try {
-      const updates = pendingTours.map((tour, index) => ({
-        propertyImageId: tour.propertyImageId,
+      const updates = pendingLinks.map((link, index) => ({
+        propertyImageId: link.propertyImageId,
         imageOrder: index + 1,
       }));
 
       await updateImageOrders(updates);
 
       setHasUnsavedChanges(false);
-      setPendingTours([]);
+      setPendingLinks([]);
     } catch (error) {
-      console.error("Error updating virtual tour order:", error);
-      setVirtualTours(initialVirtualTours);
+      console.error("Error updating YouTube link order:", error);
+      setYoutubeLinks(initialYouTubeLinks);
       setHasUnsavedChanges(false);
-      setPendingTours([]);
+      setPendingLinks([]);
     } finally {
       setIsUpdatingOrder(false);
     }
   };
 
   const handleCancelOrder = () => {
-    setVirtualTours(initialVirtualTours);
+    setYoutubeLinks(initialYouTubeLinks);
     setHasUnsavedChanges(false);
-    setPendingTours([]);
+    setPendingLinks([]);
   };
 
-  if (virtualTours.length === 0 && !isAddDialogOpen) {
+  if (youtubeLinks.length === 0 && !isAddDialogOpen) {
     return (
       <div className="border-t pt-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Glasses className="h-8 w-8 text-blue-600" />
-            <h3 className="text-lg font-medium text-gray-900">Tours Virtuales</h3>
+            <Image
+              src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/Youtube_logo.png"
+              alt="YouTube"
+              width={32}
+              height={23}
+              className="object-contain"
+            />
+            <h3 className="text-lg font-medium text-gray-900">Vídeos de YouTube</h3>
           </div>
         </div>
         
@@ -293,29 +311,29 @@ export function VirtualTourManager({
               Añadir URL
             </span>
             <span className="text-xs text-gray-400">
-              de tour virtual
+              de YouTube
             </span>
           </div>
         </div>
 
-        {/* Add Virtual Tour Dialog */}
+        {/* Add YouTube Link Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Añadir Tour Virtual</DialogTitle>
+              <DialogTitle>Añadir Vídeo de YouTube</DialogTitle>
               <DialogDescription>
-                Introduce la URL del tour virtual que quieres añadir.
+                Introduce la URL del vídeo de YouTube que quieres añadir.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="tour-url">URL del Tour Virtual</Label>
+                <Label htmlFor="youtube-url">URL de YouTube</Label>
                 <Input
-                  id="tour-url"
+                  id="youtube-url"
                   type="url"
-                  value={tourUrl}
-                  onChange={(e) => setTourUrl(e.target.value)}
-                  placeholder="https://my.matterport.com/show/?m=..."
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
                 />
               </div>
             </div>
@@ -324,13 +342,13 @@ export function VirtualTourManager({
                 variant="outline"
                 onClick={() => {
                   setIsAddDialogOpen(false);
-                  setTourUrl("");
+                  setYoutubeUrl("");
                 }}
                 disabled={isSubmitting}
               >
                 Cancelar
               </Button>
-              <Button onClick={handleAddVirtualTour} disabled={isSubmitting}>
+              <Button onClick={handleAddYouTubeLink} disabled={isSubmitting}>
                 {isSubmitting ? "Añadiendo..." : "Añadir"}
               </Button>
             </DialogFooter>
@@ -343,30 +361,39 @@ export function VirtualTourManager({
   return (
     <div className="border-t pt-6">
       <div className="flex items-center gap-3 mb-4">
-        <Glasses className="h-8 w-8 text-blue-600" />
-        <h3 className="text-lg font-medium text-gray-900">Tours Virtuales</h3>
+        <Image
+          src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/Youtube_logo.png"
+          alt="YouTube"
+          width={32}
+          height={23}
+          className="object-contain"
+        />
+        <h3 className="text-lg font-medium text-gray-900">Vídeos de YouTube</h3>
       </div>
 
       {/* Help text for drag and drop */}
-      {virtualTours.length > 1 && (
+      {youtubeLinks.length > 1 && (
         <p className="text-center text-sm text-gray-500 mb-4">
-          Arrastra y suelta los tours para reordenarlos
+          Arrastra y suelta los vídeos para reordenarlos
         </p>
       )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        {virtualTours.map((tour, idx) => {
+        {youtubeLinks.map((link, idx) => {
+          const videoId = extractVideoId(link.imageUrl);
+          const thumbnailUrl = videoId ? getYouTubeThumbnail(videoId) : null;
+
           return (
             <div
-              key={tour.propertyImageId.toString()}
+              key={link.propertyImageId.toString()}
               className={cn(
-                "group relative overflow-hidden rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-100 transition-all duration-200",
+                "group relative overflow-hidden rounded-lg border bg-white transition-all duration-200",
                 isSelectMode && "cursor-pointer",
-                selectedTours.has(idx) && "ring-2 ring-primary/50",
+                selectedLinks.has(idx) && "ring-2 ring-primary/50",
                 dragOverIndex === idx && "scale-105 ring-2 ring-blue-400",
                 draggedIndex === idx && "scale-95 opacity-50",
                 !isSelectMode && "cursor-move",
-                !tour.isActive && "opacity-50"
+                !link.isActive && "opacity-50"
               )}
               draggable={!isSelectMode && !isUpdatingOrder}
               onDragStart={(e) => handleDragStart(e, idx)}
@@ -374,27 +401,32 @@ export function VirtualTourManager({
               onDragOver={(e) => handleDragOver(e, idx)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, idx)}
-              onClick={() => isSelectMode && toggleTourSelection(idx)}
+              onClick={() => isSelectMode && toggleLinkSelection(idx)}
             >
-              {/* Mock Preview Content */}
-              <div className="relative h-40 w-full">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <Glasses className="h-12 w-12 text-blue-600 mx-auto mb-2" />
-                    <div className="text-xs text-blue-700 font-medium">Tour Virtual</div>
+              {thumbnailUrl && (
+                <div className="relative">
+                  <img
+                    src={thumbnailUrl}
+                    alt="YouTube video thumbnail"
+                    className="h-40 w-full object-cover"
+                    onError={(e) => {
+                      // Fallback to standard resolution thumbnail
+                      const target = e.target as HTMLImageElement;
+                      target.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                    }}
+                  />
+                  {/* YouTube Play Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="rounded-full bg-red-600 p-2">
+                      <div className="h-0 w-0 border-l-[8px] border-l-white border-y-[6px] border-y-transparent ml-1" />
+                    </div>
                   </div>
                 </div>
-                {/* Overlay on hover */}
-                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
-                  <span className="text-white text-sm font-medium bg-black/60 px-2 py-1 rounded">
-                    Ver tour
-                  </span>
-                </div>
-              </div>
+              )}
 
               {isSelectMode ? (
                 <div className="absolute left-2 top-2 rounded-full bg-white/80 p-1">
-                  {selectedTours.has(idx) ? (
+                  {selectedLinks.has(idx) ? (
                     <CheckSquare2 className="h-4 w-4 text-primary" />
                   ) : (
                     <Square className="h-4 w-4 text-gray-400" />
@@ -407,9 +439,9 @@ export function VirtualTourManager({
                     className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(tour.imageUrl, '_blank');
+                      window.open(link.imageUrl, '_blank');
                     }}
-                    aria-label="Abrir tour virtual"
+                    aria-label="Abrir en YouTube"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                   </button>
@@ -418,10 +450,10 @@ export function VirtualTourManager({
                     className="absolute right-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-red-500 group-hover:opacity-100"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setTourToDelete(idx);
+                      setLinkToDelete(idx);
                     }}
                     disabled={isDeleting}
-                    aria-label="Eliminar tour"
+                    aria-label="Eliminar vídeo"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -430,9 +462,9 @@ export function VirtualTourManager({
                     className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleEditTour(tour);
+                      handleEditLink(link);
                     }}
-                    aria-label="Editar tour"
+                    aria-label="Editar vídeo"
                   >
                     <Edit className="h-3.5 w-3.5" />
                   </button>
@@ -444,11 +476,11 @@ export function VirtualTourManager({
                       void handleToggleVisibility(idx);
                     }}
                     disabled={isTogglingVisibility.has(idx)}
-                    aria-label={tour.isActive ? "Ocultar tour" : "Mostrar tour"}
+                    aria-label={link.isActive ? "Ocultar vídeo" : "Mostrar vídeo"}
                   >
                     {isTogglingVisibility.has(idx) ? (
                       <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    ) : tour.isActive ? (
+                    ) : link.isActive ? (
                       <Eye className="h-3.5 w-3.5" />
                     ) : (
                       <EyeOff className="h-3.5 w-3.5" />
@@ -467,7 +499,7 @@ export function VirtualTourManager({
           );
         })}
         
-        {/* Add Virtual Tour Placeholder */}
+        {/* Add YouTube Link Placeholder */}
         <div
           onClick={() => setIsAddDialogOpen(true)}
           className="group relative flex h-40 w-full min-w-[120px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
@@ -477,7 +509,7 @@ export function VirtualTourManager({
             Añadir URL
           </span>
           <span className="text-xs text-gray-400">
-            de tour virtual
+            de YouTube
           </span>
         </div>
       </div>
@@ -490,7 +522,7 @@ export function VirtualTourManager({
               variant="ghost"
               size="sm"
               onClick={() => {
-                setSelectedTours(new Set());
+                setSelectedLinks(new Set());
                 setIsSelectMode(false);
               }}
               className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
@@ -501,7 +533,7 @@ export function VirtualTourManager({
               variant="ghost"
               size="sm"
               onClick={handleBulkDelete}
-              disabled={selectedTours.size === 0 || isDeleting}
+              disabled={selectedLinks.size === 0 || isDeleting}
               className="text-red-500 hover:bg-red-50 hover:text-red-600"
             >
               <Trash2 className="mr-1.5 h-4 w-4" />
@@ -545,20 +577,20 @@ export function VirtualTourManager({
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Añadir Tour Virtual</DialogTitle>
+            <DialogTitle>Añadir Vídeo de YouTube</DialogTitle>
             <DialogDescription>
-              Introduce la URL del tour virtual que quieres añadir.
+              Introduce la URL del vídeo de YouTube que quieres añadir.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="tour-url">URL del Tour Virtual</Label>
+              <Label htmlFor="youtube-url">URL de YouTube</Label>
               <Input
-                id="tour-url"
+                id="youtube-url"
                 type="url"
-                value={tourUrl}
-                onChange={(e) => setTourUrl(e.target.value)}
-                placeholder="https://my.matterport.com/show/?m=..."
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
               />
             </div>
           </div>
@@ -567,13 +599,13 @@ export function VirtualTourManager({
               variant="outline"
               onClick={() => {
                 setIsAddDialogOpen(false);
-                setTourUrl("");
+                setYoutubeUrl("");
               }}
               disabled={isSubmitting}
             >
               Cancelar
             </Button>
-            <Button onClick={handleAddVirtualTour} disabled={isSubmitting}>
+            <Button onClick={handleAddYouTubeLink} disabled={isSubmitting}>
               {isSubmitting ? "Añadiendo..." : "Añadir"}
             </Button>
           </DialogFooter>
@@ -581,30 +613,30 @@ export function VirtualTourManager({
       </Dialog>
 
       <Dialog
-        open={!!editingTour}
+        open={!!editingLink}
         onOpenChange={(open) => {
           if (!open) {
-            setEditingTour(null);
-            setTourUrl("");
+            setEditingLink(null);
+            setYoutubeUrl("");
           }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Tour Virtual</DialogTitle>
+            <DialogTitle>Editar Vídeo de YouTube</DialogTitle>
             <DialogDescription>
-              Modifica la URL del tour virtual.
+              Modifica la URL del vídeo de YouTube.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-tour-url">URL del Tour Virtual</Label>
+              <Label htmlFor="edit-youtube-url">URL de YouTube</Label>
               <Input
-                id="edit-tour-url"
+                id="edit-youtube-url"
                 type="url"
-                value={tourUrl}
-                onChange={(e) => setTourUrl(e.target.value)}
-                placeholder="https://my.matterport.com/show/?m=..."
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
               />
             </div>
           </div>
@@ -612,14 +644,14 @@ export function VirtualTourManager({
             <Button
               variant="outline"
               onClick={() => {
-                setEditingTour(null);
-                setTourUrl("");
+                setEditingLink(null);
+                setYoutubeUrl("");
               }}
               disabled={isSubmitting}
             >
               Cancelar
             </Button>
-            <Button onClick={handleUpdateTour} disabled={isSubmitting}>
+            <Button onClick={handleUpdateLink} disabled={isSubmitting}>
               {isSubmitting ? "Guardando..." : "Guardar cambios"}
             </Button>
           </DialogFooter>
@@ -627,21 +659,21 @@ export function VirtualTourManager({
       </Dialog>
 
       <Dialog
-        open={tourToDelete !== null}
-        onOpenChange={() => setTourToDelete(null)}
+        open={linkToDelete !== null}
+        onOpenChange={() => setLinkToDelete(null)}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Eliminar tour virtual?</DialogTitle>
+            <DialogTitle>¿Eliminar vídeo de YouTube?</DialogTitle>
             <DialogDescription>
-              Esta acción no se puede deshacer. El tour virtual se eliminará
+              Esta acción no se puede deshacer. El vídeo se eliminará
               permanentemente.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setTourToDelete(null)}
+              onClick={() => setLinkToDelete(null)}
               disabled={isDeleting}
             >
               Cancelar
@@ -649,7 +681,7 @@ export function VirtualTourManager({
             <Button
               variant="destructive"
               onClick={() =>
-                tourToDelete !== null && handleRemoveTour(tourToDelete)
+                linkToDelete !== null && handleRemoveLink(linkToDelete)
               }
               disabled={isDeleting}
             >

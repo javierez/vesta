@@ -1,6 +1,6 @@
 "use server";
 
-import { uploadImageToS3, uploadDocumentToS3, renameS3Folder } from "~/lib/s3";
+import { uploadImageToS3, uploadVideoToS3, uploadDocumentToS3, renameS3Folder } from "~/lib/s3";
 import {
   createPropertyImage,
   getPropertyImageById,
@@ -77,6 +77,64 @@ export async function uploadPropertyImage(
   }
 }
 
+export async function uploadPropertyVideo(
+  file: File,
+  propertyId: bigint,
+  referenceNumber: string,
+  videoOrder: number,
+): Promise<PropertyImage> {
+  try {
+    // 1. Upload to S3
+    const { videoUrl, s3key, videoKey } = await uploadVideoToS3(
+      file,
+      referenceNumber,
+      videoOrder,
+    );
+
+    // 2. Create record in database with imageTag = 'video'
+    const result = await createPropertyImage({
+      propertyId,
+      referenceNumber,
+      imageUrl: videoUrl, // Store video URL in imageUrl field
+      isActive: true,
+      imageKey: videoKey,
+      s3key,
+      imageOrder: videoOrder,
+      imageTag: 'video', // This is the key difference
+    });
+
+    if (!result) {
+      throw new Error("Failed to create property video record");
+    }
+
+    // 3. Fetch the complete video record
+    const propertyVideo = await getPropertyImageById(result.propertyImageId);
+    if (!propertyVideo) {
+      throw new Error("Failed to fetch created property video");
+    }
+
+    // Convert to PropertyImage type, ensuring all required fields are present
+    const typedPropertyVideo: PropertyImage = {
+      propertyImageId: propertyVideo.propertyImageId,
+      propertyId: propertyVideo.propertyId,
+      referenceNumber: propertyVideo.referenceNumber,
+      imageUrl: propertyVideo.imageUrl,
+      isActive: propertyVideo.isActive ?? true,
+      createdAt: propertyVideo.createdAt,
+      updatedAt: propertyVideo.updatedAt,
+      imageKey: propertyVideo.imageKey,
+      s3key: propertyVideo.s3key,
+      imageOrder: propertyVideo.imageOrder,
+      imageTag: propertyVideo.imageTag ?? undefined,
+    };
+
+    return typedPropertyVideo;
+  } catch (error) {
+    console.error("Error uploading property video:", error);
+    throw error;
+  }
+}
+
 export async function deletePropertyImage(
   imageKey: string,
   propertyId: bigint,
@@ -136,6 +194,204 @@ export async function togglePropertyImageVisibility(
     await updatePropertyImage(propertyImageId, { isActive });
   } catch (error) {
     console.error("Error toggling image visibility:", error);
+    throw error;
+  }
+}
+
+export async function addYouTubeLink(
+  youtubeUrl: string,
+  propertyId: bigint,
+  referenceNumber: string,
+): Promise<PropertyImage> {
+  try {
+    // Validate YouTube URL format
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    if (!youtubeRegex.test(youtubeUrl)) {
+      throw new Error("Invalid YouTube URL format");
+    }
+
+    // Normalize the URL to standard format
+    let videoId = '';
+    if (youtubeUrl.includes('youtu.be/')) {
+      videoId = youtubeUrl.split('youtu.be/')[1]?.split('?')[0] ?? '';
+    } else if (youtubeUrl.includes('watch?v=')) {
+      videoId = youtubeUrl.split('watch?v=')[1]?.split('&')[0] ?? '';
+    } else if (youtubeUrl.includes('embed/')) {
+      videoId = youtubeUrl.split('embed/')[1]?.split('?')[0] ?? '';
+    }
+
+    if (!videoId) {
+      throw new Error("Could not extract video ID from YouTube URL");
+    }
+
+    // Create standard YouTube URL
+    const standardYouTubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+    // Get the current max order for YouTube links
+    const existingYouTubeLinks = await db
+      .select()
+      .from(propertyImages)
+      .where(
+        and(
+          eq(propertyImages.propertyId, propertyId),
+          eq(propertyImages.imageTag, 'youtube'),
+          eq(propertyImages.isActive, true)
+        )
+      );
+
+    const maxOrder = existingYouTubeLinks.length > 0
+      ? Math.max(...existingYouTubeLinks.map(link => link.imageOrder ?? 0))
+      : 0;
+
+    // Create record in database with imageTag = 'youtube'
+    const result = await createPropertyImage({
+      propertyId,
+      referenceNumber,
+      imageUrl: standardYouTubeUrl,
+      isActive: true,
+      imageKey: `youtube_${videoId}`, // Use video ID as key
+      s3key: `youtube://${videoId}`, // Special S3 key to indicate YouTube
+      imageOrder: maxOrder + 1,
+      imageTag: 'youtube',
+    });
+
+    if (!result) {
+      throw new Error("Failed to create YouTube link record");
+    }
+
+    // Fetch the complete YouTube link record
+    const youtubeLink = await getPropertyImageById(result.propertyImageId);
+    if (!youtubeLink) {
+      throw new Error("Failed to fetch created YouTube link");
+    }
+
+    // Convert to PropertyImage type
+    const typedYouTubeLink: PropertyImage = {
+      propertyImageId: youtubeLink.propertyImageId,
+      propertyId: youtubeLink.propertyId,
+      referenceNumber: youtubeLink.referenceNumber,
+      imageUrl: youtubeLink.imageUrl,
+      isActive: youtubeLink.isActive ?? true,
+      createdAt: youtubeLink.createdAt,
+      updatedAt: youtubeLink.updatedAt,
+      imageKey: youtubeLink.imageKey,
+      s3key: youtubeLink.s3key,
+      imageOrder: youtubeLink.imageOrder,
+      imageTag: youtubeLink.imageTag ?? undefined,
+    };
+
+    return typedYouTubeLink;
+  } catch (error) {
+    console.error("Error adding YouTube link:", error);
+    throw error;
+  }
+}
+
+export async function addVirtualTourLink(
+  tourUrl: string,
+  propertyId: bigint,
+  referenceNumber: string,
+): Promise<PropertyImage> {
+  try {
+    // Validate virtual tour URL format
+    const urlPattern = /^https?:\/\/.+/;
+    if (!urlPattern.test(tourUrl)) {
+      throw new Error("Invalid URL format. Please provide a valid virtual tour URL.");
+    }
+
+    // Common virtual tour platforms validation
+    const supportedPlatforms = [
+      'matterport.com',
+      'kuula.co',
+      '360cities.net',
+      'roundme.com',
+      'pano2vr.com',
+      'vrpano.com',
+      'momento360.com',
+    ];
+
+    let tourId = '';
+    let platform = 'generic';
+    
+    // Extract tour ID based on platform
+    try {
+      const url = new URL(tourUrl);
+      const hostname = url.hostname.replace('www.', '');
+      
+      if (hostname.includes('matterport.com')) {
+        platform = 'matterport';
+        const match = tourUrl.match(/m=([^&]+)/);
+        tourId = match ? match[1] : Date.now().toString();
+      } else if (hostname.includes('kuula.co')) {
+        platform = 'kuula';
+        const pathParts = url.pathname.split('/');
+        tourId = pathParts[pathParts.length - 1] || Date.now().toString();
+      } else {
+        // Generic platform - use hash of URL
+        platform = 'generic';
+        tourId = Buffer.from(tourUrl).toString('base64').slice(0, 10);
+      }
+    } catch {
+      // Fallback to generic if URL parsing fails
+      tourId = Date.now().toString();
+    }
+
+    // Get the current max order for virtual tours
+    const existingTours = await db
+      .select()
+      .from(propertyImages)
+      .where(
+        and(
+          eq(propertyImages.propertyId, propertyId),
+          eq(propertyImages.imageTag, 'tour'),
+          eq(propertyImages.isActive, true)
+        )
+      );
+
+    const maxOrder = existingTours.length > 0
+      ? Math.max(...existingTours.map(tour => tour.imageOrder ?? 0))
+      : 0;
+
+    // Create record in database with imageTag = 'tour'
+    const result = await createPropertyImage({
+      propertyId,
+      referenceNumber,
+      imageUrl: tourUrl,
+      isActive: true,
+      imageKey: `tour_${platform}_${tourId}`,
+      s3key: `tour://${platform}/${tourId}`,
+      imageOrder: maxOrder + 1,
+      imageTag: 'tour',
+    });
+
+    if (!result) {
+      throw new Error("Failed to create virtual tour record");
+    }
+
+    // Fetch the complete virtual tour record
+    const virtualTour = await getPropertyImageById(result.propertyImageId);
+    if (!virtualTour) {
+      throw new Error("Failed to fetch created virtual tour");
+    }
+
+    // Convert to PropertyImage type
+    const typedVirtualTour: PropertyImage = {
+      propertyImageId: virtualTour.propertyImageId,
+      propertyId: virtualTour.propertyId,
+      referenceNumber: virtualTour.referenceNumber,
+      imageUrl: virtualTour.imageUrl,
+      isActive: virtualTour.isActive ?? true,
+      createdAt: virtualTour.createdAt,
+      updatedAt: virtualTour.updatedAt,
+      imageKey: virtualTour.imageKey,
+      s3key: virtualTour.s3key,
+      imageOrder: virtualTour.imageOrder,
+      imageTag: virtualTour.imageTag ?? undefined,
+    };
+
+    return typedVirtualTour;
+  } catch (error) {
+    console.error("Error adding virtual tour link:", error);
     throw error;
   }
 }

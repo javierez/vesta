@@ -90,6 +90,61 @@ export async function uploadImageToS3(
   }
 }
 
+export async function uploadVideoToS3(
+  file: File,
+  referenceNumber: string,
+  videoOrder: number,
+): Promise<{ videoUrl: string; s3key: string; videoKey: string }> {
+  try {
+    if (!file) {
+      throw new Error("No file provided");
+    }
+
+    if (!referenceNumber) {
+      throw new Error("No reference number provided");
+    }
+
+    // Get dynamic bucket name based on current user's account
+    const bucketName = await getDynamicBucketName();
+
+    // Generate a unique filename
+    const fileExtension = file.name.split(".").pop();
+    if (!fileExtension) {
+      throw new Error("Could not determine file extension");
+    }
+
+    // Create the S3 key following the existing structure:
+    // bucket/referenceNumber/videos/video_filename
+    const videoKey = `${referenceNumber}/videos/video_${videoOrder}_${nanoid(6)}.${fileExtension}`;
+    const s3key = `s3://${bucketName}/${videoKey}`;
+
+    // Convert File to Buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Upload to S3
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: videoKey,
+        Body: buffer,
+        ContentType: file.type,
+      }),
+    );
+
+    // Return the video URL and keys
+    const videoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${videoKey}`;
+    return {
+      videoUrl,
+      s3key,
+      videoKey,
+    };
+  } catch (error) {
+    console.error("Error uploading video to S3:", error);
+    throw error;
+  }
+}
+
 export async function uploadDocumentToS3(
   file: File,
   referenceNumber: string,
