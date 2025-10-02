@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   Bed,
   Bath,
@@ -13,14 +14,16 @@ import {
   MapPin,
   User,
   X,
-  Phone,
   Mail,
   CheckCircle,
   AlertCircle,
   KeyRound,
+  Euro,
+  Link as LinkIcon,
 } from "lucide-react";
 import type { ProspectMatch, MatchAction } from "~/types/connection-matches";
-import { formatPrice } from "~/lib/utils";
+import { formatPrice, cn } from "~/lib/utils";
+import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImagePlaceholder";
 
 interface MatchCardProps {
   match: ProspectMatch;
@@ -33,7 +36,6 @@ export const MatchCard = React.memo(function MatchCard({
   onAction,
   showActions = true,
 }: MatchCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState<MatchAction | null>(
     null,
@@ -42,10 +44,14 @@ export const MatchCard = React.memo(function MatchCard({
   const { listing, matchType, toleranceReasons, isCrossAccount, canContact } =
     match;
 
-  // Default placeholder image
-  const defaultPlaceholder =
-    "https://vesta-configuration-files.s3.amazonaws.com/default-property.jpg";
-  const imageSrc = defaultPlaceholder; // TODO: Add actual image URLs from listing
+  // Debug logs
+  console.log('🔍 MatchCard - Full listing object:', listing);
+  console.log('🏠 MatchCard - Properties object:', listing.properties);
+  console.log('📝 MatchCard - Property title:', listing.properties.title);
+  console.log('🏷️ MatchCard - Property type:', listing.properties.propertyType);
+
+  const defaultPlaceholder = "";
+  const imageSrc = defaultPlaceholder; // TODO: Add imageUrl when available in ListingWithDetails type
 
   const getPropertyTypeLabel = (type: string | null) => {
     switch (type) {
@@ -105,182 +111,176 @@ export const MatchCard = React.memo(function MatchCard({
   };
 
   const renderContent = () => (
-    <Card
-      className="overflow-hidden transition-all hover:shadow-lg"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Image Section */}
-      <div className="relative aspect-[4/3] overflow-hidden">
-        <Image
-          src={imageSrc}
-          alt={listing.properties.propertyType ?? "Property image"}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className={`object-cover transition-all duration-300 ${isHovered ? "scale-105 blur-sm" : ""}`}
-          loading="lazy"
-          onLoad={() => setImageLoaded(true)}
-          quality={85}
-        />
+    <Card className="overflow-hidden border-0 shadow-md transition-all hover:shadow-lg">
+      {/* Centered Content */}
+      <div className="p-2 text-center">
+        {/* First Row - Price and Property Labels - Centered */}
+        <div className="flex items-center justify-center gap-2 mb-1">
+          {/* Price - Most Important */}
+          <p className="text-base font-bold">
+            {formatPrice(listing.listings.price)}€
+            {listing.listings.listingType === "Rent" ? "/mes" : ""}
+          </p>
+          
+          {/* Property Type Badges */}
+          <div className="flex gap-1">
+            {/* Property Type */}
+            <Badge variant="outline" className="text-xs px-1 py-0">
+              {getPropertyTypeLabel(listing.properties.propertyType)}
+            </Badge>
+            
+            {/* Listing Type */}
+            <Badge className="text-xs px-1 py-0">
+              {getListingTypeLabel(listing.listings.listingType)}
+            </Badge>
+            
+            {/* Cross-account indicator */}
+            {isCrossAccount && (
+              <Badge variant="secondary" className="bg-blue-500 text-xs text-white px-1 py-0">
+                Externa
+              </Badge>
+            )}
+          </div>
+        </div>
+        
+        {/* Second Row - Property Title */}
+        <div className="mb-1">
+          <p className="text-sm font-medium text-gray-700 truncate">
+            {listing.properties.title || "Propiedad sin título"}
+          </p>
+        </div>
+        
+        {/* Third Row - Match Type */}
+        <div className="mb-2">
+          {getMatchTypeBadge()}
+        </div>
+        
+        {/* Fourth Row - Properties Box */}
+        <div className="group relative mx-auto w-4/5 rounded-md bg-gradient-to-br from-slate-50 to-gray-100 p-1 shadow-sm mb-2">
+          <div className="grid grid-cols-2 gap-0 text-xs">
+            {/* Price */}
+            <div className="flex items-center justify-center gap-0.5 text-gray-700">
+              <Euro className="h-3 w-3" />
+              <span>
+                {listing.listings.listingType === "Sale"
+                  ? `${Math.round(parseFloat(listing.listings.price) / 1000)}k`
+                  : parseFloat(listing.listings.price).toLocaleString()}
+              </span>
+            </div>
 
-        {/* Hover Action Buttons - Center of image */}
-        {showActions && isHovered && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-12 w-12 rounded-full bg-white/90 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-white"
+            {/* Bedrooms */}
+            {listing.properties.propertyType !== "garaje" &&
+              listing.properties.propertyType !== "local" && (
+                <div className="flex items-center justify-center gap-0.5 text-gray-700">
+                  <Bed className="h-3 w-3" />
+                  <span>{listing.properties.bedrooms || "-"}</span>
+                </div>
+              )}
+            
+            {/* For garaje/local, show a dash for bedrooms */}
+            {(listing.properties.propertyType === "garaje" ||
+              listing.properties.propertyType === "local") && (
+              <div className="flex items-center justify-center gap-0.5 text-gray-400">
+                <Bed className="h-3 w-3" />
+                <span>-</span>
+              </div>
+            )}
+
+            {/* Bathrooms */}
+            {listing.properties.propertyType !== "garaje" &&
+              listing.properties.propertyType !== "local" && (
+                <div className="flex items-center justify-center gap-0.5 text-gray-700">
+                  <Bath className="h-3 w-3" />
+                  <span>
+                    {listing.properties.bathrooms
+                      ? Math.floor(Number(listing.properties.bathrooms))
+                      : "-"}
+                  </span>
+                </div>
+              )}
+            
+            {/* For garaje/local, show a dash for bathrooms */}
+            {(listing.properties.propertyType === "garaje" ||
+              listing.properties.propertyType === "local") && (
+              <div className="flex items-center justify-center gap-0.5 text-gray-400">
+                <Bath className="h-3 w-3" />
+                <span>-</span>
+              </div>
+            )}
+
+            {/* Square meters */}
+            <div className="flex items-center justify-center gap-0.5 text-gray-700">
+              <SquareIcon className="h-3 w-3" />
+              <span>{listing.properties.squareMeter || "-"}m²</span>
+            </div>
+          </div>
+          
+          {/* Hover Action Buttons - Overlay on Properties Box */}
+          {showActions && (
+            <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/20 backdrop-blur-sm opacity-0 transition-all duration-300 group-hover:opacity-100 rounded-md">
+              <button
+                className="h-8 w-8 rounded-full bg-white/95 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center border border-gray-100"
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   void handleAction("contact");
                 }}
                 disabled={isActionLoading !== null}
-                title="Enviar mensaje"
+                title="Contactar"
               >
-                <Mail
-                  className={`h-5 w-5 text-gray-700 ${isActionLoading === "contact" ? "animate-pulse" : ""}`}
-                />
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-12 w-12 rounded-full bg-white/90 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-white"
+                <Mail className="h-3.5 w-3.5 text-gray-600" />
+              </button>
+              
+              <button
+                className="h-8 w-8 rounded-full bg-white/95 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center border border-gray-100"
                 onClick={(e) => {
                   e.preventDefault();
-                  void handleAction("contact");
+                  e.stopPropagation();
+                  console.log('📝 Creating lead for match');
                 }}
                 disabled={isActionLoading !== null}
-                title="Llamar"
+                title="Crear Lead"
               >
-                <Phone
-                  className={`h-5 w-5 text-gray-700 ${isActionLoading === "contact" ? "animate-pulse" : ""}`}
-                />
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-12 w-12 rounded-full bg-white/90 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-white"
+                <LinkIcon className="h-3.5 w-3.5 text-gray-600" />
+              </button>
+              
+              <button
+                className="h-8 w-8 rounded-full bg-white/95 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center border border-gray-100"
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   void handleAction("dismiss");
                 }}
                 disabled={isActionLoading !== null}
                 title="Descartar"
               >
-                <X
-                  className={`h-5 w-5 text-gray-700 ${isActionLoading === "dismiss" ? "animate-pulse" : ""}`}
-                />
-              </Button>
-            </div>
-          </div>
-        )}
-        {!imageLoaded && (
-          <div className="absolute inset-0 animate-pulse bg-muted" />
-        )}
-
-        {/* Top Left - Property Type */}
-        <Badge
-          variant="outline"
-          className="absolute left-2 top-2 z-10 bg-white/80 text-sm"
-        >
-          {getPropertyTypeLabel(listing.properties.propertyType)}
-        </Badge>
-
-        {/* Top Right - Listing Type */}
-        <Badge className="absolute right-2 top-2 z-10 text-sm">
-          {getListingTypeLabel(listing.listings.listingType)}
-        </Badge>
-
-        {/* Bottom Center - Match Type */}
-        <div className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2">
-          {getMatchTypeBadge()}
-        </div>
-
-        {/* Cross-account indicator */}
-        {isCrossAccount && (
-          <Badge
-            variant="secondary"
-            className="absolute bottom-2 right-2 z-10 bg-blue-500 text-sm text-white"
-          >
-            Cuenta Externa
-          </Badge>
-        )}
-      </div>
-
-      {/* Content Section */}
-      <CardContent className="p-3">
-        {/* Price and Location */}
-        <div className="mb-1 flex items-start justify-between">
-          <div>
-            <p className="text-base font-bold">
-              {formatPrice(listing.listings.price)}€
-              {listing.listings.listingType === "Rent" ? "/mes" : ""}
-            </p>
-          </div>
-        </div>
-
-        <div className="mb-2 flex items-center text-muted-foreground">
-          <MapPin className="mr-1 h-3.5 w-3.5" />
-          <p className="line-clamp-1 text-xs">
-            {listing.locations.neighborhood}
-          </p>
-        </div>
-
-        {/* Property Features */}
-        <div className="flex justify-between text-xs">
-          {listing.properties.propertyType !== "garaje" &&
-            listing.properties.propertyType !== "local" && (
-              <>
-                {listing.properties.bedrooms && (
-                  <div className="flex items-center">
-                    <Bed className="mr-1 h-3.5 w-3.5" />
-                    <span>
-                      {listing.properties.bedrooms}{" "}
-                      {listing.properties.bedrooms === 1 ? "Hab" : "Habs"}
-                    </span>
-                  </div>
-                )}
-                {listing.properties.bathrooms && (
-                  <div className="flex items-center">
-                    <Bath className="mr-1 h-3.5 w-3.5" />
-                    <span>
-                      {Math.floor(Number(listing.properties.bathrooms))}{" "}
-                      {Math.floor(Number(listing.properties.bathrooms)) === 1
-                        ? "Baño"
-                        : "Baños"}
-                    </span>
-                  </div>
-                )}
-              </>
-            )}
-          {listing.properties.squareMeter && (
-            <div className="flex items-center">
-              <SquareIcon className="mr-1 h-3.5 w-3.5" />
-              <span>{listing.properties.squareMeter} m²</span>
+                <X className="h-3.5 w-3.5 text-gray-600" />
+              </button>
             </div>
           )}
         </div>
+      </div>
 
-        {/* Tolerance Reasons */}
+      {/* Tolerance Reasons */}
+      <CardContent className="px-2 pt-0 pb-2">
         {toleranceReasons.length > 0 && (
-          <div className="mt-2 space-y-1">
+          <div className="text-center space-y-1">
             <p className="text-xs font-medium text-muted-foreground">
               Tolerancias aplicadas:
             </p>
-            {toleranceReasons.map((reason, index) => (
-              <Badge key={index} variant="outline" className="mr-1 text-xs">
-                {reason}
-              </Badge>
-            ))}
+            <div className="flex flex-wrap justify-center gap-1">
+              {toleranceReasons.map((reason, index) => (
+                <Badge key={index} variant="outline" className="text-xs px-1 py-0">
+                  {reason}
+                </Badge>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>
 
       {/* Footer with Contact Connection */}
-      <CardFooter className="border-t border-border/40 p-3 pt-2">
+      <CardFooter className="border-t border-border/40 p-2 pt-1.5">
         <div className="flex w-full items-center justify-between">
           {/* Left - Property Owner Contact */}
           <div className="flex items-center gap-1">

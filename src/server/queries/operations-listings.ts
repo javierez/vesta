@@ -25,6 +25,7 @@ export type ListingWithDetails = {
   properties: {
     id: bigint;
     propertyType: string | null;
+    title: string | null;
     bedrooms: number | null;
     bathrooms: number | null;
     squareMeter: number | null;
@@ -60,6 +61,7 @@ export async function getAllListingsWithAuth(): Promise<ListingWithDetails[]> {
         // Property fields
         propertyId: properties.propertyId,
         propertyType: properties.propertyType,
+        propertyTitle: properties.title,
         bedrooms: properties.bedrooms,
         bathrooms: properties.bathrooms,
         squareMeter: properties.squareMeter,
@@ -115,6 +117,7 @@ export async function getAllListingsWithAuth(): Promise<ListingWithDetails[]> {
         properties: {
           id: item.propertyId!,
           propertyType: item.propertyType,
+          title: item.propertyTitle,
           bedrooms: item.bedrooms,
           bathrooms: item.bathrooms ? Number(item.bathrooms) : null,
           squareMeter: item.squareMeter,
