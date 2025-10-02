@@ -186,7 +186,29 @@ export function useWebsiteForm(userId?: string): UseWebsiteFormReturn {
             "📋 FORM: metadata.mainpage:",
             result.data.metadata?.mainpage,
           );
-          form.reset(result.data);
+          
+          // Ensure all seoProps fields have defined values (not undefined)
+          const formData = {
+            ...result.data,
+            seoProps: {
+              title: result.data.seoProps?.title ?? "",
+              description: result.data.seoProps?.description ?? "",
+              keywords: result.data.seoProps?.keywords ?? "",
+              name: result.data.seoProps?.name ?? "",
+              email: result.data.seoProps?.email ?? "",
+              telephone: result.data.seoProps?.telephone ?? "",
+              url: result.data.seoProps?.url ?? "",
+              ogTitle: result.data.seoProps?.ogTitle ?? "",
+              ogDescription: result.data.seoProps?.ogDescription ?? "",
+              ogImage: result.data.seoProps?.ogImage ?? "",
+              ogType: result.data.seoProps?.ogType ?? "website",
+              ogUrl: result.data.seoProps?.ogUrl ?? "",
+              ogLocale: result.data.seoProps?.ogLocale ?? "es_ES",
+              ogSiteName: result.data.seoProps?.ogSiteName ?? "",
+            },
+          };
+          
+          form.reset(formData);
           console.log("📋 FORM: Form reset completed with data");
         } else {
           console.log("❌ FORM: Failed to load website configuration:", result);
