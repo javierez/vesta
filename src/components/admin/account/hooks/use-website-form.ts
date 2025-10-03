@@ -187,7 +187,7 @@ export function useWebsiteForm(userId?: string): UseWebsiteFormReturn {
             result.data.metadata?.mainpage,
           );
           
-          // Ensure all seoProps fields have defined values (not undefined)
+          // Ensure all fields have defined values (not undefined)
           const formData = {
             ...result.data,
             seoProps: {
@@ -205,6 +205,13 @@ export function useWebsiteForm(userId?: string): UseWebsiteFormReturn {
               ogUrl: result.data.seoProps?.ogUrl ?? "",
               ogLocale: result.data.seoProps?.ogLocale ?? "es_ES",
               ogSiteName: result.data.seoProps?.ogSiteName ?? "",
+            },
+            heroProps: {
+              title: result.data.heroProps?.title ?? "",
+              subtitle: result.data.heroProps?.subtitle ?? "",
+              backgroundImage: result.data.heroProps?.backgroundImage ?? "",
+              findPropertyButton: result.data.heroProps?.findPropertyButton ?? "Explorar Propiedades",
+              contactButton: result.data.heroProps?.contactButton ?? "Contáctanos",
             },
           };
           
