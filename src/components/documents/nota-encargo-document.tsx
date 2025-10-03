@@ -90,7 +90,7 @@ export function NotaEncargoDocument({ data }: Props) {
             const accountIdStr = userAccountId.toString();
             const brandAsset = await getBrandAsset(accountIdStr);
             
-            if (brandAsset && brandAsset.logoTransparentUrl) {
+            if (brandAsset?.logoTransparentUrl) {
               setBrandLogo(brandAsset.logoTransparentUrl);
             }
             
@@ -129,7 +129,7 @@ export function NotaEncargoDocument({ data }: Props) {
     };
 
     void fetchBrandData();
-  }, [session?.user?.id]);
+  }, [session?.user?.id, data.agency.logo]);
 
   return (
     <div className="bg-white text-black font-sans print:w-[210mm] print:h-[297mm] print:m-0 print:p-0 print:text-[11pt] print:leading-[1.4]">
@@ -252,7 +252,7 @@ export function NotaEncargoDocument({ data }: Props) {
         
         {/* Power Section */}
         <div className="my-6 text-justify">
-          D/ª <strong>{data.client.fullName}</strong>, mayor de edad, que en lo sucesivo se denominará "EL CLIENTE", cuyas demás circunstancias figuran en el encabezamiento, confiere a la AGENTE DE LA PROPIEDAD INMOBILIARIA (A.P.I), {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, con {accountType === "company" ? "C.I.F" : "N.I.F"}: <strong>{taxId}</strong>, con domicilio en las direcciones reseñadas, ENCARGO DE INTERVENCIÓN, de la operación que a continuación se expresa.
+          D/ª <strong>{data.client.fullName}</strong>, mayor de edad, que en lo sucesivo se denominará &ldquo;EL CLIENTE&rdquo;, cuyas demás circunstancias figuran en el encabezamiento, confiere a la AGENTE DE LA PROPIEDAD INMOBILIARIA (A.P.I), {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, con {accountType === 'company' ? 'C.I.F' : 'N.I.F'}: <strong>{taxId}</strong>, con domicilio en las direcciones reseñadas, ENCARGO DE INTERVENCIÓN, de la operación que a continuación se expresa.
         </div>
         
         {/* Operation Section */}
@@ -308,40 +308,40 @@ export function NotaEncargoDocument({ data }: Props) {
           <div className="my-6">
             <div className="font-bold mb-3">1º - AUTORIZACIÓN AL AGENTE</div>
             <div className="text-justify mb-3 leading-relaxed">
-              "EL CLIENTE", que actúa como propietario, autoriza de manera expresa a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, a percibir cantidades a cuenta, sobre el precio de la operación anteriormente reseñada. De igual modo también autoriza a firmar contratos de compromiso, con posibles demandantes del inmueble descrito.
+              &ldquo;EL CLIENTE&rdquo;, que actúa como propietario, autoriza de manera expresa a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, a percibir cantidades a cuenta, sobre el precio de la operación anteriormente reseñada. De igual modo también autoriza a firmar contratos de compromiso, con posibles demandantes del inmueble descrito.
             </div>
             <div className="text-justify mb-3 leading-relaxed">
-              En el caso de que la presente NOTA DE ENCARGO, no la pudiese firmar el titular del Inmueble objeto de la operación descrita, la persona que firme la presente nota, se hace responsable solidario, junto con la persona física o jurídica a la que representa, de las obligaciones que para "EL CLIENTE", se refleja en este contrato.
+              En el caso de que la presente NOTA DE ENCARGO, no la pudiese firmar el titular del Inmueble objeto de la operación descrita, la persona que firme la presente nota, se hace responsable solidario, junto con la persona física o jurídica a la que representa, de las obligaciones que para &ldquo;EL CLIENTE&rdquo;, se refleja en este contrato.
             </div>
           </div>
           
           <div className="my-6">
             <div className="font-bold mb-3">2º - COMISIONES Y PAGOS</div>
             <div className="text-justify mb-3 leading-relaxed">
-              <strong>A)</strong> De las cantidades recibidas, sobre el precio de la operación, "EL CLIENTE", abonará el <strong>{data.commission.percentage}% + I.V.A.</strong> con un mínimo de <strong>{data.commission.minimum} €</strong>, como honorarios a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, siendo autorizada expresamente a que sean satisfechos reteniéndolos de las cantidades recibidas a cuenta del precio en el momento de otorgarse el contrato de compraventa.
+              <strong>A)</strong> De las cantidades recibidas, sobre el precio de la operación, &ldquo;EL CLIENTE&rdquo;, abonará el <strong>{data.commission.percentage}% + I.V.A.</strong> con un mínimo de <strong>{data.commission.minimum} €</strong>, como honorarios a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, siendo autorizada expresamente a que sean satisfechos reteniéndolos de las cantidades recibidas a cuenta del precio en el momento de otorgarse el contrato de compraventa.
             </div>
             <div className="text-justify mb-3 leading-relaxed">
               <strong>B)</strong> La cantidad o cantidades recibidas como señal a cuenta por la compraventa, quedarán en depósito de {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong> hasta la firma de las Escrituras públicas de Compraventa.
             </div>
             <div className="text-justify mb-3 leading-relaxed">
-              <strong>C)</strong> En el supuesto de que {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, intervenga o redacte contratos de compra venta u otra documentación, sobre la compra venta del / los inmueble/s descrito/s en esta nota de encargo, llegándose a señalizar la compra y si finalmente no se llevara a cabo la venta por incumplimiento de cualquiera de las partes, "EL CLIENTE", estará obligado a abonar a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong> la cantidad del 100% de la comisión, más IVA, como intermediación, gastos de gestión, redacción de contratos, etc.
+              <strong>C)</strong> En el supuesto de que {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, intervenga o redacte contratos de compra venta u otra documentación, sobre la compra venta del / los inmueble/s descrito/s en esta nota de encargo, llegándose a señalizar la compra y si finalmente no se llevara a cabo la venta por incumplimiento de cualquiera de las partes, &ldquo;EL CLIENTE&rdquo;, estará obligado a abonar a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong> la cantidad del 100% de la comisión, más IVA, como intermediación, gastos de gestión, redacción de contratos, etc.
             </div>
           </div>
           
           <div className="my-6">
             <div className="font-bold mb-3">3º - DURACIÓN</div>
             <div className="text-justify mb-3 leading-relaxed">
-              <strong>A)</strong> El encargo de esta operación tiene una duración de <strong>{data.duration.months === 12 ? 'doce' : data.duration.months} meses</strong> prorrogables, por el mismo período de tiempo, por ambas partes, transcurrido este plazo sin haberse llevado a cabo, de no mediar denuncia expresa, a no ser que "EL CLIENTE" anteriormente reseñado, con anterioridad a la finalización del plazo comunique por escrito a este despacho su finalización.
+              <strong>A)</strong> El encargo de esta operación tiene una duración de <strong>{data.duration.months === 12 ? 'doce' : data.duration.months} meses</strong> prorrogables, por el mismo período de tiempo, por ambas partes, transcurrido este plazo sin haberse llevado a cabo, de no mediar denuncia expresa, a no ser que &ldquo;EL CLIENTE&rdquo; anteriormente reseñado, con anterioridad a la finalización del plazo comunique por escrito a este despacho su finalización.
             </div>
             <div className="text-justify mb-3 leading-relaxed">
-              <strong>B)</strong> No obstante: si con posterioridad a la finalización del plazo estipulado para este encargo, se llegase a realizar la operación encomendada con alguna persona física o jurídica a la que la agencia de {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, le hubiera enseñado o informado del inmueble descrito durante el tiempo vigente de esta Nota de Encargo y se hicieran gestiones en beneficio de la citada operación, "EL CLIENTE" estará obligado a abonar los honorarios descritos en la cláusula segunda, apartado A), de la presente NOTA DE ENCARGO a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>.
+              <strong>B)</strong> No obstante: si con posterioridad a la finalización del plazo estipulado para este encargo, se llegase a realizar la operación encomendada con alguna persona física o jurídica a la que la agencia de {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>, le hubiera enseñado o informado del inmueble descrito durante el tiempo vigente de esta Nota de Encargo y se hicieran gestiones en beneficio de la citada operación, &ldquo;EL CLIENTE&rdquo; estará obligado a abonar los honorarios descritos en la cláusula segunda, apartado A), de la presente NOTA DE ENCARGO a {accountType === 'company' ? '' : 'D/ª '}<strong>{agentName}</strong>.
             </div>
           </div>
           
           <div className="my-6">
             <div className="font-bold mb-3">4º - OTRAS AGENCIAS</div>
             <div className="text-justify mb-3 leading-relaxed">
-              "EL CLIENTE", <span className="font-bold">{data.hasOtherAgency ? '[SÍ]' : '[NO]'}</span>, tiene encomendada, la venta del mencionado inmueble a otra Agencia de la Propiedad Inmobiliaria.
+              &ldquo;EL CLIENTE&rdquo;, <span className="font-bold">{data.hasOtherAgency ? '[SÍ]' : '[NO]'}</span>, tiene encomendada, la venta del mencionado inmueble a otra Agencia de la Propiedad Inmobiliaria.
             </div>
           </div>
           
@@ -355,7 +355,7 @@ export function NotaEncargoDocument({ data }: Props) {
           <div className="my-6">
             <div className="font-bold mb-3">6º - PROTECCIÓN DE DATOS</div>
             <div className="text-justify mb-3 leading-relaxed">
-              "De conformidad con lo establecido en el REGLAMENTO (UE) 2016/679 de protección de datos de carácter personal, le informamos que los datos que usted nos facilite serán incorporados al sistema de tratamiento titularidad de {agentName} con {accountType === 'company' ? 'C.I.F' : 'N.I.F'} {taxId}, con domicilio en las direcciones reseñadas, correo electrónico: {data.agency.email}, con el fin de prestarle el servicio solicitado. Los datos proporcionados se conservarán mientras se mantenga la relación comercial durante los años necesarios para cumplir con las obligaciones legales. Los datos no se cederán a terceros, salvo en los casos que exista una obligación legal. Usted tiene derecho a obtener confirmación sobre si en {agentName} estamos tratando sus datos personales, por tanto tiene derecho a acceder a sus datos personales, rectificar los datos inexactos o solicitar su supresión cuando los datos no sean necesarios."
+              &ldquo;De conformidad con lo establecido en el REGLAMENTO (UE) 2016/679 de protección de datos de carácter personal, le informamos que los datos que usted nos facilite serán incorporados al sistema de tratamiento titularidad de {agentName} con {accountType === 'company' ? 'C.I.F' : 'N.I.F'} {taxId}, con domicilio en las direcciones reseñadas, correo electrónico: {data.agency.email}, con el fin de prestarle el servicio solicitado. Los datos proporcionados se conservarán mientras se mantenga la relación comercial durante los años necesarios para cumplir con las obligaciones legales. Los datos no se cederán a terceros, salvo en los casos que exista una obligación legal. Usted tiene derecho a obtener confirmación sobre si en {agentName} estamos tratando sus datos personales, por tanto tiene derecho a acceder a sus datos personales, rectificar los datos inexactos o solicitar su supresión cuando los datos no sean necesarios.&rdquo;
             </div>
             <div className="text-justify mb-3 leading-relaxed">
               Así mismo solicito su autorización para ofrecerle productos y servicios relacionados con los solicitados y fidelizarle como cliente. <span className="font-bold">{data.gdprConsent ? '[SÍ]' : '[NO]'}</span>.

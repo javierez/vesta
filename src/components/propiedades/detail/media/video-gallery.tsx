@@ -45,7 +45,7 @@ interface VideoGalleryProps {
 export function VideoGallery({
   videos: initialVideos,
   youtubeLinks,
-  title,
+  title: _title,
   propertyId,
   referenceNumber,
   onVideoUploaded,

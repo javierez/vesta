@@ -1,20 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
+// import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
-import { Skeleton } from "~/components/ui/skeleton";
+// import { Button } from "~/components/ui/button";
+// import { Skeleton } from "~/components/ui/skeleton";
 import {
   Bed,
   Bath,
   Square as SquareIcon,
-  MapPin,
+  // MapPin,
   User,
   X,
-  Mail,
+  // Mail,
   CheckCircle,
   AlertCircle,
   KeyRound,
@@ -22,8 +22,8 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import type { ProspectMatch, MatchAction } from "~/types/connection-matches";
-import { formatPrice, cn } from "~/lib/utils";
-import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImagePlaceholder";
+import { formatPrice } from "~/lib/utils";
+// import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImagePlaceholder";
 
 interface MatchCardProps {
   match: ProspectMatch;
@@ -36,12 +36,12 @@ export const MatchCard = React.memo(function MatchCard({
   onAction,
   showActions = true,
 }: MatchCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
+  // const [imageLoaded, setImageLoaded] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState<MatchAction | null>(
     null,
   );
 
-  const { listing, matchType, toleranceReasons, isCrossAccount, canContact, hasExistingLead, existingLead } =
+  const { listing, matchType, toleranceReasons, isCrossAccount, canContact, hasExistingLead } =
     match;
 
   // Debug logs
@@ -50,8 +50,8 @@ export const MatchCard = React.memo(function MatchCard({
   console.log('📝 MatchCard - Property title:', listing.properties.title);
   console.log('🏷️ MatchCard - Property type:', listing.properties.propertyType);
 
-  const defaultPlaceholder = "";
-  const imageSrc = defaultPlaceholder; // TODO: Add imageUrl when available in ListingWithDetails type
+  // const defaultPlaceholder = "";
+  // const imageSrc = defaultPlaceholder; // TODO: Add imageUrl when available in ListingWithDetails type
 
   const getPropertyTypeLabel = (type: string | null) => {
     switch (type) {
@@ -128,7 +128,7 @@ export const MatchCard = React.memo(function MatchCard({
         {/* First Row - Property Title (Highest Importance) */}
         <div className="mt-2 mb-2">
           <h3 className="text-lg font-bold text-gray-900 leading-tight line-clamp-2">
-            {listing.properties.title || "Propiedad sin título"}
+            {listing.properties.title ?? "Propiedad sin título"}
           </h3>
         </div>
         
@@ -184,7 +184,7 @@ export const MatchCard = React.memo(function MatchCard({
               listing.properties.propertyType !== "local" && (
                 <div className="flex items-center justify-center gap-0.5 text-gray-700">
                   <Bed className="h-3 w-3" />
-                  <span>{listing.properties.bedrooms || "-"}</span>
+                  <span>{listing.properties.bedrooms ?? "-"}</span>
                 </div>
               )}
             
@@ -222,7 +222,7 @@ export const MatchCard = React.memo(function MatchCard({
             {/* Square meters */}
             <div className="flex items-center justify-center gap-0.5 text-gray-700">
               <SquareIcon className="h-3 w-3" />
-              <span>{listing.properties.squareMeter || "-"}m²</span>
+              <span>{listing.properties.squareMeter ?? "-"}m²</span>
             </div>
           </div>
           

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -66,15 +66,7 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
     },
   });
 
-  // Load account data and terms when modal opens
-  useEffect(() => {
-    if (isOpen && session?.user?.id) {
-      console.log("Modal opened, loading account terms...");
-      loadAccountTerms();
-    }
-  }, [isOpen, session?.user?.id]);
-
-  const loadAccountTerms = async () => {
+  const loadAccountTerms = useCallback(async () => {
     console.log("loadAccountTerms called, session:", session?.user?.id);
     if (!session?.user?.id) {
       console.log("No session found, skipping account terms load");
@@ -92,7 +84,7 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
       const accountResult = await getAccountDetailsAction(userAccountId);
       
       if (accountResult.success && accountResult.data?.terms) {
-        const terms = accountResult.data.terms as Record<string, unknown>;
+        const terms = accountResult.data.terms;
         form.reset({
           commission: (terms.commission as number) ?? 3.0,
           min_commission: (terms.min_commission as number) ?? 1500,
@@ -109,7 +101,15 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
     } finally {
       setIsLoadingTerms(false);
     }
-  };
+  }, [session?.user?.id, form]);
+
+  // Load account data and terms when modal opens
+  useEffect(() => {
+    if (isOpen && session?.user?.id) {
+      console.log("Modal opened, loading account terms...");
+      void loadAccountTerms();
+    }
+  }, [isOpen, session?.user?.id, loadAccountTerms]);
 
   const onSubmit = async (data: TermsFormData) => {
     console.log("Modal onSubmit called with data:", data);
@@ -118,7 +118,7 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
     
     try {
       // Generate contract with the selected terms (keep modal open with animation)
-      await onContinue(data);
+      onContinue(data);
       // Close modal only after successful generation
       onClose();
     } catch (error) {

@@ -229,7 +229,7 @@ export function ConexionesPotenciales({
       };
       
       setError(
-        `Error al ${actionMessages[action] || action} la coincidencia`,
+        `Error al ${actionMessages[action] ?? action} la coincidencia`,
       );
     } finally {
       setActionLoading(null);

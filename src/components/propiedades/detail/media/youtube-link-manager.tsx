@@ -6,7 +6,7 @@ import {
   Trash2,
   Edit,
   ExternalLink,
-  X,
+  // X,
   CheckSquare2,
   Square,
   Eye,
@@ -43,8 +43,8 @@ interface YouTubeLinkManagerProps {
 // Helper function to extract video ID from YouTube URL
 const extractVideoId = (url: string): string | null => {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2] && match[2].length === 11 ? match[2] : null;
+  const match = regExp.exec(url);
+  return match?.[2] && match[2].length === 11 ? match[2] : null;
 };
 
 // Helper function to get YouTube thumbnail URL

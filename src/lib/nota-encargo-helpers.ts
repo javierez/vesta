@@ -113,7 +113,7 @@ export function translateListingType(listingType: string): string {
     "RoomSharing": "Habitación compartida",
   };
   
-  return translations[listingType] || listingType;
+  return translations[listingType] ?? listingType;
 }
 
 /**
@@ -179,12 +179,12 @@ export function formatClientData(
   const fullAddress = addressParts.join(', ') || "";
   
   return {
-    fullName: `${contactData.contactFirstName || ''} ${contactData.contactLastName || ''}`.trim() || "No especificado",
-    nif: contactData.contactNif || "",
+    fullName: `${contactData.contactFirstName ?? ''} ${contactData.contactLastName ?? ''}`.trim() || "No especificado",
+    nif: contactData.contactNif ?? "",
     address: fullAddress,
-    city: propertyAddress.city || "", // Use the property's city from locations table
-    postalCode: propertyAddress.postalCode || "",
-    phone: contactData.contactPhone || "",
+    city: propertyAddress.city ?? "", // Use the property's city from locations table
+    postalCode: propertyAddress.postalCode ?? "",
+    phone: contactData.contactPhone ?? "",
   };
 }
 
@@ -194,8 +194,9 @@ export function formatClientData(
  * @returns Listing ID as bigint or null if not found
  */
 export function extractListingIdFromPathname(pathname: string): bigint | null {
-  const match = pathname.match(/\/propiedades\/(\d+)/);
-  if (match && match[1]) {
+  const regex = /\/propiedades\/(\d+)/;
+  const match = regex.exec(pathname);
+  if (match?.[1]) {
     return BigInt(match[1]);
   }
   return null;
@@ -213,7 +214,7 @@ export function transformToNotaEncargoPDF(
 ): NotaEncargoPDFData {
   const documentNumber = generateDocumentNumber(rawData.listingId);
   const currentDate = new Date().toLocaleDateString('es-ES');
-  const city = rawData.city || "León"; // Default fallback
+  const city = rawData.city ?? "León"; // Default fallback
   
   // Format client data
   const clientData = formatClientData({
@@ -222,7 +223,7 @@ export function transformToNotaEncargoPDF(
     contactNif: rawData.contactNif,
     contactPhone: rawData.contactPhone,
     contactEmail: rawData.contactEmail,
-    contactAdditionalInfo: rawData.contactAdditionalInfo || {},
+    contactAdditionalInfo: rawData.contactAdditionalInfo ?? {},
   }, {
     street: rawData.street,
     addressDetails: rawData.addressDetails,
@@ -235,22 +236,22 @@ export function transformToNotaEncargoPDF(
     
     agency: {
       agentName: formatAgentName(rawData.accountName, rawData.accountType),
-      collegiateNumber: rawData.accountCollegiateNumber || "",
-      agentNIF: rawData.accountTaxId || "",
-      website: rawData.accountWebsite || "",
-      email: rawData.accountEmail || "",
+      collegiateNumber: rawData.accountCollegiateNumber ?? "",
+      agentNIF: rawData.accountTaxId ?? "",
+      website: rawData.accountWebsite ?? "",
+      email: rawData.accountEmail ?? "",
       offices: [{
-        address: rawData.accountAddress || "",
+        address: rawData.accountAddress ?? "",
         city: city,
         postalCode: "", // TODO: Extract from address if needed
-        phone: rawData.accountPhone || "",
+        phone: rawData.accountPhone ?? "",
       }],
     },
     
     client: clientData,
     
     property: {
-      description: rawData.shortDescription || rawData.description || "No especificado",
+      description: rawData.shortDescription ?? rawData.description ?? "No especificado",
       allowSignage: termsData.allowSignage ? "Sí" : "No",
       energyCertificate: formatEnergyCertificate(
         rawData.energyConsumptionScale,

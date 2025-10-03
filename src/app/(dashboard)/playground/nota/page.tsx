@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { NotaEncargoDocument } from '~/components/documents/nota-encargo-document';
 import { toast } from 'sonner';
 import { Loader2, Download, FileText } from 'lucide-react';

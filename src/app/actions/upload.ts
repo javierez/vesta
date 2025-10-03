@@ -300,15 +300,15 @@ export async function addVirtualTourLink(
     }
 
     // Common virtual tour platforms validation
-    const _supportedPlatforms = [
-      'matterport.com',
-      'kuula.co',
-      '360cities.net',
-      'roundme.com',
-      'pano2vr.com',
-      'vrpano.com',
-      'momento360.com',
-    ];
+    // const _supportedPlatforms = [
+    //   'matterport.com',
+    //   'kuula.co',
+    //   '360cities.net',
+    //   'roundme.com',
+    //   'pano2vr.com',
+    //   'vrpano.com',
+    //   'momento360.com',
+    // ];
 
     let tourId = '';
     let platform = 'generic';
