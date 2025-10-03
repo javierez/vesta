@@ -8,6 +8,7 @@ import {
   propertyImages,
   users,
   listingContacts,
+  contacts,
   accounts,
   websiteProperties,
 } from "../db/schema";
@@ -1684,6 +1685,47 @@ export async function getListingCartelSaveData(listingId: number) {
     return cartelSaveData;
   } catch (error) {
     console.error("Error fetching listing cartel save data:", error);
+    throw error;
+  }
+}
+
+// Get listing contacts by listingId - returns contactId and name for pre-populating forms
+export async function getListingContactsByIdWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  
+  console.log("🔍 [getListingContactsByIdWithAuth] Starting query with:", {
+    listingId,
+    accountId,
+    bigIntListingId: BigInt(listingId),
+    bigIntAccountId: BigInt(accountId)
+  });
+  
+  try {
+    const contactsData = await db
+      .select({
+        contactId: listingContacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(listingContacts.listingId, BigInt(listingId)),
+          eq(listingContacts.isActive, true),
+          eq(contacts.isActive, true),
+          eq(contacts.accountId, BigInt(accountId))
+        ),
+      );
+
+    console.log("📋 [getListingContactsByIdWithAuth] Query result:", {
+      count: contactsData.length,
+      contacts: contactsData
+    });
+
+    return contactsData;
+  } catch (error) {
+    console.error("❌ [getListingContactsByIdWithAuth] Error fetching listing contacts:", error);
     throw error;
   }
 }

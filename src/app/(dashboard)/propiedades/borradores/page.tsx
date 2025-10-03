@@ -53,7 +53,7 @@ export default function BorradoresPage() {
   }, []);
 
   const handleRowClick = (listingId: bigint) => {
-    router.push(`/propiedades/crear/${listingId.toString()}`);
+    router.push(`/propiedades/registro/${listingId.toString()}`);
   };
 
   const handleDelete = async (listingId: bigint, e: React.MouseEvent) => {

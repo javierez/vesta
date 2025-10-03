@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { FloatingLabelInput } from "~/components/ui/floating-label-input";
@@ -18,6 +18,7 @@ import { useFormContext } from "../form-context";
 import ContactPopup from "./contact-popup";
 import { Checkbox } from "~/components/ui/checkbox";
 import { searchContactsForFormWithAuth } from "~/server/queries/contact";
+import { getListingContactsByIdWithAuth } from "~/server/queries/listing";
 
 // Type definitions
 interface Contact {
@@ -38,7 +39,7 @@ interface NewContact {
 }
 
 interface FirstPageProps {
-  _listingId?: string; // Optional since it's unused (prefixed with _ to indicate unused)
+  listingId?: string; // Now actively used for fetching listing contacts
   onNext: () => void;
   onBack?: () => void;
 }
@@ -55,7 +56,7 @@ interface FirstPageFormData {
 
 
 export default function FirstPage({
-  _listingId,
+  listingId,
   onNext,
   onBack,
 }: FirstPageProps) {
@@ -66,22 +67,58 @@ export default function FirstPage({
   const [searchResults, setSearchResults] = useState<Contact[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [listingContacts, setListingContacts] = useState<Contact[]>([]);
 
   // Fallback price formatting functions in case formFormatters is undefined
   const formatPriceInput = (value: string | number): string => {
     if (!value) return "";
-    const numericValue =
-      typeof value === "string"
-        ? value.replace(/[^\d]/g, "")
-        : value.toString();
-    if (!numericValue) return "";
-    // Add thousand separators
-    const formatted = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return formatted;
+    
+    let strValue = typeof value === "string" ? value : value.toString();
+    
+    // Split by decimal point to handle integer and decimal parts separately
+    const parts = strValue.split('.');
+    let integerPart = parts[0] || "";
+    const decimalPart = parts[1];
+    
+    // Remove any existing formatting from integer part
+    integerPart = integerPart.replace(/[^\d]/g, "");
+    
+    if (!integerPart) return "";
+    
+    // Add thousand separators to integer part only
+    const formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    
+    // Don't show decimal part if it's "00"
+    const finalResult = (decimalPart && decimalPart !== "00") ? `${formatted},${decimalPart}` : formatted;
+    return finalResult;
   };
 
   const getNumericPrice = (formattedValue: string): string => {
-    return formattedValue.replace(/[^\d]/g, "");
+    // Handle format like "21.000.00" where last period is decimal separator
+    let result = formattedValue;
+    
+    // Find the last period - this is the decimal separator
+    const lastPeriodIndex = result.lastIndexOf('.');
+    
+    if (lastPeriodIndex !== -1) {
+      // Split into integer and decimal parts
+      const integerPart = result.substring(0, lastPeriodIndex);
+      const decimalPart = result.substring(lastPeriodIndex + 1);
+      
+      // Remove thousand separators from integer part, keep only digits
+      const cleanInteger = integerPart.replace(/[^\d]/g, "");
+      
+      // Keep only digits in decimal part
+      const cleanDecimal = decimalPart.replace(/[^\d]/g, "");
+      
+      // Reconstruct as standard decimal format
+      result = cleanDecimal ? `${cleanInteger}.${cleanDecimal}` : cleanInteger;
+    } else {
+      // No decimal point, just remove non-digits
+      result = result.replace(/[^\d]/g, "");
+    }
+    
+    return result;
   };
 
   // Close tooltip when clicking outside
@@ -179,6 +216,47 @@ export default function FirstPage({
     }
   }, [state.currentContacts, state.formData.price, state.formData.listingType, updateField]);
 
+  // Fetch and populate listing contacts when listingId is available
+  useEffect(() => {
+    const fetchListingContacts = async () => {
+      console.log("🔍 [FirstPage] Checking listing contacts for listingId:", listingId);
+      
+      if (!listingId) {
+        console.log("❌ [FirstPage] No listingId provided, skipping listing contacts fetch");
+        return;
+      }
+      
+      try {
+        console.log("📞 [FirstPage] Fetching listing contacts for listingId:", listingId);
+        const listingContacts = await getListingContactsByIdWithAuth(Number(listingId));
+        console.log("📋 [FirstPage] Received listing contacts:", listingContacts);
+        
+        if (listingContacts && listingContacts.length > 0) {
+          // Convert to Contact format for UI display
+          const contactsForUI: Contact[] = listingContacts.map(contact => ({
+            id: Number(contact.contactId),
+            name: `${contact.firstName} ${contact.lastName}`
+          }));
+          
+          // Store in state for UI display
+          setListingContacts(contactsForUI);
+          
+          // Update selected contact IDs
+          const contactIds = listingContacts.map(contact => contact.contactId.toString());
+          console.log("✅ [FirstPage] Converting to contactIds:", contactIds);
+          updateField("selectedContactIds", contactIds);
+          console.log("💾 [FirstPage] Updated selectedContactIds with listing contacts");
+        } else {
+          console.log("⚠️ [FirstPage] No listing contacts found or empty array");
+        }
+      } catch (error) {
+        console.error("❌ [FirstPage] Error fetching listing contacts:", error);
+      }
+    };
+
+    fetchListingContacts();
+  }, [listingId, updateField]);
+
   // Handle price input with formatting
   const handlePriceChange = (value: string) => {
     const numericValue =
@@ -186,8 +264,18 @@ export default function FirstPage({
     updateField("price", numericValue);
   };
 
-  // Get contacts to display - show search results or empty state
-  const contactsToDisplay = searchResults;
+  // Get contacts to display - combine listing contacts with search results, avoid duplicates
+  const contactsToDisplay = useMemo(() => {
+    if (contactSearch.trim()) {
+      // When searching, show search results + listing contacts (avoid duplicates)
+      const searchContactIds = new Set(searchResults.map(c => c.id));
+      const uniqueListingContacts = listingContacts.filter(c => !searchContactIds.has(c.id));
+      return [...searchResults, ...uniqueListingContacts];
+    } else {
+      // When not searching, show only listing contacts
+      return listingContacts;
+    }
+  }, [searchResults, listingContacts, contactSearch]);
 
   // Update the toggle logic and state management
   const handleListingTypeTab = (type: string) => {
@@ -267,10 +355,7 @@ export default function FirstPage({
       {/* Price Section */}
       <FloatingLabelInput
         id="price"
-        value={
-          formFormatters?.formatPriceInput(formData.price) ||
-          formatPriceInput(formData.price)
-        }
+        value={formatPriceInput(formData.price)}
         onChange={handlePriceChange}
         placeholder="Precio (€)"
         type="text"
@@ -609,7 +694,7 @@ export default function FirstPage({
       {/* Contacts Section */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-md font-medium text-gray-900">Contactos</h3>
+          <h3 className="text-md font-medium text-gray-900">Propietarios</h3>
           <Button
             variant="outline"
             size="sm"
