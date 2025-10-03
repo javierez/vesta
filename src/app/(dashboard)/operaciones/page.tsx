@@ -53,7 +53,7 @@ function OperacionesSummaryCardSkeleton() {
 
             {/* Desglose de Operaciones */}
             <div className="mt-4 flex w-full flex-col gap-1.5">
-              {[...Array(3)].map((_, i) => (
+              {[...Array(3) as unknown[]].map((_, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 20 }}
@@ -90,7 +90,7 @@ function QuickActionsCardSkeleton() {
       <Card className="group relative">
         <CardContent>
           <div className="mb-4 mt-8 grid grid-cols-2 gap-3">
-            {[...Array(6)].map((_, i) => (
+            {[...Array(6) as unknown[]].map((_, i) => (
               <motion.div
                 key={i}
                 className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
@@ -130,7 +130,7 @@ function WorkQueueCardSkeleton() {
               </div>
 
               <div className="space-y-1.5 max-h-80 overflow-y-auto custom-scrollbar pr-1">
-                {[...Array(4)].map((_, i) => (
+                {[...Array(4) as unknown[]].map((_, i) => (
                   <motion.div
                     key={i}
                     className="relative cursor-pointer p-2 sm:p-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 bg-white"
@@ -171,7 +171,7 @@ function WorkQueueCardSkeleton() {
               </div>
 
               <div className="space-y-3">
-                {[...Array(2)].map((_, groupIndex) => (
+                {[...Array(2) as unknown[]].map((_, groupIndex) => (
                   <div key={groupIndex} className="space-y-2">
                     {/* Date Separator */}
                     <div className="flex items-center py-1">
@@ -180,7 +180,7 @@ function WorkQueueCardSkeleton() {
 
                     {/* Appointments for this date */}
                     <div className="space-y-2">
-                      {[...Array(2)].map((_, i) => (
+                      {[...Array(2) as unknown[]].map((_, i) => (
                         <motion.div
                           key={`${groupIndex}-${i}`}
                           className="group relative cursor-pointer rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100 transition-all duration-200 hover:shadow-md hover:ring-gray-200"

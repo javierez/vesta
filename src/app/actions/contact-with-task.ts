@@ -19,8 +19,8 @@ interface ContactData {
 
 interface CreateContactWithTaskResult {
   success: boolean;
-  contact?: any;
-  task?: any;
+  contact?: unknown;
+  task?: unknown;
   error?: string;
 }
 

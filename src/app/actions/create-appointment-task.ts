@@ -8,7 +8,7 @@ import { eq, and } from "drizzle-orm";
 
 interface CreateAppointmentTaskResult {
   success: boolean;
-  task?: any;
+  task?: unknown;
   error?: string;
 }
 

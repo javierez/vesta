@@ -131,12 +131,12 @@ export async function getOfficeInfoAction(accountId: bigint): Promise<{
       .from(websiteProperties)
       .where(eq(websiteProperties.accountId, accountId));
 
-    if (!websiteConfig || !websiteConfig.contactProps) {
+    if (!websiteConfig?.contactProps) {
       return { success: false, error: "Website configuration not found" };
     }
 
     // Parse contactProps JSON
-    let contactProps;
+    let contactProps: unknown;
     try {
       contactProps = typeof websiteConfig.contactProps === "string" 
         ? JSON.parse(websiteConfig.contactProps) 
@@ -147,16 +147,23 @@ export async function getOfficeInfoAction(accountId: bigint): Promise<{
     }
 
     // Extract and format offices
-    const offices = contactProps?.offices?.map((office: any) => ({
-      address: office.address?.street || "",
-      city: office.address?.city || "",
-      postalCode: office.address?.state || "",
-      phone: office.phoneNumbers?.main || "",
-    })) || [];
+    const parsedContactProps = contactProps as { offices?: unknown[] };
+    const offices = parsedContactProps?.offices?.map((office: unknown) => {
+      const officeData = office as {
+        address?: { street?: string; city?: string; state?: string };
+        phoneNumbers?: { main?: string };
+      };
+      return {
+        address: officeData.address?.street ?? "",
+        city: officeData.address?.city ?? "",
+        postalCode: officeData.address?.state ?? "",
+        phone: officeData.phoneNumbers?.main ?? "",
+      };
+    }) ?? [];
 
     return { 
       success: true, 
-      offices: offices.filter((office: any) => office.address || office.city || office.phone)
+      offices: offices.filter((office) => office.address ?? office.city ?? office.phone)
     };
 
   } catch (error) {
