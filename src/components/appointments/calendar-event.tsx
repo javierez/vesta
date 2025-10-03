@@ -129,7 +129,7 @@ export default function CalendarEvent({
   };
 
   // Calculate travel time block height (1px per minute on calendar)
-  const travelTimeHeight = event.tripTimeMinutes || 0;
+  const travelTimeHeight = event.tripTimeMinutes ?? 0;
 
   // Get the base color for fading travel blocks
   const getBaseColor = () => {

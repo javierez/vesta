@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "~/lib/utils";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText } from "lucide-react";
 import { TermsModal } from "./terms-modal";
 import { getNotaEncargoData } from "~/server/queries/nota-encargo";
 import { transformToNotaEncargoPDF, extractListingIdFromPathname } from "~/lib/nota-encargo-helpers";
@@ -106,7 +106,14 @@ export function HojaEncargoButton({ propertyId, onDocumentGenerated, className }
         throw new Error("Error al guardar el documento en el sistema");
       }
 
-      const uploadedDocument = await uploadResponse.json();
+      const uploadedDocument = await uploadResponse.json() as {
+        docId: string | number;
+        filename: string;
+        fileType: string;
+        fileUrl: string;
+        uploadedAt: string;
+        documentKey: string;
+      };
       console.log("✅ Document uploaded successfully:", uploadedDocument);
 
       // Convert the response to the expected DocumentRecord format

@@ -696,8 +696,8 @@ export function AccountConfiguration() {
                                   max="100"
                                   step="0.1"
                                   {...field}
-                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                  value={field.value || 0}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value) ?? 0)}
+                                  value={field.value ?? 0}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -720,8 +720,8 @@ export function AccountConfiguration() {
                                   min="0"
                                   step="1"
                                   {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                  value={field.value || 0}
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) ?? 0)}
+                                  value={field.value ?? 0}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -745,8 +745,8 @@ export function AccountConfiguration() {
                                 min="1"
                                 step="1"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 12)}
-                                value={field.value || 12}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) ?? 12)}
+                                value={field.value ?? 12}
                               />
                             </FormControl>
                             <FormMessage />
