@@ -73,11 +73,11 @@ export default function FirstPage({
   const formatPriceInput = (value: string | number): string => {
     if (!value) return "";
     
-    let strValue = typeof value === "string" ? value : value.toString();
+    const strValue = typeof value === "string" ? value : value.toString();
     
     // Split by decimal point to handle integer and decimal parts separately
     const parts = strValue.split('.');
-    let integerPart = parts[0] || "";
+    let integerPart = parts[0] ?? "";
     const decimalPart = parts[1];
     
     // Remove any existing formatting from integer part
@@ -254,7 +254,7 @@ export default function FirstPage({
       }
     };
 
-    fetchListingContacts();
+    void fetchListingContacts();
   }, [listingId, updateField]);
 
   // Handle price input with formatting

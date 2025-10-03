@@ -213,6 +213,28 @@ export function useWebsiteForm(userId?: string): UseWebsiteFormReturn {
               findPropertyButton: result.data.heroProps?.findPropertyButton ?? "Explorar Propiedades",
               contactButton: result.data.heroProps?.contactButton ?? "Contáctanos",
             },
+            aboutProps: {
+              ...result.data.aboutProps,
+              services: result.data.aboutProps?.services ?? [],
+              title: result.data.aboutProps?.title ?? "Sobre Nosotros",
+              subtitle: result.data.aboutProps?.subtitle ?? "",
+              content: result.data.aboutProps?.content ?? "",
+              content2: result.data.aboutProps?.content2 ?? "",
+              image: result.data.aboutProps?.image ?? "",
+              maxServicesDisplayed: result.data.aboutProps?.maxServicesDisplayed ?? 6,
+              servicesSectionTitle: result.data.aboutProps?.servicesSectionTitle ?? "Nuestros Servicios",
+              aboutSectionTitle: result.data.aboutProps?.aboutSectionTitle ?? "Nuestra Misión",
+              buttonName: result.data.aboutProps?.buttonName ?? "Contacta a Nuestro Equipo",
+              showKPI: result.data.aboutProps?.showKPI ?? true,
+              kpi1Name: result.data.aboutProps?.kpi1Name ?? "",
+              kpi1Data: result.data.aboutProps?.kpi1Data ?? "",
+              kpi2Name: result.data.aboutProps?.kpi2Name ?? "",
+              kpi2Data: result.data.aboutProps?.kpi2Data ?? "",
+              kpi3Name: result.data.aboutProps?.kpi3Name ?? "",
+              kpi3Data: result.data.aboutProps?.kpi3Data ?? "",
+              kpi4Name: result.data.aboutProps?.kpi4Name ?? "",
+              kpi4Data: result.data.aboutProps?.kpi4Data ?? "",
+            },
           };
           
           form.reset(formData);
