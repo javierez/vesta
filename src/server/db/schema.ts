@@ -739,3 +739,56 @@ export const accountRoles = singlestoreTable("account_roles", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
+
+// Notifications table
+export const notifications = singlestoreTable("notifications", {
+  // Primary Key
+  notificationId: bigint("notification_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
+  
+  // Account for multi-tenant security
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  
+  // User targeting
+  userId: varchar("user_id", { length: 36 }), // FK → users.id (null = broadcast to all account users)
+  fromUserId: varchar("from_user_id", { length: 36 }), // FK → users.id (who triggered it, can be system)
+  
+  // Notification content
+  type: varchar("type", { length: 50 }).notNull(), // 'appointment_reminder', 'new_lead', 'property_update', 'task_due', 'deal_status', 'document_uploaded', 'comment_reply', 'portal_sync', 'system_alert'
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  actionUrl: varchar("action_url", { length: 500 }), // Where to navigate when clicked
+  
+  // Priority and categorization
+  priority: varchar("priority", { length: 20 }).default("normal"), // 'low', 'normal', 'high', 'urgent'
+  category: varchar("category", { length: 50 }).notNull(), // 'appointments', 'properties', 'contacts', 'deals', 'tasks', 'system'
+  
+  // Entity relationships (polymorphic references)
+  entityType: varchar("entity_type", { length: 50 }), // 'property', 'listing', 'contact', 'appointment', 'task', 'deal', 'prospect', 'document'
+  entityId: bigint("entity_id", { mode: "bigint" }), // ID of the related entity
+  
+  // Additional metadata
+  metadata: json("metadata").default({}), // Flexible field for extra data (e.g., appointment time, property address)
+  
+  // Notification state
+  isRead: boolean("is_read").default(false),
+  readAt: timestamp("read_at"),
+  isDismissed: boolean("is_dismissed").default(false),
+  dismissedAt: timestamp("dismissed_at"),
+  
+  // Delivery tracking
+  deliveryChannel: varchar("delivery_channel", { length: 50 }).default("in_app"), // 'in_app', 'email', 'push', 'sms'
+  isDelivered: boolean("is_delivered").default(false),
+  deliveredAt: timestamp("delivered_at"),
+  deliveryError: text("delivery_error"), // Error message if delivery failed
+  
+  // Scheduling (for future notifications)
+  scheduledFor: timestamp("scheduled_for"), // When to send (null = immediate)
+  expiresAt: timestamp("expires_at"), // Auto-dismiss after this time
+  
+  // System fields
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  isActive: boolean("is_active").default(true),
+});

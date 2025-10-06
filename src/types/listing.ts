@@ -26,6 +26,8 @@ export type ListingOverview = {
   // View-specific fields (conditional presence)
   ownerId?: bigint | null;
   ownerName?: string | null;
+  ownerPhone?: string | null;
+  ownerEmail?: string | null;
   title?: string | null;
   propertyId?: bigint;
   agentId?: string;

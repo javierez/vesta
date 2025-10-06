@@ -265,6 +265,8 @@ export const PropertyTable = React.memo(function PropertyTable({
         : baseUrl;
       const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
       const message = `Échale un vistazo: ${propertyUrl}`;
+      
+      // WhatsApp URL without specific recipient - user selects in WhatsApp
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
 
       window.open(whatsappUrl, "_blank");

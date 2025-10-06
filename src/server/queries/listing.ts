@@ -576,6 +576,8 @@ export async function listListings(
             imageUrl: sql<string>`img1.image_url`,
             ownerId: sql<bigint | null>`owner_contact.contact_id`,
             ownerName: sql<string>`CONCAT(owner_contact.first_name, ' ', owner_contact.last_name)`,
+            ownerPhone: sql<string | null>`owner_contact.phone`,
+            ownerEmail: sql<string | null>`owner_contact.email`,
           })
         : db.select({
             // Grid view: optimized fields
@@ -635,6 +637,8 @@ export async function listListings(
             c.contact_id,
             c.first_name,
             c.last_name,
+            c.phone,
+            c.email,
             ROW_NUMBER() OVER (PARTITION BY lc.listing_id ORDER BY lc.created_at ASC) as rn
           FROM listing_contacts lc
           JOIN contacts c ON lc.contact_id = c.contact_id
