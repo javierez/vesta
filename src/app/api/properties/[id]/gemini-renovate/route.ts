@@ -73,14 +73,52 @@ export async function POST(
       );
     }
 
-    console.log('Starting Gemini renovation:', {
+    console.log('Starting Gemini renovation with ASSEMBLY PROMPTS:', {
       propertyId: propertyId.toString(),
       imageSize: getImageSizeInMB(imageBase64).toFixed(2) + 'MB',
-      renovationType: data.renovationType ?? 'auto-detect'
+      renovationType: data.renovationType ?? 'auto-detect',
+      usingAssemblyPrompts: true
     });
 
-    // 6. Call Gemini API for renovation (synchronous)
-    const result = await geminiClient.renovateImage(imageBase64, data.renovationType);
+    // 6. Determine room type - use auto-detection if needed
+    let finalRoomType: RenovationType;
+    
+    // Check if provided room type is valid
+    const validRoomTypes: RenovationType[] = [
+      'living_room', 'bedroom', 'bathroom', 'entrance_hall', 
+      'terrace', 'balcony', 'kitchen', 'dining_room'
+    ];
+    
+    if (data.renovationType && validRoomTypes.includes(data.renovationType as RenovationType)) {
+      // Use provided room type if it's valid
+      finalRoomType = data.renovationType as RenovationType;
+      console.log('✅ Using provided room type:', finalRoomType);
+    } else {
+      // Auto-detect room type using Gemini
+      console.log('🔍 Auto-detecting room type...');
+      
+      // Call the room detection through the Gemini client
+      const detectionResult = await geminiClient.detectRoomType(imageBase64);
+      
+      if (detectionResult.success && detectionResult.roomType) {
+        finalRoomType = detectionResult.roomType;
+        console.log('✅ Room detection successful:', {
+          detectedType: finalRoomType,
+          confidence: detectionResult.confidence
+        });
+      } else {
+        console.warn('⚠️ Room detection failed, using fallback:', detectionResult.error);
+        finalRoomType = 'living_room'; // Default fallback
+      }
+    }
+
+    // 7. Call Gemini API for renovation using assembly prompts (synchronous)
+    const result = await geminiClient.renovateImageWithAssembly(
+      imageBase64, 
+      finalRoomType,
+      undefined, // Use all elements 
+      'default' // Use default style
+    );
 
     if (!result.success) {
       console.error('Gemini renovation failed:', result.error);

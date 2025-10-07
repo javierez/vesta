@@ -20,8 +20,21 @@ export interface GeminiTaskStatus {
   error?: string;
 }
 
-// Renovation types for different room prompts
-export type RenovationType = 'kitchen' | 'bathroom' | 'living_room' | 'bedroom' | 'generic';
+// Renovation types for different room prompts - 8 specific room types
+export type RenovationType = 'living_room' | 'bedroom' | 'bathroom' | 'entrance_hall' | 'terrace' | 'balcony' | 'kitchen' | 'dining_room';
+
+// Room detection interface
+export interface RoomDetectionResponse {
+  success: boolean;
+  roomType?: RenovationType;
+  confidence?: number; // 0-1 score
+  error?: string;
+}
+
+// Room detection request
+export interface RoomDetectionRequest {
+  imageBase64: string;
+}
 
 // Renovation prompts for different room types
 export const RENOVATION_PROMPTS: Record<RenovationType, string> = {
@@ -29,72 +42,77 @@ export const RENOVATION_PROMPTS: Record<RenovationType, string> = {
   bathroom: "PRECISION REQUIRED: Generate a high-fidelity bathroom renovation. PRESERVE STRUCTURAL POSITIONS: Wall locations, door/window openings, plumbing locations. MANDATORY WALL TRANSFORMATIONS: MUST completely change all wall colors, tiles, and finishes from original - make walls dramatically different. MUST transform shower/tub walls with new tile work. FULL RENOVATION REQUIRED: Complete tile transformation (walls and floors), new vanity (completely different style/color from original), updated fixtures, dramatic wall color/finish changes, new lighting, contemporary accessories. FURNITURE MANDATE: All furniture, storage, seating must be completely different styles and colors from original. REMOVE ALL PERSONAL ITEMS: Remove toiletries, towels, personal items, cultural symbols. TRANSFORM APPEARANCE: Every surface and furniture piece must look completely renovated.",
   living_room: "PRECISION REQUIRED: Generate a high-fidelity living room renovation. PRESERVE STRUCTURAL POSITIONS: Wall locations, door/window openings, ceiling height, built-ins locations. MANDATORY WALL TRANSFORMATIONS: MUST completely change all wall colors, paint, and finishes from original - make walls dramatically different. MUST add/change accent walls with new colors or materials. FULL RENOVATION REQUIRED: Completely different furniture (different styles, colors, arrangements from original), dramatic wall color changes, new flooring, updated lighting fixtures, new window treatments, contemporary decor. FURNITURE MANDATE: Sofas, chairs, tables, storage - all must be completely different styles and colors from original. REMOVE ALL PERSONAL ITEMS: Remove photos, books, personal artwork, cultural symbols, memorabilia. TRANSFORM APPEARANCE: Every surface and furniture piece must look completely renovated.",
   bedroom: "PRECISION REQUIRED: Generate a high-fidelity bedroom renovation. PRESERVE STRUCTURAL POSITIONS: Wall locations, door/window openings, ceiling height, built-in locations. MANDATORY WALL TRANSFORMATIONS: MUST completely change all wall colors, paint, and finishes from original - make walls dramatically different. MUST add/change accent walls with new colors or materials. FULL RENOVATION REQUIRED: Completely different furniture (different bed style, nightstands, dressers - all different colors and styles from original), dramatic wall color changes, new flooring, updated lighting fixtures, new window treatments, contemporary bedding and decor. FURNITURE MANDATE: All bedroom furniture must be completely different styles and colors from original. REMOVE ALL PERSONAL ITEMS: Remove clothing, photos, personal artwork, cultural symbols. TRANSFORM APPEARANCE: Every surface and furniture piece must look completely renovated.",
-  generic: `
-    Generate a renovation of the given image maintaining exact structural positioning PRECISION REQUIRED.
-
-    PRESERVE STRUCTURAL POSITIONS EXACTLY:
-    - Wall locations and dimensions (but CHANGE their appearance and materials completely)
-    - Door openings (but update door styles/materials/colors)
-    - Window openings (but update window frames/treatments)
-    - Ceiling height (but change ceiling finishes/treatments)
-    - Floor plan layout (but completely change flooring materials)
-    - Built-in structural elements (but update their finishes)
-
-
-    MANDATORY COMPLETE TRANSFORMATIONS:
-    - FURNITURE: Replace ALL furniture with completely different styles, colors, and arrangements - no piece should look similar to original
-    - WALLS: Change ALL wall colors, paint, textures, and finishes dramatically
-    - DECOR: Replace all accessories, artwork, and decorative items entirely
-    - LIGHTING: Update all fixtures to match new style aesthetic
-    - TEXTILES: New window treatments, rugs, and soft goods in style-appropriate colors
-    - SURFACES: Transform all visible surfaces (walls, floors, ceilings)
-
-    REMOVE PERSONAL ITEMS:
-    Remove all personal belongings, family photos, flags, religious items, personal decorations, personal artwork, cultural symbols, memorabilia, and any items that reflect current occupant preferences. Replace with neutral, contemporary decor appropriate for the space.
-    
-    NO HALLUCINATIONS:
-    Do not add/remove/move rooms, windows, doors, or structural openings. Maintain photorealistic accuracy that respects the original space's positioning constraints.
-  `
+  dining_room: "PRECISION REQUIRED: Generate a high-fidelity dining room renovation. PRESERVE STRUCTURAL POSITIONS: Wall locations, door/window openings, ceiling height, built-ins locations. MANDATORY WALL TRANSFORMATIONS: MUST completely change all wall colors, paint, and finishes from original - make walls dramatically different. MUST add/change accent walls with new colors or materials. FULL RENOVATION REQUIRED: Completely different dining furniture (different table style, chairs, buffets/sideboards - all different colors and styles from original), dramatic wall color changes, new flooring, updated lighting fixtures (chandelier/pendant over table), new window treatments, contemporary decor. FURNITURE MANDATE: Dining table, chairs, storage furniture - all must be completely different styles and colors from original. REMOVE ALL PERSONAL ITEMS: Remove photos, personal artwork, cultural symbols, memorabilia. TRANSFORM APPEARANCE: Every surface and furniture piece must look completely renovated.",
+  entrance_hall: "PRECISION REQUIRED: Generate a high-fidelity entrance hall renovation. PRESERVE STRUCTURAL POSITIONS: Wall locations, door openings, ceiling height, staircase positions (if present). MANDATORY WALL TRANSFORMATIONS: MUST completely change all wall colors, paint, and finishes from original - make walls dramatically different. FULL RENOVATION REQUIRED: Completely different furniture (console tables, seating, storage - all different styles and colors from original), dramatic wall color/material changes, new flooring, updated lighting fixtures, contemporary decor, new mirrors/artwork. FURNITURE MANDATE: All entrance furniture must be completely different styles and colors from original. REMOVE ALL PERSONAL ITEMS: Remove coats, shoes, personal items, family photos, cultural symbols. TRANSFORM APPEARANCE: Every surface and furniture piece must look completely renovated.",
+  terrace: "PRECISION REQUIRED: Generate a high-fidelity terrace renovation. PRESERVE STRUCTURAL POSITIONS: Railings, door/window openings, structural elements, roof lines. MANDATORY SURFACE TRANSFORMATIONS: MUST completely change flooring materials and finishes from original. FULL RENOVATION REQUIRED: Completely different outdoor furniture (different seating, tables, planters - all different styles and colors from original), new flooring (tiles, decking, or stone), updated lighting fixtures suitable for outdoors, new planters and greenery, contemporary outdoor decor, weather-appropriate textiles. FURNITURE MANDATE: All outdoor furniture must be completely different styles and colors from original. REMOVE ALL PERSONAL ITEMS: Remove personal belongings, old furniture, clutter. TRANSFORM APPEARANCE: Every surface and furniture piece must look completely renovated for outdoor living.",
+  balcony: "PRECISION REQUIRED: Generate a high-fidelity balcony renovation. PRESERVE STRUCTURAL POSITIONS: Railings, door openings, structural supports, building facade elements. MANDATORY SURFACE TRANSFORMATIONS: MUST completely change flooring materials and finishes from original. FULL RENOVATION REQUIRED: Completely different compact outdoor furniture (different seating, small tables, planters - all different styles and colors from original), new flooring suitable for balconies, updated lighting fixtures, new planters with appropriate plants, contemporary space-efficient decor. FURNITURE MANDATE: All balcony furniture must be completely different styles and colors from original. REMOVE ALL PERSONAL ITEMS: Remove personal belongings, old furniture, clutter. TRANSFORM APPEARANCE: Every surface and furniture piece must look completely renovated for compact outdoor living."
 } as const;
+
+// Room detection prompt for Gemini
+export const ROOM_DETECTION_PROMPT = `
+Analyze this image and identify the type of room. You must respond with EXACTLY one of these room types:
+- living_room
+- bedroom
+- bathroom
+- entrance_hall
+- terrace
+- balcony
+- kitchen
+- dining_room
+
+Based on the furniture, fixtures, and architectural elements visible in the image, determine which room type this is.
+
+Key indicators:
+- KITCHEN: Cabinets, countertops, stove, refrigerator, sink
+- BATHROOM: Toilet, shower/bathtub, sink/vanity, bathroom fixtures
+- BEDROOM: Bed, nightstands, dressers, bedroom furniture
+- LIVING_ROOM: Sofas, coffee tables, TV area, living/sitting furniture
+- DINING_ROOM: Dining table, dining chairs, dedicated eating area
+- ENTRANCE_HALL: Entry area, coat storage, console tables, foyer space
+- TERRACE: Outdoor covered area, often with outdoor furniture
+- BALCONY: Small outdoor area attached to building, usually with railings
+
+Respond with only the room type (e.g., "kitchen" or "living_room"). If unclear, choose the most likely room type based on dominant features.
+`;
 
 // Style instruction sets for different aesthetics
 export const RENOVATION_STYLES = {
-  modern: `
-    STYLE AESTHETIC - MODERN CONTEMPORARY:
+  default: `
+    STYLE AESTHETIC - SCANDINAVIAN NORDIC:
     
     WALLS:
-    - Paint: crisp whites, soft grays (Benjamin Moore Cloud White, Agreeable Gray)
-    - Accent walls: charcoal gray, deep navy, or textured concrete finish
-    - Materials: smooth drywall, glass panels, or polished concrete
-    - Trim: minimal profile baseboards and casings in matching wall color
+    - Paint: pure white (Benjamin Moore Simply White), soft off-whites
+    - Wood accent walls: light pine, birch, or whitewashed oak planks
+    - Materials: smooth painted surfaces, natural wood paneling
+    - Trim: white-painted wood in simple profiles
     
     FLOORS:
-    - Hardwood: wide-plank white oak with matte finish, or dark walnut
-    - Tile: large format porcelain in concrete-look gray or white marble veining
-    - Carpet: low-pile in neutral gray or cream tones (minimal use)
-    - Rugs: geometric patterns in black/white or solid neutrals
+    - Hardwood: light oak, ash, or pine in natural matte finish
+    - Tile: white or light gray ceramic/porcelain in simple patterns
+    - Carpet: minimal use, natural wool in cream or light gray
+    - Rugs: natural jute, wool in geometric patterns, or solid light colors
     
     FURNITURE:
-    - Sofas: clean lines, low profiles, in charcoal, white, or tan leather/fabric
-    - Tables: glass tops with metal bases, or live-edge wood with steel legs
-    - Seating: Barcelona chairs, Eames designs, or geometric armchairs
-    - Storage: floating shelves, built-ins with hidden hardware
-    - Materials: steel, glass, polished wood, leather upholstery
+    - Sofas: comfortable designs in light gray linen or white cotton
+    - Tables: light wood (oak, birch) with simple, functional designs
+    - Seating: Windsor chairs, wishbone chairs, or upholstered pieces in natural fabrics
+    - Storage: light wood shelving, white painted cabinets with wood tops
+    - Materials: light woods, white painted surfaces, natural textiles
     
     LIGHTING:
-    - Recessed LED ceiling lights with warm white temperature
-    - Pendant lights: geometric shapes in brushed steel or matte black
-    - Floor lamps: arc designs or slim profiles with metal finishes
-    - Under-cabinet LED strips, integrated lighting systems
+    - Pendant lights: simple shapes in white, wood, or brass
+    - Table lamps: ceramic bases in white/cream with linen shades
+    - Floor lamps: tripod wood legs with white shades
+    - Candles and lanterns for hygge atmosphere
     
     KITCHEN SPECIFICS:
-    - Cabinets: flat-panel doors in white, gray, or natural wood
-    - Countertops: quartz in white/gray veining or concrete-look surfaces
-    - Backsplash: subway tile, large format stone, or metal panels
-    - Appliances: stainless steel or panel-ready integrated units
-    - Hardware: brushed nickel, matte black, or chrome bar pulls
+    - Cabinets: white painted Shaker-style or light wood flat-panel
+    - Countertops: white quartz, light wood butcher block, or white marble
+    - Backsplash: white subway tile, light wood, or white stone
+    - Appliances: white or stainless steel with clean lines
+    - Hardware: brushed brass, white, or light wood knobs and pulls
     
-    CRITICAL: Transform ALL wall colors and finishes completely - no wall should remain the same color or finish as the original image. Paint every wall surface with the specified Modern aesthetic.
+    CRITICAL: Transform ALL wall colors and finishes completely - no wall should remain the same color or finish as the original image. Paint every wall surface with the specified Scandinavian aesthetic.
   `,
   
   scandinavian: `
@@ -255,7 +273,7 @@ export type RenovationStyle = keyof typeof RENOVATION_STYLES;
 // Function to combine base prompt with style instructions
 export function getRenovationPromptWithStyle(
   renovationType: RenovationType, 
-  style: RenovationStyle = 'modern'
+  style: RenovationStyle = 'default'
 ): string {
   const basePrompt = RENOVATION_PROMPTS[renovationType];
   const styleInstructions = RENOVATION_STYLES[style];
@@ -288,6 +306,267 @@ export interface RenovatedImageData {
   originalImageId: bigint;
   renovatedPropertyImage?: PropertyImage;
   renovationType?: RenovationType;
+}
+
+// Room Assembly Prompt Structure
+export interface RoomAssemblyPrompt {
+  prompt_name: string;
+  base_style: string;
+  aspect_ratio: string;
+  room_description: string;
+  camera_setup: string;
+  assembled_elements: string[];
+  negative_prompts: string[];
+}
+
+// Room assembly prompts for each room type
+export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationType, RoomAssemblyPrompt> = {
+  living_room: {
+    prompt_name: "Living Room Assembly",
+    base_style: "cinematic, photorealistic, 4K",
+    aspect_ratio: "16:9",
+    room_description: "A large sunlit Scandinavian living room with white walls and light wood floors.",
+    camera_setup: "A close-up shot, marketing-like, wide-angle. The camera moves very subtly for the entire 8-second duration.",
+    assembled_elements: [
+      "white/beige sofa with white cushions",
+      "light wood coffee table",
+      "light wood side tables", 
+      "white table lamps",
+      "white/beige floor lamps",
+      "light wood TV stand/entertainment unit",
+      "light wood bookshelf with white backing",
+      "beige/white armchairs",
+      "white/cream area rug",
+      "white/cream curtains",
+      "white/beige throw pillows",
+      "beige throw blankets",
+      "minimalist white-framed art",
+      "simple white/beige decorative objects",
+      "potted green plants"
+    ],
+    negative_prompts: ["no people", "no text overlays", "no distracting music"]
+  },
+
+  bedroom: {
+    prompt_name: "Bedroom Assembly",
+    base_style: "cinematic, photorealistic, 4K",
+    aspect_ratio: "16:9",
+    room_description: "A large sunlit Scandinavian bedroom with white walls and light wood floors.",
+    camera_setup: "A close-up shot, marketing-like, wide-angle. The camera moves very subtly for the entire 8-second duration.",
+    assembled_elements: [
+      "bed with white duvet",
+      "beige throw blanket",
+      "light wood bedside tables",
+      "white bedside lamps",
+      "light wood wardrobe",
+      "light wood shelves",
+      "white/light wood mirror",
+      "minimalist white-framed art",
+      "white/cream area rug",
+      "white/cream curtains",
+      "potted green plants"
+    ],
+    negative_prompts: ["no people", "no text overlays", "no distracting music"]
+  },
+
+  kitchen: {
+    prompt_name: "Kitchen Assembly",
+    base_style: "cinematic, photorealistic, 4K",
+    aspect_ratio: "16:9",
+    room_description: "A large sunlit Scandinavian kitchen with white walls and light wood floors.",
+    camera_setup: "A close-up shot, marketing-like, wide-angle. The camera moves very subtly for the entire 8-second duration.",
+    assembled_elements: [
+      "white kitchen cabinets",
+      "light wood countertops",
+      "white subway tile backsplash",
+      "light wood kitchen island",
+      "white/beige bar stools",
+      "white pendant lights",
+      "white under-cabinet lighting",
+      "white appliances (fridge, stove, oven)",
+      "white sink with chrome faucet",
+      "white/beige decorative bowls",
+      "potted green herbs",
+      "light wood cutting boards",
+      "white/clear storage containers",
+      "white/cream window treatments"
+    ],
+    negative_prompts: ["no people", "no text overlays", "no distracting music", "no clutter"]
+  },
+
+  bathroom: {
+    prompt_name: "Bathroom Assembly",
+    base_style: "cinematic, photorealistic, 4K",
+    aspect_ratio: "16:9",
+    room_description: "A large sunlit Scandinavian bathroom with white walls and light wood floors.",
+    camera_setup: "A close-up shot, marketing-like, wide-angle. The camera moves very subtly for the entire 8-second duration.",
+    assembled_elements: [
+      "white vanity cabinet",
+      "white/light wood bathroom mirror",
+      "white vanity lighting",
+      "white toilet",
+      "white shower/bathtub",
+      "white shower curtain/glass door",
+      "white towel racks",
+      "white/beige bath towels",
+      "white/cream bath mat",
+      "white/beige storage baskets",
+      "white/clear decorative containers",
+      "potted green plants",
+      "white wall-mounted shelves",
+      "minimalist white-framed artwork"
+    ],
+    negative_prompts: ["no people", "no text overlays", "no distracting music", "no personal items"]
+  },
+
+  dining_room: {
+    prompt_name: "Dining Room Assembly",
+    base_style: "cinematic, photorealistic, 4K",
+    aspect_ratio: "16:9",
+    room_description: "A large sunlit Scandinavian dining room with white walls and light wood floors.",
+    camera_setup: "A close-up shot, marketing-like, wide-angle. The camera moves very subtly for the entire 8-second duration.",
+    assembled_elements: [
+      "light wood dining table",
+      "white/beige dining chairs",
+      "white/simple pendant light",
+      "light wood sideboard/buffet",
+      "white display cabinet",
+      "white/cream area rug",
+      "white/cream curtains",
+      "minimalist white-framed wall art",
+      "white/beige decorative centerpiece",
+      "white/beige table runner",
+      "white dinnerware display",
+      "light wood wine storage",
+      "potted green plants",
+      "white/light wood mirrors"
+    ],
+    negative_prompts: ["no people", "no text overlays", "no distracting music"]
+  },
+
+  entrance_hall: {
+    prompt_name: "Entrance Hall Assembly",
+    base_style: "cinematic, photorealistic, 4K",
+    aspect_ratio: "16:9",
+    room_description: "A large sunlit Scandinavian entrance hall with white walls and light wood floors.",
+    camera_setup: "A close-up shot, marketing-like, wide-angle. The camera moves very subtly for the entire 8-second duration.",
+    assembled_elements: [
+      "light wood console table",
+      "white/light wood entry mirror",
+      "white coat rack/hooks",
+      "light wood shoe storage bench",
+      "white umbrella stand",
+      "white table lamp",
+      "white/beige decorative bowl/tray",
+      "minimalist white-framed wall art",
+      "white/cream area rug/runner",
+      "potted green plants",
+      "white key holder",
+      "white/beige storage baskets",
+      "white ceiling light fixture"
+    ],
+    negative_prompts: ["no people", "no text overlays", "no distracting music", "no clutter"]
+  },
+
+  terrace: {
+    prompt_name: "Terrace Assembly",
+    base_style: "cinematic, photorealistic, 4K",
+    aspect_ratio: "16:9",
+    room_description: "A large sunlit Scandinavian outdoor terrace with natural lighting and clean, open space.",
+    camera_setup: "A close-up shot, marketing-like, wide-angle. The camera moves very subtly for the entire 8-second duration.",
+    assembled_elements: [
+      "light wood outdoor dining table",
+      "white/beige outdoor chairs",
+      "white/beige outdoor sofa/seating",
+      "white/beige outdoor cushions",
+      "white/beige umbrella/shade",
+      "white/cream outdoor rug",
+      "white/beige planters with green plants",
+      "white outdoor lighting",
+      "light wood side tables",
+      "white/beige outdoor storage",
+      "white decorative lanterns",
+      "white/beige outdoor textiles",
+      "simple white/beige garden accessories"
+    ],
+    negative_prompts: ["no people", "no text overlays", "no distracting music", "no indoor furniture"]
+  },
+
+  balcony: {
+    prompt_name: "Balcony Assembly",
+    base_style: "cinematic, photorealistic, 4K",
+    aspect_ratio: "16:9",
+    room_description: "A cozy compact Scandinavian balcony with natural lighting and space-efficient design.",
+    camera_setup: "A close-up shot, marketing-like, wide-angle. The camera moves very subtly for the entire 8-second duration.",
+    assembled_elements: [
+      "light wood compact outdoor table",
+      "white/beige folding chairs",
+      "white/beige small outdoor cushions",
+      "white vertical planters",
+      "hanging green plants",
+      "white outdoor lighting string",
+      "white compact storage",
+      "white/cream outdoor rug",
+      "simple white/beige decorative elements",
+      "white/beige privacy screen",
+      "white wall-mounted shelves"
+    ],
+    negative_prompts: ["no people", "no text overlays", "no distracting music", "no large furniture"]
+  }
+} as const;
+
+// Function to generate assembly renovation prompt
+export function getAssemblyRenovationPrompt(
+  roomType: RenovationType,
+  selectedElements?: string[], // Optional: only modify specific elements
+  style: RenovationStyle = 'default'
+): string {
+  const assemblyPrompt = ROOM_ASSEMBLY_PROMPTS[roomType];
+  const styleInstructions = RENOVATION_STYLES[style];
+  
+  // If specific elements are selected, focus on those
+  const elementsToInclude = selectedElements && selectedElements.length > 0 
+    ? selectedElements 
+    : assemblyPrompt.assembled_elements;
+  
+  const elementsText = elementsToInclude.map(element => `- ${element}`).join('\n');
+  const negativeText = assemblyPrompt.negative_prompts.map(neg => `- ${neg}`).join('\n');
+  
+  return `
+ASSEMBLY RENOVATION - ${assemblyPrompt.prompt_name}
+
+PRESERVE STRUCTURAL POSITIONS EXACTLY:
+- Wall locations and dimensions (but CHANGE their appearance and materials completely)
+- Door openings (but update door styles/materials/colors)
+- Window openings (but update window frames/treatments)  
+- Ceiling height (but change ceiling finishes/treatments)
+- Floor plan layout (but completely change flooring materials)
+
+ROOM VISION:
+${assemblyPrompt.room_description}
+
+CAMERA & STYLE:
+${assemblyPrompt.camera_setup}
+${assemblyPrompt.base_style}
+Aspect ratio: ${assemblyPrompt.aspect_ratio}
+
+ASSEMBLED ELEMENTS TO TRANSFORM:
+${elementsText}
+
+STYLE AESTHETIC:
+${styleInstructions}
+
+MANDATORY REQUIREMENTS:
+- Transform ALL specified elements with completely different styles, colors, and arrangements
+- Remove all personal belongings, family photos, cultural symbols, memorabilia
+- Replace with neutral, contemporary decor appropriate for the space
+- Maintain photorealistic accuracy that respects the original space's positioning constraints
+
+NEGATIVE ELEMENTS:
+${negativeText}
+
+CRITICAL: Every specified element must look completely renovated and different from the original image while maintaining the structural integrity and spatial relationships of the room.
+`;
 }
 
 // Re-export PropertyImage type for convenience
