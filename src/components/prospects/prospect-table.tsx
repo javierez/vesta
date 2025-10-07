@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -16,6 +16,7 @@ import {
   ChevronDown,
   MapPin,
 } from "lucide-react";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,6 +113,7 @@ interface ProspectTableProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onProspectUpdate?: () => void;
+  onPrefetchPage?: (page: number) => Promise<void>;
 }
 
 export function ProspectTable({
@@ -121,6 +123,7 @@ export function ProspectTable({
   totalPages,
   onPageChange,
   onProspectUpdate,
+  onPrefetchPage,
 }: ProspectTableProps) {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [optimisticStatuses, setOptimisticStatuses] = useState<
@@ -129,6 +132,8 @@ export function ProspectTable({
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
+  const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Helper functions for parsing and display
   const parsePreferredAreas = (preferredAreas: unknown): string[] => {
@@ -508,8 +513,8 @@ export function ProspectTable({
     return "compact"; // This will be replaced by the component
   };
 
-  // Get combined operations
-  const allOperations = transformToOperations(prospects, listings);
+  // Get combined operations (memoized)
+  const allOperations = useMemo(() => transformToOperations(prospects, listings), [prospects, listings, optimisticStatuses]);
 
   // Filter operations based on URL filters
   const searchParams = useSearchParams();
@@ -518,7 +523,7 @@ export function ProspectTable({
   const statusFilter = searchParams.get("status");
   const urgencyLevelFilter = searchParams.get("urgencyLevel");
 
-  const filteredOperations = allOperations.filter((operation) => {
+  const filteredOperations = useMemo(() => allOperations.filter((operation) => {
     // Filter by prospectType (search/listing)
     if (prospectTypeFilter && prospectTypeFilter !== "all") {
       const filterValues = prospectTypeFilter.split(",");
@@ -598,7 +603,8 @@ export function ProspectTable({
     }
 
     return true;
-  });
+  }), [allOperations, prospectTypeFilter, listingTypeFilter, statusFilter, urgencyLevelFilter]);
+
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("es-ES", {
@@ -720,6 +726,108 @@ export function ProspectTable({
     />
   );
 
+  // Intersection Observer for lazy loading
+  const observeRow = useCallback((element: HTMLElement | null, operationId: string) => {
+    if (!element || !observerRef.current) return;
+
+    // Add dataset to track which operation this element represents
+    element.dataset.operationId = operationId;
+    observerRef.current.observe(element);
+  }, []);
+
+  // Initialize Intersection Observer
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const operationId = entry.target.getAttribute('data-operation-id');
+          if (!operationId) return;
+
+          if (entry.isIntersecting) {
+            setVisibleRows((prev) => new Set(prev).add(operationId));
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '100px', // Start loading content 100px before they come into view
+        threshold: 0.1,
+      }
+    );
+
+    // Clean up observer on unmount
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Initialize visible rows for first few items (above fold)
+  useEffect(() => {
+    const initialVisibleIds = allOperations.slice(0, 5).map(op => op.id);
+    setVisibleRows(new Set(initialVisibleIds));
+  }, [allOperations]);
+
+  // Smart prefetching - preload next page when user is near the end
+  useEffect(() => {
+    if (!onPrefetchPage || currentPage >= totalPages) return;
+
+    let hasTriggeredPrefetch = false;
+
+    const prefetchNextPage = () => {
+      if (hasTriggeredPrefetch) return;
+
+      // Prefetch next page when user scrolls to 80% of current content
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      if (scrollY + windowHeight >= documentHeight * 0.8) {
+        hasTriggeredPrefetch = true;
+        console.log(`Triggering prefetch for page ${currentPage + 1}`);
+        onPrefetchPage(currentPage + 1).catch(console.error);
+      }
+    };
+
+    const handleScroll = () => {
+      requestAnimationFrame(prefetchNextPage);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentPage, totalPages, onPrefetchPage]);
+
+  // Prefetch adjacent pages on component mount
+  useEffect(() => {
+    if (!onPrefetchPage) return;
+
+    const prefetchAdjacentPages = async () => {
+      const pagesToPrefetch = [];
+
+      // Prefetch next page
+      if (currentPage < totalPages) {
+        pagesToPrefetch.push(currentPage + 1);
+      }
+
+      // Prefetch previous page
+      if (currentPage > 1) {
+        pagesToPrefetch.push(currentPage - 1);
+      }
+
+      // Prefetch in background without blocking UI
+      pagesToPrefetch.forEach(page => {
+        setTimeout(() => {
+          onPrefetchPage(page).catch(() => {
+            // Silently handle prefetch errors
+          });
+        }, 1000); // Wait 1 second after initial load
+      });
+    };
+
+    void prefetchAdjacentPages();
+  }, [currentPage, totalPages, onPrefetchPage]);
+
   return (
     <div className="space-y-4">
       <div className="rounded-md border">
@@ -783,9 +891,12 @@ export function ProspectTable({
                 </TableRow>
               ) : (
                 filteredOperations.map((operation) => {
+                  const isVisible = visibleRows.has(operation.id);
+
                   return (
                     <TableRow
                       key={operation.id}
+                      ref={(el) => observeRow(el, operation.id)}
                       className={
                         operation.type === "listing"
                           ? "cursor-pointer hover:bg-gray-50"
@@ -972,7 +1083,11 @@ export function ProspectTable({
                         className="overflow-hidden"
                         style={getColumnStyle("resumen")}
                       >
-                        <SummaryComponent operation={operation} />
+                        {isVisible ? (
+                          <SummaryComponent operation={operation} />
+                        ) : (
+                          <Skeleton className="h-16 w-full rounded-lg" />
+                        )}
                       </TableCell>
 
                       {/* Creado Column */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -14,6 +14,7 @@ import {
   ChevronDown,
   MapPin,
 } from "lucide-react";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,6 +80,7 @@ interface LeadTableProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onLeadUpdate?: () => void;
+  onPrefetchPage?: (page: number) => Promise<void>;
 }
 
 export function LeadTable({
@@ -87,12 +89,15 @@ export function LeadTable({
   totalPages,
   onPageChange,
   onLeadUpdate,
+  onPrefetchPage,
 }: LeadTableProps) {
   const router = useRouter();
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [optimisticStatuses, setOptimisticStatuses] = useState<
     Record<string, LeadStatus>
   >({});
+  const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Deduplicate leads by leadId to prevent duplicate keys
   const uniqueLeads = leads.reduce((acc, lead) => {
@@ -164,6 +169,111 @@ export function LeadTable({
     }
   };
 
+  // Memoize unique leads for stable reference
+  const memoizedUniqueLeads = useMemo(() => uniqueLeads, [leads]);
+
+  // Intersection Observer for lazy loading
+  const observeRow = useCallback((element: HTMLElement | null, leadId: string) => {
+    if (!element || !observerRef.current) return;
+
+    // Add dataset to track which lead this element represents
+    element.dataset.leadId = leadId;
+    observerRef.current.observe(element);
+  }, []);
+
+  // Initialize Intersection Observer
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const leadId = entry.target.getAttribute('data-lead-id');
+          if (!leadId) return;
+
+          if (entry.isIntersecting) {
+            setVisibleRows((prev) => new Set(prev).add(leadId));
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '100px', // Start loading content 100px before they come into view
+        threshold: 0.1,
+      }
+    );
+
+    // Clean up observer on unmount
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Initialize visible rows for first few items (above fold)
+  useEffect(() => {
+    const initialVisibleIds = memoizedUniqueLeads.slice(0, 5).map(lead => lead.leadId?.toString() ?? '');
+    setVisibleRows(new Set(initialVisibleIds));
+  }, [memoizedUniqueLeads]);
+
+  // Smart prefetching - preload next page when user is near the end
+  useEffect(() => {
+    if (!onPrefetchPage || currentPage >= totalPages) return;
+
+    let hasTriggeredPrefetch = false;
+
+    const prefetchNextPage = () => {
+      if (hasTriggeredPrefetch) return;
+
+      // Prefetch next page when user scrolls to 80% of current content
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      if (scrollY + windowHeight >= documentHeight * 0.8) {
+        hasTriggeredPrefetch = true;
+        console.log(`Triggering prefetch for page ${currentPage + 1}`);
+        onPrefetchPage(currentPage + 1).catch(console.error);
+      }
+    };
+
+    const handleScroll = () => {
+      requestAnimationFrame(prefetchNextPage);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentPage, totalPages, onPrefetchPage]);
+
+  // Prefetch adjacent pages on component mount
+  useEffect(() => {
+    if (!onPrefetchPage) return;
+
+    const prefetchAdjacentPages = async () => {
+      const pagesToPrefetch = [];
+
+      // Prefetch next page
+      if (currentPage < totalPages) {
+        pagesToPrefetch.push(currentPage + 1);
+      }
+
+      // Prefetch previous page
+      if (currentPage > 1) {
+        pagesToPrefetch.push(currentPage - 1);
+      }
+
+      // Prefetch in background without blocking UI
+      pagesToPrefetch.forEach(page => {
+        setTimeout(() => {
+          onPrefetchPage(page).catch(() => {
+            // Silently handle prefetch errors
+          });
+        }, 1000); // Wait 1 second after initial load
+      });
+    };
+
+    void prefetchAdjacentPages();
+  }, [currentPage, totalPages, onPrefetchPage]);
+
   return (
     <div className="space-y-4">
       <div className="rounded-lg border">
@@ -178,98 +288,29 @@ export function LeadTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {uniqueLeads.map((lead) => {
+            {memoizedUniqueLeads.map((lead) => {
               const leadId = lead.leadId?.toString() ?? '';
               const currentStatus = optimisticStatuses[leadId] ?? lead.status;
               const isUpdating = updatingStatus === leadId;
+              const isVisible = visibleRows.has(leadId);
 
               return (
-                <TableRow key={leadId}>
+                <TableRow
+                  key={leadId}
+                  ref={(el) => observeRow(el, leadId)}
+                >
                   {/* Contact */}
                   <TableCell>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="cursor-pointer">
-                            <div className="font-medium">
-                              {lead.contact.firstName} {lead.contact.lastName}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {lead.contact.email ?? "Sin email"}
-                            </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="space-y-1">
-                            <p>
-                              <strong>Email:</strong>{" "}
-                              {lead.contact.email ?? "No disponible"}
-                            </p>
-                            <p>
-                              <strong>Teléfono:</strong>{" "}
-                              {lead.contact.phone ?? "No disponible"}
-                            </p>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </TableCell>
-
-                  {/* Property */}
-                  <TableCell>
-                    {lead.listing ? (
-                      <div
-                        className="cursor-pointer rounded-lg bg-gray-50 p-2 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md"
-                        onClick={() => handleViewListing(lead.listingId)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium">
-                              {lead.listing.title ?? "Sin título"}
-                            </div>
-                            <div className="flex items-center truncate text-xs text-muted-foreground">
-                              <MapPin className="h-3 w-3 mr-1 text-gray-400 flex-shrink-0" />
-                              {lead.listing.street ?? "Sin dirección"}
-                            </div>
-                          </div>
-                          <div className="ml-2 text-right">
-                            <div className="text-xs font-medium text-gray-900">
-                              {lead.listing.price
-                                ? new Intl.NumberFormat("es-ES").format(
-                                    Number(lead.listing.price),
-                                  ) + "€"
-                                : "Sin precio"}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {lead.listing.bedrooms
-                                ? `${lead.listing.bedrooms}hab`
-                                : ""}
-                              {lead.listing.squareMeter
-                                ? ` • ${lead.listing.squareMeter}m²`
-                                : ""}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="rounded-md border border-dashed p-2 text-center text-xs text-muted-foreground">
-                        Sin propiedad
-                      </div>
-                    )}
-                  </TableCell>
-
-                  {/* Owner */}
-                  <TableCell>
-                    {lead.owner ? (
+                    {isVisible ? (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="cursor-pointer">
                               <div className="font-medium">
-                                {lead.owner.firstName} {lead.owner.lastName}
+                                {lead.contact.firstName} {lead.contact.lastName}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {lead.owner.email ?? "Sin email"}
+                                {lead.contact.email ?? "Sin email"}
                               </div>
                             </div>
                           </TooltipTrigger>
@@ -277,18 +318,103 @@ export function LeadTable({
                             <div className="space-y-1">
                               <p>
                                 <strong>Email:</strong>{" "}
-                                {lead.owner.email ?? "No disponible"}
+                                {lead.contact.email ?? "No disponible"}
                               </p>
                               <p>
                                 <strong>Teléfono:</strong>{" "}
-                                {lead.owner.phone ?? "No disponible"}
+                                {lead.contact.phone ?? "No disponible"}
                               </p>
                             </div>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     ) : (
-                      <div className="text-muted-foreground">No disponible</div>
+                      <Skeleton className="h-10 w-full" />
+                    )}
+                  </TableCell>
+
+                  {/* Property */}
+                  <TableCell>
+                    {isVisible ? (
+                      lead.listing ? (
+                        <div
+                          className="cursor-pointer rounded-lg bg-gray-50 p-2 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md"
+                          onClick={() => handleViewListing(lead.listingId)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-sm font-medium">
+                                {lead.listing.title ?? "Sin título"}
+                              </div>
+                              <div className="flex items-center truncate text-xs text-muted-foreground">
+                                <MapPin className="h-3 w-3 mr-1 text-gray-400 flex-shrink-0" />
+                                {lead.listing.street ?? "Sin dirección"}
+                              </div>
+                            </div>
+                            <div className="ml-2 text-right">
+                              <div className="text-xs font-medium text-gray-900">
+                                {lead.listing.price
+                                  ? new Intl.NumberFormat("es-ES").format(
+                                      Number(lead.listing.price),
+                                    ) + "€"
+                                  : "Sin precio"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {lead.listing.bedrooms
+                                  ? `${lead.listing.bedrooms}hab`
+                                  : ""}
+                                {lead.listing.squareMeter
+                                  ? ` • ${lead.listing.squareMeter}m²`
+                                  : ""}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-md border border-dashed p-2 text-center text-xs text-muted-foreground">
+                          Sin propiedad
+                        </div>
+                      )
+                    ) : (
+                      <Skeleton className="h-16 w-full rounded-lg" />
+                    )}
+                  </TableCell>
+
+                  {/* Owner */}
+                  <TableCell>
+                    {isVisible ? (
+                      lead.owner ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="cursor-pointer">
+                                <div className="font-medium">
+                                  {lead.owner.firstName} {lead.owner.lastName}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {lead.owner.email ?? "Sin email"}
+                                </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="space-y-1">
+                                <p>
+                                  <strong>Email:</strong>{" "}
+                                  {lead.owner.email ?? "No disponible"}
+                                </p>
+                                <p>
+                                  <strong>Teléfono:</strong>{" "}
+                                  {lead.owner.phone ?? "No disponible"}
+                                </p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <div className="text-muted-foreground">No disponible</div>
+                      )
+                    ) : (
+                      <Skeleton className="h-10 w-full" />
                     )}
                   </TableCell>
 

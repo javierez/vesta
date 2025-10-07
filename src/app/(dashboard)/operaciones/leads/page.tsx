@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { TrendingUp, Plus } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -25,6 +25,7 @@ export default function LeadsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const prefetchCacheRef = useRef<Map<number, LeadWithDetails[]>>(new Map());
 
   // Get view mode from URL (default to list since Kanban is disabled)
   const view = (searchParams.get("view") ?? "list") as "kanban" | "list";
@@ -116,10 +117,78 @@ export default function LeadsPage() {
     void fetchLeads();
   }, [searchParams]);
 
+  // Prefetch handler
+  const handlePrefetchPage = useCallback(async (page: number) => {
+    // Check if already cached
+    if (prefetchCacheRef.current.has(page)) {
+      console.log(`Page ${page} already cached`);
+      return;
+    }
+
+    try {
+      console.log(`Prefetching page ${page}`);
+      const search = searchParams.get("search") ?? "";
+      const statusFilters = searchParams.get("status")?.split(",") ?? [];
+      const sourceFilters = searchParams.get("source")?.split(",") ?? [];
+
+      const result = await listLeadsWithAuth(
+        page,
+        ITEMS_PER_PAGE,
+        search || undefined,
+        statusFilters.length > 0 ? statusFilters : undefined,
+        sourceFilters.length > 0 ? sourceFilters : undefined,
+      );
+
+      if (result && "leads" in result) {
+        /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
+        const processedLeads = result.leads.map((item: any) => ({
+          leadId: item.listingContactId,
+          contactId: item.contactId,
+          listingId: item.listingId ?? null,
+          prospectId: item.prospectId ?? null,
+          source: item.source,
+          status: item.status as LeadStatus,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          contact: item.contact,
+          listing: item.listing?.listingId
+            ? {
+                listingId: item.listing.listingId,
+                referenceNumber: item.listing.referenceNumber,
+                title: item.listing.title,
+                street: item.listing.street,
+                price: item.listing.price ?? "0",
+                listingType: item.listing.listingType,
+                propertyType: item.listing.propertyType,
+                bedrooms: item.listing.bedrooms,
+                squareMeter: item.listing.squareMeter,
+              }
+            : undefined,
+          owner: item.owner?.contactId
+            ? {
+                contactId: item.owner.contactId,
+                firstName: item.owner.firstName,
+                lastName: item.owner.lastName,
+                email: item.owner.email,
+                phone: item.owner.phone,
+              }
+            : undefined,
+        }));
+        /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
+
+        prefetchCacheRef.current.set(page, processedLeads);
+        console.log(`Successfully prefetched page ${page}`);
+      }
+    } catch (error) {
+      console.error(`Failed to prefetch page ${page}:`, error);
+    }
+  }, [searchParams]);
+
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
     router.push(`/operaciones/leads?${params.toString()}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleViewChange = () => {
@@ -196,6 +265,7 @@ export default function LeadsPage() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
+          onPrefetchPage={handlePrefetchPage}
           onLeadUpdate={handleLeadUpdate}
         />
       ) : (

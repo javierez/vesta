@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "~/components/ui/button";
 import { Plus, FileText } from "lucide-react";
 import Link from "next/link";
@@ -87,6 +87,9 @@ export default function ContactsPage() {
   // Simplified single-state approach since URL changes trigger re-fetch anyway
   const [contacts, setContacts] = useState<ExtendedContact[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const prefetchCacheRef = useRef<Map<number, ExtendedContact[]>>(new Map());
 
   // Get filter parameters from URL
   const getFiltersFromUrl = useCallback(() => {
@@ -147,33 +150,79 @@ export default function ContactsPage() {
     [],
   );
 
+  // Fetch contacts for a specific page
+  const fetchContactsForPage = useCallback(async (page: number, filters: ReturnType<typeof getFiltersFromUrl>) => {
+    const isOwnerView = filters.roles.includes("owner");
+    const pageSize = 50; // Items per page
+
+    // Use the appropriate optimized query based on view
+    const rawContacts = isOwnerView
+      ? await listContactsOwnerDataWithAuth(page, pageSize, {
+          searchQuery: filters.searchQuery,
+          roles: ["owner"],
+          lastContactFilter: filters.lastContactFilter,
+        })
+      : await listContactsBuyerDataWithAuth(page, pageSize, {
+          searchQuery: filters.searchQuery,
+          roles: ["buyer"],
+          lastContactFilter: filters.lastContactFilter,
+        });
+
+    // Process and sort contacts
+    return processContactsData(rawContacts as DbContact[], filters);
+  }, [processContactsData]);
+
+  // Prefetch handler
+  const handlePrefetchPage = useCallback(async (page: number) => {
+    // Check if already cached
+    if (prefetchCacheRef.current.has(page)) {
+      console.log(`Page ${page} already cached`);
+      return;
+    }
+
+    try {
+      const filters = getFiltersFromUrl();
+      const contacts = await fetchContactsForPage(page, filters);
+      prefetchCacheRef.current.set(page, contacts);
+      console.log(`Successfully prefetched page ${page}`);
+    } catch (error) {
+      console.error(`Failed to prefetch page ${page}:`, error);
+    }
+  }, [getFiltersFromUrl, fetchContactsForPage]);
+
+  // Page change handler
+  const handlePageChange = useCallback((newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   useEffect(() => {
     const filters = getFiltersFromUrl();
-    const isOwnerView = filters.roles.includes("owner");
 
-    // Fetch appropriate data based on current URL filter
+    // Fetch appropriate data based on current URL filter and page
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Use the appropriate optimized query based on view
-        const rawContacts = isOwnerView 
-          ? await listContactsOwnerDataWithAuth(1, 100, {
-              searchQuery: filters.searchQuery,
-              roles: ["owner"],
-              lastContactFilter: filters.lastContactFilter,
-            })
-          : await listContactsBuyerDataWithAuth(1, 100, {
-              searchQuery: filters.searchQuery,
-              roles: ["buyer"],
-              lastContactFilter: filters.lastContactFilter,
-            });
+        // Check cache first
+        const cachedContacts = prefetchCacheRef.current.get(currentPage);
+        if (cachedContacts) {
+          console.log(`Using cached data for page ${currentPage}`);
+          setContacts(cachedContacts);
+          setIsLoading(false);
+          return;
+        }
 
-        // Process and sort contacts
-        const processedContacts = processContactsData(
-          rawContacts as DbContact[],
-          filters,
-        );
+        // Fetch from server
+        const processedContacts = await fetchContactsForPage(currentPage, filters);
         setContacts(processedContacts);
+
+        // Cache the result
+        prefetchCacheRef.current.set(currentPage, processedContacts);
+
+        // Calculate total pages (estimate based on typical contact counts)
+        // You might want to get this from a count query instead
+        const estimatedTotal = processedContacts.length === 50 ? currentPage + 1 : currentPage;
+        setTotalPages(estimatedTotal);
       } catch (error) {
         console.error("Error fetching contacts:", error);
         setContacts([]);
@@ -183,7 +232,7 @@ export default function ContactsPage() {
     };
 
     void fetchData();
-  }, [searchParams, getFiltersFromUrl, processContactsData]); // Re-fetch when URL parameters change
+  }, [searchParams, currentPage, getFiltersFromUrl, fetchContactsForPage]); // Re-fetch when URL parameters or page change
 
   // Get current filter for passing to table component
   const currentFilter = getFiltersFromUrl().roles;
@@ -234,6 +283,10 @@ export default function ContactsPage() {
           <ContactSpreadsheetTable
             contacts={contacts}
             currentFilter={currentFilter}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            onPrefetchPage={handlePrefetchPage}
           />
         </div>
       )}

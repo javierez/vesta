@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import {
@@ -146,6 +147,10 @@ export default function AppointmentsPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  // Intersection Observer for lazy loading
+  const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
   // Use real appointments data
   const {
     appointments: realAppointments,
@@ -187,29 +192,108 @@ export default function AppointmentsPage() {
     void fetchAgents();
   }, []);
 
-  // Filter appointments
-  const filteredAppointments = realAppointments.filter((appointment) => {
-    const matchesSearch =
-      appointment.contactName
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      (appointment.propertyAddress
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase()) ??
-        false);
-    const matchesType = typeFilter === "all" || appointment.type === typeFilter;
-    const matchesStatus =
-      statusFilter === "all" || appointment.status === statusFilter;
-    const matchesAgent =
-      selectedAgents.length === 0 ||
-      (appointment.agentName &&
-        selectedAgents.some(
-          (agentId) =>
-            agents.find((agent) => agent.id === agentId)?.name ===
-            appointment.agentName,
-        ));
-    return matchesSearch && matchesType && matchesStatus && matchesAgent;
-  });
+  // Filter appointments - memoized for performance
+  const filteredAppointments = useMemo(() => {
+    return realAppointments.filter((appointment) => {
+      const matchesSearch =
+        appointment.contactName
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        (appointment.propertyAddress
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ??
+          false);
+      const matchesType = typeFilter === "all" || appointment.type === typeFilter;
+      const matchesStatus =
+        statusFilter === "all" || appointment.status === statusFilter;
+      const matchesAgent =
+        selectedAgents.length === 0 ||
+        (appointment.agentName &&
+          selectedAgents.some(
+            (agentId) =>
+              agents.find((agent) => agent.id === agentId)?.name ===
+              appointment.agentName,
+          ));
+      return matchesSearch && matchesType && matchesStatus && matchesAgent;
+    });
+  }, [realAppointments, searchQuery, typeFilter, statusFilter, selectedAgents, agents]);
+
+  // Intersection Observer callback
+  const observeRow = useCallback((element: HTMLElement | null, appointmentId: string) => {
+    if (!element || !observerRef.current) return;
+
+    // Add dataset to track which appointment this element represents
+    element.dataset.appointmentId = appointmentId;
+    observerRef.current.observe(element);
+  }, []);
+
+  // Initialize Intersection Observer
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const appointmentId = entry.target.getAttribute('data-appointment-id');
+          if (!appointmentId) return;
+
+          if (entry.isIntersecting) {
+            setVisibleRows((prev) => new Set(prev).add(appointmentId));
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '100px', // Start loading content 100px before they come into view
+        threshold: 0.1,
+      }
+    );
+
+    // Clean up observer on unmount
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Initialize visible rows for first few items (above fold)
+  useEffect(() => {
+    const initialVisibleIds = filteredAppointments.slice(0, 5).map(app => app.appointmentId.toString());
+    setVisibleRows(new Set(initialVisibleIds));
+  }, [filteredAppointments]);
+
+  // Smart prefetching for list view - preload next week's data when scrolling
+  useEffect(() => {
+    if (view !== "list") return;
+
+    let hasTriggeredPrefetch = false;
+
+    const prefetchNextWeek = () => {
+      if (hasTriggeredPrefetch || loading) return;
+
+      // Prefetch when user scrolls to 80% of current content
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      if (scrollY + windowHeight >= documentHeight * 0.8) {
+        hasTriggeredPrefetch = true;
+        // Calculate next week
+        const nextWeekStart = new Date(weekStart);
+        nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+
+        // Trigger refetch for extended range
+        console.log(`Prefetching appointments for next week starting ${nextWeekStart.toDateString()}`);
+        refetch().catch(console.error);
+      }
+    };
+
+    const handleScroll = () => {
+      requestAnimationFrame(prefetchNextWeek);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [view, weekStart, loading, refetch]);
 
   // Scroll to 10:00 AM on mount for weekly view
   useEffect(() => {
@@ -691,14 +775,27 @@ export default function AppointmentsPage() {
               No se encontraron citas
             </div>
           ) : (
-            filteredAppointments.map((appointment) => (
-              <ListCalendarEvent
-                key={appointment.appointmentId.toString()}
-                event={appointment}
-                isSelected={selectedEvent === appointment.appointmentId}
-                onClick={() => setSelectedEvent(appointment.appointmentId)}
-              />
-            ))
+            filteredAppointments.map((appointment) => {
+              const appointmentId = appointment.appointmentId.toString();
+              const isVisible = visibleRows.has(appointmentId);
+
+              return (
+                <div
+                  key={appointmentId}
+                  ref={(el) => observeRow(el, appointmentId)}
+                >
+                  {isVisible ? (
+                    <ListCalendarEvent
+                      event={appointment}
+                      isSelected={selectedEvent === appointment.appointmentId}
+                      onClick={() => setSelectedEvent(appointment.appointmentId)}
+                    />
+                  ) : (
+                    <Skeleton className="h-20 w-full rounded-lg" />
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       )}

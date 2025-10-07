@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -15,6 +15,9 @@ import { Nombre } from "../table-components/list-elements/nombre";
 import { Contacto } from "../table-components/list-elements/contacto";
 import { Propiedades } from "../table-components/list-elements/propiedades";
 import { Recordatorios } from "../table-components/list-elements/recordatorios";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Button } from "~/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // Default column widths (in pixels)
 const DEFAULT_COLUMN_WIDTHS = {
@@ -78,17 +81,27 @@ interface ExtendedContact {
 interface ContactSpreadsheetTableProps {
   contacts: ExtendedContact[];
   currentFilter?: string[];
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  onPrefetchPage?: (page: number) => Promise<void>;
 }
 
 export function ContactSpreadsheetTable({
   contacts,
   currentFilter = [],
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange,
+  onPrefetchPage,
 }: ContactSpreadsheetTableProps) {
   const router = useRouter();
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
+  const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Sort contacts alphabetically
   const sortedContacts = useMemo(() => {
@@ -162,6 +175,199 @@ export function ContactSpreadsheetTable({
     />
   );
 
+  // Intersection Observer for lazy loading
+  const observeRow = useCallback((element: HTMLElement | null, contactId: string) => {
+    if (!element || !observerRef.current) return;
+
+    // Add dataset to track which contact this element represents
+    element.dataset.contactId = contactId;
+    observerRef.current.observe(element);
+  }, []);
+
+  // Initialize Intersection Observer
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const contactId = entry.target.getAttribute('data-contact-id');
+          if (!contactId) return;
+
+          if (entry.isIntersecting) {
+            setVisibleRows((prev) => new Set(prev).add(contactId));
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '100px', // Start loading content 100px before they come into view
+        threshold: 0.1,
+      }
+    );
+
+    // Clean up observer on unmount
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Initialize visible rows for first few items (above fold)
+  useEffect(() => {
+    const initialVisibleIds = sortedContacts.slice(0, 5).map(c => c.contactId.toString());
+    setVisibleRows(new Set(initialVisibleIds));
+  }, [sortedContacts]);
+
+  // Smart prefetching - preload next page when user is near the end
+  useEffect(() => {
+    if (!onPrefetchPage || currentPage >= totalPages) return;
+
+    let hasTriggeredPrefetch = false;
+
+    const prefetchNextPage = () => {
+      if (hasTriggeredPrefetch) return;
+
+      // Prefetch next page when user scrolls to 80% of current content
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      if (scrollY + windowHeight >= documentHeight * 0.8) {
+        hasTriggeredPrefetch = true;
+        console.log(`Triggering prefetch for page ${currentPage + 1}`);
+        onPrefetchPage(currentPage + 1).catch(console.error);
+      }
+    };
+
+    const handleScroll = () => {
+      requestAnimationFrame(prefetchNextPage);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentPage, totalPages, onPrefetchPage]);
+
+  // Prefetch adjacent pages on component mount
+  useEffect(() => {
+    if (!onPrefetchPage) return;
+
+    const prefetchAdjacentPages = async () => {
+      const pagesToPrefetch = [];
+
+      // Prefetch next page
+      if (currentPage < totalPages) {
+        pagesToPrefetch.push(currentPage + 1);
+      }
+
+      // Prefetch previous page
+      if (currentPage > 1) {
+        pagesToPrefetch.push(currentPage - 1);
+      }
+
+      // Prefetch in background without blocking UI
+      pagesToPrefetch.forEach(page => {
+        setTimeout(() => {
+          onPrefetchPage(page).catch(() => {
+            // Silently handle prefetch errors
+          });
+        }, 1000); // Wait 1 second after initial load
+      });
+    };
+
+    void prefetchAdjacentPages();
+  }, [currentPage, totalPages, onPrefetchPage]);
+
+  // Pagination controls component
+  const PaginationControls = () => {
+    if (!onPageChange || totalPages <= 1) return null;
+
+    const canGoPrevious = currentPage > 1;
+    const canGoNext = currentPage < totalPages;
+
+    return (
+      <div className="flex items-center justify-between border-t bg-white px-4 py-3 sm:px-6">
+        <div className="flex flex-1 justify-between sm:hidden">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={!canGoPrevious}
+          >
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={!canGoNext}
+          >
+            Siguiente
+          </Button>
+        </div>
+        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-center">
+          <div>
+            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={!canGoPrevious}
+              >
+                <span className="sr-only">Previous</span>
+                <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+              </Button>
+
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 7) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 4) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 3) {
+                  pageNum = totalPages - 6 + i;
+                } else {
+                  pageNum = currentPage - 3 + i;
+                }
+
+                const isCurrentPage = pageNum === currentPage;
+
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={isCurrentPage ? "default" : "ghost"}
+                    size="sm"
+                    className={cn(
+                      "relative inline-flex items-center px-4 py-2 text-sm font-semibold",
+                      isCurrentPage
+                        ? "z-10 bg-primary text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        : "text-gray-900 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                    )}
+                    onClick={() => onPageChange(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={!canGoNext}
+              >
+                <span className="sr-only">Next</span>
+                <ChevronRight className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="rounded-md border">
       <div className="overflow-x-auto">
@@ -201,9 +407,14 @@ export function ContactSpreadsheetTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedContacts.map((contact) => (
+            {sortedContacts.map((contact) => {
+              const contactId = contact.contactId.toString();
+              const isVisible = visibleRows.has(contactId);
+
+              return (
               <TableRow
-                key={contact.contactId.toString()}
+                key={contactId}
+                ref={(el) => observeRow(el, contactId)}
                 className={cn(
                   "cursor-pointer transition-colors",
                   contact.isActive
@@ -250,12 +461,16 @@ export function ContactSpreadsheetTable({
                   style={getColumnStyle("propiedades")}
                 >
                   <div className="truncate">
-                    <Propiedades
-                      isActive={contact.isActive}
-                      allListings={contact.allListings}
-                      currentFilter={currentFilter}
-                      prospectTitles={contact.prospectTitles}
-                    />
+                    {isVisible ? (
+                      <Propiedades
+                        isActive={contact.isActive}
+                        allListings={contact.allListings}
+                        currentFilter={currentFilter}
+                        prospectTitles={contact.prospectTitles}
+                      />
+                    ) : (
+                      <Skeleton className="h-8 w-full" />
+                    )}
                   </div>
                 </TableCell>
 
@@ -264,14 +479,20 @@ export function ContactSpreadsheetTable({
                   style={getColumnStyle("recordatorios")}
                 >
                   <div className="truncate">
-                    <Recordatorios isActive={contact.isActive} tasks={contact.tasks} />
+                    {isVisible ? (
+                      <Recordatorios isActive={contact.isActive} tasks={contact.tasks} />
+                    ) : (
+                      <Skeleton className="h-8 w-full" />
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            );
+            })}
           </TableBody>
         </Table>
       </div>
+      <PaginationControls />
     </div>
   );
 }

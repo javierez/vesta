@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Users, Briefcase } from "lucide-react";
 import Link from "next/link";
@@ -63,6 +63,7 @@ export default function ProspectsPage() {
   const [currentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const prefetchCacheRef = useRef<Map<number, { prospects: ProspectWithContact[], listings: ListingWithDetails[] }>>(new Map());
 
   const view = (searchParams.get("view") ?? "list") as "kanban" | "list";
 
@@ -119,10 +120,36 @@ export default function ProspectsPage() {
     void fetchData();
   }, [searchParams]);
 
+  // Prefetch handler
+  const handlePrefetchPage = useCallback(async (page: number) => {
+    // Check if already cached
+    if (prefetchCacheRef.current.has(page)) {
+      console.log(`Page ${page} already cached`);
+      return;
+    }
+
+    try {
+      console.log(`Prefetching page ${page}`);
+      const [prospectsResult, listingsResult] = await Promise.all([
+        getAllProspectsWithAuth(),
+        getAllListingsWithAuth(),
+      ]);
+
+      prefetchCacheRef.current.set(page, {
+        prospects: prospectsResult,
+        listings: listingsResult,
+      });
+      console.log(`Successfully prefetched page ${page}`);
+    } catch (error) {
+      console.error(`Failed to prefetch page ${page}:`, error);
+    }
+  }, []);
+
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
     router.push(`/operaciones/prospects?${params.toString()}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleViewChange = () => {
@@ -218,6 +245,7 @@ export default function ProspectsPage() {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
+            onPrefetchPage={handlePrefetchPage}
             onProspectUpdate={() => {
               // Refresh data when prospects are updated
               const fetchData = async () => {
