@@ -1,7 +1,12 @@
 "use server";
 
 import { getListingDetailsWithAuth } from "../queries/listing";
-import { getPropertyImages } from "../queries/property_images";
+import {
+  getPropertyImages,
+  getPropertyVideos,
+  getPropertyYouTubeLinks,
+  getPropertyVirtualTours,
+} from "../queries/property_images";
 import {
   getAccountWatermarkConfig,
   getAccountIdForListing,
@@ -11,6 +16,7 @@ import {
   processAndUploadWatermarkedImages,
   cleanupWatermarkedImages,
 } from "../utils/watermarked-upload";
+import { getPropertyDocuments } from "../queries/document";
 import { POSITION_MAPPING } from "~/types/watermark";
 import type { WatermarkConfig } from "~/types/watermark";
 
@@ -98,7 +104,7 @@ interface PropertyAddress {
 }
 
 interface PropertyDocument {
-  TypeId: number;
+  TypeId: number; // 1=Image, 8=Video (max 100MB), 31=External video link (YouTube/Vimeo), 23=Blueprint, 7=Virtual tour
   Url: string;
   SortingId: number;
 }
@@ -320,6 +326,19 @@ export async function buildFotocasaPayload(
         `Could not find account for listing ${listingId}, skipping watermarking`,
       );
     }
+
+    // Fetch additional media types for Fotocasa
+    const videos = await getPropertyVideos(BigInt(listing.propertyId), true);
+    const youtubeLinks = await getPropertyYouTubeLinks(BigInt(listing.propertyId), true);
+    const virtualTours = await getPropertyVirtualTours(BigInt(listing.propertyId), true);
+    const blueprints = await getPropertyDocuments(BigInt(listing.propertyId), 'blueprint', true);
+
+    console.log("Fetched additional media for Fotocasa:", {
+      videosCount: videos.length,
+      youtubeLinksCount: youtubeLinks.length,
+      virtualToursCount: virtualTours.length,
+      blueprintsCount: blueprints.length,
+    });
 
     // Extract floor number from addressDetails (get second number if exists)
     const getFloorId = (addressDetails: string | null): number | undefined => {
@@ -814,7 +833,7 @@ export async function buildFotocasaPayload(
     }
 
     // Build PropertyDocument (images) - use processed images (watermarked if applicable)
-    const propertyDocuments: PropertyDocument[] = processedImages
+    const imageDocuments: PropertyDocument[] = processedImages
       .filter((image) => image.isActive) // Only include active images
       .sort((a, b) => (a.imageOrder || 0) - (b.imageOrder || 0)) // Ensure proper order
       .map((image) => ({
@@ -822,6 +841,64 @@ export async function buildFotocasaPayload(
         Url: image.imageUrl, // This now contains watermarked URL if watermarking was applied
         SortingId: image.imageOrder ?? 1, // Use actual order set by user in gallery
       }));
+
+    // Build video documents (TypeId: 8) - max 100MB per Fotocasa requirements
+    const videoDocuments: PropertyDocument[] = videos
+      .filter((video) => video.isActive)
+      .sort((a, b) => (a.imageOrder || 0) - (b.imageOrder || 0))
+      .map((video, index) => ({
+        TypeId: 8, // Video type
+        Url: video.imageUrl, // S3 video URL
+        SortingId: imageDocuments.length + index + 1,
+      }));
+
+    // Build YouTube link documents (TypeId: 31)
+    const youtubeDocuments: PropertyDocument[] = youtubeLinks
+      .filter((link) => link.isActive)
+      .sort((a, b) => (a.imageOrder || 0) - (b.imageOrder || 0))
+      .map((link, index) => ({
+        TypeId: 31, // External video link (YouTube, Vimeo)
+        Url: link.imageUrl, // YouTube URL
+        SortingId: imageDocuments.length + videoDocuments.length + index + 1,
+      }));
+
+    // Build virtual tour documents (TypeId: 7)
+    const virtualTourDocuments: PropertyDocument[] = virtualTours
+      .filter((tour) => tour.isActive)
+      .sort((a, b) => (a.imageOrder || 0) - (b.imageOrder || 0))
+      .map((tour, index) => ({
+        TypeId: 7, // Virtual tour
+        Url: tour.imageUrl, // Matterport/Kuula/etc URL
+        SortingId: imageDocuments.length + videoDocuments.length + youtubeDocuments.length + index + 1,
+      }));
+
+    // Build blueprint documents (TypeId: 23)
+    const blueprintDocuments: PropertyDocument[] = blueprints
+      .filter((blueprint) => blueprint.isActive)
+      .sort((a, b) => (a.documentOrder || 0) - (b.documentOrder || 0))
+      .map((blueprint, index) => ({
+        TypeId: 23, // Blueprint
+        Url: blueprint.fileUrl, // S3 PDF/image URL
+        SortingId: imageDocuments.length + videoDocuments.length + youtubeDocuments.length + virtualTourDocuments.length + index + 1,
+      }));
+
+    // Combine all media types into single PropertyDocument array
+    const propertyDocuments: PropertyDocument[] = [
+      ...imageDocuments,
+      ...videoDocuments,
+      ...youtubeDocuments,
+      ...virtualTourDocuments,
+      ...blueprintDocuments,
+    ];
+
+    console.log("Fotocasa PropertyDocument summary:", {
+      images: imageDocuments.length,
+      videos: videoDocuments.length,
+      youtubeLinks: youtubeDocuments.length,
+      virtualTours: virtualTourDocuments.length,
+      blueprints: blueprintDocuments.length,
+      total: propertyDocuments.length,
+    });
 
     // Build PropertyContactInfo (hardcoded for now - should come from agent/owner data)
     const propertyContactInfo: PropertyContactInfo[] = [

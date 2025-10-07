@@ -218,6 +218,32 @@ export async function getProspectDocuments(
   }
 }
 
+// Get documents by property ID
+export async function getPropertyDocuments(
+  propertyId: bigint,
+  documentTag?: string,
+  isActive = true,
+) {
+  try {
+    const conditions = [eq(documents.propertyId, propertyId)];
+    if (documentTag) {
+      conditions.push(eq(documents.documentTag, documentTag));
+    }
+    if (isActive !== undefined) {
+      conditions.push(eq(documents.isActive, isActive));
+    }
+
+    return await db
+      .select()
+      .from(documents)
+      .where(and(...conditions))
+      .orderBy(asc(documents.documentOrder));
+  } catch (error) {
+    console.error("Error fetching property documents:", error);
+    throw error;
+  }
+}
+
 // Update document
 export async function updateDocument(docId: bigint, data: Partial<Document>) {
   try {
