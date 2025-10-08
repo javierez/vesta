@@ -1,7 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
-import { 
+import {
   GEMINI_RENOVATION_SETTINGS,
-  getRenovationPromptWithStyle,
   getAssemblyRenovationPrompt,
   ROOM_DETECTION_PROMPT,
   ROOM_ASSEMBLY_PROMPTS,
@@ -134,121 +133,7 @@ class GeminiClient {
     }
   }
 
-  /**
-   * Generate renovation image using Gemini API
-   * Uses the gemini-2.5-flash-image-preview model for image editing
-   */
-  async renovateImage(imageBase64: string, roomType?: RenovationType, style: RenovationStyle = 'default'): Promise<GeminiRenovationResponse> {
-    try {
-      // Auto-detect room type if not provided
-      let finalRoomType: RenovationType;
-      if (roomType) {
-        finalRoomType = roomType;
-        console.log('Using provided room type:', finalRoomType);
-      } else {
-        console.log('Room type not provided, detecting automatically...');
-        const detectionResult = await this.detectRoomType(imageBase64);
-        
-        if (detectionResult.success && detectionResult.roomType) {
-          finalRoomType = detectionResult.roomType;
-          console.log('Room detection successful:', {
-            detectedType: finalRoomType,
-            confidence: detectionResult.confidence
-          });
-        } else {
-          console.warn('Room detection failed:', detectionResult.error);
-          finalRoomType = 'living_room'; // Default fallback
-          console.log('Using fallback room type:', finalRoomType);
-        }
-      }
-      
-      const prompt = getRenovationPromptWithStyle(finalRoomType, style);
-
-      console.log('⚠️  USING OLD PROMPTS - Gemini API renovation request:', {
-        model: GEMINI_RENOVATION_SETTINGS.model,
-        roomType: finalRoomType,
-        style: style,
-        promptType: 'OLD_STYLE',
-        promptPreview: prompt.substring(0, 200) + '...',
-        imageDataLength: imageBase64.length,
-        settings: GEMINI_RENOVATION_SETTINGS
-      });
-
-      // Log warning about using old prompts
-      console.warn('🚨 WARNING: Using OLD renovation prompts, not the new ASSEMBLY prompts!');
-      console.log('📝 OLD PROMPT BEING USED:');
-      console.log('==========================================');
-      console.log(prompt);
-      console.log('==========================================');
-
-      // Clean base64 string (remove data URL prefix if present)
-      const cleanBase64 = imageBase64.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
-
-      // Prepare the content array with text prompt and image
-      const contents = [
-        { text: prompt },
-        {
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: cleanBase64,
-          },
-        },
-      ];
-
-      // Call Gemini API
-      const model = this.genAI.models.generateContent({
-        model: GEMINI_RENOVATION_SETTINGS.model,
-        contents,
-      });
-
-      const response = await model;
-
-      console.log('Gemini API response received:', {
-        candidatesCount: response.candidates?.length ?? 0,
-        hasContent: !!response.candidates?.[0]?.content
-      });
-
-      // Process response to find generated image
-      if (!response.candidates?.[0]?.content?.parts) {
-        throw new Error('No content returned from Gemini API');
-      }
-
-      for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-          const imageData = part.inlineData.data;
-          
-          console.log('Generated image found:', {
-            mimeType: part.inlineData.mimeType,
-            dataLength: imageData?.length ?? 0
-          });
-
-          return {
-            success: true,
-            renovatedImageBase64: imageData
-          };
-        }
-      }
-
-      // If no image data found, check for text response that might contain error info
-      const textParts = response.candidates[0].content.parts.filter(part => part.text);
-      if (textParts.length > 0) {
-        console.log('Gemini text response:', textParts[0]?.text);
-        throw new Error('Gemini API returned text instead of image. Response: ' + textParts[0]?.text);
-      }
-
-      throw new Error('No image data found in Gemini API response');
-
-    } catch (error) {
-      console.error("Gemini renovation error:", error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      return {
-        success: false,
-        error: errorMessage
-      };
-    }
-  }
+  // NOTE: Old renovateImage method removed - use renovateImageWithAssembly instead
 
   /**
    * Generate renovation image using assembly prompts for specific room elements
@@ -349,10 +234,10 @@ class GeminiClient {
   }
 
   /**
-   * Get available elements for a specific room type
+   * Get available elements for a specific room type and style
    */
-  getRoomElements(roomType: RenovationType): string[] {
-    return ROOM_ASSEMBLY_PROMPTS[roomType].assembled_elements;
+  getRoomElements(roomType: RenovationType, style: RenovationStyle = 'default'): string[] {
+    return ROOM_ASSEMBLY_PROMPTS[style][roomType].assembled_elements;
   }
 
   /**
@@ -398,20 +283,17 @@ export const geminiClient = {
     clientInstance ??= new GeminiClient();
     return clientInstance;
   },
-  
+
   // Proxy methods to the actual client
-  renovateImage: (imageBase64: string, roomType?: RenovationType, style: RenovationStyle = 'default') => 
-    geminiClient.instance.renovateImage(imageBase64, roomType, style),
-    
   renovateImageWithAssembly: (imageBase64: string, roomType: RenovationType, selectedElements?: string[], style: RenovationStyle = 'default') =>
     geminiClient.instance.renovateImageWithAssembly(imageBase64, roomType, selectedElements, style),
-    
-  getRoomElements: (roomType: RenovationType) =>
-    geminiClient.instance.getRoomElements(roomType),
-    
+
+  getRoomElements: (roomType: RenovationType, style: RenovationStyle = 'default') =>
+    geminiClient.instance.getRoomElements(roomType, style),
+
   detectRoomType: (imageBase64: string) =>
     geminiClient.instance.detectRoomType(imageBase64),
-    
+
   validateImageInput: (imageBase64: string) =>
     geminiClient.instance.validateImageInput(imageBase64),
 };
