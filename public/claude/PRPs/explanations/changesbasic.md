@@ -1,3 +1,0 @@
-- Title by default is in the same way as in @classic-template, but can be edit.
-- Right below Title, there will be a subtitle with location: this location will be build in the same  way we are doing in classic::: barrio (ciudad)
-- Ref code will go at the top right part of the cartel and SUPER small
