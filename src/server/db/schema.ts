@@ -792,3 +792,22 @@ export const notifications = singlestoreTable("notifications", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
+
+// Mappings table (for data ingestion column mappings)
+export const mappings = singlestoreTable("mappings", {
+  // Primary Key
+  sourceId: bigint("source_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
+
+  // Source information
+  sourceName: varchar("source_name", { length: 255 }).notNull(), // e.g., "Inmogesco", "Aliseda", "Custom CRM"
+
+  // Mapping configuration
+  mappings: json("mappings").notNull(), // JSON object containing column mappings
+
+  // System fields
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  isActive: boolean("is_active").default(true),
+});
