@@ -6,11 +6,12 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 export interface OnboardingFormData {
   // Step 1 - Background & Current Situation
   previousCrm?: string;
+  previousCrmOther?: string; // Custom CRM name when "other" is selected
   referralSource?: string;
   teamSize?: string;
   businessFocus?: string[]; // Multi-select
   monthlyListings?: string;
-  biggestChallenge?: string;
+  biggestChallenge?: string[]; // Multi-select
 
   // Step 2 - Technical Setup
   email?: string;

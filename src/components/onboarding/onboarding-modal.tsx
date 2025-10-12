@@ -92,7 +92,7 @@ function OnboardingModalContent({ onComplete }: { onComplete: () => void }) {
       </div>
 
       {/* Step Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         {currentStep === 1 && <StepOne onNext={nextStep} />}
         {currentStep === 2 && <StepTwo onNext={nextStep} onBack={previousStep} />}
         {currentStep === 3 && <StepThree onBack={previousStep} onSubmit={handleSubmit} />}
@@ -117,19 +117,18 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
   return (
     <Dialog open={open} onOpenChange={() => {}} modal>
       <DialogContent
-        className="flex h-[90vh] max-h-[90vh] max-w-3xl flex-col overflow-hidden"
+        className="flex h-[90vh] max-h-[90vh] max-w-3xl flex-col overflow-hidden [&>button]:hidden p-0 m-4"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
-        hideClose={true}
       >
-        <DialogHeader>
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
           <DialogTitle className="text-2xl">Configuración Inicial</DialogTitle>
           <DialogDescription>
             Completa estos pasos para personalizar tu experiencia en Vesta.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden py-4">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pb-6">
           <OnboardingProvider>
             <OnboardingModalContent onComplete={onComplete} />
           </OnboardingProvider>

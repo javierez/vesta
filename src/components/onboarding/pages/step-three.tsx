@@ -101,7 +101,7 @@ export default function StepThree({ onBack, onSubmit }: StepThreeProps) {
           value={formData.additionalNotes ?? ""}
           onChange={(e) => updateFormData({ additionalNotes: e.target.value })}
           placeholder="Escribe aquí cualquier información adicional que quieras compartir..."
-          className="min-h-[120px] resize-none border-0 shadow-md"
+          className="min-h-[120px] resize-none border border-gray-200 shadow-md"
           maxLength={500}
         />
         <p className="text-xs text-gray-400 text-right">

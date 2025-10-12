@@ -54,6 +54,7 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
     paymentSettings: Record<string, unknown>;
     preferences: Record<string, unknown>;
     terms: Record<string, unknown>;
+    onboardingData: Record<string, unknown>;
     plan: string;
     subscriptionType: string | null;
     subscriptionStatus: string;
@@ -99,6 +100,11 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
         ? (JSON.parse(account.terms) as Record<string, unknown>)
         : ((account.terms ?? {}) as Record<string, unknown>);
 
+    const onboardingData =
+      typeof account.onboardingData === "string"
+        ? (JSON.parse(account.onboardingData) as Record<string, unknown>)
+        : ((account.onboardingData ?? {}) as Record<string, unknown>);
+
     const accountData = {
       accountId: account.accountId.toString(),
       name: account.name,
@@ -120,6 +126,7 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
       paymentSettings,
       preferences,
       terms,
+      onboardingData,
       plan: account.plan ?? "basic",
       subscriptionType: account.subscriptionType,
       subscriptionStatus: account.subscriptionStatus ?? "active",

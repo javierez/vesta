@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
+import { FloatingLabelInput } from "~/components/ui/floating-label-input";
 import { ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -28,6 +29,17 @@ const businessFocusOptions = [
   { id: "land", label: "Suelo/Terrenos" },
 ];
 
+const challengeOptions = [
+  { id: "lead_management", label: "Gestión de leads" },
+  { id: "photography", label: "Fotografía de propiedades" },
+  { id: "portal_sync", label: "Sincronización con portales" },
+  { id: "team_collaboration", label: "Colaboración en equipo" },
+  { id: "reporting", label: "Informes y análisis" },
+  { id: "client_communication", label: "Comunicación con clientes" },
+  { id: "document_management", label: "Gestión documental" },
+  { id: "other", label: "Otro" },
+];
+
 export default function StepOne({ onNext }: StepOneProps) {
   const { state, updateFormData } = useOnboardingContext();
   const { formData } = state;
@@ -40,10 +52,23 @@ export default function StepOne({ onNext }: StepOneProps) {
     updateFormData({ businessFocus: newFocus });
   };
 
+  const handleChallengeToggle = (challengeId: string) => {
+    const currentChallenges = formData.biggestChallenge ?? [];
+    const newChallenges = currentChallenges.includes(challengeId)
+      ? currentChallenges.filter(id => id !== challengeId)
+      : [...currentChallenges, challengeId];
+    updateFormData({ biggestChallenge: newChallenges });
+  };
+
   const handleNext = () => {
     // Validation
     if (!formData.previousCrm) {
       alert("Por favor, selecciona tu CRM anterior.");
+      return;
+    }
+    // If "Otro" is selected, check for custom CRM name
+    if (formData.previousCrm === "other" && !formData.previousCrmOther?.trim()) {
+      alert("Por favor, escribe el nombre de tu CRM anterior.");
       return;
     }
     if (!formData.referralSource) {
@@ -62,8 +87,8 @@ export default function StepOne({ onNext }: StepOneProps) {
       alert("Por favor, selecciona tu volumen mensual de anuncios.");
       return;
     }
-    if (!formData.biggestChallenge) {
-      alert("Por favor, selecciona tu mayor desafío actual.");
+    if (!formData.biggestChallenge || formData.biggestChallenge.length === 0) {
+      alert("Por favor, selecciona al menos un desafío actual.");
       return;
     }
 
@@ -88,9 +113,15 @@ export default function StepOne({ onNext }: StepOneProps) {
         </label>
         <Select
           value={formData.previousCrm}
-          onValueChange={(value) => updateFormData({ previousCrm: value })}
+          onValueChange={(value) => {
+            updateFormData({ previousCrm: value });
+            // Clear custom CRM name if not "other"
+            if (value !== "other") {
+              updateFormData({ previousCrmOther: "" });
+            }
+          }}
         >
-          <SelectTrigger className="h-10 border-0 shadow-md">
+          <SelectTrigger className="h-10 border border-gray-200 shadow-md">
             <SelectValue placeholder="Selecciona tu CRM anterior" />
           </SelectTrigger>
           <SelectContent>
@@ -105,6 +136,24 @@ export default function StepOne({ onNext }: StepOneProps) {
         </Select>
       </div>
 
+      {/* Custom CRM Input (conditional) */}
+      {formData.previousCrm === "other" && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="space-y-2"
+        >
+          <FloatingLabelInput
+            id="previousCrmOther"
+            value={formData.previousCrmOther ?? ""}
+            onChange={(value: string) => updateFormData({ previousCrmOther: value })}
+            placeholder="Nombre del CRM"
+            type="text"
+          />
+        </motion.div>
+      )}
+
       {/* Referral Source */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-900">
@@ -114,7 +163,7 @@ export default function StepOne({ onNext }: StepOneProps) {
           value={formData.referralSource}
           onValueChange={(value) => updateFormData({ referralSource: value })}
         >
-          <SelectTrigger className="h-10 border-0 shadow-md">
+          <SelectTrigger className="h-10 border border-gray-200 shadow-md">
             <SelectValue placeholder="Selecciona una opción" />
           </SelectTrigger>
           <SelectContent>
@@ -137,7 +186,7 @@ export default function StepOne({ onNext }: StepOneProps) {
           value={formData.teamSize}
           onValueChange={(value) => updateFormData({ teamSize: value })}
         >
-          <SelectTrigger className="h-10 border-0 shadow-md">
+          <SelectTrigger className="h-10 border border-gray-200 shadow-md">
             <SelectValue placeholder="Selecciona el tamaño de tu equipo" />
           </SelectTrigger>
           <SelectContent>
@@ -185,7 +234,7 @@ export default function StepOne({ onNext }: StepOneProps) {
           value={formData.monthlyListings}
           onValueChange={(value) => updateFormData({ monthlyListings: value })}
         >
-          <SelectTrigger className="h-10 border-0 shadow-md">
+          <SelectTrigger className="h-10 border border-gray-200 shadow-md">
             <SelectValue placeholder="Selecciona tu volumen mensual" />
           </SelectTrigger>
           <SelectContent>
@@ -199,28 +248,28 @@ export default function StepOne({ onNext }: StepOneProps) {
       </div>
 
       {/* Biggest Current Challenge */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <label className="text-sm font-medium text-gray-900">
-          Mayor desafío actual <span className="text-red-500">*</span>
+          Mayores desafíos actuales <span className="text-red-500">*</span>
         </label>
-        <Select
-          value={formData.biggestChallenge}
-          onValueChange={(value) => updateFormData({ biggestChallenge: value })}
-        >
-          <SelectTrigger className="h-10 border-0 shadow-md">
-            <SelectValue placeholder="Selecciona tu mayor desafío" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="lead_management">Gestión de leads</SelectItem>
-            <SelectItem value="photography">Fotografía de propiedades</SelectItem>
-            <SelectItem value="portal_sync">Sincronización con portales</SelectItem>
-            <SelectItem value="team_collaboration">Colaboración en equipo</SelectItem>
-            <SelectItem value="reporting">Informes y análisis</SelectItem>
-            <SelectItem value="client_communication">Comunicación con clientes</SelectItem>
-            <SelectItem value="document_management">Gestión documental</SelectItem>
-            <SelectItem value="other">Otro</SelectItem>
-          </SelectContent>
-        </Select>
+        <p className="text-xs text-gray-500">Selecciona todos los que apliquen</p>
+        <div className="space-y-2 rounded-lg bg-gray-50 p-4">
+          {challengeOptions.map((option) => (
+            <div key={option.id} className="flex items-center space-x-2">
+              <Checkbox
+                id={option.id}
+                checked={formData.biggestChallenge?.includes(option.id) ?? false}
+                onCheckedChange={() => handleChallengeToggle(option.id)}
+              />
+              <label
+                htmlFor={option.id}
+                className="cursor-pointer select-none text-sm text-gray-700"
+              >
+                {option.label}
+              </label>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Navigation Buttons */}

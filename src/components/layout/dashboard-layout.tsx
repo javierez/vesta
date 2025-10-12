@@ -11,6 +11,7 @@ import { useUserRole } from "~/hooks/use-user-role";
 import { FeedbackModal } from "~/components/feedback/feedback-modal";
 import { getAccountDetailsAction, getCurrentUserAccountId } from "~/app/actions/account-settings";
 import { AccountSetupRedirect } from "~/components/auth/account-setup-redirect";
+import OnboardingModal from "~/components/onboarding/onboarding-modal";
 import {
   Building2,
   Users,
@@ -91,6 +92,8 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   const [operacionesExpanded, setOperacionesExpanded] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [accountLogo, setAccountLogo] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
@@ -127,6 +130,58 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
     }
   }, [pathname]);
 
+  // Check onboarding status
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      if (!session?.user?.id || onboardingChecked) return;
+      
+      try {
+        console.log("🔍 Checking onboarding status for user...");
+        
+        // Check sessionStorage first to avoid unnecessary API calls
+        const cachedStatus = sessionStorage.getItem('onboarding_completed');
+        if (cachedStatus === 'true') {
+          console.log("✅ Onboarding already completed (from cache)");
+          setOnboardingChecked(true);
+          return;
+        }
+        
+        // Fetch accountId from user
+        const accountId = await getCurrentUserAccountId(session.user.id);
+        if (!accountId) {
+          console.log("❌ No account ID found");
+          return;
+        }
+        
+        const details = await getAccountDetailsAction(accountId);
+        if (!details.success || !details.data) {
+          console.log("❌ Failed to fetch account details");
+          return;
+        }
+        
+        const onboardingData = (details.data.onboardingData as Record<string, unknown>) ?? {};
+        const completed = Boolean(onboardingData.completed);
+        
+        console.log("📋 Onboarding status:", { accountId: accountId.toString(), completed, onboardingData });
+        
+        // Cache the result in sessionStorage
+        sessionStorage.setItem('onboarding_completed', completed.toString());
+        
+        if (!completed) {
+          console.log("🎯 Showing onboarding modal");
+          setShowOnboarding(true);
+        }
+        
+        setOnboardingChecked(true);
+      } catch (error) {
+        console.error("❌ Error checking onboarding status:", error);
+        setOnboardingChecked(true);
+      }
+    };
+    
+    void checkOnboarding();
+  }, [session, onboardingChecked]);
+
   // Fetch account logo
   useEffect(() => {
     const fetchAccountLogo = async () => {
@@ -149,6 +204,8 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   }, [session?.user?.id]);
 
   const handleSignOut = async () => {
+    // Clear onboarding cache on logout
+    sessionStorage.removeItem('onboarding_completed');
     await signOut();
     router.push("/");
   };
@@ -680,6 +737,17 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
       <FeedbackModal
         isOpen={feedbackModalOpen}
         onClose={() => setFeedbackModalOpen(false)}
+      />
+
+      {/* Onboarding Modal */}
+      <OnboardingModal
+        open={showOnboarding}
+        onComplete={() => {
+          console.log("✅ Onboarding completed, closing modal");
+          // Update sessionStorage to mark as completed
+          sessionStorage.setItem('onboarding_completed', 'true');
+          setShowOnboarding(false);
+        }}
       />
     </div>
   );

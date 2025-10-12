@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const onboardingData = {
       completed: true,
       completedAt: new Date().toISOString(),
-      previousCrm: formData.previousCrm,
+      previousCrm: formData.previousCrm === "other" ? formData.previousCrmOther : formData.previousCrm,
       referralSource: formData.referralSource,
       teamSize: formData.teamSize,
       businessFocus: formData.businessFocus,

@@ -46,7 +46,7 @@ export function FloatingLabelInput({
             animate={{ opacity: 1, y: -12 }}
             exit={{ opacity: 0, y: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute -left-1 -top-2 z-10 bg-transparent px-1 text-xs font-medium text-gray-600"
+            className="absolute left-0 -top-2 z-10 bg-white px-2 text-xs font-medium text-gray-600"
           >
             {placeholder}
             {required && <span className="ml-1 text-red-500">*</span>}
@@ -65,7 +65,7 @@ export function FloatingLabelInput({
         disabled={disabled}
         required={required}
         className={cn(
-          "h-8 border-0 shadow-md transition-all duration-200",
+          "h-10 border border-gray-200 shadow-md transition-all duration-200",
           className,
         )}
       />
