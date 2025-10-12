@@ -267,9 +267,9 @@ export default function CalendarEvent({
 // Compact version for mobile or small spaces
 // TODO: Work in progress - New compact view design coming soon
 export function CompactCalendarEvent({
-  event,
-  isSelected = false,
-  onClick,
+  event: _event,
+  isSelected: _isSelected = false,
+  onClick: _onClick,
   className = "",
 }: Omit<CalendarEventProps, "style">) {
   return (

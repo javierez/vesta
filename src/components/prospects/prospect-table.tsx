@@ -195,7 +195,7 @@ export function ProspectTable({
   };
 
   // Transform prospects and listings into unified format
-  const transformToOperations = (
+  const transformToOperations = useCallback((
     prospects: ProspectWithContact[],
     listings: ListingWithDetails[],
   ): OperationItem[] => {
@@ -263,7 +263,7 @@ export function ProspectTable({
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
-  };
+  }, [optimisticStatuses]);
 
   // Helper functions for operation type display
   const getOperationTypeDisplay = (
@@ -514,7 +514,7 @@ export function ProspectTable({
   };
 
   // Get combined operations (memoized)
-  const allOperations = useMemo(() => transformToOperations(prospects, listings), [prospects, listings, optimisticStatuses]);
+  const allOperations = useMemo(() => transformToOperations(prospects, listings), [prospects, listings, transformToOperations]);
 
   // Filter operations based on URL filters
   const searchParams = useSearchParams();

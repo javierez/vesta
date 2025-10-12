@@ -170,7 +170,7 @@ export function LeadTable({
   };
 
   // Memoize unique leads for stable reference
-  const memoizedUniqueLeads = useMemo(() => uniqueLeads, [leads]);
+  const memoizedUniqueLeads = useMemo(() => uniqueLeads, [uniqueLeads]);
 
   // Intersection Observer for lazy loading
   const observeRow = useCallback((element: HTMLElement | null, leadId: string) => {

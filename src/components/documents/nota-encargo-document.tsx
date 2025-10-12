@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { getBrandAsset } from "~/app/actions/brand-upload";
 import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
 import { getAgentNameAction, getOfficeInfoAction } from "~/app/actions/agent-info";
@@ -140,17 +141,21 @@ export function NotaEncargoDocument({ data }: Props) {
           <div className="flex items-center justify-center gap-6 mb-6 p-2 print:mb-2 print:p-0">
             {brandLogo && (
               <div className="flex-shrink-0">
-                <img 
+                <Image 
                   src={brandLogo} 
                   alt="Logo de la agencia" 
+                  width={80}
+                  height={80}
                   className="h-20 w-auto drop-shadow-sm"
                 />
               </div>
             )}
             <div className="flex-shrink-0">
-              <img 
+              <Image 
                 src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo_api.png" 
                 alt="API Logo" 
+                width={48}
+                height={48}
                 className="h-12 w-auto drop-shadow-sm"
               />
             </div>

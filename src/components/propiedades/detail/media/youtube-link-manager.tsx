@@ -405,9 +405,11 @@ export function YouTubeLinkManager({
             >
               {thumbnailUrl && (
                 <div className="relative">
-                  <img
+                  <Image
                     src={thumbnailUrl}
                     alt="YouTube video thumbnail"
+                    width={320}
+                    height={160}
                     className="h-40 w-full object-cover"
                     onError={(e) => {
                       // Fallback to standard resolution thumbnail
