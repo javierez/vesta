@@ -89,9 +89,9 @@ export async function POST(
       'terrace', 'balcony', 'kitchen', 'dining_room'
     ];
     
-    if (data.renovationType && validRoomTypes.includes(data.renovationType as RenovationType)) {
+    if (data.renovationType && validRoomTypes.includes(data.renovationType)) {
       // Use provided room type if it's valid
-      finalRoomType = data.renovationType as RenovationType;
+      finalRoomType = data.renovationType;
       console.log('✅ Using provided room type:', finalRoomType);
     } else {
       // Auto-detect room type using Gemini
