@@ -265,85 +265,28 @@ export default function CalendarEvent({
 }
 
 // Compact version for mobile or small spaces
+// TODO: Work in progress - New compact view design coming soon
 export function CompactCalendarEvent({
   event,
   isSelected = false,
   onClick,
   className = "",
 }: Omit<CalendarEventProps, "style">) {
-  const typeConfig = appointmentTypes[
-    event.type as keyof typeof appointmentTypes
-  ] || {
-    color: "bg-gray-500",
-    icon: <CalendarIcon className="h-4 w-4" />,
-    textColor: "text-white",
-  };
-
-  const statusConfig = statusColors[event.status] || statusColors.Scheduled;
-  
-  // Apply visual indicators for optimistic events
-  const isOptimisticEvent = event.isOptimistic ?? false;
-  const optimisticStyles = isOptimisticEvent 
-    ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse" 
-    : "";
-
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onClick?.(event);
-  };
-
   return (
     <div
       className={cn(
-        "calendar-event flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-all duration-200 hover:shadow-md",
-        typeConfig.color,
-        typeConfig.textColor,
-        statusConfig,
-        isSelected && "ring-2 ring-black ring-offset-1",
-        optimisticStyles,
+        "calendar-event flex items-center justify-center rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-6",
         className,
       )}
-      onClick={handleClick}
     >
-      <div className="flex-shrink-0">
-        <div className="text-lg">{typeConfig.icon}</div>
+      <div className="text-center">
+        <p className="text-sm font-medium text-muted-foreground">
+          Vista Compacta en Desarrollo
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground/70">
+          Próximamente: Nueva experiencia de visualización
+        </p>
       </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">
-          {event.type} {event.contactName}
-        </div>
-        <div className="flex items-center gap-1 text-xs opacity-90">
-          <Clock className="h-3 w-3" />
-          {formatTime(event.startTime)} - {formatTime(event.endTime)}
-        </div>
-      </div>
-
-      {event.tripTimeMinutes && (
-        <div className="flex-shrink-0 text-xs opacity-75">
-          <Car className="mr-1 inline h-3 w-3" />
-          {event.tripTimeMinutes}min
-        </div>
-      )}
-
-      {/* Status indicator */}
-      {event.status !== "Scheduled" && (
-        <div className="flex-shrink-0">
-          <div
-            className={cn(
-              "h-2 w-2 rounded-full bg-white",
-              event.status === "Completed" ? "bg-opacity-0" : "bg-opacity-80",
-            )}
-          />
-        </div>
-      )}
     </div>
   );
 }

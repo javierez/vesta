@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import {
   Building,
@@ -100,7 +101,14 @@ export default function Navbar({
             className="flex items-center gap-2"
             aria-label="Home"
           >
-            <Building className="h-6 w-6" />
+            <Image
+              src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/vestatranszoom.png"
+              alt="Vesta Logo"
+              width={120}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
             <span className="text-xl font-bold">{shortName}</span>
           </Link>
         </div>
