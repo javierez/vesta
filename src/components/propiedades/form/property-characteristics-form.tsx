@@ -14,8 +14,8 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { 
-  Building2, 
+import {
+  Building2,
   ChevronDown
 } from "lucide-react";
 import { getAllAgentsWithAuth } from "~/server/queries/listing";
@@ -33,6 +33,7 @@ import { PropertyTitle } from "./common/property-title";
 import { ModernSaveIndicator } from "./common/modern-save-indicator";
 import { PropertySummaryCard } from "./cards/property-summary-card";
 import { PropertyDetailsCard } from "./cards/property-details-card";
+import { LocationCard } from "./cards/location-card";
 import { FeaturesCard } from "./cards/features-card";
 import { PremiumFeaturesCard } from "./cards/premium-features-card";
 import { OrientationCard } from "./cards/orientation-card";
@@ -98,6 +99,7 @@ export function PropertyCharacteristicsForm({
   
   // Local state to track current property type
   const [propertyType, setPropertyType] = useState(initialPropertyType);
+  
 
   // Check if property type has been changed from the original
   const hasPropertyTypeChanged =
@@ -257,17 +259,23 @@ export function PropertyCharacteristicsForm({
           const streetValue = (document.getElementById("street") as HTMLInputElement)?.value;
           const addressDetailsValue = (document.getElementById("addressDetails") as HTMLInputElement)?.value;
           const postalCodeValue = (document.getElementById("postalCode") as HTMLInputElement)?.value;
+          const neighborhoodValue = (document.getElementById("neighborhood") as HTMLInputElement)?.value;
+          
+          // Get city, province, municipality from either state or inputs (for immediate save after auto-complete)
+          const cityValue = city || (document.getElementById("city") as HTMLInputElement)?.value;
+          const provinceValue = province || (document.getElementById("province") as HTMLInputElement)?.value;
+          const municipalityValue = municipality || (document.getElementById("municipality") as HTMLInputElement)?.value;
           
           // Find or create location in locations table and get neighborhoodId
           let neighborhoodId: bigint | null = null;
           
-          if (city && province && municipality && listing.neighborhood) {
+          if (cityValue && provinceValue && municipalityValue && neighborhoodValue) {
             try {
               neighborhoodId = BigInt(await findOrCreateLocation({
-                city,
-                province,
-                municipality,
-                neighborhood: listing.neighborhood,
+                city: cityValue,
+                province: provinceValue,
+                municipality: municipalityValue,
+                neighborhood: neighborhoodValue,
               }));
               console.log("🏘️ Created/found location with neighborhoodId:", neighborhoodId);
             } catch (error) {
@@ -283,6 +291,11 @@ export function PropertyCharacteristicsForm({
             ...(neighborhoodId && { neighborhoodId }),
             nearbyPublicTransport,
           };
+          
+          // Note: city, province, municipality, neighborhood are NOT in listings table
+          // They are stored in locations table via neighborhoodId foreign key
+          // No listingData needed for location module
+          console.log("📝 Location data saved to properties table with neighborhoodId:", neighborhoodId);
           break;
 
         case "features":
@@ -1532,149 +1545,22 @@ export function PropertyCharacteristicsForm({
       />
 
       {/* Location */}
-      <Card
-        className={cn(
-          "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("location"),
-        )}
-      >
-        <ModernSaveIndicator
-          state={moduleStates.location?.saveState ?? "idle"}
-          onSave={() => saveModule("location")}
-        />
-        <div className="mb-3 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => toggleSection("location")}
-            className="group flex flex-1 items-center justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                DIRECCIÓN DEL INMUEBLE
-              </h3>
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsMapsPopupOpen(true);
-                }}
-                className="flex h-6 w-6 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-              >
-                <Image
-                  src="https://vesta-configuration-files.s3.amazonaws.com/logos/googlemapsicon.png"
-                  alt="Google Maps"
-                  width={14}
-                  height={14}
-                  className="object-contain"
-                />
-              </div>
-            </div>
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                collapsedSections.location && "rotate-180",
-              )}
-            />
-          </button>
-        </div>
-        <div
-          className={cn(
-            "space-y-3 overflow-hidden transition-all duration-200",
-            collapsedSections.location ? "max-h-0" : "max-h-[2000px]",
-          )}
-        >
-          <div className="space-y-1.5">
-            <Label htmlFor="street" className="text-sm">
-              Calle
-            </Label>
-            <Input
-              id="street"
-              defaultValue={listing.street}
-              className="h-8 text-gray-500"
-              onChange={() => updateModuleState("location", true)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="addressDetails" className="text-sm">
-              Detalles de la dirección
-            </Label>
-            <Input
-              id="addressDetails"
-              defaultValue={listing.addressDetails}
-              className="h-8 text-gray-500"
-              placeholder="Piso, puerta, escalera, etc."
-              onChange={() => updateModuleState("location", true)}
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="postalCode" className="text-sm">
-                Código Postal
-              </Label>
-              <Input
-                id="postalCode"
-                defaultValue={listing.postalCode}
-                className="h-8 text-gray-500"
-                onChange={() => updateModuleState("location", true)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="neighborhood" className="text-sm">
-                Barrio
-              </Label>
-              <Input
-                id="neighborhood"
-                defaultValue={listing.neighborhood}
-                className="h-8 bg-muted"
-                disabled
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="city" className="text-sm">
-                Ciudad
-              </Label>
-              <Input
-                id="city"
-                value={city}
-                onChange={(e) => {
-                  setCity(e.target.value);
-                  updateModuleState("location", true);
-                }}
-                className="h-8 text-gray-500"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="municipality" className="text-sm">
-                Municipio
-              </Label>
-              <Input
-                id="municipality"
-                value={municipality}
-                onChange={(e) => {
-                  setMunicipality(e.target.value);
-                  updateModuleState("location", true);
-                }}
-                className="h-8 text-gray-500"
-              />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="province" className="text-sm">
-              Provincia
-            </Label>
-            <Input
-              id="province"
-              value={province}
-              onChange={(e) => {
-                setProvince(e.target.value);
-                updateModuleState("location", true);
-              }}
-              className="h-8 text-gray-500"
-            />
-          </div>
-        </div>
-      </Card>
+      <LocationCard
+        listing={listing}
+        city={city}
+        province={province}
+        municipality={municipality}
+        collapsedSections={collapsedSections}
+        saveState={moduleStates.location?.saveState ?? "idle"}
+        onToggleSection={toggleSection}
+        onSave={() => saveModule("location")}
+        onUpdateModule={(hasChanges) => updateModuleState("location", hasChanges)}
+        setCity={setCity}
+        setProvince={setProvince}
+        setMunicipality={setMunicipality}
+        setIsMapsPopupOpen={setIsMapsPopupOpen}
+        getCardStyles={getCardStyles}
+      />
 
       {/* Features */}
       <FeaturesCard

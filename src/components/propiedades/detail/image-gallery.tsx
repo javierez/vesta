@@ -71,6 +71,11 @@ export function ImageGallery({
   const [imageSources, setImageSources] = useState<Record<number, string>>({});
   const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
 
+  // Sync images state when initialImages prop changes (e.g., when switching tabs)
+  React.useEffect(() => {
+    setImages(initialImages);
+  }, [initialImages]);
+
   // Initialize image sources
   React.useEffect(() => {
     const sources: Record<number, string> = {};
@@ -147,22 +152,45 @@ export function ImageGallery({
 
   const handleBulkDelete = async () => {
     const selectedImagesList = Array.from(selectedImages);
+    const imagesToDelete = selectedImagesList.map(index => images[index]).filter((img): img is PropertyImage => img !== undefined);
+    
+    // Optimistic update: immediately remove from UI
+    const newImages = images.filter((_, i) => !selectedImages.has(i));
+    setImages(newImages);
+    
+    // Update imageSources to match new indices
+    const newImageSources: Record<number, string> = {};
+    newImages.forEach((image, idx) => {
+      if (image.imageUrl) {
+        newImageSources[idx] = image.imageUrl;
+      }
+    });
+    setImageSources(newImageSources);
+    
+    // Clear selection and exit select mode immediately
+    setSelectedImages(new Set());
+    setIsSelectMode(false);
+
     setIsDeleting(true);
     try {
-      for (const index of selectedImagesList) {
-        const image = images[index];
-        if (image) {
-          await deletePropertyImage(image.imageKey, propertyId);
-        }
+      for (const image of imagesToDelete) {
+        await deletePropertyImage(image.imageKey, propertyId);
       }
-      setImages(images.filter((_, i) => !selectedImages.has(i)));
     } catch (error) {
       console.error("Error deleting images:", error);
+      // Revert optimistic update on error
+      setImages(images);
+      // Restore original imageSources
+      const originalImageSources: Record<number, string> = {};
+      images.forEach((image, idx) => {
+        if (image.imageUrl) {
+          originalImageSources[idx] = image.imageUrl;
+        }
+      });
+      setImageSources(originalImageSources);
       // TODO: Show error toast
     } finally {
       setIsDeleting(false);
-      setSelectedImages(new Set());
-      setIsSelectMode(false);
     }
   };
 
@@ -262,16 +290,38 @@ export function ImageGallery({
     const imageToRemove = images[index];
     if (!imageToRemove) return;
 
+    // Optimistic update: immediately remove from UI
+    const newImages = images.filter((_, i) => i !== index);
+    setImages(newImages);
+    setImageToDelete(null);
+
+    // Update imageSources to match new indices
+    const newImageSources: Record<number, string> = {};
+    newImages.forEach((image, idx) => {
+      if (image.imageUrl) {
+        newImageSources[idx] = image.imageUrl;
+      }
+    });
+    setImageSources(newImageSources);
+
     setIsDeleting(true);
     try {
       await deletePropertyImage(imageToRemove.imageKey, propertyId);
-      setImages(images.filter((_, i) => i !== index));
     } catch (error) {
       console.error("Error deleting image:", error);
+      // Revert optimistic update on error
+      setImages(images);
+      // Restore original imageSources
+      const originalImageSources: Record<number, string> = {};
+      images.forEach((image, idx) => {
+        if (image.imageUrl) {
+          originalImageSources[idx] = image.imageUrl;
+        }
+      });
+      setImageSources(originalImageSources);
       // TODO: Show error toast
     } finally {
       setIsDeleting(false);
-      setImageToDelete(null);
     }
   };
 

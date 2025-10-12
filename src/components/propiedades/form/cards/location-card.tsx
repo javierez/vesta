@@ -1,12 +1,13 @@
-"use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
@@ -44,6 +45,136 @@ export function LocationCard({
   setIsMapsPopupOpen,
   getCardStyles,
 }: LocationCardProps) {
+  const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
+
+  const autoCompleteAddress = async () => {
+    // Get current street value from the input
+    const streetInput = document.getElementById("street") as HTMLInputElement;
+    const addressDetailsInput = document.getElementById("addressDetails") as HTMLInputElement;
+    const streetValue = streetInput?.value?.trim() ?? "";
+
+    if (!streetValue) {
+      alert("Por favor, introduce al menos la dirección de la propiedad.");
+      return;
+    }
+
+    try {
+      setIsUpdatingAddress(true);
+
+      // Parse the address to separate street+number from details
+      const addressRegex = /^(.+?)(\d+)(.*)$/;
+      const addressMatch = addressRegex.exec(streetValue);
+
+      let streetWithNumber = streetValue;
+      let parsedDetails = addressDetailsInput?.value ?? "";
+      let searchAddress = streetValue;
+
+      if (addressMatch?.[1] && addressMatch[2]) {
+        const streetName = addressMatch[1].trim();    // "Calle Gran Vía"
+        const streetNumber = addressMatch[2];         // "123"
+        const detailsPart = addressMatch[3]?.trim() ?? "";   // ", 4º B" or "4º B"
+
+        streetWithNumber = `${streetName} ${streetNumber}`;
+        searchAddress = streetWithNumber;
+
+        // Clean up separators from details (remove leading commas, slashes, dashes, spaces)
+        if (detailsPart) {
+          parsedDetails = detailsPart.replace(/^[,\s\-\/]+/, "").trim();
+        }
+      }
+
+      // Use Nominatim to auto-complete missing fields
+      const addressString = [searchAddress, city.trim()]
+        .filter(Boolean)
+        .join(", ");
+
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`;
+
+      const response = await fetch(nominatimUrl);
+      const nominatimResults = (await response.json()) as Array<{
+        address?: {
+          road?: string;
+          house_number?: string;
+          postcode?: string;
+          city?: string;
+          town?: string;
+          state?: string;
+          suburb?: string;
+          quarter?: string;
+        };
+      }>;
+
+      if (nominatimResults.length === 0) {
+        alert(
+          "No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.",
+        );
+        return;
+      }
+
+      const result = nominatimResults[0];
+      if (!result) {
+        alert(
+          "No se pudo encontrar la dirección. Por favor, verifica que la dirección sea correcta.",
+        );
+        return;
+      }
+
+      console.log("Nominatim auto-completion successful:", result);
+
+      // Update form fields with auto-completed data
+      if (streetInput) {
+        streetInput.value = streetWithNumber;
+      }
+      if (addressDetailsInput) {
+        addressDetailsInput.value = parsedDetails;
+      }
+
+      const postalCodeInput = document.getElementById("postalCode") as HTMLInputElement;
+      if (postalCodeInput && result.address?.postcode) {
+        postalCodeInput.value = result.address.postcode;
+      }
+
+      const neighborhoodInput = document.getElementById("neighborhood") as HTMLInputElement;
+      if (neighborhoodInput) {
+        neighborhoodInput.value = result.address?.suburb ?? result.address?.quarter ?? "";
+      }
+
+      // Get the updated location values
+      const updatedCity = result.address?.city ?? result.address?.town ?? city;
+      const updatedProvince = result.address?.state ?? province;
+      const updatedMunicipality = result.address?.city ?? result.address?.town ?? municipality;
+      const updatedNeighborhood = result.address?.suburb ?? result.address?.quarter ?? "";
+
+      // Update state variables for city, province, municipality
+      setCity(updatedCity);
+      setProvince(updatedProvince);
+      setMunicipality(updatedMunicipality);
+
+      // Mark as modified and trigger save (this will call findOrCreateLocation)
+      console.log("📍 Auto-complete done! Now saving location data...");
+      console.log("   City:", updatedCity);
+      console.log("   Province:", updatedProvince);
+      console.log("   Municipality:", updatedMunicipality);
+      console.log("   Neighborhood:", updatedNeighborhood);
+
+      // Wait a moment for React to update the controlled inputs
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      onUpdateModule(true);
+      await onSave();
+
+      toast.success("Dirección actualizada correctamente");
+
+    } catch (error) {
+      console.error("Error auto-completing address:", error);
+      alert(
+        "Error al autocompletar la dirección. Por favor, inténtalo de nuevo.",
+      );
+    } finally {
+      setIsUpdatingAddress(false);
+    }
+  };
+
   return (
     <Card
       className={cn(
@@ -185,6 +316,27 @@ export function LocationCard({
             }}
             className="h-8 text-gray-500"
           />
+        </div>
+
+        {/* Actualizar Button */}
+        <div className="flex justify-center pt-2">
+          <Button
+            onClick={autoCompleteAddress}
+            disabled={isUpdatingAddress}
+            variant="outline"
+            className="flex items-center space-x-2"
+          >
+            {isUpdatingAddress ? (
+              <>
+                <Loader className="h-4 w-4 animate-spin" />
+                <span>Actualizando...</span>
+              </>
+            ) : (
+              <>
+                <span>Actualizar</span>
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </Card>
