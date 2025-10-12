@@ -203,7 +203,7 @@ export default function RentPage({
 
             {/* Garage Price - Hide for solar and garage properties */}
             {propertyType !== "solar" &&
-              propertyType !== "garage" &&
+              propertyType !== "garaje" &&
               Boolean(state.formData.hasGarage) && (
                 <div className="rounded-lg p-4">
                   <div className="mb-2 flex items-center justify-between">
@@ -226,7 +226,7 @@ export default function RentPage({
 
             {/* Storage Room Price - Hide for solar and garage properties */}
             {propertyType !== "solar" &&
-              propertyType !== "garage" &&
+              propertyType !== "garaje" &&
               Boolean(state.formData.hasStorageRoom) && (
                 <div className="rounded-lg p-4">
                   <div className="mb-2 flex items-center justify-between">
@@ -248,7 +248,7 @@ export default function RentPage({
               )}
 
             {/* Rental Characteristics - Hide for solar and garage properties */}
-            {propertyType !== "solar" && propertyType !== "garage" && (
+            {propertyType !== "solar" && propertyType !== "garaje" && (
               <>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {/* Student Friendly - Hide for local properties */}
@@ -418,7 +418,7 @@ export default function RentPage({
         transition={{ delay: 0.2, duration: 0.3 }}
       >
         {/* Rental Characteristics - Hide for solar and garage properties */}
-        {propertyType !== "solar" && propertyType !== "garage" && (
+        {propertyType !== "solar" && propertyType !== "garaje" && (
           <>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Student Friendly - Hide for local properties */}

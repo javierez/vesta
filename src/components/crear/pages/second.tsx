@@ -76,7 +76,7 @@ export default function SecondPage({
         alert("Por favor, introduce la superficie.");
         return;
       }
-    } else if (propertyType === "garage") {
+    } else if (propertyType === "garaje") {
       // For garage, surface and year built are required
       if (!formData.totalSurface || formData.totalSurface === 0) {
         alert("Por favor, introduce las medidas.");
@@ -123,7 +123,7 @@ export default function SecondPage({
   return (
     <div className="space-y-6">
       {/* Bedrooms and Bathrooms - Only show for piso, casa, local, garage */}
-      {propertyType !== "solar" && propertyType !== "garage" && (
+      {propertyType !== "solar" && propertyType !== "garaje" && (
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <RoomSelector
@@ -152,7 +152,7 @@ export default function SecondPage({
           value={formData.totalSurface ? formFormatters.formatAreaInput(formData.totalSurface.toString()) : ""}
           onChange={handleTotalSurfaceChange}
           placeholder={
-            propertyType === "garage"
+            propertyType === "garaje"
               ? "Medidas en metros cuadrados"
               : "Superficie útil (m²)"
           }
@@ -162,7 +162,7 @@ export default function SecondPage({
       </div>
 
       {/* Superficie construida - Only show for piso, casa, local */}
-      {propertyType !== "solar" && propertyType !== "garage" && (
+      {propertyType !== "solar" && propertyType !== "garaje" && (
         <div className="space-y-2">
           <FloatingLabelInput
             id="usefulSurface"
@@ -190,7 +190,7 @@ export default function SecondPage({
       )}
 
       {/* Renovation Question - Only show for piso, casa, local */}
-      {propertyType !== "solar" && propertyType !== "garage" && (
+      {propertyType !== "solar" && propertyType !== "garaje" && (
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-gray-900">¿Reformado?</h3>
           <div className="relative h-8 rounded-lg bg-gray-100 p-1">
@@ -236,7 +236,7 @@ export default function SecondPage({
       )}
 
       {/* Last Renovation Year and Building Floors - Only show for piso, casa, local */}
-      {propertyType !== "solar" && propertyType !== "garage" && (
+      {propertyType !== "solar" && propertyType !== "garaje" && (
         <>
           {formData.isRenovated && (
             <div className="space-y-2">

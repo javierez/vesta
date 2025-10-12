@@ -777,7 +777,7 @@ export function ContactInterestForm({
                 {[
                   // Basic amenities
                   { key: "elevator", label: "Ascensor" },
-                  { key: "garage", label: "Garaje" },
+                  { key: "garaje", label: "Garaje" },
                   { key: "terrace", label: "Terraza" },
                   { key: "pool", label: "Piscina" },
                   { key: "garden", label: "Jardín" },

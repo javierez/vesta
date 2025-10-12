@@ -196,7 +196,7 @@ export default function SixthPage({
                 Accesible
               </Label>
             </div>
-            {propertyType !== "garage" && (
+            {propertyType !== "garaje" && (
               <>
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -228,7 +228,7 @@ export default function SixthPage({
         </div>
 
         {/* Kitchen Features - Hide for garage properties */}
-        {propertyType !== "garage" && (
+        {propertyType !== "garaje" && (
           <div className="space-y-4 rounded-lg p-4 shadow-md">
             <div className="mb-2 flex items-center justify-between">
               <h4 className="text-xs font-medium text-gray-600">Cocina</h4>

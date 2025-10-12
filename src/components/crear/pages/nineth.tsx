@@ -53,7 +53,7 @@ export default function NinethPage({
     // For solar and garage properties, skip this page entirely
     if (
       state.formData.propertyType === "solar" ||
-      state.formData.propertyType === "garage"
+      state.formData.propertyType === "garaje"
     ) {
       onNext();
       return;

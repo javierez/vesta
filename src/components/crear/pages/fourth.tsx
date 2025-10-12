@@ -130,7 +130,7 @@ export default function FourthPage({
         transition={{ delay: 0.2, duration: 0.3 }}
       >
         {/* Elevator - Hide for garage properties */}
-        {propertyType !== "garage" && (
+        {propertyType !== "garaje" && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -178,7 +178,7 @@ export default function FourthPage({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          {propertyType === "garage" ? (
+          {propertyType === "garaje" ? (
             // For garage properties, show static header
             <div className="w-full rounded-lg border border-gray-900 bg-gray-900 p-3 text-white shadow-sm">
               <div className="flex items-center space-x-3">
@@ -231,7 +231,7 @@ export default function FourthPage({
         </motion.div>
 
         {/* Storage Room - Hide for garage properties */}
-        {propertyType !== "garage" && (
+        {propertyType !== "garaje" && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -274,7 +274,7 @@ export default function FourthPage({
         )}
 
         {/* Heating - Hide for garage properties */}
-        {propertyType !== "garage" && (
+        {propertyType !== "garaje" && (
           <motion.div
             className="space-y-3"
             initial={{ opacity: 0 }}
@@ -359,7 +359,7 @@ export default function FourthPage({
         )}
 
         {/* Air Conditioning - Hide for garage properties */}
-        {propertyType !== "garage" && (
+        {propertyType !== "garaje" && (
           <motion.div
             className="space-y-3"
             initial={{ opacity: 0 }}
@@ -441,7 +441,7 @@ export default function FourthPage({
         )}
 
         {/* Furnished - Hide for garage properties */}
-        {propertyType !== "garage" && (
+        {propertyType !== "garaje" && (
           <motion.div
             className="space-y-3"
             initial={{ opacity: 0 }}

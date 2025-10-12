@@ -46,7 +46,7 @@ export default function EighthPage({
   // Handle property type-specific logic
   useEffect(() => {
     // For garage properties, skip this page entirely
-    if (state.formData.propertyType === "garage") {
+    if (state.formData.propertyType === "garaje") {
       onNext();
       return;
     }

@@ -44,7 +44,7 @@ export default function FifthPage({
   useEffect(() => {
     const propertyType = state.formData.propertyType;
     // For solar and garage properties, skip this page entirely
-    if (propertyType === "solar" || propertyType === "garage") {
+    if (propertyType === "solar" || propertyType === "garaje") {
       onNext();
       return;
     }

@@ -93,7 +93,7 @@ export default function SeventhPage({
   // Handle property type-specific logic
   useEffect(() => {
     // For garage properties, skip this page entirely
-    if (propertyType === "garage") {
+    if (propertyType === "garaje") {
       onNext();
       return;
     }

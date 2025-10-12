@@ -572,12 +572,12 @@ export default function FirstPage({
             </button>
             <button
               onClick={() => {
-                updateField("propertyType", "garage");
+                updateField("propertyType", "garaje");
                 updateField("propertySubtype", "Individual");
               }}
               className={cn(
                 "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
-                formData.propertyType === "garage"
+                formData.propertyType === "garaje"
                   ? "text-gray-900"
                   : "text-gray-600",
               )}
@@ -604,8 +604,7 @@ export default function FirstPage({
                   ? "Otros"
                   : formData.propertyType === "solar"
                     ? "Suelo residencial"
-                    : formData.propertyType === "garage" ||
-                        formData.propertyType === "garaje"
+                    : formData.propertyType === "garaje"
                       ? "Individual"
                       : "")
           }
@@ -659,8 +658,7 @@ export default function FirstPage({
                 <SelectItem value="Suelo rústico">Suelo rústico</SelectItem>
               </>
             )}
-            {(formData.propertyType === "garage" ||
-              formData.propertyType === "garaje") && (
+            {formData.propertyType === "garaje" && (
               <>
                 <SelectItem value="Moto">Moto</SelectItem>
                 <SelectItem value="Doble">Doble</SelectItem>

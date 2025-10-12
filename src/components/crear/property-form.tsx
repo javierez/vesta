@@ -381,7 +381,7 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
     if (propertyType === "solar") {
       // Solar properties skip: fourth (3), fifth (4), sixth (5), eighth (7), nineth (8)
       return [3, 4, 5, 7, 8];
-    } else if (propertyType === "garage") {
+    } else if (propertyType === "garaje") {
       // Garage properties skip: fifth (4), seventh (6), eighth (7), nineth (8)
       return [4, 6, 7, 8];
     }
