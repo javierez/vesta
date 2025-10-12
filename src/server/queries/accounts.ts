@@ -550,3 +550,71 @@ export async function getAccountIdealistaApiKey(accountId: number | bigint): Pro
     return null;
   }
 }
+
+// Get account onboarding status
+export async function getAccountOnboardingStatus(accountId: number | bigint): Promise<boolean> {
+  try {
+    const account = await getAccountById(accountId);
+    
+    if (!account) {
+      console.warn(`Account not found for ID: ${accountId}`);
+      return false;
+    }
+
+    // Extract onboarding data from account
+    const onboardingData = (account.onboardingData as Record<string, unknown>) ?? {};
+    const completed = Boolean(onboardingData.completed);
+    
+    console.log("Retrieved onboarding status for account:", {
+      accountId: accountId.toString(),
+      completed,
+    });
+
+    return completed;
+  } catch (error) {
+    console.error("Error getting account onboarding status:", error);
+    return false;
+  }
+}
+
+// Update account onboarding data
+export async function updateAccountOnboarding(
+  accountId: number | bigint,
+  data: Record<string, unknown>,
+) {
+  try {
+    const currentAccount = await getAccountById(accountId);
+
+    if (!currentAccount) {
+      throw new Error(`Account not found: ${accountId}`);
+    }
+
+    // Merge with existing onboarding data to avoid data loss
+    const currentOnboardingData =
+      (currentAccount.onboardingData as Record<string, unknown>) ?? {};
+    const updatedOnboardingData = {
+      ...currentOnboardingData,
+      ...data,
+      completed: true,
+      completedAt: new Date().toISOString(),
+    };
+
+    await db
+      .update(accounts)
+      .set({
+        onboardingData: updatedOnboardingData,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.accountId, BigInt(accountId)));
+
+    console.log("Updated onboarding data for account:", accountId);
+
+    return {
+      success: true,
+      message: "Onboarding data updated successfully",
+    };
+  } catch (error) {
+    console.error("Error updating account onboarding data:", error);
+    throw error;
+  }
+}
