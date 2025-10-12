@@ -40,6 +40,7 @@ export const accounts = singlestoreTable("accounts", {
   paymentSettings: json("payment_settings").default({}), // Stripe, PayPal, etc.
   preferences: json("preferences").default({}), // General account preferences
   terms: json("terms").default({}), // Terms and conditions configuration
+  onboardingData: json("onboarding_data").default({}), // Onboarding form responses: { completed, previousCrm, referralSource, teamSize, businessFocus, monthlyListings, challenge, email, website, domains, portals, notes, completedAt }
   // Subscription/billing info
   plan: varchar("plan", { length: 50 }).default("basic"), // basic, pro, enterprise
   subscriptionType: varchar("subscription_type", { length: 100 }), // More detailed subscription type

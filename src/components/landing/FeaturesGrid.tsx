@@ -157,7 +157,7 @@ const features = [
 ];
 
 export function FeaturesGrid() {
-  const [activeFeature, setActiveFeature] = useState<string | null>(null);
+  const [activeFeature, setActiveFeature] = useState<string | null>("properties");
 
   const toggleFeature = (featureId: string) => {
     setActiveFeature(activeFeature === featureId ? null : featureId);

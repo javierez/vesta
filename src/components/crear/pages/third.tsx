@@ -234,8 +234,31 @@ export default function ThirdPage({
     try {
       setIsUpdatingAddress(true);
 
+      // Parse the address to separate street+number from details
+      const addressInput = formData.address.trim();
+      const addressRegex = /^(.+?)(\d+)(.*)$/;
+      const addressMatch = addressRegex.exec(addressInput);
+
+      let streetWithNumber = addressInput;
+      let parsedDetails = formData.addressDetails;
+      let searchAddress = addressInput;
+
+      if (addressMatch?.[1] && addressMatch[2]) {
+        const streetName = addressMatch[1].trim();    // "Calle Gran Vía"
+        const streetNumber = addressMatch[2];         // "123"
+        const detailsPart = addressMatch[3]?.trim() ?? "";   // ", 4º B" or "4º B"
+
+        streetWithNumber = `${streetName} ${streetNumber}`;
+        searchAddress = streetWithNumber;
+
+        // Clean up separators from details (remove leading commas, slashes, dashes, spaces)
+        if (detailsPart) {
+          parsedDetails = detailsPart.replace(/^[,\s\-\/]+/, "").trim();
+        }
+      }
+
       // Use Nominatim to auto-complete missing fields
-      const addressString = [formData.address.trim(), formData.city.trim()]
+      const addressString = [searchAddress, formData.city.trim()]
         .filter(Boolean)
         .join(", ");
 
@@ -272,10 +295,11 @@ export default function ThirdPage({
 
       console.log("Nominatim auto-completion successful:", result);
 
-      // Update form context directly with auto-completed data (simplified)
+      // Update form context directly with auto-completed data
+      // Preserve street+number in address, put parsed details in addressDetails
       const updatedData = {
-        address: result.address?.road ?? formData.address,
-        addressDetails: result.address?.house_number ?? formData.addressDetails,
+        address: streetWithNumber,
+        addressDetails: parsedDetails,
         postalCode: result.address?.postcode ?? formData.postalCode,
         city: result.address?.city ?? result.address?.town ?? formData.city,
         province: result.address?.state ?? formData.province,

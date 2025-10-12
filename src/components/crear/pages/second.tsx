@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -25,7 +25,7 @@ export default function SecondPage({
   onBack,
 }: SecondPageProps) {
   const { state, updateFormData } = useFormContext();
-  
+
   // Get current form data from context (direct reading like first.tsx)
   const formData = {
     bedrooms: state.formData.bedrooms ?? 2,
@@ -41,7 +41,37 @@ export default function SecondPage({
 
   const propertyType = state.formData?.propertyType ?? "";
 
-  // No useEffect needed - data comes from form context
+  // Initialize default values in form context on mount (only if not already set)
+  useEffect(() => {
+    const defaults: Record<string, number | boolean> = {};
+
+    // Only set defaults for non-solar and non-garaje properties
+    if (propertyType !== "solar" && propertyType !== "garaje") {
+      if (state.formData.bedrooms === undefined || state.formData.bedrooms === null) {
+        defaults.bedrooms = 2;
+      }
+      if (state.formData.bathrooms === undefined || state.formData.bathrooms === null) {
+        defaults.bathrooms = 1;
+      }
+    }
+
+    // Set conservation status default for all property types if not set
+    if (state.formData.conservationStatus === undefined || state.formData.conservationStatus === null) {
+      defaults.conservationStatus = 3;
+    }
+
+    // Set build year default for non-solar properties if not set
+    if (propertyType !== "solar") {
+      if (state.formData.buildYear === undefined || state.formData.buildYear === null || state.formData.buildYear === 0) {
+        defaults.buildYear = 1980;
+      }
+    }
+
+    // Only update if we have defaults to set
+    if (Object.keys(defaults).length > 0) {
+      updateFormData(defaults);
+    }
+  }, [propertyType, state.formData.bedrooms, state.formData.bathrooms, state.formData.conservationStatus, state.formData.buildYear, updateFormData])
 
   // Update form data helper (direct like first.tsx)
   const updateField = (
