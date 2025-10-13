@@ -84,7 +84,6 @@ interface ContactSpreadsheetTableProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
-  onPrefetchPage?: (page: number) => Promise<void>;
 }
 
 export function ContactSpreadsheetTable({
@@ -93,7 +92,6 @@ export function ContactSpreadsheetTable({
   currentPage = 1,
   totalPages = 1,
   onPageChange,
-  onPrefetchPage,
 }: ContactSpreadsheetTableProps) {
   const router = useRouter();
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
@@ -102,15 +100,6 @@ export function ContactSpreadsheetTable({
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
   const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
-
-  // Sort contacts alphabetically
-  const sortedContacts = useMemo(() => {
-    return [...contacts].sort((a, b) => {
-      const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
-      const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
-      return aName.localeCompare(bName);
-    });
-  }, [contacts]);
 
   const handleResizeStart = useCallback(
     (column: string, e: React.MouseEvent) => {
@@ -214,68 +203,9 @@ export function ContactSpreadsheetTable({
 
   // Initialize visible rows for first few items (above fold)
   useEffect(() => {
-    const initialVisibleIds = sortedContacts.slice(0, 5).map(c => c.contactId.toString());
+    const initialVisibleIds = contacts.slice(0, 5).map(c => c.contactId.toString());
     setVisibleRows(new Set(initialVisibleIds));
-  }, [sortedContacts]);
-
-  // Smart prefetching - preload next page when user is near the end
-  useEffect(() => {
-    if (!onPrefetchPage || currentPage >= totalPages) return;
-
-    let hasTriggeredPrefetch = false;
-
-    const prefetchNextPage = () => {
-      if (hasTriggeredPrefetch) return;
-
-      // Prefetch next page when user scrolls to 80% of current content
-      const scrollY = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-
-      if (scrollY + windowHeight >= documentHeight * 0.8) {
-        hasTriggeredPrefetch = true;
-        console.log(`Triggering prefetch for page ${currentPage + 1}`);
-        onPrefetchPage(currentPage + 1).catch(console.error);
-      }
-    };
-
-    const handleScroll = () => {
-      requestAnimationFrame(prefetchNextPage);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [currentPage, totalPages, onPrefetchPage]);
-
-  // Prefetch adjacent pages on component mount
-  useEffect(() => {
-    if (!onPrefetchPage) return;
-
-    const prefetchAdjacentPages = async () => {
-      const pagesToPrefetch = [];
-
-      // Prefetch next page
-      if (currentPage < totalPages) {
-        pagesToPrefetch.push(currentPage + 1);
-      }
-
-      // Prefetch previous page
-      if (currentPage > 1) {
-        pagesToPrefetch.push(currentPage - 1);
-      }
-
-      // Prefetch in background without blocking UI
-      pagesToPrefetch.forEach(page => {
-        setTimeout(() => {
-          onPrefetchPage(page).catch(() => {
-            // Silently handle prefetch errors
-          });
-        }, 1000); // Wait 1 second after initial load
-      });
-    };
-
-    void prefetchAdjacentPages();
-  }, [currentPage, totalPages, onPrefetchPage]);
+  }, [contacts]);
 
   // Pagination controls component
   const PaginationControls = () => {
@@ -407,7 +337,7 @@ export function ContactSpreadsheetTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedContacts.map((contact) => {
+            {contacts.map((contact) => {
               const contactId = contact.contactId.toString();
               const isVisible = visibleRows.has(contactId);
 

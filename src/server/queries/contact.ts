@@ -1544,6 +1544,34 @@ export async function listContactsOwnerData(
           ),
         );
       }
+      // Apply last contact date filtering at database level
+      if (filters.lastContactFilter && filters.lastContactFilter !== "all") {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        let dateThreshold: Date;
+        switch (filters.lastContactFilter) {
+          case "today":
+            dateThreshold = today;
+            break;
+          case "week":
+            dateThreshold = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case "month":
+            dateThreshold = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case "quarter":
+            dateThreshold = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+          case "year":
+            dateThreshold = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+            break;
+          default:
+            dateThreshold = new Date(0); // All time
+        }
+        
+        whereConditions.push(sql`${contacts.updatedAt} >= ${dateThreshold}`);
+      }
     } else {
       // By default, only show active contacts
       whereConditions.push(eq(contacts.isActive, true));
@@ -1616,9 +1644,13 @@ export async function listContactsOwnerData(
         contacts.createdAt,
         contacts.updatedAt,
       )
+      .having(
+        // Only include contacts that are actually owners
+        sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0`
+      )
+      .orderBy(contacts.firstName, contacts.lastName)
       .limit(limit)
-      .offset(offset)
-      .orderBy(contacts.createdAt);
+      .offset(offset);
 
     const contactIds = uniqueContacts.map((c) => c.contactId);
 
@@ -1727,44 +1759,34 @@ export async function listContactsOwnerData(
       };
     });
 
-    // Apply role filtering - show contacts that have owner relationships
-    let filteredContacts = contactsWithOwnerData;
-    if (filters?.roles?.includes("owner")) {
-      filteredContacts = contactsWithOwnerData.filter(
-        (contact) => contact.isOwner,
+    // Get total count for pagination - run count query with same filters BEFORE pagination
+    const countResult = await db
+      .select({
+        count: sql<number>`COUNT(DISTINCT ${contacts.contactId})`,
+      })
+      .from(contacts)
+      .leftJoin(
+        listingContacts,
+        and(
+          eq(contacts.contactId, listingContacts.contactId),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .groupBy(contacts.contactId)
+      .having(
+        sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0`
       );
-    }
 
-    // Apply last contact date filtering
-    if (filters?.lastContactFilter && filters.lastContactFilter !== "all") {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const quarterAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
-      const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+    const totalCount = countResult.length; // Count the number of groups (contacts)
+    const totalPages = Math.ceil(totalCount / limit);
 
-      filteredContacts = filteredContacts.filter((contact) => {
-        const lastContactDate = contact.updatedAt;
-
-        switch (filters.lastContactFilter) {
-          case "today":
-            return lastContactDate >= today;
-          case "week":
-            return lastContactDate >= weekAgo;
-          case "month":
-            return lastContactDate >= monthAgo;
-          case "quarter":
-            return lastContactDate >= quarterAgo;
-          case "year":
-            return lastContactDate >= yearAgo;
-          default:
-            return true;
-        }
-      });
-    }
-
-    return filteredContacts;
+    return {
+      contacts: contactsWithOwnerData,
+      totalCount,
+      totalPages,
+      currentPage: page,
+    };
   } catch (error) {
     console.error("Error listing owner contacts:", error);
     throw error;
@@ -1806,6 +1828,34 @@ export async function listContactsBuyerData(
           ),
         );
       }
+      // Apply last contact date filtering at database level
+      if (filters.lastContactFilter && filters.lastContactFilter !== "all") {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        let dateThreshold: Date;
+        switch (filters.lastContactFilter) {
+          case "today":
+            dateThreshold = today;
+            break;
+          case "week":
+            dateThreshold = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case "month":
+            dateThreshold = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case "quarter":
+            dateThreshold = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+          case "year":
+            dateThreshold = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+            break;
+          default:
+            dateThreshold = new Date(0); // All time
+        }
+        
+        whereConditions.push(sql`${contacts.updatedAt} >= ${dateThreshold}`);
+      }
     } else {
       // By default, only show active contacts
       whereConditions.push(eq(contacts.isActive, true));
@@ -1814,8 +1864,8 @@ export async function listContactsBuyerData(
     // Always filter by account
     whereConditions.push(eq(contacts.accountId, BigInt(accountId)));
 
-    // Build the base query
-    const baseQuery = db
+    // Get contacts with buyer data focus - always filter for buyers/prospects
+    const uniqueContacts = await db
       .select({
         contactId: contacts.contactId,
         firstName: contacts.firstName,
@@ -1878,20 +1928,15 @@ export async function listContactsBuyerData(
         contacts.isActive,
         contacts.createdAt,
         contacts.updatedAt,
-      );
-
-    // Get contacts with buyer data focus - apply HAVING conditionally
-    const isBuyerFilter = filters?.roles?.includes("buyer");
-
-    const uniqueContacts = await (isBuyerFilter
-      ? baseQuery.having(sql`
-          COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0
-          OR COUNT(DISTINCT ${prospects.id}) > 0
-        `)
-      : baseQuery)
+      )
+      .having(
+        // Only include contacts that are buyers or have prospects
+        sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0
+            OR COUNT(DISTINCT ${prospects.id}) > 0`
+      )
+      .orderBy(contacts.firstName, contacts.lastName)
       .limit(limit)
-      .offset(offset)
-      .orderBy(contacts.createdAt);
+      .offset(offset);
 
     const contactIds = uniqueContacts.map((c) => c.contactId);
 
@@ -2047,40 +2092,36 @@ export async function listContactsBuyerData(
       }),
     );
 
-    // Database-level filtering already applied via HAVING clause for buyer role
-    // Client-side filtering is no longer needed since we filter at DB level
-    let filteredContacts = contactsWithBuyerData;
+    // Get total count for pagination - run count query with same filters BEFORE pagination
+    const countResult = await db
+      .select({
+        count: sql<number>`COUNT(DISTINCT ${contacts.contactId})`,
+      })
+      .from(contacts)
+      .leftJoin(
+        listingContacts,
+        and(
+          eq(contacts.contactId, listingContacts.contactId),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .leftJoin(prospects, eq(contacts.contactId, prospects.contactId))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .groupBy(contacts.contactId)
+      .having(
+        sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0
+            OR COUNT(DISTINCT ${prospects.id}) > 0`
+      );
 
-    // Apply last contact date filtering
-    if (filters?.lastContactFilter && filters.lastContactFilter !== "all") {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const quarterAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
-      const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+    const totalCount = countResult.length; // Count the number of groups (contacts)
+    const totalPages = Math.ceil(totalCount / limit);
 
-      filteredContacts = filteredContacts.filter((contact) => {
-        const lastContactDate = contact.updatedAt;
-
-        switch (filters.lastContactFilter) {
-          case "today":
-            return lastContactDate >= today;
-          case "week":
-            return lastContactDate >= weekAgo;
-          case "month":
-            return lastContactDate >= monthAgo;
-          case "quarter":
-            return lastContactDate >= quarterAgo;
-          case "year":
-            return lastContactDate >= yearAgo;
-          default:
-            return true;
-        }
-      });
-    }
-
-    return filteredContacts;
+    return {
+      contacts: contactsWithBuyerData,
+      totalCount,
+      totalPages,
+      currentPage: page,
+    };
   } catch (error) {
     console.error("Error listing buyer contacts:", error);
     throw error;
