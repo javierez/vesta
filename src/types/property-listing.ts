@@ -34,6 +34,7 @@ export interface PropertyListing {
   street?: string;
   addressDetails?: string;
   postalCode?: string;
+  neighborhoodId?: number | bigint;  // Foreign key to locations table
   neighborhood?: string;
   city?: string;
   province?: string;
@@ -198,6 +199,7 @@ export function convertDbListingToPropertyListing(
     street: (dbListing.street as string) ?? undefined,
     addressDetails: (dbListing.addressDetails as string) ?? undefined,
     postalCode: (dbListing.postalCode as string) ?? undefined,
+    neighborhoodId: dbListing.neighborhoodId ? Number(dbListing.neighborhoodId) : undefined,
     neighborhood: (dbListing.neighborhood as string) ?? undefined,
     city: (dbListing.city as string) ?? undefined,
     province: (dbListing.province as string) ?? undefined,

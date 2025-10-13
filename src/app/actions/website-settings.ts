@@ -17,6 +17,52 @@ import type {
 } from "~/types/website-settings";
 
 /**
+ * Safely parse JSON string by sanitizing control characters
+ * Handles cases where database JSON fields may contain literal newlines or other invalid characters
+ */
+function safeJsonParse<T>(
+  jsonString: string | null | undefined,
+  defaultValue: T,
+  fieldName?: string,
+): T {
+  if (!jsonString || jsonString.trim() === "" || jsonString === "{}") {
+    return defaultValue;
+  }
+
+  try {
+    // First attempt: try parsing as-is
+    return JSON.parse(jsonString) as T;
+  } catch (firstError) {
+    try {
+      // Second attempt: sanitize control characters
+      // Remove or escape literal newlines, tabs, and other control characters
+      const sanitized = jsonString
+        .replace(/\n/g, " ")       // Replace literal newlines with spaces
+        .replace(/\r/g, " ")       // Replace carriage returns with spaces
+        .replace(/\t/g, " ")       // Replace tabs with spaces
+        .replace(/[\x00-\x1F\x7F]/g, ""); // Remove other control characters
+
+      const parsed = JSON.parse(sanitized) as T;
+      console.warn(
+        `⚠️ SAFE_PARSE: Successfully parsed ${fieldName ?? "field"} after sanitization. Consider fixing the data in the database.`,
+      );
+      return parsed;
+    } catch (secondError) {
+      // If both attempts fail, log the error and return default
+      console.error(
+        `❌ SAFE_PARSE: Failed to parse ${fieldName ?? "field"}:`,
+        firstError instanceof Error ? firstError.message : firstError,
+      );
+      console.error(
+        `📋 SAFE_PARSE: Raw value (first 200 chars):`,
+        jsonString.substring(0, 200),
+      );
+      return defaultValue;
+    }
+  }
+}
+
+/**
  * Get current user's account ID from their user ID
  */
 export async function getCurrentUserAccountId(
@@ -253,41 +299,118 @@ export async function getWebsiteConfigurationAction(
     console.log("🔍 ACTIONS: config.logotype field:", config.logotype);
     console.log("🏢 ACTIONS: Account name:", config.accountName);
 
-    // Parse metadata JSON if it exists
-    let parsedMetadata = {};
-    if (config.metadata) {
-      try {
-        parsedMetadata = JSON.parse(config.metadata) as Record<string, unknown>;
-        console.log("✅ ACTIONS: Parsed metadata JSON:", parsedMetadata);
-      } catch (error) {
-        console.error("❌ ACTIONS: Error parsing metadata JSON:", error);
-      }
-    }
-
-    // Parse JSON fields and construct the configuration
+    // Parse JSON fields and construct the configuration using safe parser
     console.log("✅ ACTIONS: Adding account name to config:", config.accountName);
     const websiteConfig: WebsiteConfigurationInput = {
       accountName: config.accountName ?? "",
-      socialLinks: JSON.parse(config.socialLinks ?? "{}") as Record<
-        string,
-        string
-      >,
-      seoProps: JSON.parse(config.seoProps ?? "{}") as Record<string, string>,
+      socialLinks: safeJsonParse<Record<string, string>>(
+        config.socialLinks,
+        {},
+        "socialLinks"
+      ),
+      seoProps: safeJsonParse<Record<string, string>>(
+        config.seoProps,
+        {},
+        "seoProps"
+      ),
       logo: config.logo ?? "",
       favicon: config.favicon ?? "",
-      heroProps: JSON.parse(config.heroProps ?? "{}") as HeroProps,
-      featuredProps: JSON.parse(config.featuredProps ?? "{}") as FeaturedProps,
-      aboutProps: JSON.parse(config.aboutProps ?? "{}") as AboutProps,
-      propertiesProps: JSON.parse(
-        config.propertiesProps ?? "{}",
-      ) as PropertiesProps,
-      testimonialProps: JSON.parse(
-        config.testimonialProps ?? "{}",
-      ) as TestimonialProps,
-      contactProps: JSON.parse(config.contactProps ?? "{}") as ContactProps,
-      footerProps: JSON.parse(config.footerProps ?? "{}") as FooterProps,
-      headProps: JSON.parse(config.headProps ?? "{}") as HeadProps,
-      watermarkProps: JSON.parse(config.watermarkProps ?? "{}") as WatermarkProps,
+      heroProps: safeJsonParse<HeroProps>(
+        config.heroProps,
+        {
+          title: "",
+          subtitle: "",
+          backgroundImage: "",
+          findPropertyButton: "Explorar Propiedades",
+          contactButton: "Contáctanos",
+        },
+        "heroProps"
+      ),
+      featuredProps: safeJsonParse<FeaturedProps>(
+        config.featuredProps,
+        { title: "Propiedades Destacadas", subtitle: "", maxItems: 6 },
+        "featuredProps"
+      ),
+      aboutProps: safeJsonParse<AboutProps>(
+        config.aboutProps,
+        {
+          title: "Sobre Nosotros",
+          subtitle: "",
+          content: "",
+          content2: "",
+          image: "",
+          services: [],
+          maxServicesDisplayed: 6,
+          servicesSectionTitle: "Nuestros Servicios",
+          aboutSectionTitle: "Nuestra Misión",
+          buttonName: "Contacta a Nuestro Equipo",
+          showKPI: true,
+          kpi1Name: "",
+          kpi1Data: "",
+          kpi2Name: "",
+          kpi2Data: "",
+          kpi3Name: "",
+          kpi3Data: "",
+          kpi4Name: "",
+          kpi4Data: "",
+        },
+        "aboutProps"
+      ),
+      propertiesProps: safeJsonParse<PropertiesProps>(
+        config.propertiesProps,
+        {
+          title: "Nuestras Propiedades",
+          subtitle: "",
+          itemsPerPage: 12,
+          defaultSort: "price-desc",
+          buttonText: "Ver Todas las Propiedades",
+        },
+        "propertiesProps"
+      ),
+      testimonialProps: safeJsonParse<TestimonialProps>(
+        config.testimonialProps,
+        { title: "Lo que dicen nuestros clientes", subtitle: "", itemsPerPage: 3, testimonials: [] },
+        "testimonialProps"
+      ),
+      contactProps: safeJsonParse<ContactProps>(
+        config.contactProps,
+        {
+          title: "Contáctanos",
+          subtitle: "",
+          messageForm: true,
+          address: true,
+          phone: true,
+          mail: true,
+          schedule: true,
+          map: true,
+          offices: [],
+        },
+        "contactProps"
+      ),
+      footerProps: safeJsonParse<FooterProps>(
+        config.footerProps,
+        {
+          companyName: "",
+          description: "",
+          socialLinks: {},
+          officeLocations: [],
+          quickLinksVisibility: {},
+          propertyTypesVisibility: {},
+          copyright: "",
+          links: [],
+        },
+        "footerProps"
+      ),
+      headProps: safeJsonParse<HeadProps>(
+        config.headProps,
+        { customScripts: "", googleAnalytics: "", facebookPixel: "" },
+        "headProps"
+      ),
+      watermarkProps: safeJsonParse<WatermarkProps>(
+        config.watermarkProps,
+        { enabled: false, position: "southeast", sizePercentage: 30 },
+        "watermarkProps"
+      ),
       metadata: {
         id: config.id?.toString(),
         account_id: config.accountId?.toString(),
@@ -307,7 +430,12 @@ export async function getWebsiteConfigurationAction(
 
     return { success: true, data: websiteConfig };
   } catch (error) {
-    console.error("Error getting website configuration:", error);
+    console.error("❌ ACTIONS: Error getting website configuration:", error);
+    console.error("📋 ACTIONS: Error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      accountId,
+    });
     return {
       success: false,
       error: "Error al obtener la configuración del sitio web",

@@ -680,7 +680,7 @@ export async function listListings(
 
     // Apply pagination and sorting
     const allListings = await filteredQuery
-      .orderBy(sql`${properties.createdAt} DESC`)
+      .orderBy(sql`${properties.updatedAt} DESC`)
       .limit(limit)
       .offset(offset);
 
@@ -933,10 +933,11 @@ export async function getListingDetails(listingId: number, accountId: number) {
         emissions: properties.emissionsScale, // Form uses emissions, DB has emissionsScale
         cadastralReference: properties.cadastralReference,
         
-        // Address from third page - Map form fields to database fields  
+        // Address from third page - Map form fields to database fields
         address: properties.street, // Form uses address, DB has street
         city: locations.city,
-        province: locations.province, 
+        province: locations.province,
+        municipality: locations.municipality,
         postalCode: properties.postalCode,
         neighborhood: locations.neighborhood,
         latitude: properties.latitude,

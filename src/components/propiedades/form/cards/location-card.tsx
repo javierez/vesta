@@ -47,6 +47,36 @@ export function LocationCard({
 }: LocationCardProps) {
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
 
+  // Log component load/render data
+  console.log("🏠 [LocationCard] Component loaded with data:", {
+    street: listing.street,
+    addressDetails: listing.addressDetails,
+    postalCode: listing.postalCode,
+    neighborhoodId: listing.neighborhoodId,
+    neighborhood: listing.neighborhood,
+    city: city,
+    province: province,
+    municipality: municipality,
+  });
+
+  // Wrap the onSave function with logging
+  const handleSave = async () => {
+    console.log("💾 [LocationCard] Save button clicked!");
+    console.log("📋 [LocationCard] Current form values before save:", {
+      street: (document.getElementById("street") as HTMLInputElement)?.value,
+      addressDetails: (document.getElementById("addressDetails") as HTMLInputElement)?.value,
+      postalCode: (document.getElementById("postalCode") as HTMLInputElement)?.value,
+      neighborhood: (document.getElementById("neighborhood") as HTMLInputElement)?.value,
+      city: city,
+      province: province,
+      municipality: municipality,
+    });
+
+    console.log("⏳ [LocationCard] Calling parent onSave function...");
+    await onSave();
+    console.log("✅ [LocationCard] Parent onSave function completed!");
+  };
+
   const autoCompleteAddress = async () => {
     // Get current street value from the input
     const streetInput = document.getElementById("street") as HTMLInputElement;
@@ -88,7 +118,7 @@ export function LocationCard({
         .filter(Boolean)
         .join(", ");
 
-      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1`;
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressString)}&limit=1&countrycodes=es&addressdetails=1&accept-language=es`;
 
       const response = await fetch(nominatimUrl);
       const nominatimResults = (await response.json()) as Array<{
@@ -150,20 +180,17 @@ export function LocationCard({
       setProvince(updatedProvince);
       setMunicipality(updatedMunicipality);
 
-      // Mark as modified and trigger save (this will call findOrCreateLocation)
-      console.log("📍 Auto-complete done! Now saving location data...");
+      // Log the auto-completed data
+      console.log("📍 Auto-complete done! Fields populated:");
       console.log("   City:", updatedCity);
       console.log("   Province:", updatedProvince);
       console.log("   Municipality:", updatedMunicipality);
       console.log("   Neighborhood:", updatedNeighborhood);
 
-      // Wait a moment for React to update the controlled inputs
-      await new Promise(resolve => setTimeout(resolve, 100));
-
+      // Mark the module as having changes so the save will trigger
       onUpdateModule(true);
-      await onSave();
 
-      toast.success("Dirección actualizada correctamente");
+      toast.success("Campos autocompletados. Guarda para aplicar los cambios.");
 
     } catch (error) {
       console.error("Error auto-completing address:", error);
@@ -184,7 +211,7 @@ export function LocationCard({
     >
       <ModernSaveIndicator
         state={saveState}
-        onSave={onSave}
+        onSave={handleSave}
       />
       <div className="mb-3 flex items-center justify-between">
         <button

@@ -260,16 +260,28 @@ export function PropertyCharacteristicsForm({
           const addressDetailsValue = (document.getElementById("addressDetails") as HTMLInputElement)?.value;
           const postalCodeValue = (document.getElementById("postalCode") as HTMLInputElement)?.value;
           const neighborhoodValue = (document.getElementById("neighborhood") as HTMLInputElement)?.value;
-          
+
           // Get city, province, municipality from either state or inputs (for immediate save after auto-complete)
           const cityValue = city || (document.getElementById("city") as HTMLInputElement)?.value;
           const provinceValue = province || (document.getElementById("province") as HTMLInputElement)?.value;
           const municipalityValue = municipality || (document.getElementById("municipality") as HTMLInputElement)?.value;
-          
+
+          console.log("💾 [SAVE] Starting location save with values:", {
+            street: streetValue,
+            addressDetails: addressDetailsValue,
+            postalCode: postalCodeValue,
+            city: cityValue,
+            province: provinceValue,
+            municipality: municipalityValue,
+            neighborhood: neighborhoodValue,
+            nearbyPublicTransport: nearbyPublicTransport,
+          });
+
           // Find or create location in locations table and get neighborhoodId
           let neighborhoodId: bigint | null = null;
-          
+
           if (cityValue && provinceValue && municipalityValue && neighborhoodValue) {
+            console.log("✅ [SAVE] All 4 location fields present, calling findOrCreateLocation...");
             try {
               neighborhoodId = BigInt(await findOrCreateLocation({
                 city: cityValue,
@@ -277,11 +289,18 @@ export function PropertyCharacteristicsForm({
                 municipality: municipalityValue,
                 neighborhood: neighborhoodValue,
               }));
-              console.log("🏘️ Created/found location with neighborhoodId:", neighborhoodId);
+              console.log("🏘️ [SAVE] Created/found location with neighborhoodId:", neighborhoodId);
             } catch (error) {
-              console.error("Error handling location:", error);
+              console.error("❌ [SAVE] Error handling location:", error);
               // neighborhoodId will remain null if location update fails
             }
+          } else {
+            console.warn("⚠️ [SAVE] Missing location fields, neighborhoodId will NOT be updated:", {
+              hasCity: !!cityValue,
+              hasProvince: !!provinceValue,
+              hasMunicipality: !!municipalityValue,
+              hasNeighborhood: !!neighborhoodValue,
+            });
           }
 
           propertyData = {
@@ -291,11 +310,15 @@ export function PropertyCharacteristicsForm({
             ...(neighborhoodId && { neighborhoodId }),
             nearbyPublicTransport,
           };
-          
+
+          console.log("📝 [SAVE] Property data prepared for update:", {
+            ...propertyData,
+            neighborhoodId: neighborhoodId ? neighborhoodId.toString() : 'NOT SET',
+          });
+
           // Note: city, province, municipality, neighborhood are NOT in listings table
           // They are stored in locations table via neighborhoodId foreign key
           // No listingData needed for location module
-          console.log("📝 Location data saved to properties table with neighborhoodId:", neighborhoodId);
           break;
 
         case "features":
