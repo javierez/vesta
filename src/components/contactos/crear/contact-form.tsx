@@ -42,6 +42,9 @@ import {
 } from "~/components/ui/dialog";
 import { cn } from "~/lib/utils";
 import { CompactPropertyCard } from "./compact-property-card";
+import { DuplicateWarningDialog } from "../duplicate-warning-dialog";
+import type { DuplicateContact } from "~/lib/contact-duplicate-detection";
+import type { Contact } from "~/lib/data";
 
 // Contact form data interface
 interface ContactFormData {
@@ -134,6 +137,8 @@ export default function ContactForm() {
     "change" | "add" | null
   >(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateContacts, setDuplicateContacts] = useState<DuplicateContact[]>([]);
   const router = useRouter();
 
   // Fetch listings on component mount
@@ -240,7 +245,7 @@ export default function ContactForm() {
     await createContactProcess();
   };
 
-  const createContactProcess = async () => {
+  const createContactProcess = async (bypassDuplicateCheck = false) => {
     try {
       setIsCreating(true);
 
@@ -272,25 +277,36 @@ export default function ContactForm() {
         isActive: true,
       };
 
-      let newContact;
+      let result;
 
       if (formData.selectedListings.length === 0) {
         // Create contact without listing relationships
-        newContact = await createContact(contactData);
-        console.log("Contact created without listings:", newContact);
+        result = await createContact(contactData, bypassDuplicateCheck);
       } else {
         // Create contact with listing relationships
-        newContact = await createContactWithListings(
+        result = await createContactWithListings(
           contactData,
           formData.selectedListings,
           formData.contactType,
           ownershipAction ?? undefined,
+          bypassDuplicateCheck,
         );
-        console.log("Contact created with listings:", newContact);
       }
 
+      // Check if result is a duplicate error
+      if ("error" in result && result.error === "DUPLICATE_FOUND") {
+        setDuplicateContacts(result.duplicates);
+        setShowDuplicateDialog(true);
+        setIsCreating(false);
+        return;
+      }
+
+      // At this point, result is guaranteed to be a Contact
+      const newContact = result as Contact;
+      console.log("Contact created:", newContact);
+
       // If contact is a demandante (buyer), automatically create appointment task
-      if (newContact?.contactId && formData.contactType === "buyer") {
+      if (newContact.contactId && formData.contactType === "buyer") {
         try {
           setIsCreatingTask(true);
           const contactName = `${formData.firstName} ${formData.lastName}`.trim();
@@ -315,7 +331,7 @@ export default function ContactForm() {
       }
 
       // Redirect to contact detail page
-      if (newContact?.contactId) {
+      if (newContact.contactId) {
         router.push(`/contactos/${newContact.contactId}`);
       } else {
         router.push("/contactos");
@@ -336,6 +352,16 @@ export default function ContactForm() {
     setShowOwnershipDialog(false);
     // Proceed with contact creation
     void createContactProcess();
+  };
+
+  const handleUseExistingContact = (contactId: number) => {
+    // Redirect to the existing contact's detail page
+    router.push(`/contactos/${contactId}`);
+  };
+
+  const handleCreateAnyway = () => {
+    // Retry creation with bypass flag
+    void createContactProcess(true);
   };
 
   const nextStep = async () => {
@@ -627,8 +653,8 @@ export default function ContactForm() {
                   </div>
                 )}
               </div>
-              <ScrollArea className="h-[400px] pr-2">
-                <div className="space-y-3">
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-3 px-1 pr-4 pb-2 pt-1">
                   {isLoadingListings ? (
                     <div className="flex justify-center py-8">
                       <Loader className="h-6 w-6 animate-spin" />
@@ -767,11 +793,10 @@ export default function ContactForm() {
           <DialogHeader>
             <div className="flex items-center space-x-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              <DialogTitle>Confirmar acción de propiedad</DialogTitle>
+              <DialogTitle>¿Cambiar o agregar propietario?</DialogTitle>
             </div>
             <DialogDescription className="pt-2">
-              Has seleccionado propiedades que ya tienen propietario registrado.
-              ¿Qué acción deseas realizar?
+              Estas propiedades ya tienen un propietario. ¿Qué quieres hacer?
             </DialogDescription>
           </DialogHeader>
 
@@ -783,10 +808,10 @@ export default function ContactForm() {
                 onClick={() => handleOwnershipAction("change")}
               >
                 <div className="font-medium text-gray-900">
-                  Cambio de Propietario
+                  Cambiar propietario
                 </div>
                 <div className="text-sm text-gray-500">
-                  Reemplazar el propietario actual con el nuevo contacto
+                  Sustituir el propietario actual por este nuevo contacto
                 </div>
               </Button>
 
@@ -796,10 +821,10 @@ export default function ContactForm() {
                 onClick={() => handleOwnershipAction("add")}
               >
                 <div className="font-medium text-gray-900">
-                  Adición de Propietario
+                  Añadir otro propietario
                 </div>
                 <div className="text-sm text-gray-500">
-                  Agregar el nuevo contacto como propietario adicional
+                  Mantener el propietario actual y añadir este contacto
                 </div>
               </Button>
             </div>
@@ -815,6 +840,15 @@ export default function ContactForm() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Duplicate Warning Dialog */}
+      <DuplicateWarningDialog
+        isOpen={showDuplicateDialog}
+        onClose={() => setShowDuplicateDialog(false)}
+        duplicates={duplicateContacts}
+        onUseExisting={handleUseExistingContact}
+        onCreateAnyway={handleCreateAnyway}
+      />
     </div>
   );
 }

@@ -14,6 +14,12 @@ import type { Contact } from "../../lib/data";
 import { listingContacts } from "../db/schema";
 import { prospectUtils } from "../../lib/utils";
 import { getCurrentUserAccountId } from "../../lib/dal";
+import {
+  normalizePhone,
+  normalizeEmail,
+  normalizeName,
+  type DuplicateContact,
+} from "../../lib/contact-duplicate-detection";
 
 // Wrapper functions that automatically get accountId from current session
 // These maintain backward compatibility while adding account filtering
@@ -300,12 +306,194 @@ async function getPreferredAreaFromProspect(
   return areas[0]?.name;
 }
 
+/**
+ * Check for duplicate contacts based on email, phone, and name combinations.
+ * Returns an array of potential duplicate contacts.
+ * 
+ * Matching rules (in priority order):
+ * 1. Exact email match
+ * 2. Exact phone match
+ * 3. Email + name match
+ * 4. Phone + name match
+ */
+export async function checkForDuplicateContacts(
+  contactData: {
+    firstName: string;
+    lastName?: string;
+    email?: string | null;
+    phone?: string | null;
+  },
+  accountId: number,
+): Promise<DuplicateContact[]> {
+  try {
+    const duplicates: DuplicateContact[] = [];
+    
+    // Normalize input data
+    const normalizedEmail = normalizeEmail(contactData.email);
+    const normalizedPhone = normalizePhone(contactData.phone);
+    const normalizedFirstName = normalizeName(contactData.firstName);
+    const normalizedLastName = normalizeName(contactData.lastName);
+    
+    // Skip if no valid identifiers
+    if (!normalizedEmail && !normalizedPhone) {
+      return duplicates;
+    }
+    
+    // Rule 1: Exact email match
+    if (normalizedEmail) {
+      const emailMatches = await db
+        .select()
+        .from(contacts)
+        .where(
+          and(
+            eq(contacts.accountId, BigInt(accountId)),
+            eq(contacts.isActive, true),
+            sql`LOWER(TRIM(${contacts.email})) = ${normalizedEmail}`,
+          ),
+        );
+      
+      for (const match of emailMatches) {
+        duplicates.push({
+          contactId: Number(match.contactId),
+          firstName: match.firstName,
+          lastName: match.lastName,
+          email: match.email,
+          phone: match.phone,
+          matchReason: "Mismo correo electrónico",
+          matchType: "exact_email",
+        });
+      }
+    }
+    
+    // Rule 2: Exact phone match
+    if (normalizedPhone) {
+      const phoneMatches = await db
+        .select()
+        .from(contacts)
+        .where(
+          and(
+            eq(contacts.accountId, BigInt(accountId)),
+            eq(contacts.isActive, true),
+            sql`REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(${contacts.phone}, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') LIKE ${`%${normalizedPhone}%`}`,
+          ),
+        );
+      
+      for (const match of phoneMatches) {
+        // Avoid duplicates if already matched by email
+        if (!duplicates.some(d => d.contactId === Number(match.contactId))) {
+          duplicates.push({
+            contactId: Number(match.contactId),
+            firstName: match.firstName,
+            lastName: match.lastName,
+            email: match.email,
+            phone: match.phone,
+            matchReason: "Mismo número de teléfono",
+            matchType: "exact_phone",
+          });
+        }
+      }
+    }
+    
+    // Rule 3: Email + name match
+    if (normalizedEmail && normalizedFirstName) {
+      const emailNameMatches = await db
+        .select()
+        .from(contacts)
+        .where(
+          and(
+            eq(contacts.accountId, BigInt(accountId)),
+            eq(contacts.isActive, true),
+            sql`LOWER(TRIM(${contacts.email})) = ${normalizedEmail}`,
+            sql`LOWER(TRIM(${contacts.firstName})) = ${normalizedFirstName}`,
+            normalizedLastName
+              ? sql`LOWER(TRIM(${contacts.lastName})) = ${normalizedLastName}`
+              : sql`1=1`,
+          ),
+        );
+      
+      for (const match of emailNameMatches) {
+        if (!duplicates.some(d => d.contactId === Number(match.contactId))) {
+          duplicates.push({
+            contactId: Number(match.contactId),
+            firstName: match.firstName,
+            lastName: match.lastName,
+            email: match.email,
+            phone: match.phone,
+            matchReason: "Mismo correo y nombre",
+            matchType: "email_and_name",
+          });
+        }
+      }
+    }
+    
+    // Rule 4: Phone + name match
+    if (normalizedPhone && normalizedFirstName) {
+      const phoneNameMatches = await db
+        .select()
+        .from(contacts)
+        .where(
+          and(
+            eq(contacts.accountId, BigInt(accountId)),
+            eq(contacts.isActive, true),
+            sql`REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(${contacts.phone}, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') LIKE ${`%${normalizedPhone}%`}`,
+            sql`LOWER(TRIM(${contacts.firstName})) = ${normalizedFirstName}`,
+            normalizedLastName
+              ? sql`LOWER(TRIM(${contacts.lastName})) = ${normalizedLastName}`
+              : sql`1=1`,
+          ),
+        );
+      
+      for (const match of phoneNameMatches) {
+        if (!duplicates.some(d => d.contactId === Number(match.contactId))) {
+          duplicates.push({
+            contactId: Number(match.contactId),
+            firstName: match.firstName,
+            lastName: match.lastName,
+            email: match.email,
+            phone: match.phone,
+            matchReason: "Mismo teléfono y nombre",
+            matchType: "phone_and_name",
+          });
+        }
+      }
+    }
+    
+    return duplicates;
+  } catch (error) {
+    console.error("Error checking for duplicate contacts:", error);
+    return [];
+  }
+}
+
 // Create a new contact
+// Returns either the created contact or a result object with duplicate information
 export async function createContact(
   data: Omit<Contact, "contactId" | "createdAt" | "updatedAt">,
-) {
+  bypassDuplicateCheck = false,
+): Promise<
+  | Contact
+  | { error: "DUPLICATE_FOUND"; duplicates: DuplicateContact[] }
+> {
   try {
     const accountId = await getCurrentUserAccountId();
+    
+    // Check for duplicates unless bypassed
+    if (!bypassDuplicateCheck) {
+      const duplicates = await checkForDuplicateContacts(
+        {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+        },
+        accountId,
+      );
+      
+      if (duplicates.length > 0) {
+        return { error: "DUPLICATE_FOUND", duplicates };
+      }
+    }
+    
     const [result] = await db
       .insert(contacts)
       .values({
@@ -328,7 +516,8 @@ export async function createContact(
           eq(contacts.accountId, BigInt(accountId)),
         ),
       );
-    return newContact;
+    if (!newContact) throw new Error("Failed to retrieve created contact");
+    return newContact as Contact;
   } catch (error) {
     console.error("Error creating contact:", error);
     throw error;
@@ -336,14 +525,37 @@ export async function createContact(
 }
 
 // Create a new contact with listing relationships
+// Returns either the created contact or a result object with duplicate information
 export async function createContactWithListings(
   contactData: Omit<Contact, "contactId" | "createdAt" | "updatedAt">,
   selectedListings: bigint[],
   contactType: "owner" | "buyer",
   ownershipAction?: "change" | "add",
-) {
+  bypassDuplicateCheck = false,
+): Promise<
+  | Contact
+  | { error: "DUPLICATE_FOUND"; duplicates: DuplicateContact[] }
+> {
   try {
     const accountId = await getCurrentUserAccountId();
+    
+    // Check for duplicates unless bypassed
+    if (!bypassDuplicateCheck) {
+      const duplicates = await checkForDuplicateContacts(
+        {
+          firstName: contactData.firstName,
+          lastName: contactData.lastName,
+          email: contactData.email,
+          phone: contactData.phone,
+        },
+        accountId,
+      );
+      
+      if (duplicates.length > 0) {
+        return { error: "DUPLICATE_FOUND", duplicates };
+      }
+    }
+    
     // First, create the contact
     const [result] = await db
       .insert(contacts)
@@ -411,7 +623,8 @@ export async function createContactWithListings(
         ),
       );
 
-    return newContact;
+    if (!newContact) throw new Error("Failed to retrieve created contact");
+    return newContact as Contact;
   } catch (error) {
     console.error("Error creating contact with listings:", error);
     throw error;

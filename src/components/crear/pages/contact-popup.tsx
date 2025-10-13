@@ -12,6 +12,9 @@ import {
 } from "~/components/ui/dialog";
 import { Loader, User } from "lucide-react";
 import { createContact } from "~/server/queries/contact";
+import { DuplicateWarningDialog } from "~/components/contactos/duplicate-warning-dialog";
+import type { DuplicateContact } from "~/lib/contact-duplicate-detection";
+import { getContactByIdWithAuth } from "~/server/queries/contact";
 
 interface ContactPopupProps {
   isOpen: boolean;
@@ -42,6 +45,8 @@ export default function ContactPopup({
 }: ContactPopupProps) {
   const [formData, setFormData] = useState<ContactFormData>(initialFormData);
   const [isCreating, setIsCreating] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateContacts, setDuplicateContacts] = useState<DuplicateContact[]>([]);
 
   const updateFormData = (field: keyof ContactFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -82,7 +87,7 @@ export default function ContactPopup({
     return true;
   };
 
-  const handleCreateContact = async () => {
+  const handleCreateContact = async (bypassDuplicateCheck = false) => {
     if (!validateForm()) return;
 
     try {
@@ -100,8 +105,17 @@ export default function ContactPopup({
       };
 
       // Create contact using the simple createContact function
-      const newContact = await createContact(contactData);
+      const result = await createContact(contactData, bypassDuplicateCheck);
 
+      // Check if result is a duplicate error
+      if ("error" in result && result.error === "DUPLICATE_FOUND") {
+        setDuplicateContacts(result.duplicates);
+        setShowDuplicateDialog(true);
+        setIsCreating(false);
+        return;
+      }
+
+      const newContact = result;
       console.log("Contact created:", newContact);
 
       // Reset form
@@ -118,6 +132,34 @@ export default function ContactPopup({
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handleUseExistingContact = async (contactId: number) => {
+    try {
+      // Fetch the full contact details
+      const existingContact = await getContactByIdWithAuth(contactId);
+      
+      if (existingContact) {
+        // Reset form
+        setFormData(initialFormData);
+        
+        // Notify parent component with existing contact
+        onContactCreated(existingContact);
+        
+        // Close both dialogs
+        setShowDuplicateDialog(false);
+        onClose();
+      }
+    } catch (error) {
+      console.error("Error fetching existing contact:", error);
+      alert("Error al cargar el contacto existente.");
+    }
+  };
+
+  const handleCreateAnyway = () => {
+    // Retry creation with bypass flag
+    setShowDuplicateDialog(false);
+    void handleCreateContact(true);
   };
 
   const handleClose = () => {
@@ -194,7 +236,7 @@ export default function ContactPopup({
             Cancelar
           </Button>
           <Button
-            onClick={handleCreateContact}
+            onClick={() => handleCreateContact()}
             disabled={isCreating}
             className="bg-gray-900 hover:bg-gray-800"
           >
@@ -209,6 +251,15 @@ export default function ContactPopup({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Duplicate Warning Dialog */}
+      <DuplicateWarningDialog
+        isOpen={showDuplicateDialog}
+        onClose={() => setShowDuplicateDialog(false)}
+        duplicates={duplicateContacts}
+        onUseExisting={handleUseExistingContact}
+        onCreateAnyway={handleCreateAnyway}
+      />
     </Dialog>
   );
 }

@@ -3,6 +3,7 @@ import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { Map, Bed, Bath, Square } from "lucide-react";
+import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImagePlaceholder";
 
 interface CompactPropertyCardProps {
   listing: {
@@ -61,16 +62,25 @@ export function CompactPropertyCard({
 
         {/* Image */}
         <div className="relative mr-1.5 h-10 w-14 flex-shrink-0 overflow-hidden rounded">
-          <Image
-            src={listing.imageUrl ?? ""}
-            alt={listing.title ?? "Property image"}
-            fill
-            className="object-cover"
-          />
+          {listing.imageUrl && 
+           !listing.imageUrl.includes('youtube.com') && 
+           !listing.imageUrl.includes('youtu.be') ? (
+            <Image
+              src={listing.imageUrl}
+              alt={listing.title ?? "Property image"}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <PropertyImagePlaceholder 
+              propertyType={listing.propertyType}
+              className="h-full w-full rounded"
+            />
+          )}
           {/* Property Type Badge */}
           <Badge
             variant="outline"
-            className="absolute left-0.5 top-0.5 bg-white/90 px-0.5 py-0 text-[9px]"
+            className="absolute left-0.5 top-0.5 bg-white/90 px-0.5 py-0 text-[9px] z-10"
           >
             {getPropertyTypeLabel(listing.propertyType)}
           </Badge>
