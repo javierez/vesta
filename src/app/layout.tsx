@@ -8,6 +8,14 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Vesta CRM - Real Estate Management System",
   description: "A comprehensive CRM system for real estate professionals",
+  appleWebApp: {
+    capable: true,
+    title: "Vesta CRM",
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({

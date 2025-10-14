@@ -142,6 +142,7 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [shouldBlockNavigation, setShouldBlockNavigation] = useState(true);
 
   // Handle close button click - show confirmation dialog
   const handleCloseForm = () => {
@@ -150,11 +151,13 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
 
   // Handle save and close action
   const handleSaveAndClose = async () => {
+    setShouldBlockNavigation(false);
     router.push("/propiedades");
   };
 
   // Handle discard and close action
   const handleDiscardAndClose = () => {
+    setShouldBlockNavigation(false);
     router.push("/propiedades");
   };
 
@@ -162,6 +165,96 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
   const handleCloseConfirmationDialog = () => {
     setShowCloseConfirmation(false);
   };
+
+  // Block navigation when there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // Only show warning if we should block navigation and there are unsaved changes
+      if (shouldBlockNavigation && state.hasUnsavedChanges) {
+        event.preventDefault();
+        // Most modern browsers ignore custom messages and show their own
+        event.returnValue = '¿Estás seguro de que quieres salir? Tienes cambios sin guardar que se perderán.';
+        return event.returnValue;
+      }
+    };
+
+    // Add event listener for browser navigation (back button, tab close, etc.)
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [shouldBlockNavigation, state.hasUnsavedChanges]);
+
+  // Handle browser back button with custom dialog
+  useEffect(() => {
+    // Push a new state to history to intercept back button
+    if (shouldBlockNavigation && state.hasUnsavedChanges) {
+      // Add a hash to the current URL to create a history entry
+      window.history.pushState(null, '', window.location.href);
+
+      const handlePopState = (event: PopStateEvent) => {
+        // Show our custom confirmation dialog
+        setShowCloseConfirmation(true);
+        // Push the state back so we stay on the page
+        window.history.pushState(null, '', window.location.href);
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [shouldBlockNavigation, state.hasUnsavedChanges]);
+
+  // Intercept all link clicks (navbar, sidebar, etc.)
+  useEffect(() => {
+    if (!shouldBlockNavigation || !state.hasUnsavedChanges) return;
+
+    const handleClick = (event: MouseEvent) => {
+      // Find if the click was on or within a link
+      let target = event.target as HTMLElement | null;
+      let linkElement: HTMLAnchorElement | null = null;
+
+      // Traverse up the DOM tree to find an anchor tag
+      while (target && target !== document.body) {
+        if (target.tagName === 'A') {
+          linkElement = target as HTMLAnchorElement;
+          break;
+        }
+        target = target.parentElement;
+      }
+
+      // If we found a link
+      if (linkElement) {
+        const href = linkElement.getAttribute('href');
+        
+        // Check if it's an internal navigation link (not external, not same page)
+        if (href && 
+            !href.startsWith('http') && 
+            !href.startsWith('mailto:') && 
+            !href.startsWith('tel:') &&
+            !href.startsWith('#') &&
+            href !== window.location.pathname) {
+          
+          // Prevent the navigation
+          event.preventDefault();
+          event.stopPropagation();
+          
+          // Show our custom confirmation dialog
+          setShowCloseConfirmation(true);
+        }
+      }
+    };
+
+    // Add click listener with capture phase to catch it before React Router
+    document.addEventListener('click', handleClick, true);
+
+    return () => {
+      document.removeEventListener('click', handleClick, true);
+    };
+  }, [shouldBlockNavigation, state.hasUnsavedChanges]);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -337,6 +430,7 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
       // Last step - save all data and complete registration
       const saved = await saveRegistrationData();
       if (saved) {
+        setShouldBlockNavigation(false); // Disable blocking before navigation
         router.push(`/propiedades`);
       } else {
         // Show error, don't navigate
