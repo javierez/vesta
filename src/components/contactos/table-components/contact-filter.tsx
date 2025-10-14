@@ -268,11 +268,11 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
     <div className="space-y-4">
       {/* Search Bar and Controls */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 items-center space-x-2">
-          <div className="relative flex-1 md:max-w-sm">
+        <div className="flex w-full flex-col gap-3 md:flex-1 md:flex-row md:items-center md:space-x-2">
+          <div className="relative w-full md:flex-1 md:max-w-sm">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar contactos..."
+              placeholder="Buscar por nombre, email, teléfono o DNI..."
               className="pl-8"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
@@ -280,7 +280,7 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
           </div>
 
           {/* Role Filter Toggle */}
-          <div className="relative h-10 max-w-md flex-1 rounded-lg bg-gray-100 p-1">
+          <div className="relative h-10 w-full rounded-lg bg-gray-100 p-1 md:max-w-xs md:flex-1">
             {selectedRole && (
               <motion.div
                 className="absolute left-1 top-1 h-8 rounded-md bg-white shadow-sm"

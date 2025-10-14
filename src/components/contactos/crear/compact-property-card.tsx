@@ -47,21 +47,21 @@ export function CompactPropertyCard({
       )}
       onClick={() => onClick(listing.listingId, !isSelected)}
     >
-      <div className="flex items-center p-2">
+      <div className="flex items-center p-2 sm:p-2.5">
         {/* Checkbox */}
-        <div className="mr-1.5 flex-shrink-0">
+        <div className="mr-2 flex-shrink-0">
           <div
             className={cn(
-              "flex h-3.5 w-3.5 items-center justify-center rounded border-2 transition-colors",
+              "flex h-4 w-4 sm:h-3.5 sm:w-3.5 items-center justify-center rounded border-2 transition-colors",
               isSelected ? "border-amber-500 bg-amber-500" : "border-gray-300",
             )}
           >
-            {isSelected && <div className="h-1.5 w-1.5 rounded-sm bg-white" />}
+            {isSelected && <div className="h-2 w-2 sm:h-1.5 sm:w-1.5 rounded-sm bg-white" />}
           </div>
         </div>
 
         {/* Image */}
-        <div className="relative mr-1.5 h-10 w-14 flex-shrink-0 overflow-hidden rounded">
+        <div className="relative mr-2 sm:mr-1.5 h-12 w-16 sm:h-10 sm:w-14 flex-shrink-0 overflow-hidden rounded">
           {listing.imageUrl && 
            !listing.imageUrl.includes('youtube.com') && 
            !listing.imageUrl.includes('youtu.be') ? (
@@ -88,12 +88,12 @@ export function CompactPropertyCard({
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-1">
+          <div className="flex items-start justify-between gap-1.5 sm:gap-1">
             <div className="min-w-0 flex-1">
-              <h4 className="truncate text-xs font-semibold leading-tight text-gray-900">
+              <h4 className="truncate text-xs sm:text-xs font-semibold leading-tight text-gray-900">
                 {listing.title ?? listing.referenceNumber ?? "Sin título"}
               </h4>
-              <div className="mt-0.5 flex items-center gap-1 text-[10px] text-gray-500">
+              <div className="mt-0.5 flex items-center gap-1 sm:gap-1 text-[10px] text-gray-500">
                 {listing.city && (
                   <div className="flex items-center">
                     <Map className="mr-0.5 h-2.5 w-2.5" />
@@ -129,7 +129,7 @@ export function CompactPropertyCard({
 
             {/* Price and Status - Stacked vertically */}
             <div className="flex flex-shrink-0 flex-col items-end">
-              <div className="text-xs font-bold leading-tight text-gray-900">
+              <div className="text-xs sm:text-xs font-bold leading-tight text-gray-900 whitespace-nowrap">
                 {formatPrice(listing.price)}€
                 {listing.listingType === "Rent" && (
                   <span className="text-[9px] font-normal text-gray-500">
@@ -140,7 +140,7 @@ export function CompactPropertyCard({
               <Badge
                 variant="secondary"
                 className={cn(
-                  "mt-0.5 px-1 py-0 text-[9px]",
+                  "mt-0.5 px-1 py-0 text-[9px] whitespace-nowrap",
                   statusColors[listing.listingType],
                 )}
               >

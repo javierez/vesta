@@ -12,6 +12,8 @@ import {
   Square,
   Eye,
   EyeOff,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -86,6 +88,28 @@ export function ImageGallery({
     });
     setImageSources(sources);
   }, [initialImages]);
+
+  // Keyboard navigation for expanded image view
+  React.useEffect(() => {
+    if (expandedImage === null) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        if (expandedImage > 0) {
+          setExpandedImage(expandedImage - 1);
+        }
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (expandedImage < images.length - 1) {
+          setExpandedImage(expandedImage + 1);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [expandedImage, images.length]);
 
   const handleImageError = (index: number) => {
     console.log("Image failed to load:", imageSources[index]);
@@ -473,6 +497,18 @@ export function ImageGallery({
     setImageSources(originalImageSources);
   };
 
+  const handlePreviousImage = () => {
+    if (expandedImage !== null && expandedImage > 0) {
+      setExpandedImage(expandedImage - 1);
+    }
+  };
+
+  const handleNextImage = () => {
+    if (expandedImage !== null && expandedImage < images.length - 1) {
+      setExpandedImage(expandedImage + 1);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Help text for drag and drop */}
@@ -766,6 +802,8 @@ export function ImageGallery({
                 onError={() => handleImageError(expandedImage)}
                 onLoad={() => handleImageLoad(expandedImage)}
               />
+
+              {/* Close button */}
               <button
                 type="button"
                 className="absolute right-4 top-4 rounded-full bg-white p-2.5 text-gray-800 shadow-lg transition-all hover:scale-110 hover:bg-gray-100"
@@ -774,6 +812,35 @@ export function ImageGallery({
               >
                 <X className="h-6 w-6" />
               </button>
+
+              {/* Previous button */}
+              {expandedImage > 0 && (
+                <button
+                  type="button"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-3 text-gray-800 shadow-lg transition-all hover:scale-110 hover:bg-white"
+                  onClick={handlePreviousImage}
+                  aria-label="Imagen anterior"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+
+              {/* Next button */}
+              {expandedImage < images.length - 1 && (
+                <button
+                  type="button"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-3 text-gray-800 shadow-lg transition-all hover:scale-110 hover:bg-white"
+                  onClick={handleNextImage}
+                  aria-label="Siguiente imagen"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
+
+              {/* Image counter */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm">
+                {expandedImage + 1} / {images.length}
+              </div>
             </div>
           )}
         </DialogContent>

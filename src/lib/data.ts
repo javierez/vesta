@@ -1070,6 +1070,7 @@ export type Contact = {
   contactId: bigint;
   firstName: string;
   lastName: string;
+  nif?: string;
   email?: string;
   phone?: string;
   additionalInfo?: {

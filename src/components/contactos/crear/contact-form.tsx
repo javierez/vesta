@@ -51,6 +51,7 @@ interface ContactFormData {
   // Personal Information
   firstName: string;
   lastName: string;
+  nif: string;
   email: string;
   phone: string;
   notes: string;
@@ -63,6 +64,7 @@ interface ContactFormData {
 const initialFormData: ContactFormData = {
   firstName: "",
   lastName: "",
+  nif: "",
   email: "",
   phone: "",
   notes: "",
@@ -270,6 +272,7 @@ export default function ContactForm() {
       const contactData = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
+        nif: formData.nif.trim() || undefined,
         email: formData.email.trim() || undefined,
         phone: formData.phone.trim() || undefined,
         additionalInfo,
@@ -448,8 +451,8 @@ export default function ContactForm() {
     switch (step.id) {
       case "personal":
         return (
-          <div className="space-y-8">
-            <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FloatingLabelInput
                 id="firstName"
                 value={formData.firstName}
@@ -466,13 +469,12 @@ export default function ContactForm() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FloatingLabelInput
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange("email")}
-                placeholder="Email"
+                id="nif"
+                value={formData.nif}
+                onChange={handleInputChange("nif")}
+                placeholder="DNI (opcional)"
               />
               <FloatingLabelInput
                 id="phone"
@@ -483,8 +485,18 @@ export default function ContactForm() {
               />
             </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="notes" className="text-base font-medium text-gray-900">Notas adicionales</Label>
+            <div className="grid grid-cols-1 gap-4">
+              <FloatingLabelInput
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange("email")}
+                placeholder="Email"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes" className="text-sm sm:text-base font-medium text-gray-900">Notas adicionales</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
@@ -500,14 +512,14 @@ export default function ContactForm() {
 
       case "property":
         return (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Contact Type Selection */}
             <div className="space-y-3">
-              <Label className="text-base font-medium text-gray-900">Relación con las propiedades</Label>
-              <div className="relative h-12 max-w-md flex-1 rounded-xl bg-gradient-to-r from-amber-100 to-rose-100 p-1 shadow-inner">
+              <Label className="text-sm sm:text-base font-medium text-gray-900">Relación con las propiedades</Label>
+              <div className="relative h-11 sm:h-12 w-full max-w-md flex-1 rounded-xl bg-gradient-to-r from-amber-100 to-rose-100 p-1 shadow-inner">
                 {formData.contactType && (
                   <motion.div
-                    className="absolute left-1 top-1 h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 shadow-lg"
+                    className="absolute left-1 top-1 h-9 sm:h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 shadow-lg"
                     animate={{
                       width: "calc(50% - 4px)",
                       x: formData.contactType === "owner" ? "0%" : "100%",
@@ -520,7 +532,7 @@ export default function ContactForm() {
                     type="button"
                     onClick={() => updateFormData("contactType", "owner")}
                     className={cn(
-                      "relative z-10 flex-1 rounded-lg text-sm font-medium transition-colors duration-200",
+                      "relative z-10 flex-1 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-200",
                       formData.contactType === "owner"
                         ? "text-white"
                         : "text-gray-700",
@@ -532,7 +544,7 @@ export default function ContactForm() {
                     type="button"
                     onClick={() => updateFormData("contactType", "buyer")}
                     className={cn(
-                      "relative z-10 flex-1 rounded-lg text-sm font-medium transition-colors duration-200",
+                      "relative z-10 flex-1 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-200",
                       formData.contactType === "buyer"
                         ? "text-white"
                         : "text-gray-700",
@@ -546,26 +558,26 @@ export default function ContactForm() {
 
             {/* Property Search and Filters */}
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <div className="relative flex-1">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-0 sm:space-x-2">
+                <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                   <Input
                     placeholder="Buscar propiedades..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 w-full"
                   />
                 </div>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="border-amber-200 hover:border-amber-300 hover:bg-amber-50">
+                    <Button variant="outline" size="sm" className="border-amber-200 hover:border-amber-300 hover:bg-amber-50 w-full sm:w-auto">
                       <Filter className="mr-2 h-4 w-4" />
-                      Filtros
+                      <span className="text-xs sm:text-sm">Filtros</span>
                       {filters.listingType.length +
                         filters.propertyType.length >
                         0 && (
                         <Badge
-                          className="ml-2 rounded-sm px-1 font-normal bg-gradient-to-r from-amber-400 to-rose-400 text-white"
+                          className="ml-2 rounded-sm px-1 font-normal bg-gradient-to-r from-amber-400 to-rose-400 text-white text-xs"
                         >
                           {filters.listingType.length +
                             filters.propertyType.length}
@@ -632,9 +644,9 @@ export default function ContactForm() {
             </div>
 
             {/* Property List */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div className="text-xs sm:text-sm text-gray-600 break-words">
                   {formData.selectedListings.length > 0 ? (
                     <span>
                       {formData.selectedListings.length} propiedades
@@ -647,14 +659,14 @@ export default function ContactForm() {
                   )}
                 </div>
                 {validationError && (
-                  <div className="flex items-center space-x-2 text-sm text-red-600">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span>{validationError}</span>
+                  <div className="flex items-center space-x-2 text-xs sm:text-sm text-red-600">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                    <span className="break-words">{validationError}</span>
                   </div>
                 )}
               </div>
-              <ScrollArea className="h-[400px]">
-                <div className="space-y-3 px-1 pr-4 pb-2 pt-1">
+              <ScrollArea className="h-[300px] sm:h-[400px]">
+                <div className="space-y-3 px-1 pr-2 sm:pr-4 pb-2 pt-1">
                   {isLoadingListings ? (
                     <div className="flex justify-center py-8">
                       <Loader className="h-6 w-6 animate-spin" />
@@ -679,8 +691,8 @@ export default function ContactForm() {
                     })
                   ) : (
                     <div className="py-8 text-center text-gray-500">
-                      <Home className="mx-auto mb-2 h-8 w-8 text-gray-300" />
-                      <p>No se encontraron propiedades</p>
+                      <Home className="mx-auto mb-2 h-6 sm:h-8 w-6 sm:w-8 text-gray-300" />
+                      <p className="text-xs sm:text-sm">No se encontraron propiedades</p>
                     </div>
                   )}
                 </div>
@@ -695,20 +707,20 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen p-2 sm:p-4">
       <div className="mx-auto max-w-2xl">
-        <Card className="shadow-xl border-0 bg-white p-8">
-          <div className="mb-8">
-            <h1 className="mb-8 text-center text-2xl font-semibold text-gray-900">
+        <Card className="shadow-xl border-0 bg-white p-4 sm:p-6 md:p-8">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="mb-6 sm:mb-8 text-center text-xl sm:text-2xl font-semibold text-gray-900">
               CREAR NUEVO CONTACTO
             </h1>
 
             {/* Progress indicator */}
-            <div className="mb-8 flex items-center justify-center">
+            <div className="mb-6 sm:mb-8 flex items-center justify-center">
               {steps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
                   <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
+                    className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-300 ${
                       index <= currentStep
                         ? "border-transparent bg-gradient-to-r from-amber-400 to-rose-400 text-white shadow-lg scale-110"
                         : "border-2 border-gray-300 bg-gray-100 text-gray-400"
@@ -718,7 +730,7 @@ export default function ContactForm() {
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`mx-3 h-1 w-16 rounded-full transition-all duration-300 ${
+                      className={`mx-2 sm:mx-3 h-1 w-12 sm:w-16 rounded-full transition-all duration-300 ${
                         index < currentStep
                           ? "bg-gradient-to-r from-amber-400 to-rose-400 shadow-sm"
                           : "bg-gray-200"
@@ -730,8 +742,8 @@ export default function ContactForm() {
             </div>
           </div>
 
-          <div className="mb-8">
-            <h2 className="mb-6 text-xl font-medium text-gray-900 text-center">
+          <div className="mb-6 sm:mb-8">
+            <h2 className="mb-4 sm:mb-6 text-lg sm:text-xl font-medium text-gray-900 text-center">
               {steps[currentStep]?.title}
             </h2>
             <AnimatePresence mode="wait">
@@ -747,26 +759,26 @@ export default function ContactForm() {
             </AnimatePresence>
           </div>
 
-          <div className="flex justify-between border-t border-gray-100 pt-6 mt-8">
+          <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 border-t border-gray-100 pt-4 sm:pt-6 mt-6 sm:mt-8">
             <Button
               variant="outline"
               onClick={prevStep}
               disabled={currentStep === 0 || isCreating || isCreatingTask}
-              className="flex h-12 items-center space-x-2 px-6 border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-all duration-200"
+              className="flex h-11 sm:h-12 items-center justify-center space-x-2 px-4 sm:px-6 border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-all duration-200"
             >
               <ChevronLeft className="h-4 w-4" />
-              <span>Anterior</span>
+              <span className="text-sm sm:text-base">Anterior</span>
             </Button>
 
             <Button
               onClick={nextStep}
               disabled={isCreating || isCreatingTask}
-              className="flex h-12 items-center space-x-2 px-6 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white font-medium transition-all duration-200 hover:scale-105 shadow-lg"
+              className="flex h-11 sm:h-12 items-center justify-center space-x-2 px-4 sm:px-6 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white font-medium transition-all duration-200 hover:scale-105 shadow-lg"
             >
               {(isCreating || isCreatingTask) ? (
                 <>
                   <Loader className="h-4 w-4 animate-spin" />
-                  <span>
+                  <span className="text-sm sm:text-base">
                     {isCreating && !isCreatingTask && "Creando contacto..."}
                     {isCreating && isCreatingTask && "Creando contacto..."}
                     {!isCreating && isCreatingTask && "Creando tarea de seguimiento..."}
@@ -774,7 +786,7 @@ export default function ContactForm() {
                 </>
               ) : (
                 <>
-                  <span>
+                  <span className="text-sm sm:text-base">
                     {currentStep === steps.length - 1
                       ? "Crear Contacto"
                       : "Siguiente"}

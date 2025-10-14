@@ -296,10 +296,11 @@ export function YouTubeLinkManager({
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
           <div
             onClick={() => setIsAddDialogOpen(true)}
-            className="group relative flex h-40 w-full min-w-[120px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
+            className="group relative flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
+            style={{ aspectRatio: '16 / 9' }}
           >
             <Plus className="mb-1 h-5 w-5 text-gray-400 transition-colors duration-200 group-hover:text-gray-500" />
             <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
@@ -373,7 +374,7 @@ export function YouTubeLinkManager({
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
         {youtubeLinks.map((link, idx) => {
           const videoId = extractVideoId(link.imageUrl);
 
@@ -389,6 +390,7 @@ export function YouTubeLinkManager({
                 !isSelectMode && "cursor-move",
                 !link.isActive && "opacity-50"
               )}
+              style={{ aspectRatio: '16 / 9' }}
               draggable={!isSelectMode && !isUpdatingOrder}
               onDragStart={(e) => handleDragStart(e, idx)}
               onDragEnd={handleDragEnd}
@@ -403,8 +405,7 @@ export function YouTubeLinkManager({
                   title="YouTube video player"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
-                  className="w-full rounded-t-lg"
-                  style={{ aspectRatio: '16 / 9' }}
+                  className="w-full h-full rounded-t-lg"
                 />
               )}
 
@@ -486,7 +487,8 @@ export function YouTubeLinkManager({
         {/* Add YouTube Link Placeholder */}
         <div
           onClick={() => setIsAddDialogOpen(true)}
-          className="group relative flex h-40 w-full min-w-[120px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
+          className="group relative flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
+          style={{ aspectRatio: '16 / 9' }}
         >
           <Plus className="mb-1 h-5 w-5 text-gray-400 transition-colors duration-200 group-hover:text-gray-500" />
           <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">

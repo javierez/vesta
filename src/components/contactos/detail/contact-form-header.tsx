@@ -188,6 +188,7 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
               <div className="mt-4 flex items-center gap-6 text-sm text-gray-600">
                 {contact.email && (
                   <div className="group flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
                     <span className="transition-all duration-200 group-hover:font-semibold">
                       {contact.email}
                     </span>
@@ -219,6 +220,7 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
                 )}
                 {contact.phone && (
                   <div className="group flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
                     <span className="transition-all duration-200 group-hover:font-semibold">
                       {contact.phone}
                     </span>

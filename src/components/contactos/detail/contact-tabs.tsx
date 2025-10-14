@@ -1,14 +1,11 @@
 "use client";
 
 import { Card } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { cn } from "~/lib/utils";
 import { useState, useEffect } from "react";
 import { User, Building, Plus } from "lucide-react";
-import { Textarea } from "~/components/ui/textarea";
 import {
   updateContactWithAuth,
   getOwnerListingsWithAuth,
@@ -20,7 +17,6 @@ import {
   deleteContactTaskWithAuth,
 } from "~/server/queries/task";
 import { toast } from "sonner";
-import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern-save-indicator";
 import { PropertyCard } from "~/components/property-card";
 import {
   ContactInterestForm,
@@ -46,6 +42,9 @@ import {
   updateUserCommentAction,
   deleteUserCommentAction,
 } from "~/server/actions/user-comments";
+import { ContactBasicInfoCard } from "./cards/contact-basic-info-card";
+import { ContactDetailsCard } from "./cards/contact-details-card";
+import { ContactNotesCard } from "./cards/contact-notes-card";
 
 // Define ProspectData interface to match database schema
 interface ProspectData {
@@ -140,6 +139,7 @@ interface ContactTabsProps {
     contactId: bigint;
     firstName: string;
     lastName: string;
+    nif?: string;
     email?: string;
     phone?: string;
     // contactType can be missing; we will derive from flags/counts if so
@@ -231,6 +231,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   // Form states
   const [firstName, setFirstName] = useState(contact.firstName ?? "");
   const [lastName, setLastName] = useState(contact.lastName ?? "");
+  const [nif, setNif] = useState(contact.nif ?? "");
   const [email, setEmail] = useState(contact.email ?? "");
   const [phone, setPhone] = useState(contact.phone ?? "");
   const [additionalInfo] = useState(contact.additionalInfo ?? {});
@@ -816,7 +817,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
 
       switch (moduleName) {
         case "basicInfo":
-          contactData = { firstName, lastName };
+          contactData = { firstName, lastName, nif };
           break;
         case "contactDetails":
           contactData = { email, phone };
@@ -973,135 +974,41 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         <div className="mx-auto max-w-4xl space-y-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Basic Information */}
-            <Card
-              className={cn(
-                "relative p-4 transition-all duration-500 ease-out",
-                getCardStyles("basicInfo"),
-              )}
-            >
-              <ModernSaveIndicator
-                state={moduleStates.basicInfo?.saveState ?? "idle"}
-                onSave={() => saveModule("basicInfo")}
-              />
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold tracking-wide">
-                  INFORMACIÓN BÁSICA
-                </h3>
-              </div>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="firstName" className="text-sm">
-                    Nombre
-                  </Label>
-                  <Input
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => {
-                      setFirstName(e.target.value);
-                      updateModuleState("basicInfo", true);
-                    }}
-                    className="h-8 text-gray-500"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="lastName" className="text-sm">
-                    Apellidos
-                  </Label>
-                  <Input
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => {
-                      setLastName(e.target.value);
-                      updateModuleState("basicInfo", true);
-                    }}
-                    className="h-8 text-gray-500"
-                  />
-                </div>
-              </div>
-            </Card>
+            <ContactBasicInfoCard
+              firstName={firstName}
+              setFirstName={setFirstName}
+              lastName={lastName}
+              setLastName={setLastName}
+              nif={nif}
+              setNif={setNif}
+              saveState={moduleStates.basicInfo?.saveState ?? "idle"}
+              onSave={() => saveModule("basicInfo")}
+              onUpdateModule={(hasChanges) => updateModuleState("basicInfo", hasChanges)}
+              getCardStyles={getCardStyles}
+            />
 
             {/* Contact Details */}
-            <Card
-              className={cn(
-                "relative p-4 transition-all duration-500 ease-out",
-                getCardStyles("contactDetails"),
-              )}
-            >
-              <ModernSaveIndicator
-                state={moduleStates.contactDetails?.saveState ?? "idle"}
-                onSave={() => saveModule("contactDetails")}
-              />
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold tracking-wide">
-                  DATOS DE CONTACTO
-                </h3>
-              </div>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-sm">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      updateModuleState("contactDetails", true);
-                    }}
-                    className="h-8 text-gray-500"
-                    placeholder="contacto@email.com"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-sm">
-                    Teléfono
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      updateModuleState("contactDetails", true);
-                    }}
-                    className="h-8 text-gray-500"
-                    placeholder="+34 600 000 000"
-                  />
-                </div>
-              </div>
-            </Card>
+            <ContactDetailsCard
+              email={email}
+              setEmail={setEmail}
+              phone={phone}
+              setPhone={setPhone}
+              saveState={moduleStates.contactDetails?.saveState ?? "idle"}
+              onSave={() => saveModule("contactDetails")}
+              onUpdateModule={(hasChanges) => updateModuleState("contactDetails", hasChanges)}
+              getCardStyles={getCardStyles}
+            />
           </div>
 
           {/* Notes Section */}
-          <Card
-            className={cn(
-              "relative p-4 transition-all duration-500 ease-out",
-              getCardStyles("notes"),
-            )}
-          >
-            <ModernSaveIndicator
-              state={moduleStates.notes?.saveState ?? "idle"}
-              onSave={() => saveModule("notes")}
-            />
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-wide">NOTAS</h3>
-            </div>
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => {
-                    setNotes(e.target.value);
-                    updateModuleState("notes", true);
-                  }}
-                  className="min-h-[120px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300"
-                  placeholder="Información adicional sobre el contacto..."
-                />
-              </div>
-            </div>
-          </Card>
+          <ContactNotesCard
+            notes={notes}
+            setNotes={setNotes}
+            saveState={moduleStates.notes?.saveState ?? "idle"}
+            onSave={() => saveModule("notes")}
+            onUpdateModule={(hasChanges) => updateModuleState("notes", hasChanges)}
+            getCardStyles={getCardStyles}
+          />
         </div>
       </TabsContent>
 

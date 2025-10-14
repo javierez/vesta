@@ -499,6 +499,7 @@ export async function createContact(
       .values({
         firstName: data.firstName,
         lastName: data.lastName,
+        nif: data.nif,
         email: data.email,
         phone: data.phone,
         additionalInfo: data.additionalInfo ?? {},
@@ -562,6 +563,7 @@ export async function createContactWithListings(
       .values({
         firstName: contactData.firstName,
         lastName: contactData.lastName,
+        nif: contactData.nif,
         email: contactData.email,
         phone: contactData.phone,
         additionalInfo: contactData.additionalInfo ?? {},
@@ -799,6 +801,7 @@ export async function listContactsWithTypes(
             like(contacts.lastName, `%${filters.searchQuery}%`),
             like(contacts.email, `%${filters.searchQuery}%`),
             like(contacts.phone, `%${filters.searchQuery}%`),
+            like(contacts.nif, `%${filters.searchQuery}%`),
           ),
         );
       }
@@ -1754,6 +1757,7 @@ export async function listContactsOwnerData(
             like(contacts.lastName, `%${filters.searchQuery}%`),
             like(contacts.email, `%${filters.searchQuery}%`),
             like(contacts.phone, `%${filters.searchQuery}%`),
+            like(contacts.nif, `%${filters.searchQuery}%`),
           ),
         );
       }
@@ -2038,6 +2042,7 @@ export async function listContactsBuyerData(
             like(contacts.lastName, `%${filters.searchQuery}%`),
             like(contacts.email, `%${filters.searchQuery}%`),
             like(contacts.phone, `%${filters.searchQuery}%`),
+            like(contacts.nif, `%${filters.searchQuery}%`),
           ),
         );
       }
