@@ -102,7 +102,7 @@ export default function Navbar({
             aria-label="Home"
           >
             <Image
-              src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/vestatranszoom.png"
+              src="/vestazoomin.jpeg"
               alt="Vesta Logo"
               width={120}
               height={40}

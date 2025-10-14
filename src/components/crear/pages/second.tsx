@@ -35,7 +35,7 @@ export default function SecondPage({
     usefulSurface: state.formData.usefulSurface ?? 0,
     buildYear: state.formData.buildYear ?? 1980,
     renovationYear: state.formData.renovationYear ?? 0,
-    isRenovated: state.formData.isRenovated ?? false,
+    renovationYearUnknown: state.formData.renovationYearUnknown ?? false,
     totalFloors: state.formData.totalFloors ?? 0,
     conservationStatus: state.formData.conservationStatus ?? 3,
   };
@@ -220,68 +220,9 @@ export default function SecondPage({
         </div>
       )}
 
-      {/* Renovation Question - Only show for piso, casa, local */}
-      {propertyType !== "solar" && propertyType !== "garaje" && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-gray-900">¿Reformado?</h3>
-          <div className="relative h-8 rounded-lg bg-gray-100 p-1">
-            <motion.div
-              className="absolute left-1 top-1 h-6 w-[calc(50%-2px)] rounded-md bg-white shadow-sm"
-              animate={{
-                x: formData.isRenovated ? "calc(100% - 5px)" : 0,
-              }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            />
-            <div className="relative flex h-full">
-              <button
-                onClick={() => {
-                  updateField("isRenovated", false);
-                  // Clear renovation year when "No" is selected
-                  updateField("renovationYear", 0);
-                }}
-                className={cn(
-                  "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
-                  !formData.isRenovated ? "text-gray-900" : "text-gray-600",
-                )}
-              >
-                No
-              </button>
-              <button
-                onClick={() => {
-                  updateField("isRenovated", true);
-                  // Set default renovation year to 2015 when "Sí" is selected
-                  if (!formData.renovationYear || formData.renovationYear === 0) {
-                    updateField("renovationYear", 2015);
-                  }
-                }}
-                className={cn(
-                  "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
-                  formData.isRenovated ? "text-gray-900" : "text-gray-600",
-                )}
-              >
-                Sí
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Last Renovation Year and Building Floors - Only show for piso, casa, local */}
+      {/* Conservation Status - Show for all property types except solar and garaje */}
       {propertyType !== "solar" && propertyType !== "garaje" && (
         <>
-          {formData.isRenovated && (
-            <div className="space-y-2">
-              <YearSlider
-                label="Año de Última Reforma"
-                value={formData.renovationYear || 2015}
-                onChange={(val) => updateField("renovationYear", val)}
-                min={1900}
-                max={new Date().getFullYear()}
-                placeholder="Año de última reforma"
-              />
-            </div>
-          )}
-
           {/* Conservation Status - Show for all property types */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-gray-900">
@@ -292,13 +233,13 @@ export default function SecondPage({
                 className="absolute left-1 top-1 h-8 w-[calc(20%-2px)] rounded-md bg-white shadow-sm"
                 animate={{
                   x:
-                    formData.conservationStatus === 3
+                    formData.conservationStatus === 1
                       ? 0
-                      : formData.conservationStatus === 6
+                      : formData.conservationStatus === 2
                         ? "100%"
-                        : formData.conservationStatus === 1
+                        : formData.conservationStatus === 3
                           ? "200%"
-                          : formData.conservationStatus === 2
+                          : formData.conservationStatus === 4
                             ? "300%"
                             : "400%",
                 }}
@@ -363,6 +304,46 @@ export default function SecondPage({
               </div>
             </div>
           </div>
+
+          {/* Renovation Year - Show only when conservation status is "A reformar" (4) or "Reformado" (6) */}
+          {(formData.conservationStatus === 4 || formData.conservationStatus === 6) && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-gray-900">
+                  Año de Reforma
+                </h3>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.renovationYearUnknown}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      updateField("renovationYearUnknown", isChecked);
+                      // Clear renovation year when "don't know" is checked
+                      if (isChecked) {
+                        updateField("renovationYear", 0);
+                      } else {
+                        // Set default when unchecked
+                        updateField("renovationYear", 2015);
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                  />
+                  <span className="text-xs text-gray-600">No lo sé</span>
+                </label>
+              </div>
+              {!formData.renovationYearUnknown && (
+                <YearSlider
+                  label=""
+                  value={formData.renovationYear || 2015}
+                  onChange={(val) => updateField("renovationYear", val)}
+                  min={1900}
+                  max={new Date().getFullYear()}
+                  placeholder="Año de última reforma"
+                />
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <label

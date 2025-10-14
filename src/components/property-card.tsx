@@ -107,7 +107,13 @@ export const PropertyCard = React.memo(function PropertyCard({
   const defaultPlaceholder = "";
   const isValidImageUrl = (url: string | null | undefined): boolean => {
     if (!url) return false;
-    return !url.includes('youtube.com') && !url.includes('youtu.be');
+    // Exclude YouTube videos
+    if (url.includes('youtube.com') || url.includes('youtu.be')) return false;
+    // Exclude video files
+    if (url.match(/\.(mp4|mov|avi|webm|mkv|flv|wmv)(\?|$)/i)) return false;
+    // Exclude URLs with /videos/ path
+    if (url.includes('/videos/')) return false;
+    return true;
   };
   const [imageSrc, setImageSrc] = useState(
     isValidImageUrl(listing.imageUrl) ? listing.imageUrl : defaultPlaceholder,

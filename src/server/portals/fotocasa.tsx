@@ -735,18 +735,10 @@ export async function buildFotocasaPayload(
       }
     }
 
-    // Conservation Status (FeatureId: 249)
-    // Values: 1=Good, 2=Pretty good, 3=Almost new, 4=Needs renovation, 6=Renovated
-    if (listing.conservationStatus != null) {
-      propertyFeatures.push({
-        FeatureId: 249,
-        DecimalValue: Number(listing.conservationStatus),
-      });
-    }
-
-    // --- ENERGY CERTIFICATE FIELDS (Fotocasa) ---
-    // Type assertion for energy certificate fields
+    // --- ADDITIONAL PROPERTY FIELDS (Conservation, Energy Certificate, etc.) ---
+    // Type assertion for optional fields that may not be in the base listing type
     const listingWithEnergy = listing as typeof listing & {
+      conservationStatus?: string | number;
       energyConsumptionScale?: string;
       emissionsScale?: string;
       energyConsumptionValue?: number;
@@ -755,6 +747,15 @@ export async function buildFotocasaPayload(
       heatingType?: string | number;
       hotWaterType?: string | number;
     };
+
+    // Conservation Status (FeatureId: 249)
+    // Values: 1=Good, 2=Pretty good, 3=Almost new, 4=Needs renovation, 6=Renovated
+    if (listingWithEnergy.conservationStatus != null) {
+      propertyFeatures.push({
+        FeatureId: 249,
+        DecimalValue: Number(listingWithEnergy.conservationStatus),
+      });
+    }
 
     // Consumption efficiency scale (FeatureId: 323)
     if (listingWithEnergy.energyConsumptionScale) {

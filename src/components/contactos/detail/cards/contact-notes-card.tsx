@@ -13,7 +13,7 @@ interface ContactNotesCardProps {
   notes: string;
   setNotes: (value: string) => void;
   saveState: SaveState;
-  onSave: () => void;
+  onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   getCardStyles: (moduleName: ModuleName) => string;
 }

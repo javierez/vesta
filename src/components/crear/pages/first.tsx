@@ -52,6 +52,7 @@ interface FirstPageFormData {
   propertySubtype: string;
   agentId: string;
   selectedContactIds: string[];
+  selectedContacts: Contact[];
 }
 
 
@@ -195,12 +196,13 @@ export default function FirstPage({
     propertySubtype: state.formData.propertySubtype ?? "",
     agentId: state.formData.agentId ?? "",
     selectedContactIds: state.formData.selectedContactIds ?? [],
+    selectedContacts: state.formData.selectedContacts ?? [],
   };
 
   // Update form data helper
   const updateField = useCallback((
     field: keyof FirstPageFormData,
-    value: string | string[],
+    value: string | string[] | Contact[],
   ) => {
     updateFormData({ [field]: value });
   }, [updateFormData]);
@@ -241,11 +243,16 @@ export default function FirstPage({
           // Store in state for UI display
           setListingContacts(contactsForUI);
           
-          // Update selected contact IDs
-          const contactIds = listingContacts.map(contact => contact.contactId.toString());
-          console.log("✅ [FirstPage] Converting to contactIds:", contactIds);
-          updateField("selectedContactIds", contactIds);
-          console.log("💾 [FirstPage] Updated selectedContactIds with listing contacts");
+          // Update selected contacts in formData (only if not already set)
+          if (!formData.selectedContactIds || formData.selectedContactIds.length === 0) {
+            const contactIds = listingContacts.map(contact => contact.contactId.toString());
+            console.log("✅ [FirstPage] Converting to contactIds:", contactIds);
+            updateFormData({
+              selectedContactIds: contactIds,
+              selectedContacts: contactsForUI
+            });
+            console.log("💾 [FirstPage] Updated selectedContactIds and selectedContacts with listing contacts");
+          }
         } else {
           console.log("⚠️ [FirstPage] No listing contacts found or empty array");
         }
@@ -255,7 +262,7 @@ export default function FirstPage({
     };
 
     void fetchListingContacts();
-  }, [listingId, updateField]);
+  }, [listingId, updateFormData, formData.selectedContactIds]);
 
   // Handle price input with formatting
   const handlePriceChange = (value: string) => {
@@ -306,10 +313,24 @@ export default function FirstPage({
   // Helper function to toggle contact selection
   const toggleContact = (contactId: string) => {
     const currentIds = formData.selectedContactIds;
+    const currentContacts = formData.selectedContacts;
+    
     if (currentIds.includes(contactId)) {
-      updateField("selectedContactIds", currentIds.filter(id => id !== contactId));
+      // Remove from both arrays
+      updateFormData({
+        selectedContactIds: currentIds.filter(id => id !== contactId),
+        selectedContacts: currentContacts.filter(c => c.id.toString() !== contactId)
+      });
     } else {
-      updateField("selectedContactIds", [...currentIds, contactId]);
+      // Find contact in available sources
+      const contact = [...listingContacts, ...searchResults].find(c => c.id.toString() === contactId);
+      if (contact) {
+        // Add to both arrays
+        updateFormData({
+          selectedContactIds: [...currentIds, contactId],
+          selectedContacts: [...currentContacts, contact]
+        });
+      }
     }
   };
 
@@ -338,7 +359,13 @@ export default function FirstPage({
 
       // Auto-select the new contact in form context
       const currentIds = formData.selectedContactIds;
-      updateField("selectedContactIds", [...currentIds, contact.contactId.toString()]);
+      const currentContacts = formData.selectedContacts;
+      const contactIdStr = contact.contactId.toString();
+      
+      updateFormData({
+        selectedContactIds: [...currentIds, contactIdStr],
+        selectedContacts: [...currentContacts, newContactForList]
+      });
     }
 
     // Note: No need to refresh search results
@@ -709,7 +736,14 @@ export default function FirstPage({
           value={formData.selectedContactIds[0]} // We'll handle multiple selection differently
           onValueChange={(value) => {
             if (!formData.selectedContactIds.includes(value)) {
-              updateField("selectedContactIds", [...formData.selectedContactIds, value]);
+              // Find the contact to add
+              const contact = contactsToDisplay.find(c => c.id.toString() === value);
+              if (contact) {
+                updateFormData({
+                  selectedContactIds: [...formData.selectedContactIds, value],
+                  selectedContacts: [...formData.selectedContacts, contact]
+                });
+              }
             }
           }}
         >
@@ -753,30 +787,25 @@ export default function FirstPage({
         </Select>
 
         {/* Display selected contacts */}
-        {formData.selectedContactIds.length > 0 && (
+        {formData.selectedContacts.length > 0 && (
           <div className="mt-2 space-y-1">
-            {formData.selectedContactIds.map((contactId) => {
-              const contact = [...listingContacts, ...searchResults].find(
-                (c) => c.id.toString() === contactId
-              );
-              return contact ? (
-                <div
-                  key={contactId}
-                  className="flex items-center justify-between rounded-md bg-gradient-to-r from-amber-50/50 to-rose-50/50 px-3 py-2 shadow-md transition-all duration-200 hover:from-amber-50/40 hover:to-rose-50/40"
+            {formData.selectedContacts.map((contact) => (
+              <div
+                key={contact.id}
+                className="flex items-center justify-between rounded-md bg-gradient-to-r from-amber-50/50 to-rose-50/50 px-3 py-2 shadow-md transition-all duration-200 hover:from-amber-50/40 hover:to-rose-50/40"
+              >
+                <span className="text-sm font-semibold">{contact.name}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => toggleContact(contact.id.toString())}
                 >
-                  <span className="text-sm font-semibold">{contact.name}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => toggleContact(contactId)}
-                  >
-                    ×
-                  </Button>
-                </div>
-              ) : null;
-            })}
+                  ×
+                </Button>
+              </div>
+            ))}
           </div>
         )}
       </div>

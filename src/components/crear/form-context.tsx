@@ -38,6 +38,7 @@ export interface CompleteFormData {
   propertySubtype?: string;
   agentId?: string;
   selectedContactIds?: string[];
+  selectedContacts?: Contact[]; // Store full contact details for display
 
   // Page 2 - Details
   bedrooms?: number;
@@ -49,6 +50,7 @@ export interface CompleteFormData {
   totalFloors?: string;
   buildYear?: number;
   renovationYear?: number;
+  renovationYearUnknown?: boolean;
   isRenovated?: boolean;
   conservationStatus?: number;
   condition?: string;

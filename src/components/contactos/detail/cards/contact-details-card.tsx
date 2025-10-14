@@ -15,7 +15,7 @@ interface ContactDetailsCardProps {
   phone: string;
   setPhone: (value: string) => void;
   saveState: SaveState;
-  onSave: () => void;
+  onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   getCardStyles: (moduleName: ModuleName) => string;
 }
