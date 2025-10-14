@@ -51,7 +51,7 @@ export async function middleware(request: NextRequest) {
   // Check for session token - try both secure and non-secure cookie names
   // In production (HTTPS), Better Auth uses __Secure- prefix
   const sessionToken =
-    request.cookies.get("__Secure-better-auth.session_token") ||
+    request.cookies.get("__Secure-better-auth.session_token") ??
     request.cookies.get("better-auth.session_token");
 
   if (!sessionToken?.value) {

@@ -89,6 +89,29 @@ const handleSubmit = (data: any) => {
 };
 ```
 
+**Nullish Coalescing:**
+- ✅ **ALWAYS use `??` (nullish coalescing)** instead of `||` (logical OR)
+- `??` only falls back for `null` or `undefined`, not for falsy values like `0`, `false`, or `""`
+- This prevents bugs and satisfies ESLint rule `@typescript-eslint/prefer-nullish-coalescing`
+
+```typescript
+// ✅ Good - Using ?? (nullish coalescing)
+const sessionToken =
+  request.cookies.get("__Secure-better-auth.session_token") ??
+  request.cookies.get("better-auth.session_token");
+
+const port = process.env.PORT ?? 3000;
+const name = user.name ?? "Anonymous";
+
+// ❌ Bad - Using || (logical OR)
+const sessionToken =
+  request.cookies.get("__Secure-better-auth.session_token") ||
+  request.cookies.get("better-auth.session_token");
+
+const port = process.env.PORT || 3000; // Bug: PORT="0" would use 3000!
+const count = value || 0; // Bug: count would be 0 even if value is 0
+```
+
 ### Component Patterns
 
 #### Server Components (Default)
