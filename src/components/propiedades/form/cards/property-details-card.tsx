@@ -15,6 +15,7 @@ import { ChevronDown } from "lucide-react";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
+import { CONSERVATION_STATUS_LABELS } from "~/lib/constants/conservation-status";
 
 type ModuleName = "propertyDetails";
 
@@ -217,11 +218,11 @@ export function PropertyDetailsCard({
                 <SelectValue placeholder="Seleccionar estado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="3">Nuevo</SelectItem>
-                <SelectItem value="6">Reformado</SelectItem>
-                <SelectItem value="1">Bueno</SelectItem>
-                <SelectItem value="2">Regular</SelectItem>
-                <SelectItem value="4">Reformar</SelectItem>
+                <SelectItem value="1">{CONSERVATION_STATUS_LABELS[1]}</SelectItem>
+                <SelectItem value="2">{CONSERVATION_STATUS_LABELS[2]}</SelectItem>
+                <SelectItem value="3">{CONSERVATION_STATUS_LABELS[3]}</SelectItem>
+                <SelectItem value="4">{CONSERVATION_STATUS_LABELS[4]}</SelectItem>
+                <SelectItem value="6">{CONSERVATION_STATUS_LABELS[6]}</SelectItem>
               </SelectContent>
             </Select>
           </div>

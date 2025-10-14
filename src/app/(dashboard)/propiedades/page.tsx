@@ -255,8 +255,8 @@ export default function PropertiesPage() {
         <div className="flex gap-2">
           <Button asChild>
             <Link href="/propiedades/registro">
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Propiedad
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Agregar Propiedad</span>
             </Link>
           </Button>
           <Button variant="outline" asChild>

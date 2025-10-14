@@ -10,6 +10,7 @@ import { RoomSelector } from "./elements/room_selector";
 import { YearSlider } from "./elements/year_slider";
 import { FloatingLabelInput } from "~/components/ui/floating-label-input";
 import { cn } from "~/lib/utils";
+import { CONSERVATION_STATUS_LABELS } from "~/lib/constants/conservation-status";
 
 
 interface SecondPageProps {
@@ -305,28 +306,6 @@ export default function SecondPage({
               />
               <div className="relative flex h-full">
                 <button
-                  onClick={() => updateField("conservationStatus", 3)}
-                  className={cn(
-                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
-                    formData.conservationStatus === 3
-                      ? "text-gray-900"
-                      : "text-gray-600",
-                  )}
-                >
-                  Nuevo
-                </button>
-                <button
-                  onClick={() => updateField("conservationStatus", 6)}
-                  className={cn(
-                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
-                    formData.conservationStatus === 6
-                      ? "text-gray-900"
-                      : "text-gray-600",
-                  )}
-                >
-                  Reformado
-                </button>
-                <button
                   onClick={() => updateField("conservationStatus", 1)}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
@@ -335,7 +314,7 @@ export default function SecondPage({
                       : "text-gray-600",
                   )}
                 >
-                  Bueno
+                  {CONSERVATION_STATUS_LABELS[1]}
                 </button>
                 <button
                   onClick={() => updateField("conservationStatus", 2)}
@@ -346,7 +325,18 @@ export default function SecondPage({
                       : "text-gray-600",
                   )}
                 >
-                  Regular
+                  {CONSERVATION_STATUS_LABELS[2]}
+                </button>
+                <button
+                  onClick={() => updateField("conservationStatus", 3)}
+                  className={cn(
+                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                    formData.conservationStatus === 3
+                      ? "text-gray-900"
+                      : "text-gray-600",
+                  )}
+                >
+                  {CONSERVATION_STATUS_LABELS[3]}
                 </button>
                 <button
                   onClick={() => updateField("conservationStatus", 4)}
@@ -357,7 +347,18 @@ export default function SecondPage({
                       : "text-gray-600",
                   )}
                 >
-                  Reformar
+                  {CONSERVATION_STATUS_LABELS[4]}
+                </button>
+                <button
+                  onClick={() => updateField("conservationStatus", 6)}
+                  className={cn(
+                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                    formData.conservationStatus === 6
+                      ? "text-gray-900"
+                      : "text-gray-600",
+                  )}
+                >
+                  {CONSERVATION_STATUS_LABELS[6]}
                 </button>
               </div>
             </div>

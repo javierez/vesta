@@ -15,7 +15,6 @@ import { ChevronDown } from "lucide-react";
 import { Separator } from "~/components/ui/separator";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import type { SaveState } from "~/types/save-state";
-import { useRouter } from "next/navigation";
 
 interface Agent {
   id: string;
@@ -45,32 +44,32 @@ interface ContactInfoCardProps {
   getCardStyles: (moduleName: string) => string;
 }
 
-export function ContactInfoCard({
-  selectedOwnerIds,
-  owners,
-  filteredOwners,
-  ownerSearch,
-  selectedAgentId,
-  agents,
-  collapsedSections,
-  saveState,
-  onToggleSection,
-  onSave,
-  onUpdateModule,
-  setSelectedOwnerIds,
-  setOwnerSearch,
-  setSelectedAgentId,
-  getCardStyles,
-}: ContactInfoCardProps) {
-  const router = useRouter();
-
-  return (
-    <Card
-      className={cn(
-        "relative p-4 transition-all duration-500 ease-out",
-        getCardStyles("contactInfo"),
-      )}
-    >
+export const ContactInfoCard = React.forwardRef<HTMLDivElement, ContactInfoCardProps>(
+  ({
+    selectedOwnerIds,
+    owners,
+    filteredOwners,
+    ownerSearch,
+    selectedAgentId,
+    agents,
+    collapsedSections,
+    saveState,
+    onToggleSection,
+    onSave,
+    onUpdateModule,
+    setSelectedOwnerIds,
+    setOwnerSearch,
+    setSelectedAgentId,
+    getCardStyles,
+  }, ref) => {
+    return (
+      <Card
+        ref={ref}
+        className={cn(
+          "relative p-4 transition-all duration-500 ease-out",
+          getCardStyles("contactInfo"),
+        )}
+      >
       <ModernSaveIndicator
         state={saveState}
         onSave={onSave}
@@ -147,8 +146,8 @@ export function ContactInfoCard({
                 return owner ? (
                   <div
                     key={ownerId}
-                    className="flex cursor-pointer items-center justify-between rounded-md bg-blue-50 px-2 py-1 shadow-md transition-all duration-200 hover:border-blue-300 hover:bg-blue-100"
-                    onClick={() => router.push(`/contactos/${owner.id}`)}
+                    className="flex cursor-pointer items-center justify-between rounded-md bg-gradient-to-r from-amber-50/50 to-rose-50/50 px-2 py-1 shadow-md transition-all duration-200 hover:from-amber-50/40 hover:to-rose-50/40"
+                    onClick={() => window.open(`/contactos/${owner.id}`, '_blank')}
                   >
                     <span className="text-sm">{owner.name}</span>
                     <Button
@@ -200,4 +199,6 @@ export function ContactInfoCard({
       </div>
     </Card>
   );
-}
+});
+
+ContactInfoCard.displayName = "ContactInfoCard";

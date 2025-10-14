@@ -94,13 +94,11 @@ export default function ContactsPage() {
   const getFiltersFromUrl = useCallback(() => {
     const roles = searchParams.get("roles");
     const q = searchParams.get("q");
-    const sort = searchParams.get("sort");
     const lastContact = searchParams.get("lastContact");
 
     return {
       roles: roles ? roles.split(",") : ["owner"],
       searchQuery: q ?? "",
-      sortOrder: sort ?? "alphabetical",
       lastContactFilter: lastContact ?? "all",
     };
   }, [searchParams]);
@@ -206,7 +204,6 @@ export default function ContactsPage() {
   const handleFilterChange = (_filters: {
     searchQuery: string;
     roles: string[];
-    sortOrder: string;
     lastContactFilter: string;
   }) => {
     // The filtering is now handled by the database query and URL parameters

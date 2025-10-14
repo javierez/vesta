@@ -26,6 +26,7 @@ interface LocationCardProps {
   setProvince: (value: string) => void;
   setMunicipality: (value: string) => void;
   setIsMapsPopupOpen: (value: boolean) => void;
+  setIsCatastroPopupOpen: (value: boolean) => void;
   getCardStyles: (moduleName: string) => string;
 }
 
@@ -43,6 +44,7 @@ export function LocationCard({
   setProvince,
   setMunicipality,
   setIsMapsPopupOpen,
+  setIsCatastroPopupOpen,
   getCardStyles,
 }: LocationCardProps) {
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
@@ -343,6 +345,35 @@ export function LocationCard({
             }}
             className="h-8 text-gray-500"
           />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="cadastralReference" className="text-sm">
+            Referencia Catastral
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="cadastralReference"
+              type="text"
+              defaultValue={listing.cadastralReference}
+              className="h-8 text-gray-500"
+              onChange={() => onUpdateModule(true)}
+            />
+            {listing.cadastralReference && (
+              <button
+                onClick={() => setIsCatastroPopupOpen(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+              >
+                <Image
+                  src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
+                  alt="Catastro"
+                  width={20}
+                  height={20}
+                  className="object-contain"
+                />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Actualizar Button */}

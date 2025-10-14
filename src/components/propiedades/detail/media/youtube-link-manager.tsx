@@ -47,11 +47,6 @@ const extractVideoId = (url: string): string | null => {
   return match?.[2] && match[2].length === 11 ? match[2] : null;
 };
 
-// Helper function to get YouTube thumbnail URL
-const getYouTubeThumbnail = (videoId: string): string => {
-  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-};
-
 export function YouTubeLinkManager({
   youtubeLinks: initialYouTubeLinks,
   propertyId,
@@ -381,7 +376,6 @@ export function YouTubeLinkManager({
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {youtubeLinks.map((link, idx) => {
           const videoId = extractVideoId(link.imageUrl);
-          const thumbnailUrl = videoId ? getYouTubeThumbnail(videoId) : null;
 
           return (
             <div
@@ -403,27 +397,15 @@ export function YouTubeLinkManager({
               onDrop={(e) => handleDrop(e, idx)}
               onClick={() => isSelectMode && toggleLinkSelection(idx)}
             >
-              {thumbnailUrl && (
-                <div className="relative">
-                  <Image
-                    src={thumbnailUrl}
-                    alt="YouTube video thumbnail"
-                    width={320}
-                    height={160}
-                    className="h-40 w-full object-cover"
-                    onError={(e) => {
-                      // Fallback to standard resolution thumbnail
-                      const target = e.target as HTMLImageElement;
-                      target.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-                    }}
-                  />
-                  {/* YouTube Play Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <div className="rounded-full bg-red-600 p-2">
-                      <div className="h-0 w-0 border-l-[8px] border-l-white border-y-[6px] border-y-transparent ml-1" />
-                    </div>
-                  </div>
-                </div>
+              {videoId && (
+                <iframe
+                  src={`https://www.youtube.com/embed/${videoId}`}
+                  title="YouTube video player"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full rounded-t-lg"
+                  style={{ aspectRatio: '16 / 9' }}
+                />
               )}
 
               {isSelectMode ? (

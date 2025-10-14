@@ -203,7 +203,7 @@ export const properties = singlestoreTable("properties", {
   yearBuilt: smallint("year_built"),
   cadastralReference: varchar("cadastral_reference", { length: 255 }),
   builtSurfaceArea: decimal("built_surface_area", { precision: 10, scale: 2 }),
-  conservationStatus: smallint("conservation_status").default(1), // 1='Buen estado' | 2='A reformar' | 3='Casi nuevo' | 4='Para reformar' | 6='Reformado'
+  conservationStatus: smallint("conservation_status").default(1), // 1='Bueno' | 2='Muy bueno' | 3='Como nuevo' | 4='A reformar' | 6='Reformado'
 
   // Location Information
   street: varchar("street", { length: 255 }),

@@ -28,6 +28,7 @@ import {
 } from "~/lib/carteleria/classic-vertical-constants";
 import { injectPrintStyles } from "~/lib/carteleria/print-utils";
 import { MiniEnergyCertificate } from "../mini-energy-certificate";
+import { getConservationStatusLabel } from "~/lib/constants/conservation-status";
 
 // Helper functions for dynamic styling
 const getFontClass = (fontType: string) => {
@@ -130,14 +131,7 @@ const getFieldValue = (fieldValue: string, data: ConfigurableTemplateProps["data
   if (value === undefined || value === null) return "N/A";
   if (typeof value === "boolean") return value ? "Sí" : "No";
   if (fieldValue === "conservationStatus" && typeof value === "number") {
-    const statusMap: Record<number, string> = {
-      1: "Bueno",
-      2: "Muy bueno",
-      3: "Como nuevo",
-      4: "A reformar",
-      6: "Reformado",
-    };
-    return statusMap[value] ?? "N/A";
+    return getConservationStatusLabel(value);
   }
   if (typeof value === "object" && value !== null) {
     return "N/A"; // Don't stringify objects

@@ -9,7 +9,7 @@ import {
   prospects,
   tasks,
 } from "../db/schema";
-import { eq, and, or, like, sql, inArray } from "drizzle-orm";
+import { eq, and, or, like, sql, inArray, desc } from "drizzle-orm";
 import type { Contact } from "../../lib/data";
 import { listingContacts } from "../db/schema";
 import { prospectUtils } from "../../lib/utils";
@@ -1861,7 +1861,7 @@ export async function listContactsOwnerData(
         // Only include contacts that are actually owners
         sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0`
       )
-      .orderBy(contacts.firstName, contacts.lastName)
+      .orderBy(desc(contacts.updatedAt))
       .limit(limit)
       .offset(offset);
 
@@ -2147,7 +2147,7 @@ export async function listContactsBuyerData(
         sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0
             OR COUNT(DISTINCT ${prospects.id}) > 0`
       )
-      .orderBy(contacts.firstName, contacts.lastName)
+      .orderBy(desc(contacts.updatedAt))
       .limit(limit)
       .offset(offset);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -42,6 +42,7 @@ import { AdditionalSpacesCard } from "./cards/additional-spaces-card";
 import { MaterialsCard } from "./cards/materials-card";
 import { RentalPropertiesCard } from "./cards/rental-properties-card";
 import { DescriptionCard } from "./cards/description-card";
+import { ContactInfoCard } from "./cards/contact-info-card";
 import { Separator } from "~/components/ui/separator";
 import Image from "next/image";
 import { generatePropertyDescription, generateShortPropertyDescription } from "~/server/openai/property_descriptions";
@@ -740,6 +741,9 @@ export function PropertyCharacteristicsForm({
   const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
 
+  // Ref for contact info card
+  const contactInfoRef = useRef<HTMLDivElement>(null);
+
   // State for collapsible sections (all closed by default)
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     basicInfo: true,
@@ -761,6 +765,23 @@ export function PropertyCharacteristicsForm({
       ...prev,
       [section]: !prev[section]
     }));
+  };
+
+  // Handler to expand and scroll to contact info section
+  const handleEditOwner = () => {
+    // Expand the contact info section
+    setCollapsedSections(prev => ({
+      ...prev,
+      contactInfo: false
+    }));
+    
+    // Scroll to the contact info card after a short delay to allow the section to expand
+    setTimeout(() => {
+      contactInfoRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }, 100);
   };
 
   // New community amenity states
@@ -807,8 +828,6 @@ export function PropertyCharacteristicsForm({
   const filteredOwners = owners.filter((owner) =>
     owner.name.toLowerCase().includes(ownerSearch.toLowerCase()),
   );
-
-
 
   // Set selectedAgentId when listing agent data is available
   useEffect(() => {
@@ -1197,6 +1216,7 @@ export function PropertyCharacteristicsForm({
         websiteLoading={websiteLoading}
         onToggleKeys={handleToggleKeys}
         onToggleWebsite={handleToggleWebsite}
+        onEditOwner={handleEditOwner}
       />
 
       {/* Basic Information */}
@@ -1479,35 +1499,6 @@ export function PropertyCharacteristicsForm({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="cadastralReference" className="text-sm">
-              Referencia Catastral
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                id="cadastralReference"
-                type="text"
-                defaultValue={listing.cadastralReference}
-                className="h-8 text-gray-500"
-                onChange={() => updateModuleState("basicInfo", true)}
-              />
-              {listing.cadastralReference && (
-                <button
-                  onClick={() => setIsCatastroPopupOpen(true)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
-                >
-                  <Image
-                    src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
-                    alt="Catastro"
-                    width={20}
-                    height={20}
-                    className="object-contain"
-                  />
-                </button>
-              )}
-            </div>
-          </div>
-
           <div className="my-2 border-t border-border" />
 
           <div className="flex items-center gap-2">
@@ -1582,6 +1573,7 @@ export function PropertyCharacteristicsForm({
         setProvince={setProvince}
         setMunicipality={setMunicipality}
         setIsMapsPopupOpen={setIsMapsPopupOpen}
+        setIsCatastroPopupOpen={setIsCatastroPopupOpen}
         getCardStyles={getCardStyles}
       />
 
@@ -1644,140 +1636,24 @@ export function PropertyCharacteristicsForm({
       />
 
       {/* Contact Information */}
-      <Card
-        className={cn(
-          "relative p-4 transition-all duration-500 ease-out",
-          getCardStyles("contactInfo"),
-        )}
-      >
-        <ModernSaveIndicator
-          state={moduleStates.contactInfo?.saveState ?? "idle"}
-          onSave={() => saveModule("contactInfo")}
-        />
-        <div className="mb-3 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => toggleSection("contactInfo")}
-            className="group flex w-full items-center justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                DATOS DE CONTACTO
-              </h3>
-            </div>
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                collapsedSections.contactInfo && "rotate-180",
-              )}
-            />
-          </button>
-        </div>
-        <div
-          className={cn(
-            "space-y-3 overflow-hidden transition-all duration-200",
-            collapsedSections.contactInfo ? "max-h-0" : "max-h-[1000px]",
-          )}
-        >
-          <div className="space-y-1.5">
-            <Label htmlFor="owners" className="text-sm">
-              Propietarios
-            </Label>
-            <div className="flex gap-2">
-              <Select
-                value={selectedOwnerIds[0]} // We'll handle multiple selection differently
-                onValueChange={(value) => {
-                  if (!selectedOwnerIds.includes(value)) {
-                    setSelectedOwnerIds([...selectedOwnerIds, value]);
-                    updateModuleState("contactInfo", true);
-                  }
-                }}
-              >
-                <SelectTrigger className="h-8 flex-1 text-gray-500">
-                  <SelectValue placeholder="Añadir propietario" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="flex items-center px-3 pb-2">
-                    <input
-                      className="flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder="Buscar propietario..."
-                      value={ownerSearch}
-                      onChange={(e) => setOwnerSearch(e.target.value)}
-                    />
-                  </div>
-                  <Separator className="mb-2" />
-                  {filteredOwners.map((owner) => (
-                    <SelectItem
-                      key={owner.id}
-                      value={owner.id.toString()}
-                      disabled={selectedOwnerIds.includes(owner.id.toString())}
-                    >
-                      {owner.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Display selected owners */}
-            {selectedOwnerIds.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {selectedOwnerIds.map((ownerId) => {
-                  const owner = owners.find((o) => o.id.toString() === ownerId);
-                  return owner ? (
-                    <div
-                      key={ownerId}
-                      className="flex cursor-pointer items-center justify-between rounded-md bg-blue-50 px-2 py-1 shadow-md transition-all duration-200 hover:border-blue-300 hover:bg-blue-100"
-                      onClick={() => router.push(`/contactos/${owner.id}`)}
-                    >
-                      <span className="text-sm">{owner.name}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent triggering the parent onClick
-                          setSelectedOwnerIds(
-                            selectedOwnerIds.filter((id) => id !== ownerId),
-                          );
-                          updateModuleState("contactInfo", true);
-                        }}
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="agent" className="text-sm">
-              Agente
-            </Label>
-            <div className="flex gap-2">
-              <Select
-                value={selectedAgentId}
-                onValueChange={(value) => {
-                  setSelectedAgentId(value);
-                  updateModuleState("contactInfo", true);
-                }}
-              >
-                <SelectTrigger className="h-8 flex-1 text-gray-500">
-                  <SelectValue placeholder="Seleccionar agente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {agents.map((agent) => (
-                    <SelectItem key={agent.id} value={agent.id.toString()}>
-                      {agent.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-      </Card>
+      <ContactInfoCard
+        ref={contactInfoRef}
+        selectedOwnerIds={selectedOwnerIds}
+        owners={owners}
+        filteredOwners={filteredOwners}
+        ownerSearch={ownerSearch}
+        selectedAgentId={selectedAgentId}
+        agents={agents}
+        collapsedSections={collapsedSections}
+        saveState={moduleStates.contactInfo?.saveState ?? "idle"}
+        onToggleSection={toggleSection}
+        onSave={() => saveModule("contactInfo")}
+        onUpdateModule={(hasChanges) => updateModuleState("contactInfo", hasChanges)}
+        setSelectedOwnerIds={setSelectedOwnerIds}
+        setOwnerSearch={setOwnerSearch}
+        setSelectedAgentId={setSelectedAgentId}
+        getCardStyles={getCardStyles}
+      />
 
       {/* Orientation and Exposure */}
       <OrientationCard

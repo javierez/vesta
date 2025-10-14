@@ -16,7 +16,7 @@ import {
   Bed,
   Square,
   User,
-  Building2,
+  Briefcase,
   Share2,
   MessageCircle,
   ChevronLeft,
@@ -595,7 +595,7 @@ export const PropertyTable = React.memo(function PropertyTable({
                           className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
+                          <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
                           <span className="truncate text-xs hover:underline">
                             {listing.agentName}
                           </span>

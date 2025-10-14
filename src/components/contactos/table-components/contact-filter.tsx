@@ -14,7 +14,6 @@ import {
   X,
   Check,
   ChevronDown,
-  ArrowUpDown,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -24,7 +23,6 @@ interface ContactFilterProps {
   onFilterChange: (filters: {
     searchQuery: string;
     roles: string[];
-    sortOrder: string;
     lastContactFilter: string;
   }) => void;
 }
@@ -34,19 +32,16 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState<string | null>("owner");
-  const [sortOrder, setSortOrder] = useState("alphabetical");
   const [lastContactFilter, setLastContactFilter] = useState("all");
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
   >({
     lastContact: true,
-    sortOrder: true,
   });
 
   // Initialize filters from URL on mount
   useEffect(() => {
     const roles = searchParams.get("roles");
-    const sort = searchParams.get("sort");
     const q = searchParams.get("q");
     const lastContact = searchParams.get("lastContact");
 
@@ -63,7 +58,6 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
     } else {
       setSelectedRole("owner");
     }
-    setSortOrder(sort ?? "alphabetical");
     setSearchQuery(q ?? "");
     setLastContactFilter(lastContact ?? "all");
 
@@ -77,7 +71,6 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
 
   const updateUrlParams = (
     newSelectedRole: string | null,
-    newSortOrder: string,
     newSearchQuery: string,
     newLastContactFilter: string,
   ) => {
@@ -104,13 +97,6 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
       params.set("roles", "owner");
     }
 
-    // Update sort order
-    if (newSortOrder !== "alphabetical") {
-      params.set("sort", newSortOrder);
-    } else {
-      params.delete("sort");
-    }
-
     // Update last contact filter
     if (newLastContactFilter !== "all") {
       params.set("lastContact", newLastContactFilter);
@@ -126,7 +112,7 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    updateUrlParams(selectedRole, sortOrder, value, lastContactFilter);
+    updateUrlParams(selectedRole, value, lastContactFilter);
 
     // When 'buyer' is selected, include both 'buyer' and 'interested'
     const rolesToFilter =
@@ -139,7 +125,6 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
     onFilterChange({
       searchQuery: value,
       roles: rolesToFilter,
-      sortOrder,
       lastContactFilter,
     });
   };
@@ -150,7 +135,7 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
 
     const newSelectedRole = selectedRole === value ? null : value;
     setSelectedRole(newSelectedRole);
-    updateUrlParams(newSelectedRole, sortOrder, searchQuery, lastContactFilter);
+    updateUrlParams(newSelectedRole, searchQuery, lastContactFilter);
 
     // When 'buyer' is selected, include both 'buyer' and 'interested'
     const rolesToFilter =
@@ -163,34 +148,13 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
     onFilterChange({
       searchQuery,
       roles: rolesToFilter,
-      sortOrder,
-      lastContactFilter,
-    });
-  };
-
-  const handleSortOrderChange = (value: string) => {
-    setSortOrder(value);
-    updateUrlParams(selectedRole, value, searchQuery, lastContactFilter);
-
-    // When 'buyer' is selected, include both 'buyer' and 'interested'
-    const rolesToFilter =
-      selectedRole === "buyer"
-        ? ["buyer", "interested"]
-        : selectedRole === "owner"
-          ? ["owner"]
-          : ["owner"]; // Default to owner
-
-    onFilterChange({
-      searchQuery,
-      roles: rolesToFilter,
-      sortOrder: value,
       lastContactFilter,
     });
   };
 
   const handleLastContactFilterChange = (value: string) => {
     setLastContactFilter(value);
-    updateUrlParams(selectedRole, sortOrder, searchQuery, value);
+    updateUrlParams(selectedRole, searchQuery, value);
 
     // When 'buyer' is selected, include both 'buyer' and 'interested'
     const rolesToFilter =
@@ -203,7 +167,6 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
     onFilterChange({
       searchQuery,
       roles: rolesToFilter,
-      sortOrder,
       lastContactFilter: value,
     });
   };
@@ -217,18 +180,17 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
 
   const clearRoleFilters = () => {
     setSelectedRole("owner");
-    updateUrlParams("owner", sortOrder, searchQuery, lastContactFilter);
+    updateUrlParams("owner", searchQuery, lastContactFilter);
     onFilterChange({
       searchQuery,
       roles: ["owner"],
-      sortOrder,
       lastContactFilter,
     });
   };
 
   const clearLastContactFilter = () => {
     setLastContactFilter("all");
-    updateUrlParams(selectedRole, sortOrder, searchQuery, "all");
+    updateUrlParams(selectedRole, searchQuery, "all");
 
     // When 'buyer' is selected, include both 'buyer' and 'interested'
     const rolesToFilter =
@@ -241,7 +203,6 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
     onFilterChange({
       searchQuery,
       roles: rolesToFilter,
-      sortOrder,
       lastContactFilter: "all",
     });
   };
@@ -269,36 +230,6 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
         }`}
       >
         {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
-      </div>
-      <span className={`text-sm ${isSelected ? "font-medium" : ""}`}>
-        {label}
-      </span>
-    </div>
-  );
-
-  const SortOption = ({
-    value: _value,
-    label,
-    isSelected,
-    onClick,
-  }: {
-    value: string;
-    label: string;
-    isSelected: boolean;
-    onClick: () => void;
-  }) => (
-    <div
-      className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
-      onClick={onClick}
-    >
-      <div
-        className={`flex h-4 w-4 items-center justify-center rounded-full border ${
-          isSelected ? "border-primary bg-primary" : "border-input"
-        }`}
-      >
-        {isSelected && (
-          <div className="h-2 w-2 rounded-full bg-primary-foreground" />
-        )}
       </div>
       <span className={`text-sm ${isSelected ? "font-medium" : ""}`}>
         {label}
@@ -388,44 +319,6 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
         </div>
 
         <div className="flex items-center space-x-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className="relative">
-                <ArrowUpDown className="h-4 w-4" />
-                {sortOrder !== "alphabetical" && (
-                  <Badge
-                    variant="secondary"
-                    className="absolute -right-1 -top-1 rounded-sm px-1 font-normal"
-                  >
-                    1
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="max-h-[80vh] w-80 p-0" align="end">
-              <div className="flex flex-col">
-                <ScrollArea className="max-h-[60vh]">
-                  <div className="space-y-6 p-4">
-                    <FilterCategory title="Ordenar por" category="sortOrder">
-                      <SortOption
-                        value="alphabetical"
-                        label="Alfabéticamente"
-                        isSelected={sortOrder === "alphabetical"}
-                        onClick={() => handleSortOrderChange("alphabetical")}
-                      />
-                      <SortOption
-                        value="lastContact"
-                        label="Último contacto"
-                        isSelected={sortOrder === "lastContact"}
-                        onClick={() => handleSortOrderChange("lastContact")}
-                      />
-                    </FilterCategory>
-                  </div>
-                </ScrollArea>
-              </div>
-            </PopoverContent>
-          </Popover>
-
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="relative">

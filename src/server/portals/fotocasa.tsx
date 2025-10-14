@@ -736,19 +736,11 @@ export async function buildFotocasaPayload(
     }
 
     // Conservation Status (FeatureId: 249)
-    if ('conservationStatus' in listing && typeof (listing as Record<string, unknown>).conservationStatus === 'string') {
-      const conservationStatusMap: Record<string, number> = {
-        excellent: 1,
-        good: 2,
-        fair: 3,
-        poor: 4,
-        needs_renovation: 5,
-      };
-      const conservationStatus = (listing as Record<string, unknown>).conservationStatus as string;
-      const statusValue = conservationStatusMap[conservationStatus] ?? 1;
+    // Values: 1=Good, 2=Pretty good, 3=Almost new, 4=Needs renovation, 6=Renovated
+    if (listing.conservationStatus != null) {
       propertyFeatures.push({
         FeatureId: 249,
-        DecimalValue: statusValue,
+        DecimalValue: Number(listing.conservationStatus),
       });
     }
 

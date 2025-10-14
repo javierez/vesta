@@ -314,9 +314,6 @@ export function VoiceRecordingEnhanced({
         message: "Transcribiendo audio a texto...",
       });
 
-      // Simulate progress for UX
-      await new Promise<void>(resolve => setTimeout(resolve, 2000));
-
       setProcessingState({
         step: "extracting",
         progress: 75,

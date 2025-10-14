@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { FloatingLabelInput } from "~/components/ui/floating-label-input";
-import { ChevronLeft, ChevronRight, Info, Plus, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Plus } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { formFormatters } from "~/lib/utils";
 import { motion } from "framer-motion";
@@ -17,6 +16,7 @@ import { useFormContext } from "../form-context";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import ContactPopup from "./contact-popup";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Separator } from "~/components/ui/separator";
 import { searchContactsForFormWithAuth } from "~/server/queries/contact";
 import { getListingContactsByIdWithAuth } from "~/server/queries/listing";
 
@@ -704,46 +704,81 @@ export default function FirstPage({
           </Button>
         </div>
 
-        {/* Contact Search */}
-        <Input
-          placeholder="Escribe para buscar contactos..."
-          value={contactSearch}
-          onChange={(e) => handleContactSearchChange(e.target.value)}
-          className="h-10 border-0 shadow-md"
-        />
-
-        {/* Contact List */}
-        <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg p-2 shadow-md">
-          {isSearching ? (
-            <p className="py-3 text-center text-sm text-gray-500">
-              Buscando contactos...
-            </p>
-          ) : contactsToDisplay.length === 0 && contactSearch.trim() ? (
-            <p className="py-3 text-center text-sm text-gray-500">
-              No se encontraron contactos
-            </p>
-          ) : contactsToDisplay.length === 0 ? (
-            <p className="py-3 text-center text-sm text-gray-500">
-              Escribe para buscar contactos
-            </p>
-          ) : (
-            contactsToDisplay.map((contact: Contact) => (
-              <div
-                key={contact.id}
-                className={cn(
-                  "flex cursor-pointer items-center space-x-2 rounded-md p-2 transition-colors",
-                  formData.selectedContactIds.includes(contact.id.toString())
-                    ? "bg-gray-100"
-                    : "hover:bg-gray-50",
-                )}
-                onClick={() => toggleContact(contact.id.toString())}
-              >
-                <User className="h-4 w-4 text-gray-400" />
-                <span className="text-sm font-medium">{contact.name}</span>
+        {/* Contact Select with Search */}
+        <Select
+          value={formData.selectedContactIds[0]} // We'll handle multiple selection differently
+          onValueChange={(value) => {
+            if (!formData.selectedContactIds.includes(value)) {
+              updateField("selectedContactIds", [...formData.selectedContactIds, value]);
+            }
+          }}
+        >
+          <SelectTrigger className="h-10 border-0 shadow-md">
+            <SelectValue placeholder="Añadir propietario" />
+          </SelectTrigger>
+          <SelectContent>
+            <div className="flex items-center px-3 pb-2">
+              <input
+                className="flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Buscar propietario..."
+                value={contactSearch}
+                onChange={(e) => handleContactSearchChange(e.target.value)}
+              />
+            </div>
+            <Separator className="mb-2" />
+            {isSearching ? (
+              <div className="py-3 text-center text-sm text-gray-500">
+                Buscando contactos...
               </div>
-            ))
-          )}
-        </div>
+            ) : contactsToDisplay.length === 0 && contactSearch.trim() ? (
+              <div className="py-3 text-center text-sm text-gray-500">
+                No se encontraron contactos
+              </div>
+            ) : contactsToDisplay.length === 0 ? (
+              <div className="py-3 text-center text-sm text-gray-500">
+                Escribe para buscar contactos
+              </div>
+            ) : (
+              contactsToDisplay.map((contact: Contact) => (
+                <SelectItem
+                  key={contact.id}
+                  value={contact.id.toString()}
+                  disabled={formData.selectedContactIds.includes(contact.id.toString())}
+                >
+                  {contact.name}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
+
+        {/* Display selected contacts */}
+        {formData.selectedContactIds.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {formData.selectedContactIds.map((contactId) => {
+              const contact = [...listingContacts, ...searchResults].find(
+                (c) => c.id.toString() === contactId
+              );
+              return contact ? (
+                <div
+                  key={contactId}
+                  className="flex items-center justify-between rounded-md bg-gradient-to-r from-amber-50/50 to-rose-50/50 px-3 py-2 shadow-md transition-all duration-200 hover:from-amber-50/40 hover:to-rose-50/40"
+                >
+                  <span className="text-sm font-semibold">{contact.name}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => toggleContact(contactId)}
+                  >
+                    ×
+                  </Button>
+                </div>
+              ) : null;
+            })}
+          </div>
+        )}
       </div>
 
       {/* Navigation Buttons */}
