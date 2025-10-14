@@ -110,7 +110,7 @@ export const PropertyCard = React.memo(function PropertyCard({
     // Exclude YouTube videos
     if (url.includes('youtube.com') || url.includes('youtu.be')) return false;
     // Exclude video files
-    if (url.match(/\.(mp4|mov|avi|webm|mkv|flv|wmv)(\?|$)/i)) return false;
+    if (/\.(mp4|mov|avi|webm|mkv|flv|wmv)(\?|$)/i.exec(url)) return false;
     // Exclude URLs with /videos/ path
     if (url.includes('/videos/')) return false;
     return true;

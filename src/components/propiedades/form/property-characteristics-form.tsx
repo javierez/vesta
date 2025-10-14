@@ -44,7 +44,6 @@ import { RentalPropertiesCard } from "./cards/rental-properties-card";
 import { DescriptionCard } from "./cards/description-card";
 import { ContactInfoCard } from "./cards/contact-info-card";
 import { Separator } from "~/components/ui/separator";
-import Image from "next/image";
 import { generatePropertyDescription, generateShortPropertyDescription } from "~/server/openai/property_descriptions";
 import { ExternalLinkPopup } from "~/components/ui/external-link-popup";
 import { generatePropertyTitle } from "~/lib/property-title";
