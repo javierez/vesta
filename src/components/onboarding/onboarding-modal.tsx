@@ -38,11 +38,11 @@ function OnboardingModalContent({ onComplete }: { onComplete: () => void }) {
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json() as { error?: string };
         throw new Error(error.error ?? "Error al guardar los datos");
       }
 
-      const result = await response.json();
+      const result = await response.json() as { success: boolean; message: string };
       console.log("✅ Onboarding saved successfully:", result);
 
       toast.success("¡Bienvenido a Vesta!", {
@@ -115,7 +115,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={() => {}} modal>
+    <Dialog open={open} onOpenChange={() => { /* Prevent closing */ }} modal>
       <DialogContent
         className="flex h-[90vh] max-h-[90vh] max-w-3xl flex-col overflow-hidden [&>button]:hidden p-0 m-4"
         onInteractOutside={(e) => e.preventDefault()}

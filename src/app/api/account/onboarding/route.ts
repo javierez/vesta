@@ -1,9 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "~/lib/auth";
 import { headers } from "next/headers";
 import { db } from "~/server/db";
 import { accounts } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
+
+interface OnboardingFormData {
+  previousCrm?: string;
+  previousCrmOther?: string;
+  referralSource?: string;
+  teamSize?: string;
+  businessFocus?: string;
+  monthlyListings?: string;
+  biggestChallenge?: string;
+  email?: string;
+  hasWebsite?: boolean;
+  websiteUrl?: string;
+  hasWebsiteDomain?: boolean;
+  websiteDomainName?: string;
+  websiteDomainManaged?: boolean;
+  hasEmailDomain?: boolean;
+  emailDomainName?: string;
+  emailDomainManaged?: boolean;
+  usesIdealista?: boolean;
+  usesFotocasa?: boolean;
+  usesHabitaclia?: boolean;
+  additionalNotes?: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const formData = await request.json();
+    const formData = await request.json() as OnboardingFormData;
 
     console.log("📝 [Onboarding API] Received data for accountId:", accountId);
     console.log("📋 [Onboarding API] Form data:", formData);

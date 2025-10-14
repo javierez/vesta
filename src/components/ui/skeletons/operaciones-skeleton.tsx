@@ -55,7 +55,7 @@ export function OperacionesQuickActionsCardSkeleton() {
         <CardContent className="flex h-full flex-col pt-6">
           {/* Simple 2x3 grid */}
           <div className="grid flex-1 grid-cols-2 gap-3">
-            {[...Array(6)].map((_, i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="rounded-xl bg-gray-50 p-6">
                 <Skeleton className="mx-auto h-6 w-6" />
                 <Skeleton className="mx-auto mt-2 h-2 w-16" />
@@ -86,7 +86,7 @@ export function WorkQueueCardSkeleton({ className = "" }) {
             <div>
               <Skeleton className="mb-4 h-5 w-32" />
               <div className="space-y-2">
-                {[...Array(4)].map((_, i) => (
+                {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="rounded-lg bg-gray-50 p-4">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="mt-2 h-3 w-1/2" />
@@ -99,7 +99,7 @@ export function WorkQueueCardSkeleton({ className = "" }) {
             <div>
               <Skeleton className="mb-4 h-5 w-32" />
               <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
+                {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="rounded-lg bg-gray-50 p-4">
                     <Skeleton className="h-4 w-2/3" />
                     <Skeleton className="mt-2 h-3 w-1/2" />

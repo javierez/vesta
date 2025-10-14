@@ -47,7 +47,7 @@ function safeJsonParse<T>(
         `⚠️ SAFE_PARSE: Successfully parsed ${fieldName ?? "field"} after sanitization. Consider fixing the data in the database.`,
       );
       return parsed;
-    } catch (secondError) {
+    } catch {
       // If both attempts fail, log the error and return default
       console.error(
         `❌ SAFE_PARSE: Failed to parse ${fieldName ?? "field"}:`,

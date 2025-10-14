@@ -159,8 +159,10 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
           return;
         }
         
-        const onboardingData = (details.data.onboardingData as Record<string, unknown>) ?? {};
-        const completed = Boolean(onboardingData.completed);
+        const onboardingData = details.data.onboardingData;
+        const completed = onboardingData && typeof onboardingData === 'object' && 'completed' in onboardingData
+          ? Boolean(onboardingData.completed)
+          : false;
         
         console.log("📋 Onboarding status:", { accountId: accountId.toString(), completed, onboardingData });
         
