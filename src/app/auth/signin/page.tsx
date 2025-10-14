@@ -34,10 +34,17 @@ const SignInPage: FC = () => {
     setError("");
 
     try {
+      console.log("🔐 Attempting sign in...");
       const result = await signIn.email({
         email,
         password,
         callbackURL: callbackUrl,
+      });
+
+      console.log("🔐 Sign in result:", {
+        success: !result.error,
+        error: result.error?.message,
+        data: result.data
       });
 
       if (result.error) {
@@ -45,11 +52,15 @@ const SignInPage: FC = () => {
         return;
       }
 
-      // Redirect on success
-      router.push(callbackUrl);
+      // Check cookies after sign-in
+      console.log("🍪 Document cookies after sign-in:", document.cookie);
+
+      // Force a full page reload to ensure cookies are set
+      console.log("🔄 Redirecting to:", callbackUrl);
+      window.location.href = callbackUrl;
     } catch (err) {
       setError("Error inesperado al iniciar sesión");
-      console.error("Sign in error:", err);
+      console.error("❌ Sign in error:", err);
     } finally {
       setIsLoading(false);
     }

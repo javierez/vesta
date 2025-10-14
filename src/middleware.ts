@@ -47,14 +47,24 @@ export async function middleware(request: NextRequest) {
 
   // Everything else is protected - requires authentication
   // Use cookie-based check to avoid Edge Runtime database issues
+
+  // DEBUG: Log all cookies
+  console.log(`🍪 [${pathname}] All cookies:`, {
+    cookieHeader: request.headers.get("cookie"),
+    allCookies: request.cookies.getAll().map(c => ({ name: c.name, value: c.value?.substring(0, 20) + '...' })),
+  });
+
   const sessionToken = request.cookies.get("better-auth.session_token");
-  
+
   if (!sessionToken?.value) {
-    console.log(`🔄 Redirecting to homepage from: ${pathname}`);
+    console.log(`🔄 Redirecting to homepage from: ${pathname} - No session token found`);
     // No session token, redirect to homepage
     const homeUrl = new URL("/", request.url);
     return NextResponse.redirect(homeUrl);
   }
+
+  console.log(`✅ [${pathname}] Session token found`);
+
 
 
   // For authenticated users, let the DAL handle full session validation
