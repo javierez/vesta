@@ -29,7 +29,10 @@
       "Bash(tail:*)",
       "Bash(npm --silent run dev --dry-run)",
       "WebSearch",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

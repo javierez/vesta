@@ -174,7 +174,6 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
         event.preventDefault();
         // Most modern browsers ignore custom messages and show their own
         event.returnValue = '¿Estás seguro de que quieres salir? Tienes cambios sin guardar que se perderán.';
-        return event.returnValue;
       }
     };
 
@@ -193,7 +192,7 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
       // Add a hash to the current URL to create a history entry
       window.history.pushState(null, '', window.location.href);
 
-      const handlePopState = (event: PopStateEvent) => {
+      const handlePopState = (_event: PopStateEvent) => {
         // Show our custom confirmation dialog
         setShowCloseConfirmation(true);
         // Push the state back so we stay on the page
