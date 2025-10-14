@@ -604,11 +604,11 @@ export async function saveExtractedDataToDatabase(
               isActive: true,
             });
 
-            if (newContact) {
+            if (newContact && 'contactId' in newContact) {
               contactCreated = true;
               result.fieldsSaved += contactFields.length;
               console.log(`✅ [DATABASE] Contact created successfully: ID ${newContact.contactId}`);
-              
+
               // Link new contact to this listing as an owner
               const newContactId = Number(newContact.contactId);
               const linkResult = await linkContactToListing(

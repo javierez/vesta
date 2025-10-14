@@ -49,7 +49,7 @@ export async function createContactWithTaskAction(
 
     // If contact is a demandante (buyer), automatically create appointment task
     let newTask = null;
-    if (newContact?.contactId && contactType === "buyer") {
+    if (newContact && 'contactId' in newContact && contactType === "buyer") {
       try {
         // Get current user for task assignment
         const currentUser = await getCurrentUser();
