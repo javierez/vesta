@@ -48,13 +48,11 @@ export async function middleware(request: NextRequest) {
   // Everything else is protected - requires authentication
   // Use cookie-based check to avoid Edge Runtime database issues
 
-  // DEBUG: Log all cookies
-  console.log(`🍪 [${pathname}] All cookies:`, {
-    cookieHeader: request.headers.get("cookie"),
-    allCookies: request.cookies.getAll().map(c => ({ name: c.name, value: c.value?.substring(0, 20) + '...' })),
-  });
-
-  const sessionToken = request.cookies.get("better-auth.session_token");
+  // Check for session token - try both secure and non-secure cookie names
+  // In production (HTTPS), Better Auth uses __Secure- prefix
+  const sessionToken =
+    request.cookies.get("__Secure-better-auth.session_token") ||
+    request.cookies.get("better-auth.session_token");
 
   if (!sessionToken?.value) {
     console.log(`🔄 Redirecting to homepage from: ${pathname} - No session token found`);
@@ -62,8 +60,6 @@ export async function middleware(request: NextRequest) {
     const homeUrl = new URL("/", request.url);
     return NextResponse.redirect(homeUrl);
   }
-
-  console.log(`✅ [${pathname}] Session token found`);
 
 
 
