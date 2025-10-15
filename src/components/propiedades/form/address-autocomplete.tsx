@@ -32,7 +32,7 @@ export interface LocationData {
 interface AddressAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
-  onLocationSelected: (data: LocationData) => void;
+  onLocationSelected: (data: LocationData) => void | Promise<void>;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -182,7 +182,7 @@ export function AddressAutocomplete({
           addressComponents: parsedComponents,
         };
 
-        onLocationSelected(locationData);
+        await Promise.resolve(onLocationSelected(locationData));
       } catch (error) {
         console.error("Error getting geocode:", error);
       }
