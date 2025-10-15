@@ -7,7 +7,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { ChevronDown, Loader } from "lucide-react";
+import { ChevronDown, Loader, Search } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
@@ -357,15 +357,29 @@ export function LocationCard({
             <Label htmlFor="neighborhood" className="text-sm">
               Barrio
             </Label>
-            <Input
-              id="neighborhood"
-              value={neighborhoodValue}
-              onChange={(e) => {
-                setNeighborhoodValue(e.target.value);
-                onUpdateModule(true);
-              }}
-              className="h-8 text-gray-500"
-            />
+            <div className="relative">
+              <Input
+                id="neighborhood"
+                value={neighborhoodValue}
+                onChange={(e) => {
+                  setNeighborhoodValue(e.target.value);
+                  onUpdateModule(true);
+                }}
+                className="h-8 text-gray-500 pr-10"
+              />
+              <button
+                type="button"
+                onClick={autoCompleteAddress}
+                disabled={isUpdatingAddress}
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUpdatingAddress ? (
+                  <Loader className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -417,15 +431,28 @@ export function LocationCard({
           <Label htmlFor="cadastralReference" className="text-sm">
             Referencia Catastral
           </Label>
-          <div className="flex gap-2">
+          <div className="relative">
             <Input
               id="cadastralReference"
               type="text"
               defaultValue={listing.cadastralReference}
-              className="h-8 text-gray-500"
+              className="h-8 text-gray-500 pr-10"
               onChange={() => onUpdateModule(true)}
             />
-            {listing.cadastralReference && (
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+              onClick={() => {
+                // Mock functionality for now
+                console.log("🔍 [LocationCard] Catastral reference search clicked");
+                toast.info("Funcionalidad de búsqueda catastral en desarrollo");
+              }}
+            >
+              <Search className="h-4 w-4" />
+            </button>
+          </div>
+          {listing.cadastralReference && (
+            <div className="mt-2 flex justify-center">
               <button
                 onClick={() => setIsCatastroPopupOpen(true)}
                 className="flex h-8 w-8 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
@@ -438,30 +465,10 @@ export function LocationCard({
                   className="object-contain"
                 />
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Actualizar Button */}
-        <div className="flex justify-center pt-2">
-          <Button
-            onClick={autoCompleteAddress}
-            disabled={isUpdatingAddress}
-            variant="outline"
-            className="flex items-center space-x-2"
-          >
-            {isUpdatingAddress ? (
-              <>
-                <Loader className="h-4 w-4 animate-spin" />
-                <span>Actualizando...</span>
-              </>
-            ) : (
-              <>
-                <span>Actualizar</span>
-              </>
-            )}
-          </Button>
-        </div>
       </div>
     </Card>
   );

@@ -599,7 +599,7 @@ export function Comments({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-1 mt-7">
       <Card>
         <CardContent className="p-4">
           <div className="flex space-x-3">
@@ -618,7 +618,7 @@ export function Comments({
                 <Button
                   onClick={handleAddComment}
                   disabled={!newComment.trim()}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 h-8"
                 >
                   <MessageCircle className="h-4 w-4" />
                   Comentar
@@ -629,7 +629,7 @@ export function Comments({
         </CardContent>
       </Card>
 
-      <div className="space-y-6">
+      <div className="space-y-1">
         {optimisticComments.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">

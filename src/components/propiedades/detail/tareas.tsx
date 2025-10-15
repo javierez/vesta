@@ -8,13 +8,11 @@ import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
 import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp, Edit } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { Comments } from "./comments";
-import { TareasSkeleton, CommentsSkeleton } from "~/components/ui/skeletons";
+import { TareasSkeleton } from "~/components/ui/skeletons";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
 import { getLeadsByListingIdWithAuth } from "~/server/queries/lead";
 import { getDealsByListingIdWithAuth } from "~/server/queries/deal";
 import { useSession } from "~/lib/auth-client";
-import type { CommentWithUser } from "~/types/comments";
 
 interface Task {
   taskId?: bigint;
@@ -104,15 +102,11 @@ interface TareasProps {
   referenceNumber: string;
   tasks: Task[];
   loading?: boolean;
-  comments?: CommentWithUser[];
   onToggleCompleted: (taskId: string) => Promise<void>;
   onDeleteTask: (taskId: string) => Promise<void>;
   onAddTask: (task: Task) => Promise<Task>;
   onUpdateTaskAfterSave: (optimisticId: string, savedTask: Task) => void;
   onRemoveOptimisticTask: (optimisticId: string) => void;
-  onAddComment: (comment: CommentWithUser) => Promise<{ success: boolean; error?: string }>;
-  onEditComment: (commentId: bigint, content: string) => Promise<{ success: boolean; error?: string }>;
-  onDeleteComment: (commentId: bigint) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function Tareas({ 
@@ -121,15 +115,11 @@ export function Tareas({
   referenceNumber, 
   tasks, 
   loading: externalLoading, 
-  comments: initialComments = [],
   onToggleCompleted,
   onDeleteTask,
   onAddTask,
   onUpdateTaskAfterSave,
   onRemoveOptimisticTask,
-  onAddComment,
-  onEditComment,
-  onDeleteComment,
 }: TareasProps) {
   const { data: session } = useSession();
   const [isAdding, setIsAdding] = useState(false);
@@ -674,25 +664,18 @@ export function Tareas({
   };
 
   if (externalLoading) {
-    return (
-      <div className="space-y-6">
-        <TareasSkeleton />
-        <div>
-          <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Comentarios</h3>
-          <CommentsSkeleton />
-        </div>
-      </div>
-    );
+    return <TareasSkeleton />;
   }
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg sm:text-xl font-semibold">Tareas</h3>
+        <div className="flex items-center gap-3">
           <Button onClick={() => {
             setEditingTask(null);
             setIsAdding(true);
-          }} className="flex items-center gap-2">
+          }} className="flex items-center gap-2 h-8 text-sm">
             <Plus className="h-4 w-4" />
             Nueva Tarea
           </Button>
@@ -958,7 +941,7 @@ export function Tareas({
               return (
                 <div 
                   key={task.id} 
-                  className={`group relative cursor-pointer p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 ${
+                  className={`group relative cursor-pointer p-3 sm:p-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 ${
                     task.completed ? 'bg-gray-50/50 opacity-75' : 'bg-white'
                   } ${taskStates[task.id] === 'saving' ? 'opacity-70' : ''}`}
                   onClick={() => handleToggleCompleted(task.id)}
@@ -1094,25 +1077,6 @@ export function Tareas({
         )}
       </div>
 
-      <div className="mt-6 sm:mt-8">
-        <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Comentarios</h3>
-        <Comments 
-          propertyId={propertyId}
-          listingId={listingId}
-          referenceNumber={referenceNumber}
-          initialComments={initialComments}
-          loading={externalLoading}
-          currentUserId={session?.user?.id}
-          currentUser={session?.user ? {
-            id: session.user.id,
-            name: session.user.name ?? undefined,
-            image: session.user.image ?? undefined
-          } : undefined}
-          onAddComment={onAddComment}
-          onEditComment={onEditComment}
-          onDeleteComment={onDeleteComment}
-        />
-      </div>
     </div>
   );
 }

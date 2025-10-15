@@ -8,6 +8,7 @@ import { PortalSelection } from "./portal-selection";
 import { DocumentsManager } from "./documents-manager";
 import { CartelesManager } from "./carteles-manager";
 import { Tareas } from "./tareas";
+import { Comments } from "./comments";
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form";
 import { CharacteristicsSkeleton } from "./skeletons";
 import { useSession } from "~/lib/auth-client";
@@ -419,23 +420,45 @@ export function PropertyTabs({
       </TabsContent>
 
       <TabsContent value="tareas" className="mt-8 sm:mt-6">
-        <div className="mx-auto max-w-6xl">
-          <Tareas
-            propertyId={listing.propertyId}
-            listingId={listing.listingId}
-            referenceNumber={listing.referenceNumber ?? ""}
-            tasks={tabData.tasks ?? []}
-            loading={loading.tasks}
-            comments={tabData.comments ?? []}
-            onToggleCompleted={handleToggleTaskCompleted}
-            onDeleteTask={handleDeleteTask}
-            onAddTask={handleAddTask}
-            onUpdateTaskAfterSave={handleUpdateTaskAfterSave}
-            onRemoveOptimisticTask={handleRemoveOptimisticTask}
-            onAddComment={handleAddComment}
-            onEditComment={handleEditComment}
-            onDeleteComment={handleDeleteComment}
-          />
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left side - Tasks */}
+            <div className="flex-1 lg:w-1/2">
+              <Tareas
+                propertyId={listing.propertyId}
+                listingId={listing.listingId}
+                referenceNumber={listing.referenceNumber ?? ""}
+                tasks={tabData.tasks ?? []}
+                loading={loading.tasks}
+                onToggleCompleted={handleToggleTaskCompleted}
+                onDeleteTask={handleDeleteTask}
+                onAddTask={handleAddTask}
+                onUpdateTaskAfterSave={handleUpdateTaskAfterSave}
+                onRemoveOptimisticTask={handleRemoveOptimisticTask}
+              />
+            </div>
+            
+            {/* Right side - Comments */}
+            <div className="flex-1 lg:w-1/2">
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Comentarios</h3>
+              <Comments 
+                propertyId={listing.propertyId}
+                listingId={listing.listingId}
+                referenceNumber={listing.referenceNumber ?? ""}
+                initialComments={tabData.comments ?? []}
+                loading={loading.comments}
+                currentUserId={session?.user?.id}
+                currentUser={session?.user ? {
+                  id: session.user.id,
+                  name: session.user.name ?? undefined,
+                  image: session.user.image ?? undefined
+                } : undefined}
+                onAddComment={handleAddComment}
+                onEditComment={handleEditComment}
+                onDeleteComment={handleDeleteComment}
+              />
+            </div>
+          </div>
         </div>
       </TabsContent>
 

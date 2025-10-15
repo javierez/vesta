@@ -228,20 +228,18 @@ export function AddressAutocomplete({
                   ? placeholder
                   : "Escribir dirección..."
             }
-            className={cn("h-8 pr-8 text-gray-500", className)}
+            className={cn("h-8 text-gray-500", className)}
             onFocus={() => {
               if (value.length >= 3 && status === "OK" && isApiLoaded) {
                 setOpen(true);
               }
             }}
           />
-          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-            {isLoadingApi ? (
+          {isLoadingApi && (
+            <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            ) : (
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </PopoverTrigger>
       <PopoverContent
