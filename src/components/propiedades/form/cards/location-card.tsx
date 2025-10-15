@@ -1,4 +1,6 @@
 
+"use client";
+
 import React, { useState } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -9,6 +11,7 @@ import { ChevronDown, Loader } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
+import { AddressAutocomplete, type LocationData } from "../address-autocomplete";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
 
@@ -48,6 +51,7 @@ export function LocationCard({
   getCardStyles,
 }: LocationCardProps) {
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
+  const [streetValue, setStreetValue] = useState(listing.street ?? "");
 
   // Log component load/render data
   console.log("🏠 [LocationCard] Component loaded with data:", {
@@ -65,7 +69,7 @@ export function LocationCard({
   const handleSave = async () => {
     console.log("💾 [LocationCard] Save button clicked!");
     console.log("📋 [LocationCard] Current form values before save:", {
-      street: (document.getElementById("street") as HTMLInputElement)?.value,
+      street: streetValue,
       addressDetails: (document.getElementById("addressDetails") as HTMLInputElement)?.value,
       postalCode: (document.getElementById("postalCode") as HTMLInputElement)?.value,
       neighborhood: (document.getElementById("neighborhood") as HTMLInputElement)?.value,
@@ -79,13 +83,52 @@ export function LocationCard({
     console.log("✅ [LocationCard] Parent onSave function completed!");
   };
 
+  // Handle Google Places autocomplete selection
+  const handleLocationSelected = (data: LocationData) => {
+    console.log("📍 [LocationCard] Google Places location selected:", data);
+
+    // Parse the street with number from address components
+    const streetWithNumber = data.addressComponents.streetNumber && data.addressComponents.route
+      ? `${data.addressComponents.route} ${data.addressComponents.streetNumber}`
+      : data.addressComponents.route || streetValue;
+
+    // Update street value state
+    setStreetValue(streetWithNumber);
+
+    // Update form fields
+    const postalCodeInput = document.getElementById("postalCode") as HTMLInputElement;
+    if (postalCodeInput && data.addressComponents.postalCode) {
+      postalCodeInput.value = data.addressComponents.postalCode;
+    }
+
+    const neighborhoodInput = document.getElementById("neighborhood") as HTMLInputElement;
+    if (neighborhoodInput && data.addressComponents.sublocality) {
+      neighborhoodInput.value = data.addressComponents.sublocality;
+    }
+
+    // Update state variables for city, province, municipality
+    if (data.addressComponents.locality) {
+      setCity(data.addressComponents.locality);
+    }
+    if (data.addressComponents.administrativeAreaLevel1) {
+      setProvince(data.addressComponents.administrativeAreaLevel1);
+    }
+    if (data.addressComponents.administrativeAreaLevel2 || data.addressComponents.locality) {
+      setMunicipality(data.addressComponents.administrativeAreaLevel2 || data.addressComponents.locality);
+    }
+
+    // Mark the module as having changes
+    onUpdateModule(true);
+
+    toast.success("Dirección autocompletada. Guarda para aplicar los cambios.");
+  };
+
   const autoCompleteAddress = async () => {
     // Get current street value from the input
-    const streetInput = document.getElementById("street") as HTMLInputElement;
     const addressDetailsInput = document.getElementById("addressDetails") as HTMLInputElement;
-    const streetValue = streetInput?.value?.trim() ?? "";
+    const currentStreetValue = streetValue.trim();
 
-    if (!streetValue) {
+    if (!currentStreetValue) {
       alert("Por favor, introduce al menos la dirección de la propiedad.");
       return;
     }
@@ -95,11 +138,11 @@ export function LocationCard({
 
       // Parse the address to separate street+number from details
       const addressRegex = /^(.+?)(\d+)(.*)$/;
-      const addressMatch = addressRegex.exec(streetValue);
+      const addressMatch = addressRegex.exec(currentStreetValue);
 
-      let streetWithNumber = streetValue;
+      let streetWithNumber = currentStreetValue;
       let parsedDetails = addressDetailsInput?.value ?? "";
-      let searchAddress = streetValue;
+      let searchAddress = currentStreetValue;
 
       if (addressMatch?.[1] && addressMatch[2]) {
         const streetName = addressMatch[1].trim();    // "Calle Gran Vía"
@@ -153,10 +196,10 @@ export function LocationCard({
 
       console.log("Nominatim auto-completion successful:", result);
 
+      // Update street value state
+      setStreetValue(streetWithNumber);
+
       // Update form fields with auto-completed data
-      if (streetInput) {
-        streetInput.value = streetWithNumber;
-      }
       if (addressDetailsInput) {
         addressDetailsInput.value = parsedDetails;
       }
@@ -259,11 +302,21 @@ export function LocationCard({
           <Label htmlFor="street" className="text-sm">
             Calle
           </Label>
-          <Input
+          <AddressAutocomplete
+            value={streetValue}
+            onChange={(value) => {
+              setStreetValue(value);
+              onUpdateModule(true);
+            }}
+            onLocationSelected={handleLocationSelected}
+            placeholder="Buscar dirección..."
+          />
+          {/* Hidden input to maintain compatibility with parent form's DOM reading */}
+          <input
+            type="hidden"
             id="street"
-            defaultValue={listing.street}
-            className="h-8 text-gray-500"
-            onChange={() => onUpdateModule(true)}
+            value={streetValue}
+            readOnly
           />
         </div>
         <div className="space-y-1.5">
