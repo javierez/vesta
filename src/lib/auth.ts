@@ -209,6 +209,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     "http://localhost:3000",
     "https://v0-vesta-eight.vercel.app",
+    "https://www.vesta-crm.com",
     ...(process.env.APP_URL ? [process.env.APP_URL] : []),
     ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
   ],
