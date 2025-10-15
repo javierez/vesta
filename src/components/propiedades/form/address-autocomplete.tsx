@@ -163,6 +163,7 @@ export function AddressAutocomplete({
 
       try {
         const results = await getGeocode({ address: selectedAddress });
+        // eslint-disable-next-line @typescript-eslint/await-thenable
         const { lat, lng } = await getLatLng(results[0]!);
 
         console.log("🗺️ [GOOGLE MAPS] Full geocoding result:", JSON.stringify(results[0], null, 2));
