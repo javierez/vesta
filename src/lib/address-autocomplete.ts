@@ -1,3 +1,5 @@
+"use server";
+
 interface NominatimResult {
   address?: {
     road?: string;
@@ -109,41 +111,4 @@ export async function autoCompleteAddress(
       error: error instanceof Error ? error.message : "Unknown error"
     };
   }
-}
-
-// Validate Spanish postal code format
-export function validateSpanishPostalCode(postalCode: string): boolean {
-  const postalCodePattern = /^[0-9]{5}$/;
-  return postalCodePattern.test(postalCode);
-}
-
-// Format address for display
-export function formatAddress(
-  street?: string,
-  addressDetails?: string,
-  postalCode?: string,
-  city?: string,
-  province?: string
-): string {
-  const parts: string[] = [];
-  
-  if (street) {
-    parts.push(street);
-    if (addressDetails) {
-      parts[0] += `, ${addressDetails}`;
-    }
-  }
-  
-  if (postalCode || city) {
-    const cityLine: string[] = [];
-    if (postalCode) cityLine.push(postalCode);
-    if (city) cityLine.push(city);
-    parts.push(cityLine.join(" "));
-  }
-  
-  if (province) {
-    parts.push(province);
-  }
-  
-  return parts.join(", ");
 }

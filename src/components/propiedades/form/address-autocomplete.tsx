@@ -112,7 +112,9 @@ export function AddressAutocomplete({
       sublocality: "",
     };
 
+    console.log("🔍 [GOOGLE MAPS] Analyzing all component types:");
     for (const component of components) {
+      console.log(`   - ${component.types.join(", ")}: ${component.long_name}`);
       const componentType = component.types[0];
 
       switch (componentType) {
@@ -139,7 +141,10 @@ export function AddressAutocomplete({
           break;
         case "sublocality":
         case "sublocality_level_1":
+        case "sublocality_level_2":
+        case "sublocality_level_3":
         case "neighborhood":
+          console.log(`   ✅ FOUND NEIGHBORHOOD: ${component.long_name}`);
           addressData.sublocality = component.long_name;
           break;
       }
@@ -160,13 +165,21 @@ export function AddressAutocomplete({
         const results = await getGeocode({ address: selectedAddress });
         const { lat, lng } = await getLatLng(results[0]!);
 
+        console.log("🗺️ [GOOGLE MAPS] Full geocoding result:", JSON.stringify(results[0], null, 2));
+        console.log("🗺️ [GOOGLE MAPS] Address components:", JSON.stringify(results[0]!.address_components, null, 2));
+
+        const parsedComponents = parseAddressComponents(
+          results[0]!.address_components,
+        );
+
+        console.log("🗺️ [GOOGLE MAPS] Parsed components:", JSON.stringify(parsedComponents, null, 2));
+        console.log("🏘️ [GOOGLE MAPS] Neighborhood (sublocality):", parsedComponents.sublocality);
+
         const locationData: LocationData = {
           address: selectedAddress,
           lat,
           lng,
-          addressComponents: parseAddressComponents(
-            results[0]!.address_components,
-          ),
+          addressComponents: parsedComponents,
         };
 
         onLocationSelected(locationData);

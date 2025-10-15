@@ -14,6 +14,7 @@ import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import { AddressAutocomplete, type LocationData } from "../address-autocomplete";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
+import { getNeighborhoodFromCoordinates } from "~/server/googlemaps/retrieve_geo";
 
 interface LocationCardProps {
   listing: PropertyListing;
@@ -52,6 +53,7 @@ export function LocationCard({
 }: LocationCardProps) {
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const [streetValue, setStreetValue] = useState(listing.street ?? "");
+  const [neighborhoodValue, setNeighborhoodValue] = useState(listing.neighborhood ?? "");
 
   // Log component load/render data
   console.log("🏠 [LocationCard] Component loaded with data:", {
@@ -72,7 +74,7 @@ export function LocationCard({
       street: streetValue,
       addressDetails: (document.getElementById("addressDetails") as HTMLInputElement)?.value,
       postalCode: (document.getElementById("postalCode") as HTMLInputElement)?.value,
-      neighborhood: (document.getElementById("neighborhood") as HTMLInputElement)?.value,
+      neighborhood: neighborhoodValue,
       city: city,
       province: province,
       municipality: municipality,
@@ -84,7 +86,7 @@ export function LocationCard({
   };
 
   // Handle Google Places autocomplete selection
-  const handleLocationSelected = (data: LocationData) => {
+  const handleLocationSelected = async (data: LocationData) => {
     console.log("📍 [LocationCard] Google Places location selected:", data);
 
     // Parse the street with number from address components
@@ -101,9 +103,19 @@ export function LocationCard({
       postalCodeInput.value = data.addressComponents.postalCode;
     }
 
-    const neighborhoodInput = document.getElementById("neighborhood") as HTMLInputElement;
-    if (neighborhoodInput && data.addressComponents.sublocality) {
-      neighborhoodInput.value = data.addressComponents.sublocality;
+    // Update neighborhood value from Google Maps if available, otherwise fetch from Nominatim
+    if (data.addressComponents.sublocality) {
+      setNeighborhoodValue(data.addressComponents.sublocality);
+    } else {
+      // Fetch neighborhood from Nominatim using coordinates
+      console.log("🔄 [LocationCard] Fetching neighborhood from Nominatim...");
+      const neighborhood = await getNeighborhoodFromCoordinates(data.lat, data.lng);
+      if (neighborhood) {
+        console.log("✅ [LocationCard] Neighborhood from Nominatim:", neighborhood);
+        setNeighborhoodValue(neighborhood);
+      } else {
+        console.log("⚠️ [LocationCard] No neighborhood found from Nominatim");
+      }
     }
 
     // Update state variables for city, province, municipality
@@ -209,16 +221,14 @@ export function LocationCard({
         postalCodeInput.value = result.address.postcode;
       }
 
-      const neighborhoodInput = document.getElementById("neighborhood") as HTMLInputElement;
-      if (neighborhoodInput) {
-        neighborhoodInput.value = result.address?.suburb ?? result.address?.quarter ?? "";
-      }
+      // Update neighborhood value
+      const updatedNeighborhood = result.address?.suburb ?? result.address?.quarter ?? "";
+      setNeighborhoodValue(updatedNeighborhood);
 
       // Get the updated location values
       const updatedCity = result.address?.city ?? result.address?.town ?? city;
       const updatedProvince = result.address?.state ?? province;
       const updatedMunicipality = result.address?.city ?? result.address?.town ?? municipality;
-      const updatedNeighborhood = result.address?.suburb ?? result.address?.quarter ?? "";
 
       // Update state variables for city, province, municipality
       setCity(updatedCity);
@@ -230,7 +240,7 @@ export function LocationCard({
       console.log("   City:", updatedCity);
       console.log("   Province:", updatedProvince);
       console.log("   Municipality:", updatedMunicipality);
-      console.log("   Neighborhood:", updatedNeighborhood);
+      console.log("   Neighborhood:", neighborhoodValue);
 
       // Mark the module as having changes so the save will trigger
       onUpdateModule(true);
@@ -349,9 +359,12 @@ export function LocationCard({
             </Label>
             <Input
               id="neighborhood"
-              defaultValue={listing.neighborhood}
-              className="h-8 bg-muted"
-              disabled
+              value={neighborhoodValue}
+              onChange={(e) => {
+                setNeighborhoodValue(e.target.value);
+                onUpdateModule(true);
+              }}
+              className="h-8 text-gray-500"
             />
           </div>
         </div>

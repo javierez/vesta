@@ -74,9 +74,9 @@ export function PropertySummaryCard({
   return (
     <Card className="col-span-full bg-gradient-to-br from-amber-50/50 to-rose-50/50 border-gradient-to-r border-amber-200/30 shadow-lg mb-6 md:mb-8">
       <div className="p-4 md:p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          {/* Left Section - Property Metrics with natural flow */}
-          <div className="flex items-center gap-3 sm:gap-4 md:gap-6 lg:gap-8">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+          {/* Property Metrics - First row on mobile, left on desktop */}
+          <div className="flex items-center justify-center md:justify-start gap-4 sm:gap-5 md:gap-6 lg:gap-8">
             {/* Bedrooms - only show for non-garage/solar properties */}
             {shouldShowBedsAndBaths && (
               <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
@@ -121,96 +121,99 @@ export function PropertySummaryCard({
             </div>
           </div>
 
-          {/* Center Section - Owner and Agent */}
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-wrap">
-            {/* Owner */}
-            <div className="group/owner relative flex items-center gap-2 bg-white/70 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-sm min-w-0">
-              <button
-                onClick={handleOwnerClick}
-                className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 transition-transform duration-200 hover:scale-125 cursor-pointer"
-                title="Ver propietario"
-              >
-                <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-800" />
-              </button>
-              <p className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-20 sm:max-w-28 md:max-w-32 lg:max-w-40">
-                {selectedOwnerIds.length > 0
-                  ? owners.find(o => o.id.toString() === selectedOwnerIds[0])?.name ?? 'Sin asignar'
-                  : 'Sin asignar'}
-              </p>
-              {onEditOwner && (
+          {/* Second row on mobile: Owner/Agent group and Toggle buttons group with space between */}
+          <div className="flex items-center justify-between md:justify-center md:gap-4">
+            {/* Owner and Agent - grouped together */}
+            <div className="flex items-center gap-2 sm:gap-3 ml-2 md:ml-0">
+              {/* Owner */}
+              <div className="group/owner relative flex items-center gap-1.5 sm:gap-2 bg-white/70 rounded-lg px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 shadow-sm min-w-0">
                 <button
-                  onClick={onEditOwner}
-                  className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/60 text-white shadow-md opacity-0 group-hover/owner:opacity-100 transition-opacity duration-200 hover:bg-amber-500/70"
-                  title="Editar propietario"
+                  onClick={handleOwnerClick}
+                  className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 transition-transform duration-200 hover:scale-125 cursor-pointer"
+                  title="Ver propietario"
                 >
-                  <Pencil className="h-3 w-3" />
+                  <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-800" />
                 </button>
-              )}
-            </div>
-
-            {/* Agent */}
-            <div className="group/agent relative flex items-center gap-2 bg-white/70 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-sm min-w-0">
-              <div className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
-                <Briefcase className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-800" />
+                <p className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-16 sm:max-w-20 md:max-w-32 lg:max-w-40">
+                  {selectedOwnerIds.length > 0
+                    ? owners.find(o => o.id.toString() === selectedOwnerIds[0])?.name ?? 'Sin asignar'
+                    : 'Sin asignar'}
+                </p>
+                {onEditOwner && (
+                  <button
+                    onClick={onEditOwner}
+                    className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/60 text-white shadow-md opacity-0 group-hover/owner:opacity-100 transition-opacity duration-200 hover:bg-amber-500/70"
+                    title="Editar propietario"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                )}
               </div>
-              <p className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-20 sm:max-w-28 md:max-w-32 lg:max-w-40">
-                {selectedAgentId
-                  ? agents.find(a => a.id === selectedAgentId)?.name ?? 'Sin asignar'
-                  : 'Sin asignar'}
-              </p>
-              {onEditOwner && (
-                <button
-                  onClick={onEditOwner}
-                  className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/60 text-white shadow-md opacity-0 group-hover/agent:opacity-100 transition-opacity duration-200 hover:bg-amber-500/70"
-                  title="Editar agente"
-                >
-                  <Pencil className="h-3 w-3" />
-                </button>
-              )}
+
+              {/* Agent */}
+              <div className="group/agent relative flex items-center gap-1.5 sm:gap-2 bg-white/70 rounded-lg px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 shadow-sm min-w-0">
+                <div className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
+                  <Briefcase className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-800" />
+                </div>
+                <p className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-16 sm:max-w-20 md:max-w-32 lg:max-w-40">
+                  {selectedAgentId
+                    ? agents.find(a => a.id === selectedAgentId)?.name ?? 'Sin asignar'
+                    : 'Sin asignar'}
+                </p>
+                {onEditOwner && (
+                  <button
+                    onClick={onEditOwner}
+                    className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/60 text-white shadow-md opacity-0 group-hover/agent:opacity-100 transition-opacity duration-200 hover:bg-amber-500/70"
+                    title="Editar agente"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Right Section - Toggle buttons */}
-          <div className="flex items-center gap-2 sm:gap-3 justify-end md:justify-start">
-            {/* Keys toggle button */}
-            <Button
-              onClick={onToggleKeys}
-              disabled={keysLoading}
-              size="sm"
-              variant="ghost"
-              className={`w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full p-0 transition-all duration-200 ${
-                hasKeys
-                  ? "bg-white hover:bg-gray-50 text-black shadow-xl scale-105"
-                  : "bg-transparent hover:bg-gray-50 text-gray-400 shadow-sm"
-              }`}
-              title={hasKeys ? "Tenemos las llaves" : "No tenemos las llaves"}
-            >
-              {keysLoading ? (
-                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
-              ) : (
-                <Key className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              )}
-            </Button>
+            {/* Toggle buttons - grouped together */}
+            <div className="flex items-center gap-2 sm:gap-3 mr-6 md:mr-0">
+              {/* Keys toggle button */}
+              <Button
+                onClick={onToggleKeys}
+                disabled={keysLoading}
+                size="sm"
+                variant="ghost"
+                className={`w-7 h-7 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full p-0 transition-all duration-200 flex-shrink-0 ${
+                  hasKeys
+                    ? "bg-white hover:bg-gray-50 text-black shadow-xl scale-105"
+                    : "bg-transparent hover:bg-gray-50 text-gray-400 shadow-sm"
+                }`}
+                title={hasKeys ? "Tenemos las llaves" : "No tenemos las llaves"}
+              >
+                {keysLoading ? (
+                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                ) : (
+                  <Key className="h-3 w-3 sm:h-4 sm:w-4" />
+                )}
+              </Button>
 
-            {/* Website toggle button */}
-            <Button
-              onClick={onToggleWebsite}
-              disabled={websiteLoading}
-              size="sm"
-              variant="ghost"
-              className={`w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full p-0 transition-all duration-200 ${
-                publishToWebsite
-                  ? "bg-white hover:bg-gray-50 text-black shadow-xl scale-105"
-                  : "bg-transparent hover:bg-gray-50 text-gray-400 shadow-sm"
-              }`}
-              title={publishToWebsite ? "Publicar en web" : "No publicar en web"}
-            >
-              {websiteLoading ? (
-                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
-              ) : (
-                <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              )}
-            </Button>
+              {/* Website toggle button */}
+              <Button
+                onClick={onToggleWebsite}
+                disabled={websiteLoading}
+                size="sm"
+                variant="ghost"
+                className={`w-7 h-7 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full p-0 transition-all duration-200 flex-shrink-0 ${
+                  publishToWebsite
+                    ? "bg-white hover:bg-gray-50 text-black shadow-xl scale-105"
+                    : "bg-transparent hover:bg-gray-50 text-gray-400 shadow-sm"
+                }`}
+                title={publishToWebsite ? "Publicar en web" : "No publicar en web"}
+              >
+                {websiteLoading ? (
+                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                ) : (
+                  <Globe className="h-3 w-3 sm:h-4 sm:w-4" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -8,10 +8,44 @@ interface NominatimResponse {
   lon: string;
   address: {
     suburb?: string;
+    quarter?: string;
     city?: string;
     province?: string;
     state?: string;
   };
+}
+
+// Reverse geocode to get neighborhood from coordinates
+export async function getNeighborhoodFromCoordinates(
+  lat: number,
+  lng: number,
+): Promise<string | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=es`;
+    console.log("🌍 [NOMINATIM] Fetching neighborhood from coordinates:", { lat, lng });
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Mozilla/5.0 (compatible; RealEstateApp/1.0)",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = (await response.json()) as NominatimResponse;
+
+    const neighborhood = data.address?.suburb ?? data.address?.quarter ?? null;
+    console.log("🏘️ [NOMINATIM] Neighborhood found:", neighborhood);
+
+    return neighborhood;
+  } catch (error) {
+    console.error("❌ [NOMINATIM] Error fetching neighborhood:", error);
+    return null;
+  }
 }
 
 // Formatted geocoding data

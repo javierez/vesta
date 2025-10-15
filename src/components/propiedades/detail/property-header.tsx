@@ -296,26 +296,27 @@ export function PropertyHeader({
               </div>
             )}
           </div>
-          <div className="mt-2">
+          <div className="mt-2 min-w-0">
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                 `${street}, ${city}, ${province} ${postalCode}`,
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center text-sm sm:text-base text-muted-foreground transition-colors hover:text-primary break-words"
+              className="group inline-flex items-center text-sm sm:text-base text-muted-foreground transition-colors hover:text-primary min-w-0 max-w-full"
             >
               <MapPin className="mr-1 h-4 w-4 flex-shrink-0 transition-transform group-hover:scale-110" />
-              <span className="group-hover:underline break-words">
+              <span className="group-hover:underline truncate">
                 {street}, {city}, {province} {postalCode}
               </span>
             </a>
           </div>
         </div>
-        <div className="flex flex-col items-start mt-2 sm:items-end sm:mt-0 md:flex-shrink-0">
+        <div className="flex flex-col items-start gap-1.5 mt-2 sm:items-end sm:mt-0 md:flex-shrink-0">
+          {/* Price - prominent on mobile */}
           <div
             className={cn(
-              "text-xl font-bold sm:text-2xl md:text-3xl break-words transition-colors",
+              "text-2xl font-bold sm:text-2xl md:text-3xl whitespace-nowrap transition-colors",
               listingId ? "cursor-pointer hover:text-primary" : "",
               isUpdatingStatus && "opacity-50",
               (currentStatus === 'Vendido' || currentStatus === 'Alquilado') && "line-through decoration-2"
@@ -328,7 +329,23 @@ export function PropertyHeader({
               ? "/mes"
               : ""}
           </div>
-          <div className="flex items-center gap-2 mt-1">
+
+          {/* Badge and completion tracker - below price on mobile */}
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="secondary"
+              className={cn(
+                "font-normal transition-all duration-200 text-xs sm:text-sm flex-shrink-0",
+                statusColors[listingType],
+                listingId ? "cursor-pointer hover:scale-105" : "",
+                isUpdatingStatus && "opacity-50"
+              )}
+              onClick={listingId ? handleStatusToggle : undefined}
+              title={listingId ? "Haz clic para cambiar el estado" : undefined}
+            >
+              {getDisplayText(listingType, currentStatus)}
+            </Badge>
+
             {/* Completion Tracker Button - only show on main property page */}
             {isMainPropertyPage && (
               <button
@@ -356,20 +373,6 @@ export function PropertyHeader({
                 <span className="text-xs font-medium text-muted-foreground">{completionPercentage}%</span>
               </button>
             )}
-
-            <Badge
-              variant="secondary"
-              className={cn(
-                "font-normal transition-all duration-200 text-xs sm:text-sm flex-shrink-0",
-                statusColors[listingType],
-                listingId ? "cursor-pointer hover:scale-105" : "",
-                isUpdatingStatus && "opacity-50"
-              )}
-              onClick={listingId ? handleStatusToggle : undefined}
-              title={listingId ? "Haz clic para cambiar el estado" : undefined}
-            >
-              {getDisplayText(listingType, currentStatus)}
-            </Badge>
           </div>
         </div>
       </div>
