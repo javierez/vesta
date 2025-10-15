@@ -182,7 +182,11 @@ export function AddressAutocomplete({
           addressComponents: parsedComponents,
         };
 
-        await Promise.resolve(onLocationSelected(locationData));
+        // Call the callback (handles both sync and async)
+        const result = onLocationSelected(locationData);
+        if (result instanceof Promise) {
+          await result;
+        }
       } catch (error) {
         console.error("Error getting geocode:", error);
       }
