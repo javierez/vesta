@@ -72,22 +72,22 @@ export function PropertySummaryCard({
   };
   
   return (
-    <Card className="col-span-full bg-gradient-to-br from-amber-50/50 to-rose-50/50 border-gradient-to-r border-amber-200/30 shadow-lg">
+    <Card className="col-span-full bg-gradient-to-br from-amber-50/50 to-rose-50/50 border-gradient-to-r border-amber-200/30 shadow-lg mb-6 md:mb-8">
       <div className="p-4 md:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           {/* Left Section - Property Metrics with natural flow */}
-          <div className="flex items-center gap-4 md:gap-8">
+          <div className="flex items-center gap-3 sm:gap-4 md:gap-6 lg:gap-8">
             {/* Bedrooms - only show for non-garage/solar properties */}
             {shouldShowBedsAndBaths && (
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
+              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
                   {isLocal ? (
-                    <DoorOpen className="h-5 w-5 text-amber-800" />
+                    <DoorOpen className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5 text-amber-800" />
                   ) : (
-                    <Bed className="h-5 w-5 text-amber-800" />
+                    <Bed className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5 text-amber-800" />
                   )}
                 </div>
-                <p className="text-base md:text-lg font-bold text-gray-900">
+                <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
                   {listing.bedrooms ?? '-'}
                 </p>
               </div>
@@ -95,23 +95,23 @@ export function PropertySummaryCard({
 
             {/* Bathrooms - only show for non-garage/solar properties */}
             {shouldShowBedsAndBaths && (
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
-                  <Bath className="h-5 w-5 text-amber-800" />
+              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
+                  <Bath className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5 text-amber-800" />
                 </div>
-                <p className="text-base md:text-lg font-bold text-gray-900">
+                <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
                   {listing.bathrooms ? Math.round(listing.bathrooms) : '-'}
                 </p>
               </div>
             )}
 
             {/* Area - use buildSurfaceArea for garage/solar, squareMeter for others */}
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
-                <Square className="h-5 w-5 text-amber-800" />
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
+                <Square className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5 text-amber-800" />
               </div>
               <div className="flex items-baseline gap-1">
-                <p className="text-base md:text-lg font-bold text-gray-900">
+                <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
                   {areaValue ?? '-'}
                 </p>
                 {areaValue && (
@@ -122,17 +122,17 @@ export function PropertySummaryCard({
           </div>
 
           {/* Center Section - Owner and Agent */}
-          <div className="flex items-center gap-3 md:gap-4 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-wrap">
             {/* Owner */}
-            <div className="group/owner relative flex items-center gap-2 bg-white/70 rounded-lg px-3 py-2 shadow-sm min-w-0">
+            <div className="group/owner relative flex items-center gap-2 bg-white/70 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-sm min-w-0">
               <button
                 onClick={handleOwnerClick}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 transition-transform duration-200 hover:scale-125 cursor-pointer"
+                className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 transition-transform duration-200 hover:scale-125 cursor-pointer"
                 title="Ver propietario"
               >
-                <Users className="h-3 w-3 text-amber-800" />
+                <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-800" />
               </button>
-              <p className="text-sm font-medium text-gray-900 truncate max-w-24 sm:max-w-32 md:max-w-24">
+              <p className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-20 sm:max-w-28 md:max-w-32 lg:max-w-40">
                 {selectedOwnerIds.length > 0
                   ? owners.find(o => o.id.toString() === selectedOwnerIds[0])?.name ?? 'Sin asignar'
                   : 'Sin asignar'}
@@ -149,11 +149,11 @@ export function PropertySummaryCard({
             </div>
 
             {/* Agent */}
-            <div className="group/agent relative flex items-center gap-2 bg-white/70 rounded-lg px-3 py-2 shadow-sm min-w-0">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
-                <Briefcase className="h-3 w-3 text-amber-800" />
+            <div className="group/agent relative flex items-center gap-2 bg-white/70 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-sm min-w-0">
+              <div className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
+                <Briefcase className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-800" />
               </div>
-              <p className="text-sm font-medium text-gray-900 truncate max-w-24 sm:max-w-32 md:max-w-24">
+              <p className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-20 sm:max-w-28 md:max-w-32 lg:max-w-40">
                 {selectedAgentId
                   ? agents.find(a => a.id === selectedAgentId)?.name ?? 'Sin asignar'
                   : 'Sin asignar'}
@@ -171,14 +171,14 @@ export function PropertySummaryCard({
           </div>
 
           {/* Right Section - Toggle buttons */}
-          <div className="flex items-center gap-3 justify-end md:justify-start">
+          <div className="flex items-center gap-2 sm:gap-3 justify-end md:justify-start">
             {/* Keys toggle button */}
             <Button
               onClick={onToggleKeys}
               disabled={keysLoading}
               size="sm"
               variant="ghost"
-              className={`w-11 h-11 rounded-full p-0 transition-all duration-200 ${
+              className={`w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full p-0 transition-all duration-200 ${
                 hasKeys
                   ? "bg-white hover:bg-gray-50 text-black shadow-xl scale-105"
                   : "bg-transparent hover:bg-gray-50 text-gray-400 shadow-sm"
@@ -186,9 +186,9 @@ export function PropertySummaryCard({
               title={hasKeys ? "Tenemos las llaves" : "No tenemos las llaves"}
             >
               {keysLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
               ) : (
-                <Key className="h-4 w-4" />
+                <Key className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               )}
             </Button>
 
@@ -198,7 +198,7 @@ export function PropertySummaryCard({
               disabled={websiteLoading}
               size="sm"
               variant="ghost"
-              className={`w-11 h-11 rounded-full p-0 transition-all duration-200 ${
+              className={`w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full p-0 transition-all duration-200 ${
                 publishToWebsite
                   ? "bg-white hover:bg-gray-50 text-black shadow-xl scale-105"
                   : "bg-transparent hover:bg-gray-50 text-gray-400 shadow-sm"
@@ -206,9 +206,9 @@ export function PropertySummaryCard({
               title={publishToWebsite ? "Publicar en web" : "No publicar en web"}
             >
               {websiteLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
               ) : (
-                <Globe className="h-4 w-4" />
+                <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               )}
             </Button>
           </div>

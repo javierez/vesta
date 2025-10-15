@@ -218,8 +218,8 @@ export default function ContactsPage() {
         <div className="flex gap-2">
           <Button asChild>
             <Link href="/contactos/crear">
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Contacto
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Agregar Contacto</span>
             </Link>
           </Button>
           <Button variant="outline" asChild>

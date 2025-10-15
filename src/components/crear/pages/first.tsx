@@ -523,7 +523,8 @@ export default function FirstPage({
       {/* Property Type Section */}
       <div className="space-y-2">
         <h3 className="text-md font-medium text-gray-900">Tipo de Propiedad</h3>
-        <div className="relative h-10 rounded-lg bg-gray-100 p-1">
+        {/* Desktop: Single row with animation */}
+        <div className="hidden sm:block relative h-10 rounded-lg bg-gray-100 p-1">
           <motion.div
             className="absolute left-1 top-1 h-8 w-[calc(20%-2px)] rounded-md bg-white shadow-sm"
             animate={{
@@ -612,6 +613,79 @@ export default function FirstPage({
               Garaje
             </button>
           </div>
+        </div>
+        {/* Mobile: Grid layout without animation */}
+        <div className="grid grid-cols-3 gap-2 sm:hidden">
+          <button
+            onClick={() => {
+              updateField("propertyType", "piso");
+              updateField("propertySubtype", "Piso");
+            }}
+            className={cn(
+              "h-10 rounded-lg text-sm font-medium transition-all duration-200",
+              formData.propertyType === "piso"
+                ? "bg-white text-gray-900 shadow-md"
+                : "bg-gray-100 text-gray-600",
+            )}
+          >
+            Piso
+          </button>
+          <button
+            onClick={() => {
+              updateField("propertyType", "casa");
+              updateField("propertySubtype", "Casa");
+            }}
+            className={cn(
+              "h-10 rounded-lg text-sm font-medium transition-all duration-200",
+              formData.propertyType === "casa"
+                ? "bg-white text-gray-900 shadow-md"
+                : "bg-gray-100 text-gray-600",
+            )}
+          >
+            Casa
+          </button>
+          <button
+            onClick={() => {
+              updateField("propertyType", "local");
+              updateField("propertySubtype", "Otros");
+            }}
+            className={cn(
+              "h-10 rounded-lg text-sm font-medium transition-all duration-200",
+              formData.propertyType === "local"
+                ? "bg-white text-gray-900 shadow-md"
+                : "bg-gray-100 text-gray-600",
+            )}
+          >
+            Local
+          </button>
+          <button
+            onClick={() => {
+              updateField("propertyType", "solar");
+              updateField("propertySubtype", "Suelo residencial");
+            }}
+            className={cn(
+              "h-10 rounded-lg text-sm font-medium transition-all duration-200 col-span-1",
+              formData.propertyType === "solar"
+                ? "bg-white text-gray-900 shadow-md"
+                : "bg-gray-100 text-gray-600",
+            )}
+          >
+            Solar
+          </button>
+          <button
+            onClick={() => {
+              updateField("propertyType", "garaje");
+              updateField("propertySubtype", "Individual");
+            }}
+            className={cn(
+              "h-10 rounded-lg text-sm font-medium transition-all duration-200 col-span-2",
+              formData.propertyType === "garaje"
+                ? "bg-white text-gray-900 shadow-md"
+                : "bg-gray-100 text-gray-600",
+            )}
+          >
+            Garaje
+          </button>
         </div>
       </div>
 

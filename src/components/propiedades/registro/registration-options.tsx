@@ -94,7 +94,7 @@ export function RegistrationOptions({
   ];
 
   return (
-    <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-4", className)}>
+    <div className={cn("grid grid-cols-1 gap-3 xs:grid-cols-2 md:grid-cols-4", className)}>
       {options.map((option) => {
         const Icon = option.icon;
         const isActive = activeOption === option.id;
@@ -104,8 +104,8 @@ export function RegistrationOptions({
             key={option.id}
             onClick={() => onToggleOption(option.id)}
             className={cn(
-              "relative flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-200",
-              "hover:scale-[1.02]",
+              "relative flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl transition-all duration-200",
+              "hover:scale-[1.02] min-h-[80px] sm:min-h-[100px]",
               isActive
                 ? `bg-gradient-to-br ${option.bgActive} shadow-lg`
                 : "bg-gray-50 shadow hover:shadow-lg"
@@ -113,7 +113,7 @@ export function RegistrationOptions({
           >
             <div
               className={cn(
-                "mb-2 rounded-lg p-2 transition-colors",
+                "mb-1.5 sm:mb-2 rounded-lg p-1.5 sm:p-2 transition-colors",
                 isActive
                   ? `bg-gradient-to-r ${option.gradient}`
                   : "bg-gray-100"
@@ -121,14 +121,14 @@ export function RegistrationOptions({
             >
               <Icon
                 className={cn(
-                  "h-5 w-5 transition-colors",
+                  "h-4 w-4 sm:h-5 sm:w-5 transition-colors",
                   isActive ? "text-white" : "text-gray-600"
                 )}
               />
             </div>
             <span
               className={cn(
-                "text-xs font-medium text-center transition-colors",
+                "text-xs sm:text-sm font-medium text-center transition-colors leading-tight",
                 isActive ? "text-gray-900" : "text-gray-600"
               )}
             >
@@ -146,38 +146,38 @@ export interface OptionDetailsProps {
   onStart?: () => void;
 }
 
-export function OptionDetails({ 
+export function OptionDetails({
   option,
-  onStart: _onStart 
+  onStart: _onStart
 }: OptionDetailsProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-3">
+        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
           {option.title}
         </h3>
-        <p className="text-gray-600 leading-relaxed">
+        <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
           {option.description}
         </p>
       </div>
-      
-      <div className="space-y-3">
-        <h4 className="font-semibold text-gray-900">
+
+      <div className="space-y-2 sm:space-y-3">
+        <h4 className="text-sm sm:text-base font-semibold text-gray-900">
           Características principales
         </h4>
-        <ul className="space-y-3">
+        <ul className="space-y-2 sm:space-y-3">
           {option.features.map((feature, index) => (
-            <li key={index} className="flex items-start gap-3">
-              <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
-                <Check className="h-3 w-3 text-white" />
+            <li key={index} className="flex items-start gap-2 sm:gap-3">
+              <div className="mt-0.5 sm:mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1 shrink-0">
+                <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
               </div>
-              <span className="text-gray-700">{feature}</span>
+              <span className="text-sm sm:text-base text-gray-700">{feature}</span>
             </li>
           ))}
         </ul>
         {option.additionalInfo && (
-          <div className="mt-6 p-4 bg-white rounded-lg shadow-sm">
-            <h5 className="text-sm font-medium text-gray-900 mb-1">
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
+            <h5 className="text-xs sm:text-sm font-medium text-gray-900 mb-1">
               Información a mencionar:
             </h5>
             <p className="text-xs text-gray-600">

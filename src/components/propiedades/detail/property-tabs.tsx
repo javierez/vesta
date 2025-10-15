@@ -392,17 +392,17 @@ export function PropertyTabs({
   }, []); // Empty dependency array - run once on mount only
 
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
-        <TabsTrigger value="general">General</TabsTrigger>
-        <TabsTrigger value="tareas">Tareas</TabsTrigger>
-        <TabsTrigger value="imagenes">Imágenes</TabsTrigger>
-        <TabsTrigger value="carteles">Carteles</TabsTrigger>
-        <TabsTrigger value="portales">Portales</TabsTrigger>
-        <TabsTrigger value="documentos">Documentos</TabsTrigger>
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mt-8 md:mt-0">
+      <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 gap-2 md:gap-0 p-1 h-auto md:h-10 bg-gray-100 rounded-lg">
+        <TabsTrigger value="general" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">General</TabsTrigger>
+        <TabsTrigger value="tareas" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Tareas</TabsTrigger>
+        <TabsTrigger value="imagenes" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Imágenes</TabsTrigger>
+        <TabsTrigger value="carteles" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Carteles</TabsTrigger>
+        <TabsTrigger value="portales" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Portales</TabsTrigger>
+        <TabsTrigger value="documentos" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Documentos</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="general" className="mt-6">
+      <TabsContent value="general" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-4xl">
           {loading.caracteristicas ? (
             <CharacteristicsSkeleton />
@@ -418,7 +418,7 @@ export function PropertyTabs({
         </div>
       </TabsContent>
 
-      <TabsContent value="tareas" className="mt-6">
+      <TabsContent value="tareas" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-6xl">
           <Tareas
             propertyId={listing.propertyId}
@@ -439,7 +439,7 @@ export function PropertyTabs({
         </div>
       </TabsContent>
 
-      <TabsContent value="imagenes" className="mt-6">
+      <TabsContent value="imagenes" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-3xl">
           <MediaManager
             images={tabData.images ?? images}
@@ -490,7 +490,7 @@ export function PropertyTabs({
         </div>
       </TabsContent>
 
-      <TabsContent value="carteles" className="mt-6">
+      <TabsContent value="carteles" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-6xl">
           <CartelesManager
             propertyId={listing.propertyId}
@@ -503,7 +503,7 @@ export function PropertyTabs({
         </div>
       </TabsContent>
 
-      <TabsContent value="portales" className="mt-6">
+      <TabsContent value="portales" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-4xl">
           <PortalSelection
             listingId={listing.listingId.toString()}
@@ -516,7 +516,7 @@ export function PropertyTabs({
       </TabsContent>
 
 
-      <TabsContent value="documentos" className="mt-6">
+      <TabsContent value="documentos" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-6xl">
           <DocumentsManager
             propertyId={listing.propertyId}

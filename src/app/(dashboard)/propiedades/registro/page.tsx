@@ -123,10 +123,10 @@ export default function CapturaPage() {
 
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-7xl">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+      <div className="w-full max-w-7xl max-h-[95vh] overflow-y-auto">
         <div className="rounded-2xl bg-white shadow-2xl">
-          <div className="relative p-8">
+          <div className="relative p-4 sm:p-6 md:p-8">
             {/* Close button */}
             <button
               onClick={() => router.back()}
@@ -136,27 +136,27 @@ export default function CapturaPage() {
             </button>
 
             {/* Header */}
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            <div className="text-center mb-6 sm:mb-8 md:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
                 Registro de Propiedad
               </h2>
-              <p className="mt-4 text-lg text-gray-600">
+              <p className="mt-2 sm:mt-3 md:mt-4 text-sm sm:text-base md:text-lg text-gray-600">
                 Selecciona cómo quieres registrar la nueva propiedad
               </p>
             </div>
 
             {/* Feature Tabs */}
-            <RegistrationOptions 
+            <RegistrationOptions
               activeOption={activeOption}
               onToggleOption={toggleOption}
-              className="mb-8"
+              className="mb-4 sm:mb-6 md:mb-8"
             />
 
             {/* Expanded Content */}
             {activeOption && activeOption !== "upload" && (
               <div className="animate-in slide-in-from-top-4 duration-300">
-                <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg p-8">
-                  <div className="grid gap-8 lg:grid-cols-3">
+                <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg p-4 sm:p-6 md:p-8">
+                  <div className="grid gap-4 sm:gap-6 md:gap-8 lg:grid-cols-3">
                     {/* Description and Features */}
                     {(() => {
                       const selectedOption = options.find(o => o.id === activeOption);

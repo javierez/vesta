@@ -6,6 +6,14 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import {
   CheckCircle2,
   Calendar,
   User,
@@ -51,6 +59,8 @@ export default function WorkQueueCard({
   const [taskStates, setTaskStates] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
   const [selectedDays, setSelectedDays] = useState(7);
   const [optimisticTasks, setOptimisticTasks] = useState<DetailedTask[]>([]);
+  const [draggingTask, setDraggingTask] = useState<string | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<{ id: number; title: string } | null>(null);
 
   // Update optimistic tasks when detailed tasks change
   useEffect(() => {
@@ -283,22 +293,29 @@ export default function WorkQueueCard({
     }
   };
 
+  const confirmDeleteTask = (taskId: number, taskTitle: string) => {
+    setTaskToDelete({ id: taskId, title: taskTitle });
+  };
+
   const handleDeleteTask = async (taskId: number) => {
     const taskIdStr = taskId.toString();
-    
+
     // Store the task for potential reversion
-    const taskToDelete = optimisticTasks.find(t => t.taskId === taskId);
-    if (!taskToDelete) return;
-    
+    const taskToDeleteData = optimisticTasks.find(t => t.taskId === taskId);
+    if (!taskToDeleteData) return;
+
+    // Close the confirmation dialog
+    setTaskToDelete(null);
+
     // Optimistic update - immediately remove from UI
     setOptimisticTasks(prev => prev.filter(task => task.taskId !== taskId));
     setTaskStates(prev => ({ ...prev, [taskIdStr]: 'saving' }));
-    
+
     try {
       // Use the general task delete function
       await deleteTaskWithAuth(taskId);
       setTaskStates(prev => ({ ...prev, [taskIdStr]: 'saved' }));
-      
+
       // Clear the saved state after 1 second
       setTimeout(() => {
         setTaskStates(prev => {
@@ -307,17 +324,17 @@ export default function WorkQueueCard({
           return newStates;
         });
       }, 1000);
-      
+
     } catch (error) {
       console.error('Error deleting task:', error);
-      
+
       // Revert optimistic update on error - restore the task
-      setOptimisticTasks(prev => [...prev, taskToDelete].sort((a, b) => 
+      setOptimisticTasks(prev => [...prev, taskToDeleteData].sort((a, b) =>
         new Date(a.dueDate ?? 0).getTime() - new Date(b.dueDate ?? 0).getTime()
       ));
-      
+
       setTaskStates(prev => ({ ...prev, [taskIdStr]: 'error' }));
-      
+
       // Clear error state after 5 seconds
       setTimeout(() => {
         setTaskStates(prev => {
@@ -383,106 +400,167 @@ export default function WorkQueueCard({
               <div className="space-y-1.5 max-h-80 overflow-y-auto custom-scrollbar pr-1">
                 {tasksToDisplay.slice(0, 10).map((task) => {
                   const taskIdStr = task.taskId.toString();
-                  
+
                   return (
-                    <div 
-                      key={taskIdStr} 
-                      className={`relative cursor-pointer p-2 sm:p-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ${
-                        task.completed ?? false ? 'bg-gray-50/50 opacity-75' : 'bg-white'
-                      } ${taskStates[taskIdStr] === 'saving' ? 'opacity-70' : ''}`}
-                      onClick={() => handleToggleCompleted(task.taskId, task.completed ?? false)}
+                    <div
+                      key={taskIdStr}
+                      className="relative rounded-lg"
                     >
-                      <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 flex items-center gap-1.5">
-                        {task.dueDate && (
-                          <span className={`text-xs px-1 py-0.5 rounded-full font-normal text-xs leading-none border whitespace-nowrap ${
-                            getRemainingTime(task.dueDate)?.includes('vencido') || getRemainingTime(task.dueDate) === 'Vencido'
-                              ? 'text-rose-600 bg-rose-50 border-rose-200'
-                              : 'text-amber-600 bg-amber-50 border-amber-200'
-                          }`}>
-                            {getRemainingTime(task.dueDate)}
-                          </span>
-                        )}
-                        <Avatar className="h-5 w-5 sm:h-6 sm:w-6 ring-1 ring-gray-100" title={task.userName ?? (`${task.userFirstName ?? ''} ${task.userLastName ?? ''}`.trim() || 'Usuario')}>
-                          <AvatarFallback className="text-xs font-medium">
-                            {getInitials(task.userFirstName, task.userLastName ?? undefined, task.userName)}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      
-                      <div className="pr-16 sm:pr-20">
-                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5">
-                          <div 
-                            className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+                      {/* Red delete background - only shown when actively swiping this task */}
+                      {draggingTask === taskIdStr && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-end px-4 rounded-lg">
+                          <Trash2 className="h-5 w-5 text-white" />
+                        </div>
+                      )}
+
+                      {/* Swipeable task card */}
+                      <motion.div
+                        drag="x"
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={0.2}
+                        onDragStart={() => {
+                          // Only enable swipe-to-delete on mobile
+                          if (window.innerWidth < 640) {
+                            setDraggingTask(taskIdStr);
+                          }
+                        }}
+                        onDragEnd={(e, info) => {
+                          setDraggingTask(null);
+
+                          // Only enable swipe-to-delete on mobile (screen width < 640px which is sm breakpoint)
+                          if (window.innerWidth >= 640) return;
+
+                          // If swiped more than 100px to the right, show delete confirmation
+                          if (info.offset.x > 100) {
+                            confirmDeleteTask(task.taskId, task.title);
+                          }
+                        }}
+                        className={`relative z-10 cursor-pointer p-2 sm:p-3 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 ${
+                          task.completed ?? false ? 'bg-gray-50 opacity-75' : 'bg-white'
+                        } ${taskStates[taskIdStr] === 'saving' ? 'opacity-70' : ''}`}
+                        onClick={() => handleToggleCompleted(task.taskId, task.completed ?? false)}
+                      >
+                      {/* Avatar badge - top right */}
+                      <Avatar className="absolute top-2 right-2 h-4 w-4 sm:h-5 sm:w-5 ring-1 ring-gray-100" title={task.userName ?? (`${task.userFirstName ?? ''} ${task.userLastName ?? ''}`.trim() || 'Usuario')}>
+                        <AvatarFallback className="text-[9px] sm:text-xs font-medium">
+                          {getInitials(task.userFirstName, task.userLastName ?? undefined, task.userName)}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      {/* Days remaining badge - bottom right on mobile, top right stacked on desktop */}
+                      {task.dueDate && (
+                        <span className={`absolute bottom-2 right-2 sm:top-8 sm:bottom-auto text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-medium leading-none border whitespace-nowrap ${
+                          getRemainingTime(task.dueDate)?.includes('vencido') || getRemainingTime(task.dueDate) === 'Vencido'
+                            ? 'text-rose-600 bg-rose-50 border-rose-200'
+                            : 'text-amber-600 bg-amber-50 border-amber-200'
+                        }`}>
+                          {getRemainingTime(task.dueDate)}
+                        </span>
+                      )}
+
+                      {/* Mobile: Compact layout, Desktop: Original layout */}
+                      <div className="flex flex-col gap-1.5">
+                        {/* Header row: Checkbox and Title */}
+                        <div className="flex items-start gap-1.5 sm:gap-2">
+                          {/* Checkbox */}
+                          <div
+                            className={`flex-shrink-0 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 flex items-center justify-center transition-all duration-200 mt-0.5 ${
                               task.completed ?? false
-                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm' 
+                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
                                 : 'border-gray-300 hover:border-gray-400'
                             }`}
                           >
-                            {(task.completed ?? false) && <Check className="w-2.5 h-2.5" />}
+                            {(task.completed ?? false) && <Check className="w-2 h-2 sm:w-2.5 sm:h-2.5" />}
                           </div>
-                          
-                          <h3 className={`font-bold text-sm leading-tight ${task.completed ?? false ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                            {task.title.length > 40 ? `${task.title.substring(0, 40)}...` : task.title}
-                          </h3>
-                          
-                          {taskStates[taskIdStr] === 'saving' && (
-                            <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
-                          )}
-                          {taskStates[taskIdStr] === 'saved' && (
-                            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                          )}
+
+                          {/* Title and status icons */}
+                          <div className="flex-1 min-w-0 pr-20 sm:pr-24">
+                            <div className="flex items-start gap-1.5 justify-between">
+                              <h3 className={`font-semibold text-xs sm:text-sm leading-tight flex-1 min-w-0 break-words ${task.completed ?? false ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                                {task.title.length > 45 ? `${task.title.substring(0, 45)}...` : task.title}
+                              </h3>
+
+                              {/* Status icons */}
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                {taskStates[taskIdStr] === 'saving' && (
+                                  <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+                                )}
+                                {taskStates[taskIdStr] === 'saved' && (
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        
-                        <div className="ml-4.5 sm:ml-6 mb-2 space-y-1.5">
-                          {/* Property Link */}
-                          {task.listingId && task.propertyTitle && (
-                            <Link 
-                              href={`/propiedades/${task.listingId}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
-                                task.completed ?? false 
-                                  ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60' 
-                                  : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
-                              }`}
+
+                        {/* Property and Contact links - more compact on mobile */}
+                        {(task.listingId && task.propertyTitle) || (task.contactId && (task.contactFirstName ?? task.contactLastName)) ? (
+                          <div className="ml-5 sm:ml-6 flex flex-wrap items-center gap-1.5">
+                            {/* Property Link */}
+                            {task.listingId && task.propertyTitle && (
+                              <Link
+                                href={`/propiedades/${task.listingId}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className={`inline-flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium transition-all duration-300 ${
+                                  task.completed ?? false
+                                    ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60'
+                                    : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
+                                }`}
+                              >
+                                <Home className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-60 flex-shrink-0" />
+                                <span className="break-words">{task.propertyTitle}</span>
+                              </Link>
+                            )}
+
+                            {/* Contact Link */}
+                            {task.contactId && (task.contactFirstName ?? task.contactLastName) && (
+                              <Link
+                                href={`/contactos/${task.contactId}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className={`inline-flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium transition-all duration-300 ${
+                                  task.completed ?? false
+                                    ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60'
+                                    : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
+                                }`}
+                              >
+                                <User className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-60 flex-shrink-0" />
+                                <span className="break-words">
+                                  {`${task.contactFirstName ?? ''} ${task.contactLastName ?? ''}`.trim()}
+                                </span>
+                              </Link>
+                            )}
+
+                            {/* Delete button - hidden on mobile, inline with badges on desktop */}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                confirmDeleteTask(task.taskId, task.title);
+                              }}
+                              className="hidden sm:flex h-5 w-5 sm:h-6 sm:w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded ml-auto"
                             >
-                              <Home className="h-3.5 w-3.5 opacity-60" />
-                              <span className="truncate max-w-32">{task.propertyTitle}</span>
-                            </Link>
-                          )}
-                          
-                          {/* Contact Link */}
-                          {task.contactId && (task.contactFirstName ?? task.contactLastName) && (
-                            <Link 
-                              href={`/contactos/${task.contactId}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
-                                task.completed ?? false 
-                                  ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60' 
-                                  : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
-                              }`}
+                              <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          /* Delete button alone when no links - hidden on mobile */
+                          <div className="ml-5 sm:ml-6 hidden sm:flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                confirmDeleteTask(task.taskId, task.title);
+                              }}
+                              className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded"
                             >
-                              <User className="h-3.5 w-3.5 opacity-60" />
-                              <span className="truncate max-w-32">
-                                {`${task.contactFirstName ?? ''} ${task.contactLastName ?? ''}`.trim()}
-                              </span>
-                            </Link>
-                          )}
-                        </div>
+                              <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      
-                      <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void handleDeleteTask(task.taskId);
-                          }}
-                          className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded"
-                        >
-                          <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                        </Button>
-                      </div>
+                      </motion.div>
                     </div>
                   );
                 })}
@@ -661,6 +739,45 @@ export default function WorkQueueCard({
           </div>
         </div>
       </CardContent>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={taskToDelete !== null} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Eliminar tarea</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que quieres eliminar esta tarea?
+            </DialogDescription>
+          </DialogHeader>
+
+          {taskToDelete && (
+            <div className="py-4">
+              <p className="text-sm font-medium text-gray-900 line-clamp-2">
+                {taskToDelete.title}
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setTaskToDelete(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (taskToDelete) {
+                  void handleDeleteTask(taskToDelete.id);
+                }
+              }}
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
