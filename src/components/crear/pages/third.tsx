@@ -39,10 +39,10 @@ export default function ThirdPage({
 
   // Coordinate state for cadastral search (obtained from Google Maps or Nominatim autocomplete)
   const [latitude, setLatitude] = useState<number | null>(
-    state.formData.latitude ? parseFloat(state.formData.latitude) : null
+    state.formData.latitude ? (typeof state.formData.latitude === 'number' ? state.formData.latitude : parseFloat(state.formData.latitude)) : null
   );
   const [longitude, setLongitude] = useState<number | null>(
-    state.formData.longitude ? parseFloat(state.formData.longitude) : null
+    state.formData.longitude ? (typeof state.formData.longitude === 'number' ? state.formData.longitude : parseFloat(state.formData.longitude)) : null
   );
 
   // Cadastral validation state
