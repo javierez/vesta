@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { FloatingLabelInput } from "~/components/ui/floating-label-input";
-import { ChevronLeft, ChevronRight, Loader } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { retrieveCadastralData } from "~/server/cadastral/retrieve_cadastral";
+import { retrieveCadastralData, searchCadastralByLocation, compareCadastralData } from "~/server/cadastral/retrieve_cadastral";
 import { toast } from "sonner";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import { useFormContext } from "../form-context";
 import { generatePropertyTitle } from "~/lib/property-title";
+import { AddressAutocomplete, type LocationData } from "~/components/propiedades/form/address-autocomplete";
+import { CadastralSelectionModal } from "~/components/propiedades/form/cadastral-selection-modal";
+import { getNeighborhoodFromCoordinates } from "~/server/googlemaps/retrieve_geo";
 
 
 interface ThirdPageProps {
@@ -28,6 +31,9 @@ export default function ThirdPage({
   const { state, updateFormData } = useFormContext();
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const [isCadastralLoading, setIsCadastralLoading] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [potentialReferences, setPotentialReferences] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const searchParams = useSearchParams();
   const method = searchParams?.get("method");
 
@@ -42,6 +48,9 @@ export default function ThirdPage({
     municipality: state.formData.municipality ?? "",
     neighborhood: state.formData.neighborhood ?? "",
   };
+
+  // Address value state for AddressAutocomplete
+  const [addressValue, setAddressValue] = useState(formData.address);
 
   // Check if method is manual - if so, skip this page
   useEffect(() => {
@@ -62,9 +71,172 @@ export default function ThirdPage({
     updateField(field, value);
   };
 
+  // Handle Google Places autocomplete selection
+  const handleLocationSelected = async (data: LocationData) => {
+    console.log("📍 [ThirdPage] Google Places location selected:", data);
+
+    // Parse the street with number from address components
+    const streetWithNumber = data.addressComponents.streetNumber && data.addressComponents.route
+      ? `${data.addressComponents.route} ${data.addressComponents.streetNumber}`
+      : data.addressComponents.route || addressValue;
+
+    // Update address value state
+    setAddressValue(streetWithNumber);
+
+    // Update form fields
+    const updatedData = {
+      address: streetWithNumber,
+      addressDetails: formData.addressDetails,
+      postalCode: data.addressComponents.postalCode || formData.postalCode,
+      city: data.addressComponents.locality || formData.city,
+      province: data.addressComponents.administrativeAreaLevel1 || formData.province,
+      municipality: data.addressComponents.administrativeAreaLevel2 || data.addressComponents.locality || formData.municipality,
+      neighborhood: data.addressComponents.sublocality || formData.neighborhood,
+    };
+
+    // Update neighborhood from coordinates if sublocality not available
+    if (!data.addressComponents.sublocality) {
+      console.log("🔄 [ThirdPage] Fetching neighborhood from Nominatim...");
+      const neighborhood = await getNeighborhoodFromCoordinates(data.lat, data.lng);
+      if (neighborhood) {
+        console.log("✅ [ThirdPage] Neighborhood from Nominatim:", neighborhood);
+        updatedData.neighborhood = neighborhood;
+      } else {
+        console.log("⚠️ [ThirdPage] No neighborhood found from Nominatim");
+      }
+    }
+
+    // Update form context
+    updateFormData(updatedData);
+
+    // Generate and update title
+    const generatedTitle = generatePropertyTitle(
+      state.formData?.propertyType ?? "piso",
+      updatedData.address,
+      updatedData.neighborhood
+    );
+    updateFormData({ title: generatedTitle });
+
+    toast.success("Dirección autocompletada. Los datos se han actualizado.");
+  };
+
+  // Search for cadastral references by address
+  const searchCadastralReferences = async () => {
+    console.log("🔍 [ThirdPage] ========================================");
+    console.log("🔍 [ThirdPage] STARTING CADASTRAL SEARCH");
+    console.log("🔍 [ThirdPage] ========================================");
+
+    const currentStreet = addressValue.trim();
+    const currentCity = formData.city.trim();
+    const currentProvince = formData.province.trim();
+    const currentMunicipality = formData.municipality.trim();
+
+    console.log("📋 [ThirdPage] Current form data for search:", {
+      street: currentStreet,
+      city: currentCity,
+      province: currentProvince,
+      municipality: currentMunicipality,
+    });
+
+    if (!currentStreet || !currentCity) {
+      console.log("⚠️ [ThirdPage] Missing required fields for search");
+      toast.error("Por favor, introduce al menos la calle y la ciudad para buscar referencias catastrales.");
+      return;
+    }
+
+    setIsSearching(true);
+    setIsSearchModalOpen(true);
+
+    try {
+      // Parse street to extract number and street name
+      const addressRegex = /^(.+?)(\d+)(.*)$/;
+      const addressMatch = addressRegex.exec(currentStreet);
+
+      let streetName = currentStreet;
+      let streetNumber = "";
+      
+      if (addressMatch?.[1] && addressMatch[2]) {
+        streetName = addressMatch[1].trim();
+        streetNumber = addressMatch[2];
+        console.log("🔍 [ThirdPage] Street parsing successful:", {
+          original: currentStreet,
+          streetName,
+          streetNumber,
+          regexMatch: addressMatch,
+        });
+      } else {
+        console.log("⚠️ [ThirdPage] Street parsing failed, using full street name:", currentStreet);
+      }
+
+      const searchParams = {
+        province: currentProvince,
+        municipality: currentMunicipality,
+        streetName,
+        streetNumber,
+      };
+
+      console.log("📡 [ThirdPage] Calling searchCadastralByLocation with params:", searchParams);
+
+      const results = await searchCadastralByLocation(searchParams);
+
+      console.log("📊 [ThirdPage] Search results received:", results);
+      setPotentialReferences(results);
+      
+      console.log("✅ [ThirdPage] ========================================");
+      console.log("✅ [ThirdPage] SEARCH COMPLETED SUCCESSFULLY");
+      console.log("✅ [ThirdPage] ========================================");
+      console.log(`✅ [ThirdPage] Found ${results.length} potential references`);
+    } catch (error) {
+      console.error("❌ [ThirdPage] ========================================");
+      console.error("❌ [ThirdPage] SEARCH FAILED WITH ERROR");
+      console.error("❌ [ThirdPage] ========================================");
+      console.error("❌ [ThirdPage] Search error:", error);
+      toast.error("Error al buscar referencias catastrales. Inténtalo de nuevo.");
+      setPotentialReferences([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Handle cadastral reference selection from modal
+  const handleCadastralReferenceSelect = (selectedRef: any) => {
+    console.log("✅ [ThirdPage] Selected cadastral reference:", selectedRef);
+    
+    // Update form data with selected reference
+    const updatedData = {
+      cadastralReference: selectedRef.cadastralReference,
+      address: selectedRef.street,
+      addressDetails: selectedRef.addressDetails,
+      postalCode: selectedRef.postalCode,
+      city: selectedRef.city || formData.city,
+      province: selectedRef.province || formData.province,
+      municipality: selectedRef.municipality,
+      neighborhood: formData.neighborhood,
+    };
+
+    // Update address value state
+    setAddressValue(selectedRef.street);
+
+    // Update form context
+    updateFormData(updatedData);
+
+    // Generate and update title
+    const generatedTitle = generatePropertyTitle(
+      state.formData?.propertyType ?? "piso",
+      updatedData.address,
+      updatedData.neighborhood
+    );
+    updateFormData({ title: generatedTitle });
+    
+    // Close modal
+    setIsSearchModalOpen(false);
+    
+    toast.success("Referencia catastral seleccionada y campos actualizados.");
+  };
+
 
   // Function to validate cadastral reference format
-  const validateCadastralReference = (reference: string): boolean => {
+  const isValidCadastralReference = (reference: string): boolean => {
     // Spanish cadastral reference format: 20 characters
     // Example: 1234567CS1234S0001AB
     const cadastralPattern = /^[0-9]{7}[A-Z]{2}[0-9]{4}[A-Z]{1}[0-9]{4}[A-Z]{2}$/;
@@ -75,11 +247,98 @@ export default function ThirdPage({
   const handleCadastralLookup = async () => {
     const reference = formData.cadastralReference.trim();
     
-    console.log("=== CADASTRAL LOOKUP INITIATED ===");
+    // Check if we have all key info (street, city, postal code)
+    const hasKeyInfo = addressValue.trim() && formData.city.trim() && formData.postalCode.trim();
+    
+    if (hasKeyInfo) {
+      // If we have all key info, do comparison
+      await validateCadastralReference(reference);
+    } else {
+      // If missing key info, fill up the values
+      await fillCadastralData(reference);
+    }
+  };
+
+  // Function to validate and compare cadastral data
+  const validateCadastralReference = async (cadastralRef: string) => {
+    console.log("🔍 [ThirdPage] ========================================");
+    console.log("🔍 [ThirdPage] STARTING CADASTRAL COMPARISON");
+    console.log("🔍 [ThirdPage] ========================================");
+    console.log("📋 [ThirdPage] Input cadastral reference:", cadastralRef);
+
+    if (!cadastralRef.trim()) {
+      console.log("⚠️ [ThirdPage] Empty cadastral reference");
+      toast.error("Referencia catastral requerida");
+      return;
+    }
+
+    try {
+      setIsCadastralLoading(true);
+      console.log("🔄 Starting cadastral comparison...");
+
+      // Get current form data for comparison
+      const currentData = {
+        street: addressValue,
+        postalCode: formData.postalCode,
+        city: formData.city,
+        province: formData.province,
+      };
+
+      console.log("📋 [ThirdPage] Current form data for comparison:", currentData);
+
+      // Fetch official cadastral data
+      const cadastralData = await retrieveCadastralData(cadastralRef);
+      
+      if (!cadastralData) {
+        console.log("❌ [ThirdPage] No cadastral data found for reference");
+        toast.error("Referencia no encontrada", {
+          description: "No se encontraron datos para esta referencia catastral. Verifica que sea correcta.",
+        });
+        return;
+      }
+
+      console.log("📊 [ThirdPage] Retrieved cadastral data:", cadastralData);
+
+      // Compare data using the comparison function from location-card
+      const comparison = await compareCadastralData(currentData, cadastralData);
+      
+      console.log("📊 [ThirdPage] Comparison result:", comparison);
+      
+      if (comparison.hasDiscrepancies) {
+        toast.warning("Discrepancias encontradas", {
+          description: "Los datos del formulario no coinciden con los oficiales. Revisa los campos marcados.",
+        });
+      } else {
+        toast.success("Datos verificados", {
+          description: "Los datos del formulario coinciden con los oficiales del catastro.",
+        });
+      }
+
+      console.log("✅ [ThirdPage] ========================================");
+      console.log("✅ [ThirdPage] COMPARISON COMPLETED SUCCESSFULLY");
+      console.log("✅ [ThirdPage] ========================================");
+
+    } catch (error) {
+      console.error("❌ [ThirdPage] ========================================");
+      console.error("❌ [ThirdPage] COMPARISON FAILED WITH ERROR");
+      console.error("❌ [ThirdPage] ========================================");
+      console.error("❌ [ThirdPage] Comparison error:", error);
+      toast.error("Error al comparar con el catastro", {
+        description: "No se pudo conectar con el servicio. Inténtalo de nuevo.",
+      });
+    } finally {
+      setIsCadastralLoading(false);
+    }
+  };
+
+  // Function to fill missing cadastral data
+  const fillCadastralData = async (cadastralRef: string) => {
+    const reference = cadastralRef.trim();
+    
+    console.log("=== CADASTRAL FILL DATA INITIATED ===");
     console.log("Input Reference:", reference);
-    console.log("Reference Length:", reference.length);
-    console.log("Current Form State Before Lookup:", {
-      address: formData.address,
+    console.log("Current Form State Before Fill:", {
+      address: addressValue,
       city: formData.city,
       province: formData.province,
       postalCode: formData.postalCode,
@@ -93,7 +352,7 @@ export default function ThirdPage({
       return;
     }
 
-    if (!validateCadastralReference(reference)) {
+    if (!isValidCadastralReference(reference)) {
       console.warn("❌ Validation Failed: Invalid cadastral reference format");
       console.log("Expected Pattern: 1234567CS1234S0001AB (20 characters)");
       console.log("Received:", reference);
@@ -193,12 +452,15 @@ export default function ThirdPage({
       console.log("   propertyType:", formUpdateData.propertyType);
       console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       
+      // Update address value state
+      setAddressValue(formUpdateData.address);
+      
       updateFormData(formUpdateData);
       console.log("✅ Form Context Updated Successfully");
 
-      console.log("🎉 CADASTRAL LOOKUP COMPLETED SUCCESSFULLY!");
+      console.log("🎉 CADASTRAL FILL DATA COMPLETED SUCCESSFULLY!");
       console.log("💡 Note: Property title will be generated when clicking 'Siguiente'");
-      console.log("=== END CADASTRAL LOOKUP ===");
+      console.log("=== END CADASTRAL FILL DATA ===");
       
       toast.success("Datos catastrales cargados", {
         description: "La información del inmueble se ha completado automáticamente",
@@ -206,7 +468,7 @@ export default function ThirdPage({
       });
 
     } catch (error) {
-      console.error("❌ CADASTRAL LOOKUP FAILED!");
+      console.error("❌ CADASTRAL FILL DATA FAILED!");
       console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       console.error("🚨 Error Details:");
       console.error("   Reference:", reference);
@@ -214,7 +476,7 @@ export default function ThirdPage({
       console.error("   Error Message:", error instanceof Error ? error.message : String(error));
       console.error("   Stack Trace:", error instanceof Error ? error.stack : 'N/A');
       console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      console.log("=== END CADASTRAL LOOKUP (WITH ERROR) ===");
+      console.log("=== END CADASTRAL FILL DATA (WITH ERROR) ===");
       toast.error("Error al consultar el catastro", {
         description: "No se pudo conectar con el servicio. Inténtalo de nuevo.",
       });
@@ -226,7 +488,7 @@ export default function ThirdPage({
   };
 
   const autoCompleteAddress = async () => {
-    if (!formData.address.trim()) {
+    if (!addressValue.trim()) {
       alert("Por favor, introduce al menos la dirección de la propiedad.");
       return;
     }
@@ -235,7 +497,7 @@ export default function ThirdPage({
       setIsUpdatingAddress(true);
 
       // Parse the address to separate street+number from details
-      const addressInput = formData.address.trim();
+      const addressInput = addressValue.trim();
       const addressRegex = /^(.+?)(\d+)(.*)$/;
       const addressMatch = addressRegex.exec(addressInput);
 
@@ -307,6 +569,9 @@ export default function ThirdPage({
         neighborhood: result.address?.suburb ?? result.address?.quarter ?? formData.neighborhood,
       };
       
+      // Update address value state
+      setAddressValue(streetWithNumber);
+      
       updateFormData(updatedData);
       
       // Generate and save title after address is updated
@@ -329,7 +594,7 @@ export default function ThirdPage({
 
   const handleNext = () => {
     // Validate required fields
-    if (!formData.address.trim()) {
+    if (!addressValue.trim()) {
       alert("Por favor, introduce la calle.");
       return;
     }
@@ -342,7 +607,7 @@ export default function ThirdPage({
     // Generate and save title before navigating
     const generatedTitle = generatePropertyTitle(
       state.formData?.propertyType ?? "piso",
-      formData.address ?? "",
+      addressValue ?? "",
       formData.neighborhood ?? ""
     );
     updateFormData({ title: generatedTitle });
@@ -366,14 +631,31 @@ export default function ThirdPage({
     <div className="space-y-4">
       <h2 className="text-md mb-4 font-medium text-gray-900">Dirección</h2>
 
-      <div className="relative">
+      <div className="relative -mt-6">
         <FloatingLabelInput
           id="cadastralReference"
           value={formData.cadastralReference}
           onChange={handleInputChange("cadastralReference")}
           placeholder="Referencia Catastral"
         />
-        {formData.cadastralReference && (
+        {/* Conditional button: Search (lupa) when empty and has required fields, Catastro logo when filled */}
+        {!formData.cadastralReference.trim() && addressValue.trim() && formData.city.trim() ? (
+          /* Search button for cadastral references (when field is empty but has required address data) */
+          <button
+            type="button"
+            onClick={searchCadastralReferences}
+            disabled={isSearching}
+            className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Buscar referencias catastrales"
+          >
+            {isSearching ? (
+              <Loader className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+          </button>
+        ) : formData.cadastralReference.trim() ? (
+          /* Catastro icon button for direct lookup (when field has content) */
           <button
             type="button"
             onClick={handleCadastralLookup}
@@ -389,14 +671,27 @@ export default function ThirdPage({
               className={`object-contain transition-opacity duration-200 ${isCadastralLoading ? 'opacity-50 animate-pulse' : 'opacity-100'}`}
             />
           </button>
-        )}
+        ) : null}
       </div>
-      <FloatingLabelInput
-        id="address"
-        value={formData.address}
-        onChange={handleInputChange("address")}
-        placeholder="Dirección"
-      />
+      <div className="relative">
+        <AddressAutocomplete
+          value={addressValue}
+          onChange={(value) => {
+            setAddressValue(value);
+            updateField("address", value);
+          }}
+          onLocationSelected={handleLocationSelected}
+          placeholder="Calle"
+          className="h-10 border border-gray-200 shadow-md transition-all duration-200"
+        />
+        {/* Hidden input to maintain compatibility with form context */}
+        <input
+          type="hidden"
+          id="address"
+          value={addressValue}
+          readOnly
+        />
+      </div>
       <FloatingLabelInput
         id="addressDetails"
         value={formData.addressDetails}
@@ -420,42 +715,33 @@ export default function ThirdPage({
         value={formData.province}
         onChange={handleInputChange("province")}
         placeholder="Comunidad"
-        disabled={true}
       />
       <FloatingLabelInput
         id="municipality"
         value={formData.municipality}
         onChange={handleInputChange("municipality")}
         placeholder="Municipio"
-        disabled={true}
       />
-      <FloatingLabelInput
-        id="neighborhood"
-        value={formData.neighborhood}
-        onChange={handleInputChange("neighborhood")}
-        placeholder="Barrio"
-        disabled={true}
-      />
-
-      {/* Update Button */}
-      <div className="flex justify-center pt-2">
-        <Button
+      <div className="relative">
+        <FloatingLabelInput
+          id="neighborhood"
+          value={formData.neighborhood}
+          onChange={handleInputChange("neighborhood")}
+          placeholder="Barrio"
+        />
+        <button
+          type="button"
           onClick={autoCompleteAddress}
-          disabled={isUpdatingAddress || !formData.address.trim()}
-          variant="outline"
-          className="flex items-center space-x-2"
+          disabled={isUpdatingAddress}
+          className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Actualizar dirección"
         >
           {isUpdatingAddress ? (
-            <>
-              <Loader className="h-4 w-4 animate-spin" />
-              <span>Actualizando...</span>
-            </>
+            <Loader className="h-4 w-4 animate-spin" />
           ) : (
-            <>
-              <span>Actualizar</span>
-            </>
+            <Search className="h-4 w-4" />
           )}
-        </Button>
+        </button>
       </div>
 
       {/* No error handling needed in local state approach */}
@@ -489,6 +775,15 @@ export default function ThirdPage({
           </Button>
         </motion.div>
       </motion.div>
+      
+      {/* Cadastral Selection Modal */}
+      <CadastralSelectionModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        searchResults={potentialReferences}
+        isLoading={isSearching}
+        onSelect={handleCadastralReferenceSelect}
+      />
     </div>
   );
 }

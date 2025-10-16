@@ -164,7 +164,7 @@ export function DescriptionCard({
                   type="button"
                   onClick={onGenerateShortDescription}
                   disabled={isGeneratingShort}
-                  className="absolute bottom-2 right-2 h-8 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-gradient-to-r from-amber-400 to-rose-400 px-2 text-xs font-medium text-white rounded shadow-sm hover:from-amber-500 hover:to-rose-500 hover:shadow-md disabled:opacity-50 flex items-center"
+                  className="absolute bottom-2 right-2 h-8 bg-gray-200 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 transition-all duration-300 px-2 text-xs font-medium text-gray-600 hover:text-white rounded shadow-sm hover:shadow-md disabled:opacity-50 flex items-center"
                 >
                   {isGeneratingShort ? (
                     <>
@@ -202,7 +202,7 @@ export function DescriptionCard({
                   type="button"
                   onClick={onGenerateDescription}
                   disabled={isGenerating}
-                  className="absolute bottom-2 right-2 h-8 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-gradient-to-r from-amber-400 to-rose-400 px-2 text-xs font-medium text-white rounded shadow-sm hover:from-amber-500 hover:to-rose-500 hover:shadow-md disabled:opacity-50 flex items-center"
+                  className="absolute bottom-2 right-2 h-8 bg-gray-200 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 transition-all duration-300 px-2 text-xs font-medium text-gray-600 hover:text-white rounded shadow-sm hover:shadow-md disabled:opacity-50 flex items-center"
                 >
                   {isGenerating ? (
                     <>

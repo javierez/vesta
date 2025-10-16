@@ -6,15 +6,23 @@ import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
-import { ChevronDown, Loader, Search } from "lucide-react";
+import { ChevronDown, Loader, Search, AlertTriangle, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import { AddressAutocomplete, type LocationData } from "../address-autocomplete";
+import { CadastralSelectionModal } from "../cadastral-selection-modal";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
 import { getNeighborhoodFromCoordinates } from "~/server/googlemaps/retrieve_geo";
+import { 
+  retrieveCadastralData, 
+  searchCadastralByLocation, 
+  compareCadastralData,
+  type CadastralComparisonResult 
+} from "~/server/cadastral/retrieve_cadastral";
 
 interface LocationCardProps {
   listing: PropertyListing;
@@ -54,6 +62,20 @@ export function LocationCard({
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const [streetValue, setStreetValue] = useState(listing.street ?? "");
   const [neighborhoodValue, setNeighborhoodValue] = useState(listing.neighborhood ?? "");
+  
+  // Cadastral validation state
+  const [cadastralDiscrepancies, setCadastralDiscrepancies] = useState<CadastralComparisonResult | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [cadastralValidationStatus, setCadastralValidationStatus] = useState<'none' | 'validating' | 'valid' | 'invalid'>('none');
+  
+  // Cadastral search state
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [potentialReferences, setPotentialReferences] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isCadastralLoading, setIsCadastralLoading] = useState(false);
+  
+  // Controlled state for cadastral reference input
+  const [cadastralReferenceValue, setCadastralReferenceValue] = useState(listing.cadastralReference ?? "");
 
   // Log component load/render data
   console.log("🏠 [LocationCard] Component loaded with data:", {
@@ -66,6 +88,304 @@ export function LocationCard({
     province: province,
     municipality: municipality,
   });
+
+  // Handle cadastral reference button click (copied from third.tsx)
+  const handleCadastralLookup = async () => {
+    const reference = cadastralReferenceValue.trim();
+    
+    // Check if we have all key info (street, city, postal code)
+    const postalCodeValue = (document.getElementById("postalCode") as HTMLInputElement)?.value || "";
+    const hasKeyInfo = streetValue.trim() && city.trim() && postalCodeValue.trim();
+    
+    if (hasKeyInfo) {
+      // If we have all key info, do comparison
+      await validateCadastralReference(reference);
+    } else {
+      // If missing key info, fill up the values
+      await fillCadastralData(reference);
+    }
+  };
+
+  // Validate cadastral reference against current form data
+  const validateCadastralReference = async (cadastralRef: string) => {
+    console.log("🔍 [LocationCard] ========================================");
+    console.log("🔍 [LocationCard] STARTING CADASTRAL VALIDATION");
+    console.log("🔍 [LocationCard] ========================================");
+    console.log("📋 [LocationCard] Input cadastral reference:", cadastralRef);
+
+    if (!cadastralRef.trim()) {
+      console.log("⚠️ [LocationCard] Empty cadastral reference, clearing validation");
+      setCadastralDiscrepancies(null);
+      setCadastralValidationStatus('none');
+      return;
+    }
+
+    setIsCadastralLoading(true);
+    setCadastralValidationStatus('validating');
+
+    try {
+      // Get current form data
+      const currentData = {
+        street: streetValue,
+        postalCode: (document.getElementById("postalCode") as HTMLInputElement)?.value || "",
+        city: city,
+        province: province,
+      };
+
+      console.log("📋 [LocationCard] Current form data to compare:", currentData);
+
+      // Fetch official cadastral data
+      console.log("📡 [LocationCard] Calling retrieveCadastralData...");
+      const cadastralData = await retrieveCadastralData(cadastralRef);
+      
+      if (!cadastralData) {
+        console.log("❌ [LocationCard] No cadastral data found for reference");
+        setCadastralValidationStatus('invalid');
+        setCadastralDiscrepancies(null);
+        return;
+      }
+
+      console.log("📊 [LocationCard] Retrieved cadastral data:", cadastralData);
+
+      // Compare data
+      console.log("🔍 [LocationCard] Calling compareCadastralData...");
+      const comparison = await compareCadastralData(currentData, cadastralData);
+      
+      console.log("📊 [LocationCard] Comparison result:", comparison);
+      
+      setCadastralDiscrepancies(comparison);
+      setCadastralValidationStatus(comparison.hasDiscrepancies ? 'invalid' : 'valid');
+
+      console.log("✅ [LocationCard] ========================================");
+      console.log("✅ [LocationCard] VALIDATION COMPLETED SUCCESSFULLY");
+      console.log("✅ [LocationCard] ========================================");
+      console.log("✅ [LocationCard] Final validation status:", comparison.hasDiscrepancies ? 'invalid' : 'valid');
+    } catch (error) {
+      console.error("❌ [LocationCard] ========================================");
+      console.error("❌ [LocationCard] VALIDATION FAILED WITH ERROR");
+      console.error("❌ [LocationCard] ========================================");
+      console.error("❌ [LocationCard] Validation error:", error);
+      setCadastralValidationStatus('invalid');
+      setCadastralDiscrepancies(null);
+    } finally {
+      setIsCadastralLoading(false);
+    }
+  };
+
+  // Fill missing cadastral data
+  const fillCadastralData = async (cadastralRef: string) => {
+    console.log("🔍 [LocationCard] ========================================");
+    console.log("🔍 [LocationCard] STARTING CADASTRAL FILL DATA");
+    console.log("🔍 [LocationCard] ========================================");
+    console.log("📋 [LocationCard] Input cadastral reference:", cadastralRef);
+
+    if (!cadastralRef.trim()) {
+      console.log("⚠️ [LocationCard] Empty cadastral reference");
+      toast.error("Referencia catastral requerida");
+      return;
+    }
+
+    setIsCadastralLoading(true);
+
+    try {
+      console.log("📡 [LocationCard] Calling retrieveCadastralData...");
+      const cadastralData = await retrieveCadastralData(cadastralRef);
+      
+      if (!cadastralData) {
+        console.log("❌ [LocationCard] No cadastral data found for reference");
+        toast.error("Referencia no encontrada", {
+          description: "No se encontraron datos para esta referencia catastral. Verifica que sea correcta.",
+        });
+        return;
+      }
+
+      console.log("📊 [LocationCard] Retrieved cadastral data:", cadastralData);
+
+      // Update form fields with cadastral data
+      setStreetValue(cadastralData.street);
+      setNeighborhoodValue(cadastralData.neighborhood);
+      
+      // Update other fields
+      const postalCodeInput = document.getElementById("postalCode") as HTMLInputElement;
+      if (postalCodeInput) {
+        postalCodeInput.value = cadastralData.postalCode;
+      }
+
+      // Update city, province, municipality
+      if (cadastralData.city) setCity(cadastralData.city);
+      if (cadastralData.province) setProvince(cadastralData.province);
+      if (cadastralData.municipality) setMunicipality(cadastralData.municipality);
+
+      // Mark as having changes
+      onUpdateModule(true);
+
+      console.log("✅ [LocationCard] ========================================");
+      console.log("✅ [LocationCard] FILL DATA COMPLETED SUCCESSFULLY");
+      console.log("✅ [LocationCard] ========================================");
+      
+      toast.success("Datos catastrales cargados", {
+        description: "La información del inmueble se ha completado automáticamente",
+      });
+
+    } catch (error) {
+      console.error("❌ [LocationCard] ========================================");
+      console.error("❌ [LocationCard] FILL DATA FAILED WITH ERROR");
+      console.error("❌ [LocationCard] ========================================");
+      console.error("❌ [LocationCard] Fill error:", error);
+      toast.error("Error al consultar el catastro", {
+        description: "No se pudo conectar con el servicio. Inténtalo de nuevo.",
+      });
+    } finally {
+      setIsCadastralLoading(false);
+    }
+  };
+
+  // Search for cadastral references by address
+  const searchCadastralReferences = async () => {
+    console.log("🔍 [LocationCard] ========================================");
+    console.log("🔍 [LocationCard] STARTING CADASTRAL SEARCH");
+    console.log("🔍 [LocationCard] ========================================");
+
+    const currentStreet = streetValue.trim();
+    const currentCity = city.trim();
+    const currentProvince = province.trim();
+    const currentMunicipality = municipality.trim();
+
+    console.log("📋 [LocationCard] Current form data for search:", {
+      street: currentStreet,
+      city: currentCity,
+      province: currentProvince,
+      municipality: currentMunicipality,
+    });
+
+    if (!currentStreet || !currentCity) {
+      console.log("⚠️ [LocationCard] Missing required fields for search");
+      toast.error("Por favor, introduce al menos la calle y la ciudad para buscar referencias catastrales.");
+      return;
+    }
+
+    setIsSearching(true);
+    setIsSearchModalOpen(true);
+
+    try {
+      // Parse street to extract number and street name
+      const addressRegex = /^(.+?)(\d+)(.*)$/;
+      const addressMatch = addressRegex.exec(currentStreet);
+
+      let streetName = currentStreet;
+      let streetNumber = "";
+      
+      if (addressMatch?.[1] && addressMatch[2]) {
+        streetName = addressMatch[1].trim();
+        streetNumber = addressMatch[2];
+        console.log("🔍 [LocationCard] Street parsing successful:", {
+          original: currentStreet,
+          streetName,
+          streetNumber,
+          regexMatch: addressMatch,
+        });
+      } else {
+        console.log("⚠️ [LocationCard] Street parsing failed, using full street name:", currentStreet);
+      }
+
+      const searchParams = {
+        province: currentProvince,
+        municipality: currentMunicipality,
+        streetName,
+        streetNumber,
+      };
+
+      console.log("📡 [LocationCard] Calling searchCadastralByLocation with params:", searchParams);
+
+      const results = await searchCadastralByLocation(searchParams);
+
+      console.log("📊 [LocationCard] Search results received:", results);
+      setPotentialReferences(results);
+      
+      console.log("✅ [LocationCard] ========================================");
+      console.log("✅ [LocationCard] SEARCH COMPLETED SUCCESSFULLY");
+      console.log("✅ [LocationCard] ========================================");
+      console.log(`✅ [LocationCard] Found ${results.length} potential references`);
+    } catch (error) {
+      console.error("❌ [LocationCard] ========================================");
+      console.error("❌ [LocationCard] SEARCH FAILED WITH ERROR");
+      console.error("❌ [LocationCard] ========================================");
+      console.error("❌ [LocationCard] Search error:", error);
+      toast.error("Error al buscar referencias catastrales. Inténtalo de nuevo.");
+      setPotentialReferences([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Handle cadastral reference selection from modal
+  const handleCadastralReferenceSelect = (selectedRef: any) => {
+    console.log("✅ [LocationCard] Selected cadastral reference:", selectedRef);
+    
+    // Update cadastral reference state
+    setCadastralReferenceValue(selectedRef.cadastralReference);
+    
+    // Update cadastral reference field
+    const cadastralInput = document.getElementById("cadastralReference") as HTMLInputElement;
+    if (cadastralInput) {
+      cadastralInput.value = selectedRef.cadastralReference;
+    }
+
+    // Update other fields with selected data
+    setStreetValue(selectedRef.street);
+    setNeighborhoodValue(selectedRef.addressDetails || "");
+    
+    // Update postal code
+    const postalCodeInput = document.getElementById("postalCode") as HTMLInputElement;
+    if (postalCodeInput && selectedRef.postalCode) {
+      postalCodeInput.value = selectedRef.postalCode;
+    }
+
+    // Update city, province, municipality if available
+    if (selectedRef.city) setCity(selectedRef.city);
+    if (selectedRef.province) setProvince(selectedRef.province);
+    if (selectedRef.municipality) setMunicipality(selectedRef.municipality);
+
+    // Mark as having changes
+    onUpdateModule(true);
+    
+    // Close modal
+    setIsSearchModalOpen(false);
+    
+    toast.success("Referencia catastral seleccionada y campos actualizados.");
+  };
+
+  // Apply suggestions from validation discrepancies
+  const applyCadastralSuggestions = () => {
+    if (!cadastralDiscrepancies) return;
+
+    console.log("✅ [LocationCard] Applying cadastral suggestions");
+
+    cadastralDiscrepancies.differences.forEach(diff => {
+      switch (diff.field) {
+        case 'street':
+          setStreetValue(diff.suggested);
+          break;
+        case 'postalCode':
+          const postalInput = document.getElementById("postalCode") as HTMLInputElement;
+          if (postalInput) postalInput.value = diff.suggested;
+          break;
+        case 'city':
+          setCity(diff.suggested);
+          break;
+        case 'province':
+          setProvince(diff.suggested);
+          break;
+      }
+    });
+
+    // Mark as having changes and clear discrepancies
+    onUpdateModule(true);
+    setCadastralDiscrepancies(null);
+    setCadastralValidationStatus('valid');
+    
+    toast.success("Sugerencias aplicadas correctamente.");
+  };
 
   // Wrap the onSave function with logging
   const handleSave = async () => {
@@ -435,41 +755,119 @@ export function LocationCard({
             <Input
               id="cadastralReference"
               type="text"
-              defaultValue={listing.cadastralReference}
-              className="h-8 text-gray-500 pr-10"
-              onChange={() => onUpdateModule(true)}
-            />
-            <button
-              type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
-              onClick={() => {
-                // Mock functionality for now
-                console.log("🔍 [LocationCard] Catastral reference search clicked");
-                toast.info("Funcionalidad de búsqueda catastral en desarrollo");
+              value={cadastralReferenceValue}
+              onChange={(e) => {
+                setCadastralReferenceValue(e.target.value);
+                onUpdateModule(true);
               }}
-            >
-              <Search className="h-4 w-4" />
-            </button>
-          </div>
-          {listing.cadastralReference && (
-            <div className="mt-2 flex justify-center">
+              className={cn(
+                "h-8 text-gray-500 pr-20",
+                cadastralValidationStatus === 'invalid' && "border-amber-500 focus:border-amber-500",
+                cadastralValidationStatus === 'valid' && "border-green-500 focus:border-green-500"
+              )}
+              onBlur={(e) => {
+                const value = e.target.value.trim();
+                if (value) {
+                  validateCadastralReference(value);
+                } else {
+                  setCadastralDiscrepancies(null);
+                  setCadastralValidationStatus('none');
+                }
+              }}
+            />
+            
+            {/* Validation status icon */}
+            <div className="absolute right-8 top-1/2 -translate-y-1/2">
+              {cadastralValidationStatus === 'validating' && (
+                <Loader className="h-4 w-4 animate-spin text-blue-500" />
+              )}
+              {cadastralValidationStatus === 'invalid' && cadastralDiscrepancies && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="hover:bg-accent rounded-sm">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="start">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Discrepancias encontradas</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Los siguientes campos no coinciden con los datos oficiales:
+                      </p>
+                      <div className="space-y-2">
+                        {cadastralDiscrepancies.differences.map((diff, index) => (
+                          <div key={index} className="text-xs">
+                            <div className="font-medium">{diff.fieldLabel}:</div>
+                            <div className="text-muted-foreground">
+                              Actual: <span className="text-red-600">{diff.current}</span>
+                            </div>
+                            <div className="text-muted-foreground">
+                              Sugerido: <span className="text-green-600">{diff.suggested}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <Button 
+                        size="sm" 
+                        onClick={applyCadastralSuggestions}
+                        className="w-full"
+                      >
+                        Aplicar sugerencias
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+
+            {/* Conditional button: Search (lupa) when empty and has required fields, Catastro logo when filled */}
+            {!cadastralReferenceValue.trim() && streetValue.trim() && city.trim() ? (
+              /* Search button for cadastral references (when field is empty but has required address data) */
               <button
-                onClick={() => setIsCatastroPopupOpen(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                type="button"
+                onClick={searchCadastralReferences}
+                disabled={isSearching}
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Buscar referencias catastrales"
+              >
+                {isSearching ? (
+                  <Loader className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+              </button>
+            ) : cadastralReferenceValue.trim() ? (
+              /* Catastro icon button for direct lookup (when field has content) */
+              <button
+                type="button"
+                onClick={handleCadastralLookup}
+                disabled={isCadastralLoading}
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Conectar con Catastro"
               >
                 <Image
                   src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
                   alt="Catastro"
-                  width={20}
-                  height={20}
-                  className="object-contain"
+                  width={16}
+                  height={16}
+                  className={`object-contain transition-opacity duration-200 ${isCadastralLoading ? 'opacity-50 animate-pulse' : 'opacity-100'}`}
                 />
               </button>
-            </div>
-          )}
+            ) : null}
+          </div>
+          
         </div>
 
       </div>
+      
+      {/* Cadastral Selection Modal */}
+      <CadastralSelectionModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        searchResults={potentialReferences}
+        isLoading={isSearching}
+        onSelect={handleCadastralReferenceSelect}
+      />
     </Card>
   );
 }

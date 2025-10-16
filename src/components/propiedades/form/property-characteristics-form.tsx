@@ -1032,21 +1032,28 @@ export function PropertyCharacteristicsForm({
     try {
       setIsGeneratingShort(true);
       
+      let fullDescription = description;
+      
       // Check if we have a full description to summarize
-      if (!description || description.trim() === "") {
-        // If no full description exists, generate it first
-        await handleGenerateDescription();
+      if (!fullDescription || fullDescription.trim() === "") {
+        // If no full description exists, generate it first without setting isGenerating state
+        const listingWithNumberTypes = {
+          ...listing,
+          lastRenovationYear: lastRenovationYear ? String(lastRenovationYear) : undefined,
+        };
+        fullDescription = await generatePropertyDescription(listingWithNumberTypes);
+        setDescription(fullDescription);
       }
       
       // Now generate short description based on the full description
-      if (description && description.trim() !== "") {
+      if (fullDescription && fullDescription.trim() !== "") {
         const listingWithStringTypes = {
           ...listing,
           lastRenovationYear: lastRenovationYear ? String(lastRenovationYear) : undefined,
         };
         
         const generatedShortDescription = await generateShortPropertyDescription(
-          description,
+          fullDescription,
           listingWithStringTypes
         );
         
