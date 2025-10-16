@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Loader, Search, AlertTriangle, CheckCircle }
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { retrieveCadastralData, searchCadastralByCoordinates, compareCadastralData, type CadastralComparisonResult } from "~/server/cadastral/retrieve_cadastral";
+import { retrieveCadastralData, searchCadastralByCoordinates, compareCadastralData, type CadastralComparisonResult, type CadastralSearchResult } from "~/server/cadastral/retrieve_cadastral";
 import { toast } from "sonner";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import { useFormContext } from "../form-context";
@@ -32,7 +32,7 @@ export default function ThirdPage({
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const [isCadastralLoading, setIsCadastralLoading] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [potentialReferences, setPotentialReferences] = useState<any[]>([]);
+  const [potentialReferences, setPotentialReferences] = useState<CadastralSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const searchParams = useSearchParams();
   const method = searchParams?.get("method");
@@ -245,17 +245,17 @@ export default function ThirdPage({
   };
 
   // Handle cadastral reference selection from modal
-  const handleCadastralReferenceSelect = (selectedRef: any) => {
+  const handleCadastralReferenceSelect = (selectedRef: CadastralSearchResult) => {
     console.log("✅ [ThirdPage] Selected cadastral reference:", selectedRef);
-    
+
     // Update form data with selected reference
     const updatedData = {
       cadastralReference: selectedRef.cadastralReference,
       address: selectedRef.street,
       addressDetails: selectedRef.addressDetails,
       postalCode: selectedRef.postalCode,
-      city: selectedRef.city || formData.city,
-      province: selectedRef.province || formData.province,
+      city: selectedRef.city ?? formData.city,
+      province: selectedRef.province ?? formData.province,
       municipality: selectedRef.municipality,
       neighborhood: formData.neighborhood,
     };
@@ -273,10 +273,10 @@ export default function ThirdPage({
       updatedData.neighborhood
     );
     updateFormData({ title: generatedTitle });
-    
+
     // Close modal
     setIsSearchModalOpen(false);
-    
+
     toast.success("Referencia catastral seleccionada y campos actualizados.");
   };
 

@@ -109,12 +109,12 @@ interface TareasProps {
   onRemoveOptimisticTask: (optimisticId: string) => void;
 }
 
-export function Tareas({ 
-  propertyId, 
-  listingId, 
-  referenceNumber, 
-  tasks, 
-  loading: externalLoading, 
+export function Tareas({
+  propertyId: _propertyId,
+  listingId,
+  referenceNumber: _referenceNumber,
+  tasks,
+  loading: externalLoading,
   onToggleCompleted,
   onDeleteTask,
   onAddTask,

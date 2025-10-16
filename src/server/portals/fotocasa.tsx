@@ -19,6 +19,10 @@ import {
 import { getPropertyDocuments } from "../queries/document";
 import { POSITION_MAPPING } from "~/types/watermark";
 import type { WatermarkConfig } from "~/types/watermark";
+import {
+  logPayloadBuild,
+  logPublishRequest,
+} from "../utils/fotocasa-logger";
 
 // Types
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -943,6 +947,9 @@ export async function buildFotocasaPayload(
       (listing as typeof listing & { _watermarkedKeys?: string[] })
         ._watermarkedKeys ?? [];
 
+    // Log the built payload
+    await logPayloadBuild(listingId, fotocasaPayload, watermarkedKeys.length);
+
     return {
       payload: fotocasaPayload,
       watermarkedKeys,
@@ -1007,10 +1014,14 @@ export async function publishToFotocasa(
     console.log("Fotocasa POST API Response:", responseData);
 
     // Check if the request was successful
-    if (
+    const isSuccess =
       response.ok &&
-      (responseData as { StatusCode?: number }).StatusCode === 201
-    ) {
+      (responseData as { StatusCode?: number }).StatusCode === 201;
+
+    if (isSuccess) {
+      // Log successful request
+      await logPublishRequest(listingId, payload, responseData, true);
+
       // Clean up watermarked images after successful upload
       if (watermarkedKeys.length > 0) {
         try {
@@ -1039,11 +1050,22 @@ export async function publishToFotocasa(
         response: responseData,
       };
     } else {
+      const errorMessage =
+        (responseData as { Message?: string }).Message ??
+        `HTTP ${response.status}: ${response.statusText}`;
+
+      // Log failed request
+      await logPublishRequest(
+        listingId,
+        payload,
+        responseData,
+        false,
+        errorMessage,
+      );
+
       return {
         success: false,
-        error:
-          (responseData as { Message?: string }).Message ??
-          `HTTP ${response.status}: ${response.statusText}`,
+        error: errorMessage,
         response: responseData,
       };
     }

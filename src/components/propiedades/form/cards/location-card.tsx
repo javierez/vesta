@@ -19,7 +19,8 @@ import {
   retrieveCadastralData,
   searchCadastralByCoordinates,
   compareCadastralData,
-  type CadastralComparisonResult
+  type CadastralComparisonResult,
+  type CadastralSearchResult
 } from "~/server/cadastral/retrieve_cadastral";
 
 interface LocationCardProps {
@@ -80,7 +81,7 @@ export function LocationCard({
   
   // Cadastral search state
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [potentialReferences, setPotentialReferences] = useState<any[]>([]);
+  const [potentialReferences, setPotentialReferences] = useState<CadastralSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isCadastralLoading, setIsCadastralLoading] = useState(false);
   
@@ -307,12 +308,12 @@ export function LocationCard({
   };
 
   // Handle cadastral reference selection from modal
-  const handleCadastralReferenceSelect = (selectedRef: any) => {
+  const handleCadastralReferenceSelect = (selectedRef: CadastralSearchResult) => {
     console.log("✅ [LocationCard] Selected cadastral reference:", selectedRef);
-    
+
     // Update cadastral reference state
     setCadastralReferenceValue(selectedRef.cadastralReference);
-    
+
     // Update cadastral reference field
     const cadastralInput = document.getElementById("cadastralReference") as HTMLInputElement;
     if (cadastralInput) {
@@ -321,8 +322,8 @@ export function LocationCard({
 
     // Update other fields with selected data
     setStreetValue(selectedRef.street);
-    setNeighborhoodValue(selectedRef.addressDetails ?? "");
-    
+    setNeighborhoodValue(selectedRef.addressDetails);
+
     // Update postal code
     const postalCodeInput = document.getElementById("postalCode") as HTMLInputElement;
     if (postalCodeInput && selectedRef.postalCode) {
@@ -336,10 +337,10 @@ export function LocationCard({
 
     // Mark as having changes
     onUpdateModule(true);
-    
+
     // Close modal
     setIsSearchModalOpen(false);
-    
+
     toast.success("Referencia catastral seleccionada y campos actualizados.");
   };
 

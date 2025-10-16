@@ -146,7 +146,7 @@ function formatStreetName(name: string): string {
 }
 
 // Types for location search response
-interface CadastralSearchResult {
+export interface CadastralSearchResult {
   cadastralReference: string;
   street: string;
   addressDetails: string;
@@ -259,6 +259,7 @@ export async function compareCadastralData(
 }
 
 // Map common province names to Catastro API province names
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function mapProvinceName(province: string): string {
   const provinceMapping: Record<string, string> = {
     "Comunidad de Madrid": "Madrid",
@@ -298,11 +299,13 @@ function mapProvinceName(province: string): string {
 }
 
 // Clean street name by removing trailing commas and extra spaces
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function cleanStreetName(streetName: string): string {
   return streetName.replace(/,\s*$/, "").trim();
 }
 
 // Normalize text for Catastro API - removes accents, commas, converts to uppercase
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function normalizeCatastroText(str: string): string {
   return str
     .normalize("NFD")              // split accent marks
@@ -313,6 +316,7 @@ function normalizeCatastroText(str: string): string {
 }
 
 // Normalize street name specifically for Catastro API - removes street type prefixes
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function normalizeCatastroStreetName(name: string): string {
   return name
     .normalize("NFD")
@@ -324,19 +328,20 @@ function normalizeCatastroStreetName(name: string): string {
 }
 
 // Validate and clean street number for Catastro API - must be up to 4 digits
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function validateCatastroStreetNumber(number: string): string {
   // Extract only digits from the input
   const digitsOnly = number.replace(/\D/g, "");
-  
+
   // Validate: must be 1-4 digits (Catastro requirement)
   if (digitsOnly.length === 0) {
     throw new Error("Street number is required and must contain at least one digit");
   }
-  
+
   if (digitsOnly.length > 4) {
     throw new Error(`Street number must be up to 4 digits, got ${digitsOnly.length} digits: ${digitsOnly}`);
   }
-  
+
   return digitsOnly;
 }
 
@@ -464,8 +469,7 @@ export async function searchCadastralByCoordinates(params: {
 
             console.log(`   🏠 Processing ${biList.length} individual dwellings...`);
 
-            for (let j = 0; j < biList.length; j++) {
-              const bi = biList[j];
+            for (const bi of biList) {
               if (!bi) continue;
 
 
@@ -521,9 +525,8 @@ export async function searchCadastralByCoordinates(params: {
               results.push(unitResult);
             }
           } else {
-            const errorText = await dnpResp.text();
+            await dnpResp.text();
             console.warn(`   ⚠️ DNPRC expansion failed with status ${dnpResp.status}`);
-            console.warn(`   ⚠️ Error response:`, errorText);
             console.warn(`   ⚠️ Falling back to parcel-level data`);
 
             // Fallback: add the parcel itself
@@ -686,7 +689,7 @@ export async function retrieveCadastralData(
 
 
     if (!response.ok) {
-      const errorText = await response.text();
+      await response.text();
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -703,8 +706,8 @@ export async function retrieveCadastralData(
     if (data.consulta_dnplocResult) {
       const responseResult = data.consulta_dnplocResult;
       if (responseResult.control?.cuerr > 0) {
-        const error = responseResult.lerr?.[0];
-        const errorMessage = `[Catastro] ${error?.cod ?? 'Unknown'}: ${error?.des ?? 'Unknown error'}`;
+        const errorData = responseResult.lerr?.[0];
+        const errorMessage = `[Catastro] ${errorData?.cod ?? 'Unknown'}: ${errorData?.des ?? 'Unknown error'}`;
         throw new Error(errorMessage);
       }
     }
@@ -810,7 +813,7 @@ export async function retrieveCadastralData(
 
 
     return formattedData;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
