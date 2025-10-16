@@ -39,6 +39,8 @@ export interface PropertyListing {
   city?: string;
   province?: string;
   municipality?: string;
+  latitude?: string;
+  longitude?: string;
 
   // Features
   hasElevator?: boolean;
@@ -204,6 +206,8 @@ export function convertDbListingToPropertyListing(
     city: (dbListing.city as string) ?? undefined,
     province: (dbListing.province as string) ?? undefined,
     municipality: (dbListing.municipality as string) ?? undefined,
+    latitude: (dbListing.latitude as string) ?? undefined,
+    longitude: (dbListing.longitude as string) ?? undefined,
     hasElevator: (dbListing.hasElevator as boolean) ?? undefined,
     hasGarage: (dbListing.hasGarage as boolean) ?? undefined,
     garageType: (dbListing.garageType as string) ?? undefined,

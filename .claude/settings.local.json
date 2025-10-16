@@ -32,7 +32,10 @@
       "Bash(pkill:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "WebFetch(domain:ropenspain.github.io)",
+      "WebFetch(domain:ovc.catastro.meh.es)"
     ],
     "deny": [],
     "ask": []

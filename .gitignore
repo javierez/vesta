@@ -45,6 +45,9 @@ yarn-error.log*
 # idea files
 .idea
 
+# logs
+/logs
+
 # Large files
 *.png
 *.jpg

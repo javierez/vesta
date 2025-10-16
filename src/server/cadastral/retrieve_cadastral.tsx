@@ -3,44 +3,60 @@
 import { retrieveGeocodingData } from "../googlemaps/retrieve_geo";
 
 // Types for the cadastral API response
-interface CadastralResponse {
-  consulta_dnprcResult?: {
-    bico: {
-      bi: {
-        dt: {
-          np: string; // Province
-          nm: string; // Municipality
-          locs: {
-            lous: {
-              lourb: {
-                dir: {
-                  tv: string; // Street type (CL, AV, etc.)
-                  nv: string; // Street name
-                  pnp: string; // Number
-                };
-                loint: {
-                  es: string; // Staircase
-                  pt: string; // Floor
-                  pu: string; // Door
-                };
-                dp: string; // Postal code
-              };
-            };
+// Individual BI (building information) unit
+interface BiUnit {
+  rc?: {
+    pc1: string;
+    pc2: string;
+    car?: string;
+    cc1?: string;
+    cc2?: string;
+  };
+  dt: {
+    np: string; // Province
+    nm: string; // Municipality
+    locs: {
+      lous: {
+        lourb: {
+          dir: {
+            tv: string; // Street type (CL, AV, etc.)
+            nv: string; // Street name
+            pnp: string; // Number
           };
-        };
-        debi: {
-          luso: string; // Usage
-          sfc: string; // Built surface area
-          ant: string; // Year built
-        };
-        idbi?: {
-          rc?: {
-            pc1: string;
-            pc2: string;
+          loint: {
+            es?: string; // Staircase
+            pt: string; // Floor
+            pu: string; // Door
           };
+          dp: string; // Postal code
         };
       };
-      lcons: Array<{
+    };
+  };
+  debi: {
+    luso: string; // Usage
+    sfc: string; // Built surface area
+    ant: string; // Year built
+  };
+  idbi?: {
+    rc?: {
+      pc1: string;
+      pc2: string;
+    };
+  };
+}
+
+interface CadastralResponse {
+  consulta_dnprcResult?: {
+    control?: {
+      cudnp: number;
+    };
+    lrcdnp?: {
+      rcdnp: BiUnit[]; // Array of property units
+    };
+    bico?: {
+      bi: BiUnit | BiUnit[]; // Can be single object or array (old format)
+      lcons?: Array<{
         lcd: string; // Construction type
       }>;
     };
@@ -54,42 +70,28 @@ interface CadastralResponse {
       des: string;
     }>;
     bico?: {
-      bi: {
-        dt: {
-          np: string; // Province
-          nm: string; // Municipality
-          locs: {
-            lous: {
-              lourb: {
-                dir: {
-                  tv: string; // Street type (CL, AV, etc.)
-                  nv: string; // Street name
-                  pnp: string; // Number
-                };
-                loint: {
-                  es: string; // Staircase
-                  pt: string; // Floor
-                  pu: string; // Door
-                };
-                dp: string; // Postal code
-              };
-            };
-          };
-        };
-        debi: {
-          luso: string; // Usage
-          sfc: string; // Built surface area
-          ant: string; // Year built
-        };
-        idbi?: {
-          rc?: {
-            pc1: string;
-            pc2: string;
-          };
-        };
-      };
+      bi: BiUnit | BiUnit[]; // Can be single object or array
       lcons?: Array<{
         lcd: string; // Construction type
+      }>;
+    };
+  };
+  Consulta_RCCOORResult?: {
+    control: {
+      cucoor: number;
+    };
+    coordenadas?: {
+      coord: Array<{
+        pc: {
+          pc1: string; // First part of cadastral reference
+          pc2: string; // Second part of cadastral reference
+        };
+        geo: {
+          xcen: string; // Longitude
+          ycen: string; // Latitude
+          srs: string; // Coordinate system
+        };
+        ldt: string; // Full address (e.g., "CL VALLEHERMOSO 58 MADRID (MADRID)")
       }>;
     };
   };
@@ -188,11 +190,6 @@ export async function compareCadastralData(
   },
   cadastralData: FormattedCadastralData,
 ): Promise<CadastralComparisonResult> {
-  console.log("🔍 [Catastro Comparison] ========================================");
-  console.log("🔍 [Catastro Comparison] STARTING DATA COMPARISON");
-  console.log("🔍 [Catastro Comparison] ========================================");
-  console.log("📋 [Catastro Comparison] Current form data:", currentData);
-  console.log("📋 [Catastro Comparison] Official cadastral data:", cadastralData);
 
   const differences: CadastralDiscrepancy[] = [];
 
@@ -200,11 +197,6 @@ export async function compareCadastralData(
   if (currentData.street && cadastralData.street) {
     const currentStreet = normalizeString(currentData.street);
     const cadastralStreet = normalizeString(cadastralData.street);
-    console.log("🏠 [Catastro Comparison] Street comparison:", {
-      original: { current: currentData.street, cadastral: cadastralData.street },
-      normalized: { current: currentStreet, cadastral: cadastralStreet },
-      match: currentStreet === cadastralStreet,
-    });
     if (currentStreet !== cadastralStreet) {
       differences.push({
         field: "street",
@@ -212,7 +204,6 @@ export async function compareCadastralData(
         current: currentData.street,
         suggested: cadastralData.street,
       });
-      console.log("⚠️ [Catastro Comparison] Street mismatch detected");
     }
   }
 
@@ -220,11 +211,6 @@ export async function compareCadastralData(
   if (currentData.postalCode && cadastralData.postalCode) {
     const currentPostal = normalizeString(currentData.postalCode);
     const cadastralPostal = normalizeString(cadastralData.postalCode);
-    console.log("📮 [Catastro Comparison] Postal code comparison:", {
-      original: { current: currentData.postalCode, cadastral: cadastralData.postalCode },
-      normalized: { current: currentPostal, cadastral: cadastralPostal },
-      match: currentPostal === cadastralPostal,
-    });
     if (currentPostal !== cadastralPostal) {
       differences.push({
         field: "postalCode",
@@ -232,7 +218,6 @@ export async function compareCadastralData(
         current: currentData.postalCode,
         suggested: cadastralData.postalCode,
       });
-      console.log("⚠️ [Catastro Comparison] Postal code mismatch detected");
     }
   }
 
@@ -240,11 +225,6 @@ export async function compareCadastralData(
   if (currentData.city && cadastralData.city) {
     const currentCity = normalizeString(currentData.city);
     const cadastralCity = normalizeString(cadastralData.city);
-    console.log("🏙️ [Catastro Comparison] City comparison:", {
-      original: { current: currentData.city, cadastral: cadastralData.city },
-      normalized: { current: currentCity, cadastral: cadastralCity },
-      match: currentCity === cadastralCity,
-    });
     if (currentCity !== cadastralCity) {
       differences.push({
         field: "city",
@@ -252,7 +232,6 @@ export async function compareCadastralData(
         current: currentData.city,
         suggested: cadastralData.city,
       });
-      console.log("⚠️ [Catastro Comparison] City mismatch detected");
     }
   }
 
@@ -260,11 +239,6 @@ export async function compareCadastralData(
   if (currentData.province && cadastralData.province) {
     const currentProvince = normalizeString(currentData.province);
     const cadastralProvince = normalizeString(cadastralData.province);
-    console.log("🗺️ [Catastro Comparison] Province comparison:", {
-      original: { current: currentData.province, cadastral: cadastralData.province },
-      normalized: { current: currentProvince, cadastral: cadastralProvince },
-      match: currentProvince === cadastralProvince,
-    });
     if (currentProvince !== cadastralProvince) {
       differences.push({
         field: "province",
@@ -272,7 +246,6 @@ export async function compareCadastralData(
         current: currentData.province,
         suggested: cadastralData.province,
       });
-      console.log("⚠️ [Catastro Comparison] Province mismatch detected");
     }
   }
 
@@ -281,11 +254,6 @@ export async function compareCadastralData(
     differences,
   };
 
-  console.log("✅ [Catastro Comparison] ========================================");
-  console.log("✅ [Catastro Comparison] COMPARISON COMPLETED");
-  console.log("✅ [Catastro Comparison] ========================================");
-  console.log("📊 [Catastro Comparison] Final comparison result:", result);
-  console.log(`📊 [Catastro Comparison] Found ${differences.length} discrepancies`);
 
   return result;
 }
@@ -326,7 +294,7 @@ function mapProvinceName(province: string): string {
     "Región de Murcia": "Murcia",
   };
 
-  return provinceMapping[province] || province;
+  return provinceMapping[province] ?? province;
 }
 
 // Clean street name by removing trailing commas and extra spaces
@@ -372,86 +340,26 @@ function validateCatastroStreetNumber(number: string): string {
   return digitsOnly;
 }
 
-// Search for cadastral references by location
-export async function searchCadastralByLocation(params: {
-  province: string;
-  municipality: string;
-  streetType?: string;
-  streetName: string;
-  streetNumber: string;
+// Search for cadastral references by coordinates (CHAINED - expands 14-char parcels)
+export async function searchCadastralByCoordinates(params: {
+  latitude: number;
+  longitude: number;
 }): Promise<CadastralSearchResult[]> {
   try {
-    console.log("🔍 [Catastro Search] ========================================");
-    console.log("🔍 [Catastro Search] STARTING SEARCH BY LOCATION");
-    console.log("🔍 [Catastro Search] ========================================");
-    console.log("📋 [Catastro Search] Input parameters:", {
-      province: params.province,
-      municipality: params.municipality,
-      streetType: params.streetType || "CL",
-      streetName: params.streetName,
-      streetNumber: params.streetNumber,
-    });
 
-    // Map province name to correct Catastro API format
-    const mappedProvince = mapProvinceName(params.province);
-    const cleanedStreetName = cleanStreetName(params.streetName);
-    
-    // Validate and clean street number
-    const validatedNumber = validateCatastroStreetNumber(params.streetNumber);
-    
-    // Normalize all text parameters for Catastro API strict matching
-    const normalizedParams = {
-      Provincia: normalizeCatastroText(mappedProvince),
-      Municipio: normalizeCatastroText(params.municipality),
-      TipoVia: params.streetType || "CL",
-      NombreVia: normalizeCatastroStreetName(cleanedStreetName),
-      Numero: validatedNumber,
-    };
-    
-    console.log("🔧 [Catastro Search] Parameter transformation:", {
-      original: {
-        province: params.province,
-        municipality: params.municipality,
-        streetName: params.streetName,
-        streetNumber: params.streetNumber,
-      },
-      mapped: {
-        province: mappedProvince,
-        streetName: cleanedStreetName,
-      },
-      normalized: normalizedParams,
-      streetTransformation: {
-        original: params.streetName,
-        cleaned: cleanedStreetName,
-        normalized: normalizedParams.NombreVia,
-        prefixesRemoved: !cleanedStreetName.toUpperCase().includes(normalizedParams.NombreVia),
-      },
-      numberTransformation: {
-        original: params.streetNumber,
-        validated: validatedNumber,
-        digitsOnly: validatedNumber,
-        length: validatedNumber.length,
-      },
-    });
+    // Build the API URL for coordinate-based search
+    const baseUrl = "https://ovc.catastro.meh.es/OVCServWeb/OVCWcfCallejero/COVCCoordenadas.svc/json/Consulta_RCCOOR";
 
-    // Build the API URL for location-based search
-    const baseUrl = "https://ovc.catastro.meh.es/OVCServWeb/OVCWcfCallejero/COVCCallejero.svc/json/Consulta_DNPLOC";
-    
     // URL encode parameters
     const queryParams = new URLSearchParams({
-      Provincia: normalizedParams.Provincia,
-      Municipio: normalizedParams.Municipio,
-      TipoVia: normalizedParams.TipoVia,
-      NombreVia: normalizedParams.NombreVia,
-      Numero: normalizedParams.Numero,
+      CoorX: params.longitude.toString(),
+      CoorY: params.latitude.toString(),
+      SRS: "EPSG:4326", // WGS84 coordinate system (standard for GPS/Google Maps)
     });
 
     const apiUrl = `${baseUrl}?${queryParams.toString()}`;
 
-    console.log("🌐 [Catastro Search] API URL:", apiUrl);
-    console.log("🌐 [Catastro Search] Query parameters:", Object.fromEntries(queryParams.entries()));
 
-    console.log("📡 [Catastro Search] Making API request...");
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
@@ -460,120 +368,252 @@ export async function searchCadastralByLocation(params: {
       },
     });
 
-    console.log("📡 [Catastro Search] Response status:", response.status);
-    console.log("📡 [Catastro Search] Response headers:", Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      console.error("❌ [Catastro Search] HTTP error:", response.status, response.statusText);
       const errorText = await response.text();
-      console.error("❌ [Catastro Search] Error response body:", errorText);
       return [];
     }
 
     const responseText = await response.text();
-    console.log("📄 [Catastro Search] Raw response body:", responseText);
 
     let data: CadastralResponse;
     try {
       data = JSON.parse(responseText) as CadastralResponse;
-      console.log("📊 [Catastro Search] Parsed JSON response:", JSON.stringify(data, null, 2));
     } catch (parseError) {
-      console.error("❌ [Catastro Search] JSON parse error:", parseError);
-      console.error("❌ [Catastro Search] Response that failed to parse:", responseText);
       return [];
     }
 
-    // The response can contain multiple properties at the same address
+    // The response can contain multiple properties at the same coordinates
     const results: CadastralSearchResult[] = [];
 
-    console.log("🔍 [Catastro Search] Processing response data...");
-    console.log("🔍 [Catastro Search] Response structure:", {
-      hasConsulta_dnprcResult: !!data.consulta_dnprcResult,
-      hasConsulta_dnplocResult: !!data.consulta_dnplocResult,
-      hasBico: !!data.consulta_dnprcResult?.bico,
-      hasBi: !!data.consulta_dnprcResult?.bico?.bi,
-    });
-
-    // Check for API errors first
-    const responseResult = data.consulta_dnplocResult || data.consulta_dnprcResult;
-    if (responseResult && 'control' in responseResult && responseResult.control?.cuerr > 0) {
-      const error = responseResult.lerr?.[0];
-      const errorMessage = `[Catastro] ${error?.cod || 'Unknown'}: ${error?.des || 'Unknown error'}`;
-      console.error("❌ [Catastro Search] API returned error:", errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    // Check if we have the expected data structure
-    if (!responseResult?.bico) {
-      console.error("❌ [Catastro Search] No cadastral data found in response");
+    // Check if we have the coordinate-based response
+    if (!data.Consulta_RCCOORResult?.coordenadas?.coord) {
       return [];
     }
 
-    const bi = responseResult.bico.bi;
-    console.log("🔍 [Catastro Search] BI data type:", Array.isArray(bi) ? "Array" : "Object");
-    console.log("🔍 [Catastro Search] BI data:", bi);
-    
-    // Handle if bi is an array or single object
-    const biArray = Array.isArray(bi) ? bi : [bi];
-    console.log("🔍 [Catastro Search] Processing", biArray.length, "BI items");
+    const coordArray = data.Consulta_RCCOORResult.coordenadas.coord;
 
-    for (let i = 0; i < biArray.length; i++) {
-      const biItem = biArray[i];
-      console.log(`🔍 [Catastro Search] Processing BI item ${i + 1}:`, biItem);
+    // Process each property found at the coordinates
+    for (let i = 0; i < coordArray.length; i++) {
+      const coordItem = coordArray[i];
+      if (!coordItem) continue;
 
-      const dt = biItem.dt;
-      const debi = biItem.debi;
-      const dir = dt.locs.lous.lourb.dir;
-      const loint = dt.locs.lous.lourb.loint;
 
-      console.log(`🔍 [Catastro Search] BI item ${i + 1} components:`, {
-        dt: dt,
-        debi: debi,
-        dir: dir,
-        loint: loint,
-      });
-
-      const formattedStreetType = formatStreetType(dir.tv);
-      const formattedStreetName = formatStreetName(dir.nv);
-      const street = `${formattedStreetType} ${formattedStreetName}, ${dir.pnp}`;
-      const addressDetails = `${loint.es}ª ${loint.pt}º ${loint.pu}`;
-      
-      const builtSurfaceArea = parseFloat(debi.sfc) || 0;
-      const yearBuilt = parseInt(debi.ant) || 0;
-
-      // Get cadastral reference from the response
-      const cadastralReference = biItem.idbi?.rc?.pc1 && biItem.idbi?.rc?.pc2
-        ? `${biItem.idbi.rc.pc1}${biItem.idbi.rc.pc2}`
+      // Extract cadastral reference
+      const cadastralReference = coordItem.pc.pc1 && coordItem.pc.pc2
+        ? `${coordItem.pc.pc1}${coordItem.pc.pc2}`
         : "";
 
-      const result = {
-        cadastralReference,
-        street,
-        addressDetails,
-        postalCode: dt.locs.lous.lourb.dp,
-        city: dt.np,
-        province: dt.np,
-        municipality: dt.nm,
-        builtSurfaceArea,
-        yearBuilt,
-      };
+      // Parse the ldt (full address) to extract components
+      // Example: "CL VALLEHERMOSO 58 MADRID (MADRID)"
+      const fullAddress = coordItem.ldt;
 
-      console.log(`🔍 [Catastro Search] Formatted result ${i + 1}:`, result);
-      results.push(result);
+      // If RC is 14 chars, fetch detailed BI info for each dwelling in the parcel
+      if (cadastralReference.length === 14) {
+        const dnpUrl = `https://ovc.catastro.meh.es/OVCServWeb/OVCWcfCallejero/COVCCallejero.svc/json/Consulta_DNPRC?RefCat=${cadastralReference}`;
+
+        try {
+          const dnpResp = await fetch(dnpUrl, {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+              "User-Agent": "Mozilla/5.0 (compatible; RealEstateApp/1.0)",
+            },
+          });
+
+
+          if (dnpResp.ok) {
+            const dnpResponseText = await dnpResp.text();
+
+            const dnpData = JSON.parse(dnpResponseText) as CadastralResponse;
+
+            // Try new format first (lrcdnp.rcdnp), then fall back to old format (bico.bi)
+            let biList: BiUnit[] = [];
+            if (dnpData?.consulta_dnprcResult?.lrcdnp?.rcdnp) {
+              biList = dnpData.consulta_dnprcResult.lrcdnp.rcdnp;
+            } else {
+              const biArray = dnpData?.consulta_dnprcResult?.bico?.bi;
+              biList = Array.isArray(biArray) ? biArray : biArray ? [biArray] : [];
+            }
+
+
+            for (let j = 0; j < biList.length; j++) {
+              const bi = biList[j];
+              if (!bi) continue;
+
+
+              // Extract full cadastral reference including car (unit number)
+              const fullRC = (bi.rc?.pc1 && bi.rc?.pc2)
+                ? `${bi.rc.pc1}${bi.rc.pc2}${bi.rc.car ?? ""}`
+                : (bi.idbi?.rc?.pc1 && bi.idbi?.rc?.pc2)
+                  ? `${bi.idbi.rc.pc1}${bi.idbi.rc.pc2}`
+                  : cadastralReference;
+
+              const dir = bi.dt?.locs?.lous?.lourb?.dir;
+              const loint = bi.dt?.locs?.lous?.lourb?.loint;
+
+              let formattedStreet = fullAddress;
+              if (dir) {
+                const streetType = formatStreetType(dir.tv);
+                const streetName = formatStreetName(dir.nv);
+                formattedStreet = `${streetType} ${streetName}, ${dir.pnp ?? ""}`;
+              }
+
+              // Format address details: Floor and door (e.g., "Planta 01, Puerta 3")
+              let addressDetails = "";
+              if (loint) {
+                const floor = loint.pt ?? "";
+                const door = loint.pu ?? "";
+                if (floor && door) {
+                  addressDetails = `Planta ${floor}, Puerta ${door}`;
+                } else if (floor) {
+                  addressDetails = `Planta ${floor}`;
+                } else if (door) {
+                  addressDetails = `Puerta ${door}`;
+                }
+              }
+
+              const postalCode = bi.dt?.locs?.lous?.lourb?.dp ?? "";
+              const municipality = bi.dt?.nm ?? "";
+              const province = bi.dt?.np ?? "";
+              const builtSurfaceArea = parseFloat(bi.debi?.sfc ?? "0");
+              const yearBuilt = parseInt(bi.debi?.ant ?? "0", 10);
+
+              const unitResult: CadastralSearchResult = {
+                cadastralReference: fullRC,
+                street: formattedStreet,
+                addressDetails: addressDetails,
+                postalCode: postalCode,
+                city: province,
+                province: province,
+                municipality: municipality,
+                builtSurfaceArea: builtSurfaceArea,
+                yearBuilt: yearBuilt,
+              };
+
+              results.push(unitResult);
+            }
+          } else {
+            const errorText = await dnpResp.text();
+
+            // Fallback: add the parcel itself
+            const addressRegex = /^(.+?)\s+(\d+)\s+(.+?)\s+\((.+?)\)$/;
+            const addressMatch = addressRegex.exec(fullAddress);
+            let street = fullAddress;
+            let municipality = "";
+            let province = "";
+
+            if (addressMatch) {
+              const streetPart = addressMatch[1] ?? "";
+              const streetNumber = addressMatch[2] ?? "";
+              municipality = addressMatch[3]?.trim() ?? "";
+              province = addressMatch[4]?.trim() ?? "";
+
+              const streetParts = streetPart.trim().split(/\s+/);
+              if (streetParts.length > 0) {
+                const streetType = formatStreetType(streetParts[0] ?? "");
+                const streetName = formatStreetName(streetParts.slice(1).join(" "));
+                street = `${streetType} ${streetName}, ${streetNumber}`;
+              }
+            }
+
+            results.push({
+              cadastralReference: cadastralReference,
+              street: street,
+              addressDetails: "",
+              postalCode: "",
+              city: province,
+              province: province,
+              municipality: municipality,
+              builtSurfaceArea: 0,
+              yearBuilt: 0,
+            });
+          }
+        } catch (dnpError) {
+
+          // Fallback: add the parcel itself
+          const addressRegex2 = /^(.+?)\s+(\d+)\s+(.+?)\s+\((.+?)\)$/;
+          const addressMatch = addressRegex2.exec(fullAddress);
+          let street = fullAddress;
+          let municipality = "";
+          let province = "";
+
+          if (addressMatch) {
+            const streetPart = addressMatch[1] ?? "";
+            const streetNumber = addressMatch[2] ?? "";
+            municipality = addressMatch[3]?.trim() ?? "";
+            province = addressMatch[4]?.trim() ?? "";
+
+            const streetParts = streetPart.trim().split(/\s+/);
+            if (streetParts.length > 0) {
+              const streetType = formatStreetType(streetParts[0] ?? "");
+              const streetName = formatStreetName(streetParts.slice(1).join(" "));
+              street = `${streetType} ${streetName}, ${streetNumber}`;
+            }
+          }
+
+          results.push({
+            cadastralReference: cadastralReference,
+            street: street,
+            addressDetails: "",
+            postalCode: "",
+            city: province,
+            province: province,
+            municipality: municipality,
+            builtSurfaceArea: 0,
+            yearBuilt: 0,
+          });
+        }
+      } else {
+        // 20-character RCs: already individual units, no expansion needed
+
+        // Parse the address string
+        // Format: "STREET_TYPE STREET_NAME NUMBER MUNICIPALITY (PROVINCE)"
+        const addressRegex3 = /^(.+?)\s+(\d+)\s+(.+?)\s+\((.+?)\)$/;
+        const addressMatch = addressRegex3.exec(fullAddress);
+
+        let street = "";
+        let municipality = "";
+        let province = "";
+
+        if (addressMatch) {
+          const streetPart = addressMatch[1] ?? ""; // e.g., "CL VALLEHERMOSO"
+          const streetNumber = addressMatch[2] ?? "";
+          municipality = addressMatch[3]?.trim() ?? "";
+          province = addressMatch[4]?.trim() ?? "";
+
+          // Format the street part
+          const streetParts = streetPart.trim().split(/\s+/);
+          if (streetParts.length > 0) {
+            const streetType = formatStreetType(streetParts[0] ?? "");
+            const streetName = formatStreetName(streetParts.slice(1).join(" "));
+            street = `${streetType} ${streetName}, ${streetNumber}`;
+          } else {
+            street = `${streetPart}, ${streetNumber}`;
+          }
+        } else {
+          // Fallback if parsing fails
+          street = fullAddress;
+        }
+
+        const result: CadastralSearchResult = {
+          cadastralReference,
+          street,
+          addressDetails: "", // Coordinate search doesn't provide floor/door details
+          postalCode: "", // Coordinate search doesn't provide postal code directly
+          city: province, // Use province as city for now
+          province: province,
+          municipality: municipality,
+          builtSurfaceArea: 0, // Not available in coordinate search
+          yearBuilt: 0, // Not available in coordinate search
+        };
+
+        results.push(result);
+      }
     }
 
-    console.log("✅ [Catastro Search] ========================================");
-    console.log("✅ [Catastro Search] SEARCH COMPLETED SUCCESSFULLY");
-    console.log("✅ [Catastro Search] ========================================");
-    console.log(`✅ [Catastro Search] Found ${results.length} potential references`);
-    console.log("✅ [Catastro Search] Final results:", results);
     return results;
   } catch (error) {
-    console.error("❌ [Catastro Search] ========================================");
-    console.error("❌ [Catastro Search] SEARCH FAILED WITH ERROR");
-    console.error("❌ [Catastro Search] ========================================");
-    console.error("❌ [Catastro Search] Error:", error);
-    console.error("❌ [Catastro Search] Error stack:", error instanceof Error ? error.stack : "No stack trace");
     return [];
   }
 }
@@ -583,16 +623,10 @@ export async function retrieveCadastralData(
   cadastralReference: string,
 ): Promise<FormattedCadastralData | null> {
   try {
-    console.log("🔍 [Catastro Validation] ========================================");
-    console.log("🔍 [Catastro Validation] STARTING VALIDATION BY REFERENCE");
-    console.log("🔍 [Catastro Validation] ========================================");
-    console.log("📋 [Catastro Validation] Input cadastral reference:", cadastralReference);
 
     const apiUrl = `https://ovc.catastro.meh.es/OVCServWeb/OVCWcfCallejero/COVCCallejero.svc/json/Consulta_DNPRC?RefCat=${cadastralReference}`;
 
-    console.log("🌐 [Catastro Validation] API URL:", apiUrl);
 
-    console.log("📡 [Catastro Validation] Making API request...");
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
@@ -601,65 +635,58 @@ export async function retrieveCadastralData(
       },
     });
 
-    console.log("📡 [Catastro Validation] Response status:", response.status);
-    console.log("📡 [Catastro Validation] Response headers:", Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      console.error("❌ [Catastro Validation] HTTP error:", response.status, response.statusText);
       const errorText = await response.text();
-      console.error("❌ [Catastro Validation] Error response body:", errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const responseText = await response.text();
-    console.log("📄 [Catastro Validation] Raw response body:", responseText);
 
     let data: CadastralResponse;
     try {
       data = JSON.parse(responseText) as CadastralResponse;
-      console.log("📊 [Catastro Validation] Parsed JSON response:", JSON.stringify(data, null, 2));
     } catch (parseError) {
-      console.error("❌ [Catastro Validation] JSON parse error:", parseError);
-      console.error("❌ [Catastro Validation] Response that failed to parse:", responseText);
       throw parseError;
     }
 
-    console.log("🔍 [Catastro Validation] Processing response data...");
-    console.log("🔍 [Catastro Validation] Response structure:", {
-      hasConsulta_dnprcResult: !!data.consulta_dnprcResult,
-      hasConsulta_dnplocResult: !!data.consulta_dnplocResult,
-      hasBico: !!data.consulta_dnprcResult?.bico,
-      hasBi: !!data.consulta_dnprcResult?.bico?.bi,
-    });
-
-    // Check for API errors first
-    const responseResult = data.consulta_dnprcResult || data.consulta_dnplocResult;
-    if (responseResult && 'control' in responseResult && responseResult.control?.cuerr > 0) {
-      const error = responseResult.lerr?.[0];
-      const errorMessage = `[Catastro] ${error?.cod || 'Unknown'}: ${error?.des || 'Unknown error'}`;
-      console.error("❌ [Catastro Validation] API returned error:", errorMessage);
-      throw new Error(errorMessage);
+    // Check for API errors first (only for consulta_dnplocResult which has error reporting)
+    if (data.consulta_dnplocResult) {
+      const responseResult = data.consulta_dnplocResult;
+      if (responseResult.control?.cuerr > 0) {
+        const error = responseResult.lerr?.[0];
+        const errorMessage = `[Catastro] ${error?.cod ?? 'Unknown'}: ${error?.des ?? 'Unknown error'}`;
+        throw new Error(errorMessage);
+      }
     }
 
-    // Check if we have the expected data structure
-    if (!responseResult?.bico) {
-      console.error("❌ [Catastro Validation] No cadastral data found in response");
-      throw new Error("No cadastral data found");
+    // Try to get property data from new format (lrcdnp.rcdnp) or old format (bico.bi)
+    let bi: BiUnit | undefined;
+    let constructionType: string | undefined;
+
+    if (data.consulta_dnprcResult?.lrcdnp?.rcdnp) {
+      // New format: lrcdnp.rcdnp (array of units)
+      bi = data.consulta_dnprcResult.lrcdnp.rcdnp[0];
+    } else if (data.consulta_dnprcResult?.bico?.bi) {
+      // Old format: bico.bi (can be single or array)
+      const biData = data.consulta_dnprcResult.bico.bi;
+      bi = Array.isArray(biData) ? biData[0] : biData;
+      constructionType = data.consulta_dnprcResult.bico.lcons?.[0]?.lcd;
+    } else if (data.consulta_dnplocResult?.bico?.bi) {
+      // Fallback to consulta_dnplocResult
+      const biData = data.consulta_dnplocResult.bico.bi;
+      bi = Array.isArray(biData) ? biData[0] : biData;
+      constructionType = data.consulta_dnplocResult.bico.lcons?.[0]?.lcd;
     }
 
-    const bi = responseResult.bico.bi;
+    if (!bi) {
+      throw new Error("No property data found");
+    }
+
     const dt = bi.dt;
     const debi = bi.debi;
     const dir = dt.locs.lous.lourb.dir;
     const loint = dt.locs.lous.lourb.loint;
-
-    console.log("🔍 [Catastro Validation] Extracted components:", {
-      bi: bi,
-      dt: dt,
-      debi: debi,
-      dir: dir,
-      loint: loint,
-    });
 
     const formattedStreetType = formatStreetType(dir.tv);
     const formattedStreetName = formatStreetName(dir.nv);
@@ -667,10 +694,8 @@ export async function retrieveCadastralData(
     const street = `${formattedStreetType} ${formattedStreetName}, ${dir.pnp}`;
 
     const fullAddress = `${street}, ${dt.nm}, ${dt.np}, España`;
-    console.log("🌍 [Catastro Validation] Full address for geocoding:", fullAddress);
 
     const geoData = await retrieveGeocodingData(fullAddress);
-    console.log("🌍 [Catastro Validation] Geocoding result:", geoData);
 
     const addressDetails = `${loint.es}ª ${loint.pt}º ${loint.pu}`;
 
@@ -678,25 +703,12 @@ export async function retrieveCadastralData(
     const builtSurfaceArea = parseFloat(debi.sfc) || 0;
     const yearBuilt = parseInt(debi.ant) || 0;
 
-    console.log("📐 [Catastro Validation] Property dimensions:", {
-      squareMeter,
-      builtSurfaceArea,
-      yearBuilt,
-    });
-
     const getPropertyType = (
       usage: string,
       constructionType?: string,
     ): string => {
       const usageLower = usage.toLowerCase();
       const constructionLower = constructionType?.toLowerCase() ?? "";
-
-      console.log("🏠 [Catastro Validation] Property type analysis:", {
-        usage,
-        constructionType,
-        usageLower,
-        constructionLower,
-      });
 
       if (
         usageLower.includes("vivienda") ||
@@ -723,14 +735,7 @@ export async function retrieveCadastralData(
       return "piso";
     };
 
-    const constructionType = responseResult.bico.lcons?.[0]?.lcd;
     const propertyType = getPropertyType(debi.luso, constructionType);
-
-    console.log("🏠 [Catastro Validation] Property type result:", {
-      usage: debi.luso,
-      constructionType,
-      finalPropertyType: propertyType,
-    });
 
     const neighborhood = geoData?.neighborhood ?? dt.nm;
     const municipality = geoData?.municipality ?? dt.nm;
@@ -754,18 +759,9 @@ export async function retrieveCadastralData(
       province,
     };
 
-    console.log("✅ [Catastro Validation] ========================================");
-    console.log("✅ [Catastro Validation] VALIDATION COMPLETED SUCCESSFULLY");
-    console.log("✅ [Catastro Validation] ========================================");
-    console.log("✅ [Catastro Validation] Final formatted data:", formattedData);
 
     return formattedData;
   } catch (error) {
-    console.error("❌ [Catastro Validation] ========================================");
-    console.error("❌ [Catastro Validation] VALIDATION FAILED WITH ERROR");
-    console.error("❌ [Catastro Validation] ========================================");
-    console.error("❌ [Catastro Validation] Error:", error);
-    console.error("❌ [Catastro Validation] Error stack:", error instanceof Error ? error.stack : "No stack trace");
     return null;
   }
 }

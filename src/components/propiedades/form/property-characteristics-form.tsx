@@ -303,12 +303,18 @@ export function PropertyCharacteristicsForm({
             });
           }
 
+          // Get coordinates from hidden inputs
+          const latitudeValue = (document.getElementById("latitude") as HTMLInputElement)?.value;
+          const longitudeValue = (document.getElementById("longitude") as HTMLInputElement)?.value;
+
           propertyData = {
             street: streetValue,
             addressDetails: addressDetailsValue,
             postalCode: postalCodeValue,
             ...(neighborhoodId && { neighborhoodId }),
             nearbyPublicTransport,
+            latitude: latitudeValue || null,
+            longitude: longitudeValue || null,
           };
 
           console.log("📝 [SAVE] Property data prepared for update:", {

@@ -108,8 +108,8 @@ interface PropertyListing {
   municipality?: string;
   neighborhood?: string;
   postalCode?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: string;
+  longitude?: string;
 
   // Property condition and features
   brandNew?: boolean;

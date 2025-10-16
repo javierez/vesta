@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Loader, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { retrieveCadastralData, searchCadastralByLocation, compareCadastralData } from "~/server/cadastral/retrieve_cadastral";
+import { retrieveCadastralData, searchCadastralByCoordinates, compareCadastralData } from "~/server/cadastral/retrieve_cadastral";
 import { toast } from "sonner";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import { useFormContext } from "../form-context";
@@ -36,6 +36,14 @@ export default function ThirdPage({
   const [isSearching, setIsSearching] = useState(false);
   const searchParams = useSearchParams();
   const method = searchParams?.get("method");
+
+  // Coordinate state for cadastral search (obtained from Google Maps or Nominatim autocomplete)
+  const [latitude, setLatitude] = useState<number | null>(
+    state.formData.latitude ? parseFloat(state.formData.latitude) : null
+  );
+  const [longitude, setLongitude] = useState<number | null>(
+    state.formData.longitude ? parseFloat(state.formData.longitude) : null
+  );
 
   // Get current form data from context (following first.tsx pattern)
   const formData = {
@@ -75,6 +83,11 @@ export default function ThirdPage({
   const handleLocationSelected = async (data: LocationData) => {
     console.log("📍 [ThirdPage] Google Places location selected:", data);
 
+    // Store coordinates for cadastral search
+    setLatitude(data.lat);
+    setLongitude(data.lng);
+    console.log("📍 [ThirdPage] Coordinates stored:", { lat: data.lat, lng: data.lng });
+
     // Parse the street with number from address components
     const streetWithNumber = data.addressComponents.streetNumber && data.addressComponents.route
       ? `${data.addressComponents.route} ${data.addressComponents.streetNumber}`
@@ -107,7 +120,11 @@ export default function ThirdPage({
     }
 
     // Update form context
-    updateFormData(updatedData);
+    updateFormData({
+      ...updatedData,
+      latitude: data.lat.toString(),
+      longitude: data.lng.toString(),
+    });
 
     // Generate and update title
     const generatedTitle = generatePropertyTitle(
@@ -120,27 +137,21 @@ export default function ThirdPage({
     toast.success("Dirección autocompletada. Los datos se han actualizado.");
   };
 
-  // Search for cadastral references by address
+  // Search for cadastral references by coordinates
   const searchCadastralReferences = async () => {
     console.log("🔍 [ThirdPage] ========================================");
     console.log("🔍 [ThirdPage] STARTING CADASTRAL SEARCH");
     console.log("🔍 [ThirdPage] ========================================");
 
-    const currentStreet = addressValue.trim();
-    const currentCity = formData.city.trim();
-    const currentProvince = formData.province.trim();
-    const currentMunicipality = formData.municipality.trim();
-
-    console.log("📋 [ThirdPage] Current form data for search:", {
-      street: currentStreet,
-      city: currentCity,
-      province: currentProvince,
-      municipality: currentMunicipality,
+    console.log("📋 [ThirdPage] Current coordinates for search:", {
+      latitude,
+      longitude,
     });
 
-    if (!currentStreet || !currentCity) {
-      console.log("⚠️ [ThirdPage] Missing required fields for search");
-      toast.error("Por favor, introduce al menos la calle y la ciudad para buscar referencias catastrales.");
+    // Check if we have coordinates
+    if (latitude === null || longitude === null) {
+      console.log("⚠️ [ThirdPage] Missing coordinates for search");
+      toast.error("Por favor, usa el autocompletado de Google Maps o Nominatim para obtener coordenadas precisas.");
       return;
     }
 
@@ -148,44 +159,28 @@ export default function ThirdPage({
     setIsSearchModalOpen(true);
 
     try {
-      // Parse street to extract number and street name
-      const addressRegex = /^(.+?)(\d+)(.*)$/;
-      const addressMatch = addressRegex.exec(currentStreet);
-
-      let streetName = currentStreet;
-      let streetNumber = "";
-      
-      if (addressMatch?.[1] && addressMatch[2]) {
-        streetName = addressMatch[1].trim();
-        streetNumber = addressMatch[2];
-        console.log("🔍 [ThirdPage] Street parsing successful:", {
-          original: currentStreet,
-          streetName,
-          streetNumber,
-          regexMatch: addressMatch,
-        });
-      } else {
-        console.log("⚠️ [ThirdPage] Street parsing failed, using full street name:", currentStreet);
-      }
-
       const searchParams = {
-        province: currentProvince,
-        municipality: currentMunicipality,
-        streetName,
-        streetNumber,
+        latitude,
+        longitude,
       };
 
-      console.log("📡 [ThirdPage] Calling searchCadastralByLocation with params:", searchParams);
+      console.log("📡 [ThirdPage] Calling searchCadastralByCoordinates with params:", searchParams);
 
-      const results = await searchCadastralByLocation(searchParams);
+      const results = await searchCadastralByCoordinates(searchParams);
 
       console.log("📊 [ThirdPage] Search results received:", results);
       setPotentialReferences(results);
-      
+
       console.log("✅ [ThirdPage] ========================================");
       console.log("✅ [ThirdPage] SEARCH COMPLETED SUCCESSFULLY");
       console.log("✅ [ThirdPage] ========================================");
-      console.log(`✅ [ThirdPage] Found ${results.length} potential references`);
+      console.log(`✅ [ThirdPage] Found ${results.length} cadastral references`);
+
+      if (results.length === 0) {
+        toast.info("No se encontraron referencias catastrales en estas coordenadas.", {
+          description: "El Catastro no encontró propiedades en un radio de 50 metros.",
+        });
+      }
     } catch (error) {
       console.error("❌ [ThirdPage] ========================================");
       console.error("❌ [ThirdPage] SEARCH FAILED WITH ERROR");
@@ -528,6 +523,8 @@ export default function ThirdPage({
 
       const response = await fetch(nominatimUrl);
       const nominatimResults = (await response.json()) as Array<{
+        lat?: string;
+        lon?: string;
         address?: {
           road?: string;
           house_number?: string;
@@ -557,6 +554,15 @@ export default function ThirdPage({
 
       console.log("Nominatim auto-completion successful:", result);
 
+      // Store coordinates from Nominatim for cadastral search
+      if (result.lat && result.lon) {
+        const parsedLat = parseFloat(result.lat);
+        const parsedLon = parseFloat(result.lon);
+        setLatitude(parsedLat);
+        setLongitude(parsedLon);
+        console.log("📍 [ThirdPage] Coordinates from Nominatim stored:", { lat: parsedLat, lng: parsedLon });
+      }
+
       // Update form context directly with auto-completed data
       // Preserve street+number in address, put parsed details in addressDetails
       const updatedData = {
@@ -567,11 +573,13 @@ export default function ThirdPage({
         province: result.address?.state ?? formData.province,
         municipality: result.address?.city ?? result.address?.town ?? formData.municipality,
         neighborhood: result.address?.suburb ?? result.address?.quarter ?? formData.neighborhood,
+        latitude: result.lat ?? "",
+        longitude: result.lon ?? "",
       };
-      
+
       // Update address value state
       setAddressValue(streetWithNumber);
-      
+
       updateFormData(updatedData);
       
       // Generate and save title after address is updated
@@ -638,15 +646,15 @@ export default function ThirdPage({
           onChange={handleInputChange("cadastralReference")}
           placeholder="Referencia Catastral"
         />
-        {/* Conditional button: Search (lupa) when empty and has required fields, Catastro logo when filled */}
-        {!formData.cadastralReference.trim() && addressValue.trim() && formData.city.trim() ? (
-          /* Search button for cadastral references (when field is empty but has required address data) */
+        {/* Conditional button: Search (lupa) when empty and has coordinates, Catastro logo when filled */}
+        {!formData.cadastralReference.trim() && latitude !== null && longitude !== null ? (
+          /* Search button for cadastral references (when field is empty but has coordinates) */
           <button
             type="button"
             onClick={searchCadastralReferences}
             disabled={isSearching}
             className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Buscar referencias catastrales"
+            title="Buscar referencias catastrales por coordenadas"
           >
             {isSearching ? (
               <Loader className="h-4 w-4 animate-spin" />
