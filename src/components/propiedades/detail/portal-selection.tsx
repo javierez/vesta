@@ -6,20 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "~/components/ui/card";
 import { Switch } from "~/components/ui/switch";
 import { Button } from "~/components/ui/button";
-import { MoreVertical, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { updateListingWithAuth } from "~/server/queries/listing";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-} from "~/components/ui/dropdown-menu";
+import { Label } from "~/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import {
   publishToFotocasa,
   deleteFromFotocasa,
@@ -47,6 +39,11 @@ interface PortalSelectionProps {
   idealista?: boolean;
   habitaclia?: boolean;
   milanuncios?: boolean;
+  // Initial state from parent for persistence across tab switches
+  initialPlatformStates?: Record<string, boolean>;
+  initialVisibilityModes?: Record<string, number>;
+  initialHidePriceModes?: Record<string, boolean>;
+  onPortalStateChange?: (platformStates: Record<string, boolean>, visibilityModes: Record<string, number>, hidePriceModes: Record<string, boolean>) => void;
 }
 
 // Mock default settings - in real app this would come from configuration
@@ -95,22 +92,28 @@ export function PortalSelection({
   idealista = false,
   habitaclia = false,
   milanuncios = false,
+  initialPlatformStates,
+  initialVisibilityModes,
+  initialHidePriceModes,
+  onPortalStateChange,
 }: PortalSelectionProps) {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [initialPlatformStates, setInitialPlatformStates] = useState<
+  const [savedPlatformStates, setSavedPlatformStates] = useState<
     Record<string, boolean>
   >({});
   const [visibilityModes, setVisibilityModes] = useState<
     Record<string, number>
-  >({
-    fotocasa: 1, // Default to Exact
-  });
+  >(
+    initialVisibilityModes ?? {
+      fotocasa: 1, // Default to Exact
+    }
+  );
   const [hidePriceModes, setHidePriceModes] = useState<Record<string, boolean>>(
-    {
+    initialHidePriceModes ?? {
       fotocasa: false, // Default to show price
-    },
+    }
   );
   const [refreshingPlatforms, setRefreshingPlatforms] = useState<
     Record<string, boolean>
@@ -122,18 +125,20 @@ export function PortalSelection({
       const portalValues = { fotocasa, idealista, habitaclia, milanuncios };
 
       const initializedPlatforms = platformConfig.map((config) => {
-        const portalValue =
-          portalValues[config.id as keyof typeof portalValues] ?? false;
+        // Check if we have cached platform state from parent first
+        const hasCachedState = initialPlatformStates && config.id in initialPlatformStates;
+        const isActive = hasCachedState
+          ? (initialPlatformStates[config.id] ?? false)
+          : (portalValues[config.id as keyof typeof portalValues] ?? false);
 
         // Use actual database values to determine initial state
-        const status: Platform["status"] = portalValue ? "active" : "inactive";
-        const isActive = portalValue;
+        const status: Platform["status"] = isActive ? "active" : "inactive";
 
         return {
           ...config,
           isActive,
           status,
-          lastSync: portalValue ? new Date() : undefined,
+          lastSync: isActive ? new Date() : undefined,
           visibilityMode:
             config.id === "fotocasa" ? visibilityModes.fotocasa : undefined,
           hidePrice:
@@ -142,15 +147,22 @@ export function PortalSelection({
       });
 
       setPlatforms(initializedPlatforms);
-      setInitialPlatformStates(
-        initializedPlatforms.reduce(
-          (acc, platform) => ({
-            ...acc,
-            [platform.id]: platform.isActive,
-          }),
-          {} as Record<string, boolean>,
-        ),
-      );
+
+      // Only set savedPlatformStates if we don't have cached states from parent
+      if (!initialPlatformStates) {
+        setSavedPlatformStates(
+          initializedPlatforms.reduce(
+            (acc, platform) => ({
+              ...acc,
+              [platform.id]: platform.isActive,
+            }),
+            {} as Record<string, boolean>,
+          ),
+        );
+      } else {
+        // Use the parent's cached states
+        setSavedPlatformStates(initialPlatformStates);
+      }
     };
 
     initializePlatforms();
@@ -161,6 +173,7 @@ export function PortalSelection({
     milanuncios,
     hidePriceModes.fotocasa,
     visibilityModes.fotocasa,
+    initialPlatformStates,
   ]);
 
   const handlePlatformToggle = (platformId: string, isActive: boolean) => {
@@ -189,6 +202,13 @@ export function PortalSelection({
     setPlatforms(updatedPlatforms);
     onPlatformsChange?.(updatedPlatforms);
     setHasUnsavedChanges(true);
+
+    // Notify parent component to persist platform toggle states
+    const platformStates = updatedPlatforms.reduce(
+      (acc, p) => ({ ...acc, [p.id]: p.isActive }),
+      {} as Record<string, boolean>
+    );
+    onPortalStateChange?.(platformStates, visibilityModes, hidePriceModes);
   };
 
   const handleConfirmChanges = async () => {
@@ -210,7 +230,7 @@ export function PortalSelection({
       await updateListingWithAuth(Number(listingId), portalUpdates);
 
       // Get the previous states to check what changed
-      const previousFotocasaState = initialPlatformStates.fotocasa;
+      const previousFotocasaState = savedPlatformStates.fotocasa;
       const currentFotocasaState = portalUpdates.fotocasa;
 
       // Call portal-specific actions based on state changes
@@ -288,7 +308,7 @@ export function PortalSelection({
 
       setPlatforms(updatedPlatforms);
       setHasUnsavedChanges(false);
-      setInitialPlatformStates(
+      setSavedPlatformStates(
         platforms.reduce(
           (acc, platform) => ({
             ...acc,
@@ -308,10 +328,11 @@ export function PortalSelection({
   };
 
   const handleVisibilityModeChange = (platformId: string, mode: number) => {
-    setVisibilityModes((prev) => ({
-      ...prev,
+    const updatedVisibilityModes = {
+      ...visibilityModes,
       [platformId]: mode,
-    }));
+    };
+    setVisibilityModes(updatedVisibilityModes);
 
     const updatedPlatforms = platforms.map((platform) =>
       platform.id === platformId
@@ -320,19 +341,34 @@ export function PortalSelection({
     );
     setPlatforms(updatedPlatforms);
     setHasUnsavedChanges(true);
+
+    // Notify parent component to persist state
+    const platformStates = updatedPlatforms.reduce(
+      (acc, p) => ({ ...acc, [p.id]: p.isActive }),
+      {} as Record<string, boolean>
+    );
+    onPortalStateChange?.(platformStates, updatedVisibilityModes, hidePriceModes);
   };
 
   const handleHidePriceChange = (platformId: string, hidePrice: boolean) => {
-    setHidePriceModes((prev) => ({
-      ...prev,
+    const updatedHidePriceModes = {
+      ...hidePriceModes,
       [platformId]: hidePrice,
-    }));
+    };
+    setHidePriceModes(updatedHidePriceModes);
 
     const updatedPlatforms = platforms.map((platform) =>
       platform.id === platformId ? { ...platform, hidePrice } : platform,
     );
     setPlatforms(updatedPlatforms);
     setHasUnsavedChanges(true);
+
+    // Notify parent component to persist state
+    const platformStates = updatedPlatforms.reduce(
+      (acc, p) => ({ ...acc, [p.id]: p.isActive }),
+      {} as Record<string, boolean>
+    );
+    onPortalStateChange?.(platformStates, visibilityModes, updatedHidePriceModes);
   };
 
   const handleRefresh = async (platformId: string) => {
@@ -393,21 +429,8 @@ export function PortalSelection({
     }
   };
 
-  const getVisibilityModeLabel = (mode: number) => {
-    switch (mode) {
-      case 1:
-        return "Exacta";
-      case 2:
-        return "Calle";
-      case 3:
-        return "Zona";
-      default:
-        return "Exacta";
-    }
-  };
-
   const getCardStyles = (platform: Platform) => {
-    const initialActive = initialPlatformStates[platform.id];
+    const initialActive = savedPlatformStates[platform.id];
     const currentActive = platform.isActive;
     if (currentActive) {
       if (initialActive) {
@@ -459,87 +482,12 @@ export function PortalSelection({
               )}
             >
               {/* Orange Dot for Pending State */}
-              {platform.isActive && !initialPlatformStates[platform.id] && (
+              {platform.isActive && !savedPlatformStates[platform.id] && (
                 <div className="absolute left-2 top-2 h-2 w-2 rounded-full bg-orange-400"></div>
               )}
 
-              {/* Settings Burger Button - Inside Top Right Corner, Only on Hover */}
+              {/* Refresh Button - Top Right Corner, Only on Hover */}
               <div className="absolute right-2 top-2 z-10 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                {/* Settings Burger Button */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 hover:bg-gray-100"
-                    >
-                      <MoreVertical className="h-3 w-3 text-gray-600" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {platform.id === "fotocasa" && (
-                      <>
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            Visibilidad:{" "}
-                            {getVisibilityModeLabel(
-                              visibilityModes.fotocasa ?? 1,
-                            )}
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleVisibilityModeChange("fotocasa", 1)
-                              }
-                            >
-                              Exacta
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleVisibilityModeChange("fotocasa", 2)
-                              }
-                            >
-                              Calle
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleVisibilityModeChange("fotocasa", 3)
-                              }
-                            >
-                              Zona
-                            </DropdownMenuItem>
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            Ocultar precio:{" "}
-                            {hidePriceModes.fotocasa ? "Sí" : "No"}
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleHidePriceChange("fotocasa", true)
-                              }
-                            >
-                              Sí
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleHidePriceChange("fotocasa", false)
-                              }
-                            >
-                              No
-                            </DropdownMenuItem>
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              {/* Refresh Button - Bottom Right Corner, Only on Hover */}
-              <div className="absolute bottom-2 right-2 z-10 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -559,8 +507,8 @@ export function PortalSelection({
                 </Button>
               </div>
 
-              <CardContent className="flex h-24 flex-col justify-between p-4">
-                <div className="flex flex-1 flex-col items-center justify-center gap-4">
+              <CardContent className="flex flex-col p-4">
+                <div className="flex h-24 flex-col items-center justify-center gap-4">
                   {/* Platform Logo */}
                   <div className="flex items-center justify-center">
                     <div className="relative">
@@ -597,6 +545,84 @@ export function PortalSelection({
                     />
                   </div>
                 </div>
+
+                {/* Inline Settings Panel - Expands when active */}
+                <AnimatePresence>
+                  {platform.isActive && platform.id === "fotocasa" && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 space-y-3 border-t pt-3">
+                        {/* Visibility Mode */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-gray-700">
+                            Visibilidad
+                          </Label>
+                          <RadioGroup
+                            value={String(visibilityModes.fotocasa ?? 1)}
+                            onValueChange={(value) =>
+                              handleVisibilityModeChange(
+                                "fotocasa",
+                                Number(value),
+                              )
+                            }
+                            className="space-y-1"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="1" id={`${platform.id}-exact`} />
+                              <Label
+                                htmlFor={`${platform.id}-exact`}
+                                className="text-xs font-normal cursor-pointer"
+                              >
+                                Exacta
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="2" id={`${platform.id}-street`} />
+                              <Label
+                                htmlFor={`${platform.id}-street`}
+                                className="text-xs font-normal cursor-pointer"
+                              >
+                                Calle
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="3" id={`${platform.id}-zone`} />
+                              <Label
+                                htmlFor={`${platform.id}-zone`}
+                                className="text-xs font-normal cursor-pointer"
+                              >
+                                Zona
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+
+                        {/* Hide Price Toggle */}
+                        <div className="flex items-center justify-between">
+                          <Label
+                            htmlFor={`${platform.id}-hide-price`}
+                            className="text-xs font-medium text-gray-700 cursor-pointer"
+                          >
+                            Ocultar precio
+                          </Label>
+                          <Switch
+                            id={`${platform.id}-hide-price`}
+                            checked={hidePriceModes.fotocasa ?? false}
+                            onCheckedChange={(checked) =>
+                              handleHidePriceChange("fotocasa", checked)
+                            }
+                            className="data-[state=checked]:bg-gray-900"
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </CardContent>
             </Card>
           </motion.div>

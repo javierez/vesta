@@ -610,23 +610,25 @@ export async function listListings(
       .leftJoin(users, eq(listings.agentId, users.id))
       .leftJoin(
         sql`(
-          SELECT 
+          SELECT
             property_id,
             image_url,
             ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY image_order ASC) as rn
-          FROM property_images 
+          FROM property_images
           WHERE is_active = true
+            AND (image_tag IS NULL OR image_tag NOT IN ('video', 'youtube', 'tour'))
         ) img1`,
         sql`img1.property_id = ${properties.propertyId} AND img1.rn = 1`
       )
       .leftJoin(
         sql`(
-          SELECT 
+          SELECT
             property_id,
             image_url,
             ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY image_order ASC) as rn
-          FROM property_images 
+          FROM property_images
           WHERE is_active = true
+            AND (image_tag IS NULL OR image_tag NOT IN ('video', 'youtube', 'tour'))
         ) img2`,
         sql`img2.property_id = ${properties.propertyId} AND img2.rn = 2`
       )

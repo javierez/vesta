@@ -450,7 +450,7 @@ export function Comments({
             commentId: tempComment.commentId.toString(),
             status: 'error'
           });
-          toast.error(result.error ?? "Error al crear el comentario");
+          toast.error(result.error ?? "Error al crear la nota");
         } else {
           // Update status to sent
           addOptimisticComment({
@@ -555,9 +555,9 @@ export function Comments({
         const result = await onEditComment(commentId, newContent);
 
         if (!result.success) {
-          toast.error(result.error ?? "Error al editar el comentario");
+          toast.error(result.error ?? "Error al editar la nota");
         } else {
-          toast.success("Comentario editado exitosamente");
+          toast.success("Nota editada exitosamente");
         }
       } catch (error) {
         console.error("Error editing comment:", error);
@@ -573,9 +573,9 @@ export function Comments({
         const result = await onDeleteComment(commentId);
 
         if (!result.success) {
-          toast.error(result.error ?? "Error al eliminar el comentario");
+          toast.error(result.error ?? "Error al eliminar la nota");
         } else {
-          toast.success("Comentario eliminado exitosamente");
+          toast.success("Nota eliminada exitosamente");
         }
       } catch (error) {
         console.error("Error deleting comment:", error);
@@ -609,7 +609,7 @@ export function Comments({
             </Avatar>
             <div className="flex-1">
               <Textarea
-                placeholder="Escribe un comentario..."
+                placeholder="Escribe una nota..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 className="min-h-[80px] resize-none border-gray-200"
@@ -621,7 +621,7 @@ export function Comments({
                   className="flex items-center gap-2 h-8"
                 >
                   <MessageCircle className="h-4 w-4" />
-                  Comentar
+                  Añadir nota
                 </Button>
               </div>
             </div>
@@ -634,7 +634,7 @@ export function Comments({
           <Card>
             <CardContent className="py-8 text-center">
               <p className="text-gray-500">
-                No hay comentarios aún. ¡Sé el primero en comentar!
+                No hay notas aún. ¡Añade la primera nota!
               </p>
             </CardContent>
           </Card>
@@ -672,10 +672,10 @@ export function Comments({
       <ConfirmDialog
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
-        title="Eliminar comentario"
+        title="Eliminar nota"
         description={(() => {
           if (!commentToDelete)
-            return "¿Estás seguro de que quieres eliminar este comentario? Esta acción no se puede deshacer.";
+            return "¿Estás seguro de que quieres eliminar esta nota? Esta acción no se puede deshacer.";
 
           const comment = optimisticComments.find(
             (c) => c.commentId === commentToDelete,
@@ -683,10 +683,10 @@ export function Comments({
           const replyCount = comment?.replies?.length ?? 0;
 
           if (replyCount > 0) {
-            return `Este comentario tiene ${replyCount} respuesta${replyCount > 1 ? "s" : ""}. Al eliminarlo también se eliminarán todas las respuestas. ¿Estás seguro? Esta acción no se puede deshacer.`;
+            return `Esta nota tiene ${replyCount} respuesta${replyCount > 1 ? "s" : ""}. Al eliminarla también se eliminarán todas las respuestas. ¿Estás seguro? Esta acción no se puede deshacer.`;
           }
 
-          return "¿Estás seguro de que quieres eliminar este comentario? Esta acción no se puede deshacer.";
+          return "¿Estás seguro de que quieres eliminar esta nota? Esta acción no se puede deshacer.";
         })()}
         onConfirm={() => {
           if (commentToDelete) {

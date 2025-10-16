@@ -409,6 +409,14 @@ export const listings = singlestoreTable("listings", {
   yaencontre: boolean("yaencontre").default(false), // Yaencontre.com publication status
   milanuncios: boolean("milanuncios").default(false), // Milanuncios.com publication status
 
+  // Portal-specific configuration (JSON objects containing portal settings)
+  fotocasaProps: json("fotocasa_props").default({}), // { visibilityMode: 1|2|3, hidePrice: boolean }
+  idealistaProps: json("idealista_props").default({}), // Portal-specific settings for Idealista
+  habitacliaProps: json("habitaclia_props").default({}), // Portal-specific settings for Habitaclia
+  pisoscomProps: json("pisoscom_props").default({}), // Portal-specific settings for Pisos.com
+  yaencontreProps: json("yaencontre_props").default({}), // Portal-specific settings for Yaencontre
+  milanunciosProps: json("milanuncios_props").default({}), // Portal-specific settings for Milanuncios
+
   // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
@@ -725,6 +733,7 @@ export const feedback = singlestoreTable("feedback", {
   feedbackComment: text("feedback_comment").notNull(),
   scale: smallint("scale").notNull(), // 1-4 scale rating
   url: varchar("url", { length: 2048 }), // URL where feedback was submitted
+  resolved: boolean("resolved").default(false).notNull(), // 1=resolved, 0=unresolved
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

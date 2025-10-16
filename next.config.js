@@ -32,6 +32,12 @@ const config = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "cdn-magnific.freepik.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
     // Optimize images
     unoptimized: false,

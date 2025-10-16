@@ -311,29 +311,23 @@ export function LocationCard({
   const handleCadastralReferenceSelect = (selectedRef: CadastralSearchResult) => {
     console.log("✅ [LocationCard] Selected cadastral reference:", selectedRef);
 
-    // Update cadastral reference state
+    // Update ONLY cadastral reference state
     setCadastralReferenceValue(selectedRef.cadastralReference);
 
-    // Update cadastral reference field
+    // Update ONLY cadastral reference field
     const cadastralInput = document.getElementById("cadastralReference") as HTMLInputElement;
     if (cadastralInput) {
       cadastralInput.value = selectedRef.cadastralReference;
     }
 
-    // Update other fields with selected data
-    setStreetValue(selectedRef.street);
-    setNeighborhoodValue(selectedRef.addressDetails);
-
-    // Update postal code
-    const postalCodeInput = document.getElementById("postalCode") as HTMLInputElement;
-    if (postalCodeInput && selectedRef.postalCode) {
-      postalCodeInput.value = selectedRef.postalCode;
+    // Update ONLY addressDetails field (floor, door, etc.)
+    const addressDetailsInput = document.getElementById("addressDetails") as HTMLInputElement;
+    if (addressDetailsInput && selectedRef.addressDetails) {
+      addressDetailsInput.value = selectedRef.addressDetails;
     }
 
-    // Update city, province, municipality if available
-    if (selectedRef.city) setCity(selectedRef.city);
-    if (selectedRef.province) setProvince(selectedRef.province);
-    if (selectedRef.municipality) setMunicipality(selectedRef.municipality);
+    // DO NOT update any other fields (street, postalCode, city, province, municipality, neighborhood)
+    // These should remain as they are
 
     // Mark as having changes
     onUpdateModule(true);
@@ -341,7 +335,7 @@ export function LocationCard({
     // Close modal
     setIsSearchModalOpen(false);
 
-    toast.success("Referencia catastral seleccionada y campos actualizados.");
+    toast.success("Referencia catastral y detalles de dirección actualizados.");
   };
 
   // Apply suggestion for a specific field

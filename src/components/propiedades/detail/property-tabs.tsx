@@ -118,6 +118,11 @@ export function PropertyTabs({
     agents: { id: string; name: string; firstName?: string; lastName?: string; }[] | null;
     comments: CommentWithUser[] | null;
     carteles: Cartel[] | null;
+    portals: {
+      platformStates: Record<string, boolean>; // Which portals are toggled on/off
+      visibilityModes: Record<string, number>;
+      hidePriceModes: Record<string, boolean>;
+    } | null;
   }>({
     images: images ?? null,
     videos: videos ?? null,
@@ -129,6 +134,7 @@ export function PropertyTabs({
     agents: null,
     comments: null,
     carteles: null,
+    portals: null,
   });
   const [loading, setLoading] = useState<{
     caracteristicas: boolean;
@@ -369,6 +375,21 @@ export function PropertyTabs({
     }
   }, [listing.listingId]); // Removed tabData.carteles dependency to prevent infinite loop
 
+  const handlePortalStateChange = (
+    platformStates: Record<string, boolean>,
+    visibilityModes: Record<string, number>,
+    hidePriceModes: Record<string, boolean>
+  ) => {
+    setTabData((prev) => ({
+      ...prev,
+      portals: {
+        platformStates,
+        visibilityModes,
+        hidePriceModes,
+      },
+    }));
+  };
+
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -396,7 +417,7 @@ export function PropertyTabs({
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mt-8 md:mt-0">
       <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 gap-2 md:gap-0 p-1 h-auto md:h-10 bg-gray-100 rounded-lg">
         <TabsTrigger value="general" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">General</TabsTrigger>
-        <TabsTrigger value="tareas" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Tareas</TabsTrigger>
+        <TabsTrigger value="tareas" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Tareas y notas</TabsTrigger>
         <TabsTrigger value="imagenes" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Imágenes</TabsTrigger>
         <TabsTrigger value="carteles" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Carteles</TabsTrigger>
         <TabsTrigger value="portales" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Portales</TabsTrigger>
@@ -440,7 +461,7 @@ export function PropertyTabs({
             
             {/* Right side - Comments */}
             <div className="flex-1 lg:w-1/2">
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">Comentarios</h3>
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Notas</h3>
               <Comments 
                 propertyId={listing.propertyId}
                 listingId={listing.listingId}
@@ -534,6 +555,10 @@ export function PropertyTabs({
             idealista={listing.idealista ?? undefined}
             habitaclia={listing.habitaclia ?? undefined}
             milanuncios={listing.milanuncios ?? undefined}
+            initialPlatformStates={tabData.portals?.platformStates}
+            initialVisibilityModes={tabData.portals?.visibilityModes}
+            initialHidePriceModes={tabData.portals?.hidePriceModes}
+            onPortalStateChange={handlePortalStateChange}
           />
         </div>
       </TabsContent>

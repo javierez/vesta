@@ -22,6 +22,8 @@ import type { WatermarkConfig } from "~/types/watermark";
 import {
   logPayloadBuild,
   logPublishRequest,
+  logUpdateRequest,
+  logDeleteRequest,
 } from "../utils/fotocasa-logger";
 
 // Types
@@ -1071,9 +1073,15 @@ export async function publishToFotocasa(
     }
   } catch (error) {
     console.error("Error publishing to Fotocasa:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+
+    // Log the exception
+    await logPublishRequest(listingId, undefined, undefined, false, errorMessage);
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: errorMessage,
     };
   }
 }
@@ -1134,10 +1142,14 @@ export async function updateFotocasa(
     console.log("Fotocasa PUT Update API Response:", responseData);
 
     // Check if the request was successful
-    if (
+    const isSuccess =
       response.ok &&
-      (responseData as { StatusCode?: number }).StatusCode === 200
-    ) {
+      (responseData as { StatusCode?: number }).StatusCode === 200;
+
+    if (isSuccess) {
+      // Log successful update
+      await logUpdateRequest(listingId, payload, responseData, true);
+
       // Clean up watermarked images after successful update
       if (watermarkedKeys.length > 0) {
         try {
@@ -1166,19 +1178,36 @@ export async function updateFotocasa(
         response: responseData,
       };
     } else {
+      const errorMessage =
+        (responseData as { Message?: string }).Message ??
+        `HTTP ${response.status}: ${response.statusText}`;
+
+      // Log failed update
+      await logUpdateRequest(
+        listingId,
+        payload,
+        responseData,
+        false,
+        errorMessage,
+      );
+
       return {
         success: false,
-        error:
-          (responseData as { Message?: string }).Message ??
-          `HTTP ${response.status}: ${response.statusText}`,
+        error: errorMessage,
         response: responseData,
       };
     }
   } catch (error) {
     console.error("Error updating on Fotocasa:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+
+    // Log the exception
+    await logUpdateRequest(listingId, undefined, undefined, false, errorMessage);
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: errorMessage,
     };
   }
 }
@@ -1226,6 +1255,15 @@ export async function deleteFromFotocasa(
     // Check if the request was successful
     if (response.ok) {
       console.log("Successfully deleted from Fotocasa");
+
+      // Log successful deletion
+      await logDeleteRequest(
+        listingId,
+        base64ExternalId,
+        { status: response.status },
+        true,
+      );
+
       return {
         success: true,
         response: { status: response.status },
@@ -1242,20 +1280,38 @@ export async function deleteFromFotocasa(
       }
 
       console.error("Failed to delete from Fotocasa:", responseData);
+
+      const errorMessage =
+        (responseData as { Message?: string; message?: string }).Message ??
+        (responseData as { message?: string }).message ??
+        `HTTP ${response.status}: ${response.statusText}`;
+
+      // Log failed deletion
+      await logDeleteRequest(
+        listingId,
+        base64ExternalId,
+        responseData,
+        false,
+        errorMessage,
+      );
+
       return {
         success: false,
-        error:
-          (responseData as { Message?: string; message?: string }).Message ??
-          (responseData as { message?: string }).message ??
-          `HTTP ${response.status}: ${response.statusText}`,
+        error: errorMessage,
         response: responseData,
       };
     }
   } catch (error) {
     console.error("Error deleting from Fotocasa:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+
+    // Log the exception
+    await logDeleteRequest(listingId, "", undefined, false, errorMessage);
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: errorMessage,
     };
   }
 }

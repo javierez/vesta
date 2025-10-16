@@ -248,36 +248,22 @@ export default function ThirdPage({
   const handleCadastralReferenceSelect = (selectedRef: CadastralSearchResult) => {
     console.log("✅ [ThirdPage] Selected cadastral reference:", selectedRef);
 
-    // Update form data with selected reference
+    // Update ONLY cadastral reference and addressDetails
     const updatedData = {
       cadastralReference: selectedRef.cadastralReference,
-      address: selectedRef.street,
       addressDetails: selectedRef.addressDetails,
-      postalCode: selectedRef.postalCode,
-      city: selectedRef.city ?? formData.city,
-      province: selectedRef.province ?? formData.province,
-      municipality: selectedRef.municipality,
-      neighborhood: formData.neighborhood,
     };
 
-    // Update address value state
-    setAddressValue(selectedRef.street);
+    // DO NOT update: address, postalCode, city, province, municipality, neighborhood
+    // These should remain as they are
 
-    // Update form context
+    // Update form context with only the two allowed fields
     updateFormData(updatedData);
-
-    // Generate and update title
-    const generatedTitle = generatePropertyTitle(
-      state.formData?.propertyType ?? "piso",
-      updatedData.address,
-      updatedData.neighborhood
-    );
-    updateFormData({ title: generatedTitle });
 
     // Close modal
     setIsSearchModalOpen(false);
 
-    toast.success("Referencia catastral seleccionada y campos actualizados.");
+    toast.success("Referencia catastral y detalles de dirección actualizados.");
   };
 
 

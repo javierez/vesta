@@ -35,7 +35,8 @@
       "Bash(git push:*)",
       "Bash(cat:*)",
       "WebFetch(domain:ropenspain.github.io)",
-      "WebFetch(domain:ovc.catastro.meh.es)"
+      "WebFetch(domain:ovc.catastro.meh.es)",
+      "WebFetch(domain:www.fotocasa.pro)"
     ],
     "deny": [],
     "ask": []

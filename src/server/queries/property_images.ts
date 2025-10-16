@@ -398,3 +398,29 @@ export async function getPropertyVirtualToursCount(propertyId: bigint, isActive 
     return 0;
   }
 }
+
+// Get the maximum image_order for a property (excludes videos, YouTube links, and virtual tours)
+export async function getMaxImageOrder(propertyId: bigint, isActive = true) {
+  try {
+    const conditions = [
+      eq(propertyImages.propertyId, propertyId),
+      // Only consider actual images, not videos, YouTube links, or virtual tours
+      and(
+        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
+      )
+    ];
+    if (isActive !== undefined) {
+      conditions.push(eq(propertyImages.isActive, isActive));
+    }
+
+    const result = await db
+      .select({ maxOrder: sql<number>`COALESCE(MAX(${propertyImages.imageOrder}), 0)` })
+      .from(propertyImages)
+      .where(and(...conditions));
+
+    return result[0]?.maxOrder ?? 0;
+  } catch (error) {
+    console.error("Error getting max image order:", error);
+    return 0;
+  }
+}

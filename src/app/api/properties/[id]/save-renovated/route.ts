@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { getSecureSession } from "~/lib/dal";
 import { uploadRenovatedImageToS3 } from "~/app/actions/renovate-image";
 import { getListingHeaderData } from "~/server/queries/listing";
-import { getPropertyImagesByReference } from "~/server/queries/property_images";
+import { getPropertyImagesByReference, getMaxImageOrder } from "~/server/queries/property_images";
 import type { RenovationType } from "~/types/gemini";
 
 /**
@@ -59,8 +59,13 @@ export async function POST(
     }
 
     // 4. Find the original image to get the correct propertyId
+    // Note: We filter out AI-enhanced/renovated images to ensure we get the actual original
     const propertyImages = await getPropertyImagesByReference(data.referenceNumber);
-    const originalImage = propertyImages.find(img => img.imageOrder === parseInt(data.currentImageOrder));
+    const originalImage = propertyImages.find(img =>
+      img.imageOrder === parseInt(data.currentImageOrder) &&
+      img.imageTag !== 'ai_enhanced' &&
+      img.imageTag !== 'ai_renovated'
+    );
     
     if (!originalImage) {
       console.error('Original image not found:', {
@@ -75,7 +80,7 @@ export async function POST(
 
     // Use the propertyId from the original image, not from URL
     const correctPropertyId = originalImage.propertyId;
-    
+
     console.log('Found original image:', {
       originalImageId: originalImage.propertyImageId.toString(),
       originalPropertyId: originalImage.propertyId.toString(),
@@ -83,13 +88,15 @@ export async function POST(
       usingCorrectPropertyId: correctPropertyId.toString()
     });
 
-    // 5. Save renovated image to S3 and database using correct propertyId
-    const newImageOrder = parseInt(data.currentImageOrder) + 1;
-    
+    // 5. Get the maximum image_order for this property and calculate next order
+    const maxImageOrder = await getMaxImageOrder(correctPropertyId);
+    const newImageOrder = maxImageOrder + 1;
+
     console.log('🎯 Renovated image save API - Starting process:', {
       correctPropertyId: correctPropertyId.toString(),
       referenceNumber: data.referenceNumber,
       currentImageOrder: data.currentImageOrder,
+      maxImageOrder,
       newImageOrder,
       renovationType: data.renovationType ?? 'generic',
       imageDataLength: data.renovatedImageBase64.length

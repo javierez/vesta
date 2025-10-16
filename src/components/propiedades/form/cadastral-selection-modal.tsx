@@ -51,7 +51,7 @@ export function CadastralSelectionModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-[95vw] sm:w-full max-h-[90vh] sm:max-h-[80vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader className="space-y-2 sm:space-y-3">
-          <DialogTitle className="text-lg sm:text-xl">Seleccionar Unidad de Propiedad</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">Seleccionar Propiedad en Catastro</DialogTitle>
           <DialogDescription className="text-sm">
             Se encontraron {searchResults.length} {searchResults.length === 1 ? 'unidad' : 'unidades'} en esta dirección.
             Selecciona la unidad específica de tu propiedad.
