@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { FloatingLabelInput } from "~/components/ui/floating-label-input";
-import { ChevronLeft, ChevronRight, Loader, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader, Search, AlertTriangle, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { retrieveCadastralData, searchCadastralByCoordinates, compareCadastralData } from "~/server/cadastral/retrieve_cadastral";
+import { retrieveCadastralData, searchCadastralByCoordinates, compareCadastralData, type CadastralComparisonResult } from "~/server/cadastral/retrieve_cadastral";
 import { toast } from "sonner";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import { useFormContext } from "../form-context";
@@ -45,6 +45,10 @@ export default function ThirdPage({
     state.formData.longitude ? parseFloat(state.formData.longitude) : null
   );
 
+  // Cadastral validation state
+  const [cadastralDiscrepancies, setCadastralDiscrepancies] = useState<CadastralComparisonResult | null>(null);
+  const [cadastralValidationStatus, setCadastralValidationStatus] = useState<'none' | 'validating' | 'valid' | 'invalid'>('none');
+
   // Get current form data from context (following first.tsx pattern)
   const formData = {
     cadastralReference: state.formData.cadastralReference ?? "",
@@ -59,6 +63,53 @@ export default function ThirdPage({
 
   // Address value state for AddressAutocomplete
   const [addressValue, setAddressValue] = useState(formData.address);
+
+  // Helper to get discrepancy for a specific field
+  const getFieldDiscrepancy = (fieldName: string) => {
+    return cadastralDiscrepancies?.differences.find(diff => diff.field === fieldName);
+  };
+
+  // Apply suggestion for a specific field
+  const applyFieldSuggestion = (fieldName: string, suggestedValue: string) => {
+    console.log(`✅ [ThirdPage] Applying suggestion for ${fieldName}:`, suggestedValue);
+
+    switch (fieldName) {
+      case 'street':
+        setAddressValue(suggestedValue);
+        updateField('address', suggestedValue);
+        break;
+      case 'postalCode':
+        updateField('postalCode', suggestedValue);
+        break;
+      case 'city':
+        updateField('city', suggestedValue);
+        break;
+      case 'province':
+        updateField('province', suggestedValue);
+        break;
+    }
+
+    // Remove the applied discrepancy from the list
+    if (cadastralDiscrepancies) {
+      const remainingDifferences = cadastralDiscrepancies.differences.filter(
+        diff => diff.field !== fieldName
+      );
+
+      if (remainingDifferences.length === 0) {
+        // All discrepancies resolved
+        setCadastralDiscrepancies(null);
+        setCadastralValidationStatus('valid');
+      } else {
+        // Update with remaining discrepancies
+        setCadastralDiscrepancies({
+          hasDiscrepancies: true,
+          differences: remainingDifferences,
+        });
+      }
+    }
+
+    toast.success("Sugerencia aplicada correctamente.");
+  };
 
   // Check if method is manual - if so, skip this page
   useEffect(() => {
@@ -257,20 +308,21 @@ export default function ThirdPage({
   // Function to validate and compare cadastral data
   const validateCadastralReference = async (cadastralRef: string) => {
     console.log("🔍 [ThirdPage] ========================================");
-    console.log("🔍 [ThirdPage] STARTING CADASTRAL COMPARISON");
+    console.log("🔍 [ThirdPage] STARTING CADASTRAL VALIDATION");
     console.log("🔍 [ThirdPage] ========================================");
     console.log("📋 [ThirdPage] Input cadastral reference:", cadastralRef);
 
     if (!cadastralRef.trim()) {
-      console.log("⚠️ [ThirdPage] Empty cadastral reference");
-      toast.error("Referencia catastral requerida");
+      console.log("⚠️ [ThirdPage] Empty cadastral reference, clearing validation");
+      setCadastralDiscrepancies(null);
+      setCadastralValidationStatus('none');
       return;
     }
 
-    try {
-      setIsCadastralLoading(true);
-      console.log("🔄 Starting cadastral comparison...");
+    setIsCadastralLoading(true);
+    setCadastralValidationStatus('validating');
 
+    try {
       // Get current form data for comparison
       const currentData = {
         street: addressValue,
@@ -279,48 +331,41 @@ export default function ThirdPage({
         province: formData.province,
       };
 
-      console.log("📋 [ThirdPage] Current form data for comparison:", currentData);
+      console.log("📋 [ThirdPage] Current form data to compare:", currentData);
 
       // Fetch official cadastral data
+      console.log("📡 [ThirdPage] Calling retrieveCadastralData...");
       const cadastralData = await retrieveCadastralData(cadastralRef);
-      
+
       if (!cadastralData) {
         console.log("❌ [ThirdPage] No cadastral data found for reference");
-        toast.error("Referencia no encontrada", {
-          description: "No se encontraron datos para esta referencia catastral. Verifica que sea correcta.",
-        });
+        setCadastralValidationStatus('invalid');
+        setCadastralDiscrepancies(null);
         return;
       }
 
       console.log("📊 [ThirdPage] Retrieved cadastral data:", cadastralData);
 
-      // Compare data using the comparison function from location-card
+      // Compare data
+      console.log("🔍 [ThirdPage] Calling compareCadastralData...");
       const comparison = await compareCadastralData(currentData, cadastralData);
-      
+
       console.log("📊 [ThirdPage] Comparison result:", comparison);
-      
-      if (comparison.hasDiscrepancies) {
-        toast.warning("Discrepancias encontradas", {
-          description: "Los datos del formulario no coinciden con los oficiales. Revisa los campos marcados.",
-        });
-      } else {
-        toast.success("Datos verificados", {
-          description: "Los datos del formulario coinciden con los oficiales del catastro.",
-        });
-      }
+
+      setCadastralDiscrepancies(comparison);
+      setCadastralValidationStatus(comparison.hasDiscrepancies ? 'invalid' : 'valid');
 
       console.log("✅ [ThirdPage] ========================================");
-      console.log("✅ [ThirdPage] COMPARISON COMPLETED SUCCESSFULLY");
+      console.log("✅ [ThirdPage] VALIDATION COMPLETED SUCCESSFULLY");
       console.log("✅ [ThirdPage] ========================================");
-
+      console.log("✅ [ThirdPage] Final validation status:", comparison.hasDiscrepancies ? 'invalid' : 'valid');
     } catch (error) {
       console.error("❌ [ThirdPage] ========================================");
-      console.error("❌ [ThirdPage] COMPARISON FAILED WITH ERROR");
+      console.error("❌ [ThirdPage] VALIDATION FAILED WITH ERROR");
       console.error("❌ [ThirdPage] ========================================");
-      console.error("❌ [ThirdPage] Comparison error:", error);
-      toast.error("Error al comparar con el catastro", {
-        description: "No se pudo conectar con el servicio. Inténtalo de nuevo.",
-      });
+      console.error("❌ [ThirdPage] Validation error:", error);
+      setCadastralValidationStatus('invalid');
+      setCadastralDiscrepancies(null);
     } finally {
       setIsCadastralLoading(false);
     }
@@ -645,7 +690,36 @@ export default function ThirdPage({
           value={formData.cadastralReference}
           onChange={handleInputChange("cadastralReference")}
           placeholder="Referencia Catastral"
+          className={
+            cadastralValidationStatus === 'invalid' && cadastralDiscrepancies ? "border-amber-500 focus:border-amber-500 pr-20" :
+            cadastralValidationStatus === 'valid' ? "border-green-500 focus:border-green-500 pr-20" :
+            "pr-20"
+          }
+          onBlur={(e) => {
+            const value = e.target.value.trim();
+            if (value) {
+              void validateCadastralReference(value);
+            } else {
+              setCadastralDiscrepancies(null);
+              setCadastralValidationStatus('none');
+            }
+          }}
         />
+
+        {/* Loading spinner centered in input */}
+        {cadastralValidationStatus === 'validating' && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-md">
+            <Loader className="h-5 w-5 animate-spin text-blue-500" />
+          </div>
+        )}
+
+        {/* Success indicator */}
+        {cadastralValidationStatus === 'valid' && (
+          <div className="absolute right-8 top-1/2 -translate-y-1/2">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </div>
+        )}
+
         {/* Conditional button: Search (lupa) when empty and has coordinates, Catastro logo when filled */}
         {!formData.cadastralReference.trim() && latitude !== null && longitude !== null ? (
           /* Search button for cadastral references (when field is empty but has coordinates) */
@@ -681,24 +755,46 @@ export default function ThirdPage({
           </button>
         ) : null}
       </div>
-      <div className="relative">
-        <AddressAutocomplete
-          value={addressValue}
-          onChange={(value) => {
-            setAddressValue(value);
-            updateField("address", value);
-          }}
-          onLocationSelected={handleLocationSelected}
-          placeholder="Calle"
-          className="h-10 border border-gray-200 shadow-md transition-all duration-200"
-        />
-        {/* Hidden input to maintain compatibility with form context */}
-        <input
-          type="hidden"
-          id="address"
-          value={addressValue}
-          readOnly
-        />
+      <div className="space-y-1.5">
+        <div className="relative">
+          <AddressAutocomplete
+            value={addressValue}
+            onChange={(value) => {
+              setAddressValue(value);
+              updateField("address", value);
+            }}
+            onLocationSelected={handleLocationSelected}
+            placeholder="Calle"
+            className="h-10 border border-gray-200 shadow-md transition-all duration-200"
+          />
+          {getFieldDiscrepancy('street') && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+            </div>
+          )}
+          {/* Hidden input to maintain compatibility with form context */}
+          <input
+            type="hidden"
+            id="address"
+            value={addressValue}
+            readOnly
+          />
+        </div>
+        {/* Field-level warning */}
+        {getFieldDiscrepancy('street') && (
+          <div className="flex items-center gap-2 rounded bg-amber-50/50 px-2 py-1 text-xs border border-amber-200/50">
+            <span className="flex-1 text-amber-900">
+              <span className="font-medium">{getFieldDiscrepancy('street')!.suggested}</span>
+            </span>
+            <button
+              type="button"
+              className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors"
+              onClick={() => applyFieldSuggestion('street', getFieldDiscrepancy('street')!.suggested)}
+            >
+              Aplicar
+            </button>
+          </div>
+        )}
       </div>
       <FloatingLabelInput
         id="addressDetails"
@@ -706,24 +802,99 @@ export default function ThirdPage({
         onChange={handleInputChange("addressDetails")}
         placeholder="Piso, puerta, otro"
       />
-      <FloatingLabelInput
-        id="postalCode"
-        value={formData.postalCode}
-        onChange={handleInputChange("postalCode")}
-        placeholder="Código Postal"
-      />
-      <FloatingLabelInput
-        id="city"
-        value={formData.city}
-        onChange={handleInputChange("city")}
-        placeholder="Ciudad"
-      />
-      <FloatingLabelInput
-        id="province"
-        value={formData.province}
-        onChange={handleInputChange("province")}
-        placeholder="Comunidad"
-      />
+      <div className="space-y-1.5">
+        <div className="relative">
+          <FloatingLabelInput
+            id="postalCode"
+            value={formData.postalCode}
+            onChange={handleInputChange("postalCode")}
+            placeholder="Código Postal"
+            className={getFieldDiscrepancy('postalCode') ? "border-amber-500 focus:border-amber-500 pr-8" : ""}
+          />
+          {getFieldDiscrepancy('postalCode') && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+            </div>
+          )}
+        </div>
+        {/* Field-level warning */}
+        {getFieldDiscrepancy('postalCode') && (
+          <div className="flex items-center gap-2 rounded bg-amber-50/50 px-2 py-1 text-xs border border-amber-200/50">
+            <span className="flex-1 text-amber-900">
+              <span className="font-medium">{getFieldDiscrepancy('postalCode')!.suggested}</span>
+            </span>
+            <button
+              type="button"
+              className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors"
+              onClick={() => applyFieldSuggestion('postalCode', getFieldDiscrepancy('postalCode')!.suggested)}
+            >
+              Aplicar
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="space-y-1.5">
+        <div className="relative">
+          <FloatingLabelInput
+            id="city"
+            value={formData.city}
+            onChange={handleInputChange("city")}
+            placeholder="Ciudad"
+            className={getFieldDiscrepancy('city') ? "border-amber-500 focus:border-amber-500 pr-8" : ""}
+          />
+          {getFieldDiscrepancy('city') && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+            </div>
+          )}
+        </div>
+        {/* Field-level warning */}
+        {getFieldDiscrepancy('city') && (
+          <div className="flex items-center gap-2 rounded bg-amber-50/50 px-2 py-1 text-xs border border-amber-200/50">
+            <span className="flex-1 text-amber-900">
+              <span className="font-medium">{getFieldDiscrepancy('city')!.suggested}</span>
+            </span>
+            <button
+              type="button"
+              className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors"
+              onClick={() => applyFieldSuggestion('city', getFieldDiscrepancy('city')!.suggested)}
+            >
+              Aplicar
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="space-y-1.5">
+        <div className="relative">
+          <FloatingLabelInput
+            id="province"
+            value={formData.province}
+            onChange={handleInputChange("province")}
+            placeholder="Comunidad"
+            className={getFieldDiscrepancy('province') ? "border-amber-500 focus:border-amber-500 pr-8" : ""}
+          />
+          {getFieldDiscrepancy('province') && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+            </div>
+          )}
+        </div>
+        {/* Field-level warning */}
+        {getFieldDiscrepancy('province') && (
+          <div className="flex items-center gap-2 rounded bg-amber-50/50 px-2 py-1 text-xs border border-amber-200/50">
+            <span className="flex-1 text-amber-900">
+              <span className="font-medium">{getFieldDiscrepancy('province')!.suggested}</span>
+            </span>
+            <button
+              type="button"
+              className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors"
+              onClick={() => applyFieldSuggestion('province', getFieldDiscrepancy('province')!.suggested)}
+            >
+              Aplicar
+            </button>
+          </div>
+        )}
+      </div>
       <FloatingLabelInput
         id="municipality"
         value={formData.municipality}
@@ -752,7 +923,19 @@ export default function ThirdPage({
         </button>
       </div>
 
-      {/* No error handling needed in local state approach */}
+      {/* Hidden input fields for coordinates */}
+      <input
+        type="hidden"
+        id="latitude"
+        value={latitude ?? ""}
+        readOnly
+      />
+      <input
+        type="hidden"
+        id="longitude"
+        value={longitude ?? ""}
+        readOnly
+      />
 
       {/* Navigation Buttons */}
       <motion.div

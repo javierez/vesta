@@ -346,6 +346,10 @@ export async function searchCadastralByCoordinates(params: {
   longitude: number;
 }): Promise<CadastralSearchResult[]> {
   try {
+    console.log("🔍 [searchCadastralByCoordinates] ========================================");
+    console.log("🔍 [searchCadastralByCoordinates] STARTING COORDINATE SEARCH");
+    console.log("🔍 [searchCadastralByCoordinates] ========================================");
+    console.log("📋 [searchCadastralByCoordinates] Input coordinates:", params);
 
     // Build the API URL for coordinate-based search
     const baseUrl = "https://ovc.catastro.meh.es/OVCServWeb/OVCWcfCallejero/COVCCoordenadas.svc/json/Consulta_RCCOOR";
@@ -359,6 +363,7 @@ export async function searchCadastralByCoordinates(params: {
 
     const apiUrl = `${baseUrl}?${queryParams.toString()}`;
 
+    console.log("📡 [searchCadastralByCoordinates] API URL:", apiUrl);
 
     const response = await fetch(apiUrl, {
       method: "GET",
@@ -368,18 +373,26 @@ export async function searchCadastralByCoordinates(params: {
       },
     });
 
+    console.log("📊 [searchCadastralByCoordinates] API Response status:", response.status, response.statusText);
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("❌ [searchCadastralByCoordinates] API returned error status:", response.status);
+      console.error("❌ [searchCadastralByCoordinates] Error response:", errorText);
       return [];
     }
 
     const responseText = await response.text();
 
+    console.log("📄 [searchCadastralByCoordinates] Raw response (first 500 chars):", responseText.substring(0, 500));
+
     let data: CadastralResponse;
     try {
       data = JSON.parse(responseText) as CadastralResponse;
+      console.log("✅ [searchCadastralByCoordinates] JSON parsed successfully");
     } catch (parseError) {
+      console.error("❌ [searchCadastralByCoordinates] JSON parse error:", parseError);
+      console.error("❌ [searchCadastralByCoordinates] Failed response text:", responseText);
       return [];
     }
 
@@ -388,16 +401,20 @@ export async function searchCadastralByCoordinates(params: {
 
     // Check if we have the coordinate-based response
     if (!data.Consulta_RCCOORResult?.coordenadas?.coord) {
+      console.warn("⚠️ [searchCadastralByCoordinates] No coordinate data found in response");
+      console.warn("⚠️ [searchCadastralByCoordinates] Response structure:", JSON.stringify(data, null, 2));
       return [];
     }
 
     const coordArray = data.Consulta_RCCOORResult.coordenadas.coord;
+    console.log(`📊 [searchCadastralByCoordinates] Found ${coordArray.length} cadastral references at coordinates`);
 
     // Process each property found at the coordinates
     for (let i = 0; i < coordArray.length; i++) {
       const coordItem = coordArray[i];
       if (!coordItem) continue;
 
+      console.log(`\n🔄 [searchCadastralByCoordinates] Processing item ${i + 1}/${coordArray.length}`);
 
       // Extract cadastral reference
       const cadastralReference = coordItem.pc.pc1 && coordItem.pc.pc2
@@ -408,9 +425,15 @@ export async function searchCadastralByCoordinates(params: {
       // Example: "CL VALLEHERMOSO 58 MADRID (MADRID)"
       const fullAddress = coordItem.ldt;
 
+      console.log(`   📋 Cadastral Reference (${cadastralReference.length} chars):`, cadastralReference);
+      console.log(`   📍 Full Address:`, fullAddress);
+
       // If RC is 14 chars, fetch detailed BI info for each dwelling in the parcel
       if (cadastralReference.length === 14) {
+        console.log(`   🔍 14-character parcel detected - expanding to individual dwellings...`);
         const dnpUrl = `https://ovc.catastro.meh.es/OVCServWeb/OVCWcfCallejero/COVCCallejero.svc/json/Consulta_DNPRC?RefCat=${cadastralReference}`;
+
+        console.log(`   📡 DNPRC expansion URL:`, dnpUrl);
 
         try {
           const dnpResp = await fetch(dnpUrl, {
@@ -421,6 +444,7 @@ export async function searchCadastralByCoordinates(params: {
             },
           });
 
+          console.log(`   📊 DNPRC Response status:`, dnpResp.status, dnpResp.statusText);
 
           if (dnpResp.ok) {
             const dnpResponseText = await dnpResp.text();
@@ -431,11 +455,14 @@ export async function searchCadastralByCoordinates(params: {
             let biList: BiUnit[] = [];
             if (dnpData?.consulta_dnprcResult?.lrcdnp?.rcdnp) {
               biList = dnpData.consulta_dnprcResult.lrcdnp.rcdnp;
+              console.log(`   ✅ Found ${biList.length} dwelling units (new format: lrcdnp.rcdnp)`);
             } else {
               const biArray = dnpData?.consulta_dnprcResult?.bico?.bi;
               biList = Array.isArray(biArray) ? biArray : biArray ? [biArray] : [];
+              console.log(`   ✅ Found ${biList.length} dwelling units (old format: bico.bi)`);
             }
 
+            console.log(`   🏠 Processing ${biList.length} individual dwellings...`);
 
             for (let j = 0; j < biList.length; j++) {
               const bi = biList[j];
@@ -495,6 +522,9 @@ export async function searchCadastralByCoordinates(params: {
             }
           } else {
             const errorText = await dnpResp.text();
+            console.warn(`   ⚠️ DNPRC expansion failed with status ${dnpResp.status}`);
+            console.warn(`   ⚠️ Error response:`, errorText);
+            console.warn(`   ⚠️ Falling back to parcel-level data`);
 
             // Fallback: add the parcel itself
             const addressRegex = /^(.+?)\s+(\d+)\s+(.+?)\s+\((.+?)\)$/;
@@ -530,6 +560,9 @@ export async function searchCadastralByCoordinates(params: {
             });
           }
         } catch (dnpError) {
+          console.error(`   ❌ DNPRC expansion error:`, dnpError);
+          console.error(`   ❌ Error type:`, dnpError instanceof Error ? dnpError.constructor.name : typeof dnpError);
+          console.error(`   ❌ Falling back to parcel-level data`);
 
           // Fallback: add the parcel itself
           const addressRegex2 = /^(.+?)\s+(\d+)\s+(.+?)\s+\((.+?)\)$/;
@@ -566,6 +599,7 @@ export async function searchCadastralByCoordinates(params: {
         }
       } else {
         // 20-character RCs: already individual units, no expansion needed
+        console.log(`   ✅ 20-character reference detected - no expansion needed`);
 
         // Parse the address string
         // Format: "STREET_TYPE STREET_NAME NUMBER MUNICIPALITY (PROVINCE)"
@@ -612,8 +646,23 @@ export async function searchCadastralByCoordinates(params: {
       }
     }
 
+    console.log("\n✅ [searchCadastralByCoordinates] ========================================");
+    console.log("✅ [searchCadastralByCoordinates] SEARCH COMPLETED SUCCESSFULLY");
+    console.log("✅ [searchCadastralByCoordinates] ========================================");
+    console.log(`✅ [searchCadastralByCoordinates] Total results: ${results.length} cadastral references`);
+
     return results;
   } catch (error) {
+    console.error("\n❌ [searchCadastralByCoordinates] ========================================");
+    console.error("❌ [searchCadastralByCoordinates] FATAL ERROR");
+    console.error("❌ [searchCadastralByCoordinates] ========================================");
+    console.error("❌ [searchCadastralByCoordinates] Error:", error);
+    console.error("❌ [searchCadastralByCoordinates] Error type:", error instanceof Error ? error.constructor.name : typeof error);
+    console.error("❌ [searchCadastralByCoordinates] Error message:", error instanceof Error ? error.message : String(error));
+    if (error instanceof Error && error.stack) {
+      console.error("❌ [searchCadastralByCoordinates] Stack trace:", error.stack);
+    }
+    console.error("❌ [searchCadastralByCoordinates] Returning empty array");
     return [];
   }
 }

@@ -13,6 +13,7 @@ interface FloatingLabelInputProps {
   type?: string;
   required?: boolean;
   name?: string;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
 }
 
 export function FloatingLabelInput({
@@ -25,6 +26,7 @@ export function FloatingLabelInput({
   type = "text",
   required = false,
   name,
+  onBlur,
 }: FloatingLabelInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const hasValue = value.length > 0;
@@ -60,7 +62,12 @@ export function FloatingLabelInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onBlur={(e) => {
+          setIsFocused(false);
+          if (onBlur) {
+            onBlur(e);
+          }
+        }}
         placeholder={shouldShowLabel ? "" : placeholder}
         disabled={disabled}
         required={required}
