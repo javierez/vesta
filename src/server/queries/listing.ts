@@ -979,7 +979,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         hasDressingRoom: sql<boolean>`NULL`, // Not in properties table
         
         // Materials from ninth page - Map form fields to database fields
-        floorMaterial: properties.mainFloorType, // Form uses floorMaterial, DB has mainFloorType
+        mainFloorType: properties.mainFloorType, // Database has mainFloorType column
         wallMaterial: sql<string>`NULL`, // Not in properties table
         kitchenMaterial: properties.kitchenType, // Form uses kitchenMaterial, DB has kitchenType
         bathroomMaterial: sql<string>`NULL`, // Not in properties table

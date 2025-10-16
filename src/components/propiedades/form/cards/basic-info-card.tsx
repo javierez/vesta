@@ -15,7 +15,6 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { Building2, ChevronDown } from "lucide-react";
-import Image from "next/image";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import { PropertyTitle } from "../common/property-title";
 import type { PropertyListing } from "~/types/property-listing";
@@ -35,10 +34,9 @@ interface BasicInfoCardProps {
   onUpdateModule: (hasChanges: boolean) => void;
   onToggleListingType: (type: string) => void;
   onHandleSecondaryListingType: (type: "RentWithOption" | "RoomSharing" | "Transfer") => void;
-  onPropertyTypeChange: (newType: string) => void;
+  onPropertyTypeChange: (newType: string) => Promise<void>;
   setIsBankOwned: (value: boolean) => void;
   setNewConstruction: (value: boolean) => void;
-  setIsCatastroPopupOpen: (value: boolean) => void;
   getCardStyles: (moduleName: string) => string;
 }
 
@@ -59,7 +57,6 @@ export function BasicInfoCard({
   onPropertyTypeChange,
   setIsBankOwned,
   setNewConstruction,
-  setIsCatastroPopupOpen,
   getCardStyles,
 }: BasicInfoCardProps) {
   const currentListingType = listingTypes[0] ?? "";
@@ -223,8 +220,8 @@ export function BasicInfoCard({
           </Label>
           <Select
             value={propertyType}
-            onValueChange={(value) => {
-              onPropertyTypeChange(value);
+            onValueChange={async (value) => {
+              await onPropertyTypeChange(value);
               onUpdateModule(true);
             }}
           >
@@ -341,35 +338,6 @@ export function BasicInfoCard({
             step="1"
             onChange={() => onUpdateModule(true)}
           />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="cadastralReference" className="text-sm">
-            Referencia Catastral
-          </Label>
-          <div className="flex gap-2">
-            <Input
-              id="cadastralReference"
-              type="text"
-              defaultValue={listing.cadastralReference}
-              className="h-8 text-gray-500"
-              onChange={() => onUpdateModule(true)}
-            />
-            {listing.cadastralReference && (
-              <button
-                onClick={() => setIsCatastroPopupOpen(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
-              >
-                <Image
-                  src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
-                  alt="Catastro"
-                  width={20}
-                  height={20}
-                  className="object-contain"
-                />
-              </button>
-            )}
-          </div>
         </div>
 
         <div className="my-2 border-t border-border" />

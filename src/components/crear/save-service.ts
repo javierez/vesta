@@ -140,7 +140,7 @@ export class FormSaveService {
           livingRoomSize: formData.livingRoomSize,
 
           // Materials from nineth page
-          mainFloorType: formData.mainFloorType ?? formData.floorMaterial, // Use mainFloorType or map from floorMaterial
+          mainFloorType: formData.mainFloorType, // Database column matches form field
           // wallMaterial: formData.wallMaterial, // No DB column
           kitchenType: formData.kitchenMaterial, // Map kitchenMaterial to kitchenType (though it's more about appliance type)
           // bathroomMaterial: formData.bathroomMaterial, // No DB column

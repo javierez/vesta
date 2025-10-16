@@ -117,7 +117,7 @@ interface ListingDetailsData {
   hasDressingRoom?: boolean | null;
   
   // Materials
-  floorMaterial?: string | null;
+  mainFloorType?: string | null;
   wallMaterial?: string | null;
   kitchenMaterial?: string | null;
   bathroomMaterial?: string | null;
@@ -230,7 +230,7 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     hasDressingRoom: listingDetails.hasDressingRoom ?? false,
     
     // Page 9 - Materials
-    floorMaterial: listingDetails.floorMaterial ?? "",
+    mainFloorType: listingDetails.mainFloorType ?? "",
     wallMaterial: listingDetails.wallMaterial ?? "",
     kitchenMaterial: listingDetails.kitchenMaterial ?? "",
     bathroomMaterial: listingDetails.bathroomMaterial ?? "",

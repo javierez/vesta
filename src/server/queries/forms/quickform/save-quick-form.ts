@@ -146,7 +146,7 @@ export async function saveQuickFormData(
         livingRoomSize: formData.livingRoomSize,
 
         // Materials from nineth page
-        mainFloorType: formData.mainFloorType ?? formData.floorMaterial, // Use mainFloorType or map from floorMaterial
+        mainFloorType: formData.mainFloorType, // Database column matches form field
         kitchenType: formData.kitchenMaterial, // Map kitchenMaterial to kitchenType (though it's more about appliance type)
         shutterType: formData.shutterType,
         carpentryType: formData.carpentryType,

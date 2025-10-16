@@ -137,7 +137,6 @@ export interface CompleteFormData {
   livingRoomSize?: number;
 
   // Page 9 - Materials & Finishes
-  floorMaterial?: string;
   wallMaterial?: string;
   kitchenMaterial?: string;
   bathroomMaterial?: string;
