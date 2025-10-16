@@ -39,6 +39,11 @@ interface PortalSelectionProps {
   idealista?: boolean;
   habitaclia?: boolean;
   milanuncios?: boolean;
+  // Portal props from database (JSON columns)
+  fotocasaProps?: { visibilityMode?: number; hidePrice?: boolean };
+  idealistaProps?: Record<string, unknown>;
+  habitacliaProps?: Record<string, unknown>;
+  milanunciosProps?: Record<string, unknown>;
   // Initial state from parent for persistence across tab switches
   initialPlatformStates?: Record<string, boolean>;
   initialVisibilityModes?: Record<string, number>;
@@ -92,6 +97,10 @@ export function PortalSelection({
   idealista = false,
   habitaclia = false,
   milanuncios = false,
+  fotocasaProps,
+  idealistaProps,
+  habitacliaProps,
+  milanunciosProps,
   initialPlatformStates,
   initialVisibilityModes,
   initialHidePriceModes,
@@ -107,12 +116,12 @@ export function PortalSelection({
     Record<string, number>
   >(
     initialVisibilityModes ?? {
-      fotocasa: 1, // Default to Exact
+      fotocasa: fotocasaProps?.visibilityMode ?? 1, // Use database value or default to Exact
     }
   );
   const [hidePriceModes, setHidePriceModes] = useState<Record<string, boolean>>(
     initialHidePriceModes ?? {
-      fotocasa: false, // Default to show price
+      fotocasa: fotocasaProps?.hidePrice ?? false, // Use database value or default to show price
     }
   );
   const [refreshingPlatforms, setRefreshingPlatforms] = useState<
@@ -224,6 +233,14 @@ export function PortalSelection({
           platforms.find((p) => p.id === "habitaclia")?.isActive ?? false,
         milanuncios:
           platforms.find((p) => p.id === "milanuncios")?.isActive ?? false,
+        // Save portal-specific configuration props
+        fotocasaProps: {
+          visibilityMode: visibilityModes.fotocasa ?? 1,
+          hidePrice: hidePriceModes.fotocasa ?? false,
+        },
+        idealistaProps: {}, // Placeholder for future Idealista settings
+        habitacliaProps: {}, // Placeholder for future Habitaclia settings
+        milanunciosProps: {}, // Placeholder for future Milanuncios settings
       };
 
       // Update the listing with the new portal values

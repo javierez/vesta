@@ -75,6 +75,10 @@ interface PropertyTabsProps {
     idealista?: boolean | null;
     habitaclia?: boolean | null;
     milanuncios?: boolean | null;
+    fotocasaProps?: { visibilityMode?: number; hidePrice?: boolean } | null;
+    idealistaProps?: Record<string, unknown> | null;
+    habitacliaProps?: Record<string, unknown> | null;
+    milanunciosProps?: Record<string, unknown> | null;
     energyCertification?: string | null;
     agentId?: string | null; // Changed from bigint to match users.id type
   };
@@ -555,6 +559,10 @@ export function PropertyTabs({
             idealista={listing.idealista ?? undefined}
             habitaclia={listing.habitaclia ?? undefined}
             milanuncios={listing.milanuncios ?? undefined}
+            fotocasaProps={listing.fotocasaProps ?? undefined}
+            idealistaProps={listing.idealistaProps ?? undefined}
+            habitacliaProps={listing.habitacliaProps ?? undefined}
+            milanunciosProps={listing.milanunciosProps ?? undefined}
             initialPlatformStates={tabData.portals?.platformStates}
             initialVisibilityModes={tabData.portals?.visibilityModes}
             initialHidePriceModes={tabData.portals?.hidePriceModes}

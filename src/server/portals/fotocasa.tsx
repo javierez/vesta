@@ -713,10 +713,10 @@ export async function buildFotocasaPayload(
       });
     }
 
-    // Garden (FeatureId: 263)
+    // Private Garden (FeatureId: 298) - using garden field
     if (listing.garden !== null) {
       propertyFeatures.push({
-        FeatureId: 263,
+        FeatureId: 298,
         BoolValue: listing.garden ?? false,
       });
     }
@@ -739,6 +739,92 @@ export async function buildFotocasaPayload(
           DecimalValue: orientationId,
         });
       }
+    }
+
+    // --- QUICK WIN ADDITIONS ---
+
+    // Terrace (FeatureId: 27)
+    if ('terrace' in listing && typeof (listing as Record<string, unknown>).terrace === 'boolean') {
+      propertyFeatures.push({
+        FeatureId: 27,
+        BoolValue: (listing as Record<string, unknown>).terrace as boolean,
+      });
+    }
+
+    // Terrace surface (FeatureId: 62)
+    if ('terraceSize' in listing && (listing as Record<string, unknown>).terraceSize) {
+      propertyFeatures.push({
+        FeatureId: 62,
+        DecimalValue: Number((listing as Record<string, unknown>).terraceSize),
+      });
+    }
+
+    // Has heating (FeatureId: 29)
+    if ('hasHeating' in listing && typeof (listing as Record<string, unknown>).hasHeating === 'boolean') {
+      propertyFeatures.push({
+        FeatureId: 29,
+        BoolValue: (listing as Record<string, unknown>).hasHeating as boolean,
+      });
+    }
+
+    // Sauna (FeatureId: 277)
+    if ('sauna' in listing && typeof (listing as Record<string, unknown>).sauna === 'boolean') {
+      propertyFeatures.push({
+        FeatureId: 277,
+        BoolValue: (listing as Record<string, unknown>).sauna as boolean,
+      });
+    }
+
+    // Balcony (FeatureId: 297) - convert balconyCount to boolean
+    if ('balconyCount' in listing && (listing as Record<string, unknown>).balconyCount !== null) {
+      const balconyCount = Number((listing as Record<string, unknown>).balconyCount);
+      propertyFeatures.push({
+        FeatureId: 297,
+        BoolValue: balconyCount > 0,
+      });
+    }
+
+    // Land area (FeatureId: 69) - using builtSurfaceArea
+    if ('builtSurfaceArea' in listing && (listing as Record<string, unknown>).builtSurfaceArea) {
+      propertyFeatures.push({
+        FeatureId: 69,
+        DecimalValue: Number((listing as Record<string, unknown>).builtSurfaceArea),
+      });
+    }
+
+    // Air conditioner (FeatureId: 254) - convert airConditioningType to boolean
+    if ('airConditioningType' in listing) {
+      const airCondType = (listing as Record<string, unknown>).airConditioningType;
+      const hasAirConditioning = airCondType !== null && airCondType !== undefined && String(airCondType).trim() !== '';
+      propertyFeatures.push({
+        FeatureId: 254,
+        BoolValue: hasAirConditioning,
+      });
+    }
+
+    // Surveillance system/Alarm (FeatureId: 272) - using alarm field
+    if ('alarm' in listing && typeof (listing as Record<string, unknown>).alarm === 'boolean') {
+      propertyFeatures.push({
+        FeatureId: 272,
+        BoolValue: (listing as Record<string, unknown>).alarm as boolean,
+      });
+    }
+
+    // Office kitchen (FeatureId: 289) - using furnishedKitchen as proxy
+    if (listing.furnishedKitchen !== null) {
+      propertyFeatures.push({
+        FeatureId: 289,
+        BoolValue: listing.furnishedKitchen ?? false,
+      });
+    }
+
+    // Parquet (FeatureId: 290) - check if mainFloorType is parquet
+    if ('mainFloorType' in listing && (listing as Record<string, unknown>).mainFloorType) {
+      const floorType = String((listing as Record<string, unknown>).mainFloorType).toLowerCase();
+      propertyFeatures.push({
+        FeatureId: 290,
+        BoolValue: floorType === 'parquet',
+      });
     }
 
     // --- ADDITIONAL PROPERTY FIELDS (Conservation, Energy Certificate, etc.) ---

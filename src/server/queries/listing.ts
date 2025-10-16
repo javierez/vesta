@@ -1541,6 +1541,10 @@ export async function getListingTabsData(listingId: number) {
         idealista: listings.idealista,
         habitaclia: listings.habitaclia,
         milanuncios: listings.milanuncios,
+        fotocasaProps: listings.fotocasaProps,
+        idealistaProps: listings.idealistaProps,
+        habitacliaProps: listings.habitacliaProps,
+        milanunciosProps: listings.milanunciosProps,
         energyCertification: properties.energyCertification,
         agentId: listings.agentId,
       })
