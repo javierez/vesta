@@ -60,7 +60,17 @@ export function PropertySummaryCard({
   const isGarageOrSolar = propertyType === "garaje" || propertyType === "solar";
   const shouldShowBedsAndBaths = !isGarageOrSolar;
   const isLocal = propertyType === "local";
-  const areaValue = isGarageOrSolar ? listing.builtSurfaceArea : listing.squareMeter;
+  const rawAreaValue = isGarageOrSolar ? listing.builtSurfaceArea : listing.squareMeter;
+  const areaValue = propertyType === "solar" && rawAreaValue != null
+    ? Math.round(rawAreaValue)
+    : rawAreaValue;
+
+  // Format area with thousand separators (e.g., 1000 -> "1.000")
+  const formatAreaDisplay = (value: number | null | undefined): string => {
+    if (value == null) return '-';
+    const numValue = Math.round(value);
+    return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
 
   const handleOwnerClick = () => {
     if (selectedOwnerIds.length > 0) {
@@ -110,9 +120,9 @@ export function PropertySummaryCard({
               </div>
               <div className="flex items-baseline gap-1">
                 <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
-                  {areaValue ?? '-'}
+                  {formatAreaDisplay(areaValue)}
                 </p>
-                {areaValue && (
+                {areaValue != null && (
                   <p className="text-xs text-gray-500">m²</p>
                 )}
               </div>

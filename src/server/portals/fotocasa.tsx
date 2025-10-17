@@ -1,6 +1,6 @@
 "use server";
 
-import { getListingDetailsWithAuth } from "../queries/listing";
+import { getListingDetailsWithAuth, updateListing } from "../queries/listing";
 import {
   getPropertyImages,
   getPropertyVideos,
@@ -1111,6 +1111,15 @@ export async function publishToFotocasa(
       // Log successful request
       await logPublishRequest(listingId, payload, responseData, true);
 
+      // Update database to set fotocasa = true ONLY on successful API response
+      try {
+        await updateListing(listingId, Number(accountId), { fotocasa: true });
+        console.log(`Successfully updated database: listings.fotocasa = true for listing ${listingId}`);
+      } catch (dbError) {
+        console.error("Error updating database after successful Fotocasa publish:", dbError);
+        // Log but don't fail the operation - the ad is already published on Fotocasa
+      }
+
       // Clean up watermarked images after successful upload
       if (watermarkedKeys.length > 0) {
         try {
@@ -1237,6 +1246,16 @@ export async function updateFotocasa(
       // Log successful update
       await logUpdateRequest(listingId, payload, responseData, true);
 
+      // Ensure database is set to fotocasa = true after successful update
+      // (It should already be true, but this ensures consistency)
+      try {
+        await updateListing(listingId, Number(accountId), { fotocasa: true });
+        console.log(`Successfully confirmed database: listings.fotocasa = true for listing ${listingId}`);
+      } catch (dbError) {
+        console.error("Error confirming database after successful Fotocasa update:", dbError);
+        // Log but don't fail the operation - the ad is already updated on Fotocasa
+      }
+
       // Clean up watermarked images after successful update
       if (watermarkedKeys.length > 0) {
         try {
@@ -1350,6 +1369,15 @@ export async function deleteFromFotocasa(
         { status: response.status },
         true,
       );
+
+      // Update database to set fotocasa = false ONLY on successful API response
+      try {
+        await updateListing(listingId, Number(accountId), { fotocasa: false });
+        console.log(`Successfully updated database: listings.fotocasa = false for listing ${listingId}`);
+      } catch (dbError) {
+        console.error("Error updating database after successful Fotocasa delete:", dbError);
+        // Log but don't fail the operation - the ad is already deleted from Fotocasa
+      }
 
       return {
         success: true,

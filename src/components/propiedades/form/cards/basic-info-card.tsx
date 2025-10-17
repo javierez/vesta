@@ -1,6 +1,6 @@
 
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -13,7 +13,7 @@ import {
 } from "~/components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn, formFormatters } from "~/lib/utils";
 import { Building2, ChevronDown } from "lucide-react";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import { PropertyTitle } from "../common/property-title";
@@ -60,6 +60,34 @@ export function BasicInfoCard({
   getCardStyles,
 }: BasicInfoCardProps) {
   const currentListingType = listingTypes[0] ?? "";
+
+  // Local state for the displayed (formatted) price
+  const [displayPrice, setDisplayPrice] = useState(() =>
+    formFormatters.formatPriceInput(listing.price ? parseFloat(listing.price.toString()) : 0)
+  );
+
+  // Sync display price when listing.price changes externally
+  useEffect(() => {
+    setDisplayPrice(formFormatters.formatPriceInput(listing.price ? parseFloat(listing.price.toString()) : 0));
+  }, [listing.price]);
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+
+    // Update display immediately with user input (allows typing)
+    setDisplayPrice(inputValue);
+
+    // Parse and save the numeric value (preserving decimals)
+    const numeric = formFormatters.getNumericPrice(inputValue);
+    listing.price = parseFloat(numeric) || 0;
+    onUpdateModule(true);
+  };
+
+  const handlePriceBlur = () => {
+    // Reformat on blur to ensure proper formatting (preserving decimals)
+    const formattedPrice = formFormatters.formatPriceInput(listing.price ? parseFloat(listing.price.toString()) : 0);
+    setDisplayPrice(formattedPrice);
+  };
 
   return (
     <Card
@@ -325,18 +353,16 @@ export function BasicInfoCard({
 
         <div className="space-y-1.5">
           <Label htmlFor="price" className="text-sm">
-            Precio
+            Precio (€)
           </Label>
           <Input
             id="price"
-            type="number"
-            defaultValue={
-              listing.price ? parseInt(listing.price.toString()) : undefined
-            }
+            type="text"
+            value={displayPrice}
             className="h-8 text-gray-500"
-            min="0"
-            step="1"
-            onChange={() => onUpdateModule(true)}
+            onChange={handlePriceChange}
+            onBlur={handlePriceBlur}
+            placeholder="0"
           />
         </div>
 

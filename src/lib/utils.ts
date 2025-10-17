@@ -23,22 +23,27 @@ export function formatPrice(price: string | number): string {
 
 // Form input formatting utilities
 export const formFormatters = {
-  // Format price for form inputs with thousand separators
+  // Format price for form inputs with thousand separators (preserves decimals)
   formatPriceInput: (value: string | number): string => {
-    if (!value) return "";
-    const numericValue =
-      typeof value === "string"
-        ? value.replace(/[^\d]/g, "")
-        : value.toString();
-    if (!numericValue) return "";
-    // Add thousand separators with dots
-    const formatted = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return formatted;
+    if (!value && value !== 0) return "";
+
+    // Convert to number, preserving decimals
+    const numValue = typeof value === "string" ? parseFloat(value) : value;
+    if (isNaN(numValue)) return "";
+
+    // Format with thousand separators using Spanish locale
+    // This will show decimals only if they exist and are non-zero
+    return new Intl.NumberFormat("es-ES", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(numValue);
   },
 
-  // Get numeric value from formatted price
+  // Get numeric value from formatted price (preserves decimals)
   getNumericPrice: (formattedValue: string): string => {
-    return formattedValue.replace(/[^\d]/g, "");
+    // Remove thousand separators (dots) but keep decimal separator (comma)
+    // Then convert comma to dot for parseFloat compatibility
+    return formattedValue.replace(/\./g, "").replace(/,/g, ".");
   },
 
   // Format area measurements (without m² symbol - add it in the label instead)
@@ -81,12 +86,12 @@ export const formFormatters = {
       setValue(numericValue ? parseInt(numericValue) : 0);
     },
 
-  // Handle numeric price input change (for number fields)
+  // Handle numeric price input change (for number fields, preserves decimals)
   handleNumericPriceInputChange:
     (setValue: (value: number) => void) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const numericValue = formFormatters.getNumericPrice(e.target.value);
-      setValue(numericValue ? parseInt(numericValue) : 0);
+      setValue(numericValue ? parseFloat(numericValue) : 0);
     },
 
   // Handle number input with leading zero removal

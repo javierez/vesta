@@ -80,7 +80,7 @@ interface FeaturesCardProps {
 }
 
 export function FeaturesCard({
-  listing,
+  listing: _listing,
   propertyType,
   hasElevator,
   isFurnished,

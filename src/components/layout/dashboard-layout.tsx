@@ -12,6 +12,7 @@ import { FeedbackModal } from "~/components/feedback/feedback-modal";
 import { getAccountDetailsAction, getCurrentUserAccountId } from "~/app/actions/account-settings";
 import { AccountSetupRedirect } from "~/components/auth/account-setup-redirect";
 import OnboardingModal from "~/components/onboarding/onboarding-modal";
+import { Toaster } from "sonner";
 import {
   Building2,
   Users,
@@ -230,12 +231,12 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
           <div className="flex h-16 items-center justify-between px-4 mt-6">
             <div className="flex items-center ml-12">
-              <Image 
-                src={accountLogo ?? "/vestazoomin.jpeg"} 
-                alt="Vesta CRM Logo" 
-                width={140} 
-                height={64} 
-                className="h-16 w-auto max-w-36"
+              <Image
+                src={accountLogo ?? "/vestazoomin.jpeg"}
+                alt="Vesta CRM Logo"
+                width={834}
+                height={187}
+                className="h-10 w-auto"
               />
             </div>
             <Button
@@ -482,13 +483,13 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex min-h-0 flex-1 flex-col border-r border-gray-200 bg-white">
           <div className="flex h-16 items-center px-4 mt-4">
-            <div className="flex items-center ml-12">
-              <Image 
-                src={accountLogo ?? "/vestazoomin.jpeg"} 
-                alt="Vesta CRM Logo" 
-                width={150} 
-                height={68} 
-                className="h-16 w-auto max-w-42"
+            <div className="flex items-center">
+              <Image
+                src={accountLogo ?? "/vestazoomin.jpeg"}
+                alt="Vesta CRM Logo"
+                width={834}
+                height={187}
+                className="h-10 w-auto"
               />
             </div>
           </div>
@@ -751,6 +752,9 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
           setShowOnboarding(false);
         }}
       />
+
+      {/* Toast Notifications */}
+      <Toaster position="top-right" richColors />
     </div>
   );
 };

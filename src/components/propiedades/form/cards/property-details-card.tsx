@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -48,6 +48,59 @@ export function PropertyDetailsCard({
   setBuildingFloors,
   getCardStyles,
 }: PropertyDetailsCardProps) {
+  // Format area with thousand separators
+  const formatArea = (value: number | null | undefined): string => {
+    if (value == null || value === 0) return "";
+    const numValue = Math.round(value);
+    return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  // Parse formatted area back to number (returns null for empty/invalid values)
+  const parseArea = (value: string): number | null => {
+    const numeric = value.replace(/\./g, "").trim();
+    if (numeric === "") return null;
+    const parsed = parseInt(numeric);
+    return isNaN(parsed) ? null : parsed;
+  };
+
+  // Local state for formatted surface values
+  const [squareMeterDisplay, setSquareMeterDisplay] = useState(formatArea(listing.squareMeter));
+  const [builtSurfaceDisplay, setBuiltSurfaceDisplay] = useState(
+    formatArea(listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null)
+  );
+
+  // Update display values when listing changes
+  useEffect(() => {
+    setSquareMeterDisplay(formatArea(listing.squareMeter));
+    setBuiltSurfaceDisplay(formatArea(listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null));
+  }, [listing.squareMeter, listing.builtSurfaceArea]);
+
+  const handleSquareMeterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSquareMeterDisplay(value);
+    const numeric = parseArea(value);
+    listing.squareMeter = numeric ?? undefined;
+    onUpdateModule(true);
+  };
+
+  const handleBuiltSurfaceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setBuiltSurfaceDisplay(value);
+    const numeric = parseArea(value);
+    listing.builtSurfaceArea = numeric ?? undefined;
+    onUpdateModule(true);
+  };
+
+  const handleSquareMeterBlur = () => {
+    // Reformat on blur to ensure consistent formatting
+    setSquareMeterDisplay(formatArea(listing.squareMeter));
+  };
+
+  const handleBuiltSurfaceBlur = () => {
+    // Reformat on blur to ensure consistent formatting
+    setBuiltSurfaceDisplay(formatArea(listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null));
+  };
+
   return (
     <Card
       className={cn(
@@ -124,10 +177,12 @@ export function PropertyDetailsCard({
               </Label>
               <Input
                 id="squareMeter"
-                type="number"
-                defaultValue={listing.squareMeter}
+                type="text"
+                value={squareMeterDisplay}
                 className="h-8 text-gray-500"
-                onChange={() => onUpdateModule(true)}
+                onChange={handleSquareMeterChange}
+                onBlur={handleSquareMeterBlur}
+                placeholder="-"
               />
             </div>
             <div className="space-y-1.5">
@@ -136,16 +191,12 @@ export function PropertyDetailsCard({
               </Label>
               <Input
                 id="builtSurfaceArea"
-                type="number"
-                defaultValue={
-                  listing.builtSurfaceArea
-                    ? Math.round(listing.builtSurfaceArea)
-                    : undefined
-                }
+                type="text"
+                value={builtSurfaceDisplay}
                 className="h-8 text-gray-500"
-                min="0"
-                step="1"
-                onChange={() => onUpdateModule(true)}
+                onChange={handleBuiltSurfaceChange}
+                onBlur={handleBuiltSurfaceBlur}
+                placeholder="-"
               />
             </div>
           </div>

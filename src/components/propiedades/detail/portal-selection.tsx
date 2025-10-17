@@ -213,6 +213,8 @@ export function PortalSelection({
 
     setPlatforms(updatedPlatforms);
     onPlatformsChange?.(updatedPlatforms);
+
+    // Set unsaved changes for all portal toggles (enabling or disabling)
     setHasUnsavedChanges(true);
 
     // Notify parent component to persist platform toggle states
@@ -227,9 +229,63 @@ export function PortalSelection({
     setIsLoading(true);
 
     try {
-      // Prepare the portal field updates based on current platform states
+      const currentFotocasaState = platforms.find((p) => p.id === "fotocasa")?.isActive ?? false;
+
+      // Debug logging
+      console.log("=== handleConfirmChanges DEBUG ===");
+      console.log("currentFotocasaState (from UI toggle):", currentFotocasaState);
+      console.log("fotocasa prop (from database):", fotocasa);
+      console.log("Condition for POST (currentFotocasaState && !fotocasa):", currentFotocasaState && !fotocasa);
+      console.log("Condition for DELETE (!currentFotocasaState && fotocasa):", !currentFotocasaState && fotocasa);
+
+      // Track if Fotocasa API call was successful
+      let fotocasaApiSuccess = true;
+
+      // Determine the operation based on current vs previous state
+      if (currentFotocasaState && !fotocasa) {
+        // fotocasa = 0, toggled ON → POST (publish)
+        console.log("✅ Publishing to Fotocasa (POST)...");
+        try {
+          const fotocasaResult = await publishToFotocasa(
+            Number(listingId),
+            visibilityModes.fotocasa ?? 1,
+            hidePriceModes.fotocasa ?? false,
+          );
+          if (fotocasaResult.success) {
+            console.log("Successfully published to Fotocasa");
+            toast.success("Correctamente subido a Fotocasa");
+          } else {
+            console.error("Failed to publish to Fotocasa:", fotocasaResult.error);
+            toast.error(`Error al publicar en Fotocasa: ${fotocasaResult.error}`);
+            fotocasaApiSuccess = false;
+          }
+        } catch (error) {
+          console.error("Error calling Fotocasa API:", error);
+          toast.error("Error al conectar con Fotocasa");
+          fotocasaApiSuccess = false;
+        }
+      } else if (!currentFotocasaState && fotocasa) {
+        // fotocasa = 1, toggled OFF → DELETE (unpublish)
+        console.log("Deleting from Fotocasa (DELETE)...");
+        try {
+          const fotocasaResult = await deleteFromFotocasa(Number(listingId));
+          if (fotocasaResult.success) {
+            console.log("Successfully deleted from Fotocasa");
+            toast.success("Borrado correctamente de Fotocasa");
+          } else {
+            console.error("Failed to delete from Fotocasa:", fotocasaResult.error);
+            toast.error(`Error al eliminar de Fotocasa: ${fotocasaResult.error}`);
+            fotocasaApiSuccess = false;
+          }
+        } catch (error) {
+          console.error("Error calling Fotocasa delete API:", error);
+          toast.error("Error al conectar con Fotocasa para eliminar");
+          fotocasaApiSuccess = false;
+        }
+      }
+
+      // Update database with portal configuration (excluding fotocasa status - handled by API)
       const portalUpdates = {
-        fotocasa: platforms.find((p) => p.id === "fotocasa")?.isActive ?? false,
         idealista:
           platforms.find((p) => p.id === "idealista")?.isActive ?? false,
         habitaclia:
@@ -246,90 +302,29 @@ export function PortalSelection({
         milanunciosProps: {}, // Placeholder for future Milanuncios settings
       };
 
-      // Update the listing with the new portal values
+      // Update the listing with the new portal values (except fotocasa, handled by API)
       await updateListingWithAuth(Number(listingId), portalUpdates);
 
-      // Get the previous states to check what changed
-      const previousFotocasaState = savedPlatformStates.fotocasa;
-      const currentFotocasaState = portalUpdates.fotocasa;
-
-      // Call portal-specific actions based on state changes
-      if (currentFotocasaState && !previousFotocasaState) {
-        // Fotocasa is being enabled - publish to Fotocasa
-        console.log("Publishing to Fotocasa...");
-        try {
-          const fotocasaResult = await publishToFotocasa(
-            Number(listingId),
-            visibilityModes.fotocasa ?? 1,
-            hidePriceModes.fotocasa ?? false,
-          );
-          if (fotocasaResult.success) {
-            console.log("Successfully published to Fotocasa");
-          } else {
-            console.error(
-              "Failed to publish to Fotocasa:",
-              fotocasaResult.error,
-            );
-            toast.error("Error al publicar en Fotocasa");
-          }
-        } catch (error) {
-          console.error("Error calling Fotocasa API:", error);
-          toast.error("Error al conectar con Fotocasa");
-        }
-      } else if (currentFotocasaState && previousFotocasaState) {
-        // Fotocasa is already active - check if settings changed and update if needed
-        const currentVisibilityMode = visibilityModes.fotocasa ?? 1;
-        const currentHidePrice = hidePriceModes.fotocasa ?? false;
-
-        // For now, we'll always update when Fotocasa is active and settings might have changed
-        // In a more sophisticated implementation, you'd compare with previous settings
-        console.log("Updating Fotocasa settings...");
-        try {
-          const fotocasaResult = await updateFotocasa(
-            Number(listingId),
-            currentVisibilityMode,
-            currentHidePrice,
-          );
-          if (fotocasaResult.success) {
-            console.log("Successfully updated Fotocasa");
-          } else {
-            console.error("Failed to update Fotocasa:", fotocasaResult.error);
-            toast.error("Error al actualizar Fotocasa");
-          }
-        } catch (error) {
-          console.error("Error calling Fotocasa update API:", error);
-          toast.error("Error al conectar con Fotocasa para actualizar");
-        }
-      } else if (!currentFotocasaState && previousFotocasaState) {
-        // Fotocasa is being disabled - delete from Fotocasa
-        console.log("Deleting from Fotocasa...");
-        try {
-          const fotocasaResult = await deleteFromFotocasa(Number(listingId));
-          if (fotocasaResult.success) {
-            console.log("Successfully deleted from Fotocasa");
-          } else {
-            console.error(
-              "Failed to delete from Fotocasa:",
-              fotocasaResult.error,
-            );
-            toast.error("Error al eliminar de Fotocasa");
-          }
-        } catch (error) {
-          console.error("Error calling Fotocasa delete API:", error);
-          toast.error("Error al conectar con Fotocasa para eliminar");
-        }
-      }
-
       // Update local state to reflect the confirmed changes
-      const updatedPlatforms: Platform[] = platforms.map((platform) => ({
-        ...platform,
-        status: platform.isActive ? ("active" as const) : ("inactive" as const),
-      }));
+      const updatedPlatforms: Platform[] = platforms.map((platform) => {
+        if (platform.id === "fotocasa" && !fotocasaApiSuccess) {
+          // Revert Fotocasa to previous state on failure
+          return {
+            ...platform,
+            isActive: fotocasa,
+            status: fotocasa ? ("active" as const) : ("inactive" as const),
+          };
+        }
+        return {
+          ...platform,
+          status: platform.isActive ? ("active" as const) : ("inactive" as const),
+        };
+      });
 
       setPlatforms(updatedPlatforms);
       setHasUnsavedChanges(false);
       setSavedPlatformStates(
-        platforms.reduce(
+        updatedPlatforms.reduce(
           (acc, platform) => ({
             ...acc,
             [platform.id]: platform.isActive,
@@ -338,7 +333,10 @@ export function PortalSelection({
         ),
       );
 
-      toast.success("Configuración de portales actualizada correctamente");
+      // Don't show generic success message - already shown specific operation message above
+      if (!fotocasaApiSuccess) {
+        toast.warning("Configuración guardada con errores en Fotocasa");
+      }
     } catch (error) {
       console.error("Error updating portal configuration:", error);
       toast.error("Error al actualizar la configuración de portales");
@@ -360,7 +358,8 @@ export function PortalSelection({
         : platform,
     );
     setPlatforms(updatedPlatforms);
-    setHasUnsavedChanges(true);
+
+    // Don't set unsaved changes - settings changes are handled via refresh button
 
     // Notify parent component to persist state
     const platformStates = updatedPlatforms.reduce(
@@ -381,7 +380,8 @@ export function PortalSelection({
       platform.id === platformId ? { ...platform, hidePrice } : platform,
     );
     setPlatforms(updatedPlatforms);
-    setHasUnsavedChanges(true);
+
+    // Don't set unsaved changes - settings changes are handled via refresh button
 
     // Notify parent component to persist state
     const platformStates = updatedPlatforms.reduce(
@@ -392,8 +392,14 @@ export function PortalSelection({
   };
 
   const handleRefresh = async (platformId: string) => {
-    // Only allow refresh if platform is active
+    // Only allow refresh for published Fotocasa listings (fotocasa = 1)
     const platform = platforms.find((p) => p.id === platformId);
+
+    if (platformId === "fotocasa" && !fotocasa) {
+      toast.error("Fotocasa no está publicado. Usa el botón Confirmar para publicar.");
+      return;
+    }
+
     if (!platform?.isActive) {
       toast.error(`${platform?.name} no está activo`);
       return;
@@ -403,7 +409,7 @@ export function PortalSelection({
 
     try {
       if (platformId === "fotocasa") {
-        console.log(`Refreshing ${platformId}...`);
+        console.log(`Updating Fotocasa with current settings (PUT operation)...`);
         const result = await updateFotocasa(
           Number(listingId),
           visibilityModes.fotocasa ?? 1,
@@ -411,8 +417,8 @@ export function PortalSelection({
         );
 
         if (result.success) {
-          console.log(`Successfully refreshed ${platformId}`);
-          toast.success(`${platform.name} actualizado correctamente`);
+          console.log(`Successfully updated ${platformId}`);
+          toast.success("Correctamente actualizado en Fotocasa");
 
           // Update platform status to active
           const updatedPlatforms = platforms.map((p) =>
@@ -421,8 +427,16 @@ export function PortalSelection({
               : p,
           );
           setPlatforms(updatedPlatforms);
+
+          // Update fotocasaProps in database with new settings
+          await updateListingWithAuth(Number(listingId), {
+            fotocasaProps: {
+              visibilityMode: visibilityModes.fotocasa ?? 1,
+              hidePrice: hidePriceModes.fotocasa ?? false,
+            },
+          } as Parameters<typeof updateListingWithAuth>[1]);
         } else {
-          console.error(`Failed to refresh ${platformId}:`, result.error);
+          console.error(`Failed to update ${platformId}:`, result.error);
           toast.error(`Error al actualizar ${platform.name}: ${result.error}`);
 
           // Update platform status to error
@@ -649,7 +663,7 @@ export function PortalSelection({
         ))}
       </motion.div>
 
-      {/* Confirm Button for Pending Platforms */}
+      {/* Confirm Button for Any Unsaved Changes */}
       <AnimatePresence>
         {hasUnsavedChanges && (
           <motion.div
