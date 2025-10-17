@@ -795,7 +795,8 @@ export async function buildFotocasaPayload(
     // Air conditioner (FeatureId: 254) - convert airConditioningType to boolean
     if ('airConditioningType' in listing) {
       const airCondType = (listing as Record<string, unknown>).airConditioningType;
-      const hasAirConditioning = airCondType !== null && airCondType !== undefined && String(airCondType).trim() !== '';
+      // Convert airCondType to boolean - it's considered true if it's not null/undefined and has a non-empty string value
+      const hasAirConditioning = airCondType !== null && airCondType !== undefined && (typeof airCondType === 'string' ? airCondType.trim() !== '' : Boolean(airCondType));
       propertyFeatures.push({
         FeatureId: 254,
         BoolValue: hasAirConditioning,

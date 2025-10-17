@@ -75,10 +75,10 @@ interface PropertyTabsProps {
     idealista?: boolean | null;
     habitaclia?: boolean | null;
     milanuncios?: boolean | null;
-    fotocasaProps?: { visibilityMode?: number; hidePrice?: boolean } | null;
-    idealistaProps?: Record<string, unknown> | null;
-    habitacliaProps?: Record<string, unknown> | null;
-    milanunciosProps?: Record<string, unknown> | null;
+    fotocasaProps?: unknown;
+    idealistaProps?: unknown;
+    habitacliaProps?: unknown;
+    milanunciosProps?: unknown;
     energyCertification?: string | null;
     agentId?: string | null; // Changed from bigint to match users.id type
   };

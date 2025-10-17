@@ -40,10 +40,10 @@ interface PortalSelectionProps {
   habitaclia?: boolean;
   milanuncios?: boolean;
   // Portal props from database (JSON columns)
-  fotocasaProps?: { visibilityMode?: number; hidePrice?: boolean };
-  idealistaProps?: Record<string, unknown>;
-  habitacliaProps?: Record<string, unknown>;
-  milanunciosProps?: Record<string, unknown>;
+  fotocasaProps?: unknown;
+  idealistaProps?: unknown;
+  habitacliaProps?: unknown;
+  milanunciosProps?: unknown;
   // Initial state from parent for persistence across tab switches
   initialPlatformStates?: Record<string, boolean>;
   initialVisibilityModes?: Record<string, number>;
@@ -98,9 +98,9 @@ export function PortalSelection({
   habitaclia = false,
   milanuncios = false,
   fotocasaProps,
-  idealistaProps,
-  habitacliaProps,
-  milanunciosProps,
+  idealistaProps: _idealistaProps,
+  habitacliaProps: _habitacliaProps,
+  milanunciosProps: _milanunciosProps,
   initialPlatformStates,
   initialVisibilityModes,
   initialHidePriceModes,
@@ -112,16 +112,19 @@ export function PortalSelection({
   const [savedPlatformStates, setSavedPlatformStates] = useState<
     Record<string, boolean>
   >({});
+  // Type guard for fotocasaProps
+  const parsedFotocasaProps = fotocasaProps as { visibilityMode?: number; hidePrice?: boolean } | undefined;
+
   const [visibilityModes, setVisibilityModes] = useState<
     Record<string, number>
   >(
     initialVisibilityModes ?? {
-      fotocasa: fotocasaProps?.visibilityMode ?? 1, // Use database value or default to Exact
+      fotocasa: parsedFotocasaProps?.visibilityMode ?? 1, // Use database value or default to Exact
     }
   );
   const [hidePriceModes, setHidePriceModes] = useState<Record<string, boolean>>(
     initialHidePriceModes ?? {
-      fotocasa: fotocasaProps?.hidePrice ?? false, // Use database value or default to show price
+      fotocasa: parsedFotocasaProps?.hidePrice ?? false, // Use database value or default to show price
     }
   );
   const [refreshingPlatforms, setRefreshingPlatforms] = useState<
