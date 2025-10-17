@@ -216,9 +216,6 @@ export function PropertyCharacteristicsForm({
           propertyData = {
             propertyType,
             propertySubtype: listing.propertySubtype,
-            cadastralReference: (
-              document.getElementById("cadastralReference") as HTMLInputElement
-            )?.value,
             newConstruction,
             title: generatedTitle, // Move title to propertyData since it belongs in properties table
           };
@@ -311,6 +308,7 @@ export function PropertyCharacteristicsForm({
             street: streetValue,
             addressDetails: addressDetailsValue,
             postalCode: postalCodeValue,
+            cadastralReference: (document.getElementById("cadastralReference") as HTMLInputElement)?.value || null,
             ...(neighborhoodId && { neighborhoodId }),
             nearbyPublicTransport,
             latitude: latitudeValue || null,
@@ -329,9 +327,7 @@ export function PropertyCharacteristicsForm({
 
         case "features":
           propertyData = {
-            hasElevator: (
-              document.getElementById("hasElevator") as HTMLInputElement
-            )?.checked,
+            hasElevator,
             hasGarage,
             garageType,
             garageSpaces: !isNaN(garageSpaces) ? garageSpaces : 1,
@@ -344,9 +340,10 @@ export function PropertyCharacteristicsForm({
             heatingType,
             hotWaterType: isHotWater ? hotWaterType : null,
             airConditioningType: isAirConditioning ? airConditioningType : null,
-            isFurnished,
           };
           listingData = {
+            isFurnished,
+            furnitureQuality: isFurnished ? furnitureQuality : null,
             optionalGaragePrice: (() => {
               const value = (
                 document.getElementById("optionalGaragePrice") as HTMLInputElement
@@ -414,7 +411,6 @@ export function PropertyCharacteristicsForm({
             frenchKitchen,
             furnishedKitchen,
             pantry,
-            suiteBathroom,
           };
           break;
 
@@ -436,6 +432,7 @@ export function PropertyCharacteristicsForm({
             gym,
             sportsArea,
             childrenArea,
+            suiteBathroom,
             communityPool,
             privatePool,
             tennisCourt,
@@ -481,16 +478,15 @@ export function PropertyCharacteristicsForm({
           break;
 
         case "rentalProperties":
+          // Only save rental characteristics for Rent listings
+          // For Sale listings, duplicateForRent is just UI state, not saved to DB
           listingData = {
             internet,
             studentFriendly,
             petsAllowed,
             appliancesIncluded,
-            rentalPrice,
           };
-          propertyData = {
-            duplicateForRent,
-          };
+          // No propertyData for rental properties - these are listing-specific
           break;
       }
 
@@ -620,6 +616,7 @@ export function PropertyCharacteristicsForm({
   const [storageRoomNumber, setStorageRoomNumber] = useState(
     listing.storageRoomNumber ?? "",
   );
+  const [hasElevator, setHasElevator] = useState(listing.hasElevator ?? false);
   const [hasGarage, setHasGarage] = useState(listing.hasGarage ?? false);
   const [hasStorageRoom, setHasStorageRoom] = useState(
     listing.hasStorageRoom ?? false,
@@ -661,16 +658,16 @@ export function PropertyCharacteristicsForm({
   );
   const [pantry, setPantry] = useState(listing.pantry ?? false);
   const [terrace, setTerrace] = useState(listing.terrace ?? false);
-  const [terraceSize, setTerraceSize] = useState(listing.terraceSize ?? 0);
+  const [terraceSize, setTerraceSize] = useState<number | null>(listing.terraceSize ?? null);
   const [wineCellar, setWineCellar] = useState(listing.wineCellar ?? false);
-  const [wineCellarSize, setWineCellarSize] = useState(
-    listing.wineCellarSize ?? 0,
+  const [wineCellarSize, setWineCellarSize] = useState<number | null>(
+    listing.wineCellarSize ?? null,
   );
-  const [livingRoomSize, setLivingRoomSize] = useState(
-    listing.livingRoomSize ?? 0,
+  const [livingRoomSize, setLivingRoomSize] = useState<number | null>(
+    listing.livingRoomSize ?? null,
   );
-  const [balconyCount, setBalconyCount] = useState(listing.balconyCount ?? 0);
-  const [galleryCount, setGalleryCount] = useState(listing.galleryCount ?? 0);
+  const [balconyCount, setBalconyCount] = useState<number | null>(listing.balconyCount ?? null);
+  const [galleryCount, setGalleryCount] = useState<number | null>(listing.galleryCount ?? null);
   const [buildingFloors, setBuildingFloors] = useState(
     listing.buildingFloors ?? 0,
   );
@@ -817,7 +814,10 @@ export function PropertyCharacteristicsForm({
   const [fridge, setFridge] = useState(listing.fridge ?? false);
   const [tv, setTv] = useState(listing.tv ?? false);
   const [stoneware, setStoneware] = useState(listing.stoneware ?? false);
-  
+
+  // Furniture quality state
+  const [furnitureQuality, setFurnitureQuality] = useState(listing.furnitureQuality ?? "");
+
   // Rental duplicate state
   const [duplicateForRent, setDuplicateForRent] = useState(false);
   const [rentalPrice, setRentalPrice] = useState(0);
@@ -1593,7 +1593,9 @@ export function PropertyCharacteristicsForm({
       <FeaturesCard
         listing={listing}
         propertyType={propertyType}
+        hasElevator={hasElevator}
         isFurnished={isFurnished}
+        furnitureQuality={furnitureQuality}
         isHeating={isHeating}
         heatingType={heatingType}
         isHotWater={isHotWater}
@@ -1621,7 +1623,9 @@ export function PropertyCharacteristicsForm({
         onToggleSection={toggleSection}
         onSave={() => saveModule("features")}
         onUpdateModule={(hasChanges) => updateModuleState("features", hasChanges)}
+        setHasElevator={setHasElevator}
         setIsFurnished={setIsFurnished}
+        setFurnitureQuality={setFurnitureQuality}
         setIsHeating={setIsHeating}
         setHeatingType={setHeatingType}
         setIsHotWater={setIsHotWater}

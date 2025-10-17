@@ -21,7 +21,9 @@ import type { SaveState } from "~/types/save-state";
 interface FeaturesCardProps {
   listing: PropertyListing;
   propertyType: string;
+  hasElevator: boolean;
   isFurnished: boolean;
+  furnitureQuality: string;
   isHeating: boolean;
   heatingType: string;
   isHotWater: boolean;
@@ -49,7 +51,9 @@ interface FeaturesCardProps {
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
+  setHasElevator: (value: boolean) => void;
   setIsFurnished: (value: boolean) => void;
+  setFurnitureQuality: (value: string) => void;
   setIsHeating: (value: boolean) => void;
   setHeatingType: (value: string) => void;
   setIsHotWater: (value: boolean) => void;
@@ -78,7 +82,9 @@ interface FeaturesCardProps {
 export function FeaturesCard({
   listing,
   propertyType,
+  hasElevator,
   isFurnished,
+  furnitureQuality,
   isHeating,
   heatingType,
   isHotWater,
@@ -106,7 +112,9 @@ export function FeaturesCard({
   onToggleSection,
   onSave,
   onUpdateModule,
+  setHasElevator,
   setIsFurnished,
+  setFurnitureQuality,
   setIsHeating,
   setHeatingType,
   setIsHotWater,
@@ -132,12 +140,12 @@ export function FeaturesCard({
   getCardStyles,
 }: FeaturesCardProps) {
   const heatingOptions = [
-    { id: 1, label: "Gas natural" },
-    { id: 2, label: "Eléctrico" },
-    { id: 3, label: "Gasóleo" },
-    { id: 4, label: "Butano" },
-    { id: 5, label: "Propano" },
-    { id: 6, label: "Solar" },
+    { value: "Gas natural", label: "Gas natural" },
+    { value: "Eléctrico", label: "Eléctrico" },
+    { value: "Gasóleo", label: "Gasóleo" },
+    { value: "Butano", label: "Butano" },
+    { value: "Propano", label: "Propano" },
+    { value: "Solar", label: "Solar" },
   ];
 
   return (
@@ -196,8 +204,11 @@ export function FeaturesCard({
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="hasElevator"
-                defaultChecked={listing.hasElevator}
-                onCheckedChange={() => onUpdateModule(true)}
+                checked={hasElevator}
+                onCheckedChange={(checked) => {
+                  setHasElevator(checked as boolean);
+                  onUpdateModule(true);
+                }}
               />
               <Label htmlFor="hasElevator" className="text-sm">
                 Ascensor
@@ -423,7 +434,7 @@ export function FeaturesCard({
                       </SelectTrigger>
                       <SelectContent>
                         {heatingOptions.map((option) => (
-                          <SelectItem key={option.id} value={option.id.toString()}>
+                          <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
                         ))}
@@ -462,7 +473,7 @@ export function FeaturesCard({
                       </SelectTrigger>
                       <SelectContent>
                         {heatingOptions.map((option) => (
-                          <SelectItem key={option.id} value={option.id.toString()}>
+                          <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
                         ))}
@@ -528,7 +539,11 @@ export function FeaturesCard({
                   {isFurnished && (
                     <div className="ml-4">
                       <RadioGroup
-                        defaultValue={listing.furnitureQuality}
+                        value={furnitureQuality}
+                        onValueChange={(value) => {
+                          setFurnitureQuality(value);
+                          onUpdateModule(true);
+                        }}
                         className="flex flex-wrap gap-2"
                       >
                         <div className="flex items-center space-x-1">
@@ -676,7 +691,7 @@ export function FeaturesCard({
                           className="no-checkmark h-3 w-3"
                         />
                         <Label htmlFor="stoneware" className="text-xs">
-                          Vajilla
+                          Lavavajillas
                         </Label>
                       </div>
                     </div>

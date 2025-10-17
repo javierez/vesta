@@ -12,12 +12,12 @@ import type { SaveState } from "~/types/save-state";
 
 interface AdditionalSpacesCardProps {
   terrace: boolean;
-  terraceSize: number;
+  terraceSize: number | null;
   wineCellar: boolean;
-  wineCellarSize: number;
-  livingRoomSize: number;
-  balconyCount: number;
-  galleryCount: number;
+  wineCellarSize: number | null;
+  livingRoomSize: number | null;
+  balconyCount: number | null;
+  galleryCount: number | null;
   builtInWardrobes: boolean;
   propertyType: string;
   collapsedSections: Record<string, boolean>;
@@ -26,12 +26,12 @@ interface AdditionalSpacesCardProps {
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   setTerrace: (value: boolean) => void;
-  setTerraceSize: (value: number) => void;
+  setTerraceSize: (value: number | null) => void;
   setWineCellar: (value: boolean) => void;
-  setWineCellarSize: (value: number) => void;
-  setLivingRoomSize: (value: number) => void;
-  setBalconyCount: (value: number) => void;
-  setGalleryCount: (value: number) => void;
+  setWineCellarSize: (value: number | null) => void;
+  setLivingRoomSize: (value: number | null) => void;
+  setBalconyCount: (value: number | null) => void;
+  setGalleryCount: (value: number | null) => void;
   setBuiltInWardrobes: (value: boolean) => void;
   getCardStyles: (moduleName: string) => string;
 }
@@ -144,10 +144,11 @@ export function AdditionalSpacesCard({
                     <Input
                       id="terraceSize"
                       type="number"
-                      value={terraceSize}
+                      value={terraceSize === null ? '' : terraceSize}
+                      placeholder="-"
                       onChange={(e) => {
-                        const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
-                        setTerraceSize(value);
+                        const value = e.target.value === '' ? null : parseInt(e.target.value);
+                        setTerraceSize(isNaN(value as number) ? null : value);
                         onUpdateModule(true);
                       }}
                       className="h-8 text-gray-500"
@@ -163,10 +164,11 @@ export function AdditionalSpacesCard({
                   <Input
                     id="balconyCount"
                     type="number"
-                    value={balconyCount}
+                    value={balconyCount === null ? '' : balconyCount}
+                    placeholder="-"
                     onChange={(e) => {
-                      const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
-                      setBalconyCount(value);
+                      const value = e.target.value === '' ? null : parseInt(e.target.value);
+                      setBalconyCount(isNaN(value as number) ? null : value);
                       onUpdateModule(true);
                     }}
                     className="h-8 text-gray-500"
@@ -181,10 +183,11 @@ export function AdditionalSpacesCard({
                   <Input
                     id="galleryCount"
                     type="number"
-                    value={galleryCount}
+                    value={galleryCount === null ? '' : galleryCount}
+                    placeholder="-"
                     onChange={(e) => {
-                      const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
-                      setGalleryCount(value);
+                      const value = e.target.value === '' ? null : parseInt(e.target.value);
+                      setGalleryCount(isNaN(value as number) ? null : value);
                       onUpdateModule(true);
                     }}
                     className="h-8 text-gray-500"
@@ -220,10 +223,11 @@ export function AdditionalSpacesCard({
                     <Input
                       id="wineCellarSize"
                       type="number"
-                      value={wineCellarSize}
+                      value={wineCellarSize === null ? '' : wineCellarSize}
+                      placeholder="-"
                       onChange={(e) => {
-                        const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
-                        setWineCellarSize(value);
+                        const value = e.target.value === '' ? null : parseInt(e.target.value);
+                        setWineCellarSize(isNaN(value as number) ? null : value);
                         onUpdateModule(true);
                       }}
                       className="h-8 text-gray-500"
@@ -248,10 +252,11 @@ export function AdditionalSpacesCard({
                   <Input
                     id="livingRoomSize"
                     type="number"
-                    value={livingRoomSize}
+                    value={livingRoomSize === null ? '' : livingRoomSize}
+                    placeholder="-"
                     onChange={(e) => {
-                      const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
-                      setLivingRoomSize(value);
+                      const value = e.target.value === '' ? null : parseInt(e.target.value);
+                      setLivingRoomSize(isNaN(value as number) ? null : value);
                       onUpdateModule(true);
                     }}
                     className="h-8 text-gray-500"

@@ -231,27 +231,29 @@ export function RentalPropertiesCard({
         {/* Show rental properties when enabled */}
         {(isRent || (isSale && duplicateForRent)) && (
           <div className="space-y-6">
-            {/* Rental Price - Mandatory for all property types */}
-            <div className="rounded-lg bg-blue-50 p-4 shadow-lg">
-              <div className="mb-2 flex items-center justify-between">
-                <h4 className="text-sm font-medium text-gray-700">
-                  Precio del Alquiler
-                </h4>
+            {/* Rental Price - Only show for Sale listings creating a rental duplicate */}
+            {isSale && duplicateForRent && (
+              <div className="rounded-lg bg-blue-50 p-4 shadow-lg">
+                <div className="mb-2 flex items-center justify-between">
+                  <h4 className="text-sm font-medium text-gray-700">
+                    Precio del Alquiler
+                  </h4>
+                </div>
+                <Input
+                  type="number"
+                  value={rentalPrice || ""}
+                  onChange={(e) => {
+                    const value = Number(e.target.value) || 0;
+                    setRentalPrice(value);
+                    onUpdateModule(true);
+                  }}
+                  placeholder="0 €"
+                  className="h-10 border-0 bg-white text-sm shadow-md"
+                  min="0"
+                  step="1"
+                />
               </div>
-              <Input
-                type="number"
-                value={rentalPrice || ""}
-                onChange={(e) => {
-                  const value = Number(e.target.value) || 0;
-                  setRentalPrice(value);
-                  onUpdateModule(true);
-                }}
-                placeholder="0 €"
-                className="h-10 border-0 bg-white text-sm shadow-md"
-                min="0"
-                step="1"
-              />
-            </div>
+            )}
 
             {/* Rental characteristics - Hide for solar and garage properties */}
             {propertyType !== "solar" && propertyType !== "garaje" && (
