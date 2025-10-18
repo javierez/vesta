@@ -259,6 +259,31 @@ export async function getAllCities() {
   }
 }
 
+// Get unique cities from properties belonging to a specific account
+export async function getCitiesFromAccountProperties(accountId: number) {
+  try {
+    const { properties } = await import("../db/schema");
+    const cities = await db
+      .selectDistinct({ city: locations.city })
+      .from(locations)
+      .innerJoin(
+        properties,
+        eq(properties.neighborhoodId, locations.neighborhoodId)
+      )
+      .where(
+        and(
+          eq(locations.isActive, true),
+          eq(properties.accountId, BigInt(accountId))
+        )
+      )
+      .orderBy(locations.city);
+    return cities.map((c) => c.city);
+  } catch (error) {
+    console.error("Error fetching cities from account properties:", error);
+    throw error;
+  }
+}
+
 // Get all neighborhoods for a specific city
 export async function getNeighborhoodsByCity(city: string) {
   try {
@@ -296,6 +321,18 @@ export async function getAllLocationsForSelection() {
     return allLocations;
   } catch (error) {
     console.error("Error fetching all locations for selection:", error);
+    throw error;
+  }
+}
+
+// Get unique cities from current user's account properties (with auth)
+export async function getCitiesFromAccountPropertiesWithAuth() {
+  try {
+    const { getCurrentUserAccountId } = await import("../../lib/dal");
+    const accountId = await getCurrentUserAccountId();
+    return getCitiesFromAccountProperties(accountId);
+  } catch (error) {
+    console.error("Error fetching cities from account properties with auth:", error);
     throw error;
   }
 }

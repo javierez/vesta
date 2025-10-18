@@ -1336,75 +1336,7 @@ export function PropertyCharacteristicsForm({
             setStoneware={setStoneware}
             getCardStyles={getCardStyles}
           />
-        </div>
 
-        {/* Right Column */}
-        <div className="flex-1 space-y-4 w-full">
-          {/* Contact Information */}
-          <ContactInfoCard
-            ref={contactInfoRef}
-            selectedOwnerIds={selectedOwnerIds}
-            owners={owners}
-            filteredOwners={filteredOwners}
-            ownerSearch={ownerSearch}
-            selectedAgentId={selectedAgentId}
-            agents={agents}
-            collapsedSections={collapsedSections}
-            saveState={moduleStates.contactInfo?.saveState ?? "idle"}
-            onToggleSection={toggleSection}
-            onSave={() => saveModule("contactInfo")}
-            onUpdateModule={(hasChanges) => updateModuleState("contactInfo", hasChanges)}
-            setSelectedOwnerIds={setSelectedOwnerIds}
-            setOwnerSearch={setOwnerSearch}
-            setSelectedAgentId={setSelectedAgentId}
-            getCardStyles={getCardStyles}
-          />
-
-          {/* Location */}
-          <LocationCard
-            listing={listing}
-            city={city}
-            province={province}
-            municipality={municipality}
-            collapsedSections={collapsedSections}
-            saveState={moduleStates.location?.saveState ?? "idle"}
-            onToggleSection={toggleSection}
-            onSave={() => saveModule("location")}
-            onUpdateModule={(hasChanges) => updateModuleState("location", hasChanges)}
-            setCity={setCity}
-            setProvince={setProvince}
-            setMunicipality={setMunicipality}
-            setIsMapsPopupOpen={setIsMapsPopupOpen}
-            setIsCatastroPopupOpen={setIsCatastroPopupOpen}
-            getCardStyles={getCardStyles}
-          />
-
-          {/* Orientation and Exposure */}
-          <OrientationCard
-            isExterior={isExterior}
-            isBright={isBright}
-            orientation={orientation}
-            propertyType={propertyType}
-            collapsedSections={collapsedSections}
-            saveState={moduleStates.orientation?.saveState ?? "idle"}
-            onToggleSection={toggleSection}
-            onSave={() => saveModule("orientation")}
-            onUpdateModule={(hasChanges) => updateModuleState("orientation", hasChanges)}
-            setIsExterior={setIsExterior}
-            setIsBright={setIsBright}
-            setOrientation={setOrientation}
-            getCardStyles={getCardStyles}
-          />
-        </div>
-      </div>
-
-      {/* Separator for secondary sections */}
-      <Separator className="my-3 opacity-50" />
-
-      {/* Two independent columns for secondary cards */}
-      <div className="flex flex-col lg:flex-row gap-4 items-start">
-        {/* Left Column */}
-        <div className="flex-1 space-y-4 w-full">
           {/* Additional Characteristics */}
           <AdditionalCharacteristicsCard
             disabledAccessible={disabledAccessible}
@@ -1474,6 +1406,62 @@ export function PropertyCharacteristicsForm({
 
         {/* Right Column */}
         <div className="flex-1 space-y-4 w-full">
+          {/* Contact Information */}
+          <ContactInfoCard
+            ref={contactInfoRef}
+            selectedOwnerIds={selectedOwnerIds}
+            owners={owners}
+            filteredOwners={filteredOwners}
+            ownerSearch={ownerSearch}
+            selectedAgentId={selectedAgentId}
+            agents={agents}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.contactInfo?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("contactInfo")}
+            onUpdateModule={(hasChanges) => updateModuleState("contactInfo", hasChanges)}
+            setSelectedOwnerIds={setSelectedOwnerIds}
+            setOwnerSearch={setOwnerSearch}
+            setSelectedAgentId={setSelectedAgentId}
+            getCardStyles={getCardStyles}
+          />
+
+          {/* Location */}
+          <LocationCard
+            listing={listing}
+            city={city}
+            province={province}
+            municipality={municipality}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.location?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("location")}
+            onUpdateModule={(hasChanges) => updateModuleState("location", hasChanges)}
+            setCity={setCity}
+            setProvince={setProvince}
+            setMunicipality={setMunicipality}
+            setIsMapsPopupOpen={setIsMapsPopupOpen}
+            setIsCatastroPopupOpen={setIsCatastroPopupOpen}
+            getCardStyles={getCardStyles}
+          />
+
+          {/* Orientation and Exposure */}
+          <OrientationCard
+            isExterior={isExterior}
+            isBright={isBright}
+            orientation={orientation}
+            propertyType={propertyType}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.orientation?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("orientation")}
+            onUpdateModule={(hasChanges) => updateModuleState("orientation", hasChanges)}
+            setIsExterior={setIsExterior}
+            setIsBright={setIsBright}
+            setOrientation={setOrientation}
+            getCardStyles={getCardStyles}
+          />
+
           {/* Premium Features */}
           <PremiumFeaturesCard
             propertyType={propertyType}

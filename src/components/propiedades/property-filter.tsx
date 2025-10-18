@@ -376,7 +376,7 @@ export function PropertyFilter({
 
     return (
       <div
-        className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
+        className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1 hover:bg-accent transition-colors"
         onClick={() =>
           isAgent
             ? toggleAgentFilter(value)
@@ -384,13 +384,13 @@ export function PropertyFilter({
         }
       >
         <div
-          className={`flex h-4 w-4 items-center justify-center rounded border ${
+          className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${
             isSelected ? "border-primary bg-primary" : "border-input"
           }`}
         >
-          {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+          {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
         </div>
-        <span className={`text-sm ${isSelected ? "font-medium" : ""}`}>
+        <span className={`text-xs ${isSelected ? "font-medium" : ""}`}>
           {label}
         </span>
       </div>
@@ -406,20 +406,22 @@ export function PropertyFilter({
     category: string;
     children: React.ReactNode;
   }) => (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div
-        className="flex cursor-pointer items-center justify-between"
+        className="flex cursor-pointer items-center justify-between group"
         onClick={() => toggleCategory(category)}
       >
-        <h5 className="text-sm font-medium text-muted-foreground">{title}</h5>
+        <h5 className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+          {title}
+        </h5>
         <ChevronDown
-          className={`h-4 w-4 text-muted-foreground transition-transform ${
-            expandedCategories[category] ? "rotate-180 transform" : ""
+          className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
+            expandedCategories[category] ? "rotate-180" : ""
           }`}
         />
       </div>
       {expandedCategories[category] && (
-        <div className="space-y-1">{children}</div>
+        <div className="space-y-0.5">{children}</div>
       )}
     </div>
   );
@@ -542,24 +544,19 @@ export function PropertyFilter({
       </div>
 
       <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-        <CollapsibleContent className="space-y-4">
-          <div className="rounded-lg border bg-card p-4">
-            {/* Advanced Filters Section */}
-            <div className="mb-6 space-y-4">
-              <h4 className="text-sm font-medium text-muted-foreground">
-                Filtros de Búsqueda
-              </h4>
-              <div className="grid gap-4 md:grid-cols-4">
-                {/* Location Filter */}
-                <div className="col-span-2 space-y-2">
-                  <Label className="text-sm font-medium">Ubicación</Label>
+        <CollapsibleContent className="space-y-3">
+          <div className="rounded-lg border bg-card p-3">
+            {/* Compact Filters Grid */}
+            <div className="space-y-3">
+              {/* Row 1: Location + Bedrooms + Bathrooms */}
+              <div className="grid gap-3 md:grid-cols-6">
+                <div className="md:col-span-2">
+                  <Label className="text-xs font-medium mb-1.5 block">Ubicación</Label>
                   <TwoLevelLocationSelect
                     cities={cities}
                     selectedCity={propertyFilters.city}
                     selectedNeighborhood={propertyFilters.neighborhood}
-                    onCityChange={(city) =>
-                      updateLocationFilter(city, "")
-                    }
+                    onCityChange={(city) => updateLocationFilter(city, "")}
                     onNeighborhoodChange={(neighborhood) =>
                       updateLocationFilter(propertyFilters.city, neighborhood)
                     }
@@ -568,20 +565,17 @@ export function PropertyFilter({
                   />
                 </div>
 
-                {/* Bedrooms Filter */}
-                <div className="space-y-2">
-                  <Label htmlFor="bedrooms" className="text-sm font-medium">
+                <div className="md:col-span-2">
+                  <Label htmlFor="bedrooms" className="text-xs font-medium mb-1.5 block">
                     Habitaciones
                   </Label>
                   <Select
-                    value={
-                      propertyFilters.minBedrooms?.toString() ?? "any"
-                    }
+                    value={propertyFilters.minBedrooms?.toString() ?? "any"}
                     onValueChange={(value) =>
                       updateSelectFilter("minBedrooms", value === "any" ? "" : value)
                     }
                   >
-                    <SelectTrigger id="bedrooms">
+                    <SelectTrigger id="bedrooms" className="h-9">
                       <SelectValue placeholder="Cualquiera" />
                     </SelectTrigger>
                     <SelectContent>
@@ -595,20 +589,17 @@ export function PropertyFilter({
                   </Select>
                 </div>
 
-                {/* Bathrooms Filter */}
-                <div className="space-y-2">
-                  <Label htmlFor="bathrooms" className="text-sm font-medium">
+                <div className="md:col-span-2">
+                  <Label htmlFor="bathrooms" className="text-xs font-medium mb-1.5 block">
                     Baños
                   </Label>
                   <Select
-                    value={
-                      propertyFilters.minBathrooms?.toString() ?? "any"
-                    }
+                    value={propertyFilters.minBathrooms?.toString() ?? "any"}
                     onValueChange={(value) =>
                       updateSelectFilter("minBathrooms", value === "any" ? "" : value)
                     }
                   >
-                    <SelectTrigger id="bathrooms">
+                    <SelectTrigger id="bathrooms" className="h-9">
                       <SelectValue placeholder="Cualquiera" />
                     </SelectTrigger>
                     <SelectContent>
@@ -622,14 +613,13 @@ export function PropertyFilter({
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                {/* Price Range Filter */}
-                <div className="space-y-2">
-                  <div className="flex flex-col space-y-1 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-                    <Label className="text-sm font-medium">Precio</Label>
-                    <span className="text-xs text-muted-foreground text-center sm:text-right">
-                      {formatNumber(priceSliderValues[0] ?? 0)}€ -{" "}
-                      {formatNumber(priceSliderValues[1] ?? 0)}€
+              {/* Row 2: Price + Area Sliders */}
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-medium">Precio</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {formatNumber(priceSliderValues[0] ?? 0)}€ - {formatNumber(priceSliderValues[1] ?? 0)}€
                     </span>
                   </div>
                   <Slider
@@ -639,17 +629,15 @@ export function PropertyFilter({
                     step={10000}
                     onValueChange={handlePriceSliderChange}
                     onValueCommit={applySliderFilters}
-                    className="py-4"
+                    className="py-2"
                   />
                 </div>
 
-                {/* Area Range Filter */}
-                <div className="space-y-2">
-                  <div className="flex flex-col space-y-1 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-                    <Label className="text-sm font-medium">Superficie</Label>
-                    <span className="text-xs text-muted-foreground text-center sm:text-right">
-                      {formatNumber(areaSliderValues[0] ?? 0)}m² -{" "}
-                      {formatNumber(areaSliderValues[1] ?? 0)}m²
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-medium">Superficie</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {formatNumber(areaSliderValues[0] ?? 0)}m² - {formatNumber(areaSliderValues[1] ?? 0)}m²
                     </span>
                   </div>
                   <Slider
@@ -659,68 +647,45 @@ export function PropertyFilter({
                     step={10}
                     onValueChange={handleAreaSliderChange}
                     onValueCommit={applySliderFilters}
-                    className="py-4"
+                    className="py-2"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Existing Status/Type Filters */}
-            <div className="grid gap-6 md:grid-cols-2 border-t pt-4">
-              <FilterCategory title="Estado" category="status">
-                <FilterOption
-                  value="for-sale"
-                  label="En Venta"
-                  category="status"
-                />
-                <FilterOption
-                  value="for-rent"
-                  label="En Alquiler"
-                  category="status"
-                />
-                <FilterOption
-                  value="sold"
-                  label="Vendido"
-                  category="status"
-                />
-                <FilterOption
-                  value="rented"
-                  label="Alquilado"
-                  category="status"
-                />
-                <FilterOption
-                  value="discarded"
-                  label="Descartado"
-                  category="status"
-                />
-              </FilterCategory>
+              {/* Row 3: Status/Type Filters - Compact Checkboxes */}
+              <div className="grid gap-3 md:grid-cols-2 border-t pt-3">
+                <FilterCategory title="Estado" category="status">
+                  <FilterOption value="for-sale" label="En Venta" category="status" />
+                  <FilterOption value="for-rent" label="En Alquiler" category="status" />
+                  <FilterOption value="sold" label="Vendido" category="status" />
+                  <FilterOption value="rented" label="Alquilado" category="status" />
+                  <FilterOption value="discarded" label="Descartado" category="status" />
+                </FilterCategory>
 
-              <FilterCategory title="Tipo" category="type">
-                <FilterOption value="piso" label="Piso" category="type" />
-                <FilterOption value="casa" label="Casa" category="type" />
-                <FilterOption value="local" label="Local" category="type" />
-                <FilterOption value="solar" label="Solar" category="type" />
-                <FilterOption
-                  value="garaje"
-                  label="Garaje"
-                  category="type"
-                />
-              </FilterCategory>
-            </div>
-
-            {activePropertyFiltersCount > 0 && (
-              <div className="mt-4 flex justify-end border-t pt-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearPropertyFilters}
-                  className="h-8"
-                >
-                  <X className="mr-1.5 h-3.5 w-3.5" />
-                  Borrar filtros
-                </Button>
+                <FilterCategory title="Tipo" category="type">
+                  <FilterOption value="piso" label="Piso" category="type" />
+                  <FilterOption value="casa" label="Casa" category="type" />
+                  <FilterOption value="local" label="Local" category="type" />
+                  <FilterOption value="solar" label="Solar" category="type" />
+                  <FilterOption value="garaje" label="Garaje" category="type" />
+                </FilterCategory>
               </div>
-            )}
+
+              {/* Clear Filters Button */}
+              {activePropertyFiltersCount > 0 && (
+                <div className="flex justify-end border-t pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearPropertyFilters}
+                    className="h-7 text-xs"
+                  >
+                    <X className="mr-1 h-3 w-3" />
+                    Borrar filtros
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </CollapsibleContent>
       </Collapsible>

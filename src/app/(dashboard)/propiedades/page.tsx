@@ -17,7 +17,7 @@ import {
   getAllAgentsWithAuth,
   getAccountWebsiteWithAuth,
 } from "~/server/queries/listing";
-import { getAllCities } from "~/server/queries/locations";
+import { getCitiesFromAccountPropertiesWithAuth } from "~/server/queries/locations";
 import type { ListingOverview } from "~/types/listing";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -48,7 +48,7 @@ export default function PropertiesPage() {
         const [allAgents, website, allCities] = await Promise.all([
           getAllAgentsWithAuth(),
           getAccountWebsiteWithAuth(),
-          getAllCities(),
+          getCitiesFromAccountPropertiesWithAuth(),
         ]);
         setAgents(allAgents);
         setAccountWebsite(website);
