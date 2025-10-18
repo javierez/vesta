@@ -4,6 +4,7 @@ import "./globals.css";
 import { UserRoleProvider } from "~/components/providers/user-role-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import { CookieConsentBanner } from "~/components/cookie-consent-banner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <UserRoleProvider>{children}</UserRoleProvider>
+        <CookieConsentBanner />
         <SpeedInsights />
         <Analytics />
       </body>

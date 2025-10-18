@@ -74,19 +74,19 @@ export function TwoLevelLocationSelect({
 
   const handleCityChange = (city: string) => {
     onCityChange(city);
-    // Reset neighborhood when city changes
-    onNeighborhoodChange("");
+    // Note: We don't call onNeighborhoodChange("") here because the parent
+    // component (property-filter.tsx) already resets the neighborhood when city changes
   };
 
   return (
     <div className="grid grid-cols-2 gap-2">
       {/* City Select */}
       <Select value={selectedCity || "all"} onValueChange={(value) => handleCityChange(value === "all" ? "" : value)}>
-        <SelectTrigger>
+        <SelectTrigger className="h-8 text-xs" isPlaceholder={!selectedCity}>
           <SelectValue placeholder={cityPlaceholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todas las ciudades</SelectItem>
+          <SelectItem value="all">Todas</SelectItem>
           {cities.map((city) => (
             <SelectItem key={city} value={city}>
               {city}
@@ -101,19 +101,19 @@ export function TwoLevelLocationSelect({
         onValueChange={(value) => onNeighborhoodChange(value === "all" ? "" : value)}
         disabled={!selectedCity || isLoadingNeighborhoods}
       >
-        <SelectTrigger>
+        <SelectTrigger className="h-8 text-xs" isPlaceholder={!selectedNeighborhood}>
           <SelectValue
             placeholder={
               isLoadingNeighborhoods
-                ? "Cargando..."
+                ? "..."
                 : !selectedCity
-                  ? "Primero selecciona ciudad"
+                  ? "Selecciona ciudad"
                   : neighborhoodPlaceholder
             }
           />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todos los barrios</SelectItem>
+          <SelectItem value="all">Todos</SelectItem>
           {neighborhoods.map((n) => (
             <SelectItem key={n.neighborhoodId.toString()} value={n.neighborhood}>
               {n.neighborhood}

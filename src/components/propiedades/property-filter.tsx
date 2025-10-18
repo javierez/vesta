@@ -20,8 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Label } from "~/components/ui/label";
-import { Slider } from "~/components/ui/slider";
 import {
   Filter,
   X,
@@ -31,6 +29,15 @@ import {
   Table as TableIcon,
   Map as MapIcon,
   User,
+  Bed,
+  Bath,
+  FilterX,
+  MapPin,
+  DollarSign,
+  Ruler,
+  Home,
+  Tag,
+  Key,
 } from "lucide-react";
 import { PropertySearch } from "./property-search";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -65,16 +72,21 @@ export function PropertyFilter({
     maxPrice: undefined as number | undefined,
     minSquareMeter: undefined as number | undefined,
     maxSquareMeter: undefined as number | undefined,
+    hasKeys: undefined as boolean | undefined,
+    publishToWebsite: undefined as boolean | undefined,
   });
   const [agentFilters, setAgentFilters] = useState<string[]>([]);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
   >({
-    status: true,
-    type: true,
-    agent: true,
-    advanced: true,
+    location: false,
+    rooms: false,
+    price: false,
+    area: false,
+    status: false,
+    type: false,
+    other: false,
   });
   const [priceSliderValues, setPriceSliderValues] = useState<number[]>([
     priceRange.minPrice,
@@ -101,6 +113,8 @@ export function PropertyFilter({
     const maxPrice = searchParams.get("maxPrice");
     const minSize = searchParams.get("minSize");
     const maxSize = searchParams.get("maxSize");
+    const hasKeys = searchParams.get("hasKeys");
+    const publishToWebsite = searchParams.get("publishToWebsite");
 
     setPropertyFilters({
       // Default to showing 'En Venta' and 'En Alquiler' if no status filter in URL
@@ -114,6 +128,8 @@ export function PropertyFilter({
       maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
       minSquareMeter: minSize ? parseInt(minSize) : undefined,
       maxSquareMeter: maxSize ? parseInt(maxSize) : undefined,
+      hasKeys: hasKeys === "true" ? true : hasKeys === "false" ? false : undefined,
+      publishToWebsite: publishToWebsite === "true" ? true : publishToWebsite === "false" ? false : undefined,
     });
     setAgentFilters(agent ? agent.split(",") : []);
     setSearchQuery(q ?? "");
@@ -222,6 +238,18 @@ export function PropertyFilter({
       params.delete("maxSize");
     }
 
+    // Update boolean filters
+    if (newPropertyFilters.hasKeys !== undefined) {
+      params.set("hasKeys", newPropertyFilters.hasKeys.toString());
+    } else {
+      params.delete("hasKeys");
+    }
+    if (newPropertyFilters.publishToWebsite !== undefined) {
+      params.set("publishToWebsite", newPropertyFilters.publishToWebsite.toString());
+    } else {
+      params.delete("publishToWebsite");
+    }
+
     // Reset to first page when filters change
     params.set("page", "1");
 
@@ -249,6 +277,16 @@ export function PropertyFilter({
       : [...agentFilters, value];
     setAgentFilters(newFilters);
     updateUrlParams(propertyFilters, newFilters, searchQuery);
+  };
+
+  const toggleBooleanFilter = (key: "hasKeys" | "publishToWebsite") => {
+    const currentValue = propertyFilters[key];
+    const newFilters = {
+      ...propertyFilters,
+      [key]: currentValue === undefined ? true : currentValue === true ? false : undefined,
+    };
+    setPropertyFilters(newFilters);
+    updateUrlParams(newFilters, agentFilters, searchQuery);
   };
 
   const toggleCategory = (category: string) => {
@@ -318,6 +356,8 @@ export function PropertyFilter({
       maxPrice: undefined,
       minSquareMeter: undefined,
       maxSquareMeter: undefined,
+      hasKeys: undefined,
+      publishToWebsite: undefined,
     };
     setPropertyFilters(newFilters);
     setPriceSliderValues([priceRange.minPrice, priceRange.maxPrice]);
@@ -337,10 +377,6 @@ export function PropertyFilter({
     updateUrlParams(propertyFilters, agentFilters, value);
   };
 
-  // Format numbers consistently
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("es-ES").format(num);
-  };
 
   // Check if current filters are the default ones
   const isDefaultStatusFilter =
@@ -357,7 +393,9 @@ export function PropertyFilter({
     (propertyFilters.minBedrooms !== undefined ? 1 : 0) +
     (propertyFilters.minBathrooms !== undefined ? 1 : 0) +
     (isPriceSliderTouched ? 1 : 0) +
-    (isAreaSliderTouched ? 1 : 0);
+    (isAreaSliderTouched ? 1 : 0) +
+    (propertyFilters.hasKeys !== undefined ? 1 : 0) +
+    (propertyFilters.publishToWebsite !== undefined ? 1 : 0);
 
   const FilterOption = ({
     value,
@@ -376,7 +414,7 @@ export function PropertyFilter({
 
     return (
       <div
-        className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1 hover:bg-accent transition-colors"
+        className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
         onClick={() =>
           isAgent
             ? toggleAgentFilter(value)
@@ -384,13 +422,13 @@ export function PropertyFilter({
         }
       >
         <div
-          className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${
+          className={`flex h-3 w-3 items-center justify-center rounded border ${
             isSelected ? "border-primary bg-primary" : "border-input"
           }`}
         >
-          {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+          {isSelected && <Check className="h-2 w-2 text-primary-foreground" />}
         </div>
-        <span className={`text-xs ${isSelected ? "font-medium" : ""}`}>
+        <span className={`text-[12px] ${isSelected ? "font-medium" : ""}`}>
           {label}
         </span>
       </div>
@@ -400,22 +438,25 @@ export function PropertyFilter({
   const FilterCategory = ({
     title,
     category,
+    icon: Icon,
     children,
   }: {
     title: string;
     category: string;
+    icon: React.ComponentType<{ className?: string }>;
     children: React.ReactNode;
   }) => (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       <div
-        className="flex cursor-pointer items-center justify-between group"
+        className="flex cursor-pointer items-center gap-1 group"
         onClick={() => toggleCategory(category)}
       >
-        <h5 className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+        <Icon className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+        <h5 className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
           {title}
         </h5>
         <ChevronDown
-          className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
+          className={`h-3 w-3 text-muted-foreground transition-transform ${
             expandedCategories[category] ? "rotate-180" : ""
           }`}
         />
@@ -434,8 +475,8 @@ export function PropertyFilter({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 items-center space-x-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 items-center gap-2">
           <PropertySearch
             onSearchChange={handleSearchChange}
             onSearch={() =>
@@ -443,26 +484,26 @@ export function PropertyFilter({
             }
           />
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1.5">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className="relative">
-                <User className="h-4 w-4" />
+              <Button variant="outline" size="sm" className="relative h-8 w-8 p-0">
+                <User className="h-3.5 w-3.5" />
                 {agentFilters.length > 0 && (
                   <Badge
                     variant="secondary"
-                    className="absolute -right-1 -top-1 rounded-sm px-1 font-normal"
+                    className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
                   >
                     {agentFilters.length}
                   </Badge>
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
+            <PopoverContent className="w-64 p-0" align="end">
               <div className="flex flex-col">
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-6 p-4">
-                    <div className="space-y-1">
+                <ScrollArea className="h-[200px]">
+                  <div className="space-y-3 p-3">
+                    <div className="space-y-0.5">
                       {agents.map((agent) => (
                         <FilterOption
                           key={agent.id.toString()}
@@ -475,67 +516,68 @@ export function PropertyFilter({
                   </div>
                 </ScrollArea>
                 {agentFilters.length > 0 && (
-                  <div className="border-t p-2">
+                  <div className="border-t p-1.5">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={clearAgentFilters}
-                      className="h-7 w-full text-xs"
+                      className="h-6 w-full text-[12px]"
                     >
-                      <X className="mr-1.5 h-3.5 w-3.5" />
-                      Borrar filtros
+                      <X className="mr-1 h-3 w-3" />
+                      Borrar
                     </Button>
                   </div>
                 )}
               </div>
             </PopoverContent>
           </Popover>
-          <div className="flex items-center gap-1 rounded-md bg-white p-1 shadow">
+          <div className="flex items-center gap-0.5 rounded-md bg-white p-0.5 shadow">
             <Button
               variant={view === "grid" ? "secondary" : "ghost"}
-              size="icon"
+              size="sm"
               onClick={() => handleViewChange("grid")}
-              title="Ver como cuadrícula"
-              className="h-9 w-9"
+              title="Cuadrícula"
+              className="h-7 w-7 p-0"
             >
-              <LayoutGrid className="h-4 w-4" />
+              <LayoutGrid className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant={view === "table" ? "secondary" : "ghost"}
-              size="icon"
+              size="sm"
               onClick={() => handleViewChange("table")}
-              title="Ver como tabla"
-              className="h-9 w-9"
+              title="Tabla"
+              className="h-7 w-7 p-0"
             >
-              <TableIcon className="h-4 w-4" />
+              <TableIcon className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant={view === "map" ? "secondary" : "ghost"}
-              size="icon"
+              size="sm"
               onClick={() => handleViewChange("map")}
-              title="Ver mapa"
-              className="h-9 w-9"
+              title="Mapa"
+              className="h-7 w-7 p-0"
             >
-              <MapIcon className="h-4 w-4" />
+              <MapIcon className="h-3.5 w-3.5" />
             </Button>
           </div>
           <Button
             variant="outline"
-            className="relative"
+            size="sm"
+            className="relative h-8 text-xs"
             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
           >
-            <Filter className="mr-2 h-4 w-4" />
-            Filtros
+            <Filter className="mr-1.5 h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Filtros</span>
             {activePropertyFiltersCount > 0 && (
               <Badge
                 variant="secondary"
-                className="ml-2 rounded-sm px-1 font-normal"
+                className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
               >
                 {activePropertyFiltersCount}
               </Badge>
             )}
             <ChevronDown
-              className={`ml-2 h-4 w-4 transition-transform ${
+              className={`ml-1 h-3 w-3 transition-transform ${
                 isFiltersOpen ? "rotate-180 transform" : ""
               }`}
             />
@@ -544,147 +586,245 @@ export function PropertyFilter({
       </div>
 
       <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-        <CollapsibleContent className="space-y-3">
-          <div className="rounded-lg border bg-card p-3">
-            {/* Compact Filters Grid */}
-            <div className="space-y-3">
-              {/* Row 1: Location + Bedrooms + Bathrooms */}
-              <div className="grid gap-3 md:grid-cols-6">
-                <div className="md:col-span-2">
-                  <Label className="text-xs font-medium mb-1.5 block">Ubicación</Label>
-                  <TwoLevelLocationSelect
-                    cities={cities}
-                    selectedCity={propertyFilters.city}
-                    selectedNeighborhood={propertyFilters.neighborhood}
-                    onCityChange={(city) => updateLocationFilter(city, "")}
-                    onNeighborhoodChange={(neighborhood) =>
-                      updateLocationFilter(propertyFilters.city, neighborhood)
-                    }
-                    cityPlaceholder="Todas las ciudades"
-                    neighborhoodPlaceholder="Todos los barrios"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <Label htmlFor="bedrooms" className="text-xs font-medium mb-1.5 block">
-                    Habitaciones
-                  </Label>
-                  <Select
-                    value={propertyFilters.minBedrooms?.toString() ?? "any"}
-                    onValueChange={(value) =>
-                      updateSelectFilter("minBedrooms", value === "any" ? "" : value)
-                    }
-                  >
-                    <SelectTrigger id="bedrooms" className="h-9">
-                      <SelectValue placeholder="Cualquiera" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Cualquiera</SelectItem>
-                      <SelectItem value="1">1+</SelectItem>
-                      <SelectItem value="2">2+</SelectItem>
-                      <SelectItem value="3">3+</SelectItem>
-                      <SelectItem value="4">4+</SelectItem>
-                      <SelectItem value="5">5+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="md:col-span-2">
-                  <Label htmlFor="bathrooms" className="text-xs font-medium mb-1.5 block">
-                    Baños
-                  </Label>
-                  <Select
-                    value={propertyFilters.minBathrooms?.toString() ?? "any"}
-                    onValueChange={(value) =>
-                      updateSelectFilter("minBathrooms", value === "any" ? "" : value)
-                    }
-                  >
-                    <SelectTrigger id="bathrooms" className="h-9">
-                      <SelectValue placeholder="Cualquiera" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Cualquiera</SelectItem>
-                      <SelectItem value="1">1+</SelectItem>
-                      <SelectItem value="2">2+</SelectItem>
-                      <SelectItem value="3">3+</SelectItem>
-                      <SelectItem value="4">4+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Row 2: Price + Area Sliders */}
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-medium">Precio</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {formatNumber(priceSliderValues[0] ?? 0)}€ - {formatNumber(priceSliderValues[1] ?? 0)}€
-                    </span>
+        <CollapsibleContent className="space-y-2">
+          <div className="rounded-lg shadow-md bg-card p-2">
+            <div className="space-y-2">
+              {/* Row 1: Location, Rooms, Price, Area */}
+              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                <FilterCategory title="Ubicación" category="location" icon={MapPin}>
+                  <div className="pt-1">
+                    <TwoLevelLocationSelect
+                      cities={cities}
+                      selectedCity={propertyFilters.city}
+                      selectedNeighborhood={propertyFilters.neighborhood}
+                      onCityChange={(city) => updateLocationFilter(city, "")}
+                      onNeighborhoodChange={(neighborhood) =>
+                        updateLocationFilter(propertyFilters.city, neighborhood)
+                      }
+                      cityPlaceholder="Ciudad"
+                      neighborhoodPlaceholder="Barrio"
+                    />
                   </div>
-                  <Slider
-                    value={priceSliderValues}
-                    min={priceRange.minPrice}
-                    max={priceRange.maxPrice}
-                    step={10000}
-                    onValueChange={handlePriceSliderChange}
-                    onValueCommit={applySliderFilters}
-                    className="py-2"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-medium">Superficie</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {formatNumber(areaSliderValues[0] ?? 0)}m² - {formatNumber(areaSliderValues[1] ?? 0)}m²
-                    </span>
-                  </div>
-                  <Slider
-                    value={areaSliderValues}
-                    min={areaRange.minArea}
-                    max={areaRange.maxArea}
-                    step={10}
-                    onValueChange={handleAreaSliderChange}
-                    onValueCommit={applySliderFilters}
-                    className="py-2"
-                  />
-                </div>
-              </div>
-
-              {/* Row 3: Status/Type Filters - Compact Checkboxes */}
-              <div className="grid gap-3 md:grid-cols-2 border-t pt-3">
-                <FilterCategory title="Estado" category="status">
-                  <FilterOption value="for-sale" label="En Venta" category="status" />
-                  <FilterOption value="for-rent" label="En Alquiler" category="status" />
-                  <FilterOption value="sold" label="Vendido" category="status" />
-                  <FilterOption value="rented" label="Alquilado" category="status" />
-                  <FilterOption value="discarded" label="Descartado" category="status" />
                 </FilterCategory>
 
-                <FilterCategory title="Tipo" category="type">
-                  <FilterOption value="piso" label="Piso" category="type" />
-                  <FilterOption value="casa" label="Casa" category="type" />
-                  <FilterOption value="local" label="Local" category="type" />
-                  <FilterOption value="solar" label="Solar" category="type" />
-                  <FilterOption value="garaje" label="Garaje" category="type" />
+                <FilterCategory title="Habitaciones y Baños" category="rooms" icon={Bed}>
+                  <div className="grid gap-2 grid-cols-2 pt-1">
+                    <Select
+                      value={propertyFilters.minBedrooms?.toString() ?? "any"}
+                      onValueChange={(value) =>
+                        updateSelectFilter("minBedrooms", value === "any" ? "" : value)
+                      }
+                    >
+                      <SelectTrigger id="bedrooms" className="h-8 text-xs" isPlaceholder={propertyFilters.minBedrooms === undefined}>
+                        <SelectValue placeholder="Hab." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Cualquiera</SelectItem>
+                        <SelectItem value="1">
+                          <div className="flex items-center gap-1.5">
+                            <Bed className="h-3 w-3" />
+                            <span>1+</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="2">
+                          <div className="flex items-center gap-1.5">
+                            <Bed className="h-3 w-3" />
+                            <span>2+</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="3">
+                          <div className="flex items-center gap-1.5">
+                            <Bed className="h-3 w-3" />
+                            <span>3+</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="4">
+                          <div className="flex items-center gap-1.5">
+                            <Bed className="h-3 w-3" />
+                            <span>4+</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="5">
+                          <div className="flex items-center gap-1.5">
+                            <Bed className="h-3 w-3" />
+                            <span>5+</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={propertyFilters.minBathrooms?.toString() ?? "any"}
+                      onValueChange={(value) =>
+                        updateSelectFilter("minBathrooms", value === "any" ? "" : value)
+                      }
+                    >
+                      <SelectTrigger id="bathrooms" className="h-8 text-xs" isPlaceholder={propertyFilters.minBathrooms === undefined}>
+                        <SelectValue placeholder="Baños" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Cualquiera</SelectItem>
+                        <SelectItem value="1">
+                          <div className="flex items-center gap-1.5">
+                            <Bath className="h-3 w-3" />
+                            <span>1+</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="2">
+                          <div className="flex items-center gap-1.5">
+                            <Bath className="h-3 w-3" />
+                            <span>2+</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="3">
+                          <div className="flex items-center gap-1.5">
+                            <Bath className="h-3 w-3" />
+                            <span>3+</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="4">
+                          <div className="flex items-center gap-1.5">
+                            <Bath className="h-3 w-3" />
+                            <span>4+</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </FilterCategory>
+
+                <FilterCategory title="Precio" category="price" icon={DollarSign}>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      defaultValue={isPriceSliderTouched ? priceSliderValues[0] : undefined}
+                      onBlur={(e) => {
+                        const val = e.target.value === "" ? priceRange.minPrice : parseInt(e.target.value);
+                        handlePriceSliderChange([val, priceSliderValues[1] ?? priceRange.maxPrice]);
+                        applySliderFilters();
+                      }}
+                      className="h-8 w-full rounded-md border border-input bg-background px-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                    <span className="text-[12px] text-muted-foreground">-</span>
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      defaultValue={isPriceSliderTouched ? priceSliderValues[1] : undefined}
+                      onBlur={(e) => {
+                        const val = e.target.value === "" ? priceRange.maxPrice : parseInt(e.target.value);
+                        handlePriceSliderChange([priceSliderValues[0] ?? priceRange.minPrice, val]);
+                        applySliderFilters();
+                      }}
+                      className="h-8 w-full rounded-md border border-input bg-background px-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                  </div>
+                </FilterCategory>
+
+                <FilterCategory title="Superficie (m²)" category="area" icon={Ruler}>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      defaultValue={isAreaSliderTouched ? areaSliderValues[0] : undefined}
+                      onBlur={(e) => {
+                        const val = e.target.value === "" ? areaRange.minArea : parseInt(e.target.value);
+                        handleAreaSliderChange([val, areaSliderValues[1] ?? areaRange.maxArea]);
+                        applySliderFilters();
+                      }}
+                      className="h-8 w-full rounded-md border border-input bg-background px-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                    <span className="text-[12px] text-muted-foreground">-</span>
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      defaultValue={isAreaSliderTouched ? areaSliderValues[1] : undefined}
+                      onBlur={(e) => {
+                        const val = e.target.value === "" ? areaRange.maxArea : parseInt(e.target.value);
+                        handleAreaSliderChange([areaSliderValues[0] ?? areaRange.minArea, val]);
+                        applySliderFilters();
+                      }}
+                      className="h-8 w-full rounded-md border border-input bg-background px-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                  </div>
                 </FilterCategory>
               </div>
 
-              {/* Clear Filters Button */}
-              {activePropertyFiltersCount > 0 && (
-                <div className="flex justify-end border-t pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearPropertyFilters}
-                    className="h-7 text-xs"
-                  >
-                    <X className="mr-1 h-3 w-3" />
-                    Borrar filtros
-                  </Button>
-                </div>
-              )}
+              {/* Separator */}
+              <div className="border-t" />
+
+              {/* Row 2: Status, Type, Other & Clear Button */}
+              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                <FilterCategory title="Estado" category="status" icon={Tag}>
+                  <div className="grid grid-cols-2 gap-x-2">
+                    <FilterOption value="for-sale" label="En Venta" category="status" />
+                    <FilterOption value="for-rent" label="En Alquiler" category="status" />
+                    <FilterOption value="sold" label="Vendido" category="status" />
+                    <FilterOption value="rented" label="Alquilado" category="status" />
+                    <FilterOption value="discarded" label="Descartado" category="status" />
+                  </div>
+                </FilterCategory>
+
+                <FilterCategory title="Tipo" category="type" icon={Home}>
+                  <div className="grid grid-cols-2 gap-x-2">
+                    <FilterOption value="piso" label="Piso" category="type" />
+                    <FilterOption value="casa" label="Casa" category="type" />
+                    <FilterOption value="local" label="Local" category="type" />
+                    <FilterOption value="solar" label="Solar" category="type" />
+                    <FilterOption value="garaje" label="Garaje" category="type" />
+                  </div>
+                </FilterCategory>
+
+                <FilterCategory title="Otros" category="other" icon={Key}>
+                  <div className="grid grid-cols-1 gap-y-0.5">
+                    <div
+                      className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+                      onClick={() => toggleBooleanFilter("hasKeys")}
+                    >
+                      <div
+                        className={`flex h-3 w-3 items-center justify-center rounded border ${
+                          propertyFilters.hasKeys === true ? "border-primary bg-primary" : "border-input"
+                        }`}
+                      >
+                        {propertyFilters.hasKeys === true && <Check className="h-2 w-2 text-primary-foreground" />}
+                      </div>
+                      <span className={`text-[12px] ${propertyFilters.hasKeys === true ? "font-medium" : ""}`}>
+                        Con llaves
+                      </span>
+                    </div>
+                    <div
+                      className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+                      onClick={() => toggleBooleanFilter("publishToWebsite")}
+                    >
+                      <div
+                        className={`flex h-3 w-3 items-center justify-center rounded border ${
+                          propertyFilters.publishToWebsite === true ? "border-primary bg-primary" : "border-input"
+                        }`}
+                      >
+                        {propertyFilters.publishToWebsite === true && <Check className="h-2 w-2 text-primary-foreground" />}
+                      </div>
+                      <span className={`text-[12px] ${propertyFilters.publishToWebsite === true ? "font-medium" : ""}`}>
+                        Visible en web
+                      </span>
+                    </div>
+                  </div>
+                </FilterCategory>
+
+                {/* Clear Filters Button */}
+                {activePropertyFiltersCount > 0 && (
+                  <div className="flex items-center justify-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearPropertyFilters}
+                      className="h-auto py-1 px-2 text-[12px]"
+                    >
+                      <FilterX className="mr-1 h-3 w-3" />
+                      Borrar filtros
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </CollapsibleContent>

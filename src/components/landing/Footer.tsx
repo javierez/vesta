@@ -21,9 +21,9 @@ const navigation = {
     { name: "API", href: "#api" },
   ],
   legal: [
-    { name: "Privacidad", href: "#privacy" },
+    { name: "Privacidad", href: "/privacidad" },
     { name: "Términos", href: "#terms" },
-    { name: "Cookies", href: "#cookies" },
+    { name: "Cookies", href: "/cookies" },
     { name: "RGPD", href: "#gdpr" },
   ],
 };
@@ -49,15 +49,15 @@ export function Footer() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <Mail className="h-4 w-4" />
-                <span>contacto@vesta.com</span>
+                <span>javier@vesta-crm.com</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <Phone className="h-4 w-4" />
-                <span>+34 900 123 456</span>
+                <span>+34 636 036 116</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <MapPin className="h-4 w-4" />
-                <span>Madrid, España</span>
+                <span>Calle Aviador Zorita 6, 28020, Madrid</span>
               </div>
             </div>
           </div>
