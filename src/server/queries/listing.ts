@@ -390,6 +390,7 @@ export async function listListings(
     status?: "En Venta" | "En Alquiler" | "Vendido" | "Alquilado" | "Descartado" | "Draft";
     listingType?: "Sale" | "Rent";
     agentId?: string[];
+    ownerId?: string[];
     propertyId?: number;
     isActive?: boolean;
     isFeatured?: boolean;
@@ -438,6 +439,11 @@ export async function listListings(
         // Properly format the agent IDs for SQL IN clause
         const agentList = filters.agentId.map(id => `'${id}'`).join(',');
         whereConditions.push(sql`${listings.agentId} IN (${sql.raw(agentList)})`);
+      }
+      if (filters.ownerId && filters.ownerId.length > 0) {
+        // Properly format the owner IDs for SQL IN clause
+        const ownerList = filters.ownerId.map(id => id).join(',');
+        whereConditions.push(sql`owner_contact.contact_id IN (${sql.raw(ownerList)})`);
       }
       if (filters.propertyId) {
         whereConditions.push(

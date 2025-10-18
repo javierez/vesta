@@ -2459,3 +2459,52 @@ export async function findContactBySimilarName(
     return null;
   }
 }
+
+// Get all owners (contacts with contactType = "owner") for filter dropdown
+export async function getAllOwnersWithAuth() {
+  const accountId = await getCurrentUserAccountId();
+  return getAllOwners(accountId);
+}
+
+async function getAllOwners(accountId: number) {
+  try {
+    const owners = await db
+      .selectDistinct({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+      })
+      .from(contacts)
+      .innerJoin(
+        listingContacts,
+        and(
+          eq(contacts.contactId, listingContacts.contactId),
+          eq(listingContacts.contactType, "owner"),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .innerJoin(
+        listings,
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+        ),
+      )
+      .where(
+        and(
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true),
+        ),
+      )
+      .orderBy(contacts.firstName, contacts.lastName);
+
+    return owners.map((owner) => ({
+      id: owner.contactId.toString(),
+      name: `${owner.firstName} ${owner.lastName ?? ""}`.trim(),
+    }));
+  } catch (error) {
+    console.error("Error getting all owners:", error);
+    return [];
+  }
+}
