@@ -5,15 +5,11 @@ import Image from "next/image";
 import {
   Plus,
   Trash2,
-  Maximize2,
-  X,
   Download,
   CheckSquare2,
   Square,
   Eye,
   EyeOff,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -32,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { ImageViewer } from "~/components/ui/image-viewer";
 
 interface ImageGalleryProps {
   images: PropertyImage[];
@@ -89,27 +86,6 @@ export function ImageGallery({
     setImageSources(sources);
   }, [initialImages]);
 
-  // Keyboard navigation for expanded image view
-  React.useEffect(() => {
-    if (expandedImage === null) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        if (expandedImage > 0) {
-          setExpandedImage(expandedImage - 1);
-        }
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        if (expandedImage < images.length - 1) {
-          setExpandedImage(expandedImage + 1);
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [expandedImage, images.length]);
 
   const handleImageError = (index: number) => {
     console.log("Image failed to load:", imageSources[index]);
@@ -497,17 +473,6 @@ export function ImageGallery({
     setImageSources(originalImageSources);
   };
 
-  const handlePreviousImage = () => {
-    if (expandedImage !== null && expandedImage > 0) {
-      setExpandedImage(expandedImage - 1);
-    }
-  };
-
-  const handleNextImage = () => {
-    if (expandedImage !== null && expandedImage < images.length - 1) {
-      setExpandedImage(expandedImage + 1);
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -536,7 +501,13 @@ export function ImageGallery({
             onDragOver={(e) => handleDragOver(e, idx)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, idx)}
-            onClick={() => isSelectMode && toggleImageSelection(idx)}
+            onClick={() => {
+              if (isSelectMode) {
+                toggleImageSelection(idx);
+              } else {
+                setExpandedImage(idx);
+              }
+            }}
           >
             {imageSources[idx] && (
               <Image
@@ -568,18 +539,7 @@ export function ImageGallery({
               <>
                 <button
                   type="button"
-                  className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExpandedImage(idx);
-                  }}
-                  aria-label="Expandir imagen"
-                >
-                  <Maximize2 className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  className="absolute right-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-red-500 group-hover:opacity-100"
+                  className="absolute right-2 top-2 rounded-full bg-black/40 p-1.5 text-white transition-all duration-200 hover:bg-red-500 md:opacity-0 md:group-hover:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
                     setImageToDelete(idx);
@@ -591,7 +551,7 @@ export function ImageGallery({
                 </button>
                 <button
                   type="button"
-                  className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 disabled:opacity-50 group-hover:opacity-100"
+                  className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white transition-all duration-200 hover:bg-black/60 disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (imageSources[idx]) {
@@ -612,7 +572,7 @@ export function ImageGallery({
                 </button>
                 <button
                   type="button"
-                  className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 disabled:opacity-50 group-hover:opacity-100"
+                  className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white transition-all duration-200 hover:bg-black/60 disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
                     void handleToggleVisibility(idx);
@@ -779,72 +739,13 @@ export function ImageGallery({
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={expandedImage !== null}
-        onOpenChange={() => setExpandedImage(null)}
-      >
-        <DialogContent className="max-h-[90vh] max-w-[90vw] border-none bg-transparent p-0 shadow-none">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Vista ampliada de la imagen</DialogTitle>
-            <DialogDescription>
-              Imagen ampliada de la propiedad. Presione ESC o el botón de cerrar
-              para salir.
-            </DialogDescription>
-          </DialogHeader>
-          {expandedImage !== null && images[expandedImage] && imageSources[expandedImage] && (
-            <div className="relative">
-              <Image
-                src={imageSources[expandedImage]}
-                alt={title ?? `Property image ${expandedImage + 1}`}
-                width={1200}
-                height={800}
-                className="h-auto max-h-[90vh] w-full rounded-lg object-contain"
-                onError={() => handleImageError(expandedImage)}
-                onLoad={() => handleImageLoad(expandedImage)}
-              />
-
-              {/* Close button */}
-              <button
-                type="button"
-                className="absolute right-4 top-4 rounded-full bg-white p-2.5 text-gray-800 shadow-lg transition-all hover:scale-110 hover:bg-gray-100"
-                onClick={() => setExpandedImage(null)}
-                aria-label="Cerrar vista ampliada"
-              >
-                <X className="h-6 w-6" />
-              </button>
-
-              {/* Previous button */}
-              {expandedImage > 0 && (
-                <button
-                  type="button"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-3 text-gray-800 shadow-lg transition-all hover:scale-110 hover:bg-white"
-                  onClick={handlePreviousImage}
-                  aria-label="Imagen anterior"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-              )}
-
-              {/* Next button */}
-              {expandedImage < images.length - 1 && (
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-3 text-gray-800 shadow-lg transition-all hover:scale-110 hover:bg-white"
-                  onClick={handleNextImage}
-                  aria-label="Siguiente imagen"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </button>
-              )}
-
-              {/* Image counter */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm">
-                {expandedImage + 1} / {images.length}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ImageViewer
+        images={Object.values(imageSources)}
+        initialIndex={expandedImage ?? 0}
+        isOpen={expandedImage !== null}
+        onClose={() => setExpandedImage(null)}
+        title={title}
+      />
     </div>
   );
 }

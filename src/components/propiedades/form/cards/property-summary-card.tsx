@@ -80,7 +80,7 @@ export function PropertySummaryCard({
   };
   
   return (
-    <Card className="col-span-full bg-gradient-to-br from-amber-50/50 to-rose-50/50 border-gradient-to-r border-amber-200/30 shadow-lg mb-6 md:mb-8">
+    <Card className="col-span-full bg-gradient-to-br from-amber-50/50 to-rose-50/50 border-gradient-to-r border-amber-200/30 shadow-lg mb-2 md:mb-3">
       <div className="p-4 md:p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
           {/* Property Metrics - First row on mobile, left on desktop */}

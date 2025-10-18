@@ -230,13 +230,12 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
         />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
           <div className="flex h-16 items-center justify-between px-4 mt-6">
-            <div className="flex items-center ml-12">
+            <div className="flex items-center justify-center h-16 w-40 relative">
               <Image
                 src={accountLogo ?? "/vestazoomin.jpeg"}
                 alt="Vesta CRM Logo"
-                width={834}
-                height={187}
-                className="h-10 w-auto"
+                fill
+                className="object-contain"
               />
             </div>
             <Button
@@ -483,13 +482,12 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex min-h-0 flex-1 flex-col border-r border-gray-200 bg-white">
           <div className="flex h-16 items-center px-4 mt-4">
-            <div className="flex items-center">
+            <div className="flex items-center justify-center h-16 w-40 relative">
               <Image
                 src={accountLogo ?? "/vestazoomin.jpeg"}
                 alt="Vesta CRM Logo"
-                width={834}
-                height={187}
-                className="h-10 w-auto"
+                fill
+                className="object-contain"
               />
             </div>
           </div>

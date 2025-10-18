@@ -1,4 +1,5 @@
 export { PropertySummaryCard } from "./property-summary-card";
+export { PropertyStatusRow } from "./property-status-row";
 export { BasicInfoCard } from "./basic-info-card";
 export { PropertyDetailsCard } from "./property-details-card";
 export { LocationCard } from "./location-card";

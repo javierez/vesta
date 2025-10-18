@@ -82,8 +82,10 @@ export const PropertyTable = React.memo(function PropertyTable({
   onPrefetchPage,
 }: PropertyTableProps) {
   const router = useRouter();
-  const defaultPlaceholder = "";
   const [loadedImages, setLoadedImages] = React.useState<Set<string>>(
+    new Set(),
+  );
+  const [failedImages, setFailedImages] = React.useState<Set<string>>(
     new Set(),
   );
   const [visibleRows, setVisibleRows] = React.useState<Set<string>>(
@@ -472,9 +474,10 @@ export const PropertyTable = React.memo(function PropertyTable({
                 >
                   <div className="truncate">
                     <div className="group relative h-[48px] w-[72px] overflow-hidden rounded-md">
-                      {isVisible && listing.imageUrl && 
-                       !listing.imageUrl.includes('youtube.com') && 
-                       !listing.imageUrl.includes('youtu.be') ? (
+                      {isVisible && listing.imageUrl &&
+                       !listing.imageUrl.includes('youtube.com') &&
+                       !listing.imageUrl.includes('youtu.be') &&
+                       !failedImages.has(listingId) ? (
                         <>
                           {!loadedImages.has(listingId) && (
                             <Skeleton className="absolute inset-0 z-10" />
@@ -493,15 +496,13 @@ export const PropertyTable = React.memo(function PropertyTable({
                                 : "opacity-0",
                             )}
                             onLoad={() => handleImageLoad(listingId)}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = defaultPlaceholder;
-                              handleImageLoad(listingId);
+                            onError={() => {
+                              setFailedImages((prev) => new Set(prev).add(listingId));
                             }}
                           />
                         </>
                       ) : isVisible ? (
-                        <PropertyImagePlaceholder 
+                        <PropertyImagePlaceholder
                           propertyType={listing.propertyType}
                           className="h-full w-full rounded-md"
                         />

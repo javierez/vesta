@@ -28,7 +28,7 @@ export async function listListingsWithAuth(
   page = 1,
   limit = 10,
   filters?: Parameters<typeof listListings>[3],
-  view?: "grid" | "table",
+  view?: "grid" | "table" | "map",
 ) {
   const accountId = await getCurrentUserAccountId();
   return listListings(accountId, page, limit, filters, view);
@@ -414,7 +414,7 @@ export async function listListings(
     needsRenovation?: boolean;
     searchQuery?: string;
   },
-  view?: "grid" | "table",
+  view?: "grid" | "table" | "map",
 ) {
   try {
     const offset = (page - 1) * limit;
@@ -478,7 +478,9 @@ export async function listListings(
         );
       }
       if (filters.bedrooms) {
-        whereConditions.push(eq(properties.bedrooms, filters.bedrooms));
+        whereConditions.push(
+          sql`${properties.bedrooms} >= ${filters.bedrooms}`,
+        );
       }
       if (filters.minBathrooms) {
         whereConditions.push(
@@ -578,6 +580,26 @@ export async function listListings(
             ownerName: sql<string>`CONCAT(owner_contact.first_name, ' ', owner_contact.last_name)`,
             ownerPhone: sql<string | null>`owner_contact.phone`,
             ownerEmail: sql<string | null>`owner_contact.email`,
+          })
+        : view === "map"
+        ? db.select({
+            // Map view: optimized fields with coordinates
+            listingId: listings.listingId,
+            propertyId: listings.propertyId,
+            agentName: users.name,
+            price: listings.price,
+            listingType: listings.listingType,
+            status: listings.status,
+            referenceNumber: properties.referenceNumber,
+            title: properties.title,
+            propertyType: properties.propertyType,
+            bedrooms: properties.bedrooms,
+            bathrooms: properties.bathrooms,
+            squareMeter: properties.squareMeter,
+            city: locations.city,
+            latitude: properties.latitude,
+            longitude: properties.longitude,
+            imageUrl: sql<string>`img1.image_url`,
           })
         : db.select({
             // Grid view: optimized fields

@@ -6,15 +6,18 @@ import { Plus, FileText } from "lucide-react";
 import Link from "next/link";
 import { PropertyCardSkeleton } from "~/components/property-card-skeleton";
 import { PropertyTableSkeleton } from "~/components/property-table-skeleton";
+import { PropertyMapSkeleton } from "~/components/property-map-skeleton";
 import { PropertyFilter } from "~/components/propiedades/property-filter";
 import { PropertyTable } from "~/components/propiedades/property-table";
 import { PropertyGrid } from "~/components/propiedades/property-grid";
+import { PropertyMap } from "~/components/propiedades/maps/property-map";
 import { NoResults } from "~/components/propiedades/no-results";
 import {
   listListingsWithAuth,
   getAllAgentsWithAuth,
   getAccountWebsiteWithAuth,
 } from "~/server/queries/listing";
+import { getAllCities } from "~/server/queries/locations";
 import type { ListingOverview } from "~/types/listing";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -32,25 +35,30 @@ export default function PropertiesPage() {
   const [accountWebsite, setAccountWebsite] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [prefetchedPages, setPrefetchedPages] = useState<Set<number>>(new Set());
+  const [cities, setCities] = useState<string[]>([]);
+  const [priceRange] = useState({ minPrice: 50000, maxPrice: 1000000 });
+  const [areaRange] = useState({ minArea: 20, maxArea: 500 });
 
-  const view = (searchParams.get("view") ?? "table") as "grid" | "table";
+  const view = (searchParams.get("view") ?? "table") as "grid" | "table" | "map";
 
-  // Fetch agents and account website independently
+  // Fetch agents, cities, and account website independently
   useEffect(() => {
-    const fetchAgentsAndWebsite = async () => {
+    const fetchStaticData = async () => {
       try {
-        const [allAgents, website] = await Promise.all([
+        const [allAgents, website, allCities] = await Promise.all([
           getAllAgentsWithAuth(),
           getAccountWebsiteWithAuth(),
+          getAllCities(),
         ]);
         setAgents(allAgents);
         setAccountWebsite(website);
+        setCities(allCities);
       } catch (error) {
-        console.error("Error fetching agents and website:", error);
+        console.error("Error fetching static data:", error);
         setError("Error al cargar los datos");
       }
     };
-    void fetchAgentsAndWebsite();
+    void fetchStaticData();
   }, []);
 
   useEffect(() => {
@@ -89,14 +97,21 @@ export default function PropertiesPage() {
             [
               "minPrice",
               "maxPrice",
-              "bedrooms",
+              "minBedrooms",
               "minBathrooms",
               "maxBathrooms",
-              "minSquareMeter",
-              "maxSquareMeter",
+              "minSize",
+              "maxSize",
             ].includes(key)
           ) {
-            filters[key] = Number(value);
+            // Map minSize/maxSize to minSquareMeter/maxSquareMeter
+            if (key === "minSize") {
+              filters.minSquareMeter = Number(value);
+            } else if (key === "maxSize") {
+              filters.maxSquareMeter = Number(value);
+            } else {
+              filters[key] = Number(value);
+            }
           } else if (
             [
               "hasGarage",
@@ -118,9 +133,11 @@ export default function PropertiesPage() {
           // Don't set filters.status - let the backend apply the default
         }
 
+        // For map view, fetch all listings; for table/grid, use pagination
+        const limit = view === "map" ? 10000 : ITEMS_PER_PAGE;
         const result = await listListingsWithAuth(
           page,
-          ITEMS_PER_PAGE,
+          limit,
           filters,
           view,
         );
@@ -201,14 +218,21 @@ export default function PropertiesPage() {
           [
             "minPrice",
             "maxPrice",
-            "bedrooms",
+            "minBedrooms",
             "minBathrooms",
             "maxBathrooms",
-            "minSquareMeter",
-            "maxSquareMeter",
+            "minSize",
+            "maxSize",
           ].includes(key)
         ) {
-          filters[key] = Number(value);
+          // Map minSize/maxSize to minSquareMeter/maxSquareMeter
+          if (key === "minSize") {
+            filters.minSquareMeter = Number(value);
+          } else if (key === "maxSize") {
+            filters.maxSquareMeter = Number(value);
+          } else {
+            filters[key] = Number(value);
+          }
         } else if (
           [
             "hasGarage",
@@ -267,7 +291,13 @@ export default function PropertiesPage() {
         </div>
       </div>
 
-      <PropertyFilter view={view} agents={agents} />
+      <PropertyFilter
+        view={view}
+        agents={agents}
+        cities={cities}
+        priceRange={priceRange}
+        areaRange={areaRange}
+      />
 
       {isLoading ? (
         view === "grid" ? (
@@ -276,6 +306,8 @@ export default function PropertiesPage() {
               <PropertyCardSkeleton key={index} />
             ))}
           </div>
+        ) : view === "map" ? (
+          <PropertyMapSkeleton />
         ) : (
           <PropertyTableSkeleton />
         )
@@ -289,9 +321,14 @@ export default function PropertiesPage() {
           onPageChange={handlePageChange}
           accountWebsite={accountWebsite}
         />
+      ) : view === "map" ? (
+        <PropertyMap
+          listings={listings}
+          accountWebsite={accountWebsite}
+        />
       ) : (
-        <PropertyTable 
-          listings={listings} 
+        <PropertyTable
+          listings={listings}
           accountWebsite={accountWebsite}
           currentPage={currentPage}
           totalPages={totalPages}

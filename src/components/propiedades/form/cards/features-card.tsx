@@ -167,7 +167,7 @@ export function FeaturesCard({
         >
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-              EQUIPAMIENTO Y SERVICIOS
+              EQUIPAMIENTO Y SUMINISTROS
             </h3>
           </div>
           <ChevronDown

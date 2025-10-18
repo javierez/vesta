@@ -104,7 +104,6 @@ export const PropertyCard = React.memo(function PropertyCard({
   };
 
   // Get primary image with proper fallback
-  const defaultPlaceholder = "";
   const isValidImageUrl = (url: string | null | undefined): boolean => {
     if (!url) return false;
     // Exclude YouTube videos
@@ -116,18 +115,18 @@ export const PropertyCard = React.memo(function PropertyCard({
     return true;
   };
   const [imageSrc, setImageSrc] = useState(
-    isValidImageUrl(listing.imageUrl) ? listing.imageUrl : defaultPlaceholder,
+    isValidImageUrl(listing.imageUrl) ? listing.imageUrl : null,
   );
   const [imageSrc2, setImageSrc2] = useState(
-    isValidImageUrl(listing.imageUrl2) ? listing.imageUrl2 : defaultPlaceholder,
+    isValidImageUrl(listing.imageUrl2) ? listing.imageUrl2 : null,
   );
 
   const onImageError = () => {
-    setImageSrc(defaultPlaceholder);
+    setImageSrc(null);
   };
 
   const onImage2Error = () => {
-    setImageSrc2(defaultPlaceholder);
+    setImageSrc2(null);
   };
 
   const handleWhatsAppClick = (e: React.MouseEvent) => {

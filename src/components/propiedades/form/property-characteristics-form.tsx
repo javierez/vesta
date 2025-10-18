@@ -14,6 +14,7 @@ import { updateProperty } from "~/server/queries/properties";
 import { updateListingWithAuth, toggleListingKeysWithAuth, toggleListingPublishToWebsiteWithAuth, getListingDetailsWithAuth } from "~/server/queries/listing";
 import { toast } from "sonner";
 import { PropertySummaryCard } from "./cards/property-summary-card";
+import { PropertyStatusRow } from "./cards/property-status-row";
 import { BasicInfoCard } from "./cards/basic-info-card";
 import { PropertyDetailsCard } from "./cards/property-details-card";
 import { LocationCard } from "./cards/location-card";
@@ -32,6 +33,7 @@ import { ExternalLinkPopup } from "~/components/ui/external-link-popup";
 import { generatePropertyTitle } from "~/lib/property-title";
 import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-modal";
 import { deletePropertyWithAuth, deleteListingWithAuth, discardListingWithAuth, recoverListingWithAuth } from "~/server/queries/listing";
+import { getFirstImage } from "~/app/actions/property-images";
 
 import type { PropertyListing } from "~/types/property-listing";
 
@@ -810,7 +812,9 @@ export function PropertyCharacteristicsForm({
   const [keysLoading, setKeysLoading] = useState(false);
   const [publishToWebsite, setPublishToWebsite] = useState<boolean>(false);
   const [websiteLoading, setWebsiteLoading] = useState(false);
-  
+
+  // First property image URL
+  const [firstImageUrl, setFirstImageUrl] = useState<string | null>(null);
 
   // Filter owners based on search
   const filteredOwners = owners.filter((owner) =>
@@ -829,13 +833,14 @@ export function PropertyCharacteristicsForm({
     const fetchAllFormData = async () => {
       try {
         console.log('Fetching all form data in single batch...');
-        
+
         // Batch all API calls in parallel for maximum performance
-        const [agentsData, potentialOwnersData, currentOwnersData, listingDetailsData] = await Promise.all([
+        const [agentsData, potentialOwnersData, currentOwnersData, listingDetailsData, firstImage] = await Promise.all([
           getAllAgentsWithAuth(),
           getAllPotentialOwnersWithAuth(),
           listing.listingId ? getCurrentListingOwnersWithAuth(Number(listing.listingId)) : Promise.resolve([]),
           listing.listingId ? getListingDetailsWithAuth(Number(listing.listingId)) : Promise.resolve(null),
+          listing.propertyId ? getFirstImage(Number(listing.propertyId)) : Promise.resolve(null),
         ]);
 
         // Process agents data
@@ -868,6 +873,9 @@ export function PropertyCharacteristicsForm({
           setPublishToWebsite(details.publishToWebsite ?? false);
         }
 
+        // Set first image URL
+        setFirstImageUrl(firstImage);
+
         console.log('✅ All form data fetched successfully - Performance optimized!');
       } catch (error) {
         console.error('❌ Error fetching form data:', error);
@@ -877,11 +885,12 @@ export function PropertyCharacteristicsForm({
         setSelectedOwnerIds([]);
         setHasKeys(false);
         setPublishToWebsite(false);
+        setFirstImageUrl(null);
       }
     };
 
     void fetchAllFormData();
-  }, [listing.listingId]);
+  }, [listing.listingId, listing.propertyId]);
 
   // Toggle handlers
   const handleToggleKeys = async () => {
@@ -1196,325 +1205,351 @@ export function PropertyCharacteristicsForm({
   const currentListingType = listingTypes[0] ?? "";
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-2">
-      {/* Property Summary */}
-      <PropertySummaryCard
-        listing={listing}
-        propertyType={propertyType}
-        selectedOwnerIds={selectedOwnerIds}
-        owners={owners}
-        selectedAgentId={selectedAgentId}
-        agents={agents}
-        hasKeys={hasKeys}
-        keysLoading={keysLoading}
-        publishToWebsite={publishToWebsite}
-        websiteLoading={websiteLoading}
-        onToggleKeys={handleToggleKeys}
-        onToggleWebsite={handleToggleWebsite}
-        onEditOwner={handleEditOwner}
-      />
+    <div className="space-y-4">
+      {/* Top row - always full width */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-2">
+        {/* Property Summary */}
+        <PropertySummaryCard
+          listing={listing}
+          propertyType={propertyType}
+          selectedOwnerIds={selectedOwnerIds}
+          owners={owners}
+          selectedAgentId={selectedAgentId}
+          agents={agents}
+          hasKeys={hasKeys}
+          keysLoading={keysLoading}
+          publishToWebsite={publishToWebsite}
+          websiteLoading={websiteLoading}
+          onToggleKeys={handleToggleKeys}
+          onToggleWebsite={handleToggleWebsite}
+          onEditOwner={handleEditOwner}
+        />
 
-      {/* Basic Information */}
-      <BasicInfoCard
-        listing={listing}
-        propertyType={propertyType}
-        hasPropertyTypeChanged={Boolean(hasPropertyTypeChanged)}
-        listingTypes={listingTypes}
-        isBankOwned={isBankOwned}
-        newConstruction={newConstruction}
-        collapsedSections={collapsedSections}
-        saveState={moduleStates.basicInfo?.saveState ?? "idle"}
-        onToggleSection={toggleSection}
-        onSave={() => saveModule("basicInfo")}
-        onUpdateModule={(hasChanges) => updateModuleState("basicInfo", hasChanges)}
-        onToggleListingType={toggleListingType}
-        onHandleSecondaryListingType={handleSecondaryListingType}
-        onPropertyTypeChange={handlePropertyTypeChange}
-        setIsBankOwned={setIsBankOwned}
-        setNewConstruction={setNewConstruction}
-        getCardStyles={getCardStyles}
-      />
+        {/* Property Status Row with Process Tracker and Image Preview */}
+        <PropertyStatusRow
+          firstImageUrl={firstImageUrl}
+          prospectStatus={null}
+          propertyType={propertyType}
+          propertyId={listing.propertyId}
+        />
+      </div>
 
-      {/* Property Details */}
-      <PropertyDetailsCard
-        listing={listing}
-        propertyType={propertyType}
-        lastRenovationYear={lastRenovationYear.toString()}
-        buildingFloors={buildingFloors}
-        collapsedSections={collapsedSections}
-        saveState={moduleStates.propertyDetails?.saveState ?? "idle"}
-        onToggleSection={toggleSection}
-        onSave={() => saveModule("propertyDetails")}
-        onUpdateModule={(hasChanges) => updateModuleState("propertyDetails", hasChanges)}
-        setLastRenovationYear={setLastRenovationYear}
-        setBuildingFloors={setBuildingFloors}
-        getCardStyles={getCardStyles}
-      />
+      {/* Two independent columns */}
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
+        {/* Left Column */}
+        <div className="flex-1 space-y-4 w-full">
+          {/* Basic Information */}
+          <BasicInfoCard
+            listing={listing}
+            propertyType={propertyType}
+            hasPropertyTypeChanged={Boolean(hasPropertyTypeChanged)}
+            listingTypes={listingTypes}
+            isBankOwned={isBankOwned}
+            newConstruction={newConstruction}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.basicInfo?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("basicInfo")}
+            onUpdateModule={(hasChanges) => updateModuleState("basicInfo", hasChanges)}
+            onToggleListingType={toggleListingType}
+            onHandleSecondaryListingType={handleSecondaryListingType}
+            onPropertyTypeChange={handlePropertyTypeChange}
+            setIsBankOwned={setIsBankOwned}
+            setNewConstruction={setNewConstruction}
+            getCardStyles={getCardStyles}
+          />
 
-      {/* Location */}
-      <LocationCard
-        listing={listing}
-        city={city}
-        province={province}
-        municipality={municipality}
-        collapsedSections={collapsedSections}
-        saveState={moduleStates.location?.saveState ?? "idle"}
-        onToggleSection={toggleSection}
-        onSave={() => saveModule("location")}
-        onUpdateModule={(hasChanges) => updateModuleState("location", hasChanges)}
-        setCity={setCity}
-        setProvince={setProvince}
-        setMunicipality={setMunicipality}
-        setIsMapsPopupOpen={setIsMapsPopupOpen}
-        setIsCatastroPopupOpen={setIsCatastroPopupOpen}
-        getCardStyles={getCardStyles}
-      />
+          {/* Property Details */}
+          <PropertyDetailsCard
+            listing={listing}
+            propertyType={propertyType}
+            lastRenovationYear={lastRenovationYear.toString()}
+            buildingFloors={buildingFloors}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.propertyDetails?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("propertyDetails")}
+            onUpdateModule={(hasChanges) => updateModuleState("propertyDetails", hasChanges)}
+            setLastRenovationYear={setLastRenovationYear}
+            setBuildingFloors={setBuildingFloors}
+            getCardStyles={getCardStyles}
+          />
 
-      {/* Features */}
-      <FeaturesCard
-        listing={listing}
-        propertyType={propertyType}
-        hasElevator={hasElevator}
-        isFurnished={isFurnished}
-        furnitureQuality={furnitureQuality}
-        isHeating={isHeating}
-        heatingType={heatingType}
-        isHotWater={isHotWater}
-        hotWaterType={hotWaterType}
-        isAirConditioning={isAirConditioning}
-        airConditioningType={airConditioningType}
-        hasGarage={hasGarage}
-        garageType={garageType}
-        garageSpaces={garageSpaces}
-        garageInBuilding={garageInBuilding}
-        garageNumber={garageNumber}
-        hasStorageRoom={hasStorageRoom}
-        storageRoomSize={storageRoomSize}
-        storageRoomNumber={storageRoomNumber}
-        optionalGaragePrice={optionalGaragePrice}
-        optionalStorageRoomPrice={optionalStorageRoomPrice}
-        oven={oven}
-        microwave={microwave}
-        washingMachine={washingMachine}
-        fridge={fridge}
-        tv={tv}
-        stoneware={stoneware}
-        collapsedSections={collapsedSections}
-        saveState={moduleStates.features?.saveState ?? "idle"}
-        onToggleSection={toggleSection}
-        onSave={() => saveModule("features")}
-        onUpdateModule={(hasChanges) => updateModuleState("features", hasChanges)}
-        setHasElevator={setHasElevator}
-        setIsFurnished={setIsFurnished}
-        setFurnitureQuality={setFurnitureQuality}
-        setIsHeating={setIsHeating}
-        setHeatingType={setHeatingType}
-        setIsHotWater={setIsHotWater}
-        setHotWaterType={setHotWaterType}
-        setIsAirConditioning={setIsAirConditioning}
-        setAirConditioningType={setAirConditioningType}
-        setHasGarage={setHasGarage}
-        setGarageType={setGarageType}
-        setGarageSpaces={setGarageSpaces}
-        setGarageInBuilding={setGarageInBuilding}
-        setGarageNumber={setGarageNumber}
-        setHasStorageRoom={setHasStorageRoom}
-        setStorageRoomSize={setStorageRoomSize}
-        setStorageRoomNumber={setStorageRoomNumber}
-        setOptionalGaragePrice={setOptionalGaragePrice}
-        setOptionalStorageRoomPrice={setOptionalStorageRoomPrice}
-        setOven={setOven}
-        setMicrowave={setMicrowave}
-        setWashingMachine={setWashingMachine}
-        setFridge={setFridge}
-        setTv={setTv}
-        setStoneware={setStoneware}
-        getCardStyles={getCardStyles}
-      />
+          {/* Features */}
+          <FeaturesCard
+            listing={listing}
+            propertyType={propertyType}
+            hasElevator={hasElevator}
+            isFurnished={isFurnished}
+            furnitureQuality={furnitureQuality}
+            isHeating={isHeating}
+            heatingType={heatingType}
+            isHotWater={isHotWater}
+            hotWaterType={hotWaterType}
+            isAirConditioning={isAirConditioning}
+            airConditioningType={airConditioningType}
+            hasGarage={hasGarage}
+            garageType={garageType}
+            garageSpaces={garageSpaces}
+            garageInBuilding={garageInBuilding}
+            garageNumber={garageNumber}
+            hasStorageRoom={hasStorageRoom}
+            storageRoomSize={storageRoomSize}
+            storageRoomNumber={storageRoomNumber}
+            optionalGaragePrice={optionalGaragePrice}
+            optionalStorageRoomPrice={optionalStorageRoomPrice}
+            oven={oven}
+            microwave={microwave}
+            washingMachine={washingMachine}
+            fridge={fridge}
+            tv={tv}
+            stoneware={stoneware}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.features?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("features")}
+            onUpdateModule={(hasChanges) => updateModuleState("features", hasChanges)}
+            setHasElevator={setHasElevator}
+            setIsFurnished={setIsFurnished}
+            setFurnitureQuality={setFurnitureQuality}
+            setIsHeating={setIsHeating}
+            setHeatingType={setHeatingType}
+            setIsHotWater={setIsHotWater}
+            setHotWaterType={setHotWaterType}
+            setIsAirConditioning={setIsAirConditioning}
+            setAirConditioningType={setAirConditioningType}
+            setHasGarage={setHasGarage}
+            setGarageType={setGarageType}
+            setGarageSpaces={setGarageSpaces}
+            setGarageInBuilding={setGarageInBuilding}
+            setGarageNumber={setGarageNumber}
+            setHasStorageRoom={setHasStorageRoom}
+            setStorageRoomSize={setStorageRoomSize}
+            setStorageRoomNumber={setStorageRoomNumber}
+            setOptionalGaragePrice={setOptionalGaragePrice}
+            setOptionalStorageRoomPrice={setOptionalStorageRoomPrice}
+            setOven={setOven}
+            setMicrowave={setMicrowave}
+            setWashingMachine={setWashingMachine}
+            setFridge={setFridge}
+            setTv={setTv}
+            setStoneware={setStoneware}
+            getCardStyles={getCardStyles}
+          />
+        </div>
 
-      {/* Contact Information */}
-      <ContactInfoCard
-        ref={contactInfoRef}
-        selectedOwnerIds={selectedOwnerIds}
-        owners={owners}
-        filteredOwners={filteredOwners}
-        ownerSearch={ownerSearch}
-        selectedAgentId={selectedAgentId}
-        agents={agents}
-        collapsedSections={collapsedSections}
-        saveState={moduleStates.contactInfo?.saveState ?? "idle"}
-        onToggleSection={toggleSection}
-        onSave={() => saveModule("contactInfo")}
-        onUpdateModule={(hasChanges) => updateModuleState("contactInfo", hasChanges)}
-        setSelectedOwnerIds={setSelectedOwnerIds}
-        setOwnerSearch={setOwnerSearch}
-        setSelectedAgentId={setSelectedAgentId}
-        getCardStyles={getCardStyles}
-      />
+        {/* Right Column */}
+        <div className="flex-1 space-y-4 w-full">
+          {/* Contact Information */}
+          <ContactInfoCard
+            ref={contactInfoRef}
+            selectedOwnerIds={selectedOwnerIds}
+            owners={owners}
+            filteredOwners={filteredOwners}
+            ownerSearch={ownerSearch}
+            selectedAgentId={selectedAgentId}
+            agents={agents}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.contactInfo?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("contactInfo")}
+            onUpdateModule={(hasChanges) => updateModuleState("contactInfo", hasChanges)}
+            setSelectedOwnerIds={setSelectedOwnerIds}
+            setOwnerSearch={setOwnerSearch}
+            setSelectedAgentId={setSelectedAgentId}
+            getCardStyles={getCardStyles}
+          />
 
-      {/* Orientation and Exposure */}
-      <OrientationCard
-        isExterior={isExterior}
-        isBright={isBright}
-        orientation={orientation}
-        propertyType={propertyType}
-        collapsedSections={collapsedSections}
-        saveState={moduleStates.orientation?.saveState ?? "idle"}
-        onToggleSection={toggleSection}
-        onSave={() => saveModule("orientation")}
-        onUpdateModule={(hasChanges) => updateModuleState("orientation", hasChanges)}
-        setIsExterior={setIsExterior}
-        setIsBright={setIsBright}
-        setOrientation={setOrientation}
-        getCardStyles={getCardStyles}
-      />
+          {/* Location */}
+          <LocationCard
+            listing={listing}
+            city={city}
+            province={province}
+            municipality={municipality}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.location?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("location")}
+            onUpdateModule={(hasChanges) => updateModuleState("location", hasChanges)}
+            setCity={setCity}
+            setProvince={setProvince}
+            setMunicipality={setMunicipality}
+            setIsMapsPopupOpen={setIsMapsPopupOpen}
+            setIsCatastroPopupOpen={setIsCatastroPopupOpen}
+            getCardStyles={getCardStyles}
+          />
+
+          {/* Orientation and Exposure */}
+          <OrientationCard
+            isExterior={isExterior}
+            isBright={isBright}
+            orientation={orientation}
+            propertyType={propertyType}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.orientation?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("orientation")}
+            onUpdateModule={(hasChanges) => updateModuleState("orientation", hasChanges)}
+            setIsExterior={setIsExterior}
+            setIsBright={setIsBright}
+            setOrientation={setOrientation}
+            getCardStyles={getCardStyles}
+          />
+        </div>
+      </div>
 
       {/* Separator for secondary sections */}
-      <div className="col-span-full">
-        <Separator className="my-3 opacity-50" />
+      <Separator className="my-3 opacity-50" />
+
+      {/* Two independent columns for secondary cards */}
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
+        {/* Left Column */}
+        <div className="flex-1 space-y-4 w-full">
+          {/* Additional Characteristics */}
+          <AdditionalCharacteristicsCard
+            disabledAccessible={disabledAccessible}
+            vpo={vpo}
+            videoIntercom={videoIntercom}
+            conciergeService={conciergeService}
+            securityGuard={securityGuard}
+            satelliteDish={satelliteDish}
+            doubleGlazing={doubleGlazing}
+            alarm={alarm}
+            securityDoor={securityDoor}
+            kitchenType={kitchenType}
+            openKitchen={openKitchen}
+            frenchKitchen={frenchKitchen}
+            furnishedKitchen={furnishedKitchen}
+            pantry={pantry}
+            propertyType={propertyType}
+            showAdditionalCharacteristics={showAdditionalCharacteristics}
+            saveState={moduleStates.additionalCharacteristics?.saveState ?? "idle"}
+            onSave={() => saveModule("additionalCharacteristics")}
+            onUpdateModule={(hasChanges) => updateModuleState("additionalCharacteristics", hasChanges)}
+            setDisabledAccessible={setDisabledAccessible}
+            setVpo={setVpo}
+            setVideoIntercom={setVideoIntercom}
+            setConciergeService={setConciergeService}
+            setSecurityGuard={setSecurityGuard}
+            setSatelliteDish={setSatelliteDish}
+            setDoubleGlazing={setDoubleGlazing}
+            setAlarm={setAlarm}
+            setSecurityDoor={setSecurityDoor}
+            setKitchenType={setKitchenType}
+            setOpenKitchen={setOpenKitchen}
+            setFrenchKitchen={setFrenchKitchen}
+            setFurnishedKitchen={setFurnishedKitchen}
+            setPantry={setPantry}
+            setShowAdditionalCharacteristics={setShowAdditionalCharacteristics}
+            getCardStyles={getCardStyles}
+          />
+
+          {/* Additional Spaces */}
+          <AdditionalSpacesCard
+            terrace={terrace}
+            terraceSize={terraceSize}
+            wineCellar={wineCellar}
+            wineCellarSize={wineCellarSize}
+            livingRoomSize={livingRoomSize}
+            balconyCount={balconyCount}
+            galleryCount={galleryCount}
+            builtInWardrobes={builtInWardrobes}
+            propertyType={propertyType}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.additionalSpaces?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("additionalSpaces")}
+            onUpdateModule={(hasChanges) => updateModuleState("additionalSpaces", hasChanges)}
+            setTerrace={setTerrace}
+            setTerraceSize={setTerraceSize}
+            setWineCellar={setWineCellar}
+            setWineCellarSize={setWineCellarSize}
+            setLivingRoomSize={setLivingRoomSize}
+            setBalconyCount={setBalconyCount}
+            setGalleryCount={setGalleryCount}
+            setBuiltInWardrobes={setBuiltInWardrobes}
+            getCardStyles={getCardStyles}
+          />
+        </div>
+
+        {/* Right Column */}
+        <div className="flex-1 space-y-4 w-full">
+          {/* Premium Features */}
+          <PremiumFeaturesCard
+            propertyType={propertyType}
+            views={views}
+            mountainViews={mountainViews}
+            seaViews={seaViews}
+            beachfront={beachfront}
+            jacuzzi={jacuzzi}
+            hydromassage={hydromassage}
+            garden={garden}
+            pool={pool}
+            homeAutomation={homeAutomation}
+            musicSystem={musicSystem}
+            laundryRoom={laundryRoom}
+            coveredClothesline={coveredClothesline}
+            fireplace={fireplace}
+            gym={gym}
+            sportsArea={sportsArea}
+            childrenArea={childrenArea}
+            suiteBathroom={suiteBathroom}
+            nearbyPublicTransport={nearbyPublicTransport}
+            communityPool={communityPool}
+            privatePool={privatePool}
+            tennisCourt={tennisCourt}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.premiumFeatures?.saveState ?? "idle"}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("premiumFeatures")}
+            onUpdateModule={(hasChanges) => updateModuleState("premiumFeatures", hasChanges)}
+            setViews={setViews}
+            setMountainViews={setMountainViews}
+            setSeaViews={setSeaViews}
+            setBeachfront={setBeachfront}
+            setJacuzzi={setJacuzzi}
+            setHydromassage={setHydromassage}
+            setGarden={setGarden}
+            setPool={setPool}
+            setHomeAutomation={setHomeAutomation}
+            setMusicSystem={setMusicSystem}
+            setLaundryRoom={setLaundryRoom}
+            setCoveredClothesline={setCoveredClothesline}
+            setFireplace={setFireplace}
+            setGym={setGym}
+            setSportsArea={setSportsArea}
+            setChildrenArea={setChildrenArea}
+            setSuiteBathroom={setSuiteBathroom}
+            setNearbyPublicTransport={setNearbyPublicTransport}
+            setCommunityPool={setCommunityPool}
+            setPrivatePool={setPrivatePool}
+            setTennisCourt={setTennisCourt}
+            getCardStyles={getCardStyles}
+          />
+
+          {/* Materials */}
+          <MaterialsCard
+            mainFloorType={mainFloorType}
+            shutterType={shutterType}
+            carpentryType={carpentryType}
+            windowType={windowType}
+            propertyType={propertyType}
+            showMaterials={showMaterials}
+            saveState={moduleStates.materials?.saveState ?? "idle"}
+            onSave={() => saveModule("materials")}
+            onUpdateModule={(hasChanges) => updateModuleState("materials", hasChanges)}
+            setMainFloorType={setMainFloorType}
+            setShutterType={setShutterType}
+            setCarpentryType={setCarpentryType}
+            setWindowType={setWindowType}
+            setShowMaterials={setShowMaterials}
+            getCardStyles={getCardStyles}
+          />
+        </div>
       </div>
-
-      {/* Additional Characteristics */}
-      <AdditionalCharacteristicsCard
-        disabledAccessible={disabledAccessible}
-        vpo={vpo}
-        videoIntercom={videoIntercom}
-        conciergeService={conciergeService}
-        securityGuard={securityGuard}
-        satelliteDish={satelliteDish}
-        doubleGlazing={doubleGlazing}
-        alarm={alarm}
-        securityDoor={securityDoor}
-        kitchenType={kitchenType}
-        openKitchen={openKitchen}
-        frenchKitchen={frenchKitchen}
-        furnishedKitchen={furnishedKitchen}
-        pantry={pantry}
-        propertyType={propertyType}
-        showAdditionalCharacteristics={showAdditionalCharacteristics}
-        saveState={moduleStates.additionalCharacteristics?.saveState ?? "idle"}
-        onSave={() => saveModule("additionalCharacteristics")}
-        onUpdateModule={(hasChanges) => updateModuleState("additionalCharacteristics", hasChanges)}
-        setDisabledAccessible={setDisabledAccessible}
-        setVpo={setVpo}
-        setVideoIntercom={setVideoIntercom}
-        setConciergeService={setConciergeService}
-        setSecurityGuard={setSecurityGuard}
-        setSatelliteDish={setSatelliteDish}
-        setDoubleGlazing={setDoubleGlazing}
-        setAlarm={setAlarm}
-        setSecurityDoor={setSecurityDoor}
-        setKitchenType={setKitchenType}
-        setOpenKitchen={setOpenKitchen}
-        setFrenchKitchen={setFrenchKitchen}
-        setFurnishedKitchen={setFurnishedKitchen}
-        setPantry={setPantry}
-        setShowAdditionalCharacteristics={setShowAdditionalCharacteristics}
-        getCardStyles={getCardStyles}
-      />
-
-      {/* Premium Features */}
-      <PremiumFeaturesCard
-        propertyType={propertyType}
-        views={views}
-        mountainViews={mountainViews}
-        seaViews={seaViews}
-        beachfront={beachfront}
-        jacuzzi={jacuzzi}
-        hydromassage={hydromassage}
-        garden={garden}
-        pool={pool}
-        homeAutomation={homeAutomation}
-        musicSystem={musicSystem}
-        laundryRoom={laundryRoom}
-        coveredClothesline={coveredClothesline}
-        fireplace={fireplace}
-        gym={gym}
-        sportsArea={sportsArea}
-        childrenArea={childrenArea}
-        suiteBathroom={suiteBathroom}
-        nearbyPublicTransport={nearbyPublicTransport}
-        communityPool={communityPool}
-        privatePool={privatePool}
-        tennisCourt={tennisCourt}
-        collapsedSections={collapsedSections}
-        saveState={moduleStates.premiumFeatures?.saveState ?? "idle"}
-        onToggleSection={toggleSection}
-        onSave={() => saveModule("premiumFeatures")}
-        onUpdateModule={(hasChanges) => updateModuleState("premiumFeatures", hasChanges)}
-        setViews={setViews}
-        setMountainViews={setMountainViews}
-        setSeaViews={setSeaViews}
-        setBeachfront={setBeachfront}
-        setJacuzzi={setJacuzzi}
-        setHydromassage={setHydromassage}
-        setGarden={setGarden}
-        setPool={setPool}
-        setHomeAutomation={setHomeAutomation}
-        setMusicSystem={setMusicSystem}
-        setLaundryRoom={setLaundryRoom}
-        setCoveredClothesline={setCoveredClothesline}
-        setFireplace={setFireplace}
-        setGym={setGym}
-        setSportsArea={setSportsArea}
-        setChildrenArea={setChildrenArea}
-        setSuiteBathroom={setSuiteBathroom}
-        setNearbyPublicTransport={setNearbyPublicTransport}
-        setCommunityPool={setCommunityPool}
-        setPrivatePool={setPrivatePool}
-        setTennisCourt={setTennisCourt}
-        getCardStyles={getCardStyles}
-      />
-
-      {/* Additional Spaces */}
-      <AdditionalSpacesCard
-        terrace={terrace}
-        terraceSize={terraceSize}
-        wineCellar={wineCellar}
-        wineCellarSize={wineCellarSize}
-        livingRoomSize={livingRoomSize}
-        balconyCount={balconyCount}
-        galleryCount={galleryCount}
-        builtInWardrobes={builtInWardrobes}
-        propertyType={propertyType}
-        collapsedSections={collapsedSections}
-        saveState={moduleStates.additionalSpaces?.saveState ?? "idle"}
-        onToggleSection={toggleSection}
-        onSave={() => saveModule("additionalSpaces")}
-        onUpdateModule={(hasChanges) => updateModuleState("additionalSpaces", hasChanges)}
-        setTerrace={setTerrace}
-        setTerraceSize={setTerraceSize}
-        setWineCellar={setWineCellar}
-        setWineCellarSize={setWineCellarSize}
-        setLivingRoomSize={setLivingRoomSize}
-        setBalconyCount={setBalconyCount}
-        setGalleryCount={setGalleryCount}
-        setBuiltInWardrobes={setBuiltInWardrobes}
-        getCardStyles={getCardStyles}
-      />
-
-      <MaterialsCard
-        mainFloorType={mainFloorType}
-        shutterType={shutterType}
-        carpentryType={carpentryType}
-        windowType={windowType}
-        propertyType={propertyType}
-        showMaterials={showMaterials}
-        saveState={moduleStates.materials?.saveState ?? "idle"}
-        onSave={() => saveModule("materials")}
-        onUpdateModule={(hasChanges) => updateModuleState("materials", hasChanges)}
-        setMainFloorType={setMainFloorType}
-        setShutterType={setShutterType}
-        setCarpentryType={setCarpentryType}
-        setWindowType={setWindowType}
-        setShowMaterials={setShowMaterials}
-        getCardStyles={getCardStyles}
-      />
 
       {/* Separator before Description */}
-      <div className="col-span-full">
-        <Separator className="my-3 opacity-50" />
-      </div>
+      <Separator className="my-3 opacity-50" />
 
       {/* Description Module */}
       <DescriptionCard
@@ -1537,8 +1572,7 @@ export function PropertyCharacteristicsForm({
       />
 
       {/* Rental Properties Module */}
-      <div className="col-span-full">
-        <RentalPropertiesCard
+      <RentalPropertiesCard
           listingType={currentListingType}
           propertyType={propertyType}
           internet={internet}
@@ -1568,10 +1602,9 @@ export function PropertyCharacteristicsForm({
           setRentalPrice={setRentalPrice}
           getCardStyles={getCardStyles}
         />
-      </div>
-      
+
       {/* Action Buttons - Discard, Delete Listing, and Delete Property */}
-      <div className="col-span-full mt-6">
+      <div className="mt-6">
         <div className="flex justify-center gap-4 flex-wrap">
           <Button
             type="button"

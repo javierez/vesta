@@ -36,7 +36,9 @@
       "Bash(cat:*)",
       "WebFetch(domain:ropenspain.github.io)",
       "WebFetch(domain:ovc.catastro.meh.es)",
-      "WebFetch(domain:www.fotocasa.pro)"
+      "WebFetch(domain:www.fotocasa.pro)",
+      "mcp__google-maps-platform-code-assist__retrieve-instructions",
+      "Bash(git checkout src/components/propiedades/property-filter.tsx)"
     ],
     "deny": [],
     "ask": []

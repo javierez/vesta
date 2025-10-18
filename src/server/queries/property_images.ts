@@ -424,3 +424,31 @@ export async function getMaxImageOrder(propertyId: bigint, isActive = true) {
     return 0;
   }
 }
+
+// Get the first property image (image_order = 1, excludes videos, YouTube links, and virtual tours)
+export async function getFirstPropertyImage(propertyId: bigint, isActive = true) {
+  try {
+    const conditions = [
+      eq(propertyImages.propertyId, propertyId),
+      eq(propertyImages.imageOrder, 1),
+      // Only get actual images, not videos, YouTube links, or virtual tours
+      and(
+        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
+      )
+    ];
+    if (isActive !== undefined) {
+      conditions.push(eq(propertyImages.isActive, isActive));
+    }
+
+    const [firstImage] = await db
+      .select()
+      .from(propertyImages)
+      .where(and(...conditions))
+      .limit(1);
+
+    return firstImage;
+  } catch (error) {
+    console.error("Error getting first property image:", error);
+    return null;
+  }
+}
