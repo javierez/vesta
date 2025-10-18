@@ -18,7 +18,6 @@ import {
   getAccountWebsiteWithAuth,
 } from "~/server/queries/listing";
 import { getCitiesFromAccountPropertiesWithAuth } from "~/server/queries/locations";
-import { getAllOwnersWithAuth } from "~/server/queries/contact";
 import type { ListingOverview } from "~/types/listing";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -33,7 +32,6 @@ export default function PropertiesPage() {
   const [totalPages, setTotalPages] = useState(1);
   // Removed unused variable: totalCount
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
-  const [owners, setOwners] = useState<Array<{ id: string; name: string }>>([]);
   const [accountWebsite, setAccountWebsite] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [prefetchedPages, setPrefetchedPages] = useState<Set<number>>(new Set());
@@ -43,18 +41,16 @@ export default function PropertiesPage() {
 
   const view = (searchParams.get("view") ?? "table") as "grid" | "table" | "map";
 
-  // Fetch agents, owners, cities, and account website independently
+  // Fetch agents, cities, and account website independently
   useEffect(() => {
     const fetchStaticData = async () => {
       try {
-        const [allAgents, allOwners, website, allCities] = await Promise.all([
+        const [allAgents, website, allCities] = await Promise.all([
           getAllAgentsWithAuth(),
-          getAllOwnersWithAuth(),
           getAccountWebsiteWithAuth(),
           getCitiesFromAccountPropertiesWithAuth(),
         ]);
         setAgents(allAgents);
-        setOwners(allOwners);
         setAccountWebsite(website);
         setCities(allCities);
       } catch (error) {
@@ -97,8 +93,8 @@ export default function PropertiesPage() {
             filters.propertyType = value.split(",");
           } else if (key === "agent") {
             filters.agentId = value.split(",");
-          } else if (key === "owner") {
-            filters.ownerId = value.split(",");
+          } else if (key === "ownerId") {
+            filters.ownerId = value;
           } else if (
             [
               "minPrice",
@@ -220,8 +216,8 @@ export default function PropertiesPage() {
           filters.propertyType = value.split(",");
         } else if (key === "agent") {
           filters.agentId = value.split(",");
-        } else if (key === "owner") {
-          filters.ownerId = value.split(",");
+        } else if (key === "ownerName") {
+          filters.ownerName = value;
         } else if (
           [
             "minPrice",
@@ -302,7 +298,6 @@ export default function PropertiesPage() {
       <PropertyFilter
         view={view}
         agents={agents}
-        owners={owners}
         cities={cities}
         priceRange={priceRange}
         areaRange={areaRange}

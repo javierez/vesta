@@ -390,7 +390,7 @@ export async function listListings(
     status?: "En Venta" | "En Alquiler" | "Vendido" | "Alquilado" | "Descartado" | "Draft";
     listingType?: "Sale" | "Rent";
     agentId?: string[];
-    ownerId?: string[];
+    ownerId?: string;
     propertyId?: number;
     isActive?: boolean;
     isFeatured?: boolean;
@@ -440,10 +440,11 @@ export async function listListings(
         const agentList = filters.agentId.map(id => `'${id}'`).join(',');
         whereConditions.push(sql`${listings.agentId} IN (${sql.raw(agentList)})`);
       }
-      if (filters.ownerId && filters.ownerId.length > 0) {
-        // Properly format the owner IDs for SQL IN clause
-        const ownerList = filters.ownerId.map(id => id).join(',');
-        whereConditions.push(sql`owner_contact.contact_id IN (${sql.raw(ownerList)})`);
+      if (filters.ownerId) {
+        // Filter by owner contact ID using exact match
+        whereConditions.push(
+          sql`owner_contact.contact_id = ${BigInt(filters.ownerId)}`
+        );
       }
       if (filters.propertyId) {
         whereConditions.push(
@@ -677,8 +678,8 @@ export async function listListings(
         sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`
       );
 
-    // Get total count for pagination (simplified, no need for image/owner JOINs for count)
-    const countResult = await db
+    // Get total count for pagination (include owner JOIN if owner filter is active)
+    const countQuery = db
       .select({ count: sql<number>`count(*)` })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
@@ -686,7 +687,25 @@ export async function listListings(
         locations,
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
-      .leftJoin(users, eq(listings.agentId, users.id))
+      .leftJoin(users, eq(listings.agentId, users.id));
+
+    // Add owner JOIN to count query if filtering by owner
+    const countQueryWithOwner = filters?.ownerId
+      ? countQuery.leftJoin(
+          sql`(
+            SELECT
+              lc.listing_id,
+              c.contact_id,
+              ROW_NUMBER() OVER (PARTITION BY lc.listing_id ORDER BY lc.created_at ASC) as rn
+            FROM listing_contacts lc
+            JOIN contacts c ON lc.contact_id = c.contact_id
+            WHERE lc.contact_type = 'owner' AND lc.is_active = true AND c.is_active = true
+          ) owner_contact`,
+          sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`
+        )
+      : countQuery;
+
+    const countResult = await countQueryWithOwner
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
 
     const count = countResult[0]?.count ?? 0;

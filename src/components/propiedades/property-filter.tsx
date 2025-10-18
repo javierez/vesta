@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "~/components/ui/button";
 import {
   Popover,
@@ -38,15 +38,16 @@ import {
   Home,
   Tag,
   Key,
+  Search,
 } from "lucide-react";
 import { PropertySearch } from "./property-search";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TwoLevelLocationSelect } from "~/components/ui/two-level-location-select";
+import { searchContactsForFormWithAuth } from "~/server/queries/contact";
 
 interface PropertyFilterProps {
   view: "grid" | "table" | "map";
   agents?: Array<{ id: string; name: string }>;
-  owners?: Array<{ id: string; name: string }>;
   cities?: string[];
   priceRange?: { minPrice: number; maxPrice: number };
   areaRange?: { minArea: number; maxArea: number };
@@ -55,7 +56,6 @@ interface PropertyFilterProps {
 export function PropertyFilter({
   view,
   agents = [],
-  owners = [],
   cities = [],
   priceRange = { minPrice: 50000, maxPrice: 1000000 },
   areaRange = { minArea: 20, maxArea: 500 },
@@ -78,7 +78,13 @@ export function PropertyFilter({
     publishToWebsite: undefined as boolean | undefined,
   });
   const [agentFilters, setAgentFilters] = useState<string[]>([]);
-  const [ownerFilters, setOwnerFilters] = useState<string[]>([]);
+  const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
+  const [ownerSearchInput, setOwnerSearchInput] = useState(""); // Local state for typing
+  const [ownerDisplayName, setOwnerDisplayName] = useState(""); // Separate state for selected owner name
+  const [ownerSearchResults, setOwnerSearchResults] = useState<Array<{ id: string; name: string }>>([]);
+  const [isSearchingOwners, setIsSearchingOwners] = useState(false);
+  const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
+  const ownerInputRef = useRef<HTMLInputElement>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
@@ -108,7 +114,7 @@ export function PropertyFilter({
     const status = searchParams.get("status");
     const type = searchParams.get("type");
     const agent = searchParams.get("agent");
-    const owner = searchParams.get("owner");
+    const ownerId = searchParams.get("ownerId");
     const q = searchParams.get("q");
     const city = searchParams.get("city");
     const neighborhood = searchParams.get("neighborhood");
@@ -137,7 +143,7 @@ export function PropertyFilter({
       publishToWebsite: publishToWebsite === "true" ? true : publishToWebsite === "false" ? false : undefined,
     });
     setAgentFilters(agent ? agent.split(",") : []);
-    setOwnerFilters(owner ? owner.split(",") : []);
+    setOwnerFilter(ownerId ?? null);
     setSearchQuery(q ?? "");
 
     // Update slider values if they're in the URL
@@ -157,10 +163,55 @@ export function PropertyFilter({
     }
   }, [searchParams, priceRange, areaRange]);
 
+  // Search owner contacts on button click
+  const performOwnerSearch = async (searchValue?: string) => {
+    const valueToSearch = searchValue ?? ownerSearchInput;
+
+    if (!valueToSearch.trim()) {
+      setOwnerSearchResults([]);
+      setShowOwnerDropdown(false);
+      return;
+    }
+
+    try {
+      setIsSearchingOwners(true);
+      const results = await searchContactsForFormWithAuth(valueToSearch, 6);
+      setOwnerSearchResults(results.map(contact => ({
+        id: contact.id.toString(),
+        name: contact.name,
+      })));
+      setShowOwnerDropdown(results.length > 0);
+    } catch (error) {
+      console.error("Error searching owner contacts:", error);
+      setOwnerSearchResults([]);
+      setShowOwnerDropdown(false);
+    } finally {
+      setIsSearchingOwners(false);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest(".owner-search-container")) {
+        setShowOwnerDropdown(false);
+      }
+    };
+
+    if (showOwnerDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showOwnerDropdown]);
+
   const updateUrlParams = (
     newPropertyFilters: typeof propertyFilters,
     newAgentFilters: string[],
-    newOwnerFilters: string[],
+    newOwnerFilter: string | null,
     newSearchQuery: string,
   ) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -193,11 +244,11 @@ export function PropertyFilter({
       params.delete("agent");
     }
 
-    // Update owner
-    if (newOwnerFilters.length > 0) {
-      params.set("owner", newOwnerFilters.join(","));
+    // Update owner ID filter
+    if (newOwnerFilter) {
+      params.set("ownerId", newOwnerFilter);
     } else {
-      params.delete("owner");
+      params.delete("ownerId");
     }
 
     // Update city
@@ -282,7 +333,7 @@ export function PropertyFilter({
         : [...currentValues, value],
     };
     setPropertyFilters(newFilters);
-    updateUrlParams(newFilters, agentFilters, ownerFilters, searchQuery);
+    updateUrlParams(newFilters, agentFilters, ownerFilter, searchQuery);
   };
 
   const toggleAgentFilter = (value: string) => {
@@ -290,15 +341,29 @@ export function PropertyFilter({
       ? agentFilters.filter((v) => v !== value)
       : [...agentFilters, value];
     setAgentFilters(newFilters);
-    updateUrlParams(propertyFilters, newFilters, ownerFilters, searchQuery);
+    updateUrlParams(propertyFilters, newFilters, ownerFilter, searchQuery);
   };
 
-  const toggleOwnerFilter = (value: string) => {
-    const newFilters = ownerFilters.includes(value)
-      ? ownerFilters.filter((v) => v !== value)
-      : [...ownerFilters, value];
-    setOwnerFilters(newFilters);
-    updateUrlParams(propertyFilters, agentFilters, newFilters, searchQuery);
+  // Handle selecting an owner from dropdown
+  const handleSelectOwner = (ownerId: string, ownerName: string) => {
+    setOwnerFilter(ownerId);
+    setOwnerDisplayName(ownerName);
+    setOwnerSearchInput(ownerName);
+    updateUrlParams(propertyFilters, agentFilters, ownerId, searchQuery);
+    setShowOwnerDropdown(false);
+    setOwnerSearchResults([]);
+  };
+
+  // Clear owner filter
+  const clearOwnerFilter = () => {
+    setOwnerFilter(null);
+    setOwnerDisplayName("");
+    setOwnerSearchInput("");
+    if (ownerInputRef.current) {
+      ownerInputRef.current.value = ""; // Clear the uncontrolled input
+    }
+    setOwnerSearchResults([]);
+    updateUrlParams(propertyFilters, agentFilters, null, searchQuery);
   };
 
   const toggleBooleanFilter = (key: "hasKeys" | "publishToWebsite") => {
@@ -308,7 +373,7 @@ export function PropertyFilter({
       [key]: currentValue === undefined ? true : currentValue === true ? false : undefined,
     };
     setPropertyFilters(newFilters);
-    updateUrlParams(newFilters, agentFilters, ownerFilters, searchQuery);
+    updateUrlParams(newFilters, agentFilters, ownerFilter, searchQuery);
   };
 
   const toggleCategory = (category: string) => {
@@ -325,7 +390,7 @@ export function PropertyFilter({
       neighborhood,
     };
     setPropertyFilters(newFilters);
-    updateUrlParams(newFilters, agentFilters, ownerFilters, searchQuery);
+    updateUrlParams(newFilters, agentFilters, ownerFilter, searchQuery);
   };
 
   const updateSelectFilter = (
@@ -337,7 +402,7 @@ export function PropertyFilter({
       [key]: value === "" ? undefined : parseInt(value),
     };
     setPropertyFilters(newFilters);
-    updateUrlParams(newFilters, agentFilters, ownerFilters, searchQuery);
+    updateUrlParams(newFilters, agentFilters, ownerFilter, searchQuery);
   };
 
   const handlePriceSliderChange = (values: number[]) => {
@@ -363,7 +428,7 @@ export function PropertyFilter({
   };
 
   const applySliderFilters = () => {
-    updateUrlParams(propertyFilters, agentFilters, ownerFilters, searchQuery);
+    updateUrlParams(propertyFilters, agentFilters, ownerFilter, searchQuery);
   };
 
   const clearPropertyFilters = () => {
@@ -386,22 +451,20 @@ export function PropertyFilter({
     setAreaSliderValues([areaRange.minArea, areaRange.maxArea]);
     setIsPriceSliderTouched(false);
     setIsAreaSliderTouched(false);
-    updateUrlParams(newFilters, agentFilters, ownerFilters, searchQuery);
+    setOwnerFilter(null);
+    setOwnerSearchInput("");
+    setOwnerSearchResults([]);
+    updateUrlParams(newFilters, agentFilters, null, searchQuery);
   };
 
   const clearAgentFilters = () => {
     setAgentFilters([]);
-    updateUrlParams(propertyFilters, [], ownerFilters, searchQuery);
-  };
-
-  const clearOwnerFilters = () => {
-    setOwnerFilters([]);
-    updateUrlParams(propertyFilters, agentFilters, [], searchQuery);
+    updateUrlParams(propertyFilters, [], ownerFilter, searchQuery);
   };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    updateUrlParams(propertyFilters, agentFilters, ownerFilters, value);
+    updateUrlParams(propertyFilters, agentFilters, ownerFilter, value);
   };
 
 
@@ -429,19 +492,15 @@ export function PropertyFilter({
     label,
     category,
     isAgent = false,
-    isOwner = false,
   }: {
     value: string;
     label: string;
     category?: "status" | "type";
     isAgent?: boolean;
-    isOwner?: boolean;
   }) => {
     const isSelected = isAgent
       ? agentFilters.includes(value)
-      : isOwner
-        ? ownerFilters.includes(value)
-        : category ? propertyFilters[category].includes(value) : false;
+      : category ? propertyFilters[category].includes(value) : false;
 
     return (
       <div
@@ -449,9 +508,7 @@ export function PropertyFilter({
         onClick={() =>
           isAgent
             ? toggleAgentFilter(value)
-            : isOwner
-              ? toggleOwnerFilter(value)
-              : category ? togglePropertyFilter(category, value) : undefined
+            : category ? togglePropertyFilter(category, value) : undefined
         }
       >
         <div
@@ -513,7 +570,7 @@ export function PropertyFilter({
           <PropertySearch
             onSearchChange={handleSearchChange}
             onSearch={() =>
-              updateUrlParams(propertyFilters, agentFilters, ownerFilters, searchQuery)
+              updateUrlParams(propertyFilters, agentFilters, ownerFilter, searchQuery)
             }
           />
         </div>
@@ -617,20 +674,6 @@ export function PropertyFilter({
           </Button>
         </div>
       </div>
-
-      {activePropertyFiltersCount > 0 && (
-        <div className="flex items-center justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearPropertyFilters}
-            className="h-auto py-1 px-2 text-[12px]"
-          >
-            <FilterX className="mr-1 h-3 w-3" />
-            Borrar filtros
-          </Button>
-        </div>
-      )}
 
       <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
         <CollapsibleContent className="space-y-2">
@@ -858,22 +901,103 @@ export function PropertyFilter({
                 </FilterCategory>
 
                 <FilterCategory title="Propietario" category="owner" icon={User}>
-                  <ScrollArea className="h-[120px]">
-                    <div className="space-y-0.5 pr-3">
-                      {owners.map((owner) => (
-                        <FilterOption
-                          key={owner.id}
-                          value={owner.id}
-                          label={owner.name}
-                          isOwner={true}
-                        />
-                      ))}
+                  <div className="pt-1 owner-search-container relative">
+                    <div className="flex items-center gap-1">
+                      <input
+                        ref={ownerInputRef}
+                        type="text"
+                        placeholder="Buscar propietario..."
+                        key={ownerFilter ?? "no-owner"} // Force re-mount when owner changes
+                        defaultValue={ownerSearchInput}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const target = e.target as HTMLInputElement;
+                            const searchValue = target.value;
+                            setOwnerSearchInput(searchValue);
+                            void performOwnerSearch(searchValue);
+                          }
+                        }}
+                        className="h-8 flex-1 rounded-md border border-input bg-background px-2 text-[12px] placeholder:text-[12px] placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                      <button
+                        onClick={() => {
+                          if (ownerInputRef.current) {
+                            const searchValue = ownerInputRef.current.value;
+                            setOwnerSearchInput(searchValue);
+                            void performOwnerSearch(searchValue);
+                          }
+                        }}
+                        disabled={isSearchingOwners}
+                        className="h-8 px-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center disabled:opacity-50"
+                        title="Buscar"
+                      >
+                        <Search className="h-3 w-3" />
+                      </button>
                     </div>
-                  </ScrollArea>
+
+                    {/* Dropdown with search results */}
+                    {showOwnerDropdown && (
+                      <div className="absolute z-50 mt-1 left-0 right-0 rounded-md border border-input bg-background shadow-lg">
+                        <ScrollArea className="max-h-[200px]">
+                          {isSearchingOwners ? (
+                            <div className="py-3 text-center text-[12px] text-muted-foreground">
+                              Buscando contactos...
+                            </div>
+                          ) : ownerSearchResults.length === 0 ? (
+                            <div className="py-3 text-center text-[12px] text-muted-foreground">
+                              No se encontraron contactos
+                            </div>
+                          ) : (
+                            <div className="p-1">
+                              {ownerSearchResults.map((owner) => (
+                                <button
+                                  key={owner.id}
+                                  onClick={() => handleSelectOwner(owner.id, owner.name)}
+                                  className="w-full text-left px-2 py-1.5 text-[12px] rounded hover:bg-accent transition-colors"
+                                >
+                                  {owner.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </ScrollArea>
+                      </div>
+                    )}
+
+                    {ownerFilter && (
+                      <div className="mt-1 flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground">Filtrado por:</span>
+                        <Badge variant="secondary" className="text-[10px] h-5">
+                          {ownerDisplayName}
+                          <button
+                            onClick={clearOwnerFilter}
+                            className="ml-1 hover:bg-accent rounded-full"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
                 </FilterCategory>
               </div>
             </div>
           </div>
+
+          {/* Clear Filters Button */}
+          {activePropertyFiltersCount > 0 && (
+            <div className="flex items-center justify-end px-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearPropertyFilters}
+                className="h-auto py-1 px-2 text-[12px]"
+              >
+                <FilterX className="mr-1 h-3 w-3" />
+                Borrar filtros
+              </Button>
+            </div>
+          )}
         </CollapsibleContent>
       </Collapsible>
     </div>
