@@ -9,12 +9,13 @@ import { DocumentsManager } from "./documents-manager";
 import { CartelesManager } from "./carteles-manager";
 import { Tareas } from "./tareas";
 import { Comments } from "./comments";
+import { ActivityTabContent } from "./activity/activity-tab-content";
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form";
 import { CharacteristicsSkeleton } from "./skeletons";
 import { useSession } from "~/lib/auth-client";
 import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
-import { 
+import {
   getListingTasksWithAuth,
   updateListingTaskWithAuth,
   deleteListingTaskWithAuth
@@ -22,6 +23,8 @@ import {
 import { getCommentsByListingIdWithAuth } from "~/server/queries/comments";
 import { createCommentAction, updateCommentAction, deleteCommentAction } from "~/server/actions/comments";
 import type { CommentWithUser } from "~/types/comments";
+import { getListingVisitsSummary, getListingContactsSummary } from "~/server/queries/activity";
+import type { VisitWithDetails, ContactWithDetails } from "~/types/activity";
 import { toast } from "sonner";
 
 // Cartel type that matches what CartelesManager component expects
@@ -127,6 +130,8 @@ export function PropertyTabs({
       visibilityModes: Record<string, number>;
       hidePriceModes: Record<string, boolean>;
     } | null;
+    visits: VisitWithDetails[] | null;
+    contacts: ContactWithDetails[] | null;
   }>({
     images: images ?? null,
     videos: videos ?? null,
@@ -139,6 +144,8 @@ export function PropertyTabs({
     comments: null,
     carteles: null,
     portals: null,
+    visits: null,
+    contacts: null,
   });
   const [loading, setLoading] = useState<{
     caracteristicas: boolean;
@@ -146,12 +153,14 @@ export function PropertyTabs({
     agents: boolean;
     comments: boolean;
     carteles: boolean;
+    activity: boolean;
   }>({
     caracteristicas: false,
     tasks: false,
     agents: false,
     comments: false,
     carteles: false,
+    activity: false,
   });
 
   // These are no longer needed - data comes from props
@@ -379,6 +388,26 @@ export function PropertyTabs({
     }
   }, [listing.listingId]); // Removed tabData.carteles dependency to prevent infinite loop
 
+  const fetchActivityData = useCallback(async () => {
+    setLoading((prev) => ({ ...prev, activity: true }));
+    try {
+      const [visitsData, contactsData] = await Promise.all([
+        getListingVisitsSummary(listing.listingId),
+        getListingContactsSummary(listing.listingId),
+      ]);
+      setTabData((prev) => ({
+        ...prev,
+        visits: visitsData,
+        contacts: contactsData,
+      }));
+    } catch (error) {
+      console.error('Error fetching activity data:', error);
+      setTabData((prev) => ({ ...prev, visits: [], contacts: [] }));
+    } finally {
+      setLoading((prev) => ({ ...prev, activity: false }));
+    }
+  }, [listing.listingId]);
+
   const handlePortalStateChange = (
     platformStates: Record<string, boolean>,
     visibilityModes: Record<string, number>,
@@ -414,6 +443,9 @@ export function PropertyTabs({
     if (!tabData.carteles) {
       void fetchCartelesData();
     }
+    if (!tabData.visits || !tabData.contacts) {
+      void fetchActivityData();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - run once on mount only
 
@@ -423,9 +455,9 @@ export function PropertyTabs({
         <TabsTrigger value="general" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">General</TabsTrigger>
         <TabsTrigger value="tareas" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Tareas y notas</TabsTrigger>
         <TabsTrigger value="imagenes" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Imágenes</TabsTrigger>
-        <TabsTrigger value="carteles" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Carteles</TabsTrigger>
+        <TabsTrigger value="carteles" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Actividad</TabsTrigger>
         <TabsTrigger value="portales" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Portales</TabsTrigger>
-        <TabsTrigger value="documentos" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Documentos</TabsTrigger>
+        <TabsTrigger value="documentos" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Archivos</TabsTrigger>
       </TabsList>
 
       <TabsContent value="general" className="mt-8 sm:mt-6">
@@ -539,15 +571,22 @@ export function PropertyTabs({
       </TabsContent>
 
       <TabsContent value="carteles" className="mt-8 sm:mt-6">
-        <div className="mx-auto max-w-6xl">
-          <CartelesManager
-            propertyId={listing.propertyId}
-            listingId={listing.listingId}
-            referenceNumber={listing.referenceNumber ?? ""}
-            carteles={tabData.carteles ?? []}
-            loading={loading.carteles}
-            onRefreshCarteles={fetchCartelesData}
-          />
+        <div className="mx-auto max-w-7xl">
+          {loading.activity ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          ) : tabData.visits && tabData.contacts ? (
+            <ActivityTabContent
+              visits={tabData.visits}
+              contacts={tabData.contacts}
+              listingId={listing.listingId}
+            />
+          ) : (
+            <div className="py-16 text-center">
+              <p className="text-gray-500">No se pudo cargar la información de actividad</p>
+            </div>
+          )}
         </div>
       </TabsContent>
 
@@ -573,12 +612,29 @@ export function PropertyTabs({
 
 
       <TabsContent value="documentos" className="mt-8 sm:mt-6">
-        <div className="mx-auto max-w-6xl">
-          <DocumentsManager
-            propertyId={listing.propertyId}
-            listingId={listing.listingId}
-            referenceNumber={listing.referenceNumber ?? ""}
-          />
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left side - Documents */}
+            <div className="flex-1 lg:w-1/2">
+              <DocumentsManager
+                propertyId={listing.propertyId}
+                listingId={listing.listingId}
+                referenceNumber={listing.referenceNumber ?? ""}
+              />
+            </div>
+
+            {/* Right side - Carteles */}
+            <div className="flex-1 lg:w-1/2">
+              <CartelesManager
+                propertyId={listing.propertyId}
+                listingId={listing.listingId}
+                referenceNumber={listing.referenceNumber ?? ""}
+                carteles={tabData.carteles ?? []}
+                loading={loading.carteles}
+                onRefreshCarteles={fetchCartelesData}
+              />
+            </div>
+          </div>
         </div>
       </TabsContent>
 

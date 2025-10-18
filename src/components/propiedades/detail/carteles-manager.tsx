@@ -187,6 +187,13 @@ export function CartelesManager({
 
   return (
     <div className={cn("space-y-6", className)}>
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900">Carteles</h3>
+        <p className="text-sm text-gray-500">
+          Gestiona los carteles de la propiedad
+        </p>
+      </div>
+
       {/* Carteles Grid */}
       {carteles.length === 0 ? (
         <div className="py-16 text-center">
@@ -199,7 +206,7 @@ export function CartelesManager({
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
           {carteles.map((cartel) => (
             <Card
               key={cartel.docId.toString()}
@@ -274,28 +281,33 @@ export function CartelesManager({
       )}
 
       {/* Action Buttons */}
-      <div className="flex justify-center space-x-3">
-        <Button
-          variant="outline"
-          size="sm"
+      <div className="flex justify-center gap-3 flex-wrap">
+        <button
+          type="button"
           onClick={() => window.location.href = `/propiedades/${listingId}/cartel-editor`}
-          className="h-10 w-10 rounded-full p-0 border-gray-200 hover:border-gray-300 transition-all duration-300"
+          className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95"
         >
-          <Pencil className="h-4 w-4 text-gray-600" />
-        </Button>
+          Editor de Carteles
+          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+        </button>
         <Button
           variant="outline"
-          size="sm"
           onClick={() => setShowUpload(!showUpload)}
           className={cn(
-            "h-10 w-10 rounded-full p-0 border-gray-200 hover:border-gray-300 transition-all duration-300",
-            showUpload && "bg-gray-50 border-gray-300"
+            "px-6 py-2.5 font-medium border-gray-300 hover:border-gray-400 transition-all duration-300",
+            showUpload && "bg-gray-50 border-gray-400"
           )}
         >
           {showUpload ? (
-            <X className="h-4 w-4 text-gray-600" />
+            <>
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </>
           ) : (
-            <Plus className="h-4 w-4 text-gray-600" />
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Subir Carteles
+            </>
           )}
         </Button>
       </div>

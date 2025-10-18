@@ -7,6 +7,7 @@ export interface PropertyListing {
   // Basic property info
   propertyType?: string;
   propertySubtype?: string;
+  title?: string;
   listingType?: string;
   status?: string;
   price?: number | string;
@@ -182,6 +183,7 @@ export function convertDbListingToPropertyListing(
     listingId: dbListing.listingId ? Number(dbListing.listingId) : undefined,
     propertyType: (dbListing.propertyType as string) ?? undefined,
     propertySubtype: (dbListing.propertySubtype as string) ?? undefined,
+    title: (dbListing.title as string) ?? undefined,
     listingType: (dbListing.listingType as string) ?? undefined,
     status: (dbListing.status as string) ?? undefined,
     price: (dbListing.price as string | number) ?? undefined,

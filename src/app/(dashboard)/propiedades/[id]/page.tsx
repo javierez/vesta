@@ -149,7 +149,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         status={headerData.status}
         isBankOwned={headerData.isBankOwned ?? false}
         neighborhood=""
-        dynamicTitle={true}
+        dynamicTitle={false}
         listing={isValidRecord(fullListingDetails) ? { ...fullListingDetails, imageCount } : undefined}
       />
 

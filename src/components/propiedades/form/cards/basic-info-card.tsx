@@ -29,12 +29,14 @@ interface BasicInfoCardProps {
   newConstruction: boolean;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
+  currentTitle?: string;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   onToggleListingType: (type: string) => void;
   onHandleSecondaryListingType: (type: "RentWithOption" | "RoomSharing" | "Transfer") => void;
   onPropertyTypeChange: (newType: string) => Promise<void>;
+  onTitleChange?: (newTitle: string) => void;
   setIsBankOwned: (value: boolean) => void;
   setNewConstruction: (value: boolean) => void;
   getCardStyles: (moduleName: string) => string;
@@ -49,12 +51,14 @@ export function BasicInfoCard({
   newConstruction,
   collapsedSections,
   saveState,
+  currentTitle,
   onToggleSection,
   onSave,
   onUpdateModule,
   onToggleListingType,
   onHandleSecondaryListingType,
   onPropertyTypeChange,
+  onTitleChange,
   setIsBankOwned,
   setNewConstruction,
   getCardStyles,
@@ -126,10 +130,18 @@ export function BasicInfoCard({
         )}
       >
         <div className="space-y-1.5">
-          <PropertyTitle
-            propertyType={propertyType}
-            street={listing.street}
-            neighborhood={listing.neighborhood}
+          <Label htmlFor="title" className="text-sm">
+            Título
+          </Label>
+          <Input
+            id="title"
+            value={currentTitle ?? ""}
+            onChange={(e) => {
+              onTitleChange?.(e.target.value);
+              onUpdateModule(true);
+            }}
+            className="h-8 text-gray-500"
+            placeholder="Título de la propiedad"
           />
         </div>
 

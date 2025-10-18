@@ -1,0 +1,79 @@
+"use client";
+
+import { Plus } from "lucide-react";
+import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import type { ContactsKPIProps } from "~/types/activity";
+
+interface ContactsKPICardProps extends ContactsKPIProps {
+  isActive: boolean;
+  onClick: () => void;
+  listingId: bigint;
+}
+
+export function ContactsKPICard({
+  newContactsCount,
+  totalContactsCount,
+  isActive,
+  onClick,
+  listingId,
+}: ContactsKPICardProps) {
+  const router = useRouter();
+
+  const handleAddContact = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/contactos/crear?listingId=${listingId}`);
+  };
+
+  return (
+    <div className="space-y-3">
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className={`flex w-full flex-col items-center rounded-2xl p-6 transition-all duration-200 ${
+          isActive
+            ? "bg-gray-100 shadow-xl"
+            : "bg-white shadow hover:shadow-lg"
+        }`}
+        onClick={onClick}
+        type="button"
+      >
+        {/* Total */}
+        <div className="mb-4">
+          <span className="text-4xl font-bold text-primary">
+            {totalContactsCount}
+          </span>
+        </div>
+
+        {/* Label */}
+        <span className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
+          Contactos
+        </span>
+
+        {/* Breakdown Stats */}
+        <div className="flex w-full items-center justify-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
+            <span className="text-xs text-gray-600 uppercase tracking-wide">
+              {newContactsCount} nuevos (30d)
+            </span>
+          </div>
+        </div>
+      </motion.button>
+
+      {/* Quick Action Button */}
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={handleAddContact}
+        className="flex w-full flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        type="button"
+      >
+        <Plus className="mb-2 h-6 w-6" />
+        <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
+          Añadir Contacto
+        </span>
+      </motion.button>
+    </div>
+  );
+}

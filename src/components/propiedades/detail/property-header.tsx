@@ -66,7 +66,7 @@ export function PropertyHeader({
   listing,
 }: PropertyHeaderProps) {
   // Generate dynamic title if enabled, otherwise use provided title
-  const displayTitle = dynamicTitle && propertyType 
+  const displayTitle = dynamicTitle && propertyType
     ? generatePropertyTitle(propertyType, street, neighborhood ?? "")
     : title;
     

@@ -38,8 +38,8 @@ export function DocumentsManager({
   const folders: Folder[] = [
     {
       id: "documentacion-inicial",
-      name: "Documentación Inicial",
-      description: "Hoja de encargo, valoración, etc.",
+      name: "Inicial",
+      description: "Hoja de encargo, valoración.",
       documents: [],
     },
     {
@@ -56,7 +56,7 @@ export function DocumentsManager({
     },
     {
       id: "certificado-energetico",
-      name: "Certificado Energético",
+      name: "Cert. Energético",
       description: "Certificado y consumos",
       documents: [],
     },
@@ -83,7 +83,7 @@ export function DocumentsManager({
       </div>
 
       {/* Folders grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         {folders.map((folder) => {
           const isEnergyFolder = folder.id === "certificado-energetico";
           return (
@@ -92,22 +92,22 @@ export function DocumentsManager({
               className="cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md relative"
               onClick={() => handleFolderClick(folder.id)}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
-                    <FolderIcon className="h-8 w-8 fill-current text-gray-600" />
+                    <FolderIcon className="h-6 w-6 fill-current text-gray-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="truncate font-medium text-gray-900">
+                    <h4 className="truncate font-medium text-gray-900 text-sm">
                       {folder.name}
                     </h4>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-0.5 text-xs text-gray-500">
                       {folder.description}
                     </p>
                   </div>
                 </div>
                 {isEnergyFolder && (
-                  <ZapIcon className="absolute top-3 right-3 h-4 w-4 text-green-600 opacity-60 fill-current" />
+                  <ZapIcon className="absolute top-2 right-2 h-3.5 w-3.5 text-green-600 opacity-60 fill-current" />
                 )}
               </CardContent>
             </Card>

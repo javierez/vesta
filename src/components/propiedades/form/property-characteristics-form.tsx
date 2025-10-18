@@ -34,6 +34,7 @@ import { generatePropertyTitle } from "~/lib/property-title";
 import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-modal";
 import { deletePropertyWithAuth, deleteListingWithAuth, discardListingWithAuth, recoverListingWithAuth } from "~/server/queries/listing";
 import { getFirstImage } from "~/app/actions/property-images";
+import { formFormatters } from "~/lib/utils";
 
 import type { PropertyListing } from "~/types/property-listing";
 
@@ -84,7 +85,9 @@ export function PropertyCharacteristicsForm({
   
   // Local state to track current property type
   const [propertyType, setPropertyType] = useState(initialPropertyType);
-  
+
+  // Local state to track the current title - initialize from database only
+  const [currentTitle, setCurrentTitle] = useState(listing.title ?? "");
 
   // Check if property type has been changed from the original
   const hasPropertyTypeChanged =
@@ -140,6 +143,9 @@ export function PropertyCharacteristicsForm({
     }
   }, [hasPropertyTypeChanged]);
 
+  // Title only updates when: 1) User edits it manually in BasicInfoCard, or 2) Location changes in LocationCard
+  // No auto-generation on property type change
+
   // Function to update module state
   const updateModuleState = (moduleName: ModuleName, hasChanges: boolean) => {
     setModuleStates((prev) => {
@@ -157,6 +163,11 @@ export function PropertyCharacteristicsForm({
         },
       };
     });
+  };
+
+  // Handle manual title changes from BasicInfoCard
+  const handleTitleChange = (newTitle: string) => {
+    setCurrentTitle(newTitle);
   };
 
   // Function to save module data
@@ -180,29 +191,26 @@ export function PropertyCharacteristicsForm({
       const propertyId = Number(listing.propertyId);
       const listingId = Number(listing.listingId);
 
-      let propertyData = {};
-      let listingData = {};
+      let propertyData: Record<string, unknown> = {};
+      let listingData: Record<string, unknown> = {};
 
       switch (moduleName) {
         case "basicInfo":
-          // Generate the title based on current propertyType
-          const generatedTitle = generatePropertyTitle(
-            propertyType,
-            listing.street ?? "",
-            listing.neighborhood ?? ""
-          );
+          // Use the current title from local state
+          const priceInputValue = (document.getElementById("price") as HTMLInputElement)?.value ?? "";
+          // Remove thousand separators and convert to numeric value
+          const numericPrice = formFormatters.getNumericPrice(priceInputValue);
 
           listingData = {
             listingType: listingTypes[0],
             isBankOwned,
-            price: (document.getElementById("price") as HTMLInputElement)
-              ?.value,
+            price: numericPrice ? parseFloat(numericPrice) : 0,
           };
           propertyData = {
             propertyType,
             propertySubtype: listing.propertySubtype,
             newConstruction,
-            title: generatedTitle, // Move title to propertyData since it belongs in properties table
+            title: currentTitle, // Use current title from local state
           };
           break;
 
@@ -289,6 +297,15 @@ export function PropertyCharacteristicsForm({
           const latitudeValue = (document.getElementById("latitude") as HTMLInputElement)?.value;
           const longitudeValue = (document.getElementById("longitude") as HTMLInputElement)?.value;
 
+          // Generate new title based on updated location
+          const newTitle = generatePropertyTitle(
+            propertyType,
+            streetValue ?? listing.street ?? "",
+            neighborhoodValue ?? listing.neighborhood ?? ""
+          );
+
+          console.log("🏷️ [SAVE] Generated new title based on location:", newTitle);
+
           propertyData = {
             street: streetValue,
             addressDetails: addressDetailsValue,
@@ -298,6 +315,7 @@ export function PropertyCharacteristicsForm({
             nearbyPublicTransport,
             latitude: latitudeValue || null,
             longitude: longitudeValue || null,
+            title: newTitle, // Add generated title to property data
           };
 
           console.log("📝 [SAVE] Property data prepared for update:", {
@@ -500,6 +518,14 @@ export function PropertyCharacteristicsForm({
           },
         };
       });
+
+      // Update current title state if location was saved with a new title
+      if (moduleName === "location" && propertyData.title) {
+        setCurrentTitle(propertyData.title as string);
+        console.log("✅ [SAVE] Updated local title state to:", propertyData.title);
+        // Refresh server components to update PropertyHeader with new title
+        router.refresh();
+      }
 
       toast.success("Cambios guardados correctamente");
 
@@ -967,35 +993,26 @@ export function PropertyCharacteristicsForm({
 
   const handlePropertyTypeChange = async (newType: string) => {
     setPropertyType(newType); // Update local state only, don't change URL
-    
-    // Generate new title based on the new property type
-    const newTitle = generatePropertyTitle(newType, listing.street, listing.neighborhood);
-    
-    // Update the property title in the database
+
+    // Only update property type, NOT the title (title stays as-is)
     try {
       const propertyId = Number(listing.propertyId);
       if (!propertyId) {
         throw new Error("Property ID is required");
       }
-      
+
       await updateProperty(propertyId, {
         propertyType: newType,
-        title: newTitle,
       });
-      
+
       // Update local listing data
       listing.propertyType = newType;
-      
-      toast.success("Tipo de propiedad y título actualizados");
+
+      toast.success("Tipo de propiedad actualizado");
     } catch (error) {
-      console.error("Error updating property type and title:", error);
+      console.error("Error updating property type:", error);
       toast.error("Error al actualizar el tipo de propiedad");
     }
-    
-    // Remove URL update to prevent component re-mounting which causes form switching
-    // const params = new URLSearchParams(searchParams.toString());
-    // params.set("type", newType);
-    // router.push(`?${params.toString()}`);
   };
 
   const handleGenerateDescription = async () => {
@@ -1248,12 +1265,14 @@ export function PropertyCharacteristicsForm({
             newConstruction={newConstruction}
             collapsedSections={collapsedSections}
             saveState={moduleStates.basicInfo?.saveState ?? "idle"}
+            currentTitle={currentTitle}
             onToggleSection={toggleSection}
             onSave={() => saveModule("basicInfo")}
             onUpdateModule={(hasChanges) => updateModuleState("basicInfo", hasChanges)}
             onToggleListingType={toggleListingType}
             onHandleSecondaryListingType={handleSecondaryListingType}
             onPropertyTypeChange={handlePropertyTypeChange}
+            onTitleChange={handleTitleChange}
             setIsBankOwned={setIsBankOwned}
             setNewConstruction={setNewConstruction}
             getCardStyles={getCardStyles}
