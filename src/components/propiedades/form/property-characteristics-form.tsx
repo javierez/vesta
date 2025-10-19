@@ -337,7 +337,7 @@ export function PropertyCharacteristicsForm({
             garageInBuilding,
             garageNumber,
             hasStorageRoom,
-            storageRoomSize: !isNaN(storageRoomSize) ? storageRoomSize : 0,
+            storageRoomSize: storageRoomSize && !isNaN(storageRoomSize) ? storageRoomSize : null,
             storageRoomNumber,
             hasHeating: isHeating,
             heatingType,
@@ -352,14 +352,14 @@ export function PropertyCharacteristicsForm({
                 document.getElementById("optionalGaragePrice") as HTMLInputElement
               )?.value;
               const num = Number(value);
-              return !isNaN(num) ? Math.round(num) : 0;
+              return value && !isNaN(num) ? Math.round(num) : null;
             })(),
             optionalStorageRoomPrice: (() => {
               const value = (
                 document.getElementById("optionalStorageRoomPrice") as HTMLInputElement
               )?.value;
               const num = Number(value);
-              return !isNaN(num) ? Math.round(num) : 0;
+              return value && !isNaN(num) ? Math.round(num) : null;
             })(),
             oven,
             microwave,
@@ -458,10 +458,10 @@ export function PropertyCharacteristicsForm({
 
         case "materials":
           propertyData = {
-            mainFloorType,
-            shutterType,
-            carpentryType,
-            windowType,
+            mainFloorType: mainFloorType || null,
+            shutterType: shutterType || null,
+            carpentryType: carpentryType || null,
+            windowType: windowType || null,
             doubleGlazing,
             securityDoor,
           };

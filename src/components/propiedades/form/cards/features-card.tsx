@@ -308,16 +308,16 @@ export function FeaturesCard({
                   <Input
                     id="optionalGaragePrice"
                     type="number"
-                    value={Math.round(optionalGaragePrice)}
+                    value={optionalGaragePrice || ""}
                     onChange={(e) => {
-                      const value = Math.round(Number(e.target.value)) || 0;
+                      const value = e.target.value === "" ? 0 : Math.round(Number(e.target.value));
                       setOptionalGaragePrice(value);
                       onUpdateModule(true);
                     }}
                     className="h-7 text-xs"
                     min="0"
                     step="1"
-                    placeholder="0"
+                    placeholder="-"
                   />
                 </div>
               </div>
@@ -353,15 +353,16 @@ export function FeaturesCard({
                         <Input
                           id="storageRoomSize"
                           type="number"
-                          value={storageRoomSize}
+                          value={storageRoomSize || ""}
                           onChange={(e) => {
-                            const value = parseInt(e.target.value) || 0;
+                            const value = e.target.value === "" ? 0 : parseInt(e.target.value);
                             setStorageRoomSize(value);
                             onUpdateModule(true);
                           }}
                           className="h-7 text-xs"
                           min="0"
                           step="1"
+                          placeholder="-"
                         />
                       </div>
                       <div className="space-y-1">
@@ -387,16 +388,16 @@ export function FeaturesCard({
                       <Input
                         id="optionalStorageRoomPrice"
                         type="number"
-                        value={Math.round(optionalStorageRoomPrice)}
+                        value={optionalStorageRoomPrice || ""}
                         onChange={(e) => {
-                          const value = Math.round(Number(e.target.value)) || 0;
+                          const value = e.target.value === "" ? 0 : Math.round(Number(e.target.value));
                           setOptionalStorageRoomPrice(value);
                           onUpdateModule(true);
                         }}
                         className="h-7 text-xs"
                         min="0"
                         step="1"
-                        placeholder="0"
+                        placeholder="-"
                       />
                     </div>
                   </div>

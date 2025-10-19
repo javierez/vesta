@@ -16,23 +16,27 @@ const scrollbarStyles = `
   .property-status-scrollbar::-webkit-scrollbar {
     height: 4px;
   }
-  
+
   .property-status-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   .property-status-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.1);
+    background: transparent;
     border-radius: 100px;
-    transition: background 0.2s ease;
+    transition: background 0.3s ease;
   }
-  
-  .property-status-scrollbar::-webkit-scrollbar-thumb:hover {
+
+  .property-status-scrollbar.scrolling::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.2);
   }
-  
-  .property-status-scrollbar::-webkit-scrollbar-thumb:active {
+
+  .property-status-scrollbar.scrolling::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.3);
+  }
+
+  .property-status-scrollbar.scrolling::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--muted-foreground) / 0.4);
   }
 `;
 
@@ -123,8 +127,10 @@ export function PropertyStatusRow({
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const activeStageRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleImageClick = async () => {
     if (!propertyId) return;
@@ -142,6 +148,35 @@ export function PropertyStatusRow({
       setIsLoadingImages(false);
     }
   };
+
+  // Handle scroll events to show/hide scrollbar
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setIsScrolling(true);
+
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Hide scrollbar after 1 second of inactivity
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 1000);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Auto-scroll to center the active stage on mount
   useEffect(() => {
@@ -171,7 +206,10 @@ export function PropertyStatusRow({
       <div className="lg:col-span-3 overflow-hidden">
         <div
           ref={scrollContainerRef}
-          className="p-4 md:p-5 overflow-x-auto property-status-scrollbar"
+          className={cn(
+            "p-4 md:p-5 overflow-x-auto property-status-scrollbar",
+            isScrolling && "scrolling"
+          )}
         >
           <div className="flex items-center gap-2">
             {PROCESS_STAGES.map((stage, index) => {

@@ -131,7 +131,7 @@ export function MaterialsCard({
                       Tipo de ventana
                     </Label>
                     <Select
-                      value={windowType}
+                      value={windowType || undefined}
                       onValueChange={(value) => {
                         setWindowType(value);
                         onUpdateModule(true);
@@ -153,7 +153,7 @@ export function MaterialsCard({
                       Tipo de carpintería
                     </Label>
                     <Select
-                      value={carpentryType}
+                      value={carpentryType || undefined}
                       onValueChange={(value) => {
                         setCarpentryType(value);
                         onUpdateModule(true);
@@ -175,7 +175,7 @@ export function MaterialsCard({
                       Tipo de persiana
                     </Label>
                     <Select
-                      value={shutterType}
+                      value={shutterType || undefined}
                       onValueChange={(value) => {
                         setShutterType(value);
                         onUpdateModule(true);
@@ -205,7 +205,7 @@ export function MaterialsCard({
                       Tipo de suelo
                     </Label>
                     <Select
-                      value={mainFloorType}
+                      value={mainFloorType || undefined}
                       onValueChange={(value) => {
                         setMainFloorType(value);
                         onUpdateModule(true);
