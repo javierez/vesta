@@ -1,9 +1,27 @@
 "use client";
 
+import { Mail, Phone, User, Users, CalendarIcon, Home, Copy, Check, MessageCircle } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { useState } from "react";
 import { formatDistance } from "date-fns";
 import { es } from "date-fns/locale";
-import { User, Mail, Phone, ExternalLink, Calendar, Send, Globe, Activity, Home } from "lucide-react";
 import type { CompactContactCardProps } from "~/types/activity";
+
+// Contact type colors and icons - matching appointment card style
+const contactTypes = {
+  buyer: {
+    color: "bg-amber-100 text-amber-800",
+    icon: <Home className="h-4 w-4" />,
+  },
+  viewer: {
+    color: "bg-blue-100 text-blue-800",
+    icon: <Users className="h-4 w-4" />,
+  },
+  owner: {
+    color: "bg-purple-100 text-purple-800",
+    icon: <User className="h-4 w-4" />,
+  },
+};
 
 export function CompactContactCard({
   contact,
@@ -11,93 +29,178 @@ export function CompactContactCard({
   hasUpcomingVisit,
   visitCount,
 }: CompactContactCardProps) {
-  const borderColor =
-    listingContact.contactType === "buyer"
-      ? "border-amber-400"
-      : listingContact.contactType === "viewer"
-      ? "border-blue-400"
-      : "border-purple-400";
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const timeAgo = formatDistance(contact.createdAt, new Date(), {
-    addSuffix: true,
-    locale: es,
-  });
+  const typeConfig = contactTypes[
+    listingContact.contactType as keyof typeof contactTypes
+  ] || {
+    color: "bg-gray-100 text-gray-800",
+    icon: <CalendarIcon className="h-4 w-4" />,
+  };
+
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+    }
+  };
+
+  const openEmail = (email: string) => {
+    window.open(`mailto:${email}`, "_blank");
+  };
+
+  const openPhoneCall = (phone: string) => {
+    window.open(`tel:${phone}`, "_blank");
+  };
+
+  const openWhatsApp = (phone: string) => {
+    // Remove any non-digit characters and ensure it starts with country code
+    const cleanPhone = phone.replace(/\D/g, "");
+    const whatsappUrl = `https://wa.me/${cleanPhone}`;
+    window.open(whatsappUrl, "_blank");
+  };
 
   return (
     <div
-      className={`
-        bg-white rounded-lg shadow-sm hover:shadow-md
-        border-l-4 ${borderColor}
-        p-4 space-y-2
-        transition-all duration-200
-      `}
+      className={cn(
+        "calendar-event relative cursor-pointer rounded-lg border bg-white p-4 transition-all duration-200 hover:shadow-md"
+      )}
     >
-      {/* Header: Name and Time */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <User className="w-5 h-5 text-gray-600 flex-shrink-0" />
-          <span className="text-gray-900 font-semibold">
-            {contact.firstName} {contact.lastName ?? ""}
+      {/* Main content */}
+      <div className="pr-32"> {/* Add right padding to avoid overlap with badges */}
+        {/* Contact name */}
+        <div className="font-medium text-gray-900 mb-2">
+          {contact.firstName} {contact.lastName ?? ""}
+          <span className="ml-2 text-xs font-normal text-gray-500">
+            ({formatDistance(contact.createdAt, new Date(), {
+              addSuffix: true,
+              locale: es,
+            })})
           </span>
         </div>
-        <span className="text-xs text-gray-500">{timeAgo}</span>
+
+        {/* Contact Info - Email and Phone */}
+        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+          {contact.email && (
+            <div className="group flex items-center">
+              <div className="mr-1 flex items-center">
+                <button
+                  className="rounded p-1 transition-colors hover:bg-gray-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEmail(contact.email!);
+                  }}
+                  title="Enviar email"
+                >
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <div className="flex w-0 items-center overflow-hidden opacity-0 transition-all duration-500 ease-out group-hover:w-auto group-hover:opacity-100">
+                  <button
+                    className="duration-400 ml-1 scale-0 transform rounded p-1 transition-all hover:bg-gray-100 group-hover:scale-100"
+                    style={{ transitionDelay: "200ms" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void copyToClipboard(contact.email!, `email-${contact.contactId}`);
+                    }}
+                    title="Copiar email"
+                  >
+                    {copiedField === `email-${contact.contactId}` ? (
+                      <Check className="h-4 w-4 text-green-900" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <span className="truncate transition-all group-hover:font-bold">
+                {contact.email}
+              </span>
+            </div>
+          )}
+          {contact.email && contact.phone && <span>•</span>}
+          {contact.phone && (
+            <div className="group flex items-center">
+              <div className="mr-1 flex items-center">
+                <button
+                  className="rounded p-1 transition-colors hover:bg-gray-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openPhoneCall(contact.phone!);
+                  }}
+                  title="Llamar"
+                >
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <div className="flex w-0 items-center overflow-hidden opacity-0 transition-all duration-500 ease-out group-hover:w-auto group-hover:opacity-100">
+                  <button
+                    className="duration-400 ml-1 scale-0 transform rounded p-1 transition-all hover:bg-gray-100 group-hover:scale-100"
+                    style={{ transitionDelay: "200ms" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openWhatsApp(contact.phone!);
+                    }}
+                    title="Enviar WhatsApp"
+                  >
+                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                  <button
+                    className="duration-400 ml-1 scale-0 transform rounded p-1 transition-all hover:bg-gray-100 group-hover:scale-100"
+                    style={{ transitionDelay: "300ms" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void copyToClipboard(contact.phone!, `phone-${contact.contactId}`);
+                    }}
+                    title="Copiar teléfono"
+                  >
+                    {copiedField === `phone-${contact.contactId}` ? (
+                      <Check className="h-4 w-4 text-green-900" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <span className="truncate transition-all group-hover:font-bold">
+                {contact.phone}
+              </span>
+            </div>
+          )}
+        </div>
+
       </div>
 
-      {/* Source and Status */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {listingContact.source && (
-          <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs font-medium">
-            <Globe className="w-3 h-3" />
-            Fuente: {listingContact.source}
+      {/* Badges - Centered in the middle */}
+      <div className="absolute top-1/2 right-3 transform -translate-y-1/2 flex flex-col gap-3">
+        {/* Contact type badge */}
+        <div
+          className={cn(
+            "flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+            typeConfig.color,
+          )}
+        >
+          {typeConfig.icon && typeConfig.icon}
+          <span>
+            {listingContact.contactType === "buyer" ? "Comprador" :
+             listingContact.contactType === "viewer" ? "Interesado" :
+             listingContact.contactType === "owner" ? "Propietario" :
+             listingContact.contactType}
           </span>
-        )}
+        </div>
+
+        {/* Status badge */}
         {listingContact.status && (
-          <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-medium">
-            <Activity className="w-3 h-3" />
+          <span
+            className={cn(
+              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+              "bg-gray-100 text-gray-700"
+            )}
+          >
             {listingContact.status}
           </span>
         )}
-      </div>
-
-      {/* Contact Information */}
-      <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
-        {contact.email && (
-          <span className="flex items-center gap-1">
-            <Mail className="w-3 h-3" />
-            {contact.email}
-          </span>
-        )}
-        {contact.phone && (
-          <span className="flex items-center gap-1">
-            <Phone className="w-3 h-3" />
-            {contact.phone}
-          </span>
-        )}
-      </div>
-
-      {/* Visit Info */}
-      {visitCount > 0 && (
-        <div className="flex items-center gap-1 text-sm text-blue-600 font-medium">
-          <Home className="w-4 h-4" />
-          {visitCount} {visitCount === 1 ? "visita" : "visitas"}
-          {hasUpcomingVisit && " (1 programada)"}
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 pt-2">
-        <button className="text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-md transition-colors flex items-center gap-1">
-          <ExternalLink className="w-3 h-3" />
-          Ver Perfil
-        </button>
-        <button className="text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-md transition-colors flex items-center gap-1">
-          <Calendar className="w-3 h-3" />
-          Programar Visita
-        </button>
-        <button className="text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-md transition-colors flex items-center gap-1">
-          <Send className="w-3 h-3" />
-          Enviar Email
-        </button>
       </div>
     </div>
   );

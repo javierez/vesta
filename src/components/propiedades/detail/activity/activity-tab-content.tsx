@@ -4,7 +4,7 @@ import { useState } from "react";
 import { VisitsKPICard } from "./visits-kpi-card";
 import { ContactsKPICard } from "./contacts-kpi-card";
 import { ExpandableSection } from "./expandable-section";
-import { CompactVisitCard } from "./compact-visit-card";
+import { AppointmentCard, type AppointmentData } from "~/components/appointments/appointment-card";
 import { CompactContactCard } from "./compact-contact-card";
 import { EmptyState } from "./empty-states";
 import type { ActivityTabContentProps } from "~/types/activity";
@@ -53,123 +53,101 @@ export function ActivityTabContent({
 
       {/* Visits Content - shown when visits card is active */}
       {activeView === "visits" && (
-        <div className="space-y-6 animate-in fade-in duration-300">
-          {/* Completed Visits Section */}
-          <ExpandableSection
-            title="Visitas Realizadas"
-            count={completedVisits.length}
-            defaultExpanded={true}
-            storageKey={`activity-completed-visits-${listingId}`}
-          >
-            <div className="space-y-3">
-              {completedVisits.length === 0 ? (
-                <EmptyState type="completed-visits" />
-              ) : (
-                completedVisits.map((visit) => (
-                  <CompactVisitCard
-                    key={visit.appointmentId.toString()}
-                    appointment={{
-                      appointmentId: visit.appointmentId,
-                      datetimeStart: visit.datetimeStart,
-                      datetimeEnd: visit.datetimeEnd,
-                      status: visit.status,
-                      tripTimeMinutes: visit.tripTimeMinutes,
-                      notes: visit.notes,
-                      type: visit.type,
-                    }}
-                    contact={{
-                      firstName: visit.contactFirstName,
-                      lastName: visit.contactLastName,
-                      email: visit.contactEmail,
-                      phone: visit.contactPhone,
-                    }}
-                    agent={{
-                      name: visit.agentName,
-                    }}
-                    hasSignatures={visit.hasSignatures}
-                  />
-                ))
-              )}
-            </div>
-          </ExpandableSection>
+        <div className="space-y-3 animate-in fade-in duration-300">
+          {/* Scheduled Visits */}
+          {scheduledVisits.length === 0 ? (
+            <EmptyState type="scheduled-visits" />
+          ) : (
+            scheduledVisits.map((visit) => {
+              const appointmentData: AppointmentData = {
+                appointmentId: visit.appointmentId,
+                type: visit.type ?? "",
+                status: (visit.status ?? "Scheduled") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
+                datetimeStart: visit.datetimeStart,
+                datetimeEnd: visit.datetimeEnd,
+                tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
+                notes: visit.notes ?? undefined,
+                contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                propertyAddress: undefined, // Not available in visit data
+                agentName: visit.agentName ?? undefined,
+                isOptimistic: false,
+              };
 
-          {/* Scheduled Visits Section */}
-          <ExpandableSection
-            title="Visitas Pendientes"
-            count={scheduledVisits.length}
-            defaultExpanded={true}
-            storageKey={`activity-scheduled-visits-${listingId}`}
-          >
-            <div className="space-y-3">
-              {scheduledVisits.length === 0 ? (
-                <EmptyState type="scheduled-visits" />
-              ) : (
-                scheduledVisits.map((visit) => (
-                  <CompactVisitCard
-                    key={visit.appointmentId.toString()}
-                    appointment={{
-                      appointmentId: visit.appointmentId,
-                      datetimeStart: visit.datetimeStart,
-                      datetimeEnd: visit.datetimeEnd,
-                      status: visit.status,
-                      tripTimeMinutes: visit.tripTimeMinutes,
-                      notes: visit.notes,
-                      type: visit.type,
-                    }}
-                    contact={{
-                      firstName: visit.contactFirstName,
-                      lastName: visit.contactLastName,
-                      email: visit.contactEmail,
-                      phone: visit.contactPhone,
-                    }}
-                    agent={{
-                      name: visit.agentName,
-                    }}
-                    hasSignatures={false}
-                  />
-                ))
-              )}
-            </div>
-          </ExpandableSection>
+              return (
+                <AppointmentCard
+                  key={visit.appointmentId.toString()}
+                  appointment={appointmentData}
+                  navigateToVisit={true}
+                />
+              );
+            })
+          )}
+
+          {/* Soft separator line between scheduled and completed visits */}
+          {scheduledVisits.length > 0 && completedVisits.length > 0 && (
+            <div className="border-t border-gray-200 my-4"></div>
+          )}
+
+          {/* Completed Visits */}
+          {completedVisits.length === 0 ? (
+            <EmptyState type="completed-visits" />
+          ) : (
+            completedVisits.map((visit) => {
+              const appointmentData: AppointmentData = {
+                appointmentId: visit.appointmentId,
+                type: visit.type ?? "",
+                status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
+                datetimeStart: visit.datetimeStart,
+                datetimeEnd: visit.datetimeEnd,
+                tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
+                notes: visit.notes ?? undefined,
+                contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                propertyAddress: undefined, // Not available in visit data
+                agentName: visit.agentName ?? undefined,
+                isOptimistic: false,
+              };
+
+              return (
+                <AppointmentCard
+                  key={visit.appointmentId.toString()}
+                  appointment={appointmentData}
+                  navigateToVisit={true}
+                />
+              );
+            })
+          )}
         </div>
       )}
 
       {/* Contacts Content - shown when contacts card is active */}
       {activeView === "contacts" && (
         <div className="space-y-6 animate-in fade-in duration-300">
-          <ExpandableSection
-            title="Nuevos Contactos"
-            count={newContacts.length}
-            defaultExpanded={true}
-            storageKey={`activity-new-contacts-${listingId}`}
-          >
-            <div className="space-y-3">
-              {newContacts.length === 0 ? (
-                <EmptyState type="new-contacts" />
-              ) : (
-                newContacts.map((contact) => (
-                  <CompactContactCard
-                    key={contact.contactId.toString()}
-                    contact={{
-                      contactId: contact.contactId,
-                      firstName: contact.firstName,
-                      lastName: contact.lastName,
-                      email: contact.email,
-                      phone: contact.phone,
-                      createdAt: contact.createdAt,
-                    }}
-                    listingContact={{
-                      source: contact.source,
-                      status: contact.status,
-                      contactType: contact.contactType as "buyer" | "owner" | "viewer",
-                    }}
-                    hasUpcomingVisit={contact.hasUpcomingVisit}
-                    visitCount={contact.visitCount}
-                  />
-                ))
-              )}
-            </div>
-          </ExpandableSection>
+          <div className="space-y-3">
+            {newContacts.length === 0 ? (
+              <EmptyState type="new-contacts" />
+            ) : (
+              newContacts.map((contact) => (
+                <CompactContactCard
+                  key={contact.contactId.toString()}
+                  contact={{
+                    contactId: contact.contactId,
+                    firstName: contact.firstName,
+                    lastName: contact.lastName,
+                    email: contact.email,
+                    phone: contact.phone,
+                    createdAt: contact.createdAt,
+                  }}
+                  listingContact={{
+                    source: contact.source,
+                    status: contact.status,
+                    contactType: contact.contactType as "buyer" | "owner" | "viewer",
+                  }}
+                  hasUpcomingVisit={contact.hasUpcomingVisit}
+                  visitCount={contact.visitCount}
+                />
+              ))
+            )}
+          </div>
 
           {/* All Contacts Section */}
           {contacts.length > newContacts.length && (

@@ -12,6 +12,7 @@ import {
   CalendarIcon,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { AppointmentCard, type AppointmentData } from "./appointment-card";
 
 // Calendar Event Display Type from PRP
 interface CalendarEvent {
@@ -298,128 +299,28 @@ export function ListCalendarEvent({
   onClick,
   className = "",
 }: Omit<CalendarEventProps, "style">) {
-  const typeConfig = appointmentTypes[
-    event.type as keyof typeof appointmentTypes
-  ] || {
-    color: "bg-gray-100 text-gray-800",
-    icon: <CalendarIcon className="h-4 w-4" />,
-    textColor: "text-gray-800",
-  };
-
-  // Apply visual indicators for optimistic events
-  const isOptimisticEvent = event.isOptimistic ?? false;
-  const optimisticStyles = isOptimisticEvent 
-    ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse" 
-    : "";
-
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      day: "2-digit",
-      month: "short",
-    }).format(date);
-  };
-
-  const formatTripTime = (minutes?: number) => {
-    if (!minutes) return null;
-    if (minutes < 60) return `${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0
-      ? `${hours}h ${remainingMinutes}m`
-      : `${hours}h`;
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onClick?.(event);
+  // Convert CalendarEvent to AppointmentData format
+  const appointmentData: AppointmentData = {
+    appointmentId: event.appointmentId,
+    type: event.type,
+    status: event.status,
+    datetimeStart: event.startTime,
+    datetimeEnd: event.endTime,
+    tripTimeMinutes: event.tripTimeMinutes,
+    notes: event.notes,
+    contactName: event.contactName,
+    propertyAddress: event.propertyAddress,
+    agentName: undefined, // Calendar events don't have agent info
+    isOptimistic: event.isOptimistic,
   };
 
   return (
-    <div
-      className={cn(
-        "calendar-event flex cursor-pointer items-center gap-4 rounded-lg border bg-white p-4 transition-all duration-200 hover:shadow-md",
-        isSelected && "ring-2 ring-blue-500 ring-offset-1",
-        optimisticStyles,
-        className,
-      )}
-      onClick={handleClick}
-    >
-      {/* Date */}
-      <div className="flex-shrink-0 text-center">
-        <div className="text-sm font-medium text-muted-foreground">
-          {formatDate(event.startTime)}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {formatTime(event.startTime)}
-        </div>
-      </div>
-
-      {/* Type badge */}
-      <div className="flex-shrink-0">
-        <div
-          className={cn(
-            "flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium",
-            typeConfig.color,
-          )}
-        >
-          {typeConfig.icon}
-          <span>{event.type}</span>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="min-w-0 flex-1">
-        <div className="font-medium text-gray-900">
-          {event.type} {event.contactName}
-        </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {formatTime(event.startTime)} - {formatTime(event.endTime)}
-          </span>
-          {event.propertyAddress && (
-            <>
-              <span>•</span>
-              <span className="flex items-center gap-1 truncate">
-                <MapPin className="h-3 w-3" />
-                {event.propertyAddress}
-              </span>
-            </>
-          )}
-          {event.tripTimeMinutes && (
-            <>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Car className="h-3 w-3" />
-                {formatTripTime(event.tripTimeMinutes)}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Status */}
-      <div className="flex-shrink-0">
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-            event.status === "Scheduled" && "bg-blue-100 text-blue-800",
-            event.status === "Completed" && "bg-green-100 text-green-800",
-            event.status === "Cancelled" && "bg-red-100 text-red-800",
-            event.status === "Rescheduled" && "bg-yellow-100 text-yellow-800",
-            event.status === "NoShow" && "bg-gray-100 text-gray-800",
-          )}
-        >
-          {event.status}
-        </span>
-      </div>
-    </div>
+    <AppointmentCard
+      appointment={appointmentData}
+      isSelected={isSelected}
+      onClick={onClick as any}
+      className={className}
+      navigateToVisit={false} // Calendar uses onClick callback instead
+    />
   );
 }
