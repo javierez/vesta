@@ -196,11 +196,11 @@ export function CartelesManager({
 
       {/* Carteles Grid */}
       {carteles.length === 0 ? (
-        <div className="py-16 text-center">
-          <div className="mx-auto w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+        <div className="py-2 text-center">
+          <div className="mx-auto w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-1">
             <FileText className="h-10 w-10 text-gray-300" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No hay carteles</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">No hay carteles</h3>
           <p className="text-sm text-gray-500 max-w-sm mx-auto">
             Sube archivos PDF para comenzar a gestionar los carteles de esta propiedad
           </p>

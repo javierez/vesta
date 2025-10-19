@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -663,6 +663,15 @@ export function Tareas({
     }));
   };
 
+  // Sort tasks: incomplete first, completed last
+  const sortedTasks = useMemo(() => {
+    return [...tasks].sort((a, b) => {
+      // Incomplete tasks come before completed tasks
+      if (a.completed === b.completed) return 0;
+      return a.completed ? 1 : -1;
+    });
+  }, [tasks]);
+
   if (externalLoading) {
     return <TareasSkeleton />;
   }
@@ -880,7 +889,7 @@ export function Tareas({
           </div>
         ) : (
           <div className="space-y-1">
-{tasks.map((task) => {
+{sortedTasks.map((task) => {
               const getInitials = (firstName?: string, lastName?: string, name?: string) => {
                 if (firstName && lastName) {
                   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();

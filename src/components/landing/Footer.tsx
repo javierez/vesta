@@ -21,10 +21,10 @@ const navigation = {
     { name: "API", href: "#api" },
   ],
   legal: [
+    { name: "Aviso Legal", href: "/aviso-legal" },
     { name: "Privacidad", href: "/privacidad" },
-    { name: "Términos", href: "#terms" },
     { name: "Cookies", href: "/cookies" },
-    { name: "RGPD", href: "#gdpr" },
+    { name: "Condiciones", href: "/condiciones-servicio" },
   ],
 };
 
