@@ -598,6 +598,8 @@ export async function createContactWithListings(
             listingId: listingId,
             contactId: newContactId,
             contactType: "owner",
+            status: null, // Owners don't have lead status
+            source: null, // Owners don't have a source
             isActive: true,
           });
         }
@@ -607,6 +609,8 @@ export async function createContactWithListings(
           listingId: listingId,
           contactId: newContactId,
           contactType: contactType,
+          status: contactType === "buyer" ? "Cita Pendiente" : null, // Set lead status for buyers
+          source: contactType === "buyer" ? "Appointment" : null, // Set source for buyers
           isActive: true,
         }));
 
@@ -1222,6 +1226,8 @@ export async function updateListingOwners(
         listingId: BigInt(listingId),
         contactId: BigInt(ownerId),
         contactType: "owner" as const,
+        status: null, // Owners don't have lead status
+        source: null, // Owners don't have a source
         isActive: true,
       }));
 
@@ -1607,6 +1613,8 @@ export async function addListingContactRelationshipWithAuth(
       listingId: BigInt(listingId),
       contactId: BigInt(contactId),
       contactType: contactType,
+      status: contactType === "buyer" ? "Cita Pendiente" : null, // Set lead status for buyers
+      source: contactType === "buyer" ? "Appointment" : null, // Set source for buyers
       isActive: true,
     });
 

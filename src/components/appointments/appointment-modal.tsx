@@ -153,6 +153,14 @@ export function useAppointmentModal() {
         urlInitialData.contactId = BigInt(contactId);
       }
 
+      // Check for listing ID
+      const listingId = searchParams.get("listingId");
+      if (listingId) {
+        urlInitialData.listingId = BigInt(listingId);
+        // When listingId is provided, default to "Visita" type
+        urlInitialData.appointmentType = "Visita";
+      }
+
       // Check for appointment type
       const type = searchParams.get("type");
       if (
@@ -185,6 +193,7 @@ export function useAppointmentModal() {
     currentParams.delete("time");
     currentParams.delete("endTime");
     currentParams.delete("contactId");
+    currentParams.delete("listingId");
     currentParams.delete("type");
 
     const newUrl = currentParams.toString()

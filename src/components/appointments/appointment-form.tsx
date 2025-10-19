@@ -91,11 +91,48 @@ interface AppointmentFormProps {
   updateOptimisticEvent?: (tempId: bigint, updates: Partial<Record<string, unknown>>) => void;
 }
 
+// Helper function to get tomorrow's date in YYYY-MM-DD format
+const getTomorrowDate = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0] ?? "";
+};
+
+// Helper function to get current time in HH:mm format, rounded to nearest 15 minutes
+const getCurrentTime = () => {
+  const now = new Date();
+  const minutes = now.getMinutes();
+  const roundedMinutes = Math.ceil(minutes / 15) * 15;
+  now.setMinutes(roundedMinutes);
+  now.setSeconds(0);
+  now.setMilliseconds(0);
+
+  // If rounding pushed us to next hour
+  if (roundedMinutes >= 60) {
+    now.setHours(now.getHours() + 1);
+    now.setMinutes(0);
+  }
+
+  return now.toTimeString().slice(0, 5);
+};
+
+// Helper function to add 30 minutes to a time string
+const addMinutesToTime = (timeStr: string, minutesToAdd: number): string => {
+  if (!timeStr) return "";
+
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours ?? 0);
+  date.setMinutes((minutes ?? 0) + minutesToAdd);
+
+  return date.toTimeString().slice(0, 5);
+};
+
 const initialFormData: Omit<AppointmentFormData, "contactId"> = {
-  startDate: "",
-  startTime: "",
-  endDate: "",
-  endTime: "",
+  startDate: getTomorrowDate(),
+  startTime: getCurrentTime(),
+  endDate: getTomorrowDate(),
+  endTime: addMinutesToTime(getCurrentTime(), 30),
   tripTimeMinutes: 15,
   notes: "",
   appointmentType: "Visita",
@@ -169,7 +206,9 @@ export default function AppointmentForm({
   removeOptimisticEvent,
   updateOptimisticEvent,
 }: AppointmentFormProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+  // Skip contact selection step if contactId is provided
+  const initialStep = initialData.contactId ? 1 : 0;
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [formData, setFormData] = useState<Partial<AppointmentFormData>>({
     ...initialFormData,
     ...initialData,
@@ -419,7 +458,21 @@ export default function AppointmentForm({
   // Handle input changes
   const handleInputChange =
     (field: keyof AppointmentFormData) => (value: string | number) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
+      setFormData((prev) => {
+        const updates: Partial<AppointmentFormData> = { [field]: value };
+
+        // Auto-update endTime when startTime changes
+        if (field === "startTime" && typeof value === "string") {
+          updates.endTime = addMinutesToTime(value, 30);
+        }
+
+        // Auto-update endDate when startDate changes
+        if (field === "startDate" && typeof value === "string") {
+          updates.endDate = value;
+        }
+
+        return { ...prev, ...updates };
+      });
       setValidationError(null);
 
       // Clear listing selection if appointment type changes from "Visita"
@@ -502,7 +555,8 @@ export default function AppointmentForm({
   };
 
   const prevStep = () => {
-    if (currentStep > 0) {
+    // Don't go back past the initial step (which may be 0 or 1)
+    if (currentStep > initialStep) {
       setDirection("backward");
       setCurrentStep((prev) => prev - 1);
     }
@@ -824,24 +878,29 @@ export default function AppointmentForm({
             {/* Listing selection - only show for "Visita" appointments */}
             {formData.appointmentType === "Visita" && (
               <div className="space-y-3">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <Home className="h-4 w-4" />
-                  Seleccionar Propiedad
-                </label>
-                {!selectedListing && (
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      value={listingSearchQuery}
-                      onChange={(e) => setListingSearchQuery(e.target.value)}
-                      placeholder="Buscar propiedades..."
-                      className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                    />
-                  </div>
+                {/* Only show label and search if listing wasn't pre-selected via URL */}
+                {!initialData.listingId && (
+                  <>
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <Home className="h-4 w-4" />
+                      Seleccionar Propiedad
+                    </label>
+                    {!selectedListing && (
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                          value={listingSearchQuery}
+                          onChange={(e) => setListingSearchQuery(e.target.value)}
+                          placeholder="Buscar propiedades..."
+                          className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {selectedListing && (
-                  // Show selected listing
+                  // Show selected listing (always visible if a listing is selected)
                   <div className="rounded-lg border border-primary bg-primary/5 p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -853,32 +912,36 @@ export default function AppointmentForm({
                           </div>
                           <div className="text-sm text-muted-foreground">
                             Ref: {selectedListing.referenceNumber} •{" "}
-                            {selectedListing.city} • €{selectedListing.price}
+                            {selectedListing.city} • {Math.floor(parseFloat(selectedListing.price)).toLocaleString('es-ES')}€
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {selectedListing.bedrooms &&
                               `${selectedListing.bedrooms} hab`}
                             {selectedListing.bathrooms &&
-                              ` • ${selectedListing.bathrooms} baños`}
+                              ` • ${Math.floor(parseFloat(selectedListing.bathrooms))} baños`}
                             {selectedListing.squareMeter &&
                               ` • ${selectedListing.squareMeter}m²`}
                           </div>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleClearListing}
-                        className="h-8 w-8 p-0"
-                        title="Cambiar propiedad"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {/* Only show clear button if listing wasn't pre-selected via URL */}
+                      {!initialData.listingId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleClearListing}
+                          className="h-8 w-8 p-0"
+                          title="Cambiar propiedad"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {!selectedListing && (
+                {/* Only show listing search results if listing wasn't pre-selected via URL */}
+                {!selectedListing && !initialData.listingId && (
                   <ScrollArea className="h-[180px]">
                     {isLoadingListings ? (
                       <div className="flex items-center justify-center py-8">
@@ -905,13 +968,13 @@ export default function AppointmentForm({
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                   Ref: {listing.referenceNumber} •{" "}
-                                  {listing.city} • €{listing.price}
+                                  {listing.city} • {Math.floor(parseFloat(listing.price)).toLocaleString('es-ES')}€
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                   {listing.bedrooms &&
                                     `${listing.bedrooms} hab`}
                                   {listing.bathrooms &&
-                                    ` • ${listing.bathrooms} baños`}
+                                    ` • ${Math.floor(parseFloat(listing.bathrooms))} baños`}
                                   {listing.squareMeter &&
                                     ` • ${listing.squareMeter}m²`}
                                 </div>
@@ -1006,8 +1069,7 @@ export default function AppointmentForm({
                         `${selectedListing.propertyType} en ${selectedListing.city}`}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Ref: {selectedListing.referenceNumber} • €
-                      {selectedListing.price}
+                      Ref: {selectedListing.referenceNumber} • {Math.floor(parseFloat(selectedListing.price)).toLocaleString('es-ES')}€
                     </div>
                   </div>
                 </div>
@@ -1109,7 +1171,7 @@ export default function AppointmentForm({
         {/* Navigation Buttons - Fixed at bottom */}
         <div className="flex items-center justify-between border-t bg-background pt-6">
           <div>
-            {currentStep > 0 ? (
+            {currentStep > initialStep ? (
               <Button variant="outline" onClick={prevStep}>
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Anterior

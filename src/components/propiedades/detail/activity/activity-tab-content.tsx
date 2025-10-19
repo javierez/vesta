@@ -126,39 +126,20 @@ export function ActivityTabContent({
             {newContacts.length === 0 ? (
               <EmptyState type="new-contacts" />
             ) : (
-              newContacts.map((contact) => (
-                <CompactContactCard
-                  key={contact.contactId.toString()}
-                  contact={{
-                    contactId: contact.contactId,
-                    firstName: contact.firstName,
-                    lastName: contact.lastName,
-                    email: contact.email,
-                    phone: contact.phone,
-                    createdAt: contact.createdAt,
-                  }}
-                  listingContact={{
-                    source: contact.source,
-                    status: contact.status,
-                    contactType: contact.contactType as "buyer" | "owner" | "viewer",
-                  }}
-                  hasUpcomingVisit={contact.hasUpcomingVisit}
-                  visitCount={contact.visitCount}
-                />
-              ))
-            )}
-          </div>
-
-          {/* All Contacts Section */}
-          {contacts.length > newContacts.length && (
-            <ExpandableSection
-              title="Todos los Contactos"
-              count={contacts.length}
-              defaultExpanded={false}
-              storageKey={`activity-all-contacts-${listingId}`}
-            >
-              <div className="space-y-3">
-                {contacts.map((contact) => (
+              newContacts.map((contact) => {
+                console.log('📇 Contact card data:', {
+                  contactId: contact.contactId.toString(),
+                  name: `${contact.firstName} ${contact.lastName ?? ''}`,
+                  contactType: contact.contactType,
+                  status: contact.status,
+                  source: contact.source,
+                  hasUpcomingVisit: contact.hasUpcomingVisit,
+                  hasMissedVisit: contact.hasMissedVisit,
+                  hasDoneVisit: contact.hasDoneVisit,
+                  visitCount: contact.visitCount,
+                  createdAt: contact.createdAt,
+                });
+                return (
                   <CompactContactCard
                     key={contact.contactId.toString()}
                     contact={{
@@ -175,9 +156,62 @@ export function ActivityTabContent({
                       contactType: contact.contactType as "buyer" | "owner" | "viewer",
                     }}
                     hasUpcomingVisit={contact.hasUpcomingVisit}
+                    hasMissedVisit={contact.hasMissedVisit}
+                    hasDoneVisit={contact.hasDoneVisit}
                     visitCount={contact.visitCount}
+                    listingId={listingId}
                   />
-                ))}
+                );
+              })
+            )}
+          </div>
+
+          {/* All Contacts Section */}
+          {contacts.length > newContacts.length && (
+            <ExpandableSection
+              title="Todos los Contactos"
+              count={contacts.length}
+              defaultExpanded={false}
+              storageKey={`activity-all-contacts-${listingId}`}
+            >
+              <div className="space-y-3">
+                {contacts.map((contact) => {
+                  console.log('📇 All contacts - Contact card data:', {
+                    contactId: contact.contactId.toString(),
+                    name: `${contact.firstName} ${contact.lastName ?? ''}`,
+                    contactType: contact.contactType,
+                    status: contact.status,
+                    source: contact.source,
+                    hasUpcomingVisit: contact.hasUpcomingVisit,
+                    hasMissedVisit: contact.hasMissedVisit,
+                    hasDoneVisit: contact.hasDoneVisit,
+                    visitCount: contact.visitCount,
+                    createdAt: contact.createdAt,
+                  });
+                  return (
+                    <CompactContactCard
+                      key={contact.contactId.toString()}
+                      contact={{
+                        contactId: contact.contactId,
+                        firstName: contact.firstName,
+                        lastName: contact.lastName,
+                        email: contact.email,
+                        phone: contact.phone,
+                        createdAt: contact.createdAt,
+                      }}
+                      listingContact={{
+                        source: contact.source,
+                        status: contact.status,
+                        contactType: contact.contactType as "buyer" | "owner" | "viewer",
+                      }}
+                      hasUpcomingVisit={contact.hasUpcomingVisit}
+                      hasMissedVisit={contact.hasMissedVisit}
+                      hasDoneVisit={contact.hasDoneVisit}
+                      visitCount={contact.visitCount}
+                      listingId={listingId}
+                    />
+                  );
+                })}
               </div>
             </ExpandableSection>
           )}

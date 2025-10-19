@@ -59,23 +59,16 @@ function ProcessStageCard({
   return (
     <div
       className={cn(
-        "relative rounded-2xl p-6 transition-all",
-        styles.card
+        "relative rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 transition-all",
+        styles.card,
+        stage.id === "busqueda" && "min-w-[120px] sm:min-w-[150px] md:min-w-[180px]"
       )}
     >
       {/* Stage header */}
-      <div className="mb-6 flex items-center gap-3">
-        <div
-          className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold shadow-lg",
-            styles.badge
-          )}
-        >
-          {index + 1}
-        </div>
+      <div className="mb-3 sm:mb-4 md:mb-6">
         <h2
           className={cn(
-            "text-sm font-semibold uppercase tracking-wider",
+            "text-xs sm:text-sm font-semibold uppercase tracking-wider",
             styles.title
           )}
         >
@@ -84,29 +77,29 @@ function ProcessStageCard({
       </div>
 
       {/* Substages in horizontal flow */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
         {stage.subStages.map((substage, subIndex) => {
           const substageStyles = getStageStyles(substage.status);
           return (
-            <div key={substage.id} className="flex items-center gap-3">
+            <div key={substage.id} className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
               <div
                 className={cn(
-                  "rounded-lg px-3 py-2 transition-all whitespace-nowrap",
+                  "rounded-md sm:rounded-lg px-2 py-1 sm:px-3 sm:py-2 transition-all whitespace-nowrap",
                   substageStyles.substage
                 )}
               >
-                <span className="text-xs font-medium">{substage.label}</span>
+                <span className="text-[10px] sm:text-xs font-medium">{substage.label}</span>
               </div>
 
               {subIndex < stage.subStages.length - 1 && (
                 <div className="flex items-center justify-center">
-                  <ChevronRight 
-                    size={14} 
+                  <ChevronRight
+                    size={12}
                     className={cn(
-                      "flex-shrink-0 transition-all duration-200",
+                      "sm:w-3.5 sm:h-3.5 flex-shrink-0 transition-all duration-200",
                       "drop-shadow-sm transform hover:scale-110 hover:drop-shadow-md",
                       substageStyles.connector
-                    )} 
+                    )}
                   />
                 </div>
               )}
@@ -201,21 +194,21 @@ export function PropertyStatusRow({
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
-      <div className="col-span-full grid grid-cols-1 lg:grid-cols-4 gap-4 -mt-2 md:-mt-3">
+      <div className="col-span-full grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4 -mt-2 md:-mt-3">
       {/* Process Chart - 75% (3 columns) */}
       <div className="lg:col-span-3 overflow-hidden">
         <div
           ref={scrollContainerRef}
           className={cn(
-            "p-4 md:p-5 overflow-x-auto property-status-scrollbar",
+            "p-2 sm:p-3 md:p-4 lg:p-5 overflow-x-auto property-status-scrollbar",
             isScrolling && "scrolling"
           )}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
             {PROCESS_STAGES.map((stage, index) => {
               const isActive = stage.status === "ongoing";
               return (
-                <div key={stage.id} className="flex items-center gap-2">
+                <div key={stage.id} className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
                   {/* Stage container */}
                   <div ref={isActive ? activeStageRef : null}>
                     <ProcessStageCard stage={stage} index={index} />
@@ -223,19 +216,20 @@ export function PropertyStatusRow({
 
                   {/* Connector arrow */}
                   {index < PROCESS_STAGES.length - 1 && (
-                    <div className="flex items-center justify-center flex-shrink-0 px-1">
-                      <ChevronRight 
-                        size={28} 
-                        strokeWidth={3.5}
+                    <div className="flex items-center justify-center flex-shrink-0 px-0.5 sm:px-1">
+                      <ChevronRight
+                        size={20}
+                        strokeWidth={3}
                         className={cn(
+                          "sm:w-6 sm:h-6 md:w-7 md:h-7",
                           "transition-all duration-300",
                           "drop-shadow-lg transform hover:scale-125 hover:rotate-3",
                           "filter brightness-110",
                           // Make arrow lighter if next stage is future (todo)
-                          PROCESS_STAGES[index + 1]?.status === "future" 
-                            ? "text-slate-300" 
+                          PROCESS_STAGES[index + 1]?.status === "future"
+                            ? "text-slate-300"
                             : "text-slate-400"
-                        )} 
+                        )}
                       />
                     </div>
                   )}
@@ -248,7 +242,7 @@ export function PropertyStatusRow({
 
       {/* Image Preview - 25% (1 column) */}
       <Card className="lg:col-span-1 border-gray-200/50 overflow-hidden">
-        <div className="relative h-full min-h-[100px] sm:min-h-[120px]">
+        <div className="relative h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px]">
           {firstImageUrl ? (
             <div
               className="relative w-full h-full group cursor-pointer"

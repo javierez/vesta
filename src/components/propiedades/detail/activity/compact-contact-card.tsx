@@ -1,10 +1,11 @@
 "use client";
 
-import { Mail, Phone, User, Users, CalendarIcon, Home, Copy, Check, MessageCircle } from "lucide-react";
+import { Mail, Phone, User, Users, CalendarIcon, CalendarPlus, Home, Copy, Check, MessageCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useState } from "react";
 import { formatDistance } from "date-fns";
 import { es } from "date-fns/locale";
+import { useRouter } from "next/navigation";
 import type { CompactContactCardProps } from "~/types/activity";
 
 // Contact type colors and icons - matching appointment card style
@@ -27,16 +28,34 @@ export function CompactContactCard({
   contact,
   listingContact,
   hasUpcomingVisit,
+  hasMissedVisit,
+  hasDoneVisit,
   visitCount,
+  listingId,
 }: CompactContactCardProps) {
+  const router = useRouter();
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const typeConfig = contactTypes[
-    listingContact.contactType as keyof typeof contactTypes
-  ] || {
+  const typeConfig = contactTypes[listingContact.contactType] ?? {
     color: "bg-gray-100 text-gray-800",
     icon: <CalendarIcon className="h-4 w-4" />,
   };
+
+  console.log('🎨 CompactContactCard rendering:', {
+    contactId: contact.contactId.toString(),
+    name: `${contact.firstName} ${contact.lastName ?? ''}`,
+    contactType: listingContact.contactType,
+    status: listingContact.status,
+    source: listingContact.source,
+    hasUpcomingVisit,
+    hasMissedVisit,
+    hasDoneVisit,
+    visitCount,
+    typeConfig: {
+      color: typeConfig.color,
+      hasIcon: !!typeConfig.icon,
+    },
+  });
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -61,6 +80,11 @@ export function CompactContactCard({
     const cleanPhone = phone.replace(/\D/g, "");
     const whatsappUrl = `https://wa.me/${cleanPhone}`;
     window.open(whatsappUrl, "_blank");
+  };
+
+  const handleCreateVisit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/calendario?new=true&contactId=${contact.contactId}&listingId=${listingId}`);
   };
 
   return (
@@ -177,11 +201,10 @@ export function CompactContactCard({
         {/* Contact type badge */}
         <div
           className={cn(
-            "flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+            "flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-medium",
             typeConfig.color,
           )}
         >
-          {typeConfig.icon && typeConfig.icon}
           <span>
             {listingContact.contactType === "buyer" ? "Comprador" :
              listingContact.contactType === "viewer" ? "Interesado" :
@@ -190,17 +213,27 @@ export function CompactContactCard({
           </span>
         </div>
 
-        {/* Status badge */}
-        {listingContact.status && (
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        {/* Visit status badge */}
+        <span
+          onClick={(!hasUpcomingVisit && !hasMissedVisit && !hasDoneVisit) || (hasMissedVisit && !hasUpcomingVisit) ? handleCreateVisit : undefined}
+          className={cn(
+            "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+            !hasUpcomingVisit && !hasMissedVisit && !hasDoneVisit &&
+              "bg-white text-gray-700 border-2 border-dashed border-gray-400 cursor-pointer hover:bg-gray-50 hover:border-gray-500 transition-colors",
+            hasMissedVisit && !hasUpcomingVisit &&
+              "bg-white text-red-800 border-2 border-dashed border-red-700 cursor-pointer hover:bg-red-50 hover:border-red-800 transition-colors",
+            (hasUpcomingVisit || (hasDoneVisit && !hasUpcomingVisit && !hasMissedVisit)) &&
               "bg-gray-100 text-gray-700"
-            )}
-          >
-            {listingContact.status}
-          </span>
-        )}
+          )}
+        >
+          {!hasUpcomingVisit && !hasMissedVisit && !hasDoneVisit && (
+            <CalendarPlus className="h-3 w-3" />
+          )}
+          {hasUpcomingVisit && "Visita pendiente"}
+          {hasMissedVisit && !hasUpcomingVisit && "Visita perdida"}
+          {hasDoneVisit && !hasUpcomingVisit && !hasMissedVisit && "Pendiente oferta"}
+          {!hasUpcomingVisit && !hasMissedVisit && !hasDoneVisit && "Crear visita"}
+        </span>
       </div>
     </div>
   );

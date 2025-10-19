@@ -62,6 +62,8 @@ export interface ContactWithDetails {
   createdAt: Date;
   visitCount: number;
   hasUpcomingVisit: boolean;
+  hasMissedVisit: boolean;
+  hasDoneVisit: boolean;
   isNew: boolean;
 }
 
@@ -85,7 +87,10 @@ export interface CompactContactCardProps {
     contactType: "buyer" | "owner" | "viewer";
   };
   hasUpcomingVisit: boolean;
+  hasMissedVisit: boolean;
+  hasDoneVisit: boolean;
   visitCount: number;
+  listingId: bigint;
 }
 
 // Section component types

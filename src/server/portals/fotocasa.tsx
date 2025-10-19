@@ -844,10 +844,14 @@ export async function buildFotocasaPayload(
     // Conservation Status (FeatureId: 249)
     // Values: 1=Good, 2=Pretty good, 3=Almost new, 4=Needs renovation, 6=Renovated
     if (listingWithEnergy.conservationStatus != null) {
-      propertyFeatures.push({
-        FeatureId: 249,
-        DecimalValue: Number(listingWithEnergy.conservationStatus),
-      });
+      const conservationValue = Number(listingWithEnergy.conservationStatus);
+      // Only add if it's a valid conservation status value (1, 2, 3, 4, or 6)
+      if ([1, 2, 3, 4, 6].includes(conservationValue)) {
+        propertyFeatures.push({
+          FeatureId: 249,
+          DecimalValue: conservationValue,
+        });
+      }
     }
 
     // Consumption efficiency scale (FeatureId: 323)

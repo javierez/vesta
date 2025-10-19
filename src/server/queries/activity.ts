@@ -139,6 +139,8 @@ export async function getListingContactsSummary(listingId: bigint) {
       contactId: bigint;
       totalVisits: number;
       upcomingVisits: number;
+      missedVisits: number;
+      completedVisits: number;
     }> = [];
 
     if (contactIds.length > 0) {
@@ -147,6 +149,8 @@ export async function getListingContactsSummary(listingId: bigint) {
           contactId: appointments.contactId,
           totalVisits: sql<number>`COUNT(*)`.as('totalVisits'),
           upcomingVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as('upcomingVisits'),
+          missedVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as('missedVisits'),
+          completedVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as('completedVisits'),
         })
         .from(appointments)
         .where(
@@ -159,11 +163,13 @@ export async function getListingContactsSummary(listingId: bigint) {
         .groupBy(appointments.contactId);
 
       visitCounts = visitCountResults
-        .filter((v): v is { contactId: bigint; totalVisits: number; upcomingVisits: number } => v.contactId !== null)
+        .filter((v): v is { contactId: bigint; totalVisits: number; upcomingVisits: number; missedVisits: number; completedVisits: number } => v.contactId !== null)
         .map((v) => ({
           contactId: v.contactId,
           totalVisits: Number(v.totalVisits),
           upcomingVisits: Number(v.upcomingVisits),
+          missedVisits: Number(v.missedVisits),
+          completedVisits: Number(v.completedVisits),
         }));
     }
 
@@ -171,13 +177,39 @@ export async function getListingContactsSummary(listingId: bigint) {
       visitCounts.map((v) => [v.contactId.toString(), v])
     );
 
-    return allContacts.map((contact) => ({
-      ...contact,
-      visitCount: visitMap.get(contact.contactId.toString())?.totalVisits ?? 0,
-      hasUpcomingVisit:
-        (visitMap.get(contact.contactId.toString())?.upcomingVisits ?? 0) > 0,
-      isNew: contact.createdAt >= thirtyDaysAgo,
-    }));
+    const contactsWithVisitStatus = allContacts.map((contact) => {
+      const hasUpcomingVisit = (visitMap.get(contact.contactId.toString())?.upcomingVisits ?? 0) > 0;
+      const hasMissedVisit = (visitMap.get(contact.contactId.toString())?.missedVisits ?? 0) > 0;
+      const hasDoneVisit = (visitMap.get(contact.contactId.toString())?.completedVisits ?? 0) > 0;
+
+      // Priority for sorting: 1=crear visita, 2=missed, 3=upcoming, 4=done
+      let sortPriority = 4;
+      if (!hasUpcomingVisit && !hasMissedVisit && !hasDoneVisit) {
+        sortPriority = 1; // Crear visita
+      } else if (hasMissedVisit) {
+        sortPriority = 2; // Missed visit
+      } else if (hasUpcomingVisit) {
+        sortPriority = 3; // Upcoming visit
+      }
+
+      return {
+        ...contact,
+        visitCount: visitMap.get(contact.contactId.toString())?.totalVisits ?? 0,
+        hasUpcomingVisit,
+        hasMissedVisit,
+        hasDoneVisit,
+        isNew: contact.createdAt >= thirtyDaysAgo,
+        sortPriority,
+      };
+    });
+
+    // Sort by priority, then by creation date
+    return contactsWithVisitStatus.sort((a, b) => {
+      if (a.sortPriority !== b.sortPriority) {
+        return a.sortPriority - b.sortPriority;
+      }
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
   } catch (error) {
     console.error("Error fetching listing contacts summary:", error);
     throw error;
