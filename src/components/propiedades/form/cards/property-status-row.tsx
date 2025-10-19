@@ -1,36 +1,130 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { ChevronRight } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImagePlaceholder";
 import { ImageViewer } from "~/components/ui/image-viewer";
 import { getAllPropertyImages } from "~/app/actions/property-images";
+import { PROCESS_STAGES, getStageStyles } from "~/lib/constants/process-stages";
+import type { ProcessStage } from "~/lib/constants/process-stages";
+import { cn } from "~/lib/utils";
+
+// Custom scrollbar styles for this component only
+const scrollbarStyles = `
+  .property-status-scrollbar::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .property-status-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .property-status-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.1);
+    border-radius: 100px;
+    transition: background 0.2s ease;
+  }
+  
+  .property-status-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.2);
+  }
+  
+  .property-status-scrollbar::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--muted-foreground) / 0.3);
+  }
+`;
 
 interface PropertyStatusRowProps {
   firstImageUrl?: string | null;
-  prospectStatus?: string | null;
+  oportunidadStatus?: string | null;
   propertyType?: string | null;
   propertyId?: number | string | bigint | null;
 }
 
+function ProcessStageCard({
+  stage,
+  index
+}: {
+  stage: ProcessStage;
+  index: number;
+}) {
+  const styles = getStageStyles(stage.status);
+
+  return (
+    <div
+      className={cn(
+        "relative rounded-2xl p-6 transition-all",
+        styles.card
+      )}
+    >
+      {/* Stage header */}
+      <div className="mb-6 flex items-center gap-3">
+        <div
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold shadow-lg",
+            styles.badge
+          )}
+        >
+          {index + 1}
+        </div>
+        <h2
+          className={cn(
+            "text-sm font-semibold uppercase tracking-wider",
+            styles.title
+          )}
+        >
+          {stage.label}
+        </h2>
+      </div>
+
+      {/* Substages in horizontal flow */}
+      <div className="flex items-center gap-3">
+        {stage.subStages.map((substage, subIndex) => {
+          const substageStyles = getStageStyles(substage.status);
+          return (
+            <div key={substage.id} className="flex items-center gap-3">
+              <div
+                className={cn(
+                  "rounded-lg px-3 py-2 transition-all whitespace-nowrap",
+                  substageStyles.substage
+                )}
+              >
+                <span className="text-xs font-medium">{substage.label}</span>
+              </div>
+
+              {subIndex < stage.subStages.length - 1 && (
+                <div className="flex items-center justify-center">
+                  <ChevronRight 
+                    size={14} 
+                    className={cn(
+                      "flex-shrink-0 transition-all duration-200",
+                      "drop-shadow-sm transform hover:scale-110 hover:drop-shadow-md",
+                      substageStyles.connector
+                    )} 
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function PropertyStatusRow({
   firstImageUrl,
-  prospectStatus: _prospectStatus,
+  oportunidadStatus: _oportunidadStatus,
   propertyType,
   propertyId,
 }: PropertyStatusRowProps) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
-
-  // Mock process stages - will be connected to actual data later
-  const processStages = [
-    { id: "prospecto", label: "Prospecto", status: "completed" as const },
-    { id: "preparacion", label: "Preparación", status: "in_progress" as const },
-    { id: "publicado", label: "Publicado", status: "pending" as const },
-    { id: "cerrado", label: "Cerrado", status: "pending" as const },
-  ];
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const activeStageRef = useRef<HTMLDivElement>(null);
 
   const handleImageClick = async () => {
     if (!propertyId) return;
@@ -49,62 +143,70 @@ export function PropertyStatusRow({
     }
   };
 
-  const getStageStyles = (status: "completed" | "in_progress" | "pending") => {
-    switch (status) {
-      case "completed":
-        return {
-          dot: "bg-emerald-500",
-          text: "text-emerald-700 font-medium",
-          connector: "bg-emerald-300"
-        };
-      case "in_progress":
-        return {
-          dot: "bg-amber-500",
-          text: "text-amber-700 font-medium",
-          connector: "bg-gray-200"
-        };
-      case "pending":
-        return {
-          dot: "bg-gray-300",
-          text: "text-gray-400",
-          connector: "bg-gray-200"
-        };
+  // Auto-scroll to center the active stage on mount
+  useEffect(() => {
+    if (scrollContainerRef.current && activeStageRef.current) {
+      const container = scrollContainerRef.current;
+      const activeElement = activeStageRef.current;
+
+      const containerWidth = container.offsetWidth;
+      const elementLeft = activeElement.offsetLeft;
+      const elementWidth = activeElement.offsetWidth;
+
+      // Calculate scroll position to center the active element
+      const scrollPosition = elementLeft - (containerWidth / 2) + (elementWidth / 2);
+
+      container.scrollTo({
+        left: scrollPosition,
+        behavior: 'smooth'
+      });
     }
-  };
+  }, []);
 
   return (
-    <div className="col-span-full grid grid-cols-1 lg:grid-cols-4 gap-4 -mt-2 md:-mt-3">
-      {/* Process Tracker - 75% (3 columns) */}
-      <Card className="lg:col-span-3 border-gray-200/50">
-        <div className="p-3 md:p-4">
-          {/* Process stages */}
-          <div className="flex items-center justify-between">
-            {processStages.map((stage, index) => {
-              const styles = getStageStyles(stage.status);
-              const isLast = index === processStages.length - 1;
-
+    <>
+      <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
+      <div className="col-span-full grid grid-cols-1 lg:grid-cols-4 gap-4 -mt-2 md:-mt-3">
+      {/* Process Chart - 75% (3 columns) */}
+      <div className="lg:col-span-3 overflow-hidden">
+        <div
+          ref={scrollContainerRef}
+          className="p-4 md:p-5 overflow-x-auto property-status-scrollbar"
+        >
+          <div className="flex items-center gap-2">
+            {PROCESS_STAGES.map((stage, index) => {
+              const isActive = stage.status === "ongoing";
               return (
-                <div key={stage.id} className="flex items-center flex-1">
-                  {/* Stage */}
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    {/* Dot */}
-                    <div className={`h-2 w-2 rounded-full ${styles.dot} transition-colors duration-300`} />
-                    {/* Label */}
-                    <p className={`text-xs ${styles.text} transition-colors duration-300 whitespace-nowrap`}>
-                      {stage.label}
-                    </p>
+                <div key={stage.id} className="flex items-center gap-2">
+                  {/* Stage container */}
+                  <div ref={isActive ? activeStageRef : null}>
+                    <ProcessStageCard stage={stage} index={index} />
                   </div>
 
-                  {/* Connector line */}
-                  {!isLast && (
-                    <div className={`flex-1 h-0.5 mx-1.5 sm:mx-2 ${styles.connector} transition-colors duration-300`} />
+                  {/* Connector arrow */}
+                  {index < PROCESS_STAGES.length - 1 && (
+                    <div className="flex items-center justify-center flex-shrink-0 px-1">
+                      <ChevronRight 
+                        size={28} 
+                        strokeWidth={3.5}
+                        className={cn(
+                          "transition-all duration-300",
+                          "drop-shadow-lg transform hover:scale-125 hover:rotate-3",
+                          "filter brightness-110",
+                          // Make arrow lighter if next stage is future (todo)
+                          PROCESS_STAGES[index + 1]?.status === "future" 
+                            ? "text-slate-300" 
+                            : "text-slate-400"
+                        )} 
+                      />
+                    </div>
                   )}
                 </div>
               );
             })}
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Image Preview - 25% (1 column) */}
       <Card className="lg:col-span-1 border-gray-200/50 overflow-hidden">
@@ -153,6 +255,7 @@ export function PropertyStatusRow({
         onClose={() => setIsViewerOpen(false)}
         title="Imágenes de la propiedad"
       />
-    </div>
+      </div>
+    </>
   );
 }
