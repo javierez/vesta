@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -122,6 +122,9 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function ContactForm() {
+  const searchParams = useSearchParams();
+  const listingIdParam = searchParams.get("listingId");
+
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<ContactFormData>(initialFormData);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
@@ -142,6 +145,23 @@ export default function ContactForm() {
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [duplicateContacts, setDuplicateContacts] = useState<DuplicateContact[]>([]);
   const router = useRouter();
+
+  // Filter steps based on whether listingId is present
+  const visibleSteps = listingIdParam
+    ? steps.filter(step => step.id === "personal")
+    : steps;
+
+  // Initialize form data with listingId from URL if present
+  useEffect(() => {
+    if (listingIdParam) {
+      const listingIdBigInt = BigInt(listingIdParam);
+      setFormData((prev) => ({
+        ...prev,
+        selectedListings: [listingIdBigInt],
+        contactType: "buyer",
+      }));
+    }
+  }, [listingIdParam]);
 
   // Fetch listings on component mount
   useEffect(() => {
@@ -370,8 +390,14 @@ export default function ContactForm() {
   const nextStep = async () => {
     if (currentStep === 0) {
       if (!validatePersonalStep()) return;
-      setDirection("forward");
-      setCurrentStep(1);
+
+      // If listingId is present in URL, skip step 2 and create contact directly
+      if (listingIdParam) {
+        await handleCreateContact();
+      } else {
+        setDirection("forward");
+        setCurrentStep(1);
+      }
     } else if (currentStep === 1) {
       await handleCreateContact();
     }
@@ -715,36 +741,38 @@ export default function ContactForm() {
               CREAR NUEVO CONTACTO
             </h1>
 
-            {/* Progress indicator */}
-            <div className="mb-6 sm:mb-8 flex items-center justify-center">
-              {steps.map((step, index) => (
-                <div key={step.id} className="flex items-center">
-                  <div
-                    className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-300 ${
-                      index <= currentStep
-                        ? "border-transparent bg-gradient-to-r from-amber-400 to-rose-400 text-white shadow-lg scale-110"
-                        : "border-2 border-gray-300 bg-gray-100 text-gray-400"
-                    }`}
-                  >
-                    {step.icon}
-                  </div>
-                  {index < steps.length - 1 && (
+            {/* Progress indicator - only show when not coming from listing */}
+            {!listingIdParam && (
+              <div className="mb-6 sm:mb-8 flex items-center justify-center">
+                {visibleSteps.map((step, index) => (
+                  <div key={step.id} className="flex items-center">
                     <div
-                      className={`mx-2 sm:mx-3 h-1 w-12 sm:w-16 rounded-full transition-all duration-300 ${
-                        index < currentStep
-                          ? "bg-gradient-to-r from-amber-400 to-rose-400 shadow-sm"
-                          : "bg-gray-200"
+                      className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-300 ${
+                        index <= currentStep
+                          ? "border-transparent bg-gradient-to-r from-amber-400 to-rose-400 text-white shadow-lg scale-110"
+                          : "border-2 border-gray-300 bg-gray-100 text-gray-400"
                       }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+                    >
+                      {step.icon}
+                    </div>
+                    {index < visibleSteps.length - 1 && (
+                      <div
+                        className={`mx-2 sm:mx-3 h-1 w-12 sm:w-16 rounded-full transition-all duration-300 ${
+                          index < currentStep
+                            ? "bg-gradient-to-r from-amber-400 to-rose-400 shadow-sm"
+                            : "bg-gray-200"
+                        }`}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mb-6 sm:mb-8">
             <h2 className="mb-4 sm:mb-6 text-lg sm:text-xl font-medium text-gray-900 text-center">
-              {steps[currentStep]?.title}
+              {visibleSteps[currentStep]?.title}
             </h2>
             <AnimatePresence mode="wait">
               <motion.div
@@ -787,7 +815,7 @@ export default function ContactForm() {
               ) : (
                 <>
                   <span className="text-sm sm:text-base">
-                    {currentStep === steps.length - 1
+                    {currentStep === visibleSteps.length - 1
                       ? "Crear Contacto"
                       : "Siguiente"}
                   </span>
