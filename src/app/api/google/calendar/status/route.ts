@@ -25,7 +25,7 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({
         connected: false,
         lastSync: null,
-        syncDirection: "bidirectional",
+        syncDirection: "vesta_to_google", // Default to recommended one-way sync
       });
     }
   } catch (error) {

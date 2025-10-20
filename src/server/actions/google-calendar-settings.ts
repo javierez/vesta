@@ -17,7 +17,7 @@ export async function getGoogleCalendarSyncDirectionAction(): Promise<{
     
     return {
       success: true,
-      syncDirection: syncDirection ?? "bidirectional",
+      syncDirection: syncDirection ?? "vesta_to_google", // Default to recommended one-way sync
     };
   } catch (error) {
     console.error("Error getting sync direction:", error);

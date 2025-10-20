@@ -21,7 +21,7 @@ export function useGoogleCalendarIntegration() {
     lastSync: null,
     loading: true,
     error: null,
-    syncDirection: "bidirectional",
+    syncDirection: "vesta_to_google", // Default to recommended one-way sync
   });
 
   // Check integration status on mount
@@ -46,7 +46,7 @@ export function useGoogleCalendarIntegration() {
           ...prev,
           connected: Boolean(data.connected),
           lastSync: data.lastSync ? new Date(data.lastSync) : null,
-          syncDirection: data.syncDirection ?? "bidirectional",
+          syncDirection: data.syncDirection ?? "vesta_to_google", // Default to recommended one-way sync
           loading: false,
         }));
       } else {
@@ -98,7 +98,7 @@ export function useGoogleCalendarIntegration() {
           lastSync: null,
           loading: false,
           error: null,
-          syncDirection: "bidirectional",
+          syncDirection: "vesta_to_google", // Default to recommended one-way sync
         });
         return { success: true, message: data.message };
       } else {

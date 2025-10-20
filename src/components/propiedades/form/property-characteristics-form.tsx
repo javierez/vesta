@@ -1245,7 +1245,7 @@ export function PropertyCharacteristicsForm({
         {/* Property Status Row with Process Tracker and Image Preview */}
         <PropertyStatusRow
           firstImageUrl={firstImageUrl}
-          prospectStatus={null}
+          oportunidadStatus={null}
           propertyType={propertyType}
           propertyId={listing.propertyId}
         />

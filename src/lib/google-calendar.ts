@@ -56,9 +56,10 @@ const REDIRECT_URI =
     : "http://localhost:3000/api/google/calendar/callback";
 
 // Calendar API scopes
+// Using calendar.events which provides read/write access to calendar events
+// Note: Google does not offer write-only scope - read access is unavoidable
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
-  "https://www.googleapis.com/auth/calendar.readonly",
 ];
 
 /**
@@ -127,7 +128,7 @@ export async function getUserIntegration(
     channelId: row.channelId,
     resourceId: row.resourceId,
     channelExpiration: row.channelExpiration,
-    syncDirection: (row.syncDirection as "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none") ?? "bidirectional",
+    syncDirection: (row.syncDirection as "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none") ?? "vesta_to_google", // Default to recommended one-way sync
     isActive: row.isActive ?? true,
   };
 }

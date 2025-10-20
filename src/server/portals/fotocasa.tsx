@@ -902,22 +902,51 @@ export async function buildFotocasaPayload(
 
     // --- HEATING & HOT WATER FIELDS (Fotocasa) ---
     // Heating (FeatureId: 320)
-    if (
-      listingWithEnergy.heatingType &&
-      !isNaN(Number(listingWithEnergy.heatingType))
-    ) {
-      const heatingId = Number(listingWithEnergy.heatingType);
-      if (heatingId >= 1 && heatingId <= 6) {
+    // Map Spanish heating types to Fotocasa IDs
+    const heatingTypeMapping: Record<string, number> = {
+      "gas natural": 1,
+      "eléctrico": 2,
+      "electrico": 2, // Handle both with and without accent
+      "gasóleo": 3,
+      "gasoleo": 3,
+      "butano": 4,
+      "propano": 5,
+      "solar": 6,
+    };
+
+    if (listingWithEnergy.heatingType) {
+      // Try to parse as number first (in case it's already stored as ID)
+      let heatingId: number | undefined;
+
+      if (!isNaN(Number(listingWithEnergy.heatingType))) {
+        heatingId = Number(listingWithEnergy.heatingType);
+      } else {
+        // Map Spanish string to ID
+        const heatingKey = String(listingWithEnergy.heatingType).toLowerCase();
+        heatingId = heatingTypeMapping[heatingKey];
+      }
+
+      // Only add if it's a valid heating type ID (1-6)
+      if (heatingId && heatingId >= 1 && heatingId <= 6) {
         propertyFeatures.push({ FeatureId: 320, DecimalValue: heatingId });
       }
     }
     // Hot water (FeatureId: 321)
-    if (
-      listingWithEnergy.hotWaterType &&
-      !isNaN(Number(listingWithEnergy.hotWaterType))
-    ) {
-      const hotWaterId = Number(listingWithEnergy.hotWaterType);
-      if (hotWaterId >= 1 && hotWaterId <= 6) {
+    // Uses same mapping as heating (same energy sources)
+    if (listingWithEnergy.hotWaterType) {
+      // Try to parse as number first (in case it's already stored as ID)
+      let hotWaterId: number | undefined;
+
+      if (!isNaN(Number(listingWithEnergy.hotWaterType))) {
+        hotWaterId = Number(listingWithEnergy.hotWaterType);
+      } else {
+        // Map Spanish string to ID using same mapping as heating
+        const hotWaterKey = String(listingWithEnergy.hotWaterType).toLowerCase();
+        hotWaterId = heatingTypeMapping[hotWaterKey];
+      }
+
+      // Only add if it's a valid hot water type ID (1-6)
+      if (hotWaterId && hotWaterId >= 1 && hotWaterId <= 6) {
         propertyFeatures.push({ FeatureId: 321, DecimalValue: hotWaterId });
       }
     }
