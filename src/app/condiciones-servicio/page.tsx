@@ -5,10 +5,8 @@ import Link from "next/link";
 import {
   FileText,
   Mail,
-  Phone,
   Building2,
   ChevronRight,
-  Lock,
   Eye,
   Users,
   Clock,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, MapPin, Car, Home, Users, PenTool, Handshake, Train, CalendarIcon } from "lucide-react";
+import { Clock, MapPin, Car, Users, PenTool, Handshake, Train, CalendarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "~/lib/utils";
 
@@ -46,7 +46,7 @@ export interface AppointmentData {
 interface AppointmentCardProps {
   appointment: AppointmentData;
   isSelected?: boolean;
-  onClick?: (...args: any[]) => void;
+  onClick?: (appointment: AppointmentData) => void;
   className?: string;
   // Optional navigation behavior - if not provided, will navigate to visit page
   navigateToVisit?: boolean;

@@ -314,11 +314,31 @@ export function ListCalendarEvent({
     isOptimistic: event.isOptimistic,
   };
 
+  // Create a typed callback handler
+  const handleClick = onClick
+    ? (appointment: AppointmentData) => {
+        // Convert AppointmentData back to CalendarEvent for the callback
+        const calendarEvent: CalendarEvent = {
+          appointmentId: appointment.appointmentId,
+          contactName: appointment.contactName,
+          propertyAddress: appointment.propertyAddress,
+          startTime: appointment.datetimeStart,
+          endTime: appointment.datetimeEnd,
+          status: appointment.status,
+          type: appointment.type,
+          tripTimeMinutes: appointment.tripTimeMinutes,
+          notes: appointment.notes,
+          isOptimistic: appointment.isOptimistic,
+        };
+        onClick(calendarEvent);
+      }
+    : undefined;
+
   return (
     <AppointmentCard
       appointment={appointmentData}
       isSelected={isSelected}
-      onClick={onClick as any}
+      onClick={handleClick}
       className={className}
       navigateToVisit={false} // Calendar uses onClick callback instead
     />

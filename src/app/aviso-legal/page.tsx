@@ -5,15 +5,12 @@ import Link from "next/link";
 import {
   FileText,
   Mail,
-  Phone,
   Building2,
   ChevronRight,
   Scale,
   Shield,
-  Globe,
   AlertCircle,
   Copyright,
-  ExternalLink,
   Info,
   Gavel,
   Lock

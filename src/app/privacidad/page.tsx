@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Shield, Mail, Phone, Building2, ChevronRight, Lock, Eye, FileText, Users, Clock, Database } from "lucide-react";
+import { Shield, Mail, Building2, ChevronRight, Lock, Eye, FileText, Users, Clock, Database } from "lucide-react";
 import Navbar from "~/components/navbar";
 import { Footer } from "~/components/landing/Footer";
 

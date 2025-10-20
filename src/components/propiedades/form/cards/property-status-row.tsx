@@ -49,7 +49,7 @@ interface PropertyStatusRowProps {
 
 function ProcessStageCard({
   stage,
-  index
+  index: _index
 }: {
   stage: ProcessStage;
   index: number;

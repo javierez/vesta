@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { FileText, Upload, Trash2, Eye, Plus, X, Pencil } from "lucide-react";
+import { FileText, Upload, Trash2, Eye, Plus, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
 

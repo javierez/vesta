@@ -25,18 +25,18 @@ export interface ProcessStage {
 // Helper function to validate and fix substage progression within a stage
 function validateSubstageProgression(subStages: SubStage[]): SubStage[] {
   let foundCompleted = false;
-  
-  return subStages.map((substage, index) => {
+
+  return subStages.map((substage, _index) => {
     // If we found a completed substage, all previous ones should be completed
     if (substage.status === "accomplished") {
       foundCompleted = true;
     }
-    
+
     // If we found a completed substage, all subsequent ones should be future
     if (foundCompleted && substage.status !== "accomplished") {
       return { ...substage, status: "future" as StageStatus };
     }
-    
+
     return substage;
   });
 }

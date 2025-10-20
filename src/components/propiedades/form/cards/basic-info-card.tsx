@@ -16,7 +16,6 @@ import { Button } from "~/components/ui/button";
 import { cn, formFormatters } from "~/lib/utils";
 import { Building2, ChevronDown } from "lucide-react";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
-import { PropertyTitle } from "../common/property-title";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
 
