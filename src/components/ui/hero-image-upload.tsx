@@ -1,22 +1,34 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Upload, Image as ImageIcon } from "lucide-react";
+import { Upload, Image as ImageIcon, Video } from "lucide-react";
 import { cn } from "~/lib/utils";
 
-interface HeroImageUploadProps {
-  onUpload: (file: File) => Promise<void>;
+interface HeroMediaUploadProps {
+  onUpload: (file: File, type: "image" | "video") => Promise<void>;
   isUploading?: boolean;
   className?: string;
+  acceptVideo?: boolean;
 }
 
 export function HeroImageUpload({
   onUpload,
   isUploading = false,
   className,
-}: HeroImageUploadProps) {
+  acceptVideo = true,
+}: HeroMediaUploadProps) {
   const [isDragActive, setIsDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const validateFile = useCallback((file: File): "image" | "video" | null => {
+    if (file.type.startsWith("image/")) {
+      return "image";
+    }
+    if (acceptVideo && file.type.startsWith("video/")) {
+      return "video";
+    }
+    return null;
+  }, [acceptVideo]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -37,32 +49,44 @@ export function HeroImageUpload({
 
       if (e.dataTransfer.files?.[0]) {
         const file = e.dataTransfer.files[0];
-        if (!file.type.startsWith("image/")) {
-          setError("Por favor selecciona un archivo de imagen válido");
+        const fileType = validateFile(file);
+        if (!fileType) {
+          setError(
+            acceptVideo
+              ? "Por favor selecciona un archivo de imagen o video válido"
+              : "Por favor selecciona un archivo de imagen válido"
+          );
           return;
         }
-        await onUpload(file);
+        await onUpload(file, fileType);
       }
     },
-    [onUpload],
+    [onUpload, acceptVideo, validateFile],
   );
 
   const handleChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       e.preventDefault();
       setError(null);
-      
+
       if (e.target.files?.[0]) {
         const file = e.target.files[0];
-        if (!file.type.startsWith("image/")) {
-          setError("Por favor selecciona un archivo de imagen válido");
+        const fileType = validateFile(file);
+        if (!fileType) {
+          setError(
+            acceptVideo
+              ? "Por favor selecciona un archivo de imagen o video válido"
+              : "Por favor selecciona un archivo de imagen válido"
+          );
           return;
         }
-        await onUpload(file);
+        await onUpload(file, fileType);
       }
     },
-    [onUpload],
+    [onUpload, acceptVideo, validateFile],
   );
+
+  const acceptTypes = acceptVideo ? "image/*,video/*" : "image/*";
 
   return (
     <div className={cn("w-full", className)}>
@@ -81,7 +105,7 @@ export function HeroImageUpload({
       >
         <input
           type="file"
-          accept="image/*"
+          accept={acceptTypes}
           onChange={handleChange}
           disabled={isUploading}
           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
@@ -92,34 +116,48 @@ export function HeroImageUpload({
             <>
               <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-primary" />
               <p className="text-sm font-medium text-gray-700">
-                Subiendo imagen...
+                Subiendo archivo...
               </p>
             </>
           ) : (
             <>
-              <div className="mb-4 rounded-full bg-gray-100 p-3">
-                {isDragActive ? (
-                  <Upload className="h-6 w-6 text-primary" />
-                ) : (
-                  <ImageIcon className="h-6 w-6 text-gray-400" />
+              <div className="mb-4 flex gap-2">
+                <div className="rounded-full bg-gray-100 p-3">
+                  {isDragActive ? (
+                    <Upload className="h-6 w-6 text-primary" />
+                  ) : (
+                    <ImageIcon className="h-6 w-6 text-gray-400" />
+                  )}
+                </div>
+                {acceptVideo && (
+                  <div className="rounded-full bg-gray-100 p-3">
+                    <Video className="h-6 w-6 text-gray-400" />
+                  </div>
                 )}
               </div>
               <p className="mb-2 text-sm font-medium text-gray-700">
                 {isDragActive
-                  ? "Suelta la imagen aquí"
-                  : "Arrastra una imagen o haz clic para seleccionar"}
+                  ? acceptVideo
+                    ? "Suelta la imagen o video aquí"
+                    : "Suelta la imagen aquí"
+                  : acceptVideo
+                    ? "Arrastra una imagen o video, o haz clic para seleccionar"
+                    : "Arrastra una imagen o haz clic para seleccionar"}
               </p>
               <p className="text-xs text-gray-500">
-                JPG, PNG o WebP (máximo 10MB)
+                {acceptVideo
+                  ? "JPG, PNG, WebP o MP4 (máximo 50MB para videos)"
+                  : "JPG, PNG o WebP (máximo 10MB)"}
               </p>
             </>
           )}
         </div>
       </div>
 
-      {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );
 }
+
+// For backwards compatibility
+export { HeroImageUpload as HeroMediaUpload };

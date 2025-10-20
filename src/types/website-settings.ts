@@ -40,6 +40,8 @@ export const heroPropsSchema = z.object({
   title: z.string().min(1, "El título es requerido"),
   subtitle: z.string().optional(),
   backgroundImage: z.string().optional(),
+  backgroundVideo: z.string().optional(),
+  backgroundType: z.enum(["image", "video"]).default("image"),
   findPropertyButton: z.string().default("Explorar Propiedades"),
   contactButton: z.string().default("Contáctanos"),
 });

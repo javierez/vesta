@@ -12,7 +12,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { HeroImageUpload } from "~/components/ui/hero-image-upload";
-import { uploadHeroImage, deleteHeroImage } from "~/app/actions/hero-upload";
+import { uploadHeroImage, deleteHeroImage, uploadHeroVideo, deleteHeroVideo } from "~/app/actions/hero-upload";
 import { useToast } from "~/components/hooks/use-toast";
 import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
 import {
@@ -48,8 +48,8 @@ export function HeroSection({
     return () => subscription.unsubscribe();
   }, [form, onUnsavedChanges]);
 
-  // Handle hero image upload
-  const handleHeroImageUpload = async (file: File) => {
+  // Handle hero media upload (image or video)
+  const handleHeroMediaUpload = async (file: File, type: "image" | "video") => {
     setIsUploading(true);
     try {
       const accountId = await getCurrentUserAccountIdAction();
@@ -57,26 +57,46 @@ export function HeroSection({
         throw new Error("No se pudo obtener el ID de la cuenta");
       }
 
-      const result = await uploadHeroImage(
-        file,
-        accountId.toString(),
-        file.name,
-      );
+      if (type === "image") {
+        const result = await uploadHeroImage(
+          file,
+          accountId.toString(),
+          file.name,
+        );
 
-      // Update form with new image URL
-      form.setValue("heroProps.backgroundImage", result.imageUrl);
-      onUnsavedChanges(true);
-      setShowUploadDialog(false);
+        // Update form with new image URL
+        form.setValue("heroProps.backgroundImage", result.imageUrl);
+        form.setValue("heroProps.backgroundType", "image");
+        onUnsavedChanges(true);
+        setShowUploadDialog(false);
 
-      toast({
-        title: "¡Éxito!",
-        description: "Imagen de fondo actualizada correctamente",
-      });
+        toast({
+          title: "¡Éxito!",
+          description: "Imagen de fondo actualizada correctamente",
+        });
+      } else {
+        const result = await uploadHeroVideo(
+          file,
+          accountId.toString(),
+          file.name,
+        );
+
+        // Update form with new video URL
+        form.setValue("heroProps.backgroundVideo", result.videoUrl);
+        form.setValue("heroProps.backgroundType", "video");
+        onUnsavedChanges(true);
+        setShowUploadDialog(false);
+
+        toast({
+          title: "¡Éxito!",
+          description: "Video de fondo actualizado correctamente",
+        });
+      }
     } catch (error) {
-      console.error("Error uploading hero image:", error);
+      console.error("Error uploading hero media:", error);
       toast({
         title: "Error",
-        description: "No se pudo subir la imagen",
+        description: `No se pudo subir ${type === "image" ? "la imagen" : "el video"}`,
         variant: "destructive",
       });
     } finally {
@@ -84,8 +104,8 @@ export function HeroSection({
     }
   };
 
-  // Handle hero image deletion
-  const handleHeroImageDelete = async () => {
+  // Handle hero media deletion
+  const handleHeroMediaDelete = async () => {
     setIsDeleting(true);
     try {
       const accountId = await getCurrentUserAccountIdAction();
@@ -93,22 +113,31 @@ export function HeroSection({
         throw new Error("No se pudo obtener el ID de la cuenta");
       }
 
-      await deleteHeroImage(accountId.toString());
+      const backgroundType = form.watch("heroProps.backgroundType") ?? "image";
 
-      // Clear the form field
-      form.setValue("heroProps.backgroundImage", "");
+      if (backgroundType === "video") {
+        await deleteHeroVideo(accountId.toString());
+        form.setValue("heroProps.backgroundVideo", "");
+        toast({
+          title: "Eliminado",
+          description: "Video de fondo eliminado correctamente",
+        });
+      } else {
+        await deleteHeroImage(accountId.toString());
+        form.setValue("heroProps.backgroundImage", "");
+        toast({
+          title: "Eliminado",
+          description: "Imagen de fondo eliminada correctamente",
+        });
+      }
+
       onUnsavedChanges(true);
       setShowDeleteConfirmation(false);
-
-      toast({
-        title: "Eliminado",
-        description: "Imagen de fondo eliminada correctamente",
-      });
     } catch (error) {
-      console.error("Error deleting hero image:", error);
+      console.error("Error deleting hero media:", error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar la imagen",
+        description: "No se pudo eliminar el archivo",
         variant: "destructive",
       });
     } finally {
@@ -164,28 +193,42 @@ export function HeroSection({
           )}
         />
 
-        {/* Background Image Field - Updated to match Marca section style */}
+        {/* Background Media Field - Updated to support both image and video */}
         <div>
-          <FormLabel>Imagen de Fondo</FormLabel>
-          {form.watch("heroProps.backgroundImage") ? (
+          <FormLabel>Imagen o Video de Fondo</FormLabel>
+          {(form.watch("heroProps.backgroundImage") || form.watch("heroProps.backgroundVideo")) ? (
             <div className="mt-3 flex justify-center">
               <div className="group relative">
                 <div className="relative h-48 w-96 overflow-hidden rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-                  <Image
-                    src={form.watch("heroProps.backgroundImage") ?? ""}
-                    alt="Hero background"
-                    fill
-                    className="object-cover"
-                  />
+                  {form.watch("heroProps.backgroundType") === "video" && form.watch("heroProps.backgroundVideo") ? (
+                    <video
+                      src={form.watch("heroProps.backgroundVideo") ?? ""}
+                      className="h-full w-full object-cover"
+                      muted
+                      loop
+                      autoPlay
+                      playsInline
+                    />
+                  ) : (
+                    <Image
+                      src={form.watch("heroProps.backgroundImage") ?? ""}
+                      alt="Hero background"
+                      fill
+                      className="object-cover"
+                    />
+                  )}
 
                   {/* Hover buttons - same pattern as branding */}
                   <button
                     type="button"
                     className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
-                    onClick={() =>
-                      window.open(form.watch("heroProps.backgroundImage"), "_blank")
-                    }
-                    aria-label="Ver imagen"
+                    onClick={() => {
+                      const url = form.watch("heroProps.backgroundType") === "video"
+                        ? form.watch("heroProps.backgroundVideo")
+                        : form.watch("heroProps.backgroundImage");
+                      window.open(url, "_blank");
+                    }}
+                    aria-label="Ver archivo"
                   >
                     <Eye className="h-3.5 w-3.5" />
                   </button>
@@ -204,14 +247,17 @@ export function HeroSection({
                     type="button"
                     className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
                     onClick={() => {
+                      const isVideo = form.watch("heroProps.backgroundType") === "video";
                       const a = document.createElement("a");
-                      a.href = form.watch("heroProps.backgroundImage") ?? "";
-                      a.download = "hero-background.jpg";
+                      a.href = isVideo
+                        ? form.watch("heroProps.backgroundVideo") ?? ""
+                        : form.watch("heroProps.backgroundImage") ?? "";
+                      a.download = isVideo ? "hero-background.mp4" : "hero-background.jpg";
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
                     }}
-                    aria-label="Descargar imagen"
+                    aria-label="Descargar archivo"
                   >
                     <Download className="h-3.5 w-3.5" />
                   </button>
@@ -220,7 +266,7 @@ export function HeroSection({
                     type="button"
                     className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
                     onClick={() => setShowUploadDialog(true)}
-                    aria-label="Reemplazar imagen"
+                    aria-label="Reemplazar archivo"
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
                   </button>
@@ -235,7 +281,7 @@ export function HeroSection({
               onClick={() => setShowUploadDialog(true)}
               className="mt-3"
             >
-              Configurar imagen de fondo
+              Configurar imagen o video de fondo
             </Button>
           )}
         </div>
@@ -273,15 +319,16 @@ export function HeroSection({
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Subir Imagen de Fondo</DialogTitle>
+            <DialogTitle>Subir Imagen o Video de Fondo</DialogTitle>
             <DialogDescription>
-              Selecciona una imagen para usar como fondo de la sección principal
+              Selecciona una imagen o video para usar como fondo de la sección principal
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <HeroImageUpload
-              onUpload={handleHeroImageUpload}
+              onUpload={handleHeroMediaUpload}
               isUploading={isUploading}
+              acceptVideo={true}
             />
           </div>
         </DialogContent>
@@ -299,7 +346,7 @@ export function HeroSection({
               Confirmar Eliminación
             </DialogTitle>
             <DialogDescription>
-              ¿Estás seguro de que deseas eliminar la imagen de fondo?
+              ¿Estás seguro de que deseas eliminar {form.watch("heroProps.backgroundType") === "video" ? "el video" : "la imagen"} de fondo?
             </DialogDescription>
           </DialogHeader>
 
@@ -308,7 +355,7 @@ export function HeroSection({
               ⚠️ Esta acción no se puede deshacer
             </p>
             <p className="mt-2 text-sm text-red-700 dark:text-red-300">
-              La imagen será eliminada permanentemente del servidor.
+              {form.watch("heroProps.backgroundType") === "video" ? "El video" : "La imagen"} será eliminado permanentemente del servidor.
             </p>
           </div>
           <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
@@ -323,7 +370,7 @@ export function HeroSection({
             <Button
               variant="destructive"
               onClick={async () => {
-                await handleHeroImageDelete();
+                await handleHeroMediaDelete();
               }}
               disabled={isDeleting}
               className="w-full sm:w-auto"
