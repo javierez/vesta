@@ -87,6 +87,7 @@ const rawProcessStages: ProcessStage[] = [
     label: "Oportunidad",
     status: "accomplished",
     subStages: [
+      { id: "alta", label: "Alta", status: "accomplished" },
       { id: "completar-info", label: "Datos pendientes", status: "accomplished" },
       { id: "firma-encargo", label: "Firma encargo", status: "future" },
     ],
@@ -106,7 +107,7 @@ const rawProcessStages: ProcessStage[] = [
     subStages: [
       { id: "contrato", label: "Contrato", status: "future" },
       { id: "arras", label: "Pago y firma", status: "future" },
-      { id: "cerrado", label: "Cerrado", status: "future" },
+      { id: "cierre-final", label: "Cierre", status: "future" },
     ],
   },
 ];

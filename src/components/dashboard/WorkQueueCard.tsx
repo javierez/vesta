@@ -67,8 +67,15 @@ export default function WorkQueueCard({
     setOptimisticTasks(detailedTasks);
   }, [detailedTasks]);
 
-  // Use optimistic tasks or detailed tasks
-  const tasksToDisplay = optimisticTasks.length > 0 ? optimisticTasks : detailedTasks;
+  // Use optimistic tasks or detailed tasks, sorted with completed tasks at the bottom
+  const tasksToDisplay = (optimisticTasks.length > 0 ? optimisticTasks : detailedTasks).sort((a, b) => {
+    // Completed tasks go to the bottom
+    if ((a.completed ?? false) !== (b.completed ?? false)) {
+      return (a.completed ?? false) ? 1 : -1;
+    }
+    // Otherwise sort by due date
+    return new Date(a.dueDate ?? 0).getTime() - new Date(b.dueDate ?? 0).getTime();
+  });
 
   const formatTime = (date: Date) => {
     return new Intl.DateTimeFormat("es-ES", {
@@ -424,7 +431,7 @@ export default function WorkQueueCard({
                             setDraggingTask(taskIdStr);
                           }
                         }}
-                        onDragEnd={(e, info) => {
+                        onDragEnd={(_e, info) => {
                           setDraggingTask(null);
 
                           // Only enable swipe-to-delete on mobile (screen width < 640px which is sm breakpoint)
@@ -494,7 +501,7 @@ export default function WorkQueueCard({
                         </div>
 
                         {/* Property and Contact links - more compact on mobile */}
-                        {(task.listingId && task.propertyTitle) || (task.contactId && (task.contactFirstName ?? task.contactLastName)) ? (
+                        {(Boolean(task.listingId && task.propertyTitle) || Boolean(task.contactId && (task.contactFirstName ?? task.contactLastName))) && (
                           <div className="ml-5 sm:ml-6 flex flex-wrap items-center gap-1.5">
                             {/* Property Link */}
                             {task.listingId && task.propertyTitle && (
@@ -529,34 +536,6 @@ export default function WorkQueueCard({
                                 </span>
                               </Link>
                             )}
-
-                            {/* Delete button - hidden on mobile, inline with badges on desktop */}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                confirmDeleteTask(task.taskId, task.title);
-                              }}
-                              className="hidden sm:flex h-5 w-5 sm:h-6 sm:w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded ml-auto"
-                            >
-                              <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          /* Delete button alone when no links - hidden on mobile */
-                          <div className="ml-5 sm:ml-6 hidden sm:flex justify-end">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                confirmDeleteTask(task.taskId, task.title);
-                              }}
-                              className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded"
-                            >
-                              <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                            </Button>
                           </div>
                         )}
                       </div>

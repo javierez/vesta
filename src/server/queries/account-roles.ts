@@ -21,13 +21,22 @@ export async function updateAccountRolePermissionsWithAuth(
   return updateAccountRolePermissions(BigInt(accountId), BigInt(roleId), permissions);
 }
 
+// Wrapper function for upserting role permissions with auth
+export async function upsertAccountRolePermissionsWithAuth(
+  roleId: number,
+  permissions: AccountRolePermissions
+) {
+  const accountId = await getCurrentUserAccountId();
+  return upsertAccountRolePermissions(BigInt(accountId), BigInt(roleId), permissions);
+}
+
 // Wrapper function for ensuring account roles with auth
 export async function ensureAccountRolesWithAuth() {
   const accountId = await getCurrentUserAccountId();
   return ensureAccountRoles(BigInt(accountId));
 }
 
-// Get all roles for an account
+// Get all roles for an account (excludes superadmin - role_id 1 - as it's internal only)
 export async function getAccountRoles(accountId: bigint) {
   try {
     const roles = await db
@@ -40,15 +49,17 @@ export async function getAccountRoles(accountId: bigint) {
         )
       );
 
-    return roles.map(role => ({
-      ...role,
-      roleId: Number(role.roleId),
-      accountId: Number(role.accountId),
-      accountRoleId: Number(role.accountRoleId),
-      permissions: role.permissions as AccountRolePermissions,
-      isSystem: role.isSystem ?? false,
-      isActive: role.isActive ?? true,
-    }));
+    return roles
+      .filter(role => Number(role.roleId) !== 1) // Exclude superadmin (role_id=1, internal only)
+      .map(role => ({
+        ...role,
+        roleId: Number(role.roleId),
+        accountId: Number(role.accountId),
+        accountRoleId: Number(role.accountRoleId),
+        permissions: role.permissions as AccountRolePermissions,
+        isSystem: role.isSystem ?? false,
+        isActive: role.isActive ?? true,
+      }));
   } catch (error) {
     console.error("Error fetching account roles:", error);
     throw error;
@@ -114,12 +125,57 @@ export async function updateAccountRolePermissions(
   }
 }
 
-// Initialize default roles for a new account (only Agent and Account Admin)
+// Upsert (insert or update) role permissions for an account
+export async function upsertAccountRolePermissions(
+  accountId: bigint,
+  roleId: bigint,
+  permissions: AccountRolePermissions
+) {
+  try {
+    // Check if role already exists for this account
+    const existingRole = await getAccountRole(accountId, roleId);
+
+    if (existingRole) {
+      // Update existing role
+      await db
+        .update(accountRoles)
+        .set({
+          permissions: permissions,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(accountRoles.accountId, accountId),
+            eq(accountRoles.roleId, roleId)
+          )
+        );
+      console.log(`✅ Updated permissions for role ${roleId} in account ${accountId}`);
+    } else {
+      // Insert new role
+      await db.insert(accountRoles).values({
+        roleId: roleId,
+        accountId: accountId,
+        permissions: permissions,
+        isSystem: true,
+        isActive: true,
+      });
+      console.log(`✅ Created new role ${roleId} for account ${accountId}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Failed to upsert role permissions:", error);
+    throw error;
+  }
+}
+
+// Initialize default roles for a new account (Agent, Account Admin, Office Manager, and Inactive)
+// Note: Superadmin (role_id=1) is NOT initialized here as it's internal only
 export async function initializeAccountRoles(accountId: bigint) {
   try {
     const defaultRoles = [
       {
-        roleId: BigInt(1), // Agente
+        roleId: BigInt(2), // Agent
         accountId: accountId,
         permissions: {
           tasks: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false },
@@ -132,7 +188,7 @@ export async function initializeAccountRoles(accountId: bigint) {
         isSystem: true,
       },
       {
-        roleId: BigInt(3), // Admin de Cuenta
+        roleId: BigInt(3), // Account Admin
         accountId: accountId,
         permissions: {
           tasks: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
@@ -141,6 +197,32 @@ export async function initializeAccountRoles(accountId: bigint) {
           calendar: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
           tools: { imageStudio: true, aiTools: true, export: true },
           admin: { manageUsers: true, manageRoles: true, viewReports: true, manageAccount: true, manageBilling: true },
+        },
+        isSystem: true,
+      },
+      {
+        roleId: BigInt(4), // Office Manager
+        accountId: accountId,
+        permissions: {
+          tasks: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
+          properties: { viewOwn: true, viewAll: true, create: true, edit: true, delete: false, publish: true },
+          contacts: { viewOwn: true, viewAll: true, create: true, edit: true, delete: false },
+          calendar: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
+          tools: { imageStudio: true, aiTools: true, export: true },
+          admin: { manageUsers: true, manageRoles: false, viewReports: true, manageAccount: false, manageBilling: false },
+        },
+        isSystem: true,
+      },
+      {
+        roleId: BigInt(5), // Inactive
+        accountId: accountId,
+        permissions: {
+          tasks: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false },
+          properties: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false, publish: false },
+          contacts: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false },
+          calendar: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false },
+          tools: { imageStudio: false, aiTools: false, export: false },
+          admin: { manageUsers: false, manageRoles: false, viewReports: false, manageAccount: false, manageBilling: false },
         },
         isSystem: true,
       },

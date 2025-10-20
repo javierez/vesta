@@ -37,11 +37,11 @@ const accountAdminSections: AccountAdminCard[] = [
     available: true,
   },
   {
-    title: "Reportes",
-    description: "Revisa estadísticas y métricas de tu cuenta",
-    icon: BarChart3,
-    href: "/account-admin/reports",
-    available: false,
+    title: "Usuarios",
+    description: "Gestiona usuarios y asigna roles",
+    icon: Users,
+    href: "/account-admin/usuarios",
+    available: true,
   },
   {
     title: "Roles y Privacidad",
@@ -78,6 +78,13 @@ const accountAdminSections: AccountAdminCard[] = [
     icon: Monitor,
     href: "/account-admin/website",
     available: true,
+  },
+  {
+    title: "Reportes",
+    description: "Revisa estadísticas y métricas de tu cuenta",
+    icon: BarChart3,
+    href: "/account-admin/reports",
+    available: false,
   },
   {
     title: "Otras Opciones",

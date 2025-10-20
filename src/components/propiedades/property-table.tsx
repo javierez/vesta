@@ -21,6 +21,7 @@ import {
   MessageCircle,
   ChevronLeft,
   ChevronRight,
+  Download,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
@@ -39,6 +40,7 @@ interface PropertyTableProps {
   totalPages?: number;
   onPageChange?: (page: number) => void;
   onPrefetchPage?: (page: number) => Promise<void>;
+  onExport?: () => Promise<void>;
 }
 
 // Default column widths (in pixels)
@@ -80,6 +82,7 @@ export const PropertyTable = React.memo(function PropertyTable({
   totalPages = 1,
   onPageChange,
   onPrefetchPage,
+  onExport,
 }: PropertyTableProps) {
   const router = useRouter();
   const [loadedImages, setLoadedImages] = React.useState<Set<string>>(
@@ -96,6 +99,7 @@ export const PropertyTable = React.memo(function PropertyTable({
   const tableRef = useRef<HTMLTableElement>(null);
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const [isHoveringTable, setIsHoveringTable] = React.useState(false);
 
   const handleResizeStart = useCallback(
     (column: string, e: React.MouseEvent) => {
@@ -314,6 +318,57 @@ export const PropertyTable = React.memo(function PropertyTable({
     [accountWebsite],
   );
 
+  // Export properties to CSV
+  const handleExport = React.useCallback(async () => {
+    if (onExport) {
+      // Use parent-provided export function (exports ALL filtered data)
+      await onExport();
+    } else {
+      // Fallback: export only current page data
+      const headers = [
+        "Referencia",
+        "Título",
+        "Tipo",
+        "Estado",
+        "Precio",
+        "Ciudad",
+        "Dormitorios",
+        "Baños",
+        "M²",
+        "Propietario",
+        "Agente",
+      ];
+
+      const rows = listings.map(listing => {
+        return [
+          listing.referenceNumber ?? "",
+          `"${listing.title ?? ""}"`,
+          listing.propertyType ?? "",
+          listing.status ?? "",
+          listing.price?.toString() ?? "",
+          listing.city ?? "",
+          listing.bedrooms?.toString() ?? "",
+          listing.bathrooms ? Math.floor(Number(listing.bathrooms)).toString() : "",
+          listing.squareMeter?.toString() ?? "",
+          listing.ownerName ?? "",
+          listing.agentName ?? "",
+        ].join(",");
+      });
+
+      const csv = [headers.join(","), ...rows].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `propiedades-${new Date().toISOString().split("T")[0]}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }, [listings, onExport]);
+
   const ResizeHandle = ({ column }: { column: string }) => (
     <div
       className={cn(
@@ -416,7 +471,29 @@ export const PropertyTable = React.memo(function PropertyTable({
   };
 
   return (
-    <div className="rounded-lg border">
+    <div
+      className="relative rounded-lg border"
+      onMouseEnter={() => setIsHoveringTable(true)}
+      onMouseLeave={() => setIsHoveringTable(false)}
+    >
+      {/* Export Button - Appears on hover */}
+      <div
+        className={cn(
+          "absolute right-2 top-2 z-10 transition-all duration-300",
+          isHoveringTable ? "opacity-60 hover:opacity-100" : "opacity-0 pointer-events-none"
+        )}
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleExport}
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          title="Exportar propiedades a CSV"
+        >
+          <Download className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
       <div className="overflow-x-auto">
         <Table ref={tableRef}>
           <TableHeader>

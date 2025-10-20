@@ -211,6 +211,68 @@ export default function ContactsPage() {
     // The useEffect above will re-fetch data when URL changes
   };
 
+  // Export all filtered contacts to CSV
+  const handleExport = useCallback(async () => {
+    const filters = getFiltersFromUrl();
+
+    try {
+      // Fetch ALL contacts with current filters (no pagination)
+      const isOwnerView = filters.roles.includes("owner");
+      const result = isOwnerView
+        ? await listContactsOwnerDataWithAuth(1, 100000, { // Large limit to get all
+            searchQuery: filters.searchQuery,
+            roles: ["owner"],
+            lastContactFilter: filters.lastContactFilter,
+          })
+        : await listContactsBuyerDataWithAuth(1, 100000, { // Large limit to get all
+            searchQuery: filters.searchQuery,
+            roles: ["buyer"],
+            lastContactFilter: filters.lastContactFilter,
+          });
+
+      const allContacts = processContactsData(result.contacts as DbContact[]);
+
+      // Create CSV headers
+      const headers = ["Nombre", "Email", "Teléfono", "Tipo", "Propiedades", "Última Actualización"];
+
+      // Create CSV rows
+      const rows = allContacts.map(contact => {
+        const types = [];
+        if (contact.isOwner) types.push("Propietario");
+        if (contact.isBuyer) types.push("Comprador");
+        if (contact.isInteresado) types.push("Interesado");
+
+        const propertiesCount = (contact.ownerCount ?? 0) + (contact.buyerCount ?? 0) + (contact.prospectCount ?? 0);
+
+        return [
+          `"${contact.firstName} ${contact.lastName}"`,
+          contact.email ?? "",
+          contact.phone ?? "",
+          types.join(", "),
+          propertiesCount.toString(),
+          contact.updatedAt.toLocaleDateString(),
+        ].join(",");
+      });
+
+      // Combine headers and rows
+      const csv = [headers.join(","), ...rows].join("\n");
+
+      // Create blob and download
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `contactos-${new Date().toISOString().split("T")[0]}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error exporting contacts:", error);
+      alert("Error al exportar contactos");
+    }
+  }, [getFiltersFromUrl, processContactsData]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -246,6 +308,7 @@ export default function ContactsPage() {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
+            onExport={handleExport}
           />
         </div>
       )}

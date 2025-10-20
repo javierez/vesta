@@ -112,6 +112,28 @@ const port = process.env.PORT || 3000; // Bug: PORT="0" would use 3000!
 const count = value || 0; // Bug: count would be 0 even if value is 0
 ```
 
+**For boolean conditions with `||`:**
+When ESLint complains about using `||` in conditional logic, wrap expressions with `Boolean()` instead of disabling the rule:
+
+```typescript
+// ✅ Good - Using Boolean() for logical OR in conditionals
+{(Boolean(conditionA) || Boolean(conditionB)) && (
+  <Component />
+)}
+
+// ❌ Bad - Disabling ESLint rules
+{/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
+{(conditionA || conditionB) && (
+  <Component />
+)}
+```
+
+**ESLint Rule Enforcement:**
+- ❌ **NEVER disable ESLint rules** with `eslint-disable` comments
+- ✅ **ALWAYS fix the underlying issue** that ESLint is flagging
+- ESLint rules exist to prevent bugs and maintain code quality
+- If a rule seems wrong, refactor the code to satisfy it or discuss changing the rule globally
+
 ### Component Patterns
 
 #### Server Components (Default)

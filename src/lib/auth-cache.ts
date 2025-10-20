@@ -1,7 +1,7 @@
 import NodeCache from "node-cache";
 import { getUserRolesFromDB, getPermissionsForRoles, auth } from "~/lib/auth";
 import type { Permission } from "~/lib/permissions";
-import { headers } from "next/headers";
+import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 
 /**
  * Enhanced Session Caching Strategy
@@ -178,8 +178,14 @@ export async function getCachedUserRoles(
 /**
  * Get cached session data with fallback to auth provider
  * This follows the same pattern as getCachedUserRoles()
+ *
+ * @param sessionId - The session ID to look up
+ * @param requestHeaders - The headers object from next/headers (must be passed from calling context)
  */
-export async function getCachedSession(sessionId: string): Promise<CachedSessionData | null> {
+export async function getCachedSession(
+  sessionId: string,
+  requestHeaders: ReadonlyHeaders
+): Promise<CachedSessionData | null> {
   const cacheKey = `session:${sessionId}`;
 
   try {
@@ -195,10 +201,10 @@ export async function getCachedSession(sessionId: string): Promise<CachedSession
     AuthMetrics.recordSessionCacheMiss();
     AuthMetrics.recordDbQuery();
     console.log(`💾 Cache MISS for session: ${sessionId} - fetching from auth provider`);
-    
+
     // Get fresh session from auth provider
     const session = await auth.api.getSession({
-      headers: await headers(),
+      headers: requestHeaders,
     });
 
     if (!session?.user?.accountId) {
@@ -227,7 +233,7 @@ export async function getCachedSession(sessionId: string): Promise<CachedSession
 
     // Cache for 4 hours
     sessionCache.set(cacheKey, enrichedSessionData, SESSION_CACHE_TTL);
-    
+
     console.log(`✅ Cached session for ${sessionId} (user: ${session.user.id})`);
     return enrichedSessionData;
   } catch (error) {

@@ -134,11 +134,11 @@ export default function SignUpPage() {
         return;
       }
 
-      // Assign agent role to the new user
+      // Assign inactive role to the new user
       if (result.user?.id) {
         try {
           console.log("Attempting to assign role to user:", result.user.id);
-          const roleResult = await assignUserRole(result.user.id, 1); // Assign agent role (roleId = 1)
+          const roleResult = await assignUserRole(result.user.id, 5); // Assign inactive role (roleId = 5)
           console.log("Role assignment result:", roleResult);
         } catch (roleError) {
           console.error("Failed to assign user role:", roleError);

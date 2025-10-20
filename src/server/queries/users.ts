@@ -580,24 +580,37 @@ export async function updateUserRole(userId: string, newRoleId: number, requesti
           .select({ accountId: users.accountId })
           .from(users)
           .where(eq(users.id, userId));
-          
+
         if (!user || user.accountId !== BigInt(requestingAccountId)) {
           throw new Error('Access denied: User belongs to different account');
         }
       }
 
-      // Deactivate all current roles
-      await tx
-        .update(userRoles)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(userRoles.userId, userId));
+      // Check if user already has a role assignment
+      const [existingRole] = await tx
+        .select({ userRoleId: userRoles.userRoleId })
+        .from(userRoles)
+        .where(eq(userRoles.userId, userId))
+        .limit(1);
 
-      // Assign new role
-      await tx.insert(userRoles).values({
-        userId: userId,
-        roleId: BigInt(newRoleId),
-        isActive: true
-      });
+      if (existingRole) {
+        // UPDATE the existing role assignment
+        await tx
+          .update(userRoles)
+          .set({
+            roleId: BigInt(newRoleId),
+            isActive: true,
+            updatedAt: new Date()
+          })
+          .where(eq(userRoles.userRoleId, existingRole.userRoleId));
+      } else {
+        // INSERT a new role assignment (first time user gets a role)
+        await tx.insert(userRoles).values({
+          userId: userId,
+          roleId: BigInt(newRoleId),
+          isActive: true
+        });
+      }
 
       console.log(`✅ Updated user ${userId} role to ${newRoleId}`);
       return { success: true };
@@ -701,14 +714,14 @@ export async function bulkUserOperations(operation: 'activate' | 'deactivate' | 
               eq(users.accountId, BigInt(requestingAccountId))
             )
           );
-          
+
         if (usersCheck.length !== userIds.length) {
           throw new Error('Access denied: Some users belong to different accounts');
         }
       }
 
       let updateData: { updatedAt: Date; isActive?: boolean };
-      
+
       switch (operation) {
         case 'activate':
           updateData = { updatedAt: new Date(), isActive: true };
@@ -736,4 +749,198 @@ export async function bulkUserOperations(operation: 'activate' | 'deactivate' | 
       throw error;
     }
   });
+}
+
+// Get all users with roles for account admin (excludes role 1 and 3)
+export async function getUsersForRoleManagement() {
+  try {
+    const accountId = await getCurrentUserAccountId();
+    console.log(`🔍 [getUsersForRoleManagement] Fetching users for accountId: ${accountId}`);
+
+    // First, get all users for this account
+    const allUsers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        image: users.image,
+        isActive: users.isActive,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.accountId, BigInt(accountId)),
+          eq(users.isActive, true)
+        )
+      )
+      .orderBy(users.name);
+
+    console.log(`📊 [getUsersForRoleManagement] Found ${allUsers.length} users`);
+
+    // For each user, get their most recent role assignment (active or not)
+    const usersWithRoles = await Promise.all(
+      allUsers.map(async (user) => {
+        // First try to get an active role assignment
+        const [activeRole] = await db
+          .select({
+            roleId: userRoles.roleId,
+            userRoleId: userRoles.userRoleId,
+            isActive: userRoles.isActive,
+          })
+          .from(userRoles)
+          .where(
+            and(
+              eq(userRoles.userId, user.id),
+              eq(userRoles.isActive, true)
+            )
+          )
+          .orderBy(desc(userRoles.updatedAt))
+          .limit(1);
+
+        // If no active role, get the most recent role assignment (even if inactive)
+        // This handles cases where a role assignment was deactivated but not replaced
+        let currentRole = activeRole;
+        if (!activeRole) {
+          const [mostRecentRole] = await db
+            .select({
+              roleId: userRoles.roleId,
+              userRoleId: userRoles.userRoleId,
+              isActive: userRoles.isActive,
+            })
+            .from(userRoles)
+            .where(eq(userRoles.userId, user.id))
+            .orderBy(desc(userRoles.updatedAt))
+            .limit(1);
+
+          currentRole = mostRecentRole;
+        }
+
+        // Debug: Check all roles for this user
+        const allUserRoles = await db
+          .select({
+            userRoleId: userRoles.userRoleId,
+            roleId: userRoles.roleId,
+            isActive: userRoles.isActive,
+            updatedAt: userRoles.updatedAt,
+          })
+          .from(userRoles)
+          .where(eq(userRoles.userId, user.id))
+          .orderBy(desc(userRoles.updatedAt));
+
+        console.log(`   - User: ${user.name} (${user.id})`);
+        console.log(`      Current role: roleId=${currentRole?.roleId ?? 'null'}, userRoleId=${currentRole?.userRoleId ?? 'null'}, assignmentActive=${currentRole?.isActive ?? 'null'}`);
+        if (allUserRoles.length > 0) {
+          console.log(`      🔍 All role assignments (${allUserRoles.length}):`);
+          allUserRoles.forEach(role => {
+            console.log(`         - userRoleId: ${role.userRoleId}, roleId: ${role.roleId}, isActive: ${role.isActive}, updated: ${role.updatedAt}`);
+          });
+        }
+
+        return {
+          ...user,
+          roleId: currentRole?.roleId ?? null,
+          userRoleId: currentRole?.userRoleId ?? null,
+        };
+      })
+    );
+
+    // Filter out users with role 1 (Superadmin - internal only) or role 3 (Account Admin - protected)
+    const filteredUsers = usersWithRoles.filter(user => {
+      const roleId = user.roleId ? Number(user.roleId) : null;
+      const shouldInclude = roleId !== 1 && roleId !== 3;
+      if (!shouldInclude) {
+        console.log(`   ⚠️  Filtering out user ${user.name} with protected role ${roleId}`);
+      }
+      return shouldInclude;
+    });
+
+    console.log(`✅ [getUsersForRoleManagement] Returning ${filteredUsers.length} filtered users`);
+
+    const result = filteredUsers.map(user => ({
+      ...user,
+      isActive: user.isActive ?? true,
+      roleId: user.roleId ? Number(user.roleId) : null,
+      userRoleId: user.userRoleId ? Number(user.userRoleId) : null,
+    }));
+
+    result.forEach(user => {
+      console.log(`   📤 Final user: ${user.name} | roleId: ${user.roleId} | userRoleId: ${user.userRoleId}`);
+    });
+
+    return result;
+  } catch (error) {
+    console.error('❌ [getUsersForRoleManagement] Error fetching users for role management:', error);
+    throw error;
+  }
+}
+
+// Update user role with auth
+export async function updateUserRoleWithAuth(userId: string, newRoleId: number) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+    console.log(`🔄 [updateUserRoleWithAuth] Starting role update for userId: ${userId}, newRoleId: ${newRoleId}, accountId: ${accountId}`);
+
+    // Verify user belongs to the account
+    const [user] = await db
+      .select({ accountId: users.accountId })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user || user.accountId !== BigInt(accountId)) {
+      console.log(`❌ [updateUserRoleWithAuth] Access denied: User ${userId} does not belong to account ${accountId}`);
+      throw new Error('Access denied: User belongs to different account');
+    }
+
+    console.log(`✅ [updateUserRoleWithAuth] User verified, belongs to account ${accountId}`);
+
+    return await db.transaction(async (tx) => {
+      // Check if user already has a role assignment
+      const [existingRole] = await tx
+        .select({ userRoleId: userRoles.userRoleId, roleId: userRoles.roleId, isActive: userRoles.isActive })
+        .from(userRoles)
+        .where(eq(userRoles.userId, userId))
+        .limit(1);
+
+      console.log(`📋 [updateUserRoleWithAuth] Existing role:`, existingRole ? `userRoleId=${existingRole.userRoleId}, roleId=${existingRole.roleId}, isActive=${existingRole.isActive}` : 'None');
+
+      if (existingRole) {
+        // UPDATE the existing role assignment
+        await tx
+          .update(userRoles)
+          .set({
+            roleId: BigInt(newRoleId),
+            isActive: true,
+            updatedAt: new Date()
+          })
+          .where(eq(userRoles.userRoleId, existingRole.userRoleId));
+
+        console.log(`✅ [updateUserRoleWithAuth] Updated existing role assignment ${existingRole.userRoleId} from role ${existingRole.roleId} to ${newRoleId}`);
+      } else {
+        // INSERT a new role assignment (first time user gets a role)
+        await tx.insert(userRoles).values({
+          userId: userId,
+          roleId: BigInt(newRoleId),
+          isActive: true,
+        });
+
+        console.log(`✅ [updateUserRoleWithAuth] Created new role assignment for user ${userId} with role ${newRoleId}`);
+      }
+
+      // Verify the final state
+      const [finalRole] = await tx
+        .select({ userRoleId: userRoles.userRoleId, roleId: userRoles.roleId, isActive: userRoles.isActive })
+        .from(userRoles)
+        .where(eq(userRoles.userId, userId));
+
+      console.log(`🔍 [updateUserRoleWithAuth] Final state: userRoleId=${finalRole?.userRoleId}, roleId=${finalRole?.roleId}, isActive=${finalRole?.isActive}`);
+
+      return { success: true };
+    });
+  } catch (error) {
+    console.error('❌ [updateUserRoleWithAuth] Error updating user role:', error);
+    throw error;
+  }
 }

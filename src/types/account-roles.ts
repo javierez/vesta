@@ -1,10 +1,10 @@
 export interface AccountRolePermissions {
   tasks?: {
-    viewOwn: boolean;
     viewAll: boolean;
-    create: boolean;
-    edit: boolean;
-    delete: boolean;
+    editOwn: boolean;
+    editAll: boolean;
+    deleteOwn: boolean;
+    deleteAll: boolean;
   };
   properties?: {
     viewOwn: boolean;
@@ -44,7 +44,7 @@ export interface AccountRolePermissions {
 
 export interface AccountRole {
   accountRoleId: number;
-  roleId: number; // 1=Agente, 2=Superadmin, 3=Admin de Cuenta
+  roleId: number; // 1=Admin, 2=Agent, 3=Account Admin, 4=Office Manager, 5=Inactive
   accountId: number;
   permissions: AccountRolePermissions;
   isSystem: boolean;
@@ -54,19 +54,25 @@ export interface AccountRole {
 }
 
 export const ROLE_NAMES: Record<number, string> = {
-  1: "Agente",
-  2: "Superadmin",
-  3: "Admin de Cuenta",
+  1: "Administrador",
+  2: "Agente",
+  3: "Administrador de Cuenta",
+  4: "Gestor de Oficina",
+  5: "Inactivo",
 };
 
 export const ROLE_DESCRIPTIONS: Record<number, string> = {
-  1: "Acceso básico para agentes inmobiliarios",
-  2: "Acceso administrativo avanzado",
-  3: "Control total de la cuenta",
+  1: "Administrador con acceso completo al sistema",
+  2: "Agente inmobiliario con acceso a gestión de propiedades",
+  3: "Administrador de cuenta",
+  4: "Gestor de oficina con coordinación de equipo",
+  5: "Usuario sin permisos activos",
 };
 
 export const ROLE_COLORS: Record<number, string> = {
-  1: "bg-slate-500",
-  2: "bg-indigo-500",
+  1: "bg-purple-600",
+  2: "bg-slate-500",
   3: "bg-emerald-600",
+  4: "bg-blue-500",
+  5: "bg-gray-400",
 };

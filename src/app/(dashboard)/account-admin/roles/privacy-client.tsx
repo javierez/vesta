@@ -6,10 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Shield, Users, Eye, Edit, Trash2, ImageIcon, Calendar, ChevronRight } from "lucide-react";
 import { ROLE_NAMES, ROLE_DESCRIPTIONS, ROLE_COLORS, type AccountRole, type AccountRolePermissions } from "~/types/account-roles";
-import { updateAccountRolePermissionsWithAuth } from "~/server/queries/account-roles";
+import { upsertAccountRolePermissionsWithAuth } from "~/server/queries/account-roles";
 
 type Permission = {
   id: string;
@@ -21,18 +20,39 @@ type Permission = {
 
 const permissions: Permission[] = [
   {
-    id: "viewOwn",
-    category: "tasks",
-    name: "Ver tareas propias",
-    description: "Solo puede ver sus propias tareas y citas del calendario",
-    icon: Eye,
-  },
-  {
     id: "viewAll",
     category: "tasks",
     name: "Ver todas las tareas",
-    description: "Puede filtrar por agente para ver tareas y citas",
+    description: "Puede ver todas las tareas del equipo",
     icon: Eye,
+  },
+  {
+    id: "editOwn",
+    category: "tasks",
+    name: "Editar mis tareas",
+    description: "Puede editar sus propias tareas",
+    icon: Edit,
+  },
+  {
+    id: "editAll",
+    category: "tasks",
+    name: "Editar todas las tareas",
+    description: "Puede editar todas las tareas del equipo",
+    icon: Edit,
+  },
+  {
+    id: "deleteOwn",
+    category: "tasks",
+    name: "Eliminar mis tareas",
+    description: "Puede eliminar sus propias tareas",
+    icon: Trash2,
+  },
+  {
+    id: "deleteAll",
+    category: "tasks",
+    name: "Eliminar todas las tareas",
+    description: "Puede eliminar todas las tareas del equipo",
+    icon: Trash2,
   },
   {
     id: "create",
@@ -169,8 +189,9 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Use upsert to insert new roles or update existing ones
       for (const role of roles) {
-        await updateAccountRolePermissionsWithAuth(role.roleId, role.permissions);
+        await upsertAccountRolePermissionsWithAuth(role.roleId, role.permissions);
       }
       setHasChanges(false);
     } catch (error) {
@@ -231,23 +252,25 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y">
-                {[1, 2, 3].map((roleId) => (
+                {roles.map((role) => (
                   <button
-                    key={roleId}
-                    onClick={() => setSelectedRoleId(roleId)}
+                    key={role.roleId}
+                    onClick={() => setSelectedRoleId(role.roleId)}
                     className={`w-full px-4 py-4 text-left transition-colors hover:bg-gray-50 ${
-                      selectedRoleId === roleId ? "bg-gray-50" : ""
+                      selectedRoleId === role.roleId ? "bg-gray-50" : ""
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`h-2 w-2 rounded-full ${ROLE_COLORS[roleId]}`} />
-                        <div>
-                          <p className="font-medium text-gray-900">{ROLE_NAMES[roleId]}</p>
-                          <p className="text-sm text-gray-500">{ROLE_DESCRIPTIONS[roleId]}</p>
+                        {role.roleId !== 4 && (
+                          <div className={`h-2 w-2 rounded-full ${ROLE_COLORS[role.roleId] ?? "bg-blue-500"}`} />
+                        )}
+                        <div className={role.roleId === 4 ? "ml-5" : ""}>
+                          <p className="font-medium text-gray-900">{ROLE_NAMES[role.roleId] ?? `Role ${role.roleId}`}</p>
+                          <p className="text-sm text-gray-500">{ROLE_DESCRIPTIONS[role.roleId] ?? "Custom role"}</p>
                         </div>
                       </div>
-                      {selectedRoleId === roleId && (
+                      {selectedRoleId === role.roleId && (
                         <ChevronRight className="h-4 w-4 text-gray-400" />
                       )}
                     </div>
@@ -262,15 +285,10 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Configuración de Permisos
-                </CardTitle>
-                <Badge className={ROLE_COLORS[selectedRoleId]}>
-                  {ROLE_NAMES[selectedRoleId]}
-                </Badge>
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Configuración de Permisos
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="all" className="w-full">

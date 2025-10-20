@@ -17,7 +17,7 @@ import { Propiedades } from "../table-components/list-elements/propiedades";
 import { Recordatorios } from "../table-components/list-elements/recordatorios";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 
 // Default column widths (in pixels)
 const DEFAULT_COLUMN_WIDTHS = {
@@ -84,6 +84,7 @@ interface ContactSpreadsheetTableProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  onExport?: () => Promise<void>;
 }
 
 export function ContactSpreadsheetTable({
@@ -92,6 +93,7 @@ export function ContactSpreadsheetTable({
   currentPage = 1,
   totalPages = 1,
   onPageChange,
+  onExport,
 }: ContactSpreadsheetTableProps) {
   const router = useRouter();
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
@@ -100,6 +102,7 @@ export function ContactSpreadsheetTable({
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
   const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const [isHoveringTable, setIsHoveringTable] = useState(false);
 
   const handleResizeStart = useCallback(
     (column: string, e: React.MouseEvent) => {
@@ -207,6 +210,47 @@ export function ContactSpreadsheetTable({
     setVisibleRows(new Set(initialVisibleIds));
   }, [contacts]);
 
+  // Export contacts to CSV
+  const handleExport = useCallback(async () => {
+    if (onExport) {
+      // Use parent-provided export function (exports ALL filtered data)
+      await onExport();
+    } else {
+      // Fallback: export only current page data
+      const headers = ["Nombre", "Email", "Teléfono", "Tipo", "Propiedades", "Última Actualización"];
+
+      const rows = contacts.map(contact => {
+        const types = [];
+        if (contact.isOwner) types.push("Propietario");
+        if (contact.isBuyer) types.push("Comprador");
+        if (contact.isInteresado) types.push("Interesado");
+
+        const propertiesCount = (contact.ownerCount ?? 0) + (contact.buyerCount ?? 0) + (contact.prospectCount ?? 0);
+
+        return [
+          `"${contact.firstName} ${contact.lastName}"`,
+          contact.email ?? "",
+          contact.phone ?? "",
+          types.join(", "),
+          propertiesCount.toString(),
+          contact.updatedAt.toLocaleDateString(),
+        ].join(",");
+      });
+
+      const csv = [headers.join(","), ...rows].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `contactos-${new Date().toISOString().split("T")[0]}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }, [contacts, onExport]);
+
   // Pagination controls component
   const PaginationControls = () => {
     if (!onPageChange || totalPages <= 1) return null;
@@ -299,7 +343,29 @@ export function ContactSpreadsheetTable({
   };
 
   return (
-    <div className="rounded-md border">
+    <div
+      className="relative rounded-md border"
+      onMouseEnter={() => setIsHoveringTable(true)}
+      onMouseLeave={() => setIsHoveringTable(false)}
+    >
+      {/* Export Button - Appears on hover */}
+      <div
+        className={cn(
+          "absolute right-2 top-2 z-10 transition-all duration-300",
+          isHoveringTable ? "opacity-60 hover:opacity-100" : "opacity-0 pointer-events-none"
+        )}
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleExport}
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          title="Exportar contactos a CSV"
+        >
+          <Download className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
       <div className="overflow-x-auto">
         <Table ref={tableRef}>
           <TableHeader>

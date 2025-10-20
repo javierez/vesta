@@ -184,6 +184,133 @@ export default function PropertiesPage() {
   };
 
   // Smart prefetching function
+  // Export all filtered properties to CSV
+  const handleExport = async () => {
+    try {
+      // Get all filter parameters from URL
+      const filters: Record<string, unknown> = {};
+      let hasStatusParam = false;
+
+      for (const [key, value] of searchParams.entries()) {
+        if (key === "page") continue;
+        if (key === "q") {
+          filters.searchQuery = value;
+        } else if (key === "status") {
+          hasStatusParam = true;
+          const statusMap: Record<string, string> = {
+            "for-sale": "En Venta",
+            "for-rent": "En Alquiler",
+            sold: "Vendido",
+            rented: "Alquilado",
+            discarded: "Descartado",
+          };
+          filters.status = value
+            .split(",")
+            .map((v) => statusMap[v] ?? v);
+        } else if (key === "type") {
+          filters.propertyType = value.split(",");
+        } else if (key === "agent") {
+          filters.agentId = value.split(",");
+        } else if (key === "ownerId") {
+          filters.ownerId = value;
+        } else if (
+          [
+            "minPrice",
+            "maxPrice",
+            "minBedrooms",
+            "minBathrooms",
+            "maxBathrooms",
+            "minSize",
+            "maxSize",
+          ].includes(key)
+        ) {
+          if (key === "minSize") {
+            filters.minSquareMeter = Number(value);
+          } else if (key === "maxSize") {
+            filters.maxSquareMeter = Number(value);
+          } else {
+            filters[key] = Number(value);
+          }
+        } else if (
+          [
+            "hasGarage",
+            "hasElevator",
+            "hasStorageRoom",
+            "brandNew",
+            "needsRenovation",
+          ].includes(key)
+        ) {
+          filters[key] = value === "true";
+        } else {
+          filters[key] = value;
+        }
+      }
+
+      if (!hasStatusParam) {
+        // Let backend apply default filter
+      }
+
+      // Fetch ALL listings with current filters (no pagination)
+      const result = await listListingsWithAuth(
+        1,
+        100000, // Large limit to get all
+        filters,
+        view,
+      );
+
+      const allListings = result.listings as unknown as ListingOverview[];
+
+      // Create CSV headers
+      const headers = [
+        "Referencia",
+        "Título",
+        "Tipo",
+        "Estado",
+        "Precio",
+        "Ciudad",
+        "Dormitorios",
+        "Baños",
+        "M²",
+        "Propietario",
+        "Agente",
+      ];
+
+      // Create CSV rows
+      const rows = allListings.map(listing => {
+        return [
+          listing.referenceNumber ?? "",
+          `"${listing.title ?? ""}"`,
+          listing.propertyType ?? "",
+          listing.status ?? "",
+          listing.price?.toString() ?? "",
+          listing.city ?? "",
+          listing.bedrooms?.toString() ?? "",
+          listing.bathrooms ? Math.floor(Number(listing.bathrooms)).toString() : "",
+          listing.squareMeter?.toString() ?? "",
+          listing.ownerName ?? "",
+          listing.agentName ?? "",
+        ].join(",");
+      });
+
+      // Combine headers and rows
+      const csv = [headers.join(","), ...rows].join("\n");
+
+      // Create blob and download
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `propiedades-${new Date().toISOString().split("T")[0]}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error exporting properties:", error);
+      alert("Error al exportar propiedades");
+    }
+  };
+
   const prefetchPage = async (pageNum: number) => {
     if (prefetchedPages.has(pageNum) || pageNum < 1 || pageNum > totalPages) {
       return;
@@ -338,6 +465,7 @@ export default function PropertiesPage() {
           totalPages={totalPages}
           onPageChange={handlePageChange}
           onPrefetchPage={prefetchPage}
+          onExport={handleExport}
         />
       )}
     </div>
