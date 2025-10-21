@@ -6,12 +6,15 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
+import { Separator } from "~/components/ui/separator";
 import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp, Edit } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { TareasSkeleton } from "~/components/ui/skeletons";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
-import { getLeadsByListingIdWithAuth } from "~/server/queries/lead";
-import { getDealsByListingIdWithAuth } from "~/server/queries/deal";
+import { getAllPotentialOwnersWithAuth } from "~/server/queries/contact";
+import { getLeadByListingAndContactWithAuth, ensureLeadExistsWithAuth } from "~/server/queries/lead";
+import { getDealByListingAndContactWithAuth } from "~/server/queries/deal";
+import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
 import { useSession } from "~/lib/auth-client";
 
 interface Task {
@@ -47,38 +50,9 @@ interface Task {
   };
 }
 
-interface Lead {
-  leadId: bigint;
-  contactId: bigint;
-  listingId: bigint;
-  status: string;
-  contact: {
-    contactId: bigint;
-    firstName: string;
-    lastName: string;
-    email?: string;
-  };
-}
-
-interface Deal {
-  dealId: bigint;
-  listingId: bigint;
-  status: string;
-  contact: {
-    contactId: bigint;
-    firstName: string;
-    lastName: string;
-    email?: string;
-  };
-}
-
 interface ContactOption {
-  contactId: bigint;
+  id: bigint;
   name: string;
-  email?: string;
-  source: 'lead' | 'deal';
-  sourceId: bigint;
-  sourceStatus: string;
 }
 
 interface Appointment {
@@ -138,139 +112,64 @@ export function Tareas({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [deals, setDeals] = useState<Deal[]>([]);
   const [appointments] = useState<Appointment[]>([]);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
-  const [agents] = useState<{ id: string; name: string; firstName?: string; lastName?: string; }[]>(
-    session?.user ? [{
-      id: session.user.id,
-      name: session.user.name || '',
-      firstName: session.user.name?.split(' ')[0] ?? undefined,
-      lastName: session.user.name?.split(' ')[1] ?? undefined
-    }] : []
-  );
-  const [loading, setLoading] = useState({
-    leads: false,
-    deals: false,
-    appointments: false,
-  });
+  const [contactSearch, setContactSearch] = useState("");
+  const [agents, setAgents] = useState<{ id: string; name: string; firstName?: string; lastName?: string; }[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [loadingAgents, setLoadingAgents] = useState(false);
 
 
 
-  // Fetch leads and deals for dropdowns when user starts creating a task
+  // Fetch all contacts when user starts creating a task
   useEffect(() => {
     if (!isAdding) return;
-    
-    const fetchDropdownData = async () => {
-      setLoading({ leads: true, deals: true, appointments: false });
+
+    const fetchContacts = async () => {
+      setLoadingContacts(true);
       try {
-        const [leadsData, dealsData] = await Promise.all([
-          getLeadsByListingIdWithAuth(Number(listingId)),
-          getDealsByListingIdWithAuth(Number(listingId))
-        ]);
-        
-        const formattedLeads = leadsData.map((item: unknown) => {
-          const typedItem = item as { listingContacts?: { listingContactId: bigint; contactId: bigint; listingId: bigint; status: string }; listing_contacts?: { listing_contact_id: bigint; contact_id: bigint; listing_id: bigint; status: string }; contacts?: { contactId: bigint; contact_id: bigint; firstName: string; first_name: string; lastName: string; last_name: string; email: string } };
-          const leadId = typedItem.listingContacts?.listingContactId ?? typedItem.listing_contacts?.listing_contact_id;
-          const contactId = typedItem.listingContacts?.contactId ?? typedItem.listing_contacts?.contact_id;
-          const listingId = typedItem.listingContacts?.listingId ?? typedItem.listing_contacts?.listing_id;
-          const status = typedItem.listingContacts?.status ?? typedItem.listing_contacts?.status;
-          const contactDbId = typedItem.contacts?.contactId ?? typedItem.contacts?.contact_id;
-          const firstName = typedItem.contacts?.firstName ?? typedItem.contacts?.first_name;
-          const lastName = typedItem.contacts?.lastName ?? typedItem.contacts?.last_name;
-          
-          // Only return leads that have all required fields
-          if (!leadId || !contactId || !listingId || !status || !contactDbId || !firstName || !lastName) {
-            return null;
-          }
-          
-          return {
-            leadId,
-            contactId,
-            listingId,
-            status,
-            contact: {
-              contactId: contactDbId,
-              firstName,
-              lastName,
-              email: typedItem.contacts?.email,
-            }
-          };
-        }).filter((lead): lead is NonNullable<typeof lead> => lead !== null);
-        
-        const formattedDeals = dealsData.map((item: unknown) => {
-          const typedItem = item as { deals?: { dealId: bigint; deal_id: bigint; listingId: bigint; listing_id: bigint; status: string }; contacts?: { contactId: bigint; contact_id: bigint; firstName: string; first_name: string; lastName: string; last_name: string; email: string } };
-          const dealId = typedItem.deals?.dealId ?? typedItem.deals?.deal_id;
-          const listingId = typedItem.deals?.listingId ?? typedItem.deals?.listing_id;
-          const status = typedItem.deals?.status;
-          const contactId = typedItem.contacts?.contactId ?? typedItem.contacts?.contact_id;
-          const firstName = typedItem.contacts?.firstName ?? typedItem.contacts?.first_name;
-          const lastName = typedItem.contacts?.lastName ?? typedItem.contacts?.last_name;
-          
-          // Only return deals that have all required fields
-          if (!dealId || !listingId || !status || !contactId || !firstName || !lastName) {
-            return null;
-          }
-          
-          return {
-            dealId,
-            listingId,
-            status,
-            contact: {
-              contactId,
-              firstName,
-              lastName,
-              email: typedItem.contacts?.email,
-            }
-          };
-        }).filter((deal): deal is NonNullable<typeof deal> => deal !== null);
-        
-        setLeads(formattedLeads);
-        setDeals(formattedDeals);
+        const contactsData = await getAllPotentialOwnersWithAuth();
+
+        const formattedContacts = contactsData.map((contact) => ({
+          id: BigInt(contact.id),
+          name: contact.name,
+        }));
+
+        setContacts(formattedContacts);
       } catch (error) {
-        console.error('Error fetching dropdown data:', error);
+        console.error('Error fetching contacts:', error);
       } finally {
-        setLoading({ leads: false, deals: false, appointments: false });
+        setLoadingContacts(false);
       }
     };
 
-    void fetchDropdownData();
-  }, [isAdding, listingId]);
+    void fetchContacts();
+  }, [isAdding]);
 
-  // Create unified contact list from leads and deals (prioritizing deals)
+  // Fetch all agents when user starts creating a task
   useEffect(() => {
-    const contactMap = new Map<string, ContactOption>();
-    
-    // Add contacts from leads first
-    leads.forEach(lead => {
-      const contactKey = lead.contact.contactId.toString();
-      contactMap.set(contactKey, {
-        contactId: lead.contact.contactId,
-        name: `${lead.contact.firstName} ${lead.contact.lastName}`,
-        email: lead.contact.email,
-        source: 'lead',
-        sourceId: lead.leadId,
-        sourceStatus: lead.status
-      });
-    });
-    
-    // Add contacts from deals (this will overwrite leads if same contact exists)
-    deals.forEach(deal => {
-      const contactKey = deal.contact.contactId.toString();
-      contactMap.set(contactKey, {
-        contactId: deal.contact.contactId,
-        name: `${deal.contact.firstName} ${deal.contact.lastName}`,
-        email: deal.contact.email,
-        source: 'deal',
-        sourceId: deal.dealId,
-        sourceStatus: deal.status
-      });
-    });
-    
-    const uniqueContacts = Array.from(contactMap.values());
-    setContacts(uniqueContacts);
-  }, [leads, deals]);
+    if (!isAdding) return;
+
+    const fetchAgents = async () => {
+      setLoadingAgents(true);
+      try {
+        const agentsData = await getAgentsForSelectionWithAuth();
+        const formattedAgents = agentsData.map((agent) => ({
+          id: agent.id,
+          name: agent.name,
+          firstName: agent.firstName,
+          lastName: agent.lastName ?? undefined,
+        }));
+        setAgents(formattedAgents);
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+      } finally {
+        setLoadingAgents(false);
+      }
+    };
+
+    void fetchAgents();
+  }, [isAdding]);
 
   // Initialize agent selection with current user when starting to add a task
   useEffect(() => {
@@ -296,7 +195,7 @@ export function Tareas({
   useEffect(() => {
     const draftKey = `task-draft-${listingId}`;
     const savedDraft = localStorage.getItem(draftKey);
-    
+
     if (savedDraft) {
       try {
         const draft = JSON.parse(savedDraft) as typeof newTask;
@@ -308,40 +207,6 @@ export function Tareas({
     }
   }, [listingId]);
 
-  // Create unified contact list from leads and deals (prioritizing deals)
-  useEffect(() => {
-    const contactMap = new Map<string, ContactOption>();
-    
-    // Add contacts from leads first
-    leads.forEach(lead => {
-      const contactKey = lead.contact.contactId.toString();
-      contactMap.set(contactKey, {
-        contactId: lead.contact.contactId,
-        name: `${lead.contact.firstName} ${lead.contact.lastName}`,
-        email: lead.contact.email,
-        source: 'lead',
-        sourceId: lead.leadId,
-        sourceStatus: lead.status
-      });
-    });
-    
-    // Add contacts from deals (this will overwrite leads if same contact exists)
-    deals.forEach(deal => {
-      const contactKey = deal.contact.contactId.toString();
-      contactMap.set(contactKey, {
-        contactId: deal.contact.contactId,
-        name: `${deal.contact.firstName} ${deal.contact.lastName}`,
-        email: deal.contact.email,
-        source: 'deal',
-        sourceId: deal.dealId,
-        sourceStatus: deal.status
-      });
-    });
-    
-    const uniqueContacts = Array.from(contactMap.values());
-    setContacts(uniqueContacts);
-  }, [leads, deals]);
-
   const handleAddTask = async () => {
     if (!newTask.title.trim() || !newTask.description.trim()) return;
     if (isSaving) return; // Prevent double submission
@@ -351,28 +216,54 @@ export function Tareas({
 
     let relatedContact;
     let relatedAppointment;
-    let leadId: bigint | undefined;
     let dealId: bigint | undefined;
-    
-    // Get related contact and determine lead/deal relationship
+    let listingContactId: bigint | undefined;
+
+    // Get related contact
     if (newTask.contactId) {
-      const selectedContact = contacts.find(c => c.contactId.toString() === newTask.contactId);
+      const selectedContact = contacts.find(c => c.id.toString() === newTask.contactId);
       if (selectedContact) {
         relatedContact = {
-          contactId: selectedContact.contactId,
+          contactId: selectedContact.id,
           name: selectedContact.name,
-          email: selectedContact.email
         };
-        
-        // Set the appropriate lead or deal ID based on contact source
-        if (selectedContact.source === 'lead') {
-          leadId = selectedContact.sourceId;
-        } else if (selectedContact.source === 'deal') {
-          dealId = selectedContact.sourceId;
+
+        // Check for existing deal or lead to link the task
+        try {
+          // Check if there's a deal for this listing + contact
+          const deal = await getDealByListingAndContactWithAuth(
+            Number(listingId),
+            Number(selectedContact.id)
+          );
+
+          // Check if there's a lead for this listing + contact
+          const lead = await getLeadByListingAndContactWithAuth(
+            Number(listingId),
+            Number(selectedContact.id)
+          );
+
+          // Priority logic: deal > lead > create new lead
+          if (deal) {
+            dealId = deal.dealId;
+          } else if (lead) {
+            listingContactId = lead.listing_contacts.listingContactId;
+          } else {
+            // No deal or lead exists, create a new lead
+            const newLead = await ensureLeadExistsWithAuth(
+              Number(listingId),
+              Number(selectedContact.id)
+            );
+            if (newLead) {
+              listingContactId = newLead.listing_contacts.listingContactId;
+            }
+          }
+        } catch (error) {
+          console.error('Error linking task to lead/deal:', error);
+          // Continue without linking to lead/deal
         }
       }
     }
-    
+
     // Get appointment info if selected
     if (newTask.appointmentId) {
       const appointment = appointments.find(a => a.appointmentId.toString() === newTask.appointmentId);
@@ -397,8 +288,6 @@ export function Tareas({
       createdAt: new Date(),
       dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
       listingId: listingId,
-      leadId: leadId,
-      dealId: dealId,
       appointmentId: newTask.appointmentId ? BigInt(newTask.appointmentId) : undefined,
       isActive: true,
       relatedContact,
@@ -432,8 +321,9 @@ export function Tareas({
         dueTime: formData.dueDate ? (formData.dueTime || "00:00") : undefined,
         completed: false,
         listingId: BigInt(listingId),
-        listingContactId: leadId ? BigInt(leadId) : undefined,
-        dealId: dealId ? BigInt(dealId) : undefined,
+        listingContactId: listingContactId,
+        dealId: dealId,
+        contactId: formData.contactId ? BigInt(formData.contactId) : undefined,
         appointmentId: formData.appointmentId ? BigInt(formData.appointmentId) : undefined,
         isActive: true,
       });
@@ -530,28 +420,54 @@ export function Tareas({
 
     let relatedContact;
     let relatedAppointment;
-    let leadId: bigint | undefined;
     let dealId: bigint | undefined;
-    
-    // Get related contact and determine lead/deal relationship
+    let listingContactId: bigint | undefined;
+
+    // Get related contact
     if (newTask.contactId) {
-      const selectedContact = contacts.find(c => c.contactId.toString() === newTask.contactId);
+      const selectedContact = contacts.find(c => c.id.toString() === newTask.contactId);
       if (selectedContact) {
         relatedContact = {
-          contactId: selectedContact.contactId,
+          contactId: selectedContact.id,
           name: selectedContact.name,
-          email: selectedContact.email
         };
-        
-        // Set the appropriate lead or deal ID based on contact source
-        if (selectedContact.source === 'lead') {
-          leadId = selectedContact.sourceId;
-        } else if (selectedContact.source === 'deal') {
-          dealId = selectedContact.sourceId;
+
+        // Check for existing deal or lead to link the task
+        try {
+          // Check if there's a deal for this listing + contact
+          const deal = await getDealByListingAndContactWithAuth(
+            Number(listingId),
+            Number(selectedContact.id)
+          );
+
+          // Check if there's a lead for this listing + contact
+          const lead = await getLeadByListingAndContactWithAuth(
+            Number(listingId),
+            Number(selectedContact.id)
+          );
+
+          // Priority logic: deal > lead > create new lead
+          if (deal) {
+            dealId = deal.dealId;
+          } else if (lead) {
+            listingContactId = lead.listing_contacts.listingContactId;
+          } else {
+            // No deal or lead exists, create a new lead
+            const newLead = await ensureLeadExistsWithAuth(
+              Number(listingId),
+              Number(selectedContact.id)
+            );
+            if (newLead) {
+              listingContactId = newLead.listing_contacts.listingContactId;
+            }
+          }
+        } catch (error) {
+          console.error('Error linking task to lead/deal:', error);
+          // Continue without linking to lead/deal
         }
       }
     }
-    
+
     // Get appointment info if selected
     if (newTask.appointmentId) {
       const appointment = appointments.find(a => a.appointmentId.toString() === newTask.appointmentId);
@@ -571,8 +487,6 @@ export function Tareas({
       description: newTask.description,
       dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
       userId: newTask.agentId,
-      leadId: leadId,
-      dealId: dealId,
       appointmentId: newTask.appointmentId ? BigInt(newTask.appointmentId) : undefined,
       relatedContact,
       relatedAppointment,
@@ -591,8 +505,9 @@ export function Tareas({
           dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
           dueTime: newTask.dueDate ? (newTask.dueTime || "00:00") : undefined,
           userId: newTask.agentId,
-          listingContactId: leadId ? BigInt(leadId) : undefined,
-          dealId: dealId ? BigInt(dealId) : undefined,
+          listingContactId: listingContactId,
+          dealId: dealId,
+          contactId: newTask.contactId ? BigInt(newTask.contactId) : undefined,
           appointmentId: newTask.appointmentId ? BigInt(newTask.appointmentId) : undefined,
         }
       );
@@ -662,6 +577,13 @@ export function Tareas({
       [taskId]: !prev[taskId]
     }));
   };
+
+  // Filter contacts based on search
+  const filteredContacts = useMemo(() => {
+    return contacts.filter((contact) =>
+      contact.name.toLowerCase().includes(contactSearch.toLowerCase()),
+    );
+  }, [contacts, contactSearch]);
 
   // Sort tasks: incomplete first, completed last
   const sortedTasks = useMemo(() => {
@@ -744,11 +666,11 @@ export function Tareas({
               <Select
                 value={newTask.agentId}
                 onValueChange={(value) => setNewTask({ ...newTask, agentId: value })}
-                disabled={externalLoading}
+                disabled={externalLoading ?? loadingAgents}
               >
                 <SelectTrigger className="h-8 text-gray-500">
                   <SelectValue placeholder={
-                    externalLoading ? "Cargando agentes..." : 
+                    (externalLoading || loadingAgents) ? "Cargando agentes..." :
                     agents.length === 0 ? "No hay agentes" : "Seleccionar agente"
                   } />
                 </SelectTrigger>
@@ -768,18 +690,27 @@ export function Tareas({
                 <Select
                   value={newTask.contactId}
                   onValueChange={(value) => setNewTask({ ...newTask, contactId: value })}
-                  disabled={externalLoading ?? loading.leads ?? loading.deals}
+                  disabled={externalLoading ?? loadingContacts}
                 >
                   <SelectTrigger className="h-8 text-gray-500">
                     <SelectValue placeholder={
-                      (externalLoading || loading.leads || loading.deals) ? "Cargando contactos..." : 
+                      (externalLoading || loadingContacts) ? "Cargando contactos..." :
                       contacts.length === 0 ? "No hay contactos" : "Seleccionar contacto"
                     } />
                   </SelectTrigger>
                   <SelectContent>
-                    {contacts.map((contact) => (
-                      <SelectItem key={contact.contactId.toString()} value={contact.contactId.toString()}>
-                        {contact.name} ({contact.sourceStatus})
+                    <div className="flex items-center px-3 pb-2">
+                      <Input
+                        className="h-9"
+                        placeholder="Buscar contacto..."
+                        value={contactSearch}
+                        onChange={(e) => setContactSearch(e.target.value)}
+                      />
+                    </div>
+                    <Separator className="mb-2" />
+                    {filteredContacts.map((contact) => (
+                      <SelectItem key={contact.id.toString()} value={contact.id.toString()}>
+                        {contact.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

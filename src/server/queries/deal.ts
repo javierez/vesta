@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "../db";
-import { deals, listings, properties } from "../db/schema";
+import { deals, listings, properties, listingContacts } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import type { Deal } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
@@ -19,10 +19,6 @@ export async function getDealByIdWithAuth(dealId: number) {
   return getDealById(dealId, accountId);
 }
 
-export async function getDealsByListingIdWithAuth(listingId: number) {
-  const accountId = await getCurrentUserAccountId();
-  return getDealsByListingId(listingId, accountId);
-}
 
 export async function getDealsByStatusWithAuth(status: Deal["status"]) {
   const accountId = await getCurrentUserAccountId();
@@ -45,6 +41,14 @@ export async function deleteDealWithAuth(dealId: number) {
 export async function listDealsWithAuth(page = 1, limit = 10) {
   const accountId = await getCurrentUserAccountId();
   return listDeals(page, limit, accountId);
+}
+
+export async function getDealByListingAndContactWithAuth(
+  listingId: number,
+  contactId: number,
+) {
+  const accountId = await getCurrentUserAccountId();
+  return getDealByListingAndContact(listingId, contactId, accountId);
 }
 
 // Create a new deal
@@ -111,46 +115,6 @@ export async function getDealById(dealId: number, accountId: number) {
   }
 }
 
-// Get deals by listing ID
-export async function getDealsByListingId(
-  listingId: number,
-  accountId: number,
-) {
-  try {
-    // Verify the listing belongs to this account
-    const [listing] = await db
-      .select({ listingId: listings.listingId })
-      .from(listings)
-      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .where(
-        and(
-          eq(listings.listingId, BigInt(listingId)),
-          eq(properties.accountId, BigInt(accountId)),
-          eq(listings.isActive, true),
-        ),
-      );
-
-    if (!listing) {
-      throw new Error("Listing not found or access denied");
-    }
-
-    const listingDeals = await db
-      .select()
-      .from(deals)
-      .innerJoin(listings, eq(deals.listingId, listings.listingId))
-      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .where(
-        and(
-          eq(deals.listingId, BigInt(listingId)),
-          eq(properties.accountId, BigInt(accountId)),
-        ),
-      );
-    return listingDeals;
-  } catch (error) {
-    console.error("Error fetching deals by listing:", error);
-    throw error;
-  }
-}
 
 // Get deals by status
 export async function getDealsByStatus(
@@ -246,6 +210,45 @@ export async function deleteDeal(dealId: number, accountId: number) {
     return { success: true };
   } catch (error) {
     console.error("Error deleting deal:", error);
+    throw error;
+  }
+}
+
+// Get deal by listing and contact
+export async function getDealByListingAndContact(
+  listingId: number,
+  contactId: number,
+  accountId: number,
+) {
+  try {
+    const [deal] = await db
+      .select({
+        dealId: deals.dealId,
+        listingId: deals.listingId,
+        listingContactId: deals.listingContactId,
+        status: deals.status,
+        closeDate: deals.closeDate,
+        createdAt: deals.createdAt,
+        updatedAt: deals.updatedAt,
+      })
+      .from(deals)
+      .innerJoin(listings, eq(deals.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        listingContacts,
+        eq(deals.listingContactId, listingContacts.listingContactId),
+      )
+      .where(
+        and(
+          eq(deals.listingId, BigInt(listingId)),
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(properties.accountId, BigInt(accountId)),
+        ),
+      );
+
+    return deal ?? null;
+  } catch (error) {
+    console.error("Error fetching deal by listing and contact:", error);
     throw error;
   }
 }

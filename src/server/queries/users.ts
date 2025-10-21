@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "../db";
 import { users, userRoles, roles, accounts, accountRoles } from "../db/schema";
 import { eq, and, or, like, desc, asc, sql } from "drizzle-orm";
@@ -835,7 +837,7 @@ export async function getUsersForRoleManagement() {
         if (allUserRoles.length > 0) {
           console.log(`      🔍 All role assignments (${allUserRoles.length}):`);
           allUserRoles.forEach(role => {
-            console.log(`         - userRoleId: ${role.userRoleId}, roleId: ${role.roleId}, isActive: ${role.isActive}, updated: ${role.updatedAt}`);
+            console.log(`         - userRoleId: ${role.userRoleId}, roleId: ${role.roleId}, isActive: ${role.isActive}, updated: ${role.updatedAt?.toISOString() ?? 'null'}`);
           });
         }
 

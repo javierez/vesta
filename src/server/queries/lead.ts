@@ -29,9 +29,20 @@ export async function getLeadsByContactIdWithAuth(contactId: number) {
   return getLeadsByContactId(contactId, accountId);
 }
 
-export async function getLeadsByListingIdWithAuth(listingId: number) {
+export async function getLeadByListingAndContactWithAuth(
+  listingId: number,
+  contactId: number,
+) {
   const accountId = await getCurrentUserAccountId();
-  return getLeadsByListingId(listingId, accountId);
+  return getLeadByListingAndContact(listingId, contactId, accountId);
+}
+
+export async function ensureLeadExistsWithAuth(
+  listingId: number,
+  contactId: number,
+) {
+  const accountId = await getCurrentUserAccountId();
+  return ensureLeadExists(listingId, contactId, accountId);
 }
 
 export async function updateLeadWithAuth(
@@ -179,26 +190,83 @@ export async function getLeadsByContactId(
   }
 }
 
-// Get leads by listing ID
-export async function getLeadsByListingId(
+// Get lead by listing and contact
+export async function getLeadByListingAndContact(
   listingId: number,
+  contactId: number,
   accountId: number,
 ) {
   try {
-    const listingLeads = await db
+    const [lead] = await db
       .select()
       .from(listingContacts)
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(
         and(
           eq(listingContacts.listingId, BigInt(listingId)),
+          eq(listingContacts.contactId, BigInt(contactId)),
           eq(contacts.accountId, BigInt(accountId)),
           eq(listingContacts.contactType, "buyer"),
         ),
       );
-    return listingLeads;
+
+    return lead ?? null;
   } catch (error) {
-    console.error("Error fetching leads by listing:", error);
+    console.error("Error fetching lead by listing and contact:", error);
+    throw error;
+  }
+}
+
+// Ensure lead exists, create if it doesn't
+export async function ensureLeadExists(
+  listingId: number,
+  contactId: number,
+  accountId: number,
+) {
+  try {
+    // First check if lead already exists
+    const existingLead = await getLeadByListingAndContact(
+      listingId,
+      contactId,
+      accountId,
+    );
+
+    if (existingLead) {
+      return existingLead;
+    }
+
+    // If no lead exists, create one
+    const leadData = {
+      contactId: BigInt(contactId),
+      listingId: BigInt(listingId),
+      contactType: "buyer" as const,
+      status: "Cita Pendiente",
+      source: "Task",
+      isActive: true,
+    };
+
+    const [result] = await db
+      .insert(listingContacts)
+      .values(leadData)
+      .$returningId();
+
+    if (!result) throw new Error("Failed to create lead");
+
+    const [newLead] = await db
+      .select()
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(listingContacts.listingContactId, BigInt(result.listingContactId)),
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(listingContacts.contactType, "buyer"),
+        ),
+      );
+
+    return newLead;
+  } catch (error) {
+    console.error("Error ensuring lead exists:", error);
     throw error;
   }
 }
