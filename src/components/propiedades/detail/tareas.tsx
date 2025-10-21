@@ -585,12 +585,23 @@ export function Tareas({
     );
   }, [contacts, contactSearch]);
 
-  // Sort tasks: incomplete first, completed last
+  // Sort tasks: incomplete first, then by due date
   const sortedTasks = useMemo(() => {
     return [...tasks].sort((a, b) => {
-      // Incomplete tasks come before completed tasks
-      if (a.completed === b.completed) return 0;
-      return a.completed ? 1 : -1;
+      // First: Incomplete tasks come before completed tasks
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1;
+      }
+
+      // Second: Sort by due date (tasks with due dates first, then by date)
+      if (a.dueDate && b.dueDate) {
+        return a.dueDate.getTime() - b.dueDate.getTime();
+      }
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+
+      // If no due dates, maintain creation order
+      return 0;
     });
   }, [tasks]);
 
@@ -962,6 +973,11 @@ export function Tareas({
                     {/* Related items with time */}
                     {(task.relatedContact ?? task.relatedAppointment ?? task.dueDate) && (
                       <div className="flex flex-wrap items-center gap-2 ml-6 sm:ml-8 mb-1">
+                        {task.dueDate && (
+                          <span className="text-xs text-amber-600 bg-amber-50 px-2 sm:px-2.5 py-0.5 rounded-full font-normal border border-amber-200 whitespace-nowrap">
+                            {getRemainingTime(task.dueDate)}
+                          </span>
+                        )}
                         {task.relatedContact && (
                           <span className="text-xs text-gray-500 flex items-center gap-1 font-normal break-words">
                             <User className="h-3 w-3 opacity-60 flex-shrink-0" />
@@ -973,11 +989,6 @@ export function Tareas({
                             <Calendar className="h-3 w-3 flex-shrink-0" />
                             <span className="truncate">{task.relatedAppointment.type}</span>
                           </Badge>
-                        )}
-                        {task.dueDate && (
-                          <span className="text-xs text-amber-600 bg-amber-50 px-2 sm:px-2.5 py-0.5 rounded-full font-normal border border-amber-200 whitespace-nowrap">
-                            {getRemainingTime(task.dueDate)}
-                          </span>
                         )}
                       </div>
                     )}

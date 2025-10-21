@@ -355,6 +355,7 @@ export async function getListingTasks(listingId: number, accountId: number) {
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
         appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
         prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
+        contactId: sql<number>`CAST(${tasks.contactId} AS UNSIGNED)`,
         isActive: tasks.isActive,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
@@ -362,11 +363,16 @@ export async function getListingTasks(listingId: number, accountId: number) {
         userName: users.name,
         userFirstName: users.firstName,
         userLastName: users.lastName,
+        // Contact fields for related contact display
+        contactFirstName: contacts.firstName,
+        contactLastName: contacts.lastName,
+        contactEmail: contacts.email,
       })
       .from(tasks)
       .innerJoin(listings, eq(tasks.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
       .innerJoin(users, eq(tasks.userId, users.id))
+      .leftJoin(contacts, eq(tasks.contactId, contacts.contactId))
       .where(
         and(
           eq(tasks.listingId, BigInt(listingId)),

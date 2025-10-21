@@ -56,6 +56,11 @@ interface TaskWithId {
   userName?: string;
   userFirstName?: string;
   userLastName?: string;
+  relatedContact?: {
+    contactId: bigint;
+    name: string;
+    email?: string;
+  };
 }
 
 interface PropertyTabsProps {
@@ -170,21 +175,31 @@ export function PropertyTabs({
     setLoading((prev) => ({ ...prev, tasks: true }));
     try {
       const tasksData = await getListingTasksWithAuth(Number(listing.listingId));
-      const tasksWithId = tasksData.map(task => ({
-        ...task,
-        id: task.taskId.toString(),
-        taskId: BigInt(task.taskId),
-        leadId: task.listingContactId ? BigInt(task.listingContactId) : undefined,
-        listingId: task.listingId ? BigInt(task.listingId) : undefined,
-        dealId: task.dealId ? BigInt(task.dealId) : undefined,
-        appointmentId: task.appointmentId ? BigInt(task.appointmentId) : undefined,
-        prospectId: task.prospectId ? BigInt(task.prospectId) : undefined,
-        dueDate: task.dueDate ?? undefined,
-        completed: task.completed ?? false,
-        isActive: task.isActive ?? true,
-        updatedAt: task.updatedAt ?? undefined,
-        userLastName: task.userLastName ?? undefined,
-      }));
+      const tasksWithId = tasksData.map(task => {
+        // Create relatedContact object if contact data exists
+        const relatedContact = task.contactId && (task.contactFirstName ?? task.contactLastName) ? {
+          contactId: BigInt(task.contactId),
+          name: `${task.contactFirstName ?? ''} ${task.contactLastName ?? ''}`.trim(),
+          email: task.contactEmail ?? undefined,
+        } : undefined;
+
+        return {
+          ...task,
+          id: task.taskId.toString(),
+          taskId: BigInt(task.taskId),
+          leadId: task.listingContactId ? BigInt(task.listingContactId) : undefined,
+          listingId: task.listingId ? BigInt(task.listingId) : undefined,
+          dealId: task.dealId ? BigInt(task.dealId) : undefined,
+          appointmentId: task.appointmentId ? BigInt(task.appointmentId) : undefined,
+          prospectId: task.prospectId ? BigInt(task.prospectId) : undefined,
+          dueDate: task.dueDate ?? undefined,
+          completed: task.completed ?? false,
+          isActive: task.isActive ?? true,
+          updatedAt: task.updatedAt ?? undefined,
+          userLastName: task.userLastName ?? undefined,
+          relatedContact,
+        };
+      });
       setTabData((prev) => ({ ...prev, tasks: tasksWithId }));
     } catch (error) {
       console.error('Error fetching tasks:', error);
