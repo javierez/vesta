@@ -3,7 +3,7 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card, CardContent } from "~/components/ui/card";
-import { MessageCircle, Reply, Edit2, Trash2, Loader2, CheckCircle2 } from "lucide-react";
+import { MessageCircle, Reply, Edit2, Trash2, Loader2, CheckCircle2, Key, ChevronDown, ChevronUp } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -135,7 +135,8 @@ function CommentItem({
               )}
 
               {currentUserId === comment.userId &&
-                editingComment !== comment.commentId && (
+                editingComment !== comment.commentId &&
+                Number(comment.userId) !== 0 && (
                   <>
                     <button
                       onClick={() => startEditingComment(comment)}
@@ -421,6 +422,7 @@ export function Comments({
   );
   const [editingComment, setEditingComment] = useState<bigint | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [keysCollapsed, setKeysCollapsed] = useState(false);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -610,6 +612,14 @@ export function Comments({
     return <CommentsSkeleton />;
   }
 
+  // Separate keys comment from regular comments
+  const keysComment = optimisticComments.find(
+    (comment) => Number(comment.userId) === 0 && comment.parentId === null
+  );
+  const regularComments = optimisticComments.filter(
+    (comment) => !(Number(comment.userId) === 0 && comment.parentId === null)
+  );
+
   return (
     <div className="space-y-1 mt-7">
       <Card>
@@ -641,8 +651,74 @@ export function Comments({
         </CardContent>
       </Card>
 
+      {/* Keys Section */}
+      {keysComment && (
+        <Card className="border-2 border-amber-200 bg-amber-50/30">
+          <CardContent className="p-4">
+            <div
+              className="mb-3 flex cursor-pointer items-center justify-between"
+              onClick={() => setKeysCollapsed(!keysCollapsed)}
+            >
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
+                  <Key className="h-4 w-4 text-amber-700" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-amber-900">
+                    Comentarios sobre las llaves
+                  </h3>
+                  <p className="text-xs text-amber-700">
+                    {keysComment.replies.length > 0
+                      ? `${keysComment.replies.length} ${keysComment.replies.length === 1 ? "nota" : "notas"}`
+                      : "Haz clic para añadir notas sobre las llaves"}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-amber-700 hover:bg-amber-100 hover:text-amber-900"
+              >
+                {keysCollapsed ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronUp className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            {!keysCollapsed && (
+              <div className="border-t border-amber-200 pt-3">
+                <CommentItem
+                  comment={keysComment}
+                  currentUserId={currentUserId}
+                  replyingTo={replyingTo}
+                  setReplyingTo={setReplyingTo}
+                  replyContents={replyContents}
+                  setReplyContents={setReplyContents}
+                  editingComment={editingComment}
+                  setEditingComment={setEditingComment}
+                  editContent={editContent}
+                  setEditContent={setEditContent}
+                  isPending={isPending}
+                  isDeleting={isDeleting}
+                  handleAddReply={handleAddReply}
+                  handleEditComment={handleEditComment}
+                  handleDeleteComment={handleDeleteComment}
+                  startEditingComment={startEditingComment}
+                  cancelEditing={cancelEditing}
+                  setCommentToDelete={setCommentToDelete}
+                  setDeleteConfirmOpen={setDeleteConfirmOpen}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Regular Comments */}
       <div className="space-y-1">
-        {optimisticComments.length === 0 ? (
+        {regularComments.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
               <p className="text-gray-500">
@@ -651,7 +727,7 @@ export function Comments({
             </CardContent>
           </Card>
         ) : (
-          optimisticComments.map((comment) => (
+          regularComments.map((comment) => (
             <Card key={comment.commentId.toString()}>
               <CardContent className="p-4">
                 <CommentItem

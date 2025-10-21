@@ -9,6 +9,7 @@ export interface Comment {
   propertyId: bigint;
   userId: string;
   content: string;
+  category?: string | null;
   parentId?: bigint | null;
   isDeleted: boolean;
   createdAt: Date;
