@@ -55,7 +55,7 @@ export function Nombre({
   const fullName = `${firstName} ${lastName}`;
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {/* Contact Name with Color Indicator */}
       <div className="flex items-center gap-2">
         <div

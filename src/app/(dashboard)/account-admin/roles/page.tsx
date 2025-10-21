@@ -15,6 +15,14 @@ const DEFAULT_PERMISSIONS: Record<number, AccountRolePermissions> = {
     tools: { imageStudio: false, aiTools: true, export: false },
     admin: { manageUsers: false, manageRoles: false, viewReports: false, manageAccount: false, manageBilling: false },
   },
+  2: {
+    tasks: { viewAll: false, editOwn: true, editAll: false, deleteOwn: false, deleteAll: false },
+    properties: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false, publish: false },
+    contacts: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false },
+    calendar: { viewOwn: true, viewAll: false, create: true, edit: true, delete: true },
+    tools: { imageStudio: false, aiTools: true, export: false },
+    admin: { manageUsers: false, manageRoles: false, viewReports: false, manageAccount: false, manageBilling: false },
+  },
   3: {
     tasks: { viewAll: true, editOwn: true, editAll: true, deleteOwn: true, deleteAll: true },
     properties: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true, publish: true },
@@ -41,10 +49,10 @@ export default async function PrivacyPermissionsPage() {
   const existingRolesMap = new Map(existingRoles.map(role => [role.roleId, role]));
 
   // Generate all roles from ROLE_NAMES constant, using existing data or defaults
-  // Exclude role_id 5 (Inactive role) from the UI
+  // Exclude role_id 1 (Superadmin - internal only) and role_id 5 (Inactive role) from the UI
   const allRoles: AccountRole[] = Object.keys(ROLE_NAMES)
     .map(Number)
-    .filter(roleId => roleId !== 5) // Exclude inactive role from UI
+    .filter(roleId => roleId !== 1 && roleId !== 5) // Exclude superadmin and inactive role from UI
     .map(roleId => {
       const existingRole = existingRolesMap.get(roleId);
 

@@ -6,6 +6,27 @@ import { eq, and } from "drizzle-orm";
 import type { AccountRolePermissions } from "~/types/account-roles";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
+// Helper function to normalize permissions (convert numeric 1/0 to boolean true/false)
+function normalizePermissions(permissions: unknown): AccountRolePermissions {
+  if (!permissions || typeof permissions !== 'object') {
+    return {} as AccountRolePermissions;
+  }
+
+  const normalized = {} as Record<string, Record<string, boolean>>;
+
+  for (const [category, categoryPerms] of Object.entries(permissions)) {
+    if (categoryPerms && typeof categoryPerms === 'object') {
+      normalized[category] = {};
+      for (const [perm, value] of Object.entries(categoryPerms as Record<string, unknown>)) {
+        // Convert 1 to true, 0 to false, and keep booleans as-is
+        normalized[category][perm] = value === 1 || value === true;
+      }
+    }
+  }
+
+  return normalized as AccountRolePermissions;
+}
+
 // Wrapper function that automatically gets accountId from current session
 export async function getAccountRolesWithAuth() {
   const accountId = await getCurrentUserAccountId();
@@ -56,7 +77,7 @@ export async function getAccountRoles(accountId: bigint) {
         roleId: Number(role.roleId),
         accountId: Number(role.accountId),
         accountRoleId: Number(role.accountRoleId),
-        permissions: role.permissions as AccountRolePermissions,
+        permissions: normalizePermissions(role.permissions),
         isSystem: role.isSystem ?? false,
         isActive: role.isActive ?? true,
       }));
@@ -87,7 +108,7 @@ export async function getAccountRole(accountId: bigint, roleId: bigint) {
       roleId: Number(role.roleId),
       accountId: Number(role.accountId),
       accountRoleId: Number(role.accountRoleId),
-      permissions: role.permissions as AccountRolePermissions,
+      permissions: normalizePermissions(role.permissions),
       isSystem: role.isSystem ?? false,
       isActive: role.isActive ?? true,
     };

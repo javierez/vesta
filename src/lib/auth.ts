@@ -9,6 +9,7 @@ import {
   verificationTokens,
   roles,
   userRoles,
+  accountRoles,
 } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { ROLE_PERMISSIONS } from "~/lib/permissions";
@@ -16,35 +17,121 @@ import type { Permission } from "~/lib/permissions";
 import { sendEmail, generatePasswordResetEmail } from "~/lib/email";
 
 /**
- * Get user roles from database (with caching)
+ * Permissions object structure from database
+ * Nested object with categories and boolean/numeric flags
+ */
+export interface PermissionsObject {
+  admin?: Record<string, boolean | number>;
+  calendar?: Record<string, boolean | number>;
+  contacts?: Record<string, boolean | number>;
+  properties?: Record<string, boolean | number>;
+  tasks?: Record<string, boolean | number>;
+  tools?: Record<string, boolean | number>;
+  [key: string]: Record<string, boolean | number> | undefined;
+}
+
+/**
+ * Return type for getUserRolesAndPermissionsFromDB
+ */
+export interface UserRolesAndPermissions {
+  roles: string[];
+  permissions: PermissionsObject;
+}
+
+/**
+ * Merge multiple permission objects using OR logic
+ * If any role grants a permission, the user gets it
+ */
+function mergePermissions(permissionsArray: PermissionsObject[]): PermissionsObject {
+  const merged: PermissionsObject = {};
+
+  permissionsArray.forEach((perms) => {
+    Object.entries(perms).forEach(([category, permissions]) => {
+      if (!merged[category as keyof PermissionsObject]) {
+        merged[category as keyof PermissionsObject] = {};
+      }
+
+      Object.entries(permissions!).forEach(([permission, value]) => {
+        const currentValue =
+          merged[category as keyof PermissionsObject]?.[permission] ?? false;
+          // OR logic: if any role grants permission (true or 1), user gets it
+          // Normalize: 1 and true are truthy, false is falsy
+          const normalizedValue = Boolean(value);
+          const normalizedCurrent = Boolean(currentValue);
+          (merged[category as keyof PermissionsObject] as Record<
+            string,
+            boolean
+          >)[permission] = normalizedCurrent || normalizedValue;
+        },
+      );
+    });
+  });
+
+  return merged;
+}
+
+/**
+ * Get user roles and permissions from database (with caching)
+ * Fetches from account_roles.permissions JSON field
  */
 export async function getUserRolesFromDB(
   userId: string,
   accountId: number,
-): Promise<string[]> {
-  console.log(`🔍 getUserRolesFromDB called for user ${userId}, account ${accountId}`);
-  
+): Promise<UserRolesAndPermissions> {
+  console.log(
+    `🔍 getUserRolesFromDB called for user ${userId}, account ${accountId}`,
+  );
+
   try {
     const userRolesList = await db
       .select({
         roleName: roles.name,
+        permissions: accountRoles.permissions,
       })
       .from(userRoles)
       .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
+      .innerJoin(
+        accountRoles,
+        and(
+          eq(accountRoles.roleId, roles.roleId),
+          eq(accountRoles.accountId, BigInt(accountId)),
+        ),
+      )
       .where(
         and(
           eq(userRoles.userId, userId),
           eq(userRoles.isActive, true),
           eq(roles.isActive, true),
+          eq(accountRoles.isActive, true),
         ),
       );
 
     const roleNames = userRolesList.map((role) => role.roleName);
-    console.log(`📊 DB query result for user ${userId}: [${roleNames.join(", ")}]`);
-    return roleNames;
+    const permissionsArray = userRolesList
+      .map((role) => role.permissions as PermissionsObject)
+      .filter((p) => p && Object.keys(p).length > 0);
+
+    // Merge permissions from all roles using OR logic
+    const mergedPermissions =
+      permissionsArray.length > 0 ? mergePermissions(permissionsArray) : {};
+
+    console.log(
+      `📊 DB query result for user ${userId}:`,
+      `\n  Roles: [${roleNames.join(", ")}]`,
+      `\n  Permissions (merged):`,
+      JSON.stringify(mergedPermissions, null, 2),
+    );
+
+    return {
+      roles: roleNames,
+      permissions: mergedPermissions,
+    };
   } catch (error) {
-    console.error("❌ Error fetching user roles:", error);
-    return [];
+    console.error("❌ Error fetching user roles and permissions:", error);
+    return {
+      roles: [],
+      permissions: {},
+    };
   }
 }
 
@@ -228,18 +315,17 @@ export async function getEnrichedSession() {
   }
 
   // Add roles and permissions to session data
-  const userRoles = await getUserRolesFromDB(
+  const rolesAndPermissions = await getUserRolesFromDB(
     session.user.id,
     Number(session.user.accountId),
   );
-  const permissions = getPermissionsForRoles(userRoles);
 
   return {
     ...session,
     user: {
       ...session.user,
-      roles: userRoles,
-      permissions: permissions,
+      roles: rolesAndPermissions.roles,
+      permissions: rolesAndPermissions.permissions,
     },
   };
 }

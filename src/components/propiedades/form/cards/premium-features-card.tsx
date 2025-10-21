@@ -34,6 +34,7 @@ interface PremiumFeaturesCardProps {
   tennisCourt: boolean;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
+  canEdit?: boolean;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -86,6 +87,7 @@ export function PremiumFeaturesCard({
   tennisCourt,
   collapsedSections,
   saveState,
+  canEdit = true,
   onToggleSection,
   onSave,
   onUpdateModule,
@@ -179,6 +181,7 @@ export function PremiumFeaturesCard({
                       setViews(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="views" className="text-sm">
                     Vistas
@@ -192,6 +195,7 @@ export function PremiumFeaturesCard({
                       setMountainViews(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="mountainViews" className="text-sm">
                     Vistas montaña
@@ -205,6 +209,7 @@ export function PremiumFeaturesCard({
                       setSeaViews(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="seaViews" className="text-sm">
                     Vistas mar
@@ -218,6 +223,7 @@ export function PremiumFeaturesCard({
                       setBeachfront(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="beachfront" className="text-sm">
                     Primera línea
@@ -238,6 +244,7 @@ export function PremiumFeaturesCard({
                       setJacuzzi(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="jacuzzi" className="text-sm">
                     Jacuzzi
@@ -251,6 +258,7 @@ export function PremiumFeaturesCard({
                       setHydromassage(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="hydromassage" className="text-sm">
                     Hidromasaje
@@ -264,6 +272,7 @@ export function PremiumFeaturesCard({
                       setFireplace(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="fireplace" className="text-sm">
                     Chimenea
@@ -277,6 +286,7 @@ export function PremiumFeaturesCard({
                       setSuiteBathroom(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="suiteBathroom" className="text-sm">
                     Baño en suite
@@ -297,6 +307,7 @@ export function PremiumFeaturesCard({
                       setHomeAutomation(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="homeAutomation" className="text-sm">
                     Domótica
@@ -310,6 +321,7 @@ export function PremiumFeaturesCard({
                       setMusicSystem(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="musicSystem" className="text-sm">
                     Sistema de música
@@ -332,6 +344,7 @@ export function PremiumFeaturesCard({
                       setGarden(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="garden" className="text-sm">
                     Jardín
@@ -345,6 +358,7 @@ export function PremiumFeaturesCard({
                       setPool(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="pool" className="text-sm">
                     Piscina
@@ -358,6 +372,7 @@ export function PremiumFeaturesCard({
                       setPrivatePool(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="privatePool" className="text-sm">
                     Piscina privada
@@ -371,6 +386,7 @@ export function PremiumFeaturesCard({
                       setCommunityPool(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="communityPool" className="text-sm">
                     Piscina comunitaria
@@ -384,6 +400,7 @@ export function PremiumFeaturesCard({
                       setTennisCourt(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="tennisCourt" className="text-sm">
                     Pista de tenis
@@ -404,6 +421,7 @@ export function PremiumFeaturesCard({
                       setGym(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="gym" className="text-sm">
                     Gimnasio
@@ -417,6 +435,7 @@ export function PremiumFeaturesCard({
                       setSportsArea(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="sportsArea" className="text-sm">
                     Zona deportiva
@@ -430,6 +449,7 @@ export function PremiumFeaturesCard({
                       setChildrenArea(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="childrenArea" className="text-sm">
                     Zona infantil
@@ -450,6 +470,7 @@ export function PremiumFeaturesCard({
                       setNearbyPublicTransport(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label
                     htmlFor="nearbyPublicTransport"
@@ -473,6 +494,7 @@ export function PremiumFeaturesCard({
                       setLaundryRoom(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="laundryRoom" className="text-sm">
                     Lavadero
@@ -486,6 +508,7 @@ export function PremiumFeaturesCard({
                       setCoveredClothesline(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="coveredClothesline" className="text-sm">
                     Tendedero cubierto

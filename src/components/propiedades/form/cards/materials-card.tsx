@@ -37,6 +37,7 @@ interface MaterialsCardProps {
   propertyType: string;
   showMaterials: boolean;
   saveState: SaveState;
+  canEdit?: boolean;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   setMainFloorType: (value: string) => void;
@@ -55,6 +56,7 @@ export function MaterialsCard({
   propertyType,
   showMaterials,
   saveState,
+  canEdit = true,
   onSave,
   onUpdateModule,
   setMainFloorType,
@@ -136,6 +138,7 @@ export function MaterialsCard({
                         setWindowType(value);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     >
                       <SelectTrigger className="h-8 text-gray-500">
                         <SelectValue placeholder="Seleccionar tipo" />
@@ -158,6 +161,7 @@ export function MaterialsCard({
                         setCarpentryType(value);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     >
                       <SelectTrigger className="h-8 text-gray-500">
                         <SelectValue placeholder="Seleccionar tipo" />
@@ -180,6 +184,7 @@ export function MaterialsCard({
                         setShutterType(value);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     >
                       <SelectTrigger className="h-8 text-gray-500">
                         <SelectValue placeholder="Seleccionar tipo" />
@@ -210,6 +215,7 @@ export function MaterialsCard({
                         setMainFloorType(value);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     >
                       <SelectTrigger className="h-8 text-gray-500">
                         <SelectValue placeholder="Seleccionar tipo" />

@@ -48,6 +48,7 @@ interface FeaturesCardProps {
   stoneware: boolean;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
+  canEdit?: boolean;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -109,6 +110,7 @@ export function FeaturesCard({
   stoneware,
   collapsedSections,
   saveState,
+  canEdit = true,
   onToggleSection,
   onSave,
   onUpdateModule,
@@ -209,6 +211,7 @@ export function FeaturesCard({
                   setHasElevator(checked as boolean);
                   onUpdateModule(true);
                 }}
+                disabled={!canEdit}
               />
               <Label htmlFor="hasElevator" className="text-sm">
                 Ascensor
@@ -229,6 +232,7 @@ export function FeaturesCard({
                   }
                   onUpdateModule(true);
                 }}
+                disabled={!canEdit}
               />
               <Label htmlFor="hasGarage" className="text-sm">
                 Garaje
@@ -241,7 +245,7 @@ export function FeaturesCard({
                     <Label htmlFor="garageType" className="text-xs">
                       Tipo
                     </Label>
-                    <Select value={garageType} onValueChange={setGarageType}>
+                    <Select value={garageType} onValueChange={setGarageType} disabled={!canEdit}>
                       <SelectTrigger className="h-7 text-xs">
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
@@ -267,6 +271,7 @@ export function FeaturesCard({
                       className="h-7 text-xs"
                       min="1"
                       max="10"
+                      disabled={!canEdit}
                     />
                   </div>
                 </div>
@@ -280,6 +285,7 @@ export function FeaturesCard({
                         onUpdateModule(true);
                       }}
                       className="h-3 w-3"
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="garageInBuilding" className="text-xs">
                       En edificio
@@ -298,6 +304,7 @@ export function FeaturesCard({
                       }}
                       className="h-7 text-xs"
                       placeholder="A-123"
+                      disabled={!canEdit}
                     />
                   </div>
                 </div>
@@ -318,6 +325,7 @@ export function FeaturesCard({
                     min="0"
                     step="1"
                     placeholder="-"
+                    disabled={!canEdit}
                   />
                 </div>
               </div>
@@ -338,6 +346,7 @@ export function FeaturesCard({
                       }
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="hasStorageRoom" className="text-sm">
                     Trastero
@@ -363,6 +372,7 @@ export function FeaturesCard({
                           min="0"
                           step="1"
                           placeholder="-"
+                          disabled={!canEdit}
                         />
                       </div>
                       <div className="space-y-1">
@@ -378,6 +388,7 @@ export function FeaturesCard({
                           }}
                           className="h-7 text-xs"
                           placeholder="T-45"
+                          disabled={!canEdit}
                         />
                       </div>
                     </div>
@@ -398,6 +409,7 @@ export function FeaturesCard({
                         min="0"
                         step="1"
                         placeholder="-"
+                        disabled={!canEdit}
                       />
                     </div>
                   </div>
@@ -416,6 +428,7 @@ export function FeaturesCard({
                       setIsHeating(!!checked);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="hasHeating" className="text-sm">
                     Calefacción
@@ -429,6 +442,7 @@ export function FeaturesCard({
                         setHeatingType(value);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     >
                       <SelectTrigger className="mt-1 h-6 px-2 py-0 text-xs text-gray-500">
                         <SelectValue placeholder="Seleccionar tipo de calefacción" />
@@ -455,6 +469,7 @@ export function FeaturesCard({
                       }
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="hasHotWater" className="text-sm">
                     Agua caliente
@@ -468,6 +483,7 @@ export function FeaturesCard({
                         setHotWaterType(value);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     >
                       <SelectTrigger className="mt-1 h-6 px-2 py-0 text-xs text-gray-500">
                         <SelectValue placeholder="Seleccionar tipo de agua caliente" />
@@ -494,6 +510,7 @@ export function FeaturesCard({
                       }
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="hasAirConditioning" className="text-sm">
                     Aire acondicionado
@@ -507,6 +524,7 @@ export function FeaturesCard({
                         setAirConditioningType(value);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     >
                       <SelectTrigger className="mt-1 h-6 px-2 py-0 text-xs text-gray-500">
                         <SelectValue placeholder="Seleccionar tipo" />
@@ -532,6 +550,7 @@ export function FeaturesCard({
                         setIsFurnished(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="isFurnished" className="text-sm">
                       Amueblado
@@ -552,6 +571,7 @@ export function FeaturesCard({
                             value="basic"
                             id="basic"
                             className="h-3 w-3 text-muted-foreground"
+                            disabled={!canEdit}
                           />
                           <Label
                             htmlFor="basic"
@@ -565,6 +585,7 @@ export function FeaturesCard({
                             value="standard"
                             id="standard"
                             className="h-3 w-3 text-muted-foreground"
+                            disabled={!canEdit}
                           />
                           <Label
                             htmlFor="standard"
@@ -578,6 +599,7 @@ export function FeaturesCard({
                             value="high"
                             id="high"
                             className="h-3 w-3 text-muted-foreground"
+                            disabled={!canEdit}
                           />
                           <Label
                             htmlFor="high"
@@ -591,6 +613,7 @@ export function FeaturesCard({
                             value="luxury"
                             id="luxury"
                             className="h-3 w-3 text-muted-foreground"
+                            disabled={!canEdit}
                           />
                           <Label
                             htmlFor="luxury"
@@ -620,6 +643,7 @@ export function FeaturesCard({
                             onUpdateModule(true);
                           }}
                           className="no-checkmark h-3 w-3"
+                          disabled={!canEdit}
                         />
                         <Label htmlFor="oven" className="text-xs">
                           Horno
@@ -634,6 +658,7 @@ export function FeaturesCard({
                             onUpdateModule(true);
                           }}
                           className="no-checkmark h-3 w-3"
+                          disabled={!canEdit}
                         />
                         <Label htmlFor="microwave" className="text-xs">
                           Microondas
@@ -648,6 +673,7 @@ export function FeaturesCard({
                             onUpdateModule(true);
                           }}
                           className="no-checkmark h-3 w-3"
+                          disabled={!canEdit}
                         />
                         <Label htmlFor="washingMachine" className="text-xs">
                           Lavadora
@@ -662,6 +688,7 @@ export function FeaturesCard({
                             onUpdateModule(true);
                           }}
                           className="no-checkmark h-3 w-3"
+                          disabled={!canEdit}
                         />
                         <Label htmlFor="fridge" className="text-xs">
                           Frigorífico
@@ -676,6 +703,7 @@ export function FeaturesCard({
                             onUpdateModule(true);
                           }}
                           className="no-checkmark h-3 w-3"
+                          disabled={!canEdit}
                         />
                         <Label htmlFor="tv" className="text-xs">
                           Televisión
@@ -690,6 +718,7 @@ export function FeaturesCard({
                             onUpdateModule(true);
                           }}
                           className="no-checkmark h-3 w-3"
+                          disabled={!canEdit}
                         />
                         <Label htmlFor="stoneware" className="text-xs">
                           Lavavajillas

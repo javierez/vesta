@@ -47,6 +47,7 @@ interface AdditionalCharacteristicsCardProps {
   propertyType: string;
   showAdditionalCharacteristics: boolean;
   saveState: SaveState;
+  canEdit?: boolean;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   setDisabledAccessible: (value: boolean) => void;
@@ -85,6 +86,7 @@ export function AdditionalCharacteristicsCard({
   propertyType,
   showAdditionalCharacteristics,
   saveState,
+  canEdit = true,
   onSave,
   onUpdateModule,
   setDisabledAccessible,
@@ -177,6 +179,7 @@ export function AdditionalCharacteristicsCard({
                         setSecurityDoor(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="securityDoor" className="text-sm">
                       Puerta blindada
@@ -190,6 +193,7 @@ export function AdditionalCharacteristicsCard({
                         setAlarm(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="alarm" className="text-sm">
                       Alarma
@@ -203,6 +207,7 @@ export function AdditionalCharacteristicsCard({
                         setVideoIntercom(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="videoIntercom" className="text-sm">
                       Videoportero
@@ -216,6 +221,7 @@ export function AdditionalCharacteristicsCard({
                         setSecurityGuard(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="securityGuard" className="text-sm">
                       Vigilante
@@ -229,6 +235,7 @@ export function AdditionalCharacteristicsCard({
                         setConciergeService(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="conciergeService" className="text-sm">
                       Conserjería
@@ -250,6 +257,7 @@ export function AdditionalCharacteristicsCard({
                           setVpo(checked as boolean);
                           onUpdateModule(true);
                         }}
+                        disabled={!canEdit}
                       />
                       <Label htmlFor="vpo" className="text-sm">
                         VPO
@@ -263,6 +271,7 @@ export function AdditionalCharacteristicsCard({
                           setDisabledAccessible(checked as boolean);
                           onUpdateModule(true);
                         }}
+                        disabled={!canEdit}
                       />
                       <Label htmlFor="disabledAccessible" className="text-sm">
                         Accesible
@@ -276,6 +285,7 @@ export function AdditionalCharacteristicsCard({
                           setSatelliteDish(checked as boolean);
                           onUpdateModule(true);
                         }}
+                        disabled={!canEdit}
                       />
                       <Label htmlFor="satelliteDish" className="text-sm">
                         Antena
@@ -289,6 +299,7 @@ export function AdditionalCharacteristicsCard({
                           setDoubleGlazing(checked as boolean);
                           onUpdateModule(true);
                         }}
+                        disabled={!canEdit}
                       />
                       <Label htmlFor="doubleGlazing" className="text-sm">
                         Doble acristalamiento
@@ -316,6 +327,7 @@ export function AdditionalCharacteristicsCard({
                         setKitchenType(value);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     >
                       <SelectTrigger className="h-8 text-gray-500">
                         <SelectValue placeholder="Seleccionar tipo" />
@@ -340,6 +352,7 @@ export function AdditionalCharacteristicsCard({
                         setOpenKitchen(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="openKitchen" className="text-sm">
                       Cocina abierta
@@ -353,6 +366,7 @@ export function AdditionalCharacteristicsCard({
                         setFrenchKitchen(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="frenchKitchen" className="text-sm">
                       Cocina francesa
@@ -366,6 +380,7 @@ export function AdditionalCharacteristicsCard({
                         setFurnishedKitchen(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="furnishedKitchen" className="text-sm">
                       Cocina amueblada
@@ -379,6 +394,7 @@ export function AdditionalCharacteristicsCard({
                         setPantry(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="pantry" className="text-sm">
                       Despensa

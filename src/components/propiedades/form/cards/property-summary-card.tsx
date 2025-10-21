@@ -37,6 +37,7 @@ interface PropertySummaryCardProps {
   keysLoading: boolean;
   publishToWebsite: boolean;
   websiteLoading: boolean;
+  canEdit?: boolean;
   onToggleKeys: () => void;
   onToggleWebsite: () => void;
   onEditOwner?: () => void;
@@ -53,6 +54,7 @@ export function PropertySummaryCard({
   keysLoading,
   publishToWebsite,
   websiteLoading,
+  canEdit = true,
   onToggleKeys,
   onToggleWebsite,
   onEditOwner,
@@ -147,7 +149,7 @@ export function PropertySummaryCard({
                     ? owners.find(o => o.id.toString() === selectedOwnerIds[0])?.name ?? 'Sin asignar'
                     : 'Sin asignar'}
                 </p>
-                {onEditOwner && (
+                {onEditOwner && canEdit && (
                   <button
                     onClick={onEditOwner}
                     className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/60 text-white shadow-md opacity-0 group-hover/owner:opacity-100 transition-opacity duration-200 hover:bg-amber-500/70"
@@ -168,7 +170,7 @@ export function PropertySummaryCard({
                     ? agents.find(a => a.id === selectedAgentId)?.name ?? 'Sin asignar'
                     : 'Sin asignar'}
                 </p>
-                {onEditOwner && (
+                {onEditOwner && canEdit && (
                   <button
                     onClick={onEditOwner}
                     className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/60 text-white shadow-md opacity-0 group-hover/agent:opacity-100 transition-opacity duration-200 hover:bg-amber-500/70"
@@ -185,7 +187,7 @@ export function PropertySummaryCard({
               {/* Keys toggle button */}
               <Button
                 onClick={onToggleKeys}
-                disabled={keysLoading}
+                disabled={!canEdit || keysLoading}
                 size="sm"
                 variant="ghost"
                 className={`w-7 h-7 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full p-0 transition-all duration-200 flex-shrink-0 ${
@@ -205,7 +207,7 @@ export function PropertySummaryCard({
               {/* Website toggle button */}
               <Button
                 onClick={onToggleWebsite}
-                disabled={websiteLoading}
+                disabled={!canEdit || websiteLoading}
                 size="sm"
                 variant="ghost"
                 className={`w-7 h-7 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full p-0 transition-all duration-200 flex-shrink-0 ${

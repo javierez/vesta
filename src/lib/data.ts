@@ -1147,6 +1147,9 @@ export type Task = {
   dueDate?: Date;
   dueTime?: string;
   completed: boolean;
+  completedBy?: string | null; // FK → users.id (who completed the task)
+  editedBy?: string | null; // FK → users.id (who last edited the task)
+  category?: string | null; // Task category/type
   listingId?: bigint;
   listingContactId?: bigint;
   dealId?: bigint;

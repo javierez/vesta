@@ -26,6 +26,7 @@ interface PropertyDetailsCardProps {
   buildingFloors: number;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
+  canEdit?: boolean;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -41,6 +42,7 @@ export function PropertyDetailsCard({
   buildingFloors,
   collapsedSections,
   saveState,
+  canEdit = true,
   onToggleSection,
   onSave,
   onUpdateModule,
@@ -148,6 +150,7 @@ export function PropertyDetailsCard({
               defaultValue={listing.bedrooms?.toString() ?? ""}
               className="h-8 text-gray-500"
               onChange={() => onUpdateModule(true)}
+              disabled={!canEdit}
             />
           </div>
         )}
@@ -166,6 +169,7 @@ export function PropertyDetailsCard({
               min="0"
               step="1"
               onChange={() => onUpdateModule(true)}
+              disabled={!canEdit}
             />
           </div>
         )}
@@ -183,6 +187,7 @@ export function PropertyDetailsCard({
                 onChange={handleSquareMeterChange}
                 onBlur={handleSquareMeterBlur}
                 placeholder="-"
+                disabled={!canEdit}
               />
             </div>
             <div className="space-y-1.5">
@@ -197,6 +202,7 @@ export function PropertyDetailsCard({
                 onChange={handleBuiltSurfaceChange}
                 onBlur={handleBuiltSurfaceBlur}
                 placeholder="-"
+                disabled={!canEdit}
               />
             </div>
           </div>
@@ -212,6 +218,7 @@ export function PropertyDetailsCard({
               defaultValue={listing.yearBuilt}
               className="h-8 text-gray-500"
               onChange={() => onUpdateModule(true)}
+              disabled={!canEdit}
             />
           </div>
         )}
@@ -231,6 +238,7 @@ export function PropertyDetailsCard({
               className="h-8 text-gray-500"
               min="1900"
               max={new Date().getFullYear()}
+              disabled={!canEdit}
             />
           </div>
         )}
@@ -250,6 +258,7 @@ export function PropertyDetailsCard({
               className="h-8 text-gray-500"
               min="1"
               step="1"
+              disabled={!canEdit}
             />
           </div>
         )}
@@ -264,6 +273,7 @@ export function PropertyDetailsCard({
                 listing.conservationStatus = parseInt(value);
                 onUpdateModule(true);
               }}
+              disabled={!canEdit}
             >
               <SelectTrigger className="h-8 text-gray-500">
                 <SelectValue placeholder="Seleccionar estado" />

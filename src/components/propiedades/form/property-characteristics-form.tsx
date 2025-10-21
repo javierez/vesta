@@ -35,6 +35,7 @@ import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-mod
 import { deletePropertyWithAuth, deleteListingWithAuth, discardListingWithAuth, recoverListingWithAuth } from "~/server/queries/listing";
 import { getFirstImage } from "~/app/actions/property-images";
 import { formFormatters } from "~/lib/utils";
+import { canDeleteProperties, canEditProperties } from "~/app/actions/permissions/check-permissions";
 
 import type { PropertyListing } from "~/types/property-listing";
 
@@ -842,6 +843,10 @@ export function PropertyCharacteristicsForm({
   // First property image URL
   const [firstImageUrl, setFirstImageUrl] = useState<string | null>(null);
 
+  // Permissions
+  const [canDelete, setCanDelete] = useState<boolean>(false);
+  const [canEdit, setCanEdit] = useState<boolean>(false);
+
   // Filter owners based on search
   const filteredOwners = owners.filter((owner) =>
     owner.name.toLowerCase().includes(ownerSearch.toLowerCase()),
@@ -861,12 +866,14 @@ export function PropertyCharacteristicsForm({
         console.log('Fetching all form data in single batch...');
 
         // Batch all API calls in parallel for maximum performance
-        const [agentsData, potentialOwnersData, currentOwnersData, listingDetailsData, firstImage] = await Promise.all([
+        const [agentsData, potentialOwnersData, currentOwnersData, listingDetailsData, firstImage, hasDeletePermission, hasEditPermission] = await Promise.all([
           getAllAgentsWithAuth(),
           getAllPotentialOwnersWithAuth(),
           listing.listingId ? getCurrentListingOwnersWithAuth(Number(listing.listingId)) : Promise.resolve([]),
           listing.listingId ? getListingDetailsWithAuth(Number(listing.listingId)) : Promise.resolve(null),
           listing.propertyId ? getFirstImage(Number(listing.propertyId)) : Promise.resolve(null),
+          canDeleteProperties(),
+          canEditProperties(),
         ]);
 
         // Process agents data
@@ -902,6 +909,16 @@ export function PropertyCharacteristicsForm({
         // Set first image URL
         setFirstImageUrl(firstImage);
 
+        // Set permissions
+        setCanDelete(hasDeletePermission);
+        setCanEdit(hasEditPermission);
+        console.log('🔐 Permission Checks:', {
+          hasDeletePermission,
+          hasEditPermission,
+          willShowDeleteButtons: hasDeletePermission ? 'YES' : 'NO',
+          formMode: hasEditPermission ? 'EDIT MODE' : 'READ-ONLY MODE'
+        });
+
         console.log('✅ All form data fetched successfully - Performance optimized!');
       } catch (error) {
         console.error('❌ Error fetching form data:', error);
@@ -912,6 +929,8 @@ export function PropertyCharacteristicsForm({
         setHasKeys(false);
         setPublishToWebsite(false);
         setFirstImageUrl(null);
+        setCanDelete(false);
+        setCanEdit(false);
       }
     };
 
@@ -1221,8 +1240,15 @@ export function PropertyCharacteristicsForm({
   // Add this near the top of the component, after listingTypes is defined
   const currentListingType = listingTypes[0] ?? "";
 
+  // Debug logging for delete permission
+  console.log('🔍 Render - Delete Permission State:', {
+    canDelete,
+    willRenderButtons: canDelete ? 'YES - Buttons will be visible' : 'NO - Buttons will be hidden'
+  });
+
   return (
     <div className="space-y-4">
+      {/* Read-Only Mode Banner */}
       {/* Top row - always full width */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-2">
         {/* Property Summary */}
@@ -1237,6 +1263,7 @@ export function PropertyCharacteristicsForm({
           keysLoading={keysLoading}
           publishToWebsite={publishToWebsite}
           websiteLoading={websiteLoading}
+          canEdit={canEdit}
           onToggleKeys={handleToggleKeys}
           onToggleWebsite={handleToggleWebsite}
           onEditOwner={handleEditOwner}
@@ -1266,6 +1293,7 @@ export function PropertyCharacteristicsForm({
             collapsedSections={collapsedSections}
             saveState={moduleStates.basicInfo?.saveState ?? "idle"}
             currentTitle={currentTitle}
+            canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("basicInfo")}
             onUpdateModule={(hasChanges) => updateModuleState("basicInfo", hasChanges)}
@@ -1286,6 +1314,7 @@ export function PropertyCharacteristicsForm({
             buildingFloors={buildingFloors}
             collapsedSections={collapsedSections}
             saveState={moduleStates.propertyDetails?.saveState ?? "idle"}
+            canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("propertyDetails")}
             onUpdateModule={(hasChanges) => updateModuleState("propertyDetails", hasChanges)}
@@ -1325,6 +1354,7 @@ export function PropertyCharacteristicsForm({
             stoneware={stoneware}
             collapsedSections={collapsedSections}
             saveState={moduleStates.features?.saveState ?? "idle"}
+            canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("features")}
             onUpdateModule={(hasChanges) => updateModuleState("features", hasChanges)}
@@ -1375,6 +1405,7 @@ export function PropertyCharacteristicsForm({
             propertyType={propertyType}
             showAdditionalCharacteristics={showAdditionalCharacteristics}
             saveState={moduleStates.additionalCharacteristics?.saveState ?? "idle"}
+            canEdit={canEdit}
             onSave={() => saveModule("additionalCharacteristics")}
             onUpdateModule={(hasChanges) => updateModuleState("additionalCharacteristics", hasChanges)}
             setDisabledAccessible={setDisabledAccessible}
@@ -1408,6 +1439,7 @@ export function PropertyCharacteristicsForm({
             propertyType={propertyType}
             collapsedSections={collapsedSections}
             saveState={moduleStates.additionalSpaces?.saveState ?? "idle"}
+            canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("additionalSpaces")}
             onUpdateModule={(hasChanges) => updateModuleState("additionalSpaces", hasChanges)}
@@ -1436,6 +1468,7 @@ export function PropertyCharacteristicsForm({
             agents={agents}
             collapsedSections={collapsedSections}
             saveState={moduleStates.contactInfo?.saveState ?? "idle"}
+            canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("contactInfo")}
             onUpdateModule={(hasChanges) => updateModuleState("contactInfo", hasChanges)}
@@ -1453,6 +1486,7 @@ export function PropertyCharacteristicsForm({
             municipality={municipality}
             collapsedSections={collapsedSections}
             saveState={moduleStates.location?.saveState ?? "idle"}
+            canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("location")}
             onUpdateModule={(hasChanges) => updateModuleState("location", hasChanges)}
@@ -1472,6 +1506,7 @@ export function PropertyCharacteristicsForm({
             propertyType={propertyType}
             collapsedSections={collapsedSections}
             saveState={moduleStates.orientation?.saveState ?? "idle"}
+            canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("orientation")}
             onUpdateModule={(hasChanges) => updateModuleState("orientation", hasChanges)}
@@ -1507,6 +1542,7 @@ export function PropertyCharacteristicsForm({
             tennisCourt={tennisCourt}
             collapsedSections={collapsedSections}
             saveState={moduleStates.premiumFeatures?.saveState ?? "idle"}
+            canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("premiumFeatures")}
             onUpdateModule={(hasChanges) => updateModuleState("premiumFeatures", hasChanges)}
@@ -1543,6 +1579,7 @@ export function PropertyCharacteristicsForm({
             propertyType={propertyType}
             showMaterials={showMaterials}
             saveState={moduleStates.materials?.saveState ?? "idle"}
+            canEdit={canEdit}
             onSave={() => saveModule("materials")}
             onUpdateModule={(hasChanges) => updateModuleState("materials", hasChanges)}
             setMainFloorType={setMainFloorType}
@@ -1567,6 +1604,7 @@ export function PropertyCharacteristicsForm({
         signature={signature}
         isSignatureDialogOpen={isSignatureDialogOpen}
         saveState={moduleStates.description?.saveState ?? "idle"}
+        canEdit={canEdit}
         onSave={() => saveModule("description")}
         onUpdateModule={(hasChanges) => updateModuleState("description", hasChanges)}
         onGenerateDescription={handleGenerateDescription}
@@ -1590,6 +1628,7 @@ export function PropertyCharacteristicsForm({
           rentalPrice={rentalPrice}
           collapsedSections={collapsedSections}
           saveState={moduleStates.rentalProperties?.saveState ?? "idle"}
+          canEdit={canEdit}
           // Listing data for duplication
           propertyId={listing.propertyId}
           listingId={listing.listingId}
@@ -1611,33 +1650,35 @@ export function PropertyCharacteristicsForm({
         />
 
       {/* Action Buttons - Discard, Delete Listing, and Delete Property */}
-      <div className="mt-6">
-        <div className="flex justify-center gap-4 flex-wrap">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsDiscardModalOpen(true)}
-            className="text-gray-600 hover:text-gray-800"
-          >
-            {listing.status === "Descartado" ? "Recuperar Anuncio" : "Descartar Anuncio"}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() => setIsDeleteListingModalOpen(true)}
-            className="bg-white hover:bg-red-50 border-2 border-red-500 border-dashed text-red-600 hover:text-red-700"
-          >
-            Borrar Anuncio
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() => setIsDeleteModalOpen(true)}
-          >
-            Eliminar Propiedad
-          </Button>
+      {canDelete && (
+        <div className="mt-6">
+          <div className="flex justify-center gap-4 flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDiscardModalOpen(true)}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              {listing.status === "Descartado" ? "Recuperar anuncio" : "Descartar anuncio"}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => setIsDeleteListingModalOpen(true)}
+              className="bg-white hover:bg-red-50 border-2 border-red-500 border-dashed text-red-600 hover:text-red-700"
+            >
+              Borrar anuncio
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => setIsDeleteModalOpen(true)}
+            >
+              Eliminar propiedad
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       <ExternalLinkPopup
         isOpen={isCatastroPopupOpen}
         onClose={() => setIsCatastroPopupOpen(false)}

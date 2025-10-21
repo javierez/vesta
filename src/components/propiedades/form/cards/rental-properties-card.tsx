@@ -21,6 +21,7 @@ interface RentalPropertiesCardProps {
   rentalPrice: number;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
+  canEdit?: boolean;
   // Listing data for duplication
   propertyId: number | string | undefined;
   listingId: number | string | undefined;
@@ -52,6 +53,7 @@ export function RentalPropertiesCard({
   rentalPrice,
   collapsedSections,
   saveState,
+  canEdit = true,
   // Listing data for duplication
   propertyId,
   listingId,
@@ -251,6 +253,7 @@ export function RentalPropertiesCard({
                   className="h-10 border-0 bg-white text-sm shadow-md"
                   min="0"
                   step="1"
+                  disabled={!canEdit}
                 />
               </div>
             )}
@@ -267,6 +270,7 @@ export function RentalPropertiesCard({
                         setInternet(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="internet" className="text-sm">
                       Internet
@@ -283,6 +287,7 @@ export function RentalPropertiesCard({
                           setStudentFriendly(checked as boolean);
                           onUpdateModule(true);
                         }}
+                        disabled={!canEdit}
                       />
                       <Label htmlFor="studentFriendly" className="text-sm">
                         Admite estudiantes
@@ -300,6 +305,7 @@ export function RentalPropertiesCard({
                           setPetsAllowed(checked as boolean);
                           onUpdateModule(true);
                         }}
+                        disabled={!canEdit}
                       />
                       <Label htmlFor="petsAllowed" className="text-sm">
                         Admite mascotas
@@ -315,6 +321,7 @@ export function RentalPropertiesCard({
                         setAppliancesIncluded(checked as boolean);
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     />
                     <Label htmlFor="appliancesIncluded" className="text-sm">
                       Incluye electrodomésticos
@@ -340,7 +347,7 @@ export function RentalPropertiesCard({
               <Button
                 type="button"
                 onClick={handleApplyDuplication}
-                disabled={isDuplicating || !rentalPrice || rentalPrice <= 0}
+                disabled={!canEdit || isDuplicating || !rentalPrice || rentalPrice <= 0}
                 className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
               >
                 {isDuplicating ? (

@@ -306,9 +306,13 @@ export async function getSecureSessionWithRoles(): Promise<SecureSession & { rol
   // Middleware doesn't set roles due to Edge Runtime, so fetch from cache
   if (roles.length === 0) {
     const { getCachedUserRoles } = await import("~/lib/auth-cache");
-    roles = await getCachedUserRoles(session.user.id, session.user.accountId);
+    const rolesAndPermissions = await getCachedUserRoles(
+      session.user.id,
+      session.user.accountId,
+    );
+    roles = rolesAndPermissions.roles;
   }
-  
+
   return {
     ...session,
     roles,
@@ -320,11 +324,11 @@ export async function getSecureSessionWithRoles(): Promise<SecureSession & { rol
  */
 export async function getUserRolesForCurrentUser(): Promise<string[]> {
   const session = await requireSecureSession();
-  
+
   // Try headers first (may not be available due to Edge Runtime middleware)
   const headersList = await headers();
   const rolesHeader = headersList.get("x-user-roles");
-  
+
   if (rolesHeader) {
     try {
       const roles = JSON.parse(rolesHeader) as string[];
@@ -333,34 +337,43 @@ export async function getUserRolesForCurrentUser(): Promise<string[]> {
       console.warn("Failed to parse roles from header");
     }
   }
-  
+
   // Fetch from cache/DB
   const { getCachedUserRoles } = await import("~/lib/auth-cache");
-  const roles = await getCachedUserRoles(session.user.id, session.user.accountId);
-  return roles;
+  const rolesAndPermissions = await getCachedUserRoles(
+    session.user.id,
+    session.user.accountId,
+  );
+  return rolesAndPermissions.roles;
 }
 
 /**
  * Get user permissions with caching - standalone function for permission systems
+ * Returns permissions object from database (account_roles.permissions)
  */
-export async function getUserPermissionsForCurrentUser(): Promise<string[]> {
+export async function getUserPermissionsForCurrentUser() {
+  const session = await requireSecureSession();
+
+  // Try headers first (may not be available due to Edge Runtime middleware)
   const headersList = await headers();
   const permissionsHeader = headersList.get("x-user-permissions");
-  
+
   if (permissionsHeader) {
     try {
-      const permissions = JSON.parse(permissionsHeader) as string[];
+      const permissions: unknown = JSON.parse(permissionsHeader);
       return permissions;
     } catch {
       console.warn("Failed to parse permissions from header");
     }
   }
-  
-  // Calculate from roles
-  const roles = await getUserRolesForCurrentUser();
-  const { getPermissionsForRoles } = await import("~/lib/auth");
-  const permissions = getPermissionsForRoles(roles);
-  return permissions;
+
+  // Fetch from cache/DB
+  const { getCachedUserRoles } = await import("~/lib/auth-cache");
+  const rolesAndPermissions = await getCachedUserRoles(
+    session.user.id,
+    session.user.accountId,
+  );
+  return rolesAndPermissions.permissions;
 }
 
 /**

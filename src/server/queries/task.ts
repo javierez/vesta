@@ -57,7 +57,9 @@ export async function updateTaskWithAuth(
   data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
 ) {
   const accountId = await getCurrentUserAccountId();
-  return updateTask(taskId, data, accountId);
+  const session = await getSecureSession();
+  const userId = session?.user?.id;
+  return updateTask(taskId, data, accountId, userId);
 }
 
 export async function updateContactTaskWithAuth(
@@ -73,12 +75,16 @@ export async function updateListingTaskWithAuth(
   data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
 ) {
   const accountId = await getCurrentUserAccountId();
-  return updateListingTask(taskId, data, accountId);
+  const session = await getSecureSession();
+  const userId = session?.user?.id;
+  return updateListingTask(taskId, data, accountId, userId);
 }
 
 export async function completeTaskWithAuth(taskId: number) {
   const accountId = await getCurrentUserAccountId();
-  return completeTask(taskId, accountId);
+  const session = await getSecureSession();
+  const userId = session?.user?.id;
+  return completeTask(taskId, accountId, userId);
 }
 
 export async function softDeleteTaskWithAuth(taskId: number) {
@@ -454,11 +460,16 @@ export async function updateTask(
   taskId: number,
   data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
   accountId: number,
+  editedBy?: string,
 ) {
   try {
     // First verify the task belongs to this account using JOINs instead of subqueries
     const [existingTask] = await db
-      .select({ taskId: tasks.taskId })
+      .select({
+        taskId: tasks.taskId,
+        title: tasks.title,
+        completed: tasks.completed
+      })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, or(
@@ -483,10 +494,21 @@ export async function updateTask(
       throw new Error("Task not found or access denied");
     }
 
+    // Prepare update data with editedBy
+    const updateData = {
+      ...data,
+      editedBy: editedBy ?? null
+    };
+
     await db
       .update(tasks)
-      .set(data)
+      .set(updateData)
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
+
+    // Log the edit action
+    const updatedFields = Object.keys(data).join(', ');
+    console.log(`[TASK EDITED] Task ID: ${taskId}, Title: "${existingTask.title}", Edited by: ${editedBy ?? 'unknown'}, Account ID: ${accountId}, Updated fields: [${updatedFields}], Timestamp: ${new Date().toISOString()}`);
+
     const [updatedTask] = await db
       .select({
         taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
@@ -496,6 +518,9 @@ export async function updateTask(
         dueDate: tasks.dueDate,
         dueTime: tasks.dueTime,
         completed: tasks.completed,
+        completedBy: tasks.completedBy,
+        editedBy: tasks.editedBy,
+        category: tasks.category,
         listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
         listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
@@ -576,11 +601,16 @@ export async function updateListingTask(
   taskId: number,
   data: Omit<Partial<Task>, "taskId" | "createdAt" | "updatedAt">,
   accountId: number,
+  editedBy?: string,
 ) {
   try {
     // Verify task exists and belongs to account through listing->property relationship
     const [existingTask] = await db
-      .select({ taskId: tasks.taskId })
+      .select({
+        taskId: tasks.taskId,
+        title: tasks.title,
+        listingId: tasks.listingId
+      })
       .from(tasks)
       .innerJoin(listings, eq(tasks.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
@@ -596,11 +626,21 @@ export async function updateListingTask(
       throw new Error("Listing task not found or access denied");
     }
 
+    // Prepare update data with editedBy
+    const updateData = {
+      ...data,
+      editedBy: editedBy ?? null
+    };
+
     await db
       .update(tasks)
-      .set(data)
+      .set(updateData)
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
-      
+
+    // Log the edit action
+    const updatedFields = Object.keys(data).join(', ');
+    console.log(`[LISTING TASK EDITED] Task ID: ${taskId}, Title: "${existingTask.title}", Listing ID: ${existingTask.listingId}, Edited by: ${editedBy ?? 'unknown'}, Account ID: ${accountId}, Updated fields: [${updatedFields}], Timestamp: ${new Date().toISOString()}`);
+
     const [updatedTask] = await db
       .select({
         taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
@@ -610,6 +650,9 @@ export async function updateListingTask(
         dueDate: tasks.dueDate,
         dueTime: tasks.dueTime,
         completed: tasks.completed,
+        completedBy: tasks.completedBy,
+        editedBy: tasks.editedBy,
+        category: tasks.category,
         listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
         listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
@@ -630,11 +673,15 @@ export async function updateListingTask(
 }
 
 // Mark task as completed
-export async function completeTask(taskId: number, accountId: number) {
+export async function completeTask(taskId: number, accountId: number, completedBy?: string) {
   try {
     // First verify the task belongs to this account
     const [existingTask] = await db
-      .select({ taskId: tasks.taskId })
+      .select({
+        taskId: tasks.taskId,
+        title: tasks.title,
+        completed: tasks.completed
+      })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, or(
@@ -659,10 +706,19 @@ export async function completeTask(taskId: number, accountId: number) {
       throw new Error("Task not found or access denied");
     }
 
+    const wasCompleted = existingTask.completed;
+
     await db
       .update(tasks)
-      .set({ completed: true })
+      .set({
+        completed: true,
+        completedBy: completedBy ?? null
+      })
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
+
+    // Log the completion action
+    console.log(`[TASK COMPLETED] Task ID: ${taskId}, Title: "${existingTask.title}", Completed by: ${completedBy ?? 'unknown'}, Account ID: ${accountId}, Previous status: ${wasCompleted ? 'completed' : 'incomplete'}, Timestamp: ${new Date().toISOString()}`);
+
     const [updatedTask] = await db
       .select({
         taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
@@ -672,6 +728,9 @@ export async function completeTask(taskId: number, accountId: number) {
         dueDate: tasks.dueDate,
         dueTime: tasks.dueTime,
         completed: tasks.completed,
+        completedBy: tasks.completedBy,
+        editedBy: tasks.editedBy,
+        category: tasks.category,
         listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
         listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,

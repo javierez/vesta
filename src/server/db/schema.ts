@@ -548,6 +548,9 @@ export const tasks = singlestoreTable("tasks", {
   dueDate: timestamp("due_date"),
   dueTime: time("due_time"),
   completed: boolean("completed").default(false),
+  completedBy: varchar("completed_by", { length: 36 }), // FK → users.id (who completed the task)
+  editedBy: varchar("edited_by", { length: 36 }), // FK → users.id (who last edited the task)
+  category: varchar("category", { length: 100 }), // Task category/type
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
   listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)

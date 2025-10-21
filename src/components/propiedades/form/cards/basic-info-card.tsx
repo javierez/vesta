@@ -29,6 +29,7 @@ interface BasicInfoCardProps {
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
   currentTitle?: string;
+  canEdit?: boolean;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -51,6 +52,7 @@ export function BasicInfoCard({
   collapsedSections,
   saveState,
   currentTitle,
+  canEdit = true,
   onToggleSection,
   onSave,
   onUpdateModule,
@@ -141,6 +143,7 @@ export function BasicInfoCard({
             }}
             className="h-8 text-gray-500"
             placeholder="Título de la propiedad"
+            disabled={!canEdit}
           />
         </div>
 
@@ -160,6 +163,7 @@ export function BasicInfoCard({
                 onUpdateModule(true);
               }}
               className="flex-1"
+              disabled={!canEdit}
             >
               Venta
             </Button>
@@ -178,6 +182,7 @@ export function BasicInfoCard({
                 onUpdateModule(true);
               }}
               className="flex-1"
+              disabled={!canEdit}
             >
               Alquiler
             </Button>
@@ -200,6 +205,7 @@ export function BasicInfoCard({
                     onToggleListingType("Rent");
                   }
                 }}
+                disabled={!canEdit}
               />
               <Label
                 htmlFor="roomSharingProperty"
@@ -219,6 +225,7 @@ export function BasicInfoCard({
                     onToggleListingType("Rent");
                   }
                 }}
+                disabled={!canEdit}
               />
               <Label
                 htmlFor="rentWithOptionProperty"
@@ -242,6 +249,7 @@ export function BasicInfoCard({
                     onToggleListingType("Sale");
                   }
                 }}
+                disabled={!canEdit}
               />
               <Label
                 htmlFor="transferProperty"
@@ -263,6 +271,7 @@ export function BasicInfoCard({
               await onPropertyTypeChange(value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
           >
             <SelectTrigger className="h-8 text-gray-500">
               <SelectValue placeholder="Seleccionar tipo" />
@@ -302,6 +311,7 @@ export function BasicInfoCard({
               }
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
           >
             <SelectTrigger className="h-8 text-gray-500">
               <SelectValue placeholder="Seleccionar subtipo" />
@@ -374,6 +384,7 @@ export function BasicInfoCard({
             onChange={handlePriceChange}
             onBlur={handlePriceBlur}
             placeholder="0"
+            disabled={!canEdit}
           />
         </div>
 
@@ -388,11 +399,12 @@ export function BasicInfoCard({
               setIsBankOwned(!isBankOwned);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
           >
             <Building2 className="mr-1 h-3.5 w-3.5" />
-            {propertyType === "piso" 
-              ? "Piso de banco" 
-              : propertyType === "casa" 
+            {propertyType === "piso"
+              ? "Piso de banco"
+              : propertyType === "casa"
                 ? "Casa de banco"
                 : propertyType === "local"
                   ? "Local de banco"
@@ -410,6 +422,7 @@ export function BasicInfoCard({
               setNewConstruction(!newConstruction);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
           >
             <Building2 className="mr-1 h-3.5 w-3.5" />
             Obra nueva

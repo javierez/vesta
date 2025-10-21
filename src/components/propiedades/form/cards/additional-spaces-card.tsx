@@ -22,6 +22,7 @@ interface AdditionalSpacesCardProps {
   propertyType: string;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
+  canEdit?: boolean;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -48,6 +49,7 @@ export function AdditionalSpacesCard({
   propertyType,
   collapsedSections,
   saveState,
+  canEdit = true,
   onToggleSection,
   onSave,
   onUpdateModule,
@@ -131,6 +133,7 @@ export function AdditionalSpacesCard({
                       setTerrace(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="terrace" className="text-sm">
                     Terraza
@@ -154,6 +157,7 @@ export function AdditionalSpacesCard({
                       className="h-8 text-gray-500"
                       min="0"
                       step="1"
+                      disabled={!canEdit}
                     />
                   </div>
                 )}
@@ -174,6 +178,7 @@ export function AdditionalSpacesCard({
                     className="h-8 text-gray-500"
                     min="0"
                     step="1"
+                    disabled={!canEdit}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -193,6 +198,7 @@ export function AdditionalSpacesCard({
                     className="h-8 text-gray-500"
                     min="0"
                     step="1"
+                    disabled={!canEdit}
                   />
                 </div>
               </div>
@@ -210,6 +216,7 @@ export function AdditionalSpacesCard({
                       setWineCellar(checked as boolean);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="wineCellar" className="text-sm">
                     Bodega
@@ -233,6 +240,7 @@ export function AdditionalSpacesCard({
                       className="h-8 text-gray-500"
                       min="0"
                       step="1"
+                      disabled={!canEdit}
                     />
                   </div>
                 )}
@@ -262,6 +270,7 @@ export function AdditionalSpacesCard({
                     className="h-8 text-gray-500"
                     min="0"
                     step="1"
+                    disabled={!canEdit}
                   />
                 </div>
               </div>
@@ -279,6 +288,7 @@ export function AdditionalSpacesCard({
                       setBuiltInWardrobes(!!checked);
                       onUpdateModule(true);
                     }}
+                    disabled={!canEdit}
                   />
                   <Label htmlFor="builtInWardrobes" className="text-sm">
                     Armarios empotrados

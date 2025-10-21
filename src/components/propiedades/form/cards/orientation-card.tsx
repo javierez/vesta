@@ -23,6 +23,7 @@ interface OrientationCardProps {
   propertyType: string;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
+  canEdit?: boolean;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -39,6 +40,7 @@ export function OrientationCard({
   propertyType,
   collapsedSections,
   saveState,
+  canEdit = true,
   onToggleSection,
   onSave,
   onUpdateModule,
@@ -92,6 +94,7 @@ export function OrientationCard({
                 setIsExterior(checked as boolean);
                 onUpdateModule(true);
               }}
+              disabled={!canEdit}
             />
             <Label htmlFor="isExterior" className="text-sm">
               Exterior
@@ -107,6 +110,7 @@ export function OrientationCard({
                 setIsBright(checked as boolean);
                 onUpdateModule(true);
               }}
+              disabled={!canEdit}
             />
             <Label htmlFor="isBright" className="text-sm">
               Luminoso
@@ -124,6 +128,7 @@ export function OrientationCard({
                 setOrientation(value);
                 onUpdateModule(true);
               }}
+              disabled={!canEdit}
             >
               <SelectTrigger className="h-8 text-gray-500">
                 <SelectValue placeholder="Seleccionar orientación" />

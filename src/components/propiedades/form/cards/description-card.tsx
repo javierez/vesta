@@ -33,6 +33,7 @@ interface DescriptionCardProps {
   signature: string;
   isSignatureDialogOpen: boolean;
   saveState: SaveState;
+  canEdit?: boolean;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   onGenerateDescription: () => Promise<void>;
@@ -52,6 +53,7 @@ export function DescriptionCard({
   signature,
   isSignatureDialogOpen,
   saveState,
+  canEdit = true,
   onSave,
   onUpdateModule,
   onGenerateDescription,
@@ -159,11 +161,12 @@ export function DescriptionCard({
                     setShortDescription(e.target.value);
                     onUpdateModule(true);
                   }}
+                  disabled={!canEdit}
                 />
                 <button
                   type="button"
                   onClick={onGenerateShortDescription}
-                  disabled={isGeneratingShort}
+                  disabled={!canEdit || isGeneratingShort}
                   className="absolute bottom-2 right-2 h-8 bg-gray-200 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 transition-all duration-300 px-2 text-xs font-medium text-gray-600 hover:text-white rounded shadow-sm hover:shadow-md disabled:opacity-50 flex items-center"
                 >
                   {isGeneratingShort ? (
@@ -197,11 +200,12 @@ export function DescriptionCard({
                     setDescription(e.target.value);
                     onUpdateModule(true);
                   }}
+                  disabled={!canEdit}
                 />
                 <button
                   type="button"
                   onClick={onGenerateDescription}
-                  disabled={isGenerating}
+                  disabled={!canEdit || isGenerating}
                   className="absolute bottom-2 right-2 h-8 bg-gray-200 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 transition-all duration-300 px-2 text-xs font-medium text-gray-600 hover:text-white rounded shadow-sm hover:shadow-md disabled:opacity-50 flex items-center"
                 >
                   {isGenerating ? (
@@ -233,6 +237,7 @@ export function DescriptionCard({
               value={signature}
               onChange={handleSignatureChange}
               className="min-h-[100px] resize-y"
+              disabled={!canEdit}
             />
           </div>
           <DialogFooter>
@@ -256,6 +261,7 @@ export function DescriptionCard({
                 }
                 setIsSignatureDialogOpen(false);
               }}
+              disabled={!canEdit}
             >
               Añadir
             </Button>

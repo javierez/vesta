@@ -35,6 +35,7 @@ interface ContactInfoCardProps {
   agents: Agent[];
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
+  canEdit?: boolean;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -54,6 +55,7 @@ export const ContactInfoCard = React.forwardRef<HTMLDivElement, ContactInfoCardP
     agents,
     collapsedSections,
     saveState,
+    canEdit = true,
     onToggleSection,
     onSave,
     onUpdateModule,
@@ -112,6 +114,7 @@ export const ContactInfoCard = React.forwardRef<HTMLDivElement, ContactInfoCardP
                   onUpdateModule(true);
                 }
               }}
+              disabled={!canEdit}
             >
               <SelectTrigger className="h-8 flex-1 text-gray-500">
                 <SelectValue placeholder="Añadir propietario" />
@@ -162,6 +165,7 @@ export const ContactInfoCard = React.forwardRef<HTMLDivElement, ContactInfoCardP
                         );
                         onUpdateModule(true);
                       }}
+                      disabled={!canEdit}
                     >
                       ×
                     </Button>
@@ -182,6 +186,7 @@ export const ContactInfoCard = React.forwardRef<HTMLDivElement, ContactInfoCardP
                 setSelectedAgentId(value);
                 onUpdateModule(true);
               }}
+              disabled={!canEdit}
             >
               <SelectTrigger className="h-8 flex-1 text-gray-500">
                 <SelectValue placeholder="Seleccionar agente" />

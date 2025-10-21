@@ -97,11 +97,11 @@ export function Propiedades({
         {/* First prospect display */}
         {renderProspect(prospectTitles[0]!, 0)}
 
-        {/* Toggle button for additional prospects */}
+        {/* Toggle button for additional prospects - inline */}
         {!isProspectsExpanded && prospectTitles.length > 1 && (
-          <div
+          <button
             className={cn(
-              "my-1 flex cursor-pointer items-center justify-center rounded-md p-1 text-xs transition-all duration-200",
+              "ml-2 inline-flex cursor-pointer items-center rounded p-0.5 text-xs transition-colors",
               isActive
                 ? "text-muted-foreground hover:bg-gray-100"
                 : "text-gray-400 hover:bg-gray-200",
@@ -111,8 +111,8 @@ export function Propiedades({
               setIsProspectsExpanded(!isProspectsExpanded);
             }}
           >
-            <ChevronDown className="mr-1 h-3 w-3" />
-          </div>
+            <ChevronDown className="h-3 w-3" />
+          </button>
         )}
 
         {/* Expanded prospects container */}
@@ -127,9 +127,9 @@ export function Propiedades({
             </div>
 
             {/* Toggle button at the bottom when expanded */}
-            <div
+            <button
               className={cn(
-                "my-1 flex cursor-pointer items-center justify-center rounded-md p-1 text-xs transition-all duration-200",
+                "ml-2 inline-flex cursor-pointer items-center rounded p-0.5 text-xs transition-colors",
                 isActive
                   ? "text-muted-foreground hover:bg-gray-100"
                   : "text-gray-400 hover:bg-gray-200",
@@ -139,8 +139,8 @@ export function Propiedades({
                 setIsProspectsExpanded(!isProspectsExpanded);
               }}
             >
-              <ChevronUp className="mr-1 h-3 w-3" />
-            </div>
+              <ChevronUp className="h-3 w-3" />
+            </button>
           </>
         )}
       </div>
@@ -163,7 +163,7 @@ export function Propiedades({
       return (
         <div
           className={cn(
-            "mx-2 my-0.5 cursor-pointer rounded-xl p-2 transition-all duration-200 hover:shadow-md active:scale-[0.98]",
+            "mx-2 my-0.5 cursor-pointer rounded-lg p-1.5 transition-all duration-200 hover:shadow-md active:scale-[0.98]",
             isDraft
               ? "border border-dashed border-orange-300 bg-orange-50/50 opacity-75"
               : isActive
@@ -178,7 +178,7 @@ export function Propiedades({
             router.push(targetRoute);
           }}
         >
-          <div className="-m-2 space-y-1 p-2">
+          <div className="space-y-0.5">
             {(listing.street ?? listing.city) && (
               <div
                 className={cn(
@@ -271,7 +271,7 @@ export function Propiedades({
     shouldShowProspects && hasProspects ? prospectTitles : [];
 
   return (
-    <div className="my-0.5 space-y-1">
+    <div className="relative my-0.5 space-y-1">
       {/* First listing display */}
       {firstListing &&
         (() => {
@@ -279,7 +279,7 @@ export function Propiedades({
           return (
             <div
               className={cn(
-                "mx-2 my-0.5 cursor-pointer rounded-xl p-2 transition-all duration-200 hover:shadow-md active:scale-[0.98]",
+                "mx-2 my-0.5 cursor-pointer rounded-lg p-1.5 transition-all duration-200 hover:shadow-md active:scale-[0.98]",
                 isDraft
                   ? "border border-dashed border-orange-300 bg-orange-50/50 opacity-75"
                   : isActive
@@ -294,7 +294,7 @@ export function Propiedades({
                 router.push(targetRoute);
               }}
             >
-              <div className="-m-2 space-y-1 p-2">
+              <div className="space-y-0.5">
                 {(firstListing.street ?? firstListing.city) && (
                   <div
                     className={cn(
@@ -389,22 +389,22 @@ export function Propiedades({
           );
         })()}
 
-      {/* Toggle button for additional items (listings + prospects) */}
+      {/* Toggle button for additional items - positioned at bottom right of first item */}
       {!isExpanded && totalItems > 1 && (
-        <div
+        <button
           className={cn(
-            "flex cursor-pointer items-center justify-center rounded-md p-1 text-xs transition-all duration-200",
+            "absolute bottom-1 right-3 inline-flex cursor-pointer items-center rounded-full p-0.5 shadow-sm transition-all hover:shadow-md",
             isActive
-              ? "text-muted-foreground hover:bg-gray-100"
-              : "text-gray-400 hover:bg-gray-200",
+              ? "bg-gray-50 text-gray-600 hover:bg-gray-100"
+              : "bg-gray-200 text-gray-500 hover:bg-gray-300",
           )}
           onClick={(e) => {
             e.stopPropagation();
             setIsExpanded(!isExpanded);
           }}
         >
-          <ChevronDown className="mr-1 h-3 w-3" />
-        </div>
+          <ChevronDown className="h-3 w-3" />
+        </button>
       )}
 
       {/* Expanded container with remaining listings + all prospects */}
@@ -419,7 +419,7 @@ export function Propiedades({
                   <div
                     key={listing.listingId.toString()}
                     className={cn(
-                      "mx-2 my-0.5 cursor-pointer rounded-xl p-2 transition-all duration-200 hover:shadow-md active:scale-[0.98]",
+                      "mx-2 my-0.5 cursor-pointer rounded-lg p-1.5 transition-all duration-200 hover:shadow-md active:scale-[0.98]",
                       isDraft
                         ? "border border-dashed border-orange-300 bg-orange-50/50 opacity-75"
                         : isActive
@@ -434,7 +434,7 @@ export function Propiedades({
                       router.push(targetRoute);
                     }}
                   >
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       {(listing.street ?? listing.city) && (
                         <div
                           className={cn(
@@ -536,9 +536,9 @@ export function Propiedades({
           </div>
 
           {/* Toggle button at the bottom when expanded */}
-          <div
+          <button
             className={cn(
-              "flex cursor-pointer items-center justify-center rounded-md p-1 text-xs transition-all duration-200",
+              "ml-2 inline-flex cursor-pointer items-center rounded p-0.5 text-xs transition-colors",
               isActive
                 ? "text-muted-foreground hover:bg-gray-100"
                 : "text-gray-400 hover:bg-gray-200",
@@ -548,8 +548,8 @@ export function Propiedades({
               setIsExpanded(!isExpanded);
             }}
           >
-            <ChevronUp className="mr-1 h-3 w-3" />
-          </div>
+            <ChevronUp className="h-3 w-3" />
+          </button>
         </>
       )}
     </div>

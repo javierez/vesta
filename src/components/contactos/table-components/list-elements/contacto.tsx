@@ -44,9 +44,9 @@ export function Contacto({ email, phone, isActive, contactId }: ContactoProps) {
   }
 
   return (
-    <div className="space-y-1">
-      <div className="rounded-md p-2">
-        <div className="space-y-1">
+    <div className="space-y-0.5">
+      <div className="rounded-md p-1">
+        <div className="space-y-0.5">
           {email && (
             <div className="group flex items-center text-sm">
               <div className="mr-2 flex items-center">

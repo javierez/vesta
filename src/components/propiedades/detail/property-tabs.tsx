@@ -213,6 +213,7 @@ export function PropertyTabs({
     try {
       await updateListingTaskWithAuth(Number(task.taskId), {
         completed: newCompleted,
+        completedBy: newCompleted ? session?.user?.id : null,
       });
     } catch (error) {
       console.error("Error updating task:", error);

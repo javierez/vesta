@@ -1,6 +1,10 @@
 import NodeCache from "node-cache";
-import { getUserRolesFromDB, getPermissionsForRoles, auth } from "~/lib/auth";
-import type { Permission } from "~/lib/permissions";
+import {
+  getUserRolesFromDB,
+  auth,
+  type PermissionsObject,
+  type UserRolesAndPermissions,
+} from "~/lib/auth";
 import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 
 /**
@@ -140,38 +144,44 @@ export class AuthMetrics {
 }
 
 /**
- * Get cached user roles with fallback to database
+ * Get cached user roles and permissions with fallback to database
  */
 export async function getCachedUserRoles(
   userId: string,
-  accountId: number
-): Promise<string[]> {
+  accountId: number,
+): Promise<UserRolesAndPermissions> {
   const cacheKey = `user_roles:${userId}:${accountId}`;
 
   try {
     // Check cache first
-    const cached = rolesCache.get<string[]>(cacheKey);
+    const cached = rolesCache.get<UserRolesAndPermissions>(cacheKey);
     if (cached) {
       AuthMetrics.recordRolesCacheHit();
-      console.log(`🎯 Cache HIT for user roles: ${userId} (account: ${accountId})`);
+      console.log(`🎯 Cache HIT - Roles: [${cached.roles.join(", ")}]`);
       return cached;
     }
 
     // Cache miss - fetch from database
     AuthMetrics.recordRolesCacheMiss();
     AuthMetrics.recordDbQuery();
-    console.log(`💾 Cache MISS for user roles: ${userId} (account: ${accountId}) - fetching from DB`);
-    
-    const roles = await getUserRolesFromDB(userId, accountId);
+    console.log(`💾 Cache MISS - Fetching from database...`);
 
-    // Cache for 15 minutes
-    rolesCache.set(cacheKey, roles, ROLES_CACHE_TTL);
-    
-    console.log(`✅ Cached user roles for ${userId}: [${roles.join(", ")}]`);
-    return roles;
+    const rolesAndPermissions = await getUserRolesFromDB(userId, accountId);
+
+    // Cache for 4 hours
+    rolesCache.set(cacheKey, rolesAndPermissions, ROLES_CACHE_TTL);
+
+    console.log(`✅ Cached - Roles: [${rolesAndPermissions.roles.join(", ")}] (TTL: 4h)`);
+    return rolesAndPermissions;
   } catch (error) {
-    console.error(`❌ Error fetching user roles for ${userId}:`, error);
-    return [];
+    console.error(
+      `❌ Error fetching user roles & permissions for ${userId}:`,
+      error,
+    );
+    return {
+      roles: [],
+      permissions: {},
+    };
   }
 }
 
@@ -244,23 +254,14 @@ export async function getCachedSession(
 
 
 /**
- * Cache user permissions (implementation ready for future use)
- * Currently not used as permissions system is not active yet
+ * Get cached user permissions from roles+permissions cache
  */
 export async function getCachedUserPermissions(
   userId: string,
-  accountId: number
-): Promise<Permission[]> {
-  console.log(`ℹ️  Permission caching not implemented yet - permissions system not in use`);
-  
-  // For future implementation:
-  // const cacheKey = `user_permissions:${userId}:${accountId}`;
-  // const cached = permissionsCache.get<Permission[]>(cacheKey);
-  // if (cached) return cached;
-  
-  // For now, calculate on-demand without caching
-  const roles = await getCachedUserRoles(userId, accountId);
-  return getPermissionsForRoles(roles);
+  accountId: number,
+): Promise<PermissionsObject> {
+  const rolesAndPermissions = await getCachedUserRoles(userId, accountId);
+  return rolesAndPermissions.permissions;
 }
 
 /**

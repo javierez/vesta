@@ -28,6 +28,7 @@ interface LocationCardProps {
   municipality: string;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
+  canEdit?: boolean;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -46,6 +47,7 @@ export function LocationCard({
   municipality,
   collapsedSections,
   saveState,
+  canEdit = true,
   onToggleSection,
   onSave,
   onUpdateModule,
@@ -651,6 +653,7 @@ export function LocationCard({
               }}
               onLocationSelected={handleLocationSelected}
               placeholder="Buscar dirección..."
+              disabled={!canEdit}
             />
             {getFieldDiscrepancy('street') && (
               <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -673,8 +676,9 @@ export function LocationCard({
               </span>
               <button
                 type="button"
-                className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors"
+                className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => applyFieldSuggestion('street', getFieldDiscrepancy('street')!.suggested)}
+                disabled={!canEdit}
               >
                 Aplicar
               </button>
@@ -691,6 +695,7 @@ export function LocationCard({
             className="h-8 text-gray-500"
             placeholder="Piso, puerta, escalera, etc."
             onChange={() => onUpdateModule(true)}
+            disabled={!canEdit}
           />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -707,6 +712,7 @@ export function LocationCard({
                   getFieldDiscrepancy('postalCode') && "border-amber-500 focus:border-amber-500 pr-8"
                 )}
                 onChange={() => onUpdateModule(true)}
+                disabled={!canEdit}
               />
               {getFieldDiscrepancy('postalCode') && (
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -722,8 +728,9 @@ export function LocationCard({
                 </span>
                 <button
                   type="button"
-                  className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors"
+                  className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => applyFieldSuggestion('postalCode', getFieldDiscrepancy('postalCode')!.suggested)}
+                  disabled={!canEdit}
                 >
                   Aplicar
                 </button>
@@ -743,11 +750,12 @@ export function LocationCard({
                   onUpdateModule(true);
                 }}
                 className="h-8 text-gray-500 pr-10"
+                disabled={!canEdit}
               />
               <button
                 type="button"
                 onClick={autoCompleteAddress}
-                disabled={isUpdatingAddress}
+                disabled={!canEdit || isUpdatingAddress}
                 className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isUpdatingAddress ? (
@@ -776,6 +784,7 @@ export function LocationCard({
                   "h-8 text-gray-500",
                   getFieldDiscrepancy('city') && "border-amber-500 focus:border-amber-500 pr-8"
                 )}
+                disabled={!canEdit}
               />
               {getFieldDiscrepancy('city') && (
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -791,8 +800,9 @@ export function LocationCard({
                 </span>
                 <button
                   type="button"
-                  className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors"
+                  className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => applyFieldSuggestion('city', getFieldDiscrepancy('city')!.suggested)}
+                  disabled={!canEdit}
                 >
                   Aplicar
                 </button>
@@ -811,6 +821,7 @@ export function LocationCard({
                 onUpdateModule(true);
               }}
               className="h-8 text-gray-500"
+              disabled={!canEdit}
             />
           </div>
         </div>
@@ -830,6 +841,7 @@ export function LocationCard({
                 "h-8 text-gray-500",
                 getFieldDiscrepancy('province') && "border-amber-500 focus:border-amber-500 pr-8"
               )}
+              disabled={!canEdit}
             />
             {getFieldDiscrepancy('province') && (
               <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -845,8 +857,9 @@ export function LocationCard({
               </span>
               <button
                 type="button"
-                className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors"
+                className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => applyFieldSuggestion('province', getFieldDiscrepancy('province')!.suggested)}
+                disabled={!canEdit}
               >
                 Aplicar
               </button>
@@ -881,6 +894,7 @@ export function LocationCard({
                   setCadastralValidationStatus('none');
                 }
               }}
+              disabled={!canEdit}
             />
 
             {/* Loading spinner centered in input */}
@@ -903,7 +917,7 @@ export function LocationCard({
               <button
                 type="button"
                 onClick={searchCadastralReferences}
-                disabled={isSearching}
+                disabled={!canEdit || isSearching}
                 className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Buscar referencias catastrales por coordenadas"
               >
@@ -918,7 +932,7 @@ export function LocationCard({
               <button
                 type="button"
                 onClick={handleCadastralLookup}
-                disabled={isCadastralLoading}
+                disabled={!canEdit || isCadastralLoading}
                 className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Conectar con Catastro"
               >
