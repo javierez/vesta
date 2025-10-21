@@ -84,10 +84,22 @@ function CommentItem({
     <div className={`${isReply ? "ml-12 pl-4" : ""}`}>
       <div className="flex space-x-3">
         <Avatar className={`${isReply ? "h-8 w-8" : "h-10 w-10"}`}>
-          <AvatarImage src={comment.user.image ?? undefined} />
-          <AvatarFallback className={`${isReply ? "text-xs" : "text-sm"}`}>
-            {comment.user.initials}
-          </AvatarFallback>
+          {Number(comment.userId) === 0 ? (
+            <div className="flex h-full w-full items-center justify-center bg-gray-100">
+              <img
+                src="/favicon.ico"
+                alt="Vesta"
+                className={`${isReply ? "h-6 w-6" : "h-8 w-8"} object-contain`}
+              />
+            </div>
+          ) : (
+            <>
+              <AvatarImage src={comment.user?.image ?? undefined} />
+              <AvatarFallback className={`${isReply ? "text-xs" : "text-sm"}`}>
+                {comment.user?.initials ?? "?"}
+              </AvatarFallback>
+            </>
+          )}
         </Avatar>
 
         <div className="min-w-0 flex-1">
@@ -151,7 +163,7 @@ function CommentItem({
               <span
                 className={`font-semibold ${isReply ? "text-xs" : "text-sm"}`}
               >
-                {comment.user.name}
+                {Number(comment.userId) === 0 ? "Sistema" : comment.user?.name ?? "Usuario"}
               </span>
               
               {/* Status indicator */}
@@ -207,7 +219,7 @@ function CommentItem({
             <div className="mt-3 flex space-x-3">
               <div className="flex-1">
                 <Textarea
-                  placeholder={`Responder a ${comment.user.name}...`}
+                  placeholder={`Responder a ${Number(comment.userId) === 0 ? "Sistema" : comment.user?.name ?? "Usuario"}...`}
                   value={replyContents[comment.commentId.toString()] ?? ""}
                   onChange={(e) =>
                     setReplyContents((prev) => ({

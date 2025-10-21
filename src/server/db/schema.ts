@@ -691,6 +691,7 @@ export const comments = singlestoreTable("comments", {
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(), // FK → properties.property_id
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
   content: text("content").notNull(),
+  category: varchar("category", { length: 100 }), // Comment category/type
   parentId: bigint("parent_id", { mode: "bigint" }), // Self-reference for replies
   isDeleted: boolean("is_deleted").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),

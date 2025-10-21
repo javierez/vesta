@@ -49,16 +49,16 @@ export async function getCommentsByPropertyId(
         createdAt: comments.createdAt,
         updatedAt: comments.updatedAt,
         user: {
-          id: users.id,
-          name: users.name,
+          id: sql<string>`COALESCE(${users.id}, '0')`,
+          name: sql<string>`COALESCE(${users.name}, 'Sistema')`,
           firstName: users.firstName,
           lastName: users.lastName,
           image: users.image,
-          initials: sql<string>`CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1))`,
+          initials: sql<string>`COALESCE(CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1)), 'SI')`,
         },
       })
       .from(comments)
-      .innerJoin(users, eq(comments.userId, users.id))
+      .leftJoin(users, eq(comments.userId, users.id))
       .innerJoin(listings, eq(comments.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -106,16 +106,16 @@ export async function getCommentsByListingId(
         createdAt: comments.createdAt,
         updatedAt: comments.updatedAt,
         user: {
-          id: users.id,
-          name: users.name,
+          id: sql<string>`COALESCE(${users.id}, '0')`,
+          name: sql<string>`COALESCE(${users.name}, 'Sistema')`,
           firstName: users.firstName,
           lastName: users.lastName,
           image: users.image,
-          initials: sql<string>`CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1))`,
+          initials: sql<string>`COALESCE(CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1)), 'SI')`,
         },
       })
       .from(comments)
-      .innerJoin(users, eq(comments.userId, users.id))
+      .leftJoin(users, eq(comments.userId, users.id))
       .innerJoin(listings, eq(comments.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -162,16 +162,16 @@ export async function getCommentById(
         createdAt: comments.createdAt,
         updatedAt: comments.updatedAt,
         user: {
-          id: users.id,
-          name: users.name,
+          id: sql<string>`COALESCE(${users.id}, '0')`,
+          name: sql<string>`COALESCE(${users.name}, 'Sistema')`,
           firstName: users.firstName,
           lastName: users.lastName,
           image: users.image,
-          initials: sql<string>`CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1))`,
+          initials: sql<string>`COALESCE(CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1)), 'SI')`,
         },
       })
       .from(comments)
-      .innerJoin(users, eq(comments.userId, users.id))
+      .leftJoin(users, eq(comments.userId, users.id))
       .innerJoin(listings, eq(comments.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -218,16 +218,16 @@ export async function getCommentReplies(
         createdAt: comments.createdAt,
         updatedAt: comments.updatedAt,
         user: {
-          id: users.id,
-          name: users.name,
+          id: sql<string>`COALESCE(${users.id}, '0')`,
+          name: sql<string>`COALESCE(${users.name}, 'Sistema')`,
           firstName: users.firstName,
           lastName: users.lastName,
           image: users.image,
-          initials: sql<string>`CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1))`,
+          initials: sql<string>`COALESCE(CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1)), 'SI')`,
         },
       })
       .from(comments)
-      .innerJoin(users, eq(comments.userId, users.id))
+      .leftJoin(users, eq(comments.userId, users.id))
       .innerJoin(listings, eq(comments.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(

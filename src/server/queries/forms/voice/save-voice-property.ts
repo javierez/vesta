@@ -5,7 +5,7 @@ import { createProperty } from "~/server/queries/properties";
 import { createDefaultListing } from "~/server/queries/listing";
 import { getCurrentUser } from "~/lib/dal";
 import { generatePropertyTitle } from "~/lib/property-title";
-import { createPropertyTasksAsync } from "~/server/actions/property-tasks";
+import { createPropertyTasksAsync, createKeysCommentAsync } from "~/server/actions/property-tasks";
 
 export interface SaveVoicePropertyResult {
   success: boolean;
@@ -180,6 +180,12 @@ export async function saveVoiceProperty(
         userId: currentUser.id,
         listingId: BigInt(newListing.listingId),
       });
+
+      // Create keys comment asynchronously (don't wait for completion)
+      await createKeysCommentAsync(
+        BigInt(newListing.listingId),
+        BigInt(newProperty.propertyId),
+      );
     }
 
     console.log("=== VOICE PROPERTY CREATION COMPLETED ===");
