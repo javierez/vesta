@@ -42,3 +42,29 @@ export async function canEditProperties(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Check if user can edit all tasks
+ */
+export async function canEditAllTasks(): Promise<boolean> {
+  try {
+    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    return Boolean(permissions.tasks?.editAll);
+  } catch (error) {
+    console.error("❌ Error checking edit all tasks permission:", error);
+    return false;
+  }
+}
+
+/**
+ * Check if user can delete all tasks
+ */
+export async function canDeleteAllTasks(): Promise<boolean> {
+  try {
+    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    return Boolean(permissions.tasks?.deleteAll);
+  } catch (error) {
+    console.error("❌ Error checking delete all tasks permission:", error);
+    return false;
+  }
+}

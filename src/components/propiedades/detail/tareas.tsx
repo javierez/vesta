@@ -4,10 +4,11 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Card, CardContent } from "~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
-import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp, Edit } from "lucide-react";
+import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Calendar, ChevronDown, ChevronUp, Edit, Filter, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { TareasSkeleton } from "~/components/ui/skeletons";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
@@ -16,6 +17,7 @@ import { getLeadByListingAndContactWithAuth, ensureLeadExistsWithAuth } from "~/
 import { getDealByListingAndContactWithAuth } from "~/server/queries/deal";
 import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
 import { useSession } from "~/lib/auth-client";
+import { canEditAllTasks, canDeleteAllTasks } from "~/app/actions/permissions/check-permissions";
 
 interface Task {
   taskId?: bigint;
@@ -119,6 +121,12 @@ export function Tareas({
   const [agents, setAgents] = useState<{ id: string; name: string; firstName?: string; lastName?: string; }[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [loadingAgents, setLoadingAgents] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'contact' | 'property'>('all');
+
+  // Permission states
+  const [hasEditAllPermission, setHasEditAllPermission] = useState<boolean>(false);
+  const [hasDeleteAllPermission, setHasDeleteAllPermission] = useState<boolean>(false);
 
 
 
@@ -179,11 +187,31 @@ export function Tareas({
     }
   }, [isAdding, session?.user?.id, newTask.agentId]);
 
+  // Fetch user permissions on component mount
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const [editAllPerm, deleteAllPerm] = await Promise.all([
+          canEditAllTasks(),
+          canDeleteAllTasks(),
+        ]);
+        setHasEditAllPermission(editAllPerm);
+        setHasDeleteAllPermission(deleteAllPerm);
+      } catch (error) {
+        console.error('Error fetching task permissions:', error);
+        setHasEditAllPermission(false);
+        setHasDeleteAllPermission(false);
+      }
+    };
+
+    void fetchPermissions();
+  }, []); // Run once on mount
+
 
   // Auto-save draft functionality
   useEffect(() => {
     const draftKey = `task-draft-${listingId}`;
-    
+
     // Save draft to localStorage when form data changes
     if (newTask.title || newTask.description) {
       localStorage.setItem(draftKey, JSON.stringify(newTask));
@@ -207,6 +235,17 @@ export function Tareas({
       }
     }
   }, [listingId]);
+
+  // Permission helper functions
+  const canUserEditTask = (task: Task): boolean => {
+    // User can edit if they created the task OR have editAll permission
+    return task.createdBy === session?.user?.id || hasEditAllPermission;
+  };
+
+  const canUserDeleteTask = (task: Task): boolean => {
+    // User can delete if they created the task OR have deleteAll permission
+    return task.createdBy === session?.user?.id || hasDeleteAllPermission;
+  };
 
   const handleAddTask = async () => {
     if (!newTask.title.trim() || !newTask.description.trim()) return;
@@ -667,220 +706,249 @@ export function Tareas({
     return <TareasSkeleton />;
   }
 
-  return (
-    <div className="space-y-4 md:space-y-6">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg sm:text-xl font-semibold">Tareas</h3>
-        <div className="flex items-center gap-3">
-          <Button onClick={() => {
-            setEditingTask(null);
-            setIsAdding(true);
-          }} className="flex items-center gap-2 h-8 text-sm">
-            <Plus className="h-4 w-4" />
-            Nueva Tarea
-          </Button>
-          {(newTask.title || newTask.description) && !isAdding && (
-            <div className="flex items-center gap-2 px-3 py-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-md w-fit">
-              <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-              Borrador guardado
-            </div>
-          )}
+  // Task form component (reusable for both new and edit)
+  const taskForm = isAdding ? (
+    <Card className="w-full">
+      <CardContent className="space-y-4 pt-4 md:pt-6 px-4 md:px-6" onKeyDown={(e) => {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault();
+          if (editingTask) {
+            void handleUpdateTask();
+          } else {
+            void handleAddTask();
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          setIsAdding(false);
+          setEditingTask(null);
+          setSaveError(null);
+        }
+      }}>
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-gray-700">
+            {editingTask ? 'Editando tarea' : 'Nueva tarea'}
+          </Label>
+          <Input
+            placeholder="Título de la tarea"
+            value={newTask.title}
+            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+          />
         </div>
-      </div>
+        <div className="relative">
+          <Textarea
+            placeholder="Descripción de la tarea"
+            value={newTask.description}
+            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+            className="min-h-[80px] pr-10 text-sm"
+          />
+          <button
+            type="button"
+            className="absolute right-2 top-2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+            title="Próximamente: Grabación de voz"
+          >
+            <Mic className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="agent-select">Asignar a</Label>
+          <Select
+            value={newTask.agentId}
+            onValueChange={(value) => setNewTask({ ...newTask, agentId: value })}
+            disabled={externalLoading ?? loadingAgents}
+          >
+            <SelectTrigger className="h-8 text-gray-500">
+              <SelectValue placeholder={
+                (externalLoading || loadingAgents) ? "Cargando agentes..." :
+                agents.length === 0 ? "No hay agentes" : "Seleccionar agente"
+              } />
+            </SelectTrigger>
+            <SelectContent>
+              {agents.map((agent) => (
+                <SelectItem key={agent.id} value={agent.id}>
+                  {agent.name ?? (`${agent.firstName ?? ''} ${agent.lastName ?? ''}`.trim() || agent.id)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      {isAdding && (
-        <Card className="w-full">
-          <CardContent className="space-y-4 pt-4 md:pt-6 px-4 md:px-6" onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              if (editingTask) {
-                void handleUpdateTask();
-              } else {
-                void handleAddTask();
-              }
-            } else if (e.key === 'Escape') {
-              e.preventDefault();
-              setIsAdding(false);
-              setEditingTask(null);
-              setSaveError(null);
-            }
-          }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="contact-select">Contacto</Label>
+            <Select
+              value={newTask.contactId}
+              onValueChange={(value) => setNewTask({ ...newTask, contactId: value })}
+              disabled={externalLoading ?? loadingContacts}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder={
+                  (externalLoading || loadingContacts) ? "Cargando contactos..." :
+                  contacts.length === 0 ? "No hay contactos" : "Seleccionar contacto"
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                <div className="flex items-center px-3 pb-2">
+                  <Input
+                    className="h-9"
+                    placeholder="Buscar contacto..."
+                    value={contactSearch}
+                    onChange={(e) => setContactSearch(e.target.value)}
+                  />
+                </div>
+                <Separator className="mb-2" />
+                {filteredContacts.map((contact) => (
+                  <SelectItem key={contact.id.toString()} value={contact.id.toString()}>
+                    {contact.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="due-date">Fecha límite</Label>
+            <Input
+              id="due-date"
+              type="date"
+              value={newTask.dueDate}
+              onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+              className="h-8 text-gray-500"
+            />
+          </div>
+        </div>
+
+        {/* Toggle for advanced options */}
+        <button
+          type="button"
+          onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+          className="text-xs text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-1"
+        >
+          {showAdvancedOptions ? (
+            <>
+              <ChevronUp className="h-3 w-3" />
+              <span>Ocultar opciones</span>
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3 w-3" />
+              <span>Más opciones</span>
+            </>
+          )}
+        </button>
+
+        {showAdvancedOptions && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">
-                {editingTask ? 'Editando tarea' : 'Nueva tarea'}
-              </Label>
-              <Input
-                placeholder="Título de la tarea"
-                value={newTask.title}
-                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-              />
-            </div>
-            <div className="relative">
-              <Textarea
-                placeholder="Descripción de la tarea"
-                value={newTask.description}
-                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                className="min-h-[80px] pr-10"
-              />
-              <button
-                type="button"
-                className="absolute right-2 top-2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                title="Próximamente: Grabación de voz"
-              >
-                <Mic className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="agent-select">Asignar a</Label>
+              <Label htmlFor="appointment-select">Cita relacionada</Label>
               <Select
-                value={newTask.agentId}
-                onValueChange={(value) => setNewTask({ ...newTask, agentId: value })}
-                disabled={externalLoading ?? loadingAgents}
+                value={newTask.appointmentId}
+                onValueChange={(value) => setNewTask({ ...newTask, appointmentId: value })}
+                disabled={externalLoading}
               >
                 <SelectTrigger className="h-8 text-gray-500">
                   <SelectValue placeholder={
-                    (externalLoading || loadingAgents) ? "Cargando agentes..." :
-                    agents.length === 0 ? "No hay agentes" : "Seleccionar agente"
+                    externalLoading ? "Cargando citas..." :
+                    appointments.length === 0 ? "No hay citas" : "Seleccionar cita"
                   } />
                 </SelectTrigger>
                 <SelectContent>
-                  {agents.map((agent) => (
-                    <SelectItem key={agent.id} value={agent.id}>
-                      {agent.name ?? (`${agent.firstName ?? ''} ${agent.lastName ?? ''}`.trim() || agent.id)}
+                  {appointments.map((appointment) => (
+                    <SelectItem key={appointment.appointmentId.toString()} value={appointment.appointmentId.toString()}>
+                      {appointment.contact.firstName} {appointment.contact.lastName} - {appointment.type} ({appointment.datetimeStart.toLocaleDateString()})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="contact-select">Contacto</Label>
-                <Select
-                  value={newTask.contactId}
-                  onValueChange={(value) => setNewTask({ ...newTask, contactId: value })}
-                  disabled={externalLoading ?? loadingContacts}
-                >
-                  <SelectTrigger className="h-8 text-gray-500">
-                    <SelectValue placeholder={
-                      (externalLoading || loadingContacts) ? "Cargando contactos..." :
-                      contacts.length === 0 ? "No hay contactos" : "Seleccionar contacto"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="flex items-center px-3 pb-2">
-                      <Input
-                        className="h-9"
-                        placeholder="Buscar contacto..."
-                        value={contactSearch}
-                        onChange={(e) => setContactSearch(e.target.value)}
-                      />
-                    </div>
-                    <Separator className="mb-2" />
-                    {filteredContacts.map((contact) => (
-                      <SelectItem key={contact.id.toString()} value={contact.id.toString()}>
-                        {contact.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="appointment-select">Cita relacionada</Label>
-                <Select
-                  value={newTask.appointmentId}
-                  onValueChange={(value) => setNewTask({ ...newTask, appointmentId: value })}
-                  disabled={externalLoading}
-                >
-                  <SelectTrigger className="h-8 text-gray-500">
-                    <SelectValue placeholder={
-                      externalLoading ? "Cargando citas..." : 
-                      appointments.length === 0 ? "No hay citas" : "Seleccionar cita"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {appointments.map((appointment) => (
-                      <SelectItem key={appointment.appointmentId.toString()} value={appointment.appointmentId.toString()}>
-                        {appointment.contact.firstName} {appointment.contact.lastName} - {appointment.type} ({appointment.datetimeStart.toLocaleDateString()})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="due-time">Hora límite</Label>
+              <Input
+                id="due-time"
+                type="time"
+                value={newTask.dueTime}
+                onChange={(e) => setNewTask({ ...newTask, dueTime: e.target.value })}
+                className="h-8 text-gray-500"
+              />
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="due-date">Fecha límite</Label>
-                <Input
-                  id="due-date"
-                  type="date"
-                  value={newTask.dueDate}
-                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-                  className="h-8 text-gray-500"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="due-time">Hora límite</Label>
-                <Input
-                  id="due-time"
-                  type="time"
-                  value={newTask.dueTime}
-                  onChange={(e) => setNewTask({ ...newTask, dueTime: e.target.value })}
-                  className="h-8 text-gray-500"
-                />
-              </div>
-            </div>
-            {saveError && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                <span className="text-sm text-red-700">{saveError}</span>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => setSaveError(null)}
-                  className="ml-auto h-6"
-                >
-                  Dismiss
-                </Button>
-              </div>
-            )}
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-gray-500 hidden sm:block">
-                <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border rounded">Cmd+Enter</kbd> para guardar, <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border rounded">Esc</kbd> para cancelar
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Button 
-                  onClick={editingTask ? handleUpdateTask : handleAddTask} 
-                  disabled={isSaving || !newTask.title.trim() || !newTask.description.trim()}
-                  className="flex items-center gap-2 w-full sm:w-auto"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {editingTask ? 'Actualizando...' : 'Guardando...'}
-                    </>
-                  ) : (
-                    editingTask ? 'Actualizar' : 'Guardar'
-                  )}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsAdding(false);
-                    setEditingTask(null);
-                    setSaveError(null);
-                  }}
-                  disabled={isSaving}
-                  className="w-full sm:w-auto"
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+        {saveError && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <span className="text-sm text-red-700">{saveError}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSaveError(null)}
+              className="ml-auto h-6"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-gray-500 hidden sm:block">
+            <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border rounded">Cmd+Enter</kbd> para guardar, <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border rounded">Esc</kbd> para cancelar
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button
+              onClick={editingTask ? handleUpdateTask : handleAddTask}
+              disabled={isSaving || !newTask.title.trim() || !newTask.description.trim()}
+              className="flex items-center gap-2 w-full sm:w-auto"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {editingTask ? 'Actualizando...' : 'Guardando...'}
+                </>
+              ) : (
+                editingTask ? 'Actualizar' : 'Guardar'
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAdding(false);
+                setEditingTask(null);
+                setSaveError(null);
+              }}
+              disabled={isSaving}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  ) : null;
+
+  return (
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg sm:text-xl font-semibold">Tareas</h3>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => {
+              setEditingTask(null);
+              setIsAdding(true);
+            }}
+            variant="outline"
+            className="flex items-center gap-2 h-8 text-sm shadow"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva Tarea
+          </Button>
+          {(newTask.title || newTask.description) && !isAdding && (
+            <div
+              className="w-3 h-3 bg-amber-400 rounded-full animate-pulse cursor-help"
+              title="Borrador guardado"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Show form at top only when creating a new task (not editing) */}
+      {(isAdding && !editingTask) && taskForm}
 
       <div className="space-y-2">
         {tasks.length === 0 ? (
@@ -948,15 +1016,15 @@ export function Tareas({
                   return `${diffDays} día${diffDays !== 1 ? 's' : ''} restantes`;
                 }
               };
-              
+
               return (
-                <div 
-                  key={task.id} 
-                  className={`group relative cursor-pointer p-3 sm:p-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 ${
-                    task.completed ? 'bg-gray-50/50 opacity-75' : 'bg-white'
-                  } ${taskStates[task.id] === 'saving' ? 'opacity-70' : ''}`}
-                  onClick={() => handleToggleCompleted(task.id)}
-                >
+                <div key={task.id}>
+                  <div
+                    className={`group relative cursor-pointer p-3 sm:p-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 ${
+                      task.completed ? 'bg-gray-50/50 opacity-75' : 'bg-white'
+                    } ${taskStates[task.id] === 'saving' ? 'opacity-70' : ''}`}
+                    onClick={() => handleToggleCompleted(task.id)}
+                  >
                   {/* User avatar - top right */}
                   <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex flex-col items-center gap-1">
                     <div title={task.userName ?? (`${task.userFirstName ?? ''} ${task.userLastName ?? ''}`.trim() || 'Usuario')}>
@@ -968,11 +1036,11 @@ export function Tareas({
                     </div>
                     {/* System task indicator - under avatar */}
                     {task.createdBy === "0" && (
-                      <div className="flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center" title="Tarea del sistema">
+                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center" title="Tarea del sistema">
                         <img
                           src="/favicon.ico"
                           alt="Sistema"
-                          className="h-3 w-3 sm:h-4 sm:w-4 object-contain opacity-60"
+                          className="h-4 w-4 sm:h-5 sm:w-5 object-contain opacity-60"
                         />
                       </div>
                     )}
@@ -1068,31 +1136,43 @@ export function Tareas({
 
                   {/* Action buttons - bottom right */}
                   <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditTask(task);
-                      }}
-                      className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors duration-200 rounded-lg"
-                      title="Editar tarea"
-                    >
-                      <Edit className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleDeleteTask(task.taskId?.toString() ?? task.id);
-                      }}
-                      className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded-lg"
-                      title="Eliminar tarea"
-                    >
-                      <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    </Button>
+                    {canUserEditTask(task) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditTask(task);
+                        }}
+                        className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors duration-200 rounded-lg"
+                        title="Editar tarea"
+                      >
+                        <Edit className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      </Button>
+                    )}
+                    {canUserDeleteTask(task) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleDeleteTask(task.taskId?.toString() ?? task.id);
+                        }}
+                        className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-200 rounded-lg"
+                        title="Eliminar tarea"
+                      >
+                        <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      </Button>
+                    )}
                   </div>
+                  </div>
+
+                  {/* Show edit form inline after this task if it's being edited */}
+                  {editingTask?.id === task.id && (
+                    <div className="mt-2">
+                      {taskForm}
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -478,7 +478,8 @@ export function ContactTareas({
               setEditingTask(null);
               setIsAdding(true);
             }}
-            className="flex items-center gap-2"
+            variant="outline"
+            className="flex items-center gap-2 h-8 text-sm shadow"
             title="Nota: Actualmente las tareas solo se pueden crear desde propiedades"
           >
             <Plus className="h-4 w-4" />
