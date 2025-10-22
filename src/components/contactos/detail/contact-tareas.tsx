@@ -274,10 +274,11 @@ export function ContactTareas({
         isActive: true,
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         dueTime: formData.dueDate ? (formData.dueTime || "00:00") : undefined,
+        createdBy: session?.user?.id,
         // Entity associations
         contactId,
         listingId: selectedListingId ? BigInt(selectedListingId) : undefined,
-        listingContactId: selectedListingId ? 
+        listingContactId: selectedListingId ?
           BigInt(contactListings.find(l => l.listingId.toString() === selectedListingId)?.listingContactId ?? 0) : undefined,
         dealId: undefined,
         appointmentId: undefined,

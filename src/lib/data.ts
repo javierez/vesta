@@ -1073,6 +1073,9 @@ export type Contact = {
   nif?: string;
   email?: string;
   phone?: string;
+  phoneNotes?: string;
+  secondaryPhone?: string;
+  secondaryPhoneNotes?: string;
   additionalInfo?: {
     demandType?: string; // For demandante: what they're looking for
     propertiesCount?: number; // For sellers: number of properties
@@ -1147,6 +1150,7 @@ export type Task = {
   dueDate?: Date;
   dueTime?: string;
   completed: boolean;
+  createdBy?: string | null; // FK → users.id (who created the task)
   completedBy?: string | null; // FK → users.id (who completed the task)
   editedBy?: string | null; // FK → users.id (who last edited the task)
   category?: string | null; // Task category/type

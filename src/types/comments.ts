@@ -32,6 +32,7 @@ export interface CreateCommentFormData {
   listingId: string | bigint;
   propertyId: string | bigint;
   content: string;
+  category?: string | null;
   parentId?: string | bigint | null;
 }
 

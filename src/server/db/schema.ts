@@ -434,6 +434,9 @@ export const contacts = singlestoreTable("contacts", {
   nif: varchar("nif", { length: 20 }), // Spanish NIF/DNI/NIE identification number
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 20 }),
+  phoneNotes: text("phone_notes"), // Notes for primary phone number
+  secondaryPhone: varchar("secondary_phone", { length: 20 }),
+  secondaryPhoneNotes: text("secondary_phone_notes"), // Notes for secondary phone number
   additionalInfo: json("additional_info").default({}),
   orgId: bigint("org_id", { mode: "bigint" }), // Nullable FK to organizations
   isActive: boolean("is_active").default(true),
@@ -548,6 +551,7 @@ export const tasks = singlestoreTable("tasks", {
   dueDate: timestamp("due_date"),
   dueTime: time("due_time"),
   completed: boolean("completed").default(false),
+  createdBy: varchar("created_by", { length: 36 }), // FK → users.id (who created the task)
   completedBy: varchar("completed_by", { length: 36 }), // FK → users.id (who completed the task)
   editedBy: varchar("edited_by", { length: 36 }), // FK → users.id (who last edited the task)
   category: varchar("category", { length: 100 }), // Task category/type

@@ -49,6 +49,7 @@ export async function createCommentAction(
       propertyId: BigInt(formData.propertyId),
       userId: currentUser.id,
       content: formData.content.trim(),
+      category: formData.category ?? null,
       parentId: formData.parentId ? BigInt(formData.parentId) : null,
       isDeleted: false,
     };
@@ -81,6 +82,7 @@ export async function createCommentAction(
         propertyId: commentData.propertyId,
         userId: commentData.userId,
         content: commentData.content,
+        category: commentData.category,
         parentId: commentData.parentId,
         isDeleted: commentData.isDeleted,
         createdAt: new Date(),

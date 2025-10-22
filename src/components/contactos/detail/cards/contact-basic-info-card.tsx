@@ -59,7 +59,8 @@ export function ContactBasicInfoCard({
               setFirstName(e.target.value);
               onUpdateModule(true);
             }}
-            className="h-8 text-gray-500"
+            className="h-8 text-gray-500 placeholder:text-gray-300"
+            placeholder="Nombre"
           />
         </div>
         <div className="space-y-1.5">
@@ -73,7 +74,8 @@ export function ContactBasicInfoCard({
               setLastName(e.target.value);
               onUpdateModule(true);
             }}
-            className="h-8 text-gray-500"
+            className="h-8 text-gray-500 placeholder:text-gray-300"
+            placeholder="Apellidos"
           />
         </div>
         <div className="space-y-1.5">
@@ -87,7 +89,7 @@ export function ContactBasicInfoCard({
               setNif(e.target.value);
               onUpdateModule(true);
             }}
-            className="h-8 text-gray-500"
+            className="h-8 text-gray-500 placeholder:text-gray-300"
             placeholder="Opcional"
           />
         </div>

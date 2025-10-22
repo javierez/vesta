@@ -33,6 +33,7 @@ interface Task {
   isActive: boolean;
   createdAt: Date;
   updatedAt?: Date;
+  createdBy?: string;
   // User info for "Asignado a"
   userName?: string;
   userFirstName?: string;
@@ -279,9 +280,33 @@ export function Tareas({
     // Create optimistic task
     const optimisticId = Date.now().toString();
     const selectedUserId = newTask.agentId ?? (session?.user?.id ?? "current-user-id");
+
+    // Get the selected agent's info for display
+    const selectedAgent = agents.find(a => a.id === selectedUserId);
+
+    // Fallback to session user if agent not found (e.g., during race condition)
+    const agentName = selectedAgent?.name ?? (
+      selectedUserId === session?.user?.id
+        ? session.user.name
+        : undefined
+    );
+    const agentFirstName = selectedAgent?.firstName ?? (
+      selectedUserId === session?.user?.id
+        ? session.user.name?.split(' ')[0]
+        : undefined
+    );
+    const agentLastName = selectedAgent?.lastName ?? (
+      selectedUserId === session?.user?.id
+        ? session.user.name?.split(' ').slice(1).join(' ')
+        : undefined
+    );
+
     const optimisticTask: Task = {
       id: optimisticId,
       userId: selectedUserId,
+      userName: agentName,
+      userFirstName: agentFirstName,
+      userLastName: agentLastName,
       title: newTask.title,
       description: newTask.description,
       completed: false,
@@ -320,6 +345,7 @@ export function Tareas({
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         dueTime: formData.dueDate ? (formData.dueTime || "00:00") : undefined,
         completed: false,
+        createdBy: session?.user?.id,
         listingId: BigInt(listingId),
         listingContactId: listingContactId,
         dealId: dealId,
@@ -331,7 +357,29 @@ export function Tareas({
       if (!savedTask) {
         throw new Error('Failed to save task');
       }
-      
+
+      // Extract contact fields safely
+      const contactFirstName = ('contactFirstName' in savedTask && typeof savedTask.contactFirstName === 'string') ? savedTask.contactFirstName : '';
+      const contactLastName = ('contactLastName' in savedTask && typeof savedTask.contactLastName === 'string') ? savedTask.contactLastName : '';
+      const contactEmail = ('contactEmail' in savedTask && typeof savedTask.contactEmail === 'string') ? savedTask.contactEmail : undefined;
+
+      // Rebuild relatedContact from server response if contact data exists
+      const savedRelatedContact = savedTask.contactId && (contactFirstName || contactLastName) ? {
+        contactId: BigInt(savedTask.contactId),
+        name: `${contactFirstName} ${contactLastName}`.trim(),
+        email: contactEmail,
+      } : relatedContact; // Fallback to the one we built earlier
+
+      // Extract user fields safely
+      const taskUserName = ('userName' in savedTask && typeof savedTask.userName === 'string') ? savedTask.userName : undefined;
+      const taskUserFirstName = ('userFirstName' in savedTask && typeof savedTask.userFirstName === 'string') ? savedTask.userFirstName : undefined;
+      const taskUserLastName = ('userLastName' in savedTask && typeof savedTask.userLastName === 'string') ? savedTask.userLastName : undefined;
+
+      // Use agent info from server response, or fallback to what we built earlier
+      const savedUserName = taskUserName ?? agentName;
+      const savedUserFirstName = taskUserFirstName ?? agentFirstName;
+      const savedUserLastName = taskUserLastName ?? agentLastName;
+
       // Server actions now return converted types, just add id and handle dates
       const savedTaskForComponent = {
         ...savedTask,
@@ -347,6 +395,10 @@ export function Tareas({
         dueDate: savedTask.dueDate ? new Date(savedTask.dueDate) : undefined,
         completed: savedTask.completed ?? false,
         isActive: savedTask.isActive ?? true,
+        userName: savedUserName,
+        userFirstName: savedUserFirstName,
+        userLastName: savedUserLastName,
+        relatedContact: savedRelatedContact,
       };
       
       // SUCCESS: Update with server response via parent
@@ -480,6 +532,9 @@ export function Tareas({
       }
     }
 
+    // Get the selected agent's info for display
+    const selectedAgent = agents.find(a => a.id === newTask.agentId);
+
     // Create updated task object
     const updatedTask: Task = {
       ...editingTask,
@@ -487,6 +542,9 @@ export function Tareas({
       description: newTask.description,
       dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
       userId: newTask.agentId,
+      userName: selectedAgent?.name,
+      userFirstName: selectedAgent?.firstName,
+      userLastName: selectedAgent?.lastName,
       appointmentId: newTask.appointmentId ? BigInt(newTask.appointmentId) : undefined,
       relatedContact,
       relatedAppointment,
@@ -832,6 +890,8 @@ export function Tareas({
         ) : (
           <div className="space-y-1">
 {sortedTasks.map((task) => {
+              console.log('Rendering task - createdBy:', task.createdBy, 'taskId:', task.taskId, 'title:', task.title);
+
               const getInitials = (firstName?: string, lastName?: string, name?: string) => {
                 if (firstName && lastName) {
                   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -898,12 +958,24 @@ export function Tareas({
                   onClick={() => handleToggleCompleted(task.id)}
                 >
                   {/* User avatar - top right */}
-                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3" title={task.userName ?? (`${task.userFirstName ?? ''} ${task.userLastName ?? ''}`.trim() || 'Usuario')}>
-                    <Avatar className="h-6 w-6 sm:h-7 sm:w-7 ring-2 ring-gray-100">
-                      <AvatarFallback className="text-xs font-medium">
-                        {getInitials(task.userFirstName, task.userLastName, task.userName)}
-                      </AvatarFallback>
-                    </Avatar>
+                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex flex-col items-center gap-1">
+                    <div title={task.userName ?? (`${task.userFirstName ?? ''} ${task.userLastName ?? ''}`.trim() || 'Usuario')}>
+                      <Avatar className="h-6 w-6 sm:h-7 sm:w-7 ring-2 ring-gray-100">
+                        <AvatarFallback className="text-xs font-medium">
+                          {getInitials(task.userFirstName, task.userLastName, task.userName)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    {/* System task indicator - under avatar */}
+                    {task.createdBy === "0" && (
+                      <div className="flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center" title="Tarea del sistema">
+                        <img
+                          src="/favicon.ico"
+                          alt="Sistema"
+                          className="h-3 w-3 sm:h-4 sm:w-4 object-contain opacity-60"
+                        />
+                      </div>
+                    )}
                   </div>
                   
                   {/* Task content */}
@@ -974,7 +1046,7 @@ export function Tareas({
                     {(task.relatedContact ?? task.relatedAppointment ?? task.dueDate) && (
                       <div className="flex flex-wrap items-center gap-2 ml-6 sm:ml-8 mb-1">
                         {task.dueDate && (
-                          <span className="text-xs text-amber-600 bg-amber-50 px-2 sm:px-2.5 py-0.5 rounded-full font-normal border border-amber-200 whitespace-nowrap">
+                          <span className="text-xs text-amber-600 bg-amber-50 px-2 sm:px-2.5 py-0.5 rounded-full font-normal border border-amber-200 whitespace-nowrap inline-block min-w-[120px] text-center">
                             {getRemainingTime(task.dueDate)}
                           </span>
                         )}
@@ -993,7 +1065,7 @@ export function Tareas({
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Action buttons - bottom right */}
                   <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1">
                     <Button

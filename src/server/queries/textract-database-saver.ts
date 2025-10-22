@@ -13,7 +13,7 @@ import { generatePropertyTitle } from "~/lib/property-title";
 import { getCurrentUser } from "~/lib/dal";
 import { autoCompleteAddress } from "~/lib/address-autocomplete";
 import type { Property, Listing } from "~/lib/data";
-import { createPropertyTasksAsync, createKeysCommentAsync } from "~/server/actions/property-tasks";
+import { createPropertyTasksAsync } from "~/server/actions/property-tasks";
 
 type DbProperty = Omit<Property, "builtInWardrobes"> & {
   builtInWardrobes?: boolean;
@@ -665,12 +665,6 @@ export async function saveExtractedDataToDatabase(
         userId: currentUser.id,
         listingId: BigInt(listingId),
       });
-
-      // Create keys comment asynchronously (don't wait for completion)
-      await createKeysCommentAsync(
-        BigInt(listingId),
-        BigInt(propertyId),
-      );
     }
 
     console.log(`🎯 [DATABASE] Save operation completed:`);

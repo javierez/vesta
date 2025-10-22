@@ -4,7 +4,7 @@ import { updateProperty, updatePropertyLocation } from "~/server/queries/propert
 import { updateListingWithAuth } from "~/server/queries/listing";
 import { updateListingOwnersWithAuth } from "~/server/queries/contact";
 import { generatePropertyTitle } from "~/lib/property-title";
-import { createPropertyTasks, createKeysComment } from "~/server/actions/property-tasks";
+import { createPropertyTasks } from "~/server/actions/property-tasks";
 
 export interface SaveOptions {
   showLoading?: boolean;
@@ -281,13 +281,6 @@ export async function saveQuickFormData(
         listingId: BigInt(listingId),
       });
       promises.push(tasksPromise);
-
-      // Create keys comment
-      const keysCommentPromise = createKeysComment(
-        BigInt(listingId),
-        listingDetails.propertyId ? BigInt(listingDetails.propertyId) : undefined,
-      );
-      promises.push(keysCommentPromise);
     }
 
     // Execute all save operations

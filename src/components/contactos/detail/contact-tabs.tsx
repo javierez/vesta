@@ -141,6 +141,9 @@ interface ContactTabsProps {
     nif?: string;
     email?: string;
     phone?: string;
+    phoneNotes?: string;
+    secondaryPhone?: string;
+    secondaryPhoneNotes?: string;
     // contactType can be missing; we will derive from flags/counts if so
     contactType?:
       | "demandante"
@@ -233,6 +236,9 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   const [nif, setNif] = useState(contact.nif ?? "");
   const [email, setEmail] = useState(contact.email ?? "");
   const [phone, setPhone] = useState(contact.phone ?? "");
+  const [phoneNotes, setPhoneNotes] = useState(contact.phoneNotes ?? "");
+  const [secondaryPhone, setSecondaryPhone] = useState(contact.secondaryPhone ?? "");
+  const [secondaryPhoneNotes, setSecondaryPhoneNotes] = useState(contact.secondaryPhoneNotes ?? "");
   const [additionalInfo] = useState(contact.additionalInfo ?? {});
 
   // Interest forms state - Start empty, only show when explicitly creating/editing
@@ -819,7 +825,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
           contactData = { firstName, lastName, nif };
           break;
         case "contactDetails":
-          contactData = { email, phone };
+          contactData = { email, phone, phoneNotes, secondaryPhone, secondaryPhoneNotes };
           break;
         case "notes":
           contactData = {
@@ -992,6 +998,12 @@ export function ContactTabs({ contact }: ContactTabsProps) {
               setEmail={setEmail}
               phone={phone}
               setPhone={setPhone}
+              phoneNotes={phoneNotes}
+              setPhoneNotes={setPhoneNotes}
+              secondaryPhone={secondaryPhone}
+              setSecondaryPhone={setSecondaryPhone}
+              secondaryPhoneNotes={secondaryPhoneNotes}
+              setSecondaryPhoneNotes={setSecondaryPhoneNotes}
               saveState={moduleStates.contactDetails?.saveState ?? "idle"}
               onSave={() => saveModule("contactDetails")}
               onUpdateModule={(hasChanges) => updateModuleState("contactDetails", hasChanges)}

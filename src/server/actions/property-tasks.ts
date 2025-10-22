@@ -1,9 +1,6 @@
 "use server";
 
 import { createTaskWithAuth } from "~/server/queries/task";
-import { db } from "~/server/db";
-import { comments, listings } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
 
 interface CreatePropertyTasksParams {
   userId: string;
@@ -55,6 +52,7 @@ export async function createPropertyTasks({
     dueDate: dueDate7Days,
     dueTime: undefined,
     completed: false,
+    createdBy: "0",
     listingId,
     listingContactId: undefined,
     dealId: undefined,
@@ -75,6 +73,7 @@ export async function createPropertyTasks({
     dueDate: dueDate7Days,
     dueTime: undefined,
     completed: false,
+    createdBy: "0",
     listingId,
     listingContactId: undefined,
     dealId: undefined,
@@ -95,6 +94,7 @@ export async function createPropertyTasks({
     dueDate: dueDate10Days,
     dueTime: undefined,
     completed: false,
+    createdBy: "0",
     listingId,
     listingContactId: undefined,
     dealId: undefined,
@@ -115,6 +115,7 @@ export async function createPropertyTasks({
     dueDate: dueDate10Days,
     dueTime: undefined,
     completed: false,
+    createdBy: "0",
     listingId,
     listingContactId: undefined,
     dealId: undefined,
@@ -135,6 +136,7 @@ export async function createPropertyTasks({
     dueDate: dueDate10Days,
     dueTime: undefined,
     completed: false,
+    createdBy: "0",
     listingId,
     listingContactId: undefined,
     dealId: undefined,
@@ -155,6 +157,7 @@ export async function createPropertyTasks({
     dueDate: dueDate12Days,
     dueTime: undefined,
     completed: false,
+    createdBy: "0",
     listingId,
     listingContactId: undefined,
     dealId: undefined,
@@ -175,6 +178,7 @@ export async function createPropertyTasks({
     dueDate: dueDate14Days,
     dueTime: undefined,
     completed: false,
+    createdBy: "0",
     listingId,
     listingContactId: undefined,
     dealId: undefined,
@@ -195,6 +199,7 @@ export async function createPropertyTasks({
     dueDate: dueDate16Days,
     dueTime: undefined,
     completed: false,
+    createdBy: "0",
     listingId,
     listingContactId: undefined,
     dealId: undefined,
@@ -232,57 +237,3 @@ export async function createPropertyTasksAsync({
   });
 }
 
-/**
- * Creates a system comment for keys when a new listing is created
- * This comment allows agents to track information about property keys
- */
-export async function createKeysComment(
-  listingId: bigint,
-  propertyId?: bigint,
-): Promise<void> {
-  try {
-    // If propertyId is not provided, fetch it from the listing
-    let finalPropertyId = propertyId;
-
-    if (!finalPropertyId) {
-      const [listing] = await db
-        .select({ propertyId: listings.propertyId })
-        .from(listings)
-        .where(eq(listings.listingId, listingId));
-
-      if (!listing) {
-        throw new Error(`Listing with ID ${listingId} not found`);
-      }
-
-      finalPropertyId = listing.propertyId;
-    }
-
-    // Create the system comment for keys
-    await db.insert(comments).values({
-      listingId,
-      propertyId: finalPropertyId,
-      userId: "0", // System user ID
-      content: "Comentarios sobre las llaves",
-      category: "keys",
-      isDeleted: false,
-    });
-
-    console.log(`Keys comment created successfully for listing ${listingId}`);
-  } catch (error) {
-    console.error("Error creating keys comment:", error);
-    // Don't throw - we don't want to fail listing creation if comment creation fails
-  }
-}
-
-/**
- * Creates a system comment for keys asynchronously
- * Use this when you don't need to wait for comment creation to complete
- */
-export async function createKeysCommentAsync(
-  listingId: bigint,
-  propertyId?: bigint,
-): Promise<void> {
-  createKeysComment(listingId, propertyId).catch((error) => {
-    console.error("Error creating keys comment:", error);
-  });
-}

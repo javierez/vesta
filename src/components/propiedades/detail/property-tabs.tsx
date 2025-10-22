@@ -183,7 +183,7 @@ export function PropertyTabs({
           email: task.contactEmail ?? undefined,
         } : undefined;
 
-        return {
+        const mappedTask = {
           ...task,
           id: task.taskId.toString(),
           taskId: BigInt(task.taskId),
@@ -199,6 +199,10 @@ export function PropertyTabs({
           userLastName: task.userLastName ?? undefined,
           relatedContact,
         };
+
+        console.log('Task mapping - createdBy:', task.createdBy, 'taskId:', task.taskId);
+
+        return mappedTask;
       });
       setTabData((prev) => ({ ...prev, tasks: tasksWithId }));
     } catch (error) {
@@ -302,6 +306,7 @@ export function PropertyTabs({
         listingId: tempComment.listingId,
         propertyId: tempComment.propertyId,
         content: tempComment.content,
+        category: tempComment.category,
         parentId: tempComment.parentId,
       });
 
