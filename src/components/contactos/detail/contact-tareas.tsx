@@ -41,6 +41,7 @@ import {
 import { getContactListingsForTasksWithAuth } from "~/server/queries/user-comments";
 import { useSession } from "~/lib/auth-client";
 import type { UserCommentWithUser } from "~/types/user-comments";
+import { canEditAllTasks, canDeleteAllTasks } from "~/app/actions/permissions/check-permissions";
 
 
 interface ContactListing {
@@ -74,6 +75,7 @@ interface Task {
   isActive: boolean;
   createdAt: Date;
   updatedAt?: Date;
+  createdBy?: string;
   // User info for "Asignado a"
   userName?: string;
   userFirstName?: string;
@@ -150,6 +152,10 @@ export function ContactTareas({
   const [isSaving, setIsSaving] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'contact' | 'property'>('all');
 
+  // Permission states
+  const [hasEditAllPermission, setHasEditAllPermission] = useState<boolean>(false);
+  const [hasDeleteAllPermission, setHasDeleteAllPermission] = useState<boolean>(false);
+
   // Contact listings for task association
   const [contactListings, setContactListings] = useState<ContactListing[]>([]);
   const [selectedListingId, setSelectedListingId] = useState<string>('');
@@ -192,6 +198,26 @@ export function ContactTareas({
     }
   }, [isAdding, session?.user?.id, newTask.agentId]);
 
+  // Fetch user permissions on component mount
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const [editAllPerm, deleteAllPerm] = await Promise.all([
+          canEditAllTasks(),
+          canDeleteAllTasks(),
+        ]);
+        setHasEditAllPermission(editAllPerm);
+        setHasDeleteAllPermission(deleteAllPerm);
+      } catch (error) {
+        console.error('Error fetching task permissions:', error);
+        setHasEditAllPermission(false);
+        setHasDeleteAllPermission(false);
+      }
+    };
+
+    void fetchPermissions();
+  }, []); // Run once on mount
+
   // Auto-save draft functionality
   useEffect(() => {
     const draftKey = `contact-task-draft-${contactId}`;
@@ -229,6 +255,17 @@ export function ContactTareas({
       }
     }
   }, [contactId]);
+
+  // Permission helper functions
+  const canUserEditTask = (task: Task): boolean => {
+    // User can edit if they created the task OR have editAll permission
+    return task.createdBy === session?.user?.id || hasEditAllPermission;
+  };
+
+  const canUserDeleteTask = (task: Task): boolean => {
+    // User can delete if they created the task OR have deleteAll permission
+    return task.createdBy === session?.user?.id || hasDeleteAllPermission;
+  };
 
   const handleAddTask = async () => {
     if (!newTask.title.trim() || !newTask.description.trim()) return;
@@ -501,8 +538,9 @@ export function ContactTareas({
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg sm:text-xl font-semibold">Tareas</h3>
+        <div className="flex items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="relative h-8 w-8 p-0 shadow text-gray-600">
@@ -588,16 +626,15 @@ export function ContactTareas({
             }}
             variant="outline"
             className="flex items-center gap-2 h-8 text-sm shadow text-gray-600"
-            title="Nota: Actualmente las tareas solo se pueden crear desde propiedades"
           >
             <Plus className="h-4 w-4" />
             Nueva Tarea
           </Button>
           {(newTask.title || newTask.description) && !isAdding && (
-            <div className="flex w-fit items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-700">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-amber-400"></div>
-              Borrador guardado
-            </div>
+            <div
+              className="w-3 h-3 bg-amber-400 rounded-full animate-pulse cursor-help"
+              title="Borrador guardado"
+            />
           )}
         </div>
       </div>
@@ -894,29 +931,34 @@ export function ContactTareas({
               return (
                 <div
                   key={task.id}
-                  className={`group relative cursor-pointer rounded-xl border border-gray-200 p-3 transition-all duration-200 hover:border-gray-300 hover:shadow-sm sm:p-4 ${
+                  className={`group relative cursor-pointer rounded-xl shadow-md hover:shadow-lg p-3 transition-all duration-200 sm:p-4 ${
                     task.completed ? "bg-gray-50/50 opacity-75" : "bg-white"
                   } ${taskStates[task.id] === "saving" ? "opacity-70" : ""}`}
                   onClick={() => handleToggleCompleted(task.id)}
                 >
                   {/* User avatar - top right */}
-                  <div
-                    className="absolute right-2 top-2 sm:right-3 sm:top-3"
-                    title={
-                      task.userName ??
-                      (`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
-                        "Usuario")
-                    }
-                  >
-                    <Avatar className="h-6 w-6 ring-2 ring-gray-100 sm:h-7 sm:w-7">
-                      <AvatarFallback className="text-xs font-medium">
-                        {getInitials(
-                          task.userFirstName,
-                          task.userLastName,
-                          task.userName,
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
+                  <div className="absolute right-2 top-2 sm:right-3 sm:top-3 flex flex-col items-center gap-1">
+                    <div title={task.userName ?? (`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() || "Usuario")}>
+                      <Avatar className="h-6 w-6 ring-2 ring-gray-100 sm:h-7 sm:w-7">
+                        <AvatarFallback className="text-xs font-medium">
+                          {getInitials(
+                            task.userFirstName,
+                            task.userLastName,
+                            task.userName,
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    {/* System task indicator - under avatar */}
+                    {task.createdBy === "0" && (
+                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center" title="Tarea del sistema">
+                        <img
+                          src="/favicon.ico"
+                          alt="Sistema"
+                          className="h-4 w-4 sm:h-5 sm:w-5 object-contain opacity-60"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Task content */}
@@ -1027,30 +1069,34 @@ export function ContactTareas({
 
                   {/* Action buttons - bottom right */}
                   <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 sm:bottom-2 sm:right-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditTask(task);
-                      }}
-                      className="h-6 w-6 rounded-lg p-0 text-gray-400 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-500 sm:h-7 sm:w-7"
-                      title="Editar tarea"
-                    >
-                      <Edit className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleDeleteTask(task.id);
-                      }}
-                      className="h-6 w-6 rounded-lg p-0 text-gray-400 transition-colors duration-200 hover:bg-red-50 hover:text-red-500 sm:h-7 sm:w-7"
-                      title="Eliminar tarea"
-                    >
-                      <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    </Button>
+                    {canUserEditTask(task) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditTask(task);
+                        }}
+                        className="h-6 w-6 rounded-lg p-0 text-gray-400 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-500 sm:h-7 sm:w-7"
+                        title="Editar tarea"
+                      >
+                        <Edit className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      </Button>
+                    )}
+                    {canUserDeleteTask(task) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleDeleteTask(task.id);
+                        }}
+                        className="h-6 w-6 rounded-lg p-0 text-gray-400 transition-colors duration-200 hover:bg-red-50 hover:text-red-500 sm:h-7 sm:w-7"
+                        title="Eliminar tarea"
+                      >
+                        <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

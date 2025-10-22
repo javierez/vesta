@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { CheckCircle2, AlertCircle, ChevronDown } from "lucide-react";
-import { calculateCompletion, type FieldRule } from "~/lib/property-completion-tracker";
+import { calculateCompletion, type FieldRule } from "~/lib/properties/completion-tracker";
 import { cn } from "~/lib/utils";
 import { useState, useEffect } from "react";
 import { Card } from "~/components/ui/card";

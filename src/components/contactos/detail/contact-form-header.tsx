@@ -3,13 +3,19 @@
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { Mail, Phone, Calendar, User, Copy, Check } from "lucide-react";
+import { Mail, Phone, Calendar, User, Copy, Check, Star, Ban, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { cn } from "~/lib/utils";
 import {
   CONTACT_PALETTE,
   getContactBadgeColor,
 } from "../table-components/color/contact-colors";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 
 interface ContactFormHeaderProps {
   contact: {
@@ -21,6 +27,8 @@ interface ContactFormHeaderProps {
     contactType: string;
     isActive: boolean | null;
     createdAt: Date;
+    updatedAt?: Date | null;
+    rating?: number | null;
     // Role counts and flags for badge display
     ownerCount?: number;
     buyerCount?: number;
@@ -29,13 +37,18 @@ interface ContactFormHeaderProps {
     isBuyer?: boolean;
     isInteresado?: boolean;
   };
+  onRatingChange?: (rating: number | null) => void;
 }
 
-export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
+export function ContactFormHeader({
+  contact,
+  onRatingChange,
+}: ContactFormHeaderProps) {
   const [copied, setCopied] = useState<{
     field: "email" | "phone" | null;
     value: string;
   }>({ field: null, value: "" });
+  const [showDates, setShowDates] = useState(false);
 
   function handleCopy(field: "email" | "phone", value: string) {
     void navigator.clipboard.writeText(value);
@@ -250,16 +263,98 @@ export function ContactFormHeader({ contact }: ContactFormHeaderProps) {
                     </div>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    Creado:{" "}
-                    {new Date(contact.createdAt).toLocaleDateString("es-ES")}
-                  </span>
-                </div>
+                <button
+                  onClick={() => setShowDates(!showDates)}
+                  className="flex items-center gap-0.5 text-xs text-gray-400 transition-colors hover:text-gray-600"
+                >
+                  {showDates ? (
+                    <ChevronUp className="h-3 w-3" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3" />
+                  )}
+                  <span>{showDates ? "Ver menos" : "Ver más"}</span>
+                </button>
               </div>
+              {showDates && (
+                <div className="mt-3 flex items-center gap-6 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      Creado:{" "}
+                      {new Date(contact.createdAt).toLocaleDateString("es-ES")}
+                    </span>
+                  </div>
+                  {contact.updatedAt && (
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      <span>
+                        Actualizado:{" "}
+                        {new Date(contact.updatedAt).toLocaleDateString("es-ES")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Rating display and editor in top right corner */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1.5 px-2 py-1.5 text-sm transition-all hover:opacity-70">
+                {contact.rating ? (
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: contact.rating }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className="h-4 w-4 fill-gray-400 text-gray-400"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-gray-300" />
+                    <span className="text-xs text-gray-400">Sin valorar</span>
+                  </div>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <DropdownMenuItem
+                  key={rating}
+                  onClick={() => onRatingChange?.(rating)}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: rating }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className="h-3.5 w-3.5 fill-gray-400 text-gray-400"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+              ))}
+              {contact.rating !== null && contact.rating !== undefined && (
+                <>
+                  <div className="my-1 h-px bg-gray-200" />
+                  <DropdownMenuItem
+                    onClick={() => onRatingChange?.(null)}
+                    className="cursor-pointer text-gray-500"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-0.5">
+                        <Ban className="h-3.5 w-3.5" />
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </Card>
     </div>

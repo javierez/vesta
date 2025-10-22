@@ -931,6 +931,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         optionalStorageRoom: listings.optionalStorageRoom,
         optionalStorageRoomPrice: listings.optionalStorageRoomPrice,
         hasKeys: listings.hasKeys,
+        encargo: listings.encargo,
         studentFriendly: listings.studentFriendly,
         petsAllowed: listings.petsAllowed,
         appliancesIncluded: listings.appliancesIncluded,

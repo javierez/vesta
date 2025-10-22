@@ -16,6 +16,8 @@ interface ContactBasicInfoCardProps {
   setLastName: (value: string) => void;
   nif: string;
   setNif: (value: string) => void;
+  source: string;
+  setSource: (value: string) => void;
   saveState: SaveState;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -29,6 +31,8 @@ export function ContactBasicInfoCard({
   setLastName,
   nif,
   setNif,
+  source,
+  setSource,
   saveState,
   onSave,
   onUpdateModule,
@@ -87,6 +91,21 @@ export function ContactBasicInfoCard({
             value={nif}
             onChange={(e) => {
               setNif(e.target.value);
+              onUpdateModule(true);
+            }}
+            className="h-8 text-gray-500 placeholder:text-gray-300"
+            placeholder="Opcional"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="source" className="text-sm">
+            Origen
+          </Label>
+          <Input
+            id="source"
+            value={source}
+            onChange={(e) => {
+              setSource(e.target.value);
               onUpdateModule(true);
             }}
             className="h-8 text-gray-500 placeholder:text-gray-300"

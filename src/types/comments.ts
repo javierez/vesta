@@ -24,7 +24,7 @@ export interface CommentWithUser extends Comment {
     lastName?: string | null;
     image?: string | null;
     initials: string;
-  };
+  } | null;
   replies: CommentWithUser[];
 }
 

@@ -377,6 +377,7 @@ export const listings = singlestoreTable("listings", {
     scale: 2,
   }),
   hasKeys: boolean("has_keys").notNull().default(false),
+  encargo: boolean("encargo").notNull().default(false),
   studentFriendly: boolean("student_friendly"),
   petsAllowed: boolean("pets_allowed"),
   appliancesIncluded: boolean("appliances_included"),
@@ -437,8 +438,10 @@ export const contacts = singlestoreTable("contacts", {
   phoneNotes: text("phone_notes"), // Notes for primary phone number
   secondaryPhone: varchar("secondary_phone", { length: 20 }),
   secondaryPhoneNotes: text("secondary_phone_notes"), // Notes for secondary phone number
+  rating: smallint("rating"), // Contact rating (e.g., 1-5 scale for quality/importance)
   additionalInfo: json("additional_info").default({}),
   orgId: bigint("org_id", { mode: "bigint" }), // Nullable FK to organizations
+  source: varchar("source", { length: 100 }), // Contact source (e.g., "Website", "Walk-In", "Referral")
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
@@ -512,6 +515,8 @@ export const appointments = singlestoreTable("appointments", {
   status: varchar("status", { length: 20 }).notNull().default("Scheduled"),
   notes: text("notes"),
   type: varchar("type", { length: 50 }),
+  assignedTo: varchar("assigned_to", { length: 36 }), // FK → users.id (who is assigned to the appointment)
+  editedBy: varchar("edited_by", { length: 36 }), // FK → users.id (who last edited the appointment)
   // Google Calendar integration fields
   googleEventId: varchar("google_event_id", { length: 255 }), // Google Calendar event ID
   googleEtag: varchar("google_etag", { length: 255 }), // For conflict resolution

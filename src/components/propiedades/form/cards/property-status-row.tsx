@@ -5,8 +5,8 @@ import Image from "next/image";
 import { Card } from "~/components/ui/card";
 import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImagePlaceholder";
 import { ImageViewer } from "~/components/ui/image-viewer";
-import { getAllPropertyImages } from "~/app/actions/property-images";
-import { PROCESS_STAGES } from "~/lib/constants/process-stages";
+import { getAllPropertyImages, getPropertyImageCount } from "~/app/actions/property-images";
+import { getProcessStages } from "~/lib/constants/process-stages";
 import type { StageStatus } from "~/lib/constants/process-stages";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
@@ -47,6 +47,7 @@ interface PropertyStatusRowProps {
   propertyType?: string | null;
   propertyId?: number | string | bigint | null;
   createdAt?: Date | null;
+  listing?: Record<string, unknown>;
 }
 
 // Timeline node component for substages
@@ -68,6 +69,7 @@ function TimelineNode({
   infoTooltipContent?: string;
 }) {
   const isFuture = status === "future";
+  const isOngoing = status === "ongoing";
 
   const dotSize = isFirst || isLast ? "h-6 w-6 sm:h-7 sm:w-7" : "h-3 w-3 sm:h-3.5 sm:w-3.5";
 
@@ -87,7 +89,7 @@ function TimelineNode({
         className={cn(
           "absolute whitespace-nowrap text-[11px] sm:text-xs font-medium flex items-center justify-center gap-1",
           labelPosition === "above" ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.75rem)]" : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.75rem)]",
-          isFuture ? "text-slate-300" : "text-slate-900"
+          isFuture ? "text-slate-300" : isOngoing ? "text-amber-700" : "text-slate-900"
         )}
         style={{
           height: labelPosition === "above" ? "1.5rem" : "1.5rem"
@@ -101,7 +103,7 @@ function TimelineNode({
                 type="button"
                 className={cn(
                   "inline-flex items-center justify-center rounded-full p-0.5 hover:bg-slate-200 transition-colors",
-                  isFuture ? "text-slate-300" : "text-slate-600 hover:text-slate-900"
+                  isFuture ? "text-slate-300" : isOngoing ? "text-amber-600 hover:text-amber-900" : "text-slate-600 hover:text-slate-900"
                 )}
                 aria-label="Información"
               >
@@ -120,7 +122,7 @@ function TimelineNode({
         className={cn(
           "relative z-10 rounded-full transition-all",
           dotSize,
-          isFuture ? "bg-slate-300" : "bg-slate-900"
+          isFuture ? "bg-slate-300" : isOngoing ? "bg-amber-500 ring-2 ring-amber-300 ring-offset-1" : "bg-slate-900"
         )}
       />
     </div>
@@ -133,6 +135,7 @@ export function PropertyStatusRow({
   propertyType,
   propertyId,
   createdAt,
+  listing,
 }: PropertyStatusRowProps) {
   // Log the props to verify data
   console.log("🔍 PropertyStatusRow props:", {
@@ -149,9 +152,29 @@ export function PropertyStatusRow({
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [imageCount, setImageCount] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const activeStageRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch image count on mount
+  useEffect(() => {
+    if (propertyId) {
+      const id = typeof propertyId === 'bigint'
+        ? propertyId
+        : BigInt(String(propertyId));
+
+      getPropertyImageCount(id)
+        .then((count) => {
+          setImageCount(count);
+          console.log("🖼️ Image count fetched:", count);
+        })
+        .catch((error) => {
+          console.error("Error fetching image count:", error);
+          setImageCount(0);
+        });
+    }
+  }, [propertyId]);
 
   const handleImageClick = async () => {
     if (!propertyId) return;
@@ -217,10 +240,16 @@ export function PropertyStatusRow({
     }
   }, []);
 
-  // Calculate total substages for proportional width
-  const totalSubstages = PROCESS_STAGES.reduce((acc, stage) => acc + stage.subStages.length, 0);
+  // Merge imageCount into listing before using it
+  const listingWithImages = listing ? { ...listing, imageCount } : undefined;
 
-  const completedSubstages = PROCESS_STAGES.reduce((acc, stage) => {
+  // Get dynamic process stages based on listing completion (with image count)
+  const processStages = getProcessStages(listingWithImages);
+
+  // Calculate total substages for proportional width
+  const totalSubstages = processStages.reduce((acc, stage) => acc + stage.subStages.length, 0);
+
+  const completedSubstages = processStages.reduce((acc, stage) => {
     return acc + stage.subStages.filter((sub) => sub.status === "accomplished").length;
   }, 0);
   const progressPercent = (completedSubstages / totalSubstages) * 100;
@@ -249,7 +278,7 @@ export function PropertyStatusRow({
           <div
             ref={scrollContainerRef}
             className={cn(
-              "px-4 py-8 sm:px-6 sm:py-10 md:px-8 md:py-12 overflow-x-auto property-status-scrollbar",
+              "px-4 pt-[2.625rem] pb-8 sm:px-6 sm:pt-[3.125rem] sm:pb-10 md:px-8 md:pt-[3.625rem] md:pb-12 overflow-x-auto property-status-scrollbar",
               isScrolling && "scrolling"
             )}
           >
@@ -270,7 +299,7 @@ export function PropertyStatusRow({
               </div>
 
               <div className="relative flex items-center">
-                {PROCESS_STAGES.map((stage, stageIndex) => {
+                {processStages.map((stage, stageIndex) => {
                   const stageSubstageCount = stage.subStages.length;
                   const widthPercent = (stageSubstageCount / totalSubstages) * 100;
 
@@ -282,7 +311,7 @@ export function PropertyStatusRow({
                     >
                       {stage.subStages.map((substage, subIndex) => {
                         const globalIndex =
-                          PROCESS_STAGES.slice(0, stageIndex).reduce((acc, s) => acc + s.subStages.length, 0) + subIndex;
+                          processStages.slice(0, stageIndex).reduce((acc, s) => acc + s.subStages.length, 0) + subIndex;
                         const isFirst = globalIndex === 0;
                         const isLast = globalIndex === totalSubstages - 1;
                         const labelPosition = globalIndex % 2 === 0 ? "above" : "below";

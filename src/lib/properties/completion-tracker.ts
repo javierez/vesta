@@ -3,18 +3,23 @@
  * Validates property listing fields and categorizes them by importance
  */
 
+export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje";
+
 export interface FieldRule {
   id: string;
   label: string; // Spanish user-facing label
   fieldPath: string; // Path in listing object
   importance: "mandatory" | "nth"; // Field importance category
   category: string; // Card/module name
+  applicablePropertyTypes?: PropertyType[]; // If undefined, applies to all types
   validator: (value: unknown, listing?: Record<string, unknown>) => boolean;
 }
 
 export const fieldRules: FieldRule[] = [
   // ==================== MANDATORY FIELDS ====================
-  // Essential for portal publishing (12 fields)
+  // Essential for portal publishing
+
+  // ========== UNIVERSAL MANDATORY (7 fields - all property types) ==========
 
   {
     id: "price",
@@ -22,6 +27,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "price",
     importance: "mandatory",
     category: "Información Básica",
+    // Applies to all property types
     validator: (v) => v !== null && v !== undefined && Number(v) > 0,
   },
   {
@@ -30,6 +36,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "listingType",
     importance: "mandatory",
     category: "Información Básica",
+    // Applies to all property types
     validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
@@ -38,31 +45,8 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "propertyType",
     importance: "mandatory",
     category: "Información Básica",
+    // Applies to all property types
     validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
-  },
-  {
-    id: "squareMeter",
-    label: "Superficie",
-    fieldPath: "squareMeter",
-    importance: "mandatory",
-    category: "Detalles de la Propiedad",
-    validator: (v) => v !== null && v !== undefined && Number(v) > 0,
-  },
-  {
-    id: "bedrooms",
-    label: "Dormitorios",
-    fieldPath: "bedrooms",
-    importance: "mandatory",
-    category: "Detalles de la Propiedad",
-    validator: (v) => v !== null && v !== undefined,
-  },
-  {
-    id: "bathrooms",
-    label: "Baños",
-    fieldPath: "bathrooms",
-    importance: "mandatory",
-    category: "Detalles de la Propiedad",
-    validator: (v) => v !== null && v !== undefined,
   },
   {
     id: "street",
@@ -70,6 +54,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "street",
     importance: "mandatory",
     category: "Dirección",
+    // Applies to all property types
     validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
@@ -78,6 +63,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "city",
     importance: "mandatory",
     category: "Dirección",
+    // Applies to all property types
     validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
@@ -86,6 +72,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "province",
     importance: "mandatory",
     category: "Dirección",
+    // Applies to all property types
     validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
   {
@@ -94,27 +81,96 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "postalCode",
     importance: "mandatory",
     category: "Dirección",
+    // Applies to all property types
     validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
   },
+
+  // ========== PROPERTY TYPE-SPECIFIC MANDATORY FIELDS ==========
+
+  // Superficie - Required for piso, casa, local, solar (NOT garaje - uses builtSurfaceArea)
+  {
+    id: "squareMeter",
+    label: "Superficie",
+    fieldPath: "squareMeter",
+    importance: "mandatory",
+    category: "Detalles de la Propiedad",
+    applicablePropertyTypes: ["piso", "casa", "local", "solar"],
+    validator: (v) => v !== null && v !== undefined && Number(v) > 0,
+  },
+
+  // Superficie construida - Required ONLY for garaje
+  {
+    id: "builtSurfaceArea",
+    label: "Superficie construida",
+    fieldPath: "builtSurfaceArea",
+    importance: "mandatory",
+    category: "Detalles de la Propiedad",
+    applicablePropertyTypes: ["garaje"],
+    validator: (v) => v !== null && v !== undefined && Number(v) > 0,
+  },
+
+  // Dormitorios - Required ONLY for piso and casa (residential)
+  {
+    id: "bedrooms",
+    label: "Dormitorios",
+    fieldPath: "bedrooms",
+    importance: "mandatory",
+    category: "Detalles de la Propiedad",
+    applicablePropertyTypes: ["piso", "casa"],
+    validator: (v) => v !== null && v !== undefined,
+  },
+
+  // Baños - Required for piso, casa, and local (NOT garaje or solar)
+  {
+    id: "bathrooms",
+    label: "Baños",
+    fieldPath: "bathrooms",
+    importance: "mandatory",
+    category: "Detalles de la Propiedad",
+    applicablePropertyTypes: ["piso", "casa", "local"],
+    validator: (v) => v !== null && v !== undefined,
+  },
+
+  // Descripción - Required for all property types
   {
     id: "description",
     label: "Descripción completa",
     fieldPath: "description",
     importance: "mandatory",
     category: "Descripción",
+    // Applies to all property types
     validator: (v) => {
       if (!v) return false;
       if (typeof v === 'string') return v.trim().length >= 20;
       return false;
     },
   },
+
+  // Imágenes - Different requirements per property type
   {
     id: "images",
-    label: "Imágenes (mínimo 5)",
+    label: "Imágenes",
     fieldPath: "imageCount",
     importance: "mandatory",
     category: "Imágenes",
-    validator: (v) => v !== null && v !== undefined && Number(v) >= 5,
+    // Applies to all property types, but with different minimums
+    validator: (v, listing) => {
+      const count = Number(v ?? 0);
+      const propertyType = listing?.propertyType as PropertyType | undefined;
+
+      // Residential properties (piso, casa) and commercial (local) need minimum 5 images
+      if (propertyType === "piso" || propertyType === "casa" || propertyType === "local") {
+        return count >= 5;
+      }
+
+      // Garaje and solar need minimum 3 images
+      if (propertyType === "garaje" || propertyType === "solar") {
+        return count >= 3;
+      }
+
+      // Default: 5 images if property type is unknown
+      return count >= 5;
+    },
   },
 
   // ==================== NTH FIELDS (Nice to Have) ====================
@@ -477,6 +533,34 @@ export interface CompletionResult {
   canPublishToPortals: boolean;
 }
 
+/**
+ * Checks if a field rule is applicable to a given property type
+ */
+function isFieldApplicable(rule: FieldRule, propertyType?: string): boolean {
+  // If no applicablePropertyTypes specified, field applies to all types
+  if (!rule.applicablePropertyTypes) {
+    return true;
+  }
+
+  // If no property type provided, include the field (for safety)
+  if (!propertyType) {
+    return true;
+  }
+
+  // Check if the property type is in the applicable list
+  return rule.applicablePropertyTypes.includes(propertyType as PropertyType);
+}
+
+/**
+ * Gets the dynamic label for images based on property type
+ */
+function getImageLabel(propertyType?: string): string {
+  if (propertyType === "garaje" || propertyType === "solar") {
+    return "Imágenes (mínimo 3)";
+  }
+  return "Imágenes (mínimo 5)";
+}
+
 export function calculateCompletion(listing: Record<string, unknown>): CompletionResult {
   const mandatory = {
     completed: [] as Array<FieldRule & { isCompleted: boolean }>,
@@ -504,10 +588,25 @@ export function calculateCompletion(listing: Record<string, unknown>): Completio
     };
   }
 
+  // Get property type from listing
+  const propertyType = listing.propertyType as PropertyType | undefined;
+
+  // Filter and process field rules based on property type
   fieldRules.forEach((rule) => {
+    // Skip fields that don't apply to this property type
+    if (!isFieldApplicable(rule, propertyType)) {
+      return;
+    }
+
     const fieldValue = listing[rule.fieldPath];
     const isValid = rule.validator(fieldValue, listing);
-    const fieldInfo = { ...rule, isCompleted: isValid };
+
+    // Create field info with dynamic label for images
+    const fieldInfo = {
+      ...rule,
+      label: rule.id === "images" ? getImageLabel(propertyType) : rule.label,
+      isCompleted: isValid
+    };
 
     if (rule.importance === "mandatory") {
       mandatory.total++;

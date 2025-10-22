@@ -25,6 +25,7 @@ const DEFAULT_COLUMN_WIDTHS = {
   contacto: 160,
   propiedades: 160,
   recordatorios: 160,
+  origen: 140,
 } as const;
 
 // Minimum column widths
@@ -33,6 +34,7 @@ const MIN_COLUMN_WIDTHS = {
   contacto: 80,
   propiedades: 100,
   recordatorios: 100,
+  origen: 80,
 } as const;
 
 // Extended Contact type
@@ -42,6 +44,7 @@ interface ExtendedContact {
   lastName: string;
   email?: string;
   phone?: string;
+  source?: string;
   isActive: boolean;
   ownerCount?: number;
   buyerCount?: number;
@@ -400,6 +403,13 @@ export function ContactSpreadsheetTable({
                 <div className="truncate">Recordatorios</div>
                 <ResizeHandle column="recordatorios" />
               </TableHead>
+              <TableHead
+                className="relative"
+                style={getColumnStyle("origen")}
+              >
+                <div className="truncate">Origen</div>
+                <ResizeHandle column="origen" />
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -420,7 +430,7 @@ export function ContactSpreadsheetTable({
                 onClick={() => router.push(`/contactos/${contact.contactId}`)}
               >
                 <TableCell
-                  className="overflow-hidden"
+                  className="overflow-hidden py-2.5"
                   style={getColumnStyle("nombre")}
                 >
                   <div className="truncate">
@@ -439,7 +449,7 @@ export function ContactSpreadsheetTable({
                 </TableCell>
 
                 <TableCell
-                  className="overflow-hidden"
+                  className="overflow-hidden py-2.5"
                   style={getColumnStyle("contacto")}
                 >
                   <div className="truncate">
@@ -453,7 +463,7 @@ export function ContactSpreadsheetTable({
                 </TableCell>
 
                 <TableCell
-                  className="overflow-hidden"
+                  className="overflow-hidden py-2.5"
                   style={getColumnStyle("propiedades")}
                 >
                   <div className="truncate">
@@ -471,7 +481,7 @@ export function ContactSpreadsheetTable({
                 </TableCell>
 
                 <TableCell
-                  className="overflow-hidden"
+                  className="overflow-hidden py-2.5"
                   style={getColumnStyle("recordatorios")}
                 >
                   <div className="truncate">
@@ -480,6 +490,17 @@ export function ContactSpreadsheetTable({
                     ) : (
                       <Skeleton className="h-8 w-full" />
                     )}
+                  </div>
+                </TableCell>
+
+                <TableCell
+                  className="overflow-hidden py-2.5"
+                  style={getColumnStyle("origen")}
+                >
+                  <div className="truncate">
+                    <span className="text-sm text-muted-foreground">
+                      {contact.source ?? "-"}
+                    </span>
                   </div>
                 </TableCell>
               </TableRow>

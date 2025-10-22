@@ -3,6 +3,9 @@
 import { ContactBreadcrumb } from "./contact-breadcrumb";
 import { ContactFormHeader } from "./contact-form-header";
 import { ContactTabs } from "./contact-tabs";
+import { updateContactRating } from "~/app/(dashboard)/contactos/[id]/actions";
+import { useTransition } from "react";
+import { toast } from "sonner";
 
 interface ContactDetailLayoutProps {
   contact: {
@@ -14,6 +17,7 @@ interface ContactDetailLayoutProps {
     contactType?: string;
     isActive: boolean | null;
     createdAt: Date;
+    rating?: number | null;
     // Flags and counts from server (optional)
     ownerCount?: number;
     buyerCount?: number;
@@ -27,6 +31,23 @@ interface ContactDetailLayoutProps {
 }
 
 export function ContactDetailLayout({ contact }: ContactDetailLayoutProps) {
+  const [, startTransition] = useTransition();
+
+  const handleRatingChange = (rating: number | null) => {
+    startTransition(async () => {
+      const result = await updateContactRating(Number(contact.contactId), rating);
+      if (result.success) {
+        toast.success(
+          rating
+            ? `Valoración actualizada a ${rating}/5`
+            : "Valoración eliminada",
+        );
+      } else {
+        toast.error("Error al actualizar la valoración");
+      }
+    });
+  };
+
   // Transform contact to match ContactCharacteristicsForm interface
   const transformedContact = {
     contactId: contact.contactId,
@@ -68,6 +89,7 @@ export function ContactDetailLayout({ contact }: ContactDetailLayoutProps) {
           ...contact,
           contactType: contact.contactType ?? "demandante",
         }}
+        onRatingChange={handleRatingChange}
       />
 
       {/* Contact Tabs */}

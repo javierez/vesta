@@ -1276,6 +1276,7 @@ export function PropertyCharacteristicsForm({
           propertyType={propertyType}
           propertyId={listing.propertyId}
           createdAt={listing.createdAt}
+          listing={listing as unknown as Record<string, unknown>}
         />
       </div>
 

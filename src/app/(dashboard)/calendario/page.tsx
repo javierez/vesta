@@ -151,6 +151,10 @@ export default function AppointmentsPage() {
   const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
 
+  // Prefetch state management
+  const hasTriggeredPrefetchRef = useRef(false);
+  const lastPrefetchTimeRef = useRef<number>(0);
+
   // Use real appointments data
   const {
     appointments: realAppointments,
@@ -204,8 +208,19 @@ export default function AppointmentsPage() {
           .includes(searchQuery.toLowerCase()) ??
           false);
       const matchesType = typeFilter === "all" || appointment.type === typeFilter;
+
+      // Map Spanish status filter to English DB status
+      const statusMap: Record<string, string> = {
+        "Programado": "Scheduled",
+        "Completado": "Completed",
+        "Cancelado": "Cancelled",
+        "Reprogramado": "Rescheduled",
+        "No asistió": "NoShow",
+      };
       const matchesStatus =
-        statusFilter === "all" || appointment.status === statusFilter;
+        statusFilter === "all" ||
+        appointment.status === statusMap[statusFilter];
+
       const matchesAgent =
         selectedAgents.length === 0 ||
         (appointment.agentName &&
@@ -261,22 +276,37 @@ export default function AppointmentsPage() {
     setVisibleRows(new Set(initialVisibleIds));
   }, [filteredAppointments]);
 
+  // Reset prefetch flag when week changes
+  useEffect(() => {
+    hasTriggeredPrefetchRef.current = false;
+  }, [weekStart]);
+
   // Smart prefetching for list view - preload next week's data when scrolling
   useEffect(() => {
     if (view !== "list") return;
 
-    let hasTriggeredPrefetch = false;
+    const PREFETCH_COOLDOWN = 5000; // 5 seconds cooldown between prefetches
+    const PREFETCH_THRESHOLD = 0.8; // Trigger at 80% scroll
 
     const prefetchNextWeek = () => {
-      if (hasTriggeredPrefetch || loading) return;
+      // Guard conditions
+      if (hasTriggeredPrefetchRef.current || loading) return;
 
-      // Prefetch when user scrolls to 80% of current content
+      const now = Date.now();
+      const timeSinceLastPrefetch = now - lastPrefetchTimeRef.current;
+
+      // Enforce cooldown period
+      if (timeSinceLastPrefetch < PREFETCH_COOLDOWN) return;
+
+      // Check scroll position
       const scrollY = window.scrollY;
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
 
-      if (scrollY + windowHeight >= documentHeight * 0.8) {
-        hasTriggeredPrefetch = true;
+      if (scrollY + windowHeight >= documentHeight * PREFETCH_THRESHOLD) {
+        hasTriggeredPrefetchRef.current = true;
+        lastPrefetchTimeRef.current = now;
+
         // Calculate next week
         const nextWeekStart = new Date(weekStart);
         nextWeekStart.setDate(nextWeekStart.getDate() + 7);
@@ -428,85 +458,81 @@ export default function AppointmentsPage() {
           {/* Agent Filter - Multi-select */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-between sm:w-[180px]"
-              >
-                {selectedAgents.length === 0
-                  ? "Todos los agentes"
-                  : selectedAgents.length === 1
-                    ? (() => {
-                        const agent = agents.find(
-                          (agent) => agent.id === selectedAgents[0],
-                        );
-                        return (
-                          agent?.name ??
-                          `${agent?.firstName} ${agent?.lastName}`
-                        );
-                      })()
-                    : `${selectedAgents.length} agentes`}
-                <Filter className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              <Button variant="outline" size="sm" className="relative h-8 w-8 p-0">
+                <Users className="h-3.5 w-3.5" />
+                {selectedAgents.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
+                  >
+                    {selectedAgents.length}
+                  </Badge>
+                )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-56 p-0" align="start">
-              <div className="p-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    {selectedAgents.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedAgents([])}
-                        className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        Limpiar
-                      </Button>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    {agents.map((agent) => {
-                      const isSelected = selectedAgents.includes(agent.id);
-                      return (
-                        <div
-                          key={agent.id}
-                          className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
-                          onClick={() => {
-                            if (isSelected) {
-                              setSelectedAgents((prev) =>
-                                prev.filter((id) => id !== agent.id),
-                              );
-                            } else {
-                              setSelectedAgents((prev) => [...prev, agent.id]);
-                            }
-                          }}
-                        >
+            <PopoverContent className="w-64 p-0" align="end">
+              <div className="flex flex-col">
+                <ScrollArea className="h-[200px]">
+                  <div className="space-y-3 p-3">
+                    <div className="space-y-0.5">
+                      {agents.map((agent) => {
+                        const isSelected = selectedAgents.includes(agent.id);
+                        return (
                           <div
-                            className={`flex h-4 w-4 items-center justify-center rounded border ${
-                              isSelected
-                                ? "border-primary bg-primary"
-                                : "border-input"
-                            }`}
+                            key={agent.id}
+                            className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedAgents((prev) =>
+                                  prev.filter((id) => id !== agent.id),
+                                );
+                              } else {
+                                setSelectedAgents((prev) => [...prev, agent.id]);
+                              }
+                            }}
                           >
-                            {isSelected && (
-                              <Check className="h-3 w-3 text-primary-foreground" />
-                            )}
+                            <div
+                              className={`flex h-3 w-3 items-center justify-center rounded border ${
+                                isSelected
+                                  ? "border-primary bg-primary"
+                                  : "border-input"
+                              }`}
+                            >
+                              {isSelected && (
+                                <Check className="h-2 w-2 text-primary-foreground" />
+                              )}
+                            </div>
+                            <span className={`text-[12px] ${isSelected ? "font-medium" : ""}`}>
+                              {agent.name ??
+                                `${agent.firstName} ${agent.lastName ?? ""}`}
+                            </span>
                           </div>
-                          <span className="text-sm">
-                            {agent.name ??
-                              `${agent.firstName} ${agent.lastName ?? ""}`}
-                          </span>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                </ScrollArea>
+                {selectedAgents.length > 0 && (
+                  <div className="border-t p-1.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedAgents([])}
+                      className="h-6 w-full text-[12px]"
+                    >
+                      <X className="mr-1 h-3 w-3" />
+                      Borrar
+                    </Button>
+                  </div>
+                )}
               </div>
             </PopoverContent>
           </Popover>
 
           <Button
             variant="outline"
-            size="icon"
+            size="sm"
+            className="h-8 w-8 p-0"
             onClick={() =>
               setView(
                 view === "list"
@@ -525,17 +551,17 @@ export default function AppointmentsPage() {
             }
           >
             {view === "list" ? (
-              <CalendarIcon className="h-4 w-4" />
+              <CalendarIcon className="h-3.5 w-3.5" />
             ) : view === "calendar" ? (
-              <Clock className="h-4 w-4" />
+              <Clock className="h-3.5 w-3.5" />
             ) : (
-              <TableIcon className="h-4 w-4" />
+              <TableIcon className="h-3.5 w-3.5" />
             )}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" title="Integraciones">
-                <LinkIcon className="h-4 w-4" />
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Integraciones">
+                <LinkIcon className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
@@ -659,15 +685,15 @@ export default function AppointmentsPage() {
           </DropdownMenu>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="relative">
-                <Filter className="mr-2 h-4 w-4" />
-                Filtros
+              <Button variant="outline" size="sm" className="relative h-8 text-xs">
+                <Filter className="mr-1.5 h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Filtros</span>
                 {(typeFilter !== "all" ||
                   statusFilter !== "all" ||
                   selectedAgents.length > 0) && (
                   <Badge
                     variant="secondary"
-                    className="ml-2 rounded-sm px-1 font-normal"
+                    className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
                   >
                     {[typeFilter, statusFilter].filter((f) => f !== "all")
                       .length + (selectedAgents.length > 0 ? 1 : 0)}
@@ -710,7 +736,7 @@ export default function AppointmentsPage() {
                         Estado
                       </h5>
                       <div className="space-y-1">
-                        {["Programado", "Completado", "Cancelado"].map(
+                        {["Programado", "Completado", "Cancelado", "Reprogramado", "No asistió"].map(
                           (status) => (
                             <div
                               key={status}
@@ -762,7 +788,7 @@ export default function AppointmentsPage() {
       </div>
 
       {view === "list" && (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader className="h-6 w-6 animate-spin" />

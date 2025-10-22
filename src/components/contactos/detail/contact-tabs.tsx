@@ -139,6 +139,7 @@ interface ContactTabsProps {
     firstName: string;
     lastName: string;
     nif?: string;
+    source?: string;
     email?: string;
     phone?: string;
     phoneNotes?: string;
@@ -234,6 +235,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   const [firstName, setFirstName] = useState(contact.firstName ?? "");
   const [lastName, setLastName] = useState(contact.lastName ?? "");
   const [nif, setNif] = useState(contact.nif ?? "");
+  const [source, setSource] = useState(contact.source ?? "");
   const [email, setEmail] = useState(contact.email ?? "");
   const [phone, setPhone] = useState(contact.phone ?? "");
   const [phoneNotes, setPhoneNotes] = useState(contact.phoneNotes ?? "");
@@ -822,7 +824,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
 
       switch (moduleName) {
         case "basicInfo":
-          contactData = { firstName, lastName, nif };
+          contactData = { firstName, lastName, nif, source };
           break;
         case "contactDetails":
           contactData = { email, phone, phoneNotes, secondaryPhone, secondaryPhoneNotes };
@@ -986,6 +988,8 @@ export function ContactTabs({ contact }: ContactTabsProps) {
               setLastName={setLastName}
               nif={nif}
               setNif={setNif}
+              source={source}
+              setSource={setSource}
               saveState={moduleStates.basicInfo?.saveState ?? "idle"}
               onSave={() => saveModule("basicInfo")}
               onUpdateModule={(hasChanges) => updateModuleState("basicInfo", hasChanges)}

@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { formatListingType } from "../../contactos/contact-config";
 import { generatePropertyTitle } from "~/lib/property-title";
 import { CompletionTrackerModal } from "../completion-tracker-modal";
-import { calculateCompletion } from "~/lib/property-completion-tracker";
+import { calculateCompletion } from "~/lib/properties/completion-tracker";
 
 const statusColors: Record<string, string> = {
   Sale: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-200 hover:text-amber-900 hover:border-amber-400 hover:shadow-lg hover:scale-105",

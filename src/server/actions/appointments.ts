@@ -30,6 +30,7 @@ interface AppointmentFormData {
   tripTimeMinutes?: number;
   notes?: string;
   appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
+  assignedTo?: string; // FK → users.id (who is assigned to the appointment)
 }
 
 // Server action for appointment update
@@ -56,6 +57,8 @@ export async function updateAppointmentAction(
       status: "Scheduled" as const,
       notes: formData.notes,
       type: formData.appointmentType,
+      assignedTo: formData.assignedTo,
+      editedBy: currentUser.id, // Track who edited the appointment
       isActive: true,
     };
 
@@ -138,6 +141,7 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       status: "Scheduled" as const,
       notes: formData.notes,
       type: formData.appointmentType,
+      assignedTo: formData.assignedTo,
       isActive: true,
     };
 

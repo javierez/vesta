@@ -111,7 +111,7 @@ export function AppointmentCard({
   return (
     <div
       className={cn(
-        "calendar-event relative cursor-pointer rounded-lg border bg-white p-4 transition-all duration-200 hover:shadow-md",
+        "calendar-event relative cursor-pointer rounded-lg border bg-white p-2.5 transition-all duration-200 hover:shadow-md",
         isSelected && "ring-2 ring-blue-500 ring-offset-1",
         optimisticStyles,
         className,
@@ -119,14 +119,14 @@ export function AppointmentCard({
       onClick={handleClick}
     >
       {/* Main content */}
-      <div className="pr-32"> {/* Add right padding to avoid overlap with badges */}
+      <div className="pr-28"> {/* Add right padding to avoid overlap with badges */}
         {/* Contact name */}
-        <div className="font-medium text-gray-900 mb-2">
+        <div className="font-medium text-gray-900 text-sm mb-1">
           {appointment.contactName}
         </div>
 
         {/* Details */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {formatDate(appointment.datetimeStart)} • {formatTime(appointment.datetimeStart)} - {formatTime(appointment.datetimeEnd)}
@@ -161,11 +161,11 @@ export function AppointmentCard({
       </div>
 
       {/* Badges - Centered in the middle */}
-      <div className="absolute top-1/2 right-3 transform -translate-y-1/2 flex flex-col gap-3">
+      <div className="absolute top-1/2 right-2 transform -translate-y-1/2 flex flex-col gap-1.5">
         {/* Type badge */}
         <div
           className={cn(
-            "flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+            "flex items-center justify-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
             typeConfig.color,
           )}
         >
@@ -176,7 +176,7 @@ export function AppointmentCard({
         {/* Status badge */}
         <span
           className={cn(
-            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
             appointment.status === "Scheduled" && "bg-gray-100 text-gray-700",
             appointment.status === "Completed" && "bg-gray-200 text-gray-800",
             appointment.status === "Cancelled" && "bg-gray-100 text-gray-600",
@@ -184,7 +184,7 @@ export function AppointmentCard({
             appointment.status === "NoShow" && "bg-gray-100 text-gray-500",
           )}
         >
-          {appointment.status === "Scheduled" ? "Programado" : 
+          {appointment.status === "Scheduled" ? "Programado" :
            appointment.status === "Completed" ? "Completado" :
            appointment.status === "Cancelled" ? "Cancelado" :
            appointment.status === "Rescheduled" ? "Reprogramado" :

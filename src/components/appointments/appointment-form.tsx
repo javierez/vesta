@@ -29,8 +29,10 @@ import {
 } from "~/server/actions/appointments";
 import { searchContactsWithAuth } from "~/server/queries/contact";
 import { listListingsCompactWithAuth } from "~/server/queries/listing";
+import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
+import { useSession } from "~/lib/auth-client";
 import {
   Select,
   SelectContent,
@@ -53,6 +55,7 @@ interface AppointmentFormData {
   tripTimeMinutes?: number;
   notes?: string;
   appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
+  assignedTo?: string; // FK → users.id (who is assigned to the appointment)
 }
 
 interface Contact {
@@ -226,11 +229,26 @@ export default function AppointmentForm({
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [listingSearchQuery, setListingSearchQuery] = useState("");
+  const [showEndDate, setShowEndDate] = useState(false);
+  const [durationHours, setDurationHours] = useState(0);
+  const [durationMinutes, setDurationMinutes] = useState(30);
+  const [agents, setAgents] = useState<{ id: string; name: string; firstName?: string; lastName?: string; }[]>([]);
+  const [isLoadingAgents, setIsLoadingAgents] = useState(false);
+  const { data: session } = useSession();
+
+  // Calculate endTime based on startTime and duration
+  useEffect(() => {
+    if (formData.startTime) {
+      const totalMinutes = durationHours * 60 + durationMinutes;
+      const newEndTime = addMinutesToTime(formData.startTime, totalMinutes);
+      setFormData((prev) => ({ ...prev, endTime: newEndTime }));
+    }
+  }, [formData.startTime, durationHours, durationMinutes]);
 
   // Cleanup effect to handle component unmounting
   useEffect(() => {
     isMountedRef.current = true;
-    
+
     return () => {
       isMountedRef.current = false;
       // Clean up optimistic event if component unmounts during creation
@@ -318,6 +336,38 @@ export default function AppointmentForm({
       return () => clearTimeout(debounceTimer);
     }
   }, [searchQuery, initialData.contactId, selectedContact, contacts.length]);
+
+  // Fetch all agents when user is on step 0 (contact selection)
+  useEffect(() => {
+    if (currentStep !== 0) return;
+
+    const fetchAgents = async () => {
+      setIsLoadingAgents(true);
+      try {
+        const agentsData = await getAgentsForSelectionWithAuth();
+        const formattedAgents = agentsData.map((agent) => ({
+          id: agent.id,
+          name: agent.name,
+          firstName: agent.firstName,
+          lastName: agent.lastName ?? undefined,
+        }));
+        setAgents(formattedAgents);
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+      } finally {
+        setIsLoadingAgents(false);
+      }
+    };
+
+    void fetchAgents();
+  }, [currentStep]);
+
+  // Initialize agent selection with current user when on step 0
+  useEffect(() => {
+    if (currentStep === 0 && !formData.assignedTo && session?.user?.id) {
+      setFormData(prev => ({ ...prev, assignedTo: session.user.id }));
+    }
+  }, [currentStep, session?.user?.id, formData.assignedTo]);
 
   // Fetch last 10 listings on mount when on step 2, then fetch when user searches
   useEffect(() => {
@@ -522,6 +572,10 @@ export default function AppointmentForm({
           setValidationError("Debe seleccionar un contacto");
           return false;
         }
+        if (!formData.assignedTo) {
+          setValidationError("Debe seleccionar un agente");
+          return false;
+        }
         return true;
       case 1: // Details
         // Check if listing is required for "Visita" appointments
@@ -703,47 +757,78 @@ export default function AppointmentForm({
       case 0: // Contact Selection
         return (
           <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                id="contact-search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar contactos..."
-                className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              />
+            {/* Agent Selection */}
+            <div className="space-y-2">
+              <label htmlFor="agent-select" className="text-sm font-medium text-gray-700">
+                Asignar a
+              </label>
+              <Select
+                value={formData.assignedTo}
+                onValueChange={(value) => {
+                  setFormData((prev) => ({ ...prev, assignedTo: value }));
+                  setValidationError(null);
+                }}
+                disabled={isLoadingAgents}
+              >
+                <SelectTrigger className="h-9 text-gray-500">
+                  <SelectValue placeholder={
+                    isLoadingAgents ? "Cargando agentes..." :
+                    agents.length === 0 ? "No hay agentes" : "Seleccionar agente"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.name ?? (`${agent.firstName ?? ''} ${agent.lastName ?? ''}`.trim() || agent.id)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="contact-search" className="text-sm font-medium text-gray-700">
+                Buscar contacto
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  id="contact-search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar contactos..."
+                  className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
             </div>
 
             {selectedContact && (
               // Show selected contact
-              <div className="rounded-lg border border-primary bg-primary/5 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-primary" />
-                    <div>
-                      <div className="font-medium">
-                        {selectedContact.firstName} {selectedContact.lastName}
-                      </div>
-                      {selectedContact.email && (
-                        <div className="text-sm text-muted-foreground">
-                          {selectedContact.email}
-                        </div>
-                      )}
-                      {selectedContact.phone && (
-                        <div className="text-sm text-muted-foreground">
-                          {selectedContact.phone}
-                        </div>
-                      )}
+              <div className="rounded-lg border border-primary/40 bg-primary/5 p-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">
+                      {selectedContact.firstName} {selectedContact.lastName}
                     </div>
+                    {selectedContact.email && (
+                      <div className="text-xs text-muted-foreground">
+                        {selectedContact.email}
+                      </div>
+                    )}
+                    {selectedContact.phone && (
+                      <div className="text-xs text-muted-foreground">
+                        {selectedContact.phone}
+                      </div>
+                    )}
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleClearContact}
-                    className="h-8 w-8 p-0"
+                    className="h-6 w-6 p-0 shrink-0"
                     title="Cambiar contacto"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
@@ -751,31 +836,31 @@ export default function AppointmentForm({
 
             <ScrollArea className="h-[300px]">
               {isLoadingContacts ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader className="h-6 w-6 animate-spin" />
+                <div className="flex items-center justify-center py-6">
+                  <Loader className="h-5 w-5 animate-spin" />
                 </div>
               ) : filteredContacts.length === 0 && searchQuery.length > 0 ? (
-                <div className="py-8 text-center text-muted-foreground">
+                <div className="py-6 text-center text-sm text-muted-foreground">
                   No se encontraron contactos
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {filteredContacts.map((contact) => (
                     <div
                       key={contact.contactId.toString()}
-                      className="cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted"
+                      className="cursor-pointer rounded-lg border border-gray-100/50 bg-gray-50/30 p-2 transition-all hover:border-gray-200 hover:bg-gray-100/60 hover:shadow-sm"
                       onClick={() => handleContactSelect(contact)}
                     >
-                      <div className="font-medium">
+                      <div className="text-sm font-medium text-gray-600">
                         {contact.firstName} {contact.lastName}
                       </div>
                       {contact.email && (
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-xs text-gray-400">
                           {contact.email}
                         </div>
                       )}
                       {contact.phone && (
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-xs text-gray-400">
                           {contact.phone}
                         </div>
                       )}
@@ -789,16 +874,65 @@ export default function AppointmentForm({
 
       case 1: // Details
         return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FloatingLabelInput
-                id="startDate"
-                value={formData.startDate ?? ""}
-                onChange={handleInputChange("startDate")}
-                placeholder="Fecha de inicio"
-                type="date"
-                required
-              />
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <FloatingLabelInput
+                  id="startDate"
+                  value={formData.startDate ?? ""}
+                  onChange={handleInputChange("startDate")}
+                  placeholder="Fecha de inicio"
+                  type="date"
+                  required
+                />
+                {!showEndDate ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowEndDate(true)}
+                    className="w-full text-xs"
+                  >
+                    + Añadir fecha de fin
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowEndDate(false)}
+                    className="w-full text-xs text-muted-foreground"
+                  >
+                    Ocultar fecha de fin
+                  </Button>
+                )}
+              </div>
+
+              <div className="relative mt-8">
+                <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
+                  Hora de inicio
+                </label>
+                <Select
+                  value={formData.startTime}
+                  onValueChange={handleInputChange("startTime")}
+                >
+                  <SelectTrigger className="h-9 border border-gray-200 shadow-md">
+                    <SelectValue placeholder="Seleccionar hora" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <ScrollArea className="h-[200px]">
+                      {generateTimeOptions().map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </ScrollArea>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {showEndDate && (
               <FloatingLabelInput
                 id="endDate"
                 value={formData.endDate ?? ""}
@@ -807,59 +941,50 @@ export default function AppointmentForm({
                 type="date"
                 required
               />
-            </div>
+            )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Hora de inicio</label>
-                <Select
-                  value={formData.startTime}
-                  onValueChange={handleInputChange("startTime")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar hora" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <ScrollArea className="h-[200px]">
-                      {generateTimeOptions().map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </ScrollArea>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Hora de fin</label>
-                <Select
-                  value={formData.endTime}
-                  onValueChange={handleInputChange("endTime")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar hora" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <ScrollArea className="h-[200px]">
-                      {generateTimeOptions().map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </ScrollArea>
-                  </SelectContent>
-                </Select>
+            <div className="relative">
+              <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
+                Duración
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={durationHours}
+                    onChange={(e) => setDurationHours(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    className="h-9 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                  <span className="text-xs text-muted-foreground">horas</span>
+                </div>
+                <div className="space-y-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    step="15"
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)}
+                    placeholder="30"
+                    className="h-9 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                  <span className="text-xs text-muted-foreground">minutos</span>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tipo de cita</label>
+            <div className="relative">
+              <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
+                Tipo de cita
+              </label>
               <Select
                 value={formData.appointmentType}
                 onValueChange={handleInputChange("appointmentType")}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9 border border-gray-200 shadow-md">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -879,49 +1004,43 @@ export default function AppointmentForm({
             {formData.appointmentType === "Visita" && (
               <div className="space-y-3">
                 {/* Only show label and search if listing wasn't pre-selected via URL */}
-                {!initialData.listingId && (
-                  <>
-                    <label className="flex items-center gap-2 text-sm font-medium">
-                      <Home className="h-4 w-4" />
+                {!initialData.listingId && !selectedListing && (
+                  <div className="relative">
+                    <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
                       Seleccionar Propiedad
                     </label>
-                    {!selectedListing && (
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <input
-                          value={listingSearchQuery}
-                          onChange={(e) => setListingSearchQuery(e.target.value)}
-                          placeholder="Buscar propiedades..."
-                          className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                        />
-                      </div>
-                    )}
-                  </>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10" />
+                      <input
+                        value={listingSearchQuery}
+                        onChange={(e) => setListingSearchQuery(e.target.value)}
+                        placeholder="Buscar propiedades..."
+                        className="h-9 w-full rounded-md border border-gray-200 bg-background pl-10 pr-3 text-sm shadow-md transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      />
+                    </div>
+                  </div>
                 )}
 
                 {selectedListing && (
                   // Show selected listing (always visible if a listing is selected)
-                  <div className="rounded-lg border border-primary bg-primary/5 p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Home className="h-5 w-5 text-primary" />
-                        <div>
-                          <div className="font-medium">
-                            {selectedListing.title ??
-                              `${selectedListing.propertyType} en ${selectedListing.city}`}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Ref: {selectedListing.referenceNumber} •{" "}
-                            {selectedListing.city} • {Math.floor(parseFloat(selectedListing.price)).toLocaleString('es-ES')}€
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {selectedListing.bedrooms &&
-                              `${selectedListing.bedrooms} hab`}
-                            {selectedListing.bathrooms &&
-                              ` • ${Math.floor(parseFloat(selectedListing.bathrooms))} baños`}
-                            {selectedListing.squareMeter &&
-                              ` • ${selectedListing.squareMeter}m²`}
-                          </div>
+                  <div className="rounded-lg border border-primary/40 bg-primary/5 p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">
+                          {selectedListing.title ??
+                            `${selectedListing.propertyType} en ${selectedListing.city}`}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Ref: {selectedListing.referenceNumber} •{" "}
+                          {selectedListing.city} • {Math.floor(parseFloat(selectedListing.price)).toLocaleString('es-ES')}€
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {selectedListing.bedrooms &&
+                            `${selectedListing.bedrooms} hab`}
+                          {selectedListing.bathrooms &&
+                            ` • ${Math.floor(parseFloat(selectedListing.bathrooms))} baños`}
+                          {selectedListing.squareMeter &&
+                            ` • ${selectedListing.squareMeter}m²`}
                         </div>
                       </div>
                       {/* Only show clear button if listing wasn't pre-selected via URL */}
@@ -930,10 +1049,10 @@ export default function AppointmentForm({
                           variant="ghost"
                           size="sm"
                           onClick={handleClearListing}
-                          className="h-8 w-8 p-0"
+                          className="h-6 w-6 p-0 shrink-0"
                           title="Cambiar propiedad"
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
@@ -944,33 +1063,33 @@ export default function AppointmentForm({
                 {!selectedListing && !initialData.listingId && (
                   <ScrollArea className="h-[180px]">
                     {isLoadingListings ? (
-                      <div className="flex items-center justify-center py-8">
-                        <Loader className="h-6 w-6 animate-spin" />
+                      <div className="flex items-center justify-center py-6">
+                        <Loader className="h-5 w-5 animate-spin" />
                       </div>
                     ) : filteredListings.length === 0 &&
                       listingSearchQuery.length > 0 ? (
-                      <div className="py-8 text-center text-muted-foreground">
+                      <div className="py-6 text-center text-sm text-muted-foreground">
                         No se encontraron propiedades
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {filteredListings.map((listing) => (
                           <div
                             key={listing.listingId.toString()}
-                            className="cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted"
+                            className="cursor-pointer rounded-lg border border-gray-100/50 bg-gray-50/30 p-2 transition-all hover:border-gray-200 hover:bg-gray-100/60 hover:shadow-sm"
                             onClick={() => handleListingSelect(listing)}
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                               <div className="flex-1">
-                                <div className="font-medium">
+                                <div className="text-sm font-medium text-gray-600">
                                   {listing.title ??
                                     `${listing.propertyType} en ${listing.city}`}
                                 </div>
-                                <div className="text-sm text-muted-foreground">
+                                <div className="text-xs text-gray-400">
                                   Ref: {listing.referenceNumber} •{" "}
                                   {listing.city} • {Math.floor(parseFloat(listing.price)).toLocaleString('es-ES')}€
                                 </div>
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-xs text-gray-400">
                                   {listing.bedrooms &&
                                     `${listing.bedrooms} hab`}
                                   {listing.bathrooms &&
@@ -989,9 +1108,8 @@ export default function AppointmentForm({
               </div>
             )}
 
-            <div className="space-y-1">
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <Car className="h-4 w-4" />
+            <div className="relative">
+              <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
                 Tiempo de viaje (minutos)
               </label>
               <input
@@ -1004,17 +1122,19 @@ export default function AppointmentForm({
                 }
                 placeholder="0"
                 type="number"
-                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-9 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Notas</label>
+            <div className="relative">
+              <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
+                Notas
+              </label>
               <Textarea
                 value={formData.notes ?? ""}
                 onChange={(e) => handleInputChange("notes")(e.target.value)}
                 placeholder="Notas adicionales sobre la cita..."
-                className="min-h-[80px]"
+                className="min-h-[60px] border-gray-200 shadow-md"
               />
             </div>
           </div>
@@ -1047,8 +1167,12 @@ export default function AppointmentForm({
                 <Calendar className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <div className="font-medium">
-                    {formData.startDate} • {formData.startTime} -{" "}
-                    {formData.endTime}
+                    {formData.startDate} • {formData.startTime} - {formData.endTime}
+                    {showEndDate && formData.endDate !== formData.startDate && (
+                      <>
+                        {" "}(hasta {formData.endDate})
+                      </>
+                    )}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {
@@ -1056,6 +1180,8 @@ export default function AppointmentForm({
                         (t) => t.value === formData.appointmentType,
                       )?.label
                     }
+                    {" • "}
+                    Duración: {durationHours > 0 && `${durationHours}h `}{durationMinutes}min
                   </div>
                 </div>
               </div>
