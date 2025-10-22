@@ -157,6 +157,10 @@ export interface PropertyListing {
     id: string;
     name: string;
   };
+
+  // Timestamps
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
 }
 
 // Type guard to check if an object is a PropertyListing
@@ -299,5 +303,7 @@ export function convertDbListingToPropertyListing(
             name: `${String((dbListing.agent as Record<string, unknown>).firstName)} ${String((dbListing.agent as Record<string, unknown>).lastName)}`,
           }
         : undefined,
+    createdAt: dbListing.createdAt instanceof Date ? dbListing.createdAt : null,
+    updatedAt: dbListing.updatedAt instanceof Date ? dbListing.updatedAt : null,
   };
 }

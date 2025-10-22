@@ -90,7 +90,7 @@ export function ContactDetailsCard({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="phoneNotes" className="text-sm">
+          <Label htmlFor="phoneNotes" className="text-xs text-muted-foreground">
             Notas del Teléfono
           </Label>
           <Textarea
@@ -100,7 +100,7 @@ export function ContactDetailsCard({
               setPhoneNotes(e.target.value);
               onUpdateModule(true);
             }}
-            className="min-h-[60px] text-gray-500 placeholder:text-gray-300"
+            className="min-h-[50px] text-sm text-gray-400 placeholder:text-gray-300"
             placeholder="Notas sobre el teléfono principal..."
           />
         </div>
@@ -121,7 +121,7 @@ export function ContactDetailsCard({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="secondaryPhoneNotes" className="text-sm">
+          <Label htmlFor="secondaryPhoneNotes" className="text-xs text-muted-foreground">
             Notas del Teléfono Secundario
           </Label>
           <Textarea
@@ -131,7 +131,7 @@ export function ContactDetailsCard({
               setSecondaryPhoneNotes(e.target.value);
               onUpdateModule(true);
             }}
-            className="min-h-[60px] text-gray-500 placeholder:text-gray-300"
+            className="min-h-[50px] text-sm text-gray-400 placeholder:text-gray-300"
             placeholder="Notas sobre el teléfono secundario..."
           />
         </div>

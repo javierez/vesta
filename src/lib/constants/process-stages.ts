@@ -87,9 +87,9 @@ const rawProcessStages: ProcessStage[] = [
     label: "Oportunidad",
     status: "accomplished",
     subStages: [
-      { id: "alta", label: "Alta", status: "accomplished" },
+      { id: "alta", label: "Alta propiedad", status: "accomplished" },
       { id: "completar-info", label: "Datos pendientes", status: "accomplished" },
-      { id: "firma-encargo", label: "Firma encargo", status: "future" },
+      { id: "firma-encargo", label: "Encargo", status: "future" },
     ],
   },
   {
@@ -97,7 +97,7 @@ const rawProcessStages: ProcessStage[] = [
     label: "Búsqueda",
     status: "ongoing",
     subStages: [
-      { id: "visitas", label: "En visitas", status: "accomplished" },
+      { id: "visitas", label: "Visitas", status: "accomplished" },
     ],
   },
   {
@@ -105,8 +105,8 @@ const rawProcessStages: ProcessStage[] = [
     label: "Cierre",
     status: "future",
     subStages: [
-      { id: "contrato", label: "Contrato", status: "future" },
-      { id: "arras", label: "Pago y firma", status: "future" },
+      { id: "arras", label: "Arras", status: "future" },
+      { id: "contrato", label: "Escritura", status: "future" },
       { id: "cierre-final", label: "Cierre", status: "future" },
     ],
   },

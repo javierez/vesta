@@ -9,6 +9,8 @@ import { getAllPropertyImages } from "~/app/actions/property-images";
 import { PROCESS_STAGES } from "~/lib/constants/process-stages";
 import type { StageStatus } from "~/lib/constants/process-stages";
 import { cn } from "~/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 // Custom scrollbar styles for this component only
 const scrollbarStyles = `
@@ -44,6 +46,7 @@ interface PropertyStatusRowProps {
   oportunidadStatus?: string | null;
   propertyType?: string | null;
   propertyId?: number | string | bigint | null;
+  createdAt?: Date | null;
 }
 
 // Timeline node component for substages
@@ -52,35 +55,64 @@ function TimelineNode({
   status,
   labelPosition,
   isFirst,
-  isLast
+  isLast,
+  showInfoButton,
+  infoTooltipContent
 }: {
   label: string;
   status: StageStatus;
   labelPosition: "above" | "below";
   isFirst: boolean;
   isLast: boolean;
+  showInfoButton?: boolean;
+  infoTooltipContent?: string;
 }) {
   const isFuture = status === "future";
 
-  // Larger dots for first and last
-  const dotSize = isFirst || isLast
-    ? "h-6 w-6 sm:h-7 sm:w-7"
-    : "h-3 w-3 sm:h-3.5 sm:w-3.5";
+  const dotSize = isFirst || isLast ? "h-6 w-6 sm:h-7 sm:w-7" : "h-3 w-3 sm:h-3.5 sm:w-3.5";
+
+  // Log if this node has an info button
+  if (showInfoButton && infoTooltipContent) {
+    console.log("💡 TimelineNode with info button:", {
+      label,
+      infoTooltipContent,
+      hasInfoButton: !!showInfoButton,
+    });
+  }
 
   return (
     <div className="relative flex flex-col items-center">
-      {/* Label - positioned absolutely with fixed baseline alignment */}
+      {/* Label with optional info button - positioned absolutely with fixed baseline alignment */}
       <div
         className={cn(
-          "absolute whitespace-nowrap text-[11px] sm:text-xs font-medium flex items-center justify-center",
-          labelPosition === "above" ? "bottom-[calc(100%+0.25rem)] sm:bottom-[calc(100%+0.375rem)]" : "top-[calc(100%+0.25rem)] sm:top-[calc(100%+0.375rem)]",
+          "absolute whitespace-nowrap text-[11px] sm:text-xs font-medium flex items-center justify-center gap-1",
+          labelPosition === "above" ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.75rem)]" : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.75rem)]",
           isFuture ? "text-slate-300" : "text-slate-900"
         )}
         style={{
           height: labelPosition === "above" ? "1.5rem" : "1.5rem"
         }}
       >
-        {label}
+        <span>{label}</span>
+        {showInfoButton && infoTooltipContent && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  "inline-flex items-center justify-center rounded-full p-0.5 hover:bg-slate-200 transition-colors",
+                  isFuture ? "text-slate-300" : "text-slate-600 hover:text-slate-900"
+                )}
+                aria-label="Información"
+              >
+                <Info className="h-3 w-3" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{infoTooltipContent}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       {/* Dot */}
@@ -100,7 +132,19 @@ export function PropertyStatusRow({
   oportunidadStatus: _oportunidadStatus,
   propertyType,
   propertyId,
+  createdAt,
 }: PropertyStatusRowProps) {
+  // Log the props to verify data
+  console.log("🔍 PropertyStatusRow props:", {
+    firstImageUrl,
+    propertyType,
+    propertyId,
+    createdAt,
+    createdAtType: typeof createdAt,
+    createdAtInstanceOfDate: createdAt instanceof Date,
+    createdAtValue: createdAt,
+  });
+
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
@@ -155,7 +199,6 @@ export function PropertyStatusRow({
     };
   }, []);
 
-  // Auto-scroll to center the active stage on mount
   useEffect(() => {
     if (scrollContainerRef.current && activeStageRef.current) {
       const container = scrollContainerRef.current;
@@ -165,12 +208,11 @@ export function PropertyStatusRow({
       const elementLeft = activeElement.offsetLeft;
       const elementWidth = activeElement.offsetWidth;
 
-      // Calculate scroll position to center the active element
-      const scrollPosition = elementLeft - (containerWidth / 2) + (elementWidth / 2);
+      const scrollPosition = elementLeft - containerWidth / 2 + elementWidth / 2;
 
       container.scrollTo({
         left: scrollPosition,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   }, []);
@@ -178,8 +220,28 @@ export function PropertyStatusRow({
   // Calculate total substages for proportional width
   const totalSubstages = PROCESS_STAGES.reduce((acc, stage) => acc + stage.subStages.length, 0);
 
+  const completedSubstages = PROCESS_STAGES.reduce((acc, stage) => {
+    return acc + stage.subStages.filter((sub) => sub.status === "accomplished").length;
+  }, 0);
+  const progressPercent = (completedSubstages / totalSubstages) * 100;
+
+  // Format created date for tooltip - using short date format
+  const createdAtText = createdAt
+    ? new Date(createdAt).toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+    : undefined;
+
+  console.log("📅 Formatted createdAt text:", {
+    createdAtText,
+    hasCreatedAt: !!createdAt,
+    willShowTooltip: !!(createdAtText),
+  });
+
   return (
-    <>
+    <TooltipProvider>
       <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
       <div className="col-span-full grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4 -mt-2 md:-mt-3">
         {/* Process Timeline - 75% (3 columns) */}
@@ -187,64 +249,25 @@ export function PropertyStatusRow({
           <div
             ref={scrollContainerRef}
             className={cn(
-              "px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 overflow-x-auto property-status-scrollbar",
+              "px-4 py-8 sm:px-6 sm:py-10 md:px-8 md:py-12 overflow-x-auto property-status-scrollbar",
               isScrolling && "scrolling"
             )}
           >
-            {/* Stage headers with dividers */}
-            <div className="relative mb-8 sm:mb-12 flex gap-2">
-              {PROCESS_STAGES.map((stage) => {
-                const isActive = stage.status === "ongoing";
-                const isFuture = stage.status === "future";
-                const stageSubstageCount = stage.subStages.length;
-
-                // Apply width multiplier to give búsqueda more space
-                const widthMultiplier = stage.id === "busqueda" ? 1.5 : 1;
-                const adjustedCount = stageSubstageCount * widthMultiplier;
-                const totalAdjusted = PROCESS_STAGES.reduce((acc, s) => {
-                  const multiplier = s.id === "busqueda" ? 1.5 : 1;
-                  return acc + (s.subStages.length * multiplier);
-                }, 0);
-                const widthPercent = (adjustedCount / totalAdjusted) * 100;
-
-                return (
-                  <div
-                    key={stage.id}
-                    className="relative flex items-center"
-                    style={{ width: `${widthPercent}%` }}
-                  >
-                    {/* Subtle background box */}
-                    <div
-                      className={cn(
-                        "absolute inset-0 rounded-lg transition-colors border-l border-r",
-                        isFuture ? "border-slate-200" : "border-slate-300"
-                      )}
-                    />
-
-                    {/* Stage title */}
-                    <h2
-                      ref={isActive ? activeStageRef : null}
-                      className={cn(
-                        "relative w-full text-center text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-widest py-2",
-                        isFuture ? "text-slate-300" : "text-slate-900"
-                      )}
-                    >
-                      {stage.label}
-                    </h2>
-                  </div>
-                );
-              })}
-            </div>
-
             {/* Timeline with dots and substages */}
             <div className="relative px-[calc((100%/${totalSubstages})/2)]">
-              {/* Horizontal line - starts at first dot and ends at last dot */}
-              <div className="absolute top-1/2 h-0.5 bg-slate-300"
-                   style={{
-                     left: `calc((100% / ${totalSubstages}) / 2)`,
-                     right: `calc((100% / ${totalSubstages}) / 2)`
-                   }}
-              />
+              {/* Progress bar background */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 h-3 bg-slate-200 rounded-full overflow-hidden shadow-sm"
+                style={{
+                  left: `calc((100% / ${totalSubstages}) / 2)`,
+                  right: `calc((100% / ${totalSubstages}) / 2)`,
+                }}
+              >
+                <div
+                  className="h-full bg-slate-800 rounded-full transition-all duration-500 ease-out shadow-md"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
 
               <div className="relative flex items-center">
                 {PROCESS_STAGES.map((stage, stageIndex) => {
@@ -264,6 +287,23 @@ export function PropertyStatusRow({
                         const isLast = globalIndex === totalSubstages - 1;
                         const labelPosition = globalIndex % 2 === 0 ? "above" : "below";
 
+                        // Add info button for "Alta propiedad" with created date
+                        const showInfoButton = substage.id === "alta" && !!createdAtText;
+                        const infoTooltipContent = substage.id === "alta" && createdAtText
+                          ? `Creado: ${createdAtText}`
+                          : undefined;
+
+                        // Log info button assignment
+                        if (substage.id === "alta") {
+                          console.log("🎯 Alta propiedad node:", {
+                            substageId: substage.id,
+                            substageLabel: substage.label,
+                            createdAtText,
+                            infoTooltipContent,
+                            showInfoButton,
+                          });
+                        }
+
                         return (
                           <TimelineNode
                             key={substage.id}
@@ -272,6 +312,8 @@ export function PropertyStatusRow({
                             labelPosition={labelPosition}
                             isFirst={isFirst}
                             isLast={isLast}
+                            showInfoButton={showInfoButton}
+                            infoTooltipContent={infoTooltipContent}
                           />
                         );
                       })}
@@ -331,6 +373,6 @@ export function PropertyStatusRow({
           title="Imágenes de la propiedad"
         />
       </div>
-    </>
+    </TooltipProvider>
   );
 }

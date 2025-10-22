@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -14,6 +14,8 @@ import {
 } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
+import { Separator } from "~/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import {
   Plus,
   Trash2,
@@ -27,6 +29,8 @@ import {
   ChevronDown,
   ChevronUp,
   Edit,
+  Filter,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { ContactComments } from "./contact-comments";
@@ -144,7 +148,8 @@ export function ContactTareas({
   >({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'contact' | 'property'>('all');
+
   // Contact listings for task association
   const [contactListings, setContactListings] = useState<ContactListing[]>([]);
   const [selectedListingId, setSelectedListingId] = useState<string>('');
@@ -469,17 +474,120 @@ export function ContactTareas({
     }));
   };
 
+  // Filter and sort tasks by category
+  const filteredTasks = useMemo(() => {
+    let filtered = [...tasks];
+
+    // Filter by category
+    if (categoryFilter === 'contact') {
+      filtered = filtered.filter(task => task.relatedContact ?? task.contactId);
+    } else if (categoryFilter === 'property') {
+      filtered = filtered.filter(task => !task.relatedContact && !task.contactId);
+    }
+
+    // Sort: incomplete first, then by due date
+    return filtered.sort((a, b) => {
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1;
+      }
+      if (a.dueDate && b.dueDate) {
+        return a.dueDate.getTime() - b.dueDate.getTime();
+      }
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+      return 0;
+    });
+  }, [tasks, categoryFilter]);
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="relative h-8 w-8 p-0 shadow text-gray-600">
+                <Filter className="h-3.5 w-3.5" />
+                {categoryFilter !== 'all' && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[10px] font-normal"
+                  >
+                    1
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-2" align="start">
+              <div className="space-y-1">
+                <div
+                  className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
+                    categoryFilter === 'all' ? 'bg-accent' : ''
+                  }`}
+                  onClick={() => setCategoryFilter('all')}
+                >
+                  <div
+                    className={`flex h-3 w-3 items-center justify-center rounded border ${
+                      categoryFilter === 'all' ? 'border-primary bg-primary' : 'border-input'
+                    }`}
+                  >
+                    {categoryFilter === 'all' && <Check className="h-2 w-2 text-primary-foreground" />}
+                  </div>
+                  <span className={categoryFilter === 'all' ? 'font-medium' : ''}>Todas</span>
+                </div>
+                <div
+                  className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
+                    categoryFilter === 'contact' ? 'bg-accent' : ''
+                  }`}
+                  onClick={() => setCategoryFilter('contact')}
+                >
+                  <div
+                    className={`flex h-3 w-3 items-center justify-center rounded border ${
+                      categoryFilter === 'contact' ? 'border-primary bg-primary' : 'border-input'
+                    }`}
+                  >
+                    {categoryFilter === 'contact' && <Check className="h-2 w-2 text-primary-foreground" />}
+                  </div>
+                  <span className={categoryFilter === 'contact' ? 'font-medium' : ''}>Con contacto</span>
+                </div>
+                <div
+                  className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
+                    categoryFilter === 'property' ? 'bg-accent' : ''
+                  }`}
+                  onClick={() => setCategoryFilter('property')}
+                >
+                  <div
+                    className={`flex h-3 w-3 items-center justify-center rounded border ${
+                      categoryFilter === 'property' ? 'border-primary bg-primary' : 'border-input'
+                    }`}
+                  >
+                    {categoryFilter === 'property' && <Check className="h-2 w-2 text-primary-foreground" />}
+                  </div>
+                  <span className={categoryFilter === 'property' ? 'font-medium' : ''}>De propiedad</span>
+                </div>
+              </div>
+              {categoryFilter !== 'all' && (
+                <>
+                  <Separator className="my-1" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCategoryFilter('all')}
+                    className="h-7 w-full text-xs"
+                  >
+                    <X className="mr-1 h-3 w-3" />
+                    Borrar filtro
+                  </Button>
+                </>
+              )}
+            </PopoverContent>
+          </Popover>
           <Button
             onClick={() => {
               setEditingTask(null);
               setIsAdding(true);
             }}
             variant="outline"
-            className="flex items-center gap-2 h-8 text-sm shadow"
+            className="flex items-center gap-2 h-8 text-sm shadow text-gray-600"
             title="Nota: Actualmente las tareas solo se pueden crear desde propiedades"
           >
             <Plus className="h-4 w-4" />
@@ -697,15 +805,17 @@ export function ContactTareas({
       )}
 
       <div className="space-y-2">
-        {tasks.length === 0 ? (
+        {filteredTasks.length === 0 ? (
           <div className="py-6 text-center text-gray-500 sm:py-8">
             <p className="text-sm sm:text-base">
-              No hay tareas registradas para este contacto
+              {categoryFilter !== 'all'
+                ? `No hay tareas ${categoryFilter === 'contact' ? 'con contacto' : 'de propiedad'}`
+                : 'No hay tareas registradas para este contacto'}
             </p>
           </div>
         ) : (
           <div className="space-y-1">
-            {tasks.map((task) => {
+            {filteredTasks.map((task) => {
               const getInitials = (
                 firstName?: string,
                 lastName?: string,

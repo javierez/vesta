@@ -682,9 +682,18 @@ export function Tareas({
     );
   }, [contacts, contactSearch]);
 
-  // Sort tasks: incomplete first, then by due date
+  // Sort and filter tasks: filter by category, incomplete first, then by due date
   const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => {
+    let filteredTasks = [...tasks];
+
+    // Filter by category
+    if (categoryFilter === 'contact') {
+      filteredTasks = filteredTasks.filter(task => task.relatedContact);
+    } else if (categoryFilter === 'property') {
+      filteredTasks = filteredTasks.filter(task => !task.relatedContact);
+    }
+
+    return filteredTasks.sort((a, b) => {
       // First: Incomplete tasks come before completed tasks
       if (a.completed !== b.completed) {
         return a.completed ? 1 : -1;
@@ -700,7 +709,7 @@ export function Tareas({
       // If no due dates, maintain creation order
       return 0;
     });
-  }, [tasks]);
+  }, [tasks, categoryFilter]);
 
   if (externalLoading) {
     return <TareasSkeleton />;
@@ -926,14 +935,92 @@ export function Tareas({
     <div className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-lg sm:text-xl font-semibold">Tareas</h3>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="relative h-8 w-8 p-0 shadow text-gray-600">
+                <Filter className="h-3.5 w-3.5" />
+                {categoryFilter !== 'all' && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[10px] font-normal"
+                  >
+                    1
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-2" align="end">
+              <div className="space-y-1">
+                <div
+                  className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
+                    categoryFilter === 'all' ? 'bg-accent' : ''
+                  }`}
+                  onClick={() => setCategoryFilter('all')}
+                >
+                  <div
+                    className={`flex h-3 w-3 items-center justify-center rounded border ${
+                      categoryFilter === 'all' ? 'border-primary bg-primary' : 'border-input'
+                    }`}
+                  >
+                    {categoryFilter === 'all' && <Check className="h-2 w-2 text-primary-foreground" />}
+                  </div>
+                  <span className={categoryFilter === 'all' ? 'font-medium' : ''}>Todas</span>
+                </div>
+                <div
+                  className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
+                    categoryFilter === 'contact' ? 'bg-accent' : ''
+                  }`}
+                  onClick={() => setCategoryFilter('contact')}
+                >
+                  <div
+                    className={`flex h-3 w-3 items-center justify-center rounded border ${
+                      categoryFilter === 'contact' ? 'border-primary bg-primary' : 'border-input'
+                    }`}
+                  >
+                    {categoryFilter === 'contact' && <Check className="h-2 w-2 text-primary-foreground" />}
+                  </div>
+                  <span className={categoryFilter === 'contact' ? 'font-medium' : ''}>Con contacto</span>
+                </div>
+                <div
+                  className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
+                    categoryFilter === 'property' ? 'bg-accent' : ''
+                  }`}
+                  onClick={() => setCategoryFilter('property')}
+                >
+                  <div
+                    className={`flex h-3 w-3 items-center justify-center rounded border ${
+                      categoryFilter === 'property' ? 'border-primary bg-primary' : 'border-input'
+                    }`}
+                  >
+                    {categoryFilter === 'property' && <Check className="h-2 w-2 text-primary-foreground" />}
+                  </div>
+                  <span className={categoryFilter === 'property' ? 'font-medium' : ''}>De propiedad</span>
+                </div>
+              </div>
+              {categoryFilter !== 'all' && (
+                <>
+                  <Separator className="my-1" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCategoryFilter('all')}
+                    className="h-7 w-full text-xs"
+                  >
+                    <X className="mr-1 h-3 w-3" />
+                    Borrar filtro
+                  </Button>
+                </>
+              )}
+            </PopoverContent>
+          </Popover>
           <Button
             onClick={() => {
               setEditingTask(null);
               setIsAdding(true);
             }}
             variant="outline"
-            className="flex items-center gap-2 h-8 text-sm shadow"
+            className="flex items-center gap-2 h-8 text-sm shadow text-gray-600"
           >
             <Plus className="h-4 w-4" />
             Nueva Tarea
@@ -951,9 +1038,13 @@ export function Tareas({
       {(isAdding && !editingTask) && taskForm}
 
       <div className="space-y-2">
-        {tasks.length === 0 ? (
+        {sortedTasks.length === 0 ? (
           <div className="text-center py-6 sm:py-8 text-gray-500">
-            <p className="text-sm sm:text-base">No hay tareas registradas para esta propiedad</p>
+            <p className="text-sm sm:text-base">
+              {categoryFilter !== 'all'
+                ? `No hay tareas ${categoryFilter === 'contact' ? 'con contacto' : 'de propiedad'}`
+                : 'No hay tareas registradas para esta propiedad'}
+            </p>
           </div>
         ) : (
           <div className="space-y-1">
