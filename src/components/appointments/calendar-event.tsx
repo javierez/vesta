@@ -298,7 +298,11 @@ export function ListCalendarEvent({
   isSelected = false,
   onClick,
   className = "",
-}: Omit<CalendarEventProps, "style">) {
+  tasks = [],
+}: Omit<CalendarEventProps, "style"> & {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tasks?: any[];
+}) {
   // Convert CalendarEvent to AppointmentData format
   const appointmentData: AppointmentData = {
     appointmentId: event.appointmentId,
@@ -341,6 +345,7 @@ export function ListCalendarEvent({
       onClick={handleClick}
       className={className}
       navigateToVisit={false} // Calendar uses onClick callback instead
+      tasks={tasks} // Pass tasks from parent
     />
   );
 }

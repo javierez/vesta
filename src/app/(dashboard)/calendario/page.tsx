@@ -60,7 +60,7 @@ import CalendarEvent, {
 import AppointmentModal, {
   useAppointmentModal,
 } from "~/components/appointments/appointment-modal";
-import { getAgentsForFilterAction, updateAppointmentStatusAction } from "~/server/actions/appointments";
+import { getAgentsForFilterAction, updateAppointmentStatusAction, getBatchAppointmentTasksAction } from "~/server/actions/appointments";
 import { useGoogleCalendarIntegration } from "~/hooks/use-google-calendar-integration";
 import { GoogleCalendarSyncSettings } from "~/components/calendar/google-calendar-sync-settings";
 import { canEditCalendar, canDeleteCalendar } from "~/app/actions/permissions/check-permissions";
@@ -213,6 +213,10 @@ export default function AppointmentsPage() {
   // Status update state
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
+  // Tasks state - batch loaded for all appointments
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [appointmentTasksMap, setAppointmentTasksMap] = useState<Record<number, any[]>>({});
+
   // Fetch user permissions on component mount
   useEffect(() => {
     const fetchPermissions = async () => {
@@ -308,15 +312,21 @@ export default function AppointmentsPage() {
           const appointmentId = entry.target.getAttribute('data-appointment-id');
           if (!appointmentId) return;
 
+          // Only add to visible set when intersecting, never remove
+          // This prevents flickering as items scroll in and out
           if (entry.isIntersecting) {
-            setVisibleRows((prev) => new Set(prev).add(appointmentId));
+            setVisibleRows((prev) => {
+              const newSet = new Set(prev);
+              newSet.add(appointmentId);
+              return newSet;
+            });
           }
         });
       },
       {
         root: null,
-        rootMargin: '100px', // Start loading content 100px before they come into view
-        threshold: 0.1,
+        rootMargin: '200px', // Start loading content 200px before they come into view
+        threshold: 0.01, // Lower threshold for earlier detection
       }
     );
 
@@ -333,6 +343,26 @@ export default function AppointmentsPage() {
     const initialVisibleIds = filteredAppointments.slice(0, 5).map(app => app.appointmentId.toString());
     setVisibleRows(new Set(initialVisibleIds));
   }, [filteredAppointments]);
+
+  // Batch fetch tasks for filtered appointments (only in list view)
+  useEffect(() => {
+    if (view !== "list" || filteredAppointments.length === 0) return;
+
+    const fetchTasksForAppointments = async () => {
+      try {
+        const appointmentIds = filteredAppointments.map(app => Number(app.appointmentId));
+        const result = await getBatchAppointmentTasksAction(appointmentIds);
+
+        if (result.success) {
+          setAppointmentTasksMap(result.tasksMap);
+        }
+      } catch (error) {
+        console.error("Error fetching appointment tasks:", error);
+      }
+    };
+
+    void fetchTasksForAppointments();
+  }, [view, filteredAppointments]);
 
   // Reset prefetch flag when week changes
   useEffect(() => {
@@ -948,6 +978,7 @@ export default function AppointmentsPage() {
                       event={appointment}
                       isSelected={selectedEvent === appointment.appointmentId}
                       onClick={() => setSelectedEvent(appointment.appointmentId)}
+                      tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
                     />
                   ) : (
                     <Skeleton className="h-20 w-full rounded-lg" />

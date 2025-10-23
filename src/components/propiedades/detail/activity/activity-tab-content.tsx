@@ -37,6 +37,15 @@ const TYPE_LABELS: Record<string, string> = {
   Viaje: "Viaje",
 };
 
+const CONTACT_FLAG_LABELS: Record<string, string> = {
+  hasUpcomingVisit: "Visita Pendiente",
+  hasMissedVisit: "Visita Perdida",
+  hasCancelledVisit: "Visita Cancelada",
+  hasCompletedVisit: "Visita Completada",
+  hasOffer: "Oferta Realizada",
+  noVisits: "Sin Visitas",
+};
+
 export function ActivityTabContent({
   visits,
   contacts,
@@ -52,7 +61,13 @@ export function ActivityTabContent({
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     status: true,
     type: true,
+    contactStatus: true,
   });
+
+  // Contact filters - using badge flags instead of status
+  const [selectedContactFlags, setSelectedContactFlags] = useState<Set<string>>(
+    new Set(["hasUpcomingVisit", "hasMissedVisit", "hasCancelledVisit", "hasCompletedVisit", "hasOffer", "noVisits"])
+  );
 
   // Filter visits based on selected statuses and types
   const filteredVisits = visits.filter((v) =>
@@ -93,8 +108,49 @@ export function ActivityTabContent({
   const allScheduledVisits = visits.filter((v) => v.status === "Scheduled");
   const allCancelledVisits = visits.filter((v) => v.status === "Cancelled");
 
-  // Contacts filtering
-  const newContacts = contacts.filter((c) => c.isNew);
+  // Filter contacts by badge flags
+  const filteredContacts = contacts.filter((c) => {
+    // Determine which flag applies to this contact (using same logic as badge)
+    let contactFlag: string;
+
+    if (c.hasUpcomingVisit) {
+      contactFlag = "hasUpcomingVisit";
+    } else if (c.hasCompletedVisit && c.hasOffer) {
+      contactFlag = "hasOffer";
+    } else if (c.hasMissedVisit && !c.hasCancelledVisit) {
+      contactFlag = "hasMissedVisit";
+    } else if (c.hasCancelledVisit) {
+      contactFlag = "hasCancelledVisit";
+    } else if (c.hasCompletedVisit && !c.hasOffer) {
+      contactFlag = "hasCompletedVisit";
+    } else {
+      // No visits at all
+      contactFlag = "noVisits";
+    }
+
+    return selectedContactFlags.has(contactFlag);
+  });
+
+  // Sorting logic for contacts - Priority based
+  const sortedContacts = [...filteredContacts].sort((a, b) => {
+    // 1. Priority: Has offer (highest priority)
+    if (a.hasOffer !== b.hasOffer) return a.hasOffer ? -1 : 1;
+
+    // 2. Priority: Has upcoming visit
+    if (a.hasUpcomingVisit !== b.hasUpcomingVisit) return a.hasUpcomingVisit ? -1 : 1;
+
+    // 3. Priority: Has missed visit (needs attention)
+    if (a.hasMissedVisit !== b.hasMissedVisit) return a.hasMissedVisit ? -1 : 1;
+
+    // 4. Priority: Visit count (more engaged contacts first)
+    if (a.visitCount !== b.visitCount) return b.visitCount - a.visitCount;
+
+    // 5. Finally: Most recent first
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+
+  // New contacts with same sorting
+  const newContacts = sortedContacts.filter((c) => c.isNew);
 
   const handleVisitsClick = () => {
     setActiveView(activeView === "visits" ? null : "visits");
@@ -131,16 +187,36 @@ export function ActivityTabContent({
     }));
   };
 
+  const toggleContactFlag = (flag: string) => {
+    const newFlags = new Set(selectedContactFlags);
+    if (newFlags.has(flag)) {
+      newFlags.delete(flag);
+    } else {
+      newFlags.add(flag);
+    }
+    setSelectedContactFlags(newFlags);
+  };
+
   const clearFilters = () => {
     setSelectedStatuses(new Set(["Completed", "Scheduled", "Cancelled", "Rescheduled", "NoShow"]));
     setSelectedTypes(new Set(["Visita", "Reunión", "Firma", "Cierre", "Viaje"]));
   };
 
+  const clearContactFilters = () => {
+    setSelectedContactFlags(new Set(["hasUpcomingVisit", "hasMissedVisit", "hasCancelledVisit", "hasCompletedVisit", "hasOffer", "noVisits"]));
+  };
+
   const activeFilterCount =
     (5 - selectedStatuses.size) + (5 - selectedTypes.size); // Count deselected items
 
+  const activeContactFilterCount =
+    (6 - selectedContactFlags.size); // Count deselected items
+
   // Get unique types from visits
   const availableTypes = Array.from(new Set(visits.map((v) => v.type).filter((t): t is string => t !== null)));
+
+  // All available contact flags (static list)
+  const availableContactFlags = ["hasUpcomingVisit", "hasMissedVisit", "hasCancelledVisit", "hasCompletedVisit", "hasOffer", "noVisits"];
 
   return (
     <div className="space-y-6">
@@ -171,7 +247,7 @@ export function ActivityTabContent({
           <div className="flex justify-end">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="h-9 relative">
+                <Button variant="outline" className="h-8 relative">
                   <Filter className="mr-2 h-4 w-4" />
                   Filtros
                   {activeFilterCount > 0 && (
@@ -440,12 +516,99 @@ export function ActivityTabContent({
 
       {/* Contacts Content - shown when contacts card is active */}
       {activeView === "contacts" && (
-        <div className="space-y-6 animate-in fade-in duration-300">
-          <div className="space-y-3">
-            {newContacts.length === 0 ? (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          {/* Contact Filter Button */}
+          <div className="flex justify-end">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-8 relative">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filtros
+                  {activeContactFilterCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 rounded-sm px-1 font-normal"
+                    >
+                      {activeContactFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 p-0">
+                <div className="flex flex-col">
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-6 p-4">
+                      {/* Contact Badge Filters */}
+                      <div className="space-y-2">
+                        <div
+                          className="flex cursor-pointer items-center justify-between"
+                          onClick={() => toggleCategory("contactStatus")}
+                        >
+                          <h5 className="text-sm font-medium text-muted-foreground">
+                            Estado de Visita
+                          </h5>
+                          <ChevronDown
+                            className={`h-4 w-4 text-muted-foreground transition-transform ${expandedCategories.contactStatus ? "rotate-180 transform" : ""}`}
+                          />
+                        </div>
+                        {expandedCategories.contactStatus && (
+                          <div className="space-y-1">
+                            {availableContactFlags.map((flag) => (
+                              <div
+                                key={flag}
+                                className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
+                                onClick={() => toggleContactFlag(flag)}
+                              >
+                                <div
+                                  className={`flex h-4 w-4 items-center justify-center rounded border ${selectedContactFlags.has(flag) ? "border-primary bg-primary" : "border-input"}`}
+                                >
+                                  {selectedContactFlags.has(flag) && (
+                                    <Check className="h-3 w-3 text-primary-foreground" />
+                                  )}
+                                </div>
+                                <span className="text-sm">{CONTACT_FLAG_LABELS[flag]}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </ScrollArea>
+                  {activeContactFilterCount > 0 && (
+                    <div className="border-t p-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearContactFilters}
+                        className="h-7 w-full text-xs"
+                      >
+                        <X className="mr-1.5 h-3.5 w-3.5" />
+                        Borrar filtros
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-6">
+            {/* No contacts at all */}
+            {filteredContacts.length === 0 && (
               <EmptyState type="new-contacts" />
-            ) : (
-              newContacts.map((contact) => {
+            )}
+
+            {/* New Contacts Section */}
+            {newContacts.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">
+                    Nuevos Contactos ({newContacts.length})
+                  </h3>
+                </div>
+                <div className="space-y-3">
+                  {newContacts.map((contact) => {
                 console.log('📇 Contact card data:', {
                   contactId: contact.contactId.toString(),
                   name: `${contact.firstName} ${contact.lastName ?? ''}`,
@@ -485,20 +648,21 @@ export function ActivityTabContent({
                     listingId={listingId}
                   />
                 );
-              })
+              })}
+                </div>
+              </div>
             )}
-          </div>
 
-          {/* All Contacts Section */}
-          {contacts.length > newContacts.length && (
-            <ExpandableSection
-              title="Todos los Contactos"
-              count={contacts.length}
-              defaultExpanded={false}
-              storageKey={`activity-all-contacts-${listingId}`}
-            >
-              <div className="space-y-3">
-                {contacts.map((contact) => {
+            {/* All Contacts Section */}
+            {sortedContacts.length > newContacts.length && (
+              <ExpandableSection
+                title="Todos los Contactos"
+                count={sortedContacts.length}
+                defaultExpanded={false}
+                storageKey={`activity-all-contacts-${listingId}`}
+              >
+                <div className="space-y-3">
+                  {sortedContacts.map((contact) => {
                   console.log('📇 All contacts - Contact card data:', {
                     contactId: contact.contactId.toString(),
                     name: `${contact.firstName} ${contact.lastName ?? ''}`,
@@ -542,6 +706,7 @@ export function ActivityTabContent({
               </div>
             </ExpandableSection>
           )}
+          </div>
         </div>
       )}
     </div>

@@ -453,3 +453,48 @@ export async function getAppointmentTasksAction(appointmentId: number) {
     };
   }
 }
+
+// Server action to get tasks for multiple appointments (batch fetch)
+export async function getBatchAppointmentTasksAction(appointmentIds: number[]) {
+  try {
+    // PATTERN: Always get account ID for security
+    const accountId = await getCurrentUserAccountId();
+
+    // Fetch tasks for all appointments in parallel
+    const tasksPromises = appointmentIds.map(async (appointmentId) => {
+      try {
+        const tasks = await getAppointmentTasksWithAuth(appointmentId);
+        return {
+          appointmentId,
+          tasks,
+        };
+      } catch (error) {
+        console.error(`Failed to fetch tasks for appointment ${appointmentId}:`, error);
+        return {
+          appointmentId,
+          tasks: [],
+        };
+      }
+    });
+
+    const results = await Promise.all(tasksPromises);
+
+    // Convert to a map for easy lookup
+    const tasksMap = new Map<number, typeof results[0]['tasks']>();
+    results.forEach(({ appointmentId, tasks }) => {
+      tasksMap.set(appointmentId, tasks);
+    });
+
+    return {
+      success: true,
+      tasksMap: Object.fromEntries(tasksMap),
+    };
+  } catch (error) {
+    console.error("Failed to batch fetch appointment tasks:", error);
+    return {
+      success: false,
+      error: "Error al obtener las tareas de las citas",
+      tasksMap: {},
+    };
+  }
+}

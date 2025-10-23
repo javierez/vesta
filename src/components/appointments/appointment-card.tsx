@@ -63,6 +63,8 @@ interface AppointmentCardProps {
   className?: string;
   // Optional navigation behavior - if not provided, will navigate to visit page
   navigateToVisit?: boolean;
+  // Optional tasks prop - if provided, will use these instead of fetching
+  tasks?: Task[];
 }
 
 export function AppointmentCard({
@@ -71,11 +73,12 @@ export function AppointmentCard({
   onClick,
   className = "",
   navigateToVisit = true,
+  tasks: propTasks,
 }: AppointmentCardProps) {
   const router = useRouter();
   const [showTasks, setShowTasks] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [tasksLoaded, setTasksLoaded] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>(propTasks ?? []);
+  const [tasksLoaded, setTasksLoaded] = useState(!!propTasks);
 
   const typeConfig = appointmentTypes[
     appointment.type as keyof typeof appointmentTypes
@@ -124,8 +127,16 @@ export function AppointmentCard({
     }
   };
 
-  // Fetch tasks on mount to check if there are any
+  // Fetch tasks on mount only if not provided via props
   useEffect(() => {
+    // If tasks were provided as props, use them and skip fetching
+    if (propTasks !== undefined) {
+      setTasks(propTasks);
+      setTasksLoaded(true);
+      return;
+    }
+
+    // Otherwise, fetch tasks from server
     const fetchTasks = async () => {
       try {
         console.log('🔍 Fetching tasks for appointment:', appointment.appointmentId.toString());
@@ -146,7 +157,7 @@ export function AppointmentCard({
     };
 
     void fetchTasks();
-  }, [appointment.appointmentId]);
+  }, [appointment.appointmentId, propTasks]);
 
   const handleToggleTasks = async (e: React.MouseEvent) => {
     e.stopPropagation();
