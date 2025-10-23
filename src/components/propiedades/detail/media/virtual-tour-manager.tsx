@@ -38,6 +38,7 @@ interface VirtualTourManagerProps {
   propertyId: bigint;
   referenceNumber: string;
   onVirtualTourAdded?: (tour: PropertyImage) => void;
+  canEdit?: boolean;
 }
 
 export function VirtualTourManager({
@@ -45,6 +46,7 @@ export function VirtualTourManager({
   propertyId,
   referenceNumber,
   onVirtualTourAdded,
+  canEdit = true,
 }: VirtualTourManagerProps) {
   const [virtualTours, setVirtualTours] = useState<PropertyImage[]>(initialVirtualTours);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -282,20 +284,22 @@ export function VirtualTourManager({
             <h3 className="text-lg font-medium text-gray-900">Tours Virtuales</h3>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-          <div
-            onClick={() => setIsAddDialogOpen(true)}
-            className="group relative flex h-40 w-full min-w-[120px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
-          >
-            <Plus className="mb-1 h-5 w-5 text-gray-400 transition-colors duration-200 group-hover:text-gray-500" />
-            <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
-              Añadir URL
-            </span>
-            <span className="text-xs text-gray-400">
-              de tour virtual
-            </span>
-          </div>
+          {canEdit && (
+            <div
+              onClick={() => setIsAddDialogOpen(true)}
+              className="group relative flex h-40 w-full min-w-[120px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
+            >
+              <Plus className="mb-1 h-5 w-5 text-gray-400 transition-colors duration-200 group-hover:text-gray-500" />
+              <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
+                Añadir URL
+              </span>
+              <span className="text-xs text-gray-400">
+                de tour virtual
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Add Virtual Tour Dialog */}
@@ -434,47 +438,53 @@ export function VirtualTourManager({
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                   </button>
-                  <button
-                    type="button"
-                    className="absolute right-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-red-500 group-hover:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTourToDelete(idx);
-                    }}
-                    disabled={isDeleting}
-                    aria-label="Eliminar tour"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditTour(tour);
-                    }}
-                    aria-label="Editar tour"
-                  >
-                    <Edit className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 disabled:opacity-50 group-hover:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void handleToggleVisibility(idx);
-                    }}
-                    disabled={isTogglingVisibility.has(idx)}
-                    aria-label={tour.isActive ? "Ocultar tour" : "Mostrar tour"}
-                  >
-                    {isTogglingVisibility.has(idx) ? (
-                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    ) : tour.isActive ? (
-                      <Eye className="h-3.5 w-3.5" />
-                    ) : (
-                      <EyeOff className="h-3.5 w-3.5" />
-                    )}
-                  </button>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="absolute right-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-red-500 group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTourToDelete(idx);
+                      }}
+                      disabled={isDeleting}
+                      aria-label="Eliminar tour"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditTour(tour);
+                      }}
+                      aria-label="Editar tour"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 disabled:opacity-50 group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleToggleVisibility(idx);
+                      }}
+                      disabled={isTogglingVisibility.has(idx)}
+                      aria-label={tour.isActive ? "Ocultar tour" : "Mostrar tour"}
+                    >
+                      {isTogglingVisibility.has(idx) ? (
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      ) : tour.isActive ? (
+                        <Eye className="h-3.5 w-3.5" />
+                      ) : (
+                        <EyeOff className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
                 </>
               )}
 
@@ -487,80 +497,84 @@ export function VirtualTourManager({
             </div>
           );
         })}
-        
+
         {/* Add Virtual Tour Placeholder */}
-        <div
-          onClick={() => setIsAddDialogOpen(true)}
-          className="group relative flex h-40 w-full min-w-[120px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
-        >
-          <Plus className="mb-1 h-5 w-5 text-gray-400 transition-colors duration-200 group-hover:text-gray-500" />
-          <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
-            Añadir URL
-          </span>
-          <span className="text-xs text-gray-400">
-            de tour virtual
-          </span>
-        </div>
+        {canEdit && (
+          <div
+            onClick={() => setIsAddDialogOpen(true)}
+            className="group relative flex h-40 w-full min-w-[120px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
+          >
+            <Plus className="mb-1 h-5 w-5 text-gray-400 transition-colors duration-200 group-hover:text-gray-500" />
+            <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
+              Añadir URL
+            </span>
+            <span className="text-xs text-gray-400">
+              de tour virtual
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Controls */}
-      <div className="mt-4 flex items-center space-x-2">
-        {isSelectMode ? (
-          <>
+      {canEdit && (
+        <div className="mt-4 flex items-center space-x-2">
+          {isSelectMode ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedTours(new Set());
+                  setIsSelectMode(false);
+                }}
+                className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={selectedTours.size === 0 || isDeleting}
+                className="text-red-500 hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Eliminar
+              </Button>
+            </>
+          ) : hasUnsavedChanges ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancelOrder}
+                className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSaveOrder}
+                disabled={isUpdatingOrder}
+                className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                {isUpdatingOrder ? "Guardando..." : "Guardar"}
+              </Button>
+            </>
+          ) : (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                setSelectedTours(new Set());
-                setIsSelectMode(false);
-              }}
+              onClick={() => setIsSelectMode(true)}
               className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
             >
-              Cancelar
+              <CheckSquare2 className="mr-1.5 h-4 w-4" />
+              Seleccionar
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBulkDelete}
-              disabled={selectedTours.size === 0 || isDeleting}
-              className="text-red-500 hover:bg-red-50 hover:text-red-600"
-            >
-              <Trash2 className="mr-1.5 h-4 w-4" />
-              Eliminar
-            </Button>
-          </>
-        ) : hasUnsavedChanges ? (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCancelOrder}
-              className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSaveOrder}
-              disabled={isUpdatingOrder}
-              className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            >
-              {isUpdatingOrder ? "Guardando..." : "Guardar"}
-            </Button>
-          </>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsSelectMode(true)}
-            className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-          >
-            <CheckSquare2 className="mr-1.5 h-4 w-4" />
-            Seleccionar
-          </Button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Dialogs */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

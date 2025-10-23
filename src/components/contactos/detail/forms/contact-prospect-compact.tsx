@@ -2,7 +2,7 @@ import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
-import { Edit2, MapPin, Banknote, Home, Bed, Bath } from "lucide-react";
+import { Pencil, MapPin, Banknote, Home, Bed, Bath } from "lucide-react";
 import { prospectUtils } from "~/lib/utils";
 import { useEffect, useState, useCallback } from "react";
 import { getLocationByNeighborhoodId } from "~/server/queries/locations";
@@ -95,32 +95,26 @@ export function ContactProspectCompact({
   ]);
 
   const formatPrice = prospectUtils.formatCurrency;
-  const getPropertyTypeIcon = prospectUtils.getPropertyTypeIcon;
 
   return (
-    <Card className="border-gray-200 bg-white p-4 transition-shadow hover:shadow-md">
+    <Card className="group border-gray-200 bg-white p-4 transition-shadow hover:shadow-md">
       <div className="mb-4 flex items-start justify-between">
-        <div className="flex items-center space-x-3">
-          <span className="text-4xl">
-            {getPropertyTypeIcon(prospect.propertyType)}
-          </span>
-          <div>
-            {title && (
-              <h3 className="text-sm font-medium text-gray-900">{title}</h3>
-            )}
-            <p className="mt-0.5 text-xs text-gray-500">
-              Creado {prospect.createdAt.toLocaleDateString("es-ES")}
-            </p>
-          </div>
+        <div>
+          {title && (
+            <h3 className="text-sm font-bold text-gray-900">{title}</h3>
+          )}
+          <p className="mt-0.5 text-xs text-gray-500">
+            Creado {prospect.createdAt.toLocaleDateString("es-ES")}
+          </p>
         </div>
 
         <Button
           variant="ghost"
           size="sm"
           onClick={() => onEdit(prospect)}
-          className="h-8 w-8 p-0 hover:bg-gray-100"
+          className="h-6 w-6 p-0 opacity-0 transition-opacity hover:bg-gray-100 group-hover:opacity-100"
         >
-          <Edit2 className="h-4 w-4" />
+          <Pencil className="h-3 w-3 text-gray-400" />
         </Button>
       </div>
 

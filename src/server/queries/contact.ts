@@ -91,6 +91,39 @@ export async function getCurrentListingOwnersWithAuth(listingId: number) {
   return getCurrentListingOwners(listingId, accountId);
 }
 
+/**
+ * Get the owner's listing_contact_id and contact_id for a specific listing
+ * Used when creating tasks to automatically link them to the property owner
+ */
+export async function getListingOwnerInfoWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+
+  try {
+    const [ownerInfo] = await db
+      .select({
+        listingContactId: listingContacts.listingContactId,
+        contactId: listingContacts.contactId,
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(listingContacts.listingId, BigInt(listingId)),
+          eq(listingContacts.contactType, "owner"),
+          eq(listingContacts.isActive, true),
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true)
+        )
+      )
+      .limit(1);
+
+    return ownerInfo;
+  } catch (error) {
+    console.error("Error fetching listing owner info:", error);
+    return undefined;
+  }
+}
+
 export async function updateListingOwnersWithAuth(
   listingId: number,
   ownerIds: number[],

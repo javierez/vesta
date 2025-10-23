@@ -68,3 +68,39 @@ export async function canDeleteAllTasks(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Check if user can edit calendar
+ */
+export async function canEditCalendar(): Promise<boolean> {
+  try {
+    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    const canEdit = Boolean(permissions.calendar?.edit);
+    console.log("🔐 [Server] canEditCalendar check:", {
+      calendarPermissions: permissions.calendar,
+      canEdit,
+    });
+    return canEdit;
+  } catch (error) {
+    console.error("❌ [Server] Error checking edit calendar permission:", error);
+    return false;
+  }
+}
+
+/**
+ * Check if user can delete calendar
+ */
+export async function canDeleteCalendar(): Promise<boolean> {
+  try {
+    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    const canDelete = Boolean(permissions.calendar?.delete);
+    console.log("🔐 [Server] canDeleteCalendar check:", {
+      calendarPermissions: permissions.calendar,
+      canDelete,
+    });
+    return canDelete;
+  } catch (error) {
+    console.error("❌ [Server] Error checking delete calendar permission:", error);
+    return false;
+  }
+}

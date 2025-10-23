@@ -12,6 +12,7 @@ import {
 import { getEnergyCertificate } from "~/server/queries/document";
 import type { PropertyImage } from "~/lib/data";
 import { convertDbListingToPropertyListing } from "~/types/property-listing";
+import { canEditProperties } from "~/app/actions/permissions/check-permissions";
 
 interface PropertyPageProps {
   params: Promise<{
@@ -23,13 +24,14 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   const unwrappedParams = await params;
   const listingId = parseInt(unwrappedParams.id);
 
-  // Get data with optimized queries
-  const [breadcrumbData, headerData, tabsData, fullListingDetails] =
+  // Get data with optimized queries, including permissions
+  const [breadcrumbData, headerData, tabsData, fullListingDetails, hasEditPermission] =
     await Promise.all([
       getListingBreadcrumbData(listingId),
       getListingHeaderData(listingId),
       getListingTabsData(listingId),
       getListingDetailsWithAuth(listingId),
+      canEditProperties(), // Fetch edit permission
     ]);
 
   // Type guard to check if fullListingDetails is a valid record
@@ -167,6 +169,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           youtubeLinks={processedYouTubeLinks}
           virtualTours={processedVirtualTours}
           energyCertificate={energyCertificate}
+          canEdit={hasEditPermission}
         />
       </div>
     </div>

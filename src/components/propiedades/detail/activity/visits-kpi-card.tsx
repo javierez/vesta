@@ -14,6 +14,7 @@ interface VisitsKPICardProps extends VisitsKPIProps {
 export function VisitsKPICard({
   completedCount,
   scheduledCount,
+  cancelledCount,
   totalCount,
   isActive,
   onClick,
@@ -50,17 +51,23 @@ export function VisitsKPICard({
         </span>
 
         {/* Breakdown Stats */}
-        <div className="flex w-full items-center justify-center gap-4">
+        <div className="flex w-full items-center justify-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded-full bg-gradient-to-r from-rose-400 to-orange-400" />
-            <span className="text-xs text-gray-600 uppercase tracking-wide">
+            <span className="text-[10px] text-gray-600 uppercase tracking-wide">
               {completedCount} realizadas
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded-full bg-gradient-to-r from-orange-400 to-amber-400" />
-            <span className="text-xs text-gray-600 uppercase tracking-wide">
+            <span className="text-[10px] text-gray-600 uppercase tracking-wide">
               {scheduledCount} pendientes
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-gradient-to-r from-gray-400 to-gray-500" />
+            <span className="text-[10px] text-gray-600 uppercase tracking-wide">
+              {cancelledCount} canceladas
             </span>
           </div>
         </div>

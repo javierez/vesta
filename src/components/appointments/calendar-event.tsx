@@ -73,7 +73,7 @@ const appointmentTypes = {
 const statusColors = {
   Scheduled: "opacity-100",
   Completed: "opacity-75 bg-green-600",
-  Cancelled: "opacity-50 bg-gray-400",
+  Cancelled: "opacity-30 bg-gray-400 line-through",
   Rescheduled: "opacity-75 bg-orange-500",
   NoShow: "opacity-50 bg-red-400",
 };
@@ -148,14 +148,14 @@ export default function CalendarEvent({
   return (
     <>
       {/* Travel Time Block - positioned above appointment */}
-      {travelTimeHeight > 0 && (
+      {travelTimeHeight > 0 && event.status !== "Cancelled" && (
         <div
           className="absolute left-0.5 right-0.5 pointer-events-none rounded-t-lg backdrop-blur-sm"
           style={{
             top: `${parseInt(style.top) - travelTimeHeight}px`,
             height: `${travelTimeHeight}px`,
-            background: `linear-gradient(to bottom, 
-              rgba(${baseColorRGB}, 0.12), 
+            background: `linear-gradient(to bottom,
+              rgba(${baseColorRGB}, 0.12),
               rgba(${baseColorRGB}, 0.25)
             )`,
           }}
@@ -241,14 +241,14 @@ export default function CalendarEvent({
       </div>
       
       {/* Return Travel Time Block - positioned below appointment */}
-      {travelTimeHeight > 0 && (
+      {travelTimeHeight > 0 && event.status !== "Cancelled" && (
         <div
           className="absolute left-0.5 right-0.5 pointer-events-none rounded-b-lg backdrop-blur-sm"
           style={{
             top: `${parseInt(style.top) + parseInt(style.height)}px`,
             height: `${travelTimeHeight}px`,
-            background: `linear-gradient(to top, 
-              rgba(${baseColorRGB}, 0.12), 
+            background: `linear-gradient(to top,
+              rgba(${baseColorRGB}, 0.12),
               rgba(${baseColorRGB}, 0.25)
             )`,
           }}

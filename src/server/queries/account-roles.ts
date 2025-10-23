@@ -199,7 +199,7 @@ export async function initializeAccountRoles(accountId: bigint) {
         roleId: BigInt(2), // Agent
         accountId: accountId,
         permissions: {
-          tasks: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false },
+          tasks: { viewAll: false, editOwn: true, editAll: false, deleteOwn: true, deleteAll: false },
           properties: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false, publish: false },
           contacts: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false },
           calendar: { viewOwn: true, viewAll: false, create: true, edit: true, delete: true },
@@ -212,7 +212,7 @@ export async function initializeAccountRoles(accountId: bigint) {
         roleId: BigInt(3), // Account Admin
         accountId: accountId,
         permissions: {
-          tasks: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
+          tasks: { viewAll: true, editOwn: true, editAll: true, deleteOwn: true, deleteAll: true },
           properties: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true, publish: true },
           contacts: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
           calendar: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
@@ -225,7 +225,7 @@ export async function initializeAccountRoles(accountId: bigint) {
         roleId: BigInt(4), // Office Manager
         accountId: accountId,
         permissions: {
-          tasks: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
+          tasks: { viewAll: true, editOwn: true, editAll: true, deleteOwn: true, deleteAll: true },
           properties: { viewOwn: true, viewAll: true, create: true, edit: true, delete: false, publish: true },
           contacts: { viewOwn: true, viewAll: true, create: true, edit: true, delete: false },
           calendar: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
@@ -238,7 +238,7 @@ export async function initializeAccountRoles(accountId: bigint) {
         roleId: BigInt(5), // Inactive
         accountId: accountId,
         permissions: {
-          tasks: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false },
+          tasks: { viewAll: false, editOwn: false, editAll: false, deleteOwn: false, deleteAll: false },
           properties: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false, publish: false },
           contacts: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false },
           calendar: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false },

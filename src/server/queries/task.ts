@@ -444,22 +444,28 @@ export async function getDealTasks(dealId: number, _accountId: number) {
 // Get tasks by appointment ID
 export async function getAppointmentTasks(
   appointmentId: number,
-  _accountId: number,
+  accountId: number,
 ) {
   try {
-    // Note: appointments don't have direct account relationship, need proper schema
-    // For now, returning empty array to prevent unauthorized access
     const appointmentTasks = await db
       .select()
       .from(tasks)
+      .leftJoin(users, eq(tasks.userId, users.id))
       .where(
         and(
           eq(tasks.appointmentId, BigInt(appointmentId)),
           eq(tasks.isActive, true),
-          eq(tasks.taskId, BigInt(-1)), // This will never match, preventing access
+          eq(users.accountId, BigInt(accountId)),
         ),
       );
-    return appointmentTasks;
+
+    // Transform to match expected Task interface
+    return appointmentTasks.map(row => ({
+      ...row.tasks,
+      userName: row.users?.name,
+      userFirstName: row.users?.firstName,
+      userLastName: row.users?.lastName,
+    }));
   } catch (error) {
     console.error("Error fetching appointment tasks:", error);
     throw error;

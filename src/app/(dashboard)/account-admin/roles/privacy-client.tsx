@@ -19,6 +19,7 @@ type Permission = {
 };
 
 const permissions: Permission[] = [
+  // Tasks permissions
   {
     id: "viewAll",
     category: "tasks",
@@ -54,6 +55,21 @@ const permissions: Permission[] = [
     description: "Puede eliminar todas las tareas del equipo",
     icon: Trash2,
   },
+  // Properties permissions
+  {
+    id: "viewOwn",
+    category: "properties",
+    name: "Ver propiedades propias",
+    description: "Solo puede ver sus propias propiedades",
+    icon: Eye,
+  },
+  {
+    id: "viewAll",
+    category: "properties",
+    name: "Ver todas las propiedades",
+    description: "Puede ver todas las propiedades del equipo",
+    icon: Eye,
+  },
   {
     id: "create",
     category: "properties",
@@ -82,6 +98,7 @@ const permissions: Permission[] = [
     description: "Puede publicar propiedades en portales",
     icon: Eye,
   },
+  // Contacts permissions
   {
     id: "viewOwn",
     category: "contacts",
@@ -93,14 +110,21 @@ const permissions: Permission[] = [
     id: "viewAll",
     category: "contacts",
     name: "Ver todos los contactos",
-    description: "Puede ver todos los contactos",
+    description: "Puede ver todos los contactos del equipo",
     icon: Eye,
+  },
+  {
+    id: "create",
+    category: "contacts",
+    name: "Crear contactos",
+    description: "Puede crear nuevos contactos",
+    icon: Edit,
   },
   {
     id: "edit",
     category: "contacts",
     name: "Editar contactos",
-    description: "Puede editar y eliminar contactos",
+    description: "Puede editar contactos existentes",
     icon: Edit,
   },
   {
@@ -110,12 +134,13 @@ const permissions: Permission[] = [
     description: "Puede eliminar contactos",
     icon: Trash2,
   },
+  // Calendar permissions
   {
-    id: "imageStudio",
-    category: "tools",
-    name: "Usar Image Studio",
-    description: "Acceso al estudio de imágenes para edición",
-    icon: ImageIcon,
+    id: "viewOwn",
+    category: "calendar",
+    name: "Ver calendario propio",
+    description: "Solo puede ver sus propios eventos",
+    icon: Calendar,
   },
   {
     id: "viewAll",
@@ -127,9 +152,81 @@ const permissions: Permission[] = [
   {
     id: "create",
     category: "calendar",
-    name: "Gestionar calendario",
-    description: "Puede crear y modificar eventos del calendario",
+    name: "Crear eventos",
+    description: "Puede crear nuevos eventos en el calendario",
     icon: Calendar,
+  },
+  {
+    id: "edit",
+    category: "calendar",
+    name: "Editar eventos",
+    description: "Puede editar eventos del calendario",
+    icon: Edit,
+  },
+  {
+    id: "delete",
+    category: "calendar",
+    name: "Eliminar eventos",
+    description: "Puede eliminar eventos del calendario",
+    icon: Trash2,
+  },
+  // Tools permissions
+  {
+    id: "imageStudio",
+    category: "tools",
+    name: "Usar Image Studio",
+    description: "Acceso al estudio de imágenes para edición",
+    icon: ImageIcon,
+  },
+  {
+    id: "aiTools",
+    category: "tools",
+    name: "Usar herramientas IA",
+    description: "Acceso a herramientas de inteligencia artificial",
+    icon: Shield,
+  },
+  {
+    id: "export",
+    category: "tools",
+    name: "Exportar datos",
+    description: "Puede exportar información a archivos externos",
+    icon: Shield,
+  },
+  // Admin permissions
+  {
+    id: "manageUsers",
+    category: "admin",
+    name: "Gestionar usuarios",
+    description: "Puede crear, editar y eliminar usuarios",
+    icon: Users,
+  },
+  {
+    id: "manageRoles",
+    category: "admin",
+    name: "Gestionar roles",
+    description: "Puede configurar roles y permisos",
+    icon: Shield,
+  },
+  {
+    id: "viewReports",
+    category: "admin",
+    name: "Ver reportes",
+    description: "Acceso a informes y estadísticas",
+    icon: Eye,
+  },
+  {
+    id: "manageAccount",
+    category: "admin",
+    name: "Gestionar cuenta",
+    description: "Puede modificar configuración de la cuenta",
+    icon: Shield,
+  },
+  {
+    id: "manageBilling",
+    category: "admin",
+    name: "Gestionar facturación",
+    description: "Acceso a información de pagos y suscripciones",
+    icon: Shield,
   },
 ];
 
@@ -296,7 +393,7 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
                   <TabsTrigger value="all">Todos</TabsTrigger>
                   <TabsTrigger value="properties">Propiedades</TabsTrigger>
                   <TabsTrigger value="contacts">Contactos</TabsTrigger>
-                  <TabsTrigger value="tools">Herramientas</TabsTrigger>
+                  <TabsTrigger value="admin">Admin</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="all" className="mt-6 space-y-6">
@@ -348,7 +445,7 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
                   ))}
                 </TabsContent>
 
-                {["properties", "contacts", "tools"].map((tab) => (
+                {["properties", "contacts", "admin"].map((tab) => (
                   <TabsContent key={tab} value={tab} className="mt-6 space-y-4">
                     {groupedPermissions[tab]?.map((permission) => {
                       const Icon = permission.icon;

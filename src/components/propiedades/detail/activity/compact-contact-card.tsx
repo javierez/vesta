@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, Phone, User, Users, CalendarIcon, CalendarPlus, Home, Copy, Check, MessageCircle } from "lucide-react";
+import { Mail, Phone, CalendarPlus, Copy, Check, MessageCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useState } from "react";
 import { formatDistance } from "date-fns";
@@ -8,38 +8,19 @@ import { es } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import type { CompactContactCardProps } from "~/types/activity";
 
-// Contact type colors and icons - matching appointment card style
-const contactTypes = {
-  buyer: {
-    color: "bg-amber-100 text-amber-800",
-    icon: <Home className="h-4 w-4" />,
-  },
-  viewer: {
-    color: "bg-blue-100 text-blue-800",
-    icon: <Users className="h-4 w-4" />,
-  },
-  owner: {
-    color: "bg-purple-100 text-purple-800",
-    icon: <User className="h-4 w-4" />,
-  },
-};
-
 export function CompactContactCard({
   contact,
   listingContact,
   hasUpcomingVisit,
   hasMissedVisit,
-  hasDoneVisit,
+  hasCompletedVisit,
+  hasCancelledVisit,
+  hasOffer,
   visitCount,
   listingId,
 }: CompactContactCardProps) {
   const router = useRouter();
   const [copiedField, setCopiedField] = useState<string | null>(null);
-
-  const typeConfig = contactTypes[listingContact.contactType] ?? {
-    color: "bg-gray-100 text-gray-800",
-    icon: <CalendarIcon className="h-4 w-4" />,
-  };
 
   console.log('🎨 CompactContactCard rendering:', {
     contactId: contact.contactId.toString(),
@@ -49,12 +30,10 @@ export function CompactContactCard({
     source: listingContact.source,
     hasUpcomingVisit,
     hasMissedVisit,
-    hasDoneVisit,
+    hasCompletedVisit,
+    hasCancelledVisit,
+    hasOffer,
     visitCount,
-    typeConfig: {
-      color: typeConfig.color,
-      hasIcon: !!typeConfig.icon,
-    },
   });
 
   const copyToClipboard = async (text: string, field: string) => {
@@ -90,13 +69,13 @@ export function CompactContactCard({
   return (
     <div
       className={cn(
-        "calendar-event relative cursor-pointer rounded-lg border bg-white p-4 transition-all duration-200 hover:shadow-md"
+        "calendar-event relative cursor-pointer rounded-lg border bg-white p-2.5 transition-all duration-200 hover:shadow-md"
       )}
     >
       {/* Main content */}
-      <div className="pr-32"> {/* Add right padding to avoid overlap with badges */}
+      <div className="pr-28"> {/* Add right padding to avoid overlap with badges */}
         {/* Contact name */}
-        <div className="font-medium text-gray-900 mb-2">
+        <div className="font-medium text-sm text-gray-900 mb-1">
           {contact.firstName} {contact.lastName ?? ""}
           <span className="ml-2 text-xs font-normal text-gray-500">
             ({formatDistance(contact.createdAt, new Date(), {
@@ -107,7 +86,7 @@ export function CompactContactCard({
         </div>
 
         {/* Contact Info - Email and Phone */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
           {contact.email && (
             <div className="group flex items-center">
               <div className="mr-1 flex items-center">
@@ -119,7 +98,7 @@ export function CompactContactCard({
                   }}
                   title="Enviar email"
                 >
-                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <Mail className="h-3 w-3 text-muted-foreground" />
                 </button>
                 <div className="flex w-0 items-center overflow-hidden opacity-0 transition-all duration-500 ease-out group-hover:w-auto group-hover:opacity-100">
                   <button
@@ -132,9 +111,9 @@ export function CompactContactCard({
                     title="Copiar email"
                   >
                     {copiedField === `email-${contact.contactId}` ? (
-                      <Check className="h-4 w-4 text-green-900" />
+                      <Check className="h-3 w-3 text-green-900" />
                     ) : (
-                      <Copy className="h-4 w-4 text-muted-foreground" />
+                      <Copy className="h-3 w-3 text-muted-foreground" />
                     )}
                   </button>
                 </div>
@@ -156,7 +135,7 @@ export function CompactContactCard({
                   }}
                   title="Llamar"
                 >
-                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <Phone className="h-3 w-3 text-muted-foreground" />
                 </button>
                 <div className="flex w-0 items-center overflow-hidden opacity-0 transition-all duration-500 ease-out group-hover:w-auto group-hover:opacity-100">
                   <button
@@ -168,7 +147,7 @@ export function CompactContactCard({
                     }}
                     title="Enviar WhatsApp"
                   >
-                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                    <MessageCircle className="h-3 w-3 text-muted-foreground" />
                   </button>
                   <button
                     className="duration-400 ml-1 scale-0 transform rounded p-1 transition-all hover:bg-gray-100 group-hover:scale-100"
@@ -180,9 +159,9 @@ export function CompactContactCard({
                     title="Copiar teléfono"
                   >
                     {copiedField === `phone-${contact.contactId}` ? (
-                      <Check className="h-4 w-4 text-green-900" />
+                      <Check className="h-3 w-3 text-green-900" />
                     ) : (
-                      <Copy className="h-4 w-4 text-muted-foreground" />
+                      <Copy className="h-3 w-3 text-muted-foreground" />
                     )}
                   </button>
                 </div>
@@ -196,43 +175,42 @@ export function CompactContactCard({
 
       </div>
 
-      {/* Badges - Centered in the middle */}
-      <div className="absolute top-1/2 right-3 transform -translate-y-1/2 flex flex-col gap-3">
-        {/* Contact type badge */}
-        <div
-          className={cn(
-            "flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-            typeConfig.color,
-          )}
-        >
-          <span>
-            {listingContact.contactType === "buyer" ? "Comprador" :
-             listingContact.contactType === "viewer" ? "Interesado" :
-             listingContact.contactType === "owner" ? "Propietario" :
-             listingContact.contactType}
-          </span>
-        </div>
-
+      {/* Badge - Top right */}
+      <div className="absolute top-2 right-2">
         {/* Visit status badge */}
         <span
-          onClick={(!hasUpcomingVisit && !hasMissedVisit && !hasDoneVisit) || (hasMissedVisit && !hasUpcomingVisit) ? handleCreateVisit : undefined}
+          onClick={(!hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit) || (hasMissedVisit && !hasUpcomingVisit) || (hasCancelledVisit && !hasUpcomingVisit) ? handleCreateVisit : undefined}
           className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-            !hasUpcomingVisit && !hasMissedVisit && !hasDoneVisit &&
+            "inline-flex items-center justify-center gap-1 rounded-full px-2 py-0 text-xs font-medium min-w-[120px] h-5",
+            // Crear visita - no visits at all
+            !hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit &&
               "bg-white text-gray-700 border-2 border-dashed border-gray-400 cursor-pointer hover:bg-gray-50 hover:border-gray-500 transition-colors",
-            hasMissedVisit && !hasUpcomingVisit &&
+            // Visita cancelada - has cancelled visit, clickable to reschedule
+            hasCancelledVisit && !hasUpcomingVisit &&
+              "bg-white text-orange-800 border-2 border-dashed border-orange-600 cursor-pointer hover:bg-orange-50 hover:border-orange-700 transition-colors",
+            // Visita perdida - missed visit, clickable to reschedule
+            hasMissedVisit && !hasUpcomingVisit && !hasCancelledVisit &&
               "bg-white text-red-800 border-2 border-dashed border-red-700 cursor-pointer hover:bg-red-50 hover:border-red-800 transition-colors",
-            (hasUpcomingVisit || (hasDoneVisit && !hasUpcomingVisit && !hasMissedVisit)) &&
+            // Visita pendiente - upcoming visit scheduled
+            hasUpcomingVisit &&
+              "bg-blue-100 text-blue-800",
+            // Oferta realizada - completed visit with offer made
+            hasCompletedVisit && hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit &&
+              "bg-green-100 text-green-800",
+            // Visita completada - completed visit without offer yet
+            hasCompletedVisit && !hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit &&
               "bg-gray-100 text-gray-700"
           )}
         >
-          {!hasUpcomingVisit && !hasMissedVisit && !hasDoneVisit && (
-            <CalendarPlus className="h-3 w-3" />
+          {!hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && (
+            <CalendarPlus className="h-2.5 w-2.5" />
           )}
           {hasUpcomingVisit && "Visita pendiente"}
-          {hasMissedVisit && !hasUpcomingVisit && "Visita perdida"}
-          {hasDoneVisit && !hasUpcomingVisit && !hasMissedVisit && "Pendiente oferta"}
-          {!hasUpcomingVisit && !hasMissedVisit && !hasDoneVisit && "Crear visita"}
+          {hasCancelledVisit && !hasUpcomingVisit && "Visita cancelada"}
+          {hasMissedVisit && !hasUpcomingVisit && !hasCancelledVisit && "Visita perdida"}
+          {hasCompletedVisit && hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit && "Oferta realizada"}
+          {hasCompletedVisit && !hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit && "Visita completada"}
+          {!hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && "Crear visita"}
         </span>
       </div>
     </div>

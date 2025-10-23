@@ -61,7 +61,7 @@ const baseNavigation: NavigationItem[] = [
 ];
 
 const operacionesItems: NavigationItem[] = [
-  { name: "Prospectos", href: "/operaciones/prospects", icon: Search },
+  { name: "Cruces", href: "/operaciones/prospects", icon: Search },
   {
     name: "Conexiones",
     href: "/operaciones/leads",

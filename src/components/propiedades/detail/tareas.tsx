@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -12,10 +13,11 @@ import { Plus, Trash2, Check, Mic, AlertCircle, CheckCircle2, Loader2, User, Cal
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { TareasSkeleton } from "~/components/ui/skeletons";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
-import { getAllPotentialOwnersWithAuth } from "~/server/queries/contact";
+import { getAllPotentialOwnersWithAuth, getListingOwnerInfoWithAuth } from "~/server/queries/contact";
 import { getLeadByListingAndContactWithAuth, ensureLeadExistsWithAuth } from "~/server/queries/lead";
 import { getDealByListingAndContactWithAuth } from "~/server/queries/deal";
 import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
+import { getListingAppointmentsAction } from "~/server/actions/appointments";
 import { useSession } from "~/lib/auth-client";
 import { canEditAllTasks, canDeleteAllTasks } from "~/app/actions/permissions/check-permissions";
 
@@ -25,6 +27,7 @@ interface Task {
   userId: string;
   title: string;
   description: string;
+  category?: string;
   dueDate?: Date;
   completed: boolean;
   listingId?: bigint;
@@ -115,14 +118,16 @@ export function Tareas({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [appointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const [contactSearch, setContactSearch] = useState("");
   const [agents, setAgents] = useState<{ id: string; name: string; firstName?: string; lastName?: string; }[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [loadingAgents, setLoadingAgents] = useState(false);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'contact' | 'property'>('all');
+  const [ownerInfo, setOwnerInfo] = useState<{ listingContactId: bigint; contactId: bigint } | null>(null);
 
   // Permission states
   const [hasEditAllPermission, setHasEditAllPermission] = useState<boolean>(false);
@@ -180,6 +185,48 @@ export function Tareas({
     void fetchAgents();
   }, [isAdding]);
 
+  // Fetch appointments for this listing when user starts creating a task
+  useEffect(() => {
+    if (!isAdding) return;
+
+    const fetchAppointments = async () => {
+      setLoadingAppointments(true);
+      try {
+        const result = await getListingAppointmentsAction(Number(listingId));
+
+        if (result.success && result.appointments) {
+          // Format appointments to match the Appointment interface
+          const formattedAppointments: Appointment[] = result.appointments.map((apt) => ({
+            appointmentId: apt.appointmentId,
+            listingId: apt.listingId ?? undefined,
+            datetimeStart: new Date(apt.datetimeStart),
+            datetimeEnd: new Date(apt.datetimeEnd),
+            type: apt.type ?? undefined,
+            status: apt.status,
+            contact: {
+              contactId: apt.contactId,
+              firstName: apt.contactFirstName ?? '',
+              lastName: apt.contactLastName ?? '',
+              email: apt.contactEmail ?? undefined,
+            },
+          }));
+
+          setAppointments(formattedAppointments);
+        } else {
+          console.error('Error fetching appointments:', result.error);
+          setAppointments([]);
+        }
+      } catch (error) {
+        console.error('Error fetching appointments:', error);
+        setAppointments([]);
+      } finally {
+        setLoadingAppointments(false);
+      }
+    };
+
+    void fetchAppointments();
+  }, [isAdding, listingId]);
+
   // Initialize agent selection with current user when starting to add a task
   useEffect(() => {
     if (isAdding && !newTask.agentId && session?.user?.id) {
@@ -207,6 +254,20 @@ export function Tareas({
     void fetchPermissions();
   }, []); // Run once on mount
 
+  // Fetch owner information for this listing
+  useEffect(() => {
+    const fetchOwnerInfo = async () => {
+      try {
+        const info = await getListingOwnerInfoWithAuth(Number(listingId));
+        setOwnerInfo(info ?? null);
+      } catch (error) {
+        console.error('Error fetching owner info:', error);
+        setOwnerInfo(null);
+      }
+    };
+
+    void fetchOwnerInfo();
+  }, [listingId]);
 
   // Auto-save draft functionality
   useEffect(() => {
@@ -381,14 +442,15 @@ export function Tareas({
         userId: selectedUserId,
         title: formData.title,
         description: formData.description,
+        category: "property",
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         dueTime: formData.dueDate ? (formData.dueTime || "00:00") : undefined,
         completed: false,
         createdBy: session?.user?.id,
         listingId: BigInt(listingId),
-        listingContactId: listingContactId,
+        listingContactId: ownerInfo?.listingContactId ?? listingContactId,
         dealId: dealId,
-        contactId: formData.contactId ? BigInt(formData.contactId) : undefined,
+        contactId: ownerInfo?.contactId ?? (formData.contactId ? BigInt(formData.contactId) : undefined),
         appointmentId: formData.appointmentId ? BigInt(formData.appointmentId) : undefined,
         isActive: true,
       });
@@ -599,12 +661,13 @@ export function Tareas({
         {
           title: newTask.title,
           description: newTask.description,
+          category: "property",
           dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
           dueTime: newTask.dueDate ? (newTask.dueTime || "00:00") : undefined,
           userId: newTask.agentId,
-          listingContactId: listingContactId,
+          listingContactId: ownerInfo?.listingContactId ?? listingContactId,
           dealId: dealId,
-          contactId: newTask.contactId ? BigInt(newTask.contactId) : undefined,
+          contactId: ownerInfo?.contactId ?? (newTask.contactId ? BigInt(newTask.contactId) : undefined),
           appointmentId: newTask.appointmentId ? BigInt(newTask.appointmentId) : undefined,
         }
       );
@@ -682,15 +745,28 @@ export function Tareas({
     );
   }, [contacts, contactSearch]);
 
+  // Filter appointments based on selected contact
+  const filteredAppointments = useMemo(() => {
+    // If no contact is selected, show all appointments
+    if (!newTask.contactId) {
+      return appointments;
+    }
+
+    // Filter appointments that match the selected contact
+    return appointments.filter((appointment) =>
+      appointment.contact.contactId.toString() === newTask.contactId
+    );
+  }, [appointments, newTask.contactId]);
+
   // Sort and filter tasks: filter by category, incomplete first, then by due date
   const sortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
 
     // Filter by category
     if (categoryFilter === 'contact') {
-      filteredTasks = filteredTasks.filter(task => task.relatedContact);
+      filteredTasks = filteredTasks.filter(task => task.category === 'contact');
     } else if (categoryFilter === 'property') {
-      filteredTasks = filteredTasks.filter(task => !task.relatedContact);
+      filteredTasks = filteredTasks.filter(task => task.category === 'property');
     }
 
     return filteredTasks.sort((a, b) => {
@@ -796,12 +872,13 @@ export function Tareas({
                 } />
               </SelectTrigger>
               <SelectContent>
-                <div className="flex items-center px-3 pb-2">
+                <div className="flex items-center px-3 pb-2" onKeyDown={(e) => e.stopPropagation()}>
                   <Input
                     className="h-9"
                     placeholder="Buscar contacto..."
                     value={contactSearch}
                     onChange={(e) => setContactSearch(e.target.value)}
+                    onKeyDown={(e) => e.stopPropagation()}
                   />
                 </div>
                 <Separator className="mb-2" />
@@ -851,16 +928,16 @@ export function Tareas({
               <Select
                 value={newTask.appointmentId}
                 onValueChange={(value) => setNewTask({ ...newTask, appointmentId: value })}
-                disabled={externalLoading}
+                disabled={externalLoading ?? loadingAppointments}
               >
                 <SelectTrigger className="h-8 text-gray-500">
                   <SelectValue placeholder={
-                    externalLoading ? "Cargando citas..." :
-                    appointments.length === 0 ? "No hay citas" : "Seleccionar cita"
+                    (externalLoading || loadingAppointments) ? "Cargando citas..." :
+                    filteredAppointments.length === 0 ? (newTask.contactId ? "No hay citas para este contacto" : "No hay citas") : "Seleccionar cita"
                   } />
                 </SelectTrigger>
                 <SelectContent>
-                  {appointments.map((appointment) => (
+                  {filteredAppointments.map((appointment) => (
                     <SelectItem key={appointment.appointmentId.toString()} value={appointment.appointmentId.toString()}>
                       {appointment.contact.firstName} {appointment.contact.lastName} - {appointment.type} ({appointment.datetimeStart.toLocaleDateString()})
                     </SelectItem>
@@ -980,7 +1057,7 @@ export function Tareas({
                   >
                     {categoryFilter === 'contact' && <Check className="h-2 w-2 text-primary-foreground" />}
                   </div>
-                  <span className={categoryFilter === 'contact' ? 'font-medium' : ''}>Con contacto</span>
+                  <span className={categoryFilter === 'contact' ? 'font-medium' : ''}>Contacto</span>
                 </div>
                 <div
                   className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
@@ -995,7 +1072,7 @@ export function Tareas({
                   >
                     {categoryFilter === 'property' && <Check className="h-2 w-2 text-primary-foreground" />}
                   </div>
-                  <span className={categoryFilter === 'property' ? 'font-medium' : ''}>De propiedad</span>
+                  <span className={categoryFilter === 'property' ? 'font-medium' : ''}>Propiedad</span>
                 </div>
               </div>
               {categoryFilter !== 'all' && (
@@ -1042,15 +1119,13 @@ export function Tareas({
           <div className="text-center py-6 sm:py-8 text-gray-500">
             <p className="text-sm sm:text-base">
               {categoryFilter !== 'all'
-                ? `No hay tareas ${categoryFilter === 'contact' ? 'con contacto' : 'de propiedad'}`
+                ? `No hay tareas de ${categoryFilter === 'contact' ? 'contacto' : 'propiedad'}`
                 : 'No hay tareas registradas para esta propiedad'}
             </p>
           </div>
         ) : (
           <div className="space-y-1">
 {sortedTasks.map((task) => {
-              console.log('Rendering task - createdBy:', task.createdBy, 'taskId:', task.taskId, 'title:', task.title);
-
               const getInitials = (firstName?: string, lastName?: string, name?: string) => {
                 if (firstName && lastName) {
                   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -1128,9 +1203,11 @@ export function Tareas({
                     {/* System task indicator - under avatar */}
                     {task.createdBy === "0" && (
                       <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center" title="Tarea del sistema">
-                        <img
+                        <Image
                           src="/favicon.ico"
                           alt="Sistema"
+                          width={20}
+                          height={20}
                           className="h-4 w-4 sm:h-5 sm:w-5 object-contain opacity-60"
                         />
                       </div>

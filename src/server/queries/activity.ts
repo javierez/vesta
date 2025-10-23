@@ -29,6 +29,7 @@ export async function getListingVisitsSummary(listingId: bigint) {
         tripTimeMinutes: appointments.tripTimeMinutes,
         notes: appointments.notes,
         type: appointments.type,
+        contactId: contacts.contactId,
         contactFirstName: contacts.firstName,
         contactLastName: contacts.lastName,
         contactEmail: contacts.email,
@@ -117,6 +118,7 @@ export async function getListingContactsSummary(listingId: bigint) {
         source: listingContacts.source,
         status: listingContacts.status,
         createdAt: listingContacts.createdAt,
+        offer: listingContacts.offer,
       })
       .from(listingContacts)
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
@@ -141,6 +143,7 @@ export async function getListingContactsSummary(listingId: bigint) {
       upcomingVisits: number;
       missedVisits: number;
       completedVisits: number;
+      cancelledVisits: number;
     }> = [];
 
     if (contactIds.length > 0) {
@@ -149,8 +152,9 @@ export async function getListingContactsSummary(listingId: bigint) {
           contactId: appointments.contactId,
           totalVisits: sql<number>`COUNT(*)`.as('totalVisits'),
           upcomingVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as('upcomingVisits'),
-          missedVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as('missedVisits'),
-          completedVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as('completedVisits'),
+          missedVisits: sql<number>`SUM(CASE WHEN (${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled') OR ${appointments.status} = 'NoShow' THEN 1 ELSE 0 END)`.as('missedVisits'),
+          completedVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as('completedVisits'),
+          cancelledVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Cancelled' THEN 1 ELSE 0 END)`.as('cancelledVisits'),
         })
         .from(appointments)
         .where(
@@ -163,13 +167,14 @@ export async function getListingContactsSummary(listingId: bigint) {
         .groupBy(appointments.contactId);
 
       visitCounts = visitCountResults
-        .filter((v): v is { contactId: bigint; totalVisits: number; upcomingVisits: number; missedVisits: number; completedVisits: number } => v.contactId !== null)
+        .filter((v): v is { contactId: bigint; totalVisits: number; upcomingVisits: number; missedVisits: number; completedVisits: number; cancelledVisits: number } => v.contactId !== null)
         .map((v) => ({
           contactId: v.contactId,
           totalVisits: Number(v.totalVisits),
           upcomingVisits: Number(v.upcomingVisits),
           missedVisits: Number(v.missedVisits),
           completedVisits: Number(v.completedVisits),
+          cancelledVisits: Number(v.cancelledVisits),
         }));
     }
 
@@ -178,26 +183,35 @@ export async function getListingContactsSummary(listingId: bigint) {
     );
 
     const contactsWithVisitStatus = allContacts.map((contact) => {
-      const hasUpcomingVisit = (visitMap.get(contact.contactId.toString())?.upcomingVisits ?? 0) > 0;
-      const hasMissedVisit = (visitMap.get(contact.contactId.toString())?.missedVisits ?? 0) > 0;
-      const hasDoneVisit = (visitMap.get(contact.contactId.toString())?.completedVisits ?? 0) > 0;
+      const visitStats = visitMap.get(contact.contactId.toString());
+      const hasUpcomingVisit = (visitStats?.upcomingVisits ?? 0) > 0;
+      const hasMissedVisit = (visitStats?.missedVisits ?? 0) > 0;
+      const hasCompletedVisit = (visitStats?.completedVisits ?? 0) > 0;
+      const hasCancelledVisit = (visitStats?.cancelledVisits ?? 0) > 0;
+      const hasOffer = contact.offer !== null && contact.offer !== undefined;
 
-      // Priority for sorting: 1=crear visita, 2=missed, 3=upcoming, 4=done
-      let sortPriority = 4;
-      if (!hasUpcomingVisit && !hasMissedVisit && !hasDoneVisit) {
-        sortPriority = 1; // Crear visita
+      // Priority for sorting: 1=cancelled, 2=missed, 3=upcoming, 4=offer made, 5=completed, 6=crear visita
+      let sortPriority = 6;
+      if (hasCancelledVisit) {
+        sortPriority = 1; // Cancelled visit
       } else if (hasMissedVisit) {
         sortPriority = 2; // Missed visit
       } else if (hasUpcomingVisit) {
         sortPriority = 3; // Upcoming visit
+      } else if (hasCompletedVisit && hasOffer) {
+        sortPriority = 4; // Offer made
+      } else if (hasCompletedVisit) {
+        sortPriority = 5; // Completed visit
       }
 
       return {
         ...contact,
-        visitCount: visitMap.get(contact.contactId.toString())?.totalVisits ?? 0,
+        visitCount: visitStats?.totalVisits ?? 0,
         hasUpcomingVisit,
         hasMissedVisit,
-        hasDoneVisit,
+        hasCompletedVisit,
+        hasCancelledVisit,
+        hasOffer,
         isNew: contact.createdAt >= thirtyDaysAgo,
         sortPriority,
       };

@@ -7,23 +7,7 @@ export const dynamic = 'force-dynamic';
 
 // Default permissions for each role
 const DEFAULT_PERMISSIONS: Record<number, AccountRolePermissions> = {
-  1: {
-    tasks: { viewAll: false, editOwn: true, editAll: false, deleteOwn: false, deleteAll: false },
-    properties: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false, publish: false },
-    contacts: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false },
-    calendar: { viewOwn: true, viewAll: false, create: true, edit: true, delete: true },
-    tools: { imageStudio: false, aiTools: true, export: false },
-    admin: { manageUsers: false, manageRoles: false, viewReports: false, manageAccount: false, manageBilling: false },
-  },
-  2: {
-    tasks: { viewAll: false, editOwn: true, editAll: false, deleteOwn: false, deleteAll: false },
-    properties: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false, publish: false },
-    contacts: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false },
-    calendar: { viewOwn: true, viewAll: false, create: true, edit: true, delete: true },
-    tools: { imageStudio: false, aiTools: true, export: false },
-    admin: { manageUsers: false, manageRoles: false, viewReports: false, manageAccount: false, manageBilling: false },
-  },
-  3: {
+  1: { // Administrador (Superadmin - internal only)
     tasks: { viewAll: true, editOwn: true, editAll: true, deleteOwn: true, deleteAll: true },
     properties: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true, publish: true },
     contacts: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
@@ -31,13 +15,37 @@ const DEFAULT_PERMISSIONS: Record<number, AccountRolePermissions> = {
     tools: { imageStudio: true, aiTools: true, export: true },
     admin: { manageUsers: true, manageRoles: true, viewReports: true, manageAccount: true, manageBilling: true },
   },
-  4: {
+  2: { // Agente
+    tasks: { viewAll: false, editOwn: true, editAll: false, deleteOwn: true, deleteAll: false },
+    properties: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false, publish: false },
+    contacts: { viewOwn: true, viewAll: false, create: true, edit: true, delete: false },
+    calendar: { viewOwn: true, viewAll: false, create: true, edit: true, delete: true },
+    tools: { imageStudio: false, aiTools: true, export: false },
+    admin: { manageUsers: false, manageRoles: false, viewReports: false, manageAccount: false, manageBilling: false },
+  },
+  3: { // Admin de Cuenta
+    tasks: { viewAll: true, editOwn: true, editAll: true, deleteOwn: true, deleteAll: true },
+    properties: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true, publish: true },
+    contacts: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
+    calendar: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
+    tools: { imageStudio: true, aiTools: true, export: true },
+    admin: { manageUsers: true, manageRoles: true, viewReports: true, manageAccount: true, manageBilling: true },
+  },
+  4: { // Gestor de Oficina
     tasks: { viewAll: true, editOwn: true, editAll: true, deleteOwn: true, deleteAll: true },
     properties: { viewOwn: true, viewAll: true, create: true, edit: true, delete: false, publish: true },
     contacts: { viewOwn: true, viewAll: true, create: true, edit: true, delete: false },
     calendar: { viewOwn: true, viewAll: true, create: true, edit: true, delete: true },
     tools: { imageStudio: true, aiTools: true, export: true },
     admin: { manageUsers: true, manageRoles: false, viewReports: true, manageAccount: false, manageBilling: false },
+  },
+  5: { // Inactivo
+    tasks: { viewAll: false, editOwn: false, editAll: false, deleteOwn: false, deleteAll: false },
+    properties: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false, publish: false },
+    contacts: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false },
+    calendar: { viewOwn: false, viewAll: false, create: false, edit: false, delete: false },
+    tools: { imageStudio: false, aiTools: false, export: false },
+    admin: { manageUsers: false, manageRoles: false, viewReports: false, manageAccount: false, manageBilling: false },
   },
 };
 

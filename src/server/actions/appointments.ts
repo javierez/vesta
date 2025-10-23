@@ -10,11 +10,13 @@ import {
   getAgentsForFilter,
   getUserAppointmentsSecure,
   getAppointmentsByDateRangeSecure,
+  getListingAppointments,
 } from "~/server/queries/appointment";
 import {
   findOrCreateLeadForAppointment,
 } from "~/server/queries/lead-status-sync";
 import { syncToGoogle } from "~/lib/google-calendar-sync";
+import { getAppointmentTasksWithAuth } from "~/server/queries/task";
 
 // Form data structure from PRP
 interface AppointmentFormData {
@@ -351,6 +353,103 @@ export async function getAgentsForFilterAction() {
       success: false,
       error: "Error al obtener los agentes",
       agents: [],
+    };
+  }
+}
+
+// Server action to update appointment status only
+export async function updateAppointmentStatusAction(
+  appointmentId: bigint,
+  status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow",
+) {
+  try {
+    // PATTERN: Always get account ID for security
+    await getCurrentUserAccountId();
+    const currentUser = await getCurrentUser();
+
+    // Get the current appointment to preserve other fields
+    const appointment = await updateAppointment(Number(appointmentId), {
+      status,
+      editedBy: currentUser.id,
+    } as Parameters<typeof updateAppointment>[1]);
+
+    if (!appointment) {
+      return {
+        success: false,
+        error: "Error al actualizar el estado de la cita",
+      };
+    }
+
+    // Sync to Google Calendar after status update
+    try {
+      await syncToGoogle(currentUser.id, appointmentId, "update");
+    } catch (error) {
+      console.error(
+        "Failed to sync appointment status update to Google Calendar:",
+        error,
+      );
+      // Don't fail the status update if Google Calendar sync fails
+    }
+
+    // Refresh calendar data
+    revalidatePath("/calendario");
+
+    return {
+      success: true,
+      appointmentId: appointment.appointmentId,
+    };
+  } catch (error) {
+    console.error("Failed to update appointment status:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al actualizar el estado de la cita",
+    };
+  }
+}
+
+// Server action to get appointments for a specific listing
+export async function getListingAppointmentsAction(listingId: number) {
+  try {
+    // PATTERN: Always get account ID for security
+    await getCurrentUserAccountId();
+
+    const appointments = await getListingAppointments(listingId);
+
+    return {
+      success: true,
+      appointments,
+    };
+  } catch (error) {
+    console.error("Failed to fetch listing appointments:", error);
+    return {
+      success: false,
+      error: "Error al obtener las citas de la propiedad",
+      appointments: [],
+    };
+  }
+}
+
+// Server action to get tasks for a specific appointment
+export async function getAppointmentTasksAction(appointmentId: number) {
+  try {
+    // PATTERN: Always get account ID for security
+    await getCurrentUserAccountId();
+
+    const tasks = await getAppointmentTasksWithAuth(appointmentId);
+
+    return {
+      success: true,
+      tasks,
+    };
+  } catch (error) {
+    console.error("Failed to fetch appointment tasks:", error);
+    return {
+      success: false,
+      error: "Error al obtener las tareas de la cita",
+      tasks: [],
     };
   }
 }

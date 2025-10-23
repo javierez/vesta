@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern-save-indicator";
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error";
-type ModuleName = "basicInfo" | "contactDetails" | "notes" | "interestForms";
+type ModuleName = "basicInfo" | "contactDetails" | "notes";
 
 interface ContactNotesCardProps {
   notes: string;

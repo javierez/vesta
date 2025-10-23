@@ -6,6 +6,7 @@ import { getAppointmentsByDateRangeAction } from "~/server/actions/appointments"
 // Re-export types from use-appointments for compatibility
 interface CalendarEvent {
   appointmentId: bigint;
+  userId: string;
   contactName: string;
   propertyAddress?: string;
   startTime: Date;
@@ -94,6 +95,7 @@ function transformToOptimisticEvent(eventData: Partial<CalendarEvent>, tempId: b
   const now = new Date();
   return {
     appointmentId: tempId,
+    userId: eventData.userId ?? "",
     contactName: eventData.contactName ?? "New Contact",
     propertyAddress: eventData.propertyAddress,
     startTime: eventData.startTime ?? now,
@@ -118,8 +120,15 @@ function transformToCalendarEvent(rawAppointment: RawAppointment): CalendarEvent
       ? `${rawAppointment.contactFirstName} ${rawAppointment.contactLastName}`
       : `Contact ${rawAppointment.contactId}`;
 
+  console.log("🔄 [Hook] Transforming appointment:", {
+    appointmentId: rawAppointment.appointmentId.toString(),
+    userId: rawAppointment.userId,
+    contactName,
+  });
+
   return {
     appointmentId: rawAppointment.appointmentId,
+    userId: rawAppointment.userId,
     contactName,
     propertyAddress: rawAppointment.propertyStreet ?? undefined,
     startTime: rawAppointment.datetimeStart,

@@ -36,6 +36,7 @@ interface ImageGalleryProps {
   propertyId: bigint;
   referenceNumber: string;
   onImageUploaded?: (image: PropertyImage) => void;
+  canEdit?: boolean; // Permission flag to control upload/delete actions
 }
 
 export function ImageGallery({
@@ -44,6 +45,7 @@ export function ImageGallery({
   propertyId,
   referenceNumber,
   onImageUploaded,
+  canEdit = true, // Default to true for backward compatibility
 }: ImageGalleryProps) {
   const [images, setImages] = useState<PropertyImage[]>(initialImages);
   const [imageToDelete, setImageToDelete] = useState<number | null>(null);
@@ -537,18 +539,20 @@ export function ImageGallery({
               </div>
             ) : (
               <>
-                <button
-                  type="button"
-                  className="absolute right-2 top-2 rounded-full bg-black/40 p-1.5 text-white transition-all duration-200 hover:bg-red-500 md:opacity-0 md:group-hover:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setImageToDelete(idx);
-                  }}
-                  disabled={isDeleting}
-                  aria-label="Eliminar imagen"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="absolute right-2 top-2 rounded-full bg-black/40 p-1.5 text-white transition-all duration-200 hover:bg-red-500 md:opacity-0 md:group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImageToDelete(idx);
+                    }}
+                    disabled={isDeleting}
+                    aria-label="Eliminar imagen"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
                 <button
                   type="button"
                   className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white transition-all duration-200 hover:bg-black/60 disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100"
@@ -570,24 +574,26 @@ export function ImageGallery({
                     <Download className="h-3.5 w-3.5" />
                   )}
                 </button>
-                <button
-                  type="button"
-                  className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white transition-all duration-200 hover:bg-black/60 disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void handleToggleVisibility(idx);
-                  }}
-                  disabled={isTogglingVisibility.has(idx)}
-                  aria-label={image.isActive ? "Ocultar imagen" : "Mostrar imagen"}
-                >
-                  {isTogglingVisibility.has(idx) ? (
-                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  ) : image.isActive ? (
-                    <Eye className="h-3.5 w-3.5" />
-                  ) : (
-                    <EyeOff className="h-3.5 w-3.5" />
-                  )}
-                </button>
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white transition-all duration-200 hover:bg-black/60 disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleToggleVisibility(idx);
+                    }}
+                    disabled={isTogglingVisibility.has(idx)}
+                    aria-label={image.isActive ? "Ocultar imagen" : "Mostrar imagen"}
+                  >
+                    {isTogglingVisibility.has(idx) ? (
+                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : image.isActive ? (
+                      <Eye className="h-3.5 w-3.5" />
+                    ) : (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                )}
               </>
             )}
 
@@ -599,112 +605,116 @@ export function ImageGallery({
             )}
           </div>
         ))}
-        <label
-          className={cn(
-            "group relative flex h-40 w-full min-w-[120px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50",
-            isUploading && "cursor-not-allowed opacity-50",
-          )}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={isUploading}
-          />
-          {isUploading ? (
-            <div className="w-full space-y-2 px-4">
-              {Object.entries(uploadProgress).map(([fileId, progress]) => (
-                <div key={fileId} className="space-y-1">
-                  <div className="h-0.5 w-full overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      className="h-full bg-gray-400 transition-all duration-300 ease-out"
-                      style={{ width: `${progress}%` }}
-                    />
+        {canEdit && (
+          <label
+            className={cn(
+              "group relative flex h-40 w-full min-w-[120px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50",
+              isUploading && "cursor-not-allowed opacity-50",
+            )}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={isUploading}
+            />
+            {isUploading ? (
+              <div className="w-full space-y-2 px-4">
+                {Object.entries(uploadProgress).map(([fileId, progress]) => (
+                  <div key={fileId} className="space-y-1">
+                    <div className="h-0.5 w-full overflow-hidden rounded-full bg-gray-100">
+                      <div
+                        className="h-full bg-gray-400 transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <>
-              <Plus className="mb-1 h-5 w-5 text-gray-400 transition-colors duration-200 group-hover:text-gray-500" />
-              <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
-                Añadir imágenes
-              </span>
-            </>
-          )}
-        </label>
+                ))}
+              </div>
+            ) : (
+              <>
+                <Plus className="mb-1 h-5 w-5 text-gray-400 transition-colors duration-200 group-hover:text-gray-500" />
+                <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
+                  Añadir imágenes
+                </span>
+              </>
+            )}
+          </label>
+        )}
       </div>
 
       {/* Selection Controls - Moved to bottom */}
-      <div className="mt-4 flex items-center space-x-2">
-        {isSelectMode ? (
-          <>
+      {canEdit && (
+        <div className="mt-4 flex items-center space-x-2">
+          {isSelectMode ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedImages(new Set());
+                  setIsSelectMode(false);
+                }}
+                className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBulkDownload}
+                disabled={selectedImages.size === 0 || isDeleting}
+                className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                <Download className="mr-1.5 h-4 w-4" />
+                Descargar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={selectedImages.size === 0 || isDeleting}
+                className="text-red-500 hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Eliminar
+              </Button>
+            </>
+          ) : hasUnsavedChanges ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancelOrder}
+                className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSaveOrder}
+                disabled={isUpdatingOrder}
+                className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                {isUpdatingOrder ? "Guardando..." : "Guardar"}
+              </Button>
+            </>
+          ) : (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                setSelectedImages(new Set());
-                setIsSelectMode(false);
-              }}
+              onClick={() => setIsSelectMode(true)}
               className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
             >
-              Cancelar
+              <CheckSquare2 className="mr-1.5 h-4 w-4" />
+              Seleccionar
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBulkDownload}
-              disabled={selectedImages.size === 0 || isDeleting}
-              className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            >
-              <Download className="mr-1.5 h-4 w-4" />
-              Descargar
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBulkDelete}
-              disabled={selectedImages.size === 0 || isDeleting}
-              className="text-red-500 hover:bg-red-50 hover:text-red-600"
-            >
-              <Trash2 className="mr-1.5 h-4 w-4" />
-              Eliminar
-            </Button>
-          </>
-        ) : hasUnsavedChanges ? (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCancelOrder}
-              className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSaveOrder}
-              disabled={isUpdatingOrder}
-              className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            >
-              {isUpdatingOrder ? "Guardando..." : "Guardar"}
-            </Button>
-          </>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsSelectMode(true)}
-            className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-          >
-            <CheckSquare2 className="mr-1.5 h-4 w-4" />
-            Seleccionar
-          </Button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <Dialog
         open={imageToDelete !== null}

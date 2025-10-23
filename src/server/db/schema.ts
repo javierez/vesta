@@ -456,12 +456,16 @@ export const listingContacts = singlestoreTable("listing_contacts", {
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   contactType: varchar("contact_type", { length: 20 }).notNull(), // "buyer", "owner", "viewer"
-  
+
   // NEW COLUMNS (from leads table):
   prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.id (nullable)
   source: varchar("source", { length: 50 }), // e.g. "Website", "Walk-In", "Appointment"
   status: varchar("status", { length: 50 }), // Lead status workflow
-  
+
+  // Offer tracking:
+  offer: int("offer"), // Offer amount
+  offerAccepted: boolean("offer_accepted"), // Whether the offer was accepted
+
   // Existing columns:
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

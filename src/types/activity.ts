@@ -12,6 +12,7 @@ export interface VisitWithDetails {
   tripTimeMinutes: number | null;
   notes: string | null;
   type: string | null;
+  contactId: bigint | null;
   contactFirstName: string | null;
   contactLastName: string | null;
   contactEmail: string | null;
@@ -24,6 +25,7 @@ export interface VisitWithDetails {
 export interface VisitsKPIProps {
   completedCount: number;
   scheduledCount: number;
+  cancelledCount: number;
   totalCount: number;
 }
 
@@ -63,7 +65,9 @@ export interface ContactWithDetails {
   visitCount: number;
   hasUpcomingVisit: boolean;
   hasMissedVisit: boolean;
-  hasDoneVisit: boolean;
+  hasCompletedVisit: boolean;
+  hasCancelledVisit: boolean;
+  hasOffer: boolean;
   isNew: boolean;
 }
 
@@ -88,7 +92,9 @@ export interface CompactContactCardProps {
   };
   hasUpcomingVisit: boolean;
   hasMissedVisit: boolean;
-  hasDoneVisit: boolean;
+  hasCompletedVisit: boolean;
+  hasCancelledVisit: boolean;
+  hasOffer: boolean;
   visitCount: number;
   listingId: bigint;
 }

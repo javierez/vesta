@@ -22,6 +22,7 @@ interface MediaManagerProps {
   onYouTubeLinkAdded?: (link: PropertyImage) => void;
   onVirtualTourAdded?: (tour: PropertyImage) => void;
   onMediaTypeChange?: (type: MediaType) => void;
+  canEdit?: boolean; // Permission flag to control media upload/delete
 }
 
 export function MediaManager({
@@ -37,6 +38,7 @@ export function MediaManager({
   onYouTubeLinkAdded,
   onVirtualTourAdded,
   onMediaTypeChange,
+  canEdit = true, // Default to true for backward compatibility
 }: MediaManagerProps) {
   const [selectedMediaType, setSelectedMediaType] = useState<MediaType>("images");
 
@@ -55,6 +57,7 @@ export function MediaManager({
             propertyId={propertyId}
             referenceNumber={referenceNumber}
             onImageUploaded={onImageUploaded}
+            canEdit={canEdit}
           />
         );
       case "videos":
@@ -67,6 +70,7 @@ export function MediaManager({
             referenceNumber={referenceNumber}
             onVideoUploaded={onVideoUploaded}
             onYouTubeLinkAdded={onYouTubeLinkAdded}
+            canEdit={canEdit}
           />
         );
       case "virtual-tour":
@@ -76,6 +80,7 @@ export function MediaManager({
             propertyId={propertyId}
             referenceNumber={referenceNumber}
             onVirtualTourAdded={onVirtualTourAdded}
+            canEdit={canEdit}
           />
         );
       default:

@@ -1,4 +1,5 @@
 import { useState, useTransition, useOptimistic } from "react";
+import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -86,9 +87,11 @@ function CommentItem({
         <Avatar className={`${isReply ? "h-8 w-8" : "h-10 w-10"}`}>
           {Number(comment.userId) === 0 ? (
             <div className="flex h-full w-full items-center justify-center bg-gray-100">
-              <img
+              <Image
                 src="/favicon.ico"
                 alt="Vesta"
+                width={isReply ? 24 : 32}
+                height={isReply ? 24 : 32}
                 className={`${isReply ? "h-6 w-6" : "h-8 w-8"} object-contain`}
               />
             </div>

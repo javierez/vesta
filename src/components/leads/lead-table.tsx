@@ -99,18 +99,19 @@ export function LeadTable({
   const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // Deduplicate leads by leadId to prevent duplicate keys
-  const uniqueLeads = leads.reduce((acc, lead) => {
-    const key = lead.leadId?.toString();
-    if (key && !acc.some(existingLead => existingLead.leadId?.toString() === key)) {
-      acc.push(lead);
-    } else if (!key) {
-      // Keep leads without leadId (shouldn't happen, but just in case)
-      acc.push(lead);
-    }
-    return acc;
-  }, [] as LeadWithDetails[]);
-
+  // Memoize unique leads to prevent infinite re-renders
+  const uniqueLeads = useMemo(() => {
+    return leads.reduce((acc, lead) => {
+      const key = lead.leadId?.toString();
+      if (key && !acc.some(existingLead => existingLead.leadId?.toString() === key)) {
+        acc.push(lead);
+      } else if (!key) {
+        // Keep leads without leadId (shouldn't happen, but just in case)
+        acc.push(lead);
+      }
+      return acc;
+    }, [] as LeadWithDetails[]);
+  }, [leads]);
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("es-ES", {
@@ -169,16 +170,27 @@ export function LeadTable({
     }
   };
 
-  // Memoize unique leads for stable reference
-  const memoizedUniqueLeads = useMemo(() => uniqueLeads, [uniqueLeads]);
+  // No need for double memoization - uniqueLeads is already memoized
 
-  // Intersection Observer for lazy loading
-  const observeRow = useCallback((element: HTMLElement | null, leadId: string) => {
-    if (!element || !observerRef.current) return;
+  // Track observed elements to prevent re-observing
+  const observedElements = useRef<Set<string>>(new Set());
+  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
-    // Add dataset to track which lead this element represents
-    element.dataset.leadId = leadId;
-    observerRef.current.observe(element);
+  // Store ref callbacks to prevent recreation
+  const refCallbacks = useRef<Map<string, (el: HTMLTableRowElement | null) => void>>(new Map());
+
+  const getRefCallback = useCallback((leadId: string) => {
+    if (!refCallbacks.current.has(leadId)) {
+      refCallbacks.current.set(leadId, (el: HTMLTableRowElement | null) => {
+        if (el) {
+          el.dataset.leadId = leadId;
+          rowRefs.current.set(leadId, el);
+        } else {
+          rowRefs.current.delete(leadId);
+        }
+      });
+    }
+    return refCallbacks.current.get(leadId)!;
   }, []);
 
   // Initialize Intersection Observer
@@ -190,7 +202,11 @@ export function LeadTable({
           if (!leadId) return;
 
           if (entry.isIntersecting) {
-            setVisibleRows((prev) => new Set(prev).add(leadId));
+            setVisibleRows((prev) => {
+              const newSet = new Set(prev);
+              newSet.add(leadId);
+              return newSet;
+            });
           }
         });
       },
@@ -206,14 +222,27 @@ export function LeadTable({
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
+      observedElements.current.clear();
+      rowRefs.current.clear();
+      refCallbacks.current.clear();
     };
   }, []);
 
-  // Initialize visible rows for first few items (above fold)
+  // Initialize visible rows for first few items (above fold) and observe all rows
   useEffect(() => {
-    const initialVisibleIds = memoizedUniqueLeads.slice(0, 5).map(lead => lead.leadId?.toString() ?? '');
+    const initialVisibleIds = uniqueLeads.slice(0, 5).map(lead => lead.leadId?.toString() ?? '');
     setVisibleRows(new Set(initialVisibleIds));
-  }, [memoizedUniqueLeads]);
+
+    // Observe all rows
+    if (observerRef.current) {
+      rowRefs.current.forEach((element, leadId) => {
+        if (!observedElements.current.has(leadId)) {
+          observedElements.current.add(leadId);
+          observerRef.current?.observe(element);
+        }
+      });
+    }
+  }, [uniqueLeads]);
 
   // Smart prefetching - preload next page when user is near the end
   useEffect(() => {
@@ -275,20 +304,21 @@ export function LeadTable({
   }, [currentPage, totalPages, onPrefetchPage]);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Contacto</TableHead>
-              <TableHead>Propiedad</TableHead>
-              <TableHead>Propietario</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Creado</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {memoizedUniqueLeads.map((lead) => {
+    <TooltipProvider>
+      <div className="space-y-4">
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Contacto</TableHead>
+                <TableHead>Propiedad</TableHead>
+                <TableHead>Propietario</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Creado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {uniqueLeads.map((lead) => {
               const leadId = lead.leadId?.toString() ?? '';
               const currentStatus = optimisticStatuses[leadId] ?? lead.status;
               const isUpdating = updatingStatus === leadId;
@@ -297,37 +327,35 @@ export function LeadTable({
               return (
                 <TableRow
                   key={leadId}
-                  ref={(el) => observeRow(el, leadId)}
+                  ref={getRefCallback(leadId)}
                 >
                   {/* Contact */}
                   <TableCell>
                     {isVisible ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="cursor-pointer">
-                              <div className="font-medium">
-                                {lead.contact.firstName} {lead.contact.lastName}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {lead.contact.email ?? "Sin email"}
-                              </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-pointer">
+                            <div className="font-medium">
+                              {lead.contact.firstName} {lead.contact.lastName}
                             </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="space-y-1">
-                              <p>
-                                <strong>Email:</strong>{" "}
-                                {lead.contact.email ?? "No disponible"}
-                              </p>
-                              <p>
-                                <strong>Teléfono:</strong>{" "}
-                                {lead.contact.phone ?? "No disponible"}
-                              </p>
+                            <div className="text-xs text-muted-foreground">
+                              {lead.contact.email ?? "Sin email"}
                             </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="space-y-1">
+                            <p>
+                              <strong>Email:</strong>{" "}
+                              {lead.contact.email ?? "No disponible"}
+                            </p>
+                            <p>
+                              <strong>Teléfono:</strong>{" "}
+                              {lead.contact.phone ?? "No disponible"}
+                            </p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
                     ) : (
                       <Skeleton className="h-10 w-full" />
                     )}
@@ -384,32 +412,30 @@ export function LeadTable({
                   <TableCell>
                     {isVisible ? (
                       lead.owner ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-pointer">
-                                <div className="font-medium">
-                                  {lead.owner.firstName} {lead.owner.lastName}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {lead.owner.email ?? "Sin email"}
-                                </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="cursor-pointer">
+                              <div className="font-medium">
+                                {lead.owner.firstName} {lead.owner.lastName}
                               </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <div className="space-y-1">
-                                <p>
-                                  <strong>Email:</strong>{" "}
-                                  {lead.owner.email ?? "No disponible"}
-                                </p>
-                                <p>
-                                  <strong>Teléfono:</strong>{" "}
-                                  {lead.owner.phone ?? "No disponible"}
-                                </p>
+                              <div className="text-xs text-muted-foreground">
+                                {lead.owner.email ?? "Sin email"}
                               </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="space-y-1">
+                              <p>
+                                <strong>Email:</strong>{" "}
+                                {lead.owner.email ?? "No disponible"}
+                              </p>
+                              <p>
+                                <strong>Teléfono:</strong>{" "}
+                                {lead.owner.phone ?? "No disponible"}
+                              </p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
                       ) : (
                         <div className="text-muted-foreground">No disponible</div>
                       )
@@ -470,5 +496,6 @@ export function LeadTable({
         />
       )}
     </div>
+    </TooltipProvider>
   );
 }

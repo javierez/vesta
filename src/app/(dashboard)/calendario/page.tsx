@@ -35,6 +35,11 @@ import {
   RefreshCw,
   AlertCircle,
   Settings,
+  CircleDot,
+  CheckCircle,
+  Ban,
+  RotateCw,
+  UserX,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -55,9 +60,12 @@ import CalendarEvent, {
 import AppointmentModal, {
   useAppointmentModal,
 } from "~/components/appointments/appointment-modal";
-import { getAgentsForFilterAction } from "~/server/actions/appointments";
+import { getAgentsForFilterAction, updateAppointmentStatusAction } from "~/server/actions/appointments";
 import { useGoogleCalendarIntegration } from "~/hooks/use-google-calendar-integration";
 import { GoogleCalendarSyncSettings } from "~/components/calendar/google-calendar-sync-settings";
+import { canEditCalendar, canDeleteCalendar } from "~/app/actions/permissions/check-permissions";
+import { useSession } from "~/lib/auth-client";
+import { toast } from "sonner";
 
 // Appointment types configuration
 const appointmentTypes = {
@@ -81,6 +89,14 @@ const appointmentTypes = {
     color: "bg-emerald-100 text-emerald-800",
     icon: <Train className="h-4 w-4" />,
   },
+};
+
+// Helper to get the Monday of the week for a given date
+const getWeekStart = (date: Date) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff));
 };
 
 // Helper to get date string in YYYY-MM-DD
@@ -125,20 +141,30 @@ const calculateEventStyle = (startTime: string, endTime: string) => {
 };
 
 export default function AppointmentsPage() {
+  const { data: session } = useSession();
+
+  // Log session data for debugging
+  useEffect(() => {
+    console.log("👤 [Calendar] Current session:", {
+      userId: session?.user?.id,
+      userName: session?.user?.name,
+      hasSession: !!session,
+    });
+  }, [session]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [expandedFilterSections, setExpandedFilterSections] = useState<{
+    type: boolean;
+    status: boolean;
+  }>({ type: true, status: true });
   const [agents, setAgents] = useState<
     Array<{ id: string; name: string; firstName: string; lastName: string | null }>
   >([]);
   const [view, setView] = useState<"list" | "calendar" | "weekly">("weekly");
-  const [weekStart, setWeekStart] = useState(() => {
-    const now = new Date();
-    const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(now.setDate(diff));
-  });
+  const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
   const [selectedEvent, setSelectedEvent] = useState<bigint | null>(null);
   const [editMode, setEditMode] = useState<"create" | "edit">("create");
   const [editingAppointmentId, setEditingAppointmentId] = useState<
@@ -177,8 +203,40 @@ export default function AppointmentsPage() {
   // Use Google Calendar integration
   const { integration, connect, disconnect, updateSyncDirection } =
     useGoogleCalendarIntegration();
-    
+
   const [syncSettingsOpen, setSyncSettingsOpen] = useState(false);
+
+  // Permission states
+  const [hasEditCalendarPermission, setHasEditCalendarPermission] = useState<boolean>(false);
+  const [hasDeleteCalendarPermission, setHasDeleteCalendarPermission] = useState<boolean>(false);
+
+  // Status update state
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Fetch user permissions on component mount
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      console.log("🔐 [Calendar] Fetching calendar permissions...");
+      try {
+        const [editCalendarPerm, deleteCalendarPerm] = await Promise.all([
+          canEditCalendar(),
+          canDeleteCalendar(),
+        ]);
+        console.log("🔐 [Calendar] Permissions fetched:", {
+          editCalendar: editCalendarPerm,
+          deleteCalendar: deleteCalendarPerm,
+        });
+        setHasEditCalendarPermission(editCalendarPerm);
+        setHasDeleteCalendarPermission(deleteCalendarPerm);
+      } catch (error) {
+        console.error("❌ [Calendar] Error fetching calendar permissions:", error);
+        setHasEditCalendarPermission(false);
+        setHasDeleteCalendarPermission(false);
+      }
+    };
+
+    void fetchPermissions();
+  }, []); // Run once on mount
 
   // Fetch agents for filter on component mount
   useEffect(() => {
@@ -425,6 +483,47 @@ export default function AppointmentsPage() {
       date.getMonth() === today.getMonth() &&
       date.getFullYear() === today.getFullYear()
     );
+  };
+
+  // Permission helper function
+  const canUserEditAppointment = (appointmentUserId: string): boolean => {
+    const isOwner = appointmentUserId === session?.user?.id;
+    const hasPermission = hasEditCalendarPermission;
+    const canEdit = isOwner || hasPermission;
+
+    console.log("🔍 [Calendar] Checking edit permission:", {
+      appointmentUserId,
+      currentUserId: session?.user?.id,
+      isOwner,
+      hasEditCalendarPermission: hasPermission,
+      canEdit,
+    });
+
+    return canEdit;
+  };
+
+  // Handle status update
+  const handleStatusUpdate = async (
+    appointmentId: bigint,
+    newStatus: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow",
+  ) => {
+    setIsUpdatingStatus(true);
+    try {
+      const result = await updateAppointmentStatusAction(appointmentId, newStatus);
+
+      if (result.success) {
+        toast.success("Estado actualizado correctamente");
+        // Refetch appointments to get updated data
+        await refetch();
+      } else {
+        toast.error(result.error ?? "Error al actualizar el estado");
+      }
+    } catch (error) {
+      console.error("Error updating appointment status:", error);
+      toast.error("Error al actualizar el estado");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   return (
@@ -706,59 +805,93 @@ export default function AppointmentsPage() {
                 <ScrollArea className="h-[300px] sm:h-[400px]">
                   <div className="space-y-6 p-4">
                     <div className="space-y-2">
-                      <h5 className="text-sm font-medium text-muted-foreground">
-                        Tipo
-                      </h5>
-                      <div className="space-y-1">
-                        {Object.keys(appointmentTypes).map((type) => (
-                          <div
-                            key={type}
-                            className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
-                            onClick={() => {
-                              setTypeFilter(typeFilter === type ? "all" : type);
-                            }}
-                          >
-                            <div
-                              className={`flex h-4 w-4 items-center justify-center rounded border ${typeFilter === type ? "border-primary bg-primary" : "border-input"}`}
-                            >
-                              {typeFilter === type && (
-                                <Check className="h-3 w-3 text-primary-foreground" />
-                              )}
-                            </div>
-                            <span className="text-sm">{type}</span>
-                          </div>
-                        ))}
+                      <div
+                        className="flex cursor-pointer items-center justify-between"
+                        onClick={() =>
+                          setExpandedFilterSections((prev) => ({
+                            ...prev,
+                            type: !prev.type,
+                          }))
+                        }
+                      >
+                        <h5 className="text-sm font-medium text-muted-foreground">
+                          Tipo
+                        </h5>
+                        {expandedFilterSections.type ? (
+                          <ChevronLeft className="h-4 w-4 rotate-90 text-muted-foreground" />
+                        ) : (
+                          <ChevronLeft className="h-4 w-4 -rotate-90 text-muted-foreground" />
+                        )}
                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <h5 className="text-sm font-medium text-muted-foreground">
-                        Estado
-                      </h5>
-                      <div className="space-y-1">
-                        {["Programado", "Completado", "Cancelado", "Reprogramado", "No asistió"].map(
-                          (status) => (
+                      {expandedFilterSections.type && (
+                        <div className="space-y-1">
+                          {Object.keys(appointmentTypes).map((type) => (
                             <div
-                              key={status}
+                              key={type}
                               className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
                               onClick={() => {
-                                setStatusFilter(
-                                  statusFilter === status ? "all" : status,
-                                );
+                                setTypeFilter(typeFilter === type ? "all" : type);
                               }}
                             >
                               <div
-                                className={`flex h-4 w-4 items-center justify-center rounded border ${statusFilter === status ? "border-primary bg-primary" : "border-input"}`}
+                                className={`flex h-4 w-4 items-center justify-center rounded border ${typeFilter === type ? "border-primary bg-primary" : "border-input"}`}
                               >
-                                {statusFilter === status && (
+                                {typeFilter === type && (
                                   <Check className="h-3 w-3 text-primary-foreground" />
                                 )}
                               </div>
-                              <span className="text-sm">{status}</span>
+                              <span className="text-sm">{type}</span>
                             </div>
-                          ),
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <div
+                        className="flex cursor-pointer items-center justify-between"
+                        onClick={() =>
+                          setExpandedFilterSections((prev) => ({
+                            ...prev,
+                            status: !prev.status,
+                          }))
+                        }
+                      >
+                        <h5 className="text-sm font-medium text-muted-foreground">
+                          Estado
+                        </h5>
+                        {expandedFilterSections.status ? (
+                          <ChevronLeft className="h-4 w-4 rotate-90 text-muted-foreground" />
+                        ) : (
+                          <ChevronLeft className="h-4 w-4 -rotate-90 text-muted-foreground" />
                         )}
                       </div>
+                      {expandedFilterSections.status && (
+                        <div className="space-y-1">
+                          {["Programado", "Completado", "Cancelado", "Reprogramado", "No asistió"].map(
+                            (status) => (
+                              <div
+                                key={status}
+                                className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
+                                onClick={() => {
+                                  setStatusFilter(
+                                    statusFilter === status ? "all" : status,
+                                  );
+                                }}
+                              >
+                                <div
+                                  className={`flex h-4 w-4 items-center justify-center rounded border ${statusFilter === status ? "border-primary bg-primary" : "border-input"}`}
+                                >
+                                  {statusFilter === status && (
+                                    <Check className="h-3 w-3 text-primary-foreground" />
+                                  )}
+                                </div>
+                                <span className="text-sm">{status}</span>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </ScrollArea>
@@ -879,7 +1012,7 @@ export default function AppointmentsPage() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => setWeekStart(new Date())}
+                onClick={() => setWeekStart(getWeekStart(new Date()))}
                 className="w-full sm:ml-4 sm:w-auto"
               >
                 Hoy
@@ -1054,6 +1187,15 @@ export default function AppointmentsPage() {
               icon: <CalendarIcon className="h-4 w-4" />,
             };
 
+            // Log event details for debugging
+            console.log("📅 [Calendar] Event detail panel opened:", {
+              appointmentId: event.appointmentId.toString(),
+              userId: event.userId,
+              currentUserId: session?.user?.id,
+              hasEditPermission: hasEditCalendarPermission,
+              canEdit: canUserEditAppointment(event.userId),
+            });
+
             return (
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
@@ -1069,8 +1211,82 @@ export default function AppointmentsPage() {
                     ×
                   </Button>
                 </div>
-                <div>
+                <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">{event.type}</p>
+
+                  {/* Status Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        disabled={!canUserEditAppointment(event.userId)}
+                      >
+                        <span className={cn(
+                          "rounded-full px-2 py-0.5",
+                          event.status === "Scheduled" && "bg-gray-100 text-gray-700",
+                          event.status === "Completed" && "bg-gray-200 text-gray-800",
+                          event.status === "Cancelled" && "bg-gray-50 text-gray-400 line-through",
+                          event.status === "Rescheduled" && "bg-gray-150 text-gray-700",
+                          event.status === "NoShow" && "bg-gray-100 text-gray-500",
+                        )}>
+                          {event.status === "Scheduled" && "Programado"}
+                          {event.status === "Completed" && "Completado"}
+                          {event.status === "Cancelled" && "Cancelado"}
+                          {event.status === "Rescheduled" && "Reprogramado"}
+                          {event.status === "NoShow" && "No asistió"}
+                        </span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleStatusUpdate(event.appointmentId, "Scheduled");
+                        }}
+                        disabled={isUpdatingStatus || event.status === "Scheduled"}
+                      >
+                        <CircleDot className="mr-2 h-3 w-3 text-muted-foreground" />
+                        Programado
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleStatusUpdate(event.appointmentId, "Completed");
+                        }}
+                        disabled={isUpdatingStatus || event.status === "Completed"}
+                      >
+                        <CheckCircle className="mr-2 h-3 w-3 text-muted-foreground" />
+                        Completado
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleStatusUpdate(event.appointmentId, "Cancelled");
+                        }}
+                        disabled={isUpdatingStatus || event.status === "Cancelled"}
+                      >
+                        <Ban className="mr-2 h-3 w-3 text-muted-foreground" />
+                        Cancelado
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleStatusUpdate(event.appointmentId, "Rescheduled");
+                        }}
+                        disabled={isUpdatingStatus || event.status === "Rescheduled"}
+                      >
+                        <RotateCw className="mr-2 h-3 w-3 text-muted-foreground" />
+                        Reprogramado
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleStatusUpdate(event.appointmentId, "NoShow");
+                        }}
+                        disabled={isUpdatingStatus || event.status === "NoShow"}
+                      >
+                        <UserX className="mr-2 h-3 w-3 text-muted-foreground" />
+                        No asistió
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 <div className="space-y-2">
@@ -1106,58 +1322,61 @@ export default function AppointmentsPage() {
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      // Open the appointment modal with the event data for editing
-                      openModalWithEdit({
-                        appointmentId: event.appointmentId,
-                        initialData: {
-                          contactId: event.contactId,
-                          listingId: event.listingId ?? undefined,
-                          listingContactId: event.listingContactId ?? undefined,
-                          dealId: event.dealId ?? undefined,
-                          prospectId: event.prospectId ?? undefined,
-                          startDate: event.startTime
-                            .toISOString()
-                            .split("T")[0],
-                          startTime: event.startTime.toTimeString().slice(0, 5),
-                          endDate: event.endTime.toISOString().split("T")[0],
-                          endTime: event.endTime.toTimeString().slice(0, 5),
-                          tripTimeMinutes: event.tripTimeMinutes,
-                          notes: event.notes,
-                          appointmentType: event.type as
-                            | "Visita"
-                            | "Reunión"
-                            | "Firma"
-                            | "Cierre"
-                            | "Viaje",
-                        },
-                      });
-                      setSelectedEvent(null); // Close the detail panel
-                    }}
-                    className="flex-1"
-                  >
-                    Editar
-                  </Button>
-                  {!(
-                    event.status === "Completed" && event.type === "Visita"
-                  ) && (
+                  {canUserEditAppointment(event.userId) && (
                     <Button
                       size="sm"
-                      variant="default"
+                      variant="outline"
                       onClick={() => {
-                        router.push(
-                          `/calendario/visita/${event.appointmentId}`,
-                        );
+                        // Open the appointment modal with the event data for editing
+                        openModalWithEdit({
+                          appointmentId: event.appointmentId,
+                          initialData: {
+                            contactId: event.contactId,
+                            listingId: event.listingId ?? undefined,
+                            listingContactId: event.listingContactId ?? undefined,
+                            dealId: event.dealId ?? undefined,
+                            prospectId: event.prospectId ?? undefined,
+                            startDate: event.startTime
+                              .toISOString()
+                              .split("T")[0],
+                            startTime: event.startTime.toTimeString().slice(0, 5),
+                            endDate: event.endTime.toISOString().split("T")[0],
+                            endTime: event.endTime.toTimeString().slice(0, 5),
+                            tripTimeMinutes: event.tripTimeMinutes,
+                            notes: event.notes,
+                            appointmentType: event.type as
+                              | "Visita"
+                              | "Reunión"
+                              | "Firma"
+                              | "Cierre"
+                              | "Viaje",
+                          },
+                        });
                         setSelectedEvent(null); // Close the detail panel
                       }}
                       className="flex-1"
                     >
-                      Visita
+                      Editar
                     </Button>
                   )}
+                  {canUserEditAppointment(event.userId) &&
+                    !(
+                      event.status === "Completed" && event.type === "Visita"
+                    ) && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => {
+                          router.push(
+                            `/calendario/visita/${event.appointmentId}`,
+                          );
+                          setSelectedEvent(null); // Close the detail panel
+                        }}
+                        className="flex-1"
+                      >
+                        Visita
+                      </Button>
+                    )}
                 </div>
               </div>
             );

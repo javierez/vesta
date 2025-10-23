@@ -1,6 +1,7 @@
 
 
 import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -33,15 +34,14 @@ import {
   X,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { ContactComments } from "./contact-comments";
 import {
   createTaskWithAuth,
   updateTaskWithAuth,
 } from "~/server/queries/task";
 import { getContactListingsForTasksWithAuth } from "~/server/queries/user-comments";
 import { useSession } from "~/lib/auth-client";
-import type { UserCommentWithUser } from "~/types/user-comments";
 import { canEditAllTasks, canDeleteAllTasks } from "~/app/actions/permissions/check-permissions";
+import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
 
 
 interface ContactListing {
@@ -64,6 +64,7 @@ interface Task {
   userId: string;
   title: string;
   description: string;
+  category?: string;
   dueDate?: Date;
   completed: boolean;
   listingId?: bigint;
@@ -107,30 +108,22 @@ interface ContactTareasProps {
   contactId: bigint;
   tasks?: Task[];
   loading?: boolean;
-  comments?: UserCommentWithUser[];
   onToggleCompleted: (taskId: string) => Promise<void>;
   onDeleteTask: (taskId: string) => Promise<void>;
   onAddTask: (task: Task) => Promise<Task>;
   onUpdateTaskAfterSave: (optimisticId: string, savedTask: Task) => void;
   onRemoveOptimisticTask: (optimisticId: string) => void;
-  onAddComment: (comment: UserCommentWithUser) => Promise<{ success: boolean; error?: string }>;
-  onEditComment: (commentId: bigint, content: string) => Promise<{ success: boolean; error?: string }>;
-  onDeleteComment: (commentId: bigint) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function ContactTareas({
   contactId,
   tasks = [],
   loading: externalLoading,
-  comments: initialComments = [],
   onToggleCompleted,
   onDeleteTask,
   onAddTask,
   onUpdateTaskAfterSave,
   onRemoveOptimisticTask,
-  onAddComment,
-  onEditComment,
-  onDeleteComment,
 }: ContactTareasProps) {
   const { data: session } = useSession();
   const [isAdding, setIsAdding] = useState(false);
@@ -160,21 +153,9 @@ export function ContactTareas({
   const [contactListings, setContactListings] = useState<ContactListing[]>([]);
   const [selectedListingId, setSelectedListingId] = useState<string>('');
 
-  // Agents list - simplified to just current user
-  const [agents] = useState<
-    { id: string; name: string; firstName?: string; lastName?: string }[]
-  >(
-    session?.user
-      ? [
-          {
-            id: session.user.id,
-            name: session.user.name || "",
-            firstName: session.user.name?.split(" ")[0] ?? undefined,
-            lastName: session.user.name?.split(" ")[1] ?? undefined,
-          },
-        ]
-      : [],
-  );
+  // Agents list
+  const [agents, setAgents] = useState<{ id: string; name: string; firstName?: string; lastName?: string; }[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(false);
 
   // Load contact listings for task association
   useEffect(() => {
@@ -190,6 +171,30 @@ export function ContactTareas({
     void loadContactListings();
   }, [contactId]);
 
+  // Fetch all agents when user starts creating a task
+  useEffect(() => {
+    if (!isAdding) return;
+
+    const fetchAgents = async () => {
+      setLoadingAgents(true);
+      try {
+        const agentsData = await getAgentsForSelectionWithAuth();
+        const formattedAgents = agentsData.map((agent) => ({
+          id: agent.id,
+          name: agent.name,
+          firstName: agent.firstName,
+          lastName: agent.lastName ?? undefined,
+        }));
+        setAgents(formattedAgents);
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+      } finally {
+        setLoadingAgents(false);
+      }
+    };
+
+    void fetchAgents();
+  }, [isAdding]);
 
   // Initialize agent selection with current user when starting to add a task
   useEffect(() => {
@@ -278,9 +283,33 @@ export function ContactTareas({
     const optimisticId = Date.now().toString();
     const selectedUserId =
       newTask.agentId ?? session?.user?.id ?? "current-user-id";
+
+    // Get the selected agent's info for display
+    const selectedAgent = agents.find(a => a.id === selectedUserId);
+
+    // Fallback to session user if agent not found (e.g., during race condition)
+    const agentName = selectedAgent?.name ?? (
+      selectedUserId === session?.user?.id
+        ? session.user.name
+        : undefined
+    );
+    const agentFirstName = selectedAgent?.firstName ?? (
+      selectedUserId === session?.user?.id
+        ? session.user.name?.split(' ')[0]
+        : undefined
+    );
+    const agentLastName = selectedAgent?.lastName ?? (
+      selectedUserId === session?.user?.id
+        ? session.user.name?.split(' ').slice(1).join(' ')
+        : undefined
+    );
+
     const optimisticTask: Task = {
       id: optimisticId,
       userId: selectedUserId,
+      userName: agentName,
+      userFirstName: agentFirstName,
+      userLastName: agentLastName,
       title: newTask.title,
       description: newTask.description,
       completed: false,
@@ -312,6 +341,7 @@ export function ContactTareas({
         userId: selectedUserId,
         title: formData.title,
         description: formData.description,
+        category: "contact",
         completed: false,
         isActive: true,
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
@@ -437,12 +467,13 @@ export function ContactTareas({
         {
           title: newTask.title,
           description: newTask.description,
+          category: "contact",
           dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
           dueTime: newTask.dueDate ? (newTask.dueTime || "00:00") : undefined,
           userId: newTask.agentId,
           contactId,
           listingId: selectedListingId ? BigInt(selectedListingId) : undefined,
-          listingContactId: selectedListingId ? 
+          listingContactId: selectedListingId ?
             BigInt(contactListings.find(l => l.listingId.toString() === selectedListingId)?.listingContactId ?? 0) : undefined,
         }
       );
@@ -517,9 +548,9 @@ export function ContactTareas({
 
     // Filter by category
     if (categoryFilter === 'contact') {
-      filtered = filtered.filter(task => task.relatedContact ?? task.contactId);
+      filtered = filtered.filter(task => task.category === 'contact');
     } else if (categoryFilter === 'property') {
-      filtered = filtered.filter(task => !task.relatedContact && !task.contactId);
+      filtered = filtered.filter(task => task.category === 'property');
     }
 
     // Sort: incomplete first, then by due date
@@ -535,6 +566,209 @@ export function ContactTareas({
       return 0;
     });
   }, [tasks, categoryFilter]);
+
+  // Task form component (reusable for both new and edit)
+  const taskForm = isAdding ? (
+    <Card className="w-full">
+      <CardContent
+        className="space-y-4 px-4 pt-4 md:px-6 md:pt-6"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            if (editingTask) {
+              void handleUpdateTask();
+            } else {
+              void handleAddTask();
+            }
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            setIsAdding(false);
+            setEditingTask(null);
+            setSaveError(null);
+          }
+        }}
+      >
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-gray-700">
+            {editingTask ? 'Editando tarea' : 'Nueva tarea'}
+          </Label>
+          <Input
+            placeholder="Título de la tarea"
+            value={newTask.title}
+            onChange={(e) =>
+              setNewTask({ ...newTask, title: e.target.value })
+            }
+          />
+        </div>
+        <div className="relative">
+          <Textarea
+            placeholder="Descripción de la tarea"
+            value={newTask.description}
+            onChange={(e) =>
+              setNewTask({ ...newTask, description: e.target.value })
+            }
+            className="min-h-[80px] pr-10"
+          />
+          <button
+            type="button"
+            className="absolute right-2 top-2 p-1 text-gray-400 transition-colors hover:text-gray-600"
+            title="Próximamente: Grabación de voz"
+          >
+            <Mic className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Listing selector in same row as Agent */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="agent-select">Asignar a</Label>
+            <Select
+              value={newTask.agentId}
+              onValueChange={(value) =>
+                setNewTask({ ...newTask, agentId: value })
+              }
+              disabled={externalLoading}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue
+                  placeholder={
+                    (externalLoading || loadingAgents)
+                      ? "Cargando agentes..."
+                      : agents.length === 0
+                        ? "No hay agentes"
+                        : "Seleccionar agente"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {agents.map((agent) => (
+                  <SelectItem key={agent.id} value={agent.id}>
+                    {agent.name ??
+                      (`${agent.firstName ?? ""} ${agent.lastName ?? ""}`.trim() ||
+                        agent.id)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="listing-select">Propiedad (opcional)</Label>
+            <Select
+              value={selectedListingId}
+              onValueChange={setSelectedListingId}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Sin propiedad específica" />
+              </SelectTrigger>
+              <SelectContent>
+                {contactListings.length === 0 ? (
+                  <SelectItem value="no-properties" disabled className="pl-2">
+                    No hay propiedades asociadas
+                  </SelectItem>
+                ) : (
+                  contactListings.map((listing) => (
+                    <SelectItem
+                      key={listing.listingContactId}
+                      value={listing.listingId.toString()}
+                      className="text-left pl-2"
+                    >
+                      {listing.street ?? 'Sin dirección'} - {listing.city}, {listing.province} ({listing.contactType})
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="due-date">Fecha límite</Label>
+            <Input
+              id="due-date"
+              type="date"
+              value={newTask.dueDate}
+              onChange={(e) =>
+                setNewTask({ ...newTask, dueDate: e.target.value })
+              }
+              className="h-8 text-gray-500"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="due-time">Hora límite</Label>
+            <Input
+              id="due-time"
+              type="time"
+              value={newTask.dueTime}
+              onChange={(e) =>
+                setNewTask({ ...newTask, dueTime: e.target.value })
+              }
+              className="h-8 text-gray-500"
+            />
+          </div>
+        </div>
+        {saveError && (
+          <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <span className="text-sm text-red-700">{saveError}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSaveError(null)}
+              className="ml-auto h-6"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
+        <div className="flex items-center justify-between">
+          <div className="hidden text-xs text-gray-500 sm:block">
+            <kbd className="rounded border bg-gray-100 px-1.5 py-0.5 font-mono text-xs">
+              Cmd+Enter
+            </kbd>{" "}
+            para guardar,{" "}
+            <kbd className="rounded border bg-gray-100 px-1.5 py-0.5 font-mono text-xs">
+              Esc
+            </kbd>{" "}
+            para cancelar
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button
+              onClick={editingTask ? handleUpdateTask : handleAddTask}
+              disabled={
+                isSaving ||
+                !newTask.title.trim() ||
+                !newTask.description.trim()
+              }
+              className="flex w-full items-center gap-2 sm:w-auto"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {editingTask ? 'Actualizando...' : 'Guardando...'}
+                </>
+              ) : (
+                editingTask ? 'Actualizar' : 'Guardar'
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAdding(false);
+                setEditingTask(null);
+                setSaveError(null);
+              }}
+              disabled={isSaving}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  ) : null;
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -555,7 +789,7 @@ export function ContactTareas({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-48 p-2" align="start">
+            <PopoverContent className="w-48 p-2" align="end">
               <div className="space-y-1">
                 <div
                   className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
@@ -585,7 +819,7 @@ export function ContactTareas({
                   >
                     {categoryFilter === 'contact' && <Check className="h-2 w-2 text-primary-foreground" />}
                   </div>
-                  <span className={categoryFilter === 'contact' ? 'font-medium' : ''}>Con contacto</span>
+                  <span className={categoryFilter === 'contact' ? 'font-medium' : ''}>Contacto</span>
                 </div>
                 <div
                   className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
@@ -600,7 +834,7 @@ export function ContactTareas({
                   >
                     {categoryFilter === 'property' && <Check className="h-2 w-2 text-primary-foreground" />}
                   </div>
-                  <span className={categoryFilter === 'property' ? 'font-medium' : ''}>De propiedad</span>
+                  <span className={categoryFilter === 'property' ? 'font-medium' : ''}>Propiedad</span>
                 </div>
               </div>
               {categoryFilter !== 'all' && (
@@ -639,220 +873,21 @@ export function ContactTareas({
         </div>
       </div>
 
-      {isAdding && (
-        <Card className="w-full">
-          <CardContent
-            className="space-y-4 px-4 pt-4 md:px-6 md:pt-6"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                if (editingTask) {
-                  void handleUpdateTask();
-                } else {
-                  void handleAddTask();
-                }
-              } else if (e.key === "Escape") {
-                e.preventDefault();
-                setIsAdding(false);
-                setEditingTask(null);
-                setSaveError(null);
-              }
-            }}
-          >
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">
-                {editingTask ? 'Editando tarea' : 'Nueva tarea'}
-              </Label>
-              <Input
-                placeholder="Título de la tarea"
-                value={newTask.title}
-                onChange={(e) =>
-                  setNewTask({ ...newTask, title: e.target.value })
-                }
-              />
-            </div>
-            <div className="relative">
-              <Textarea
-                placeholder="Descripción de la tarea"
-                value={newTask.description}
-                onChange={(e) =>
-                  setNewTask({ ...newTask, description: e.target.value })
-                }
-                className="min-h-[80px] pr-10"
-              />
-              <button
-                type="button"
-                className="absolute right-2 top-2 p-1 text-gray-400 transition-colors hover:text-gray-600"
-                title="Próximamente: Grabación de voz"
-              >
-                <Mic className="h-4 w-4" />
-              </button>
-            </div>
-            
-            {/* Listing selector in same row as Agent */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="agent-select">Asignar a</Label>
-                <Select
-                  value={newTask.agentId}
-                  onValueChange={(value) =>
-                    setNewTask({ ...newTask, agentId: value })
-                  }
-                  disabled={externalLoading}
-                >
-                  <SelectTrigger className="h-8 text-gray-500">
-                    <SelectValue
-                      placeholder={
-                        externalLoading
-                          ? "Cargando agentes..."
-                          : agents.length === 0
-                            ? "No hay agentes"
-                            : "Seleccionar agente"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {agents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id}>
-                        {agent.name ??
-                          (`${agent.firstName ?? ""} ${agent.lastName ?? ""}`.trim() ||
-                            agent.id)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="listing-select">Propiedad (opcional)</Label>
-                <Select
-                  value={selectedListingId}
-                  onValueChange={setSelectedListingId}
-                >
-                  <SelectTrigger className="h-8 text-gray-500">
-                    <SelectValue placeholder="Sin propiedad específica" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contactListings.length === 0 ? (
-                      <SelectItem value="no-properties" disabled className="pl-2">
-                        No hay propiedades asociadas
-                      </SelectItem>
-                    ) : (
-                      contactListings.map((listing) => (
-                        <SelectItem 
-                          key={listing.listingContactId} 
-                          value={listing.listingId.toString()}
-                          className="text-left pl-2"
-                        >
-                          {listing.street ?? 'Sin dirección'} - {listing.city}, {listing.province} ({listing.contactType})
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="due-date">Fecha límite</Label>
-                <Input
-                  id="due-date"
-                  type="date"
-                  value={newTask.dueDate}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, dueDate: e.target.value })
-                  }
-                  className="h-8 text-gray-500"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="due-time">Hora límite</Label>
-                <Input
-                  id="due-time"
-                  type="time"
-                  value={newTask.dueTime}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, dueTime: e.target.value })
-                  }
-                  className="h-8 text-gray-500"
-                />
-              </div>
-            </div>
-            {saveError && (
-              <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                <span className="text-sm text-red-700">{saveError}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setSaveError(null)}
-                  className="ml-auto h-6"
-                >
-                  Dismiss
-                </Button>
-              </div>
-            )}
-            <div className="flex items-center justify-between">
-              <div className="hidden text-xs text-gray-500 sm:block">
-                <kbd className="rounded border bg-gray-100 px-1.5 py-0.5 font-mono text-xs">
-                  Cmd+Enter
-                </kbd>{" "}
-                para guardar,{" "}
-                <kbd className="rounded border bg-gray-100 px-1.5 py-0.5 font-mono text-xs">
-                  Esc
-                </kbd>{" "}
-                para cancelar
-              </div>
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                <Button
-                  onClick={editingTask ? handleUpdateTask : handleAddTask}
-                  disabled={
-                    isSaving ||
-                    !newTask.title.trim() ||
-                    !newTask.description.trim()
-                  }
-                  className="flex w-full items-center gap-2 sm:w-auto"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {editingTask ? 'Actualizando...' : 'Guardando...'}
-                    </>
-                  ) : (
-                    editingTask ? 'Actualizar' : 'Guardar'
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsAdding(false);
-                    setEditingTask(null);
-                    setSaveError(null);
-                  }}
-                  disabled={isSaving}
-                  className="w-full sm:w-auto"
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Show form at top only when creating a new task (not editing) */}
+      {(isAdding && !editingTask) && taskForm}
 
       <div className="space-y-2">
         {filteredTasks.length === 0 ? (
           <div className="py-6 text-center text-gray-500 sm:py-8">
             <p className="text-sm sm:text-base">
               {categoryFilter !== 'all'
-                ? `No hay tareas ${categoryFilter === 'contact' ? 'con contacto' : 'de propiedad'}`
+                ? `No hay tareas de ${categoryFilter === 'contact' ? 'contacto' : 'propiedad'}`
                 : 'No hay tareas registradas para este contacto'}
             </p>
           </div>
         ) : (
           <div className="space-y-1">
-            {filteredTasks.map((task) => {
+          {filteredTasks.map((task) => {
               const getInitials = (
                 firstName?: string,
                 lastName?: string,
@@ -929,13 +964,13 @@ export function ContactTareas({
               };
 
               return (
-                <div
-                  key={task.id}
-                  className={`group relative cursor-pointer rounded-xl shadow-md hover:shadow-lg p-3 transition-all duration-200 sm:p-4 ${
-                    task.completed ? "bg-gray-50/50 opacity-75" : "bg-white"
-                  } ${taskStates[task.id] === "saving" ? "opacity-70" : ""}`}
-                  onClick={() => handleToggleCompleted(task.id)}
-                >
+                <div key={task.id}>
+                  <div
+                    className={`group relative cursor-pointer rounded-xl shadow-md hover:shadow-lg p-3 transition-all duration-200 sm:p-4 ${
+                      task.completed ? "bg-gray-50/50 opacity-75" : "bg-white"
+                    } ${taskStates[task.id] === "saving" ? "opacity-70" : ""}`}
+                    onClick={() => handleToggleCompleted(task.id)}
+                  >
                   {/* User avatar - top right */}
                   <div className="absolute right-2 top-2 sm:right-3 sm:top-3 flex flex-col items-center gap-1">
                     <div title={task.userName ?? (`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() || "Usuario")}>
@@ -952,9 +987,11 @@ export function ContactTareas({
                     {/* System task indicator - under avatar */}
                     {task.createdBy === "0" && (
                       <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center" title="Tarea del sistema">
-                        <img
+                        <Image
                           src="/favicon.ico"
                           alt="Sistema"
+                          width={20}
+                          height={20}
                           className="h-4 w-4 sm:h-5 sm:w-5 object-contain opacity-60"
                         />
                       </div>
@@ -1098,34 +1135,19 @@ export function ContactTareas({
                       </Button>
                     )}
                   </div>
+                  </div>
+
+                  {/* Show edit form inline after this task if it's being edited */}
+                  {editingTask?.id === task.id && (
+                    <div className="mt-2">
+                      {taskForm}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
-      </div>
-
-      <div className="mt-6 sm:mt-8">
-        <h3 className="mb-3 text-lg font-semibold sm:mb-4 sm:text-xl">
-          Comentarios
-        </h3>
-        <ContactComments
-          contactId={contactId}
-          initialComments={initialComments}
-          currentUserId={session?.user?.id}
-          currentUser={
-            session?.user
-              ? {
-                  id: session.user.id,
-                  name: session.user.name ?? undefined,
-                  image: session.user.image ?? undefined,
-                }
-              : undefined
-          }
-          onAddComment={onAddComment}
-          onEditComment={onEditComment}
-          onDeleteComment={onDeleteComment}
-        />
       </div>
     </div>
   );

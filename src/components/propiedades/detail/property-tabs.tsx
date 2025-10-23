@@ -12,6 +12,7 @@ import { Comments } from "./comments";
 import { ActivityTabContent } from "./activity/activity-tab-content";
 import { PropertyCharacteristicsForm } from "~/components/propiedades/form/property-characteristics-form";
 import { CharacteristicsSkeleton } from "./skeletons";
+import { ActivitySkeleton } from "~/components/ui/skeletons/activity-skeleton";
 import { useSession } from "~/lib/auth-client";
 import type { PropertyImage } from "~/lib/data";
 import type { PropertyListing } from "~/types/property-listing";
@@ -100,6 +101,7 @@ interface PropertyTabsProps {
     fileUrl: string;
   } | null;
   convertedListing?: PropertyListing;
+  canEdit?: boolean; // Permission flag to control editing capabilities
 }
 
 export function PropertyTabs({
@@ -110,6 +112,7 @@ export function PropertyTabs({
   youtubeLinks,
   virtualTours,
   energyCertificate,
+  canEdit = true, // Default to true for backward compatibility
 }: PropertyTabsProps) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -575,6 +578,7 @@ export function PropertyTabs({
               }));
             }}
             onMediaTypeChange={setSelectedMediaType}
+            canEdit={canEdit}
           />
           {selectedMediaType === "images" && (
             <div className="flex justify-center pt-6">
@@ -594,9 +598,7 @@ export function PropertyTabs({
       <TabsContent value="carteles" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-7xl">
           {loading.activity ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            </div>
+            <ActivitySkeleton />
           ) : tabData.visits && tabData.contacts ? (
             <ActivityTabContent
               visits={tabData.visits}

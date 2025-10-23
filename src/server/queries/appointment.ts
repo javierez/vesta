@@ -229,8 +229,30 @@ export async function getContactAppointments(contactId: number) {
 export async function getListingAppointments(listingId: number) {
   try {
     const listingAppointments = await db
-      .select()
+      .select({
+        appointmentId: appointments.appointmentId,
+        userId: appointments.userId,
+        contactId: appointments.contactId,
+        listingId: appointments.listingId,
+        listingContactId: appointments.listingContactId,
+        dealId: appointments.dealId,
+        prospectId: appointments.prospectId,
+        datetimeStart: appointments.datetimeStart,
+        datetimeEnd: appointments.datetimeEnd,
+        tripTimeMinutes: appointments.tripTimeMinutes,
+        status: appointments.status,
+        notes: appointments.notes,
+        type: appointments.type,
+        isActive: appointments.isActive,
+        createdAt: appointments.createdAt,
+        updatedAt: appointments.updatedAt,
+        // Add contact information from joined table
+        contactFirstName: contacts.firstName,
+        contactLastName: contacts.lastName,
+        contactEmail: contacts.email,
+      })
       .from(appointments)
+      .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .where(
         and(
           eq(appointments.listingId, BigInt(listingId)),

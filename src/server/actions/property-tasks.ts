@@ -1,6 +1,9 @@
 "use server";
 
 import { createTaskWithAuth } from "~/server/queries/task";
+import { db } from "~/server/db";
+import { listingContacts } from "~/server/db/schema";
+import { eq, and } from "drizzle-orm";
 
 interface CreatePropertyTasksParams {
   userId: string;
@@ -29,6 +32,32 @@ export async function createPropertyTasks({
   userId,
   listingId,
 }: CreatePropertyTasksParams): Promise<CreatePropertyTasksResult> {
+  // Query the database to get the owner's listing_contact_id and contact_id for this listing
+  let ownerListingContactId: bigint | undefined;
+  let ownerContactId: bigint | undefined;
+  try {
+    const [ownerRelation] = await db
+      .select({
+        listingContactId: listingContacts.listingContactId,
+        contactId: listingContacts.contactId
+      })
+      .from(listingContacts)
+      .where(
+        and(
+          eq(listingContacts.listingId, listingId),
+          eq(listingContacts.contactType, "owner"),
+          eq(listingContacts.isActive, true)
+        )
+      )
+      .limit(1);
+
+    ownerListingContactId = ownerRelation?.listingContactId;
+    ownerContactId = ownerRelation?.contactId;
+  } catch (error) {
+    console.error("Error fetching owner listing_contact_id and contact_id:", error);
+    // Continue with undefined if query fails
+  }
+
   const dueDate7Days = new Date();
   dueDate7Days.setDate(dueDate7Days.getDate() + 7);
   
@@ -49,16 +78,17 @@ export async function createPropertyTasks({
     userId,
     title: "Subir fotos de la propiedad",
     description: "Cargar y organizar las fotografías del inmueble para mejorar la presentación en portales inmobiliarios y atraer más interesados",
+    category: "property",
     dueDate: dueDate7Days,
     dueTime: undefined,
     completed: false,
     createdBy: "0",
     listingId,
-    listingContactId: undefined,
+    listingContactId: ownerListingContactId,
     dealId: undefined,
     appointmentId: undefined,
     prospectId: undefined,
-    contactId: undefined,
+    contactId: ownerContactId,
     isActive: true,
   }).catch((error) => {
     console.error("Failed to create image upload task:", error);
@@ -70,16 +100,17 @@ export async function createPropertyTasks({
     userId,
     title: "Completar información del inmueble en el cuestionario",
     description: "Revisar y completar todos los campos pendientes del cuestionario para tener la información completa del inmueble",
+    category: "property",
     dueDate: dueDate7Days,
     dueTime: undefined,
     completed: false,
     createdBy: "0",
     listingId,
-    listingContactId: undefined,
+    listingContactId: ownerListingContactId,
     dealId: undefined,
     appointmentId: undefined,
     prospectId: undefined,
-    contactId: undefined,
+    contactId: ownerContactId,
     isActive: true,
   }).catch((error) => {
     console.error("Failed to create complete info task:", error);
@@ -91,16 +122,17 @@ export async function createPropertyTasks({
     userId,
     title: "Programar visita al inmueble",
     description: "Coordinar y agendar una visita con el propietario para conocer el inmueble y tomar fotografías profesionales",
+    category: "property",
     dueDate: dueDate10Days,
     dueTime: undefined,
     completed: false,
     createdBy: "0",
     listingId,
-    listingContactId: undefined,
+    listingContactId: ownerListingContactId,
     dealId: undefined,
     appointmentId: undefined,
     prospectId: undefined,
-    contactId: undefined,
+    contactId: ownerContactId,
     isActive: true,
   }).catch((error) => {
     console.error("Failed to create schedule visit task:", error);
@@ -112,16 +144,17 @@ export async function createPropertyTasks({
     userId,
     title: "Recoger llaves del inmueble",
     description: "Coordinar con el propietario la recogida de las llaves para facilitar las visitas y gestiones del inmueble",
+    category: "property",
     dueDate: dueDate10Days,
     dueTime: undefined,
     completed: false,
     createdBy: "0",
     listingId,
-    listingContactId: undefined,
+    listingContactId: ownerListingContactId,
     dealId: undefined,
     appointmentId: undefined,
     prospectId: undefined,
-    contactId: undefined,
+    contactId: ownerContactId,
     isActive: true,
   }).catch((error) => {
     console.error("Failed to create pickup keys task:", error);
@@ -133,16 +166,17 @@ export async function createPropertyTasks({
     userId,
     title: "Realizar valoración del inmueble",
     description: "Realizar una valoración profesional del inmueble considerando ubicación, estado, mercado local y características únicas",
+    category: "property",
     dueDate: dueDate10Days,
     dueTime: undefined,
     completed: false,
     createdBy: "0",
     listingId,
-    listingContactId: undefined,
+    listingContactId: ownerListingContactId,
     dealId: undefined,
     appointmentId: undefined,
     prospectId: undefined,
-    contactId: undefined,
+    contactId: ownerContactId,
     isActive: true,
   }).catch((error) => {
     console.error("Failed to create valuation task:", error);
@@ -154,16 +188,17 @@ export async function createPropertyTasks({
     userId,
     title: "Crear hoja de encargo",
     description: "Preparar y redactar la hoja de encargo con todos los términos y condiciones para la comercialización del inmueble",
+    category: "property",
     dueDate: dueDate12Days,
     dueTime: undefined,
     completed: false,
     createdBy: "0",
     listingId,
-    listingContactId: undefined,
+    listingContactId: ownerListingContactId,
     dealId: undefined,
     appointmentId: undefined,
     prospectId: undefined,
-    contactId: undefined,
+    contactId: ownerContactId,
     isActive: true,
   }).catch((error) => {
     console.error("Failed to create hoja de encargo task:", error);
@@ -175,16 +210,17 @@ export async function createPropertyTasks({
     userId,
     title: "Firmar hoja de encargo",
     description: "Coordinar la firma de la hoja de encargo con el propietario para formalizar el mandato de comercialización",
+    category: "property",
     dueDate: dueDate14Days,
     dueTime: undefined,
     completed: false,
     createdBy: "0",
     listingId,
-    listingContactId: undefined,
+    listingContactId: ownerListingContactId,
     dealId: undefined,
     appointmentId: undefined,
     prospectId: undefined,
-    contactId: undefined,
+    contactId: ownerContactId,
     isActive: true,
   }).catch((error) => {
     console.error("Failed to create signed hoja de encargo task:", error);
@@ -196,16 +232,17 @@ export async function createPropertyTasks({
     userId,
     title: "Generar cartel del inmueble",
     description: "Crear el cartel promocional del inmueble con fotografías, características y información comercial para su difusión",
+    category: "property",
     dueDate: dueDate16Days,
     dueTime: undefined,
     completed: false,
     createdBy: "0",
     listingId,
-    listingContactId: undefined,
+    listingContactId: ownerListingContactId,
     dealId: undefined,
     appointmentId: undefined,
     prospectId: undefined,
-    contactId: undefined,
+    contactId: ownerContactId,
     isActive: true,
   }).catch((error) => {
     console.error("Failed to create generate cartel task:", error);

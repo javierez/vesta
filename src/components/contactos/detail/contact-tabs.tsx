@@ -4,7 +4,7 @@ import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { useState, useEffect } from "react";
-import { User, Building, Plus } from "lucide-react";
+import { Building, Plus } from "lucide-react";
 import {
   updateContactWithAuth,
   getOwnerListingsWithAuth,
@@ -17,23 +17,12 @@ import {
 } from "~/server/queries/task";
 import { toast } from "sonner";
 import { PropertyCard } from "~/components/property-card";
-import {
-  ContactInterestForm,
-  type InterestFormData,
-} from "./forms/contact-interest-form";
-import {
-  createProspectWithAuth,
-  updateProspectWithAuth,
-  getProspectsByContactWithAuth,
-  type CreateProspectInput,
-  type UpdateProspectInput,
-} from "~/server/queries/prospect";
-import { ContactProspectCompact } from "./forms/contact-prospect-compact";
-import { getLocationByNeighborhoodId } from "~/server/queries/locations";
+import { ContactSolicitudes } from "./contact-solicitudes";
 import type { PropertyListing } from "~/types/property-listing";
 import { AddPropertyDialog } from "./add-property-dialog";
 import { RemovePropertyDialog } from "./remove-property-dialog";
 import { ContactTareas } from "./contact-tareas";
+import { ContactComments } from "./contact-comments";
 import { getUserCommentsByContactIdWithAuth, getContactTasksWithAuth } from "~/server/queries/user-comments";
 import type { UserCommentWithUser } from "~/types/user-comments";
 import {
@@ -44,27 +33,7 @@ import {
 import { ContactBasicInfoCard } from "./cards/contact-basic-info-card";
 import { ContactDetailsCard } from "./cards/contact-details-card";
 import { ContactNotesCard } from "./cards/contact-notes-card";
-
-// Define ProspectData interface to match database schema
-interface ProspectData {
-  id: bigint;
-  contactId: bigint;
-  status: string;
-  listingType: string | null;
-  propertyType: string | null;
-  maxPrice: string | null;
-  preferredAreas: Array<{ neighborhoodId?: number; name?: string }> | null;
-  minBedrooms: number | null;
-  minBathrooms: number | null;
-  minSquareMeters: number | null;
-  moveInBy: Date | null;
-  extras: Record<string, unknown> | null;
-  urgencyLevel: number | null;
-  fundingReady: boolean | null;
-  notesInternal: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { useSession } from "~/lib/auth-client";
 
 // Create a type alias for the PropertyCard's expected Listing type
 type PropertyCardListing = {
@@ -118,6 +87,7 @@ interface Task {
   isActive: boolean;
   createdAt: Date;
   updatedAt?: Date;
+  createdBy?: string;
   userName?: string;
   userFirstName?: string;
   userLastName?: string;
@@ -131,7 +101,7 @@ interface ModuleState {
   lastSaved?: Date;
 }
 
-type ModuleName = "basicInfo" | "contactDetails" | "notes" | "interestForms";
+type ModuleName = "basicInfo" | "contactDetails" | "notes";
 
 interface ContactTabsProps {
   contact: {
@@ -173,16 +143,17 @@ interface ContactTabsProps {
       moveInBy?: string;
       notes?: string;
       extras?: Record<string, boolean>;
-      interestForms?: InterestFormData[];
     };
   };
 }
 
 export function ContactTabs({ contact }: ContactTabsProps) {
+  const { data: session } = useSession();
+
   // State for contact comments
   const [contactComments, setContactComments] = useState<UserCommentWithUser[]>([]);
   const [, setIsLoadingComments] = useState(false);
-  
+
   // State for tasks
   const [contactTasks, setContactTasks] = useState<Task[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
@@ -227,7 +198,6 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       basicInfo: { saveState: "idle", hasChanges: false },
       contactDetails: { saveState: "idle", hasChanges: false },
       notes: { saveState: "idle", hasChanges: false },
-      interestForms: { saveState: "idle", hasChanges: false },
     },
   );
 
@@ -242,14 +212,6 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   const [secondaryPhone, setSecondaryPhone] = useState(contact.secondaryPhone ?? "");
   const [secondaryPhoneNotes, setSecondaryPhoneNotes] = useState(contact.secondaryPhoneNotes ?? "");
   const [additionalInfo] = useState(contact.additionalInfo ?? {});
-
-  // Interest forms state - Start empty, only show when explicitly creating/editing
-  const [interestForms, setInterestForms] = useState<InterestFormData[]>([]);
-
-  // Prospects state for tracking existing prospects
-  const [prospects, setProspects] = useState<ProspectData[]>([]);
-  const [, setEditingProspectId] = useState<string | null>(null);
-  const [showNewForm, setShowNewForm] = useState(false);
 
   // Notes state
   const [notes, setNotes] = useState(additionalInfo.notes ?? "");
@@ -513,6 +475,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
           isActive: task.isActive ?? true,
           createdAt: new Date(task.createdAt),
           updatedAt: task.updatedAt ? new Date(task.updatedAt) : undefined,
+          createdBy: task.createdBy ?? undefined,
           userName: task.userName ?? undefined,
           userFirstName: task.userFirstName ?? undefined,
           userLastName: task.userLastName ?? undefined,
@@ -562,24 +525,6 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       void loadContactListings();
     }
   }, [contact.contactId, isBuyer, isOwner]);
-
-  // Load existing prospects for this contact
-  useEffect(() => {
-    const loadProspects = async () => {
-      try {
-        const existingProspects = await getProspectsByContactWithAuth(
-          contact.contactId,
-        );
-        setProspects(
-          existingProspects.map((item) => item.prospects) as ProspectData[],
-        );
-      } catch (error) {
-        console.error("Error loading prospects:", error);
-      }
-    };
-
-    void loadProspects();
-  }, [contact.contactId]);
 
   // Function to reload contact listings after adding properties
   const reloadContactListings = async () => {
@@ -677,136 +622,6 @@ export function ContactTabs({ contact }: ContactTabsProps) {
     }));
   };
 
-  // Function to handle editing a prospect
-  const handleEditProspect = async (prospect: ProspectData) => {
-    // Convert preferredAreas back to selectedNeighborhoods format
-    let selectedNeighborhoods: Array<{
-      neighborhoodId: bigint;
-      neighborhood: string;
-      city: string;
-      municipality: string;
-      province: string;
-    }> = [];
-
-    if (
-      Array.isArray(prospect.preferredAreas) &&
-      prospect.preferredAreas.length > 0
-    ) {
-      // Fetch full location data for each neighborhood ID
-      const locationPromises = prospect.preferredAreas.map(
-        async (area: { neighborhoodId?: number; name?: string }) => {
-          try {
-            if (typeof area.neighborhoodId !== "number") return null;
-            const location = await getLocationByNeighborhoodId(
-              area.neighborhoodId,
-            );
-            return location
-              ? {
-                  neighborhoodId: location.neighborhoodId,
-                  neighborhood: location.neighborhood,
-                  city: location.city,
-                  municipality: location.municipality,
-                  province: location.province,
-                }
-              : null;
-          } catch (error) {
-            console.error("Error fetching location:", error);
-            return null;
-          }
-        },
-      );
-
-      const locations = await Promise.all(locationPromises);
-      selectedNeighborhoods = locations.filter(
-        (loc: unknown): loc is NonNullable<typeof loc> => loc !== null,
-      ) as Array<{
-        neighborhoodId: bigint;
-        neighborhood: string;
-        city: string;
-        municipality: string;
-        province: string;
-      }>;
-    }
-
-    // Convert prospect to InterestFormData format
-    const convertedForm: InterestFormData = {
-      id: `prospect-${prospect.id.toString()}`,
-      demandType: prospect.listingType ?? "",
-      maxPrice: prospect.maxPrice ? Number(prospect.maxPrice) : 200000,
-      preferredArea: selectedNeighborhoods
-        .map((n) => n.neighborhood)
-        .join(", "),
-      selectedNeighborhoods: selectedNeighborhoods,
-      propertyTypes: prospect.propertyType ? [prospect.propertyType] : [],
-      minBedrooms: prospect.minBedrooms ?? 0,
-      minBathrooms: prospect.minBathrooms ?? 0,
-      minSquareMeters: prospect.minSquareMeters ?? 80,
-      urgencyLevel: prospect.urgencyLevel ?? 3,
-      fundingReady: prospect.fundingReady ?? false,
-      moveInBy: prospect.moveInBy
-        ? prospect.moveInBy.toISOString().split("T")[0]!
-        : "",
-      extras: (prospect.extras as Record<string, boolean>) ?? {},
-      notes: prospect.notesInternal ?? "",
-    };
-
-    setInterestForms([convertedForm]);
-    setEditingProspectId(prospect.id.toString());
-    setShowNewForm(false);
-  };
-
-  // Function to handle saving and returning to compact view
-  const handleFormSaved = () => {
-    setShowNewForm(false);
-    setEditingProspectId(null);
-    setInterestForms([]);
-    // Reload prospects
-    const loadProspects = async () => {
-      try {
-        const existingProspects = await getProspectsByContactWithAuth(
-          contact.contactId,
-        );
-        setProspects(
-          existingProspects.map((item) => item.prospects) as ProspectData[],
-        );
-      } catch (error) {
-        console.error("Error loading prospects:", error);
-      }
-    };
-    void loadProspects();
-  };
-
-  // Function to create new form
-  const createNewForm = () => {
-    const newForm: InterestFormData = {
-      id: `form-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-      demandType: "",
-      maxPrice: 150000,
-      preferredArea: "",
-      selectedNeighborhoods: [],
-      propertyTypes: [],
-      minBedrooms: 0,
-      minBathrooms: 0,
-      minSquareMeters: 80,
-      urgencyLevel: 3,
-      fundingReady: false,
-      moveInBy: "",
-      extras: {},
-      notes: "",
-    };
-    setInterestForms([newForm]);
-    setShowNewForm(true);
-    setEditingProspectId(null);
-  };
-
-  // Function to update interest form
-  const updateInterestForm = (id: string, data: InterestFormData) => {
-    setInterestForms(
-      interestForms.map((form) => (form.id === id ? data : form)),
-    );
-    updateModuleState("interestForms", true);
-  };
-
   // Function to save module data
   const saveModule = async (moduleName: ModuleName) => {
     setModuleStates((prev) => ({
@@ -832,68 +647,6 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         case "notes":
           contactData = {
             additionalInfo: { ...additionalInfo, notes },
-          };
-          break;
-        case "interestForms":
-          // Save each interest form as a prospect
-          for (const form of interestForms) {
-            // Convert selectedNeighborhoods to preferredAreas format
-            const preferredAreas =
-              form.selectedNeighborhoods?.map((neighborhood) => ({
-                neighborhoodId: Number(neighborhood.neighborhoodId),
-                name: neighborhood.neighborhood,
-              })) || [];
-
-            const prospectData: CreateProspectInput = {
-              contactId: BigInt(contactId),
-              status: "active",
-              prospectType: "search", // Traditional buyer/renter prospect
-              listingType: form.demandType || undefined,
-              propertyType: form.propertyTypes[0] ?? "",
-              maxPrice: form.maxPrice.toString(),
-              preferredAreas: preferredAreas,
-              minBedrooms: form.minBedrooms ?? 0,
-              minBathrooms: form.minBathrooms ?? 0,
-              minSquareMeters: form.minSquareMeters ?? 0,
-              moveInBy: form.moveInBy ? new Date(form.moveInBy) : undefined,
-              extras: form.extras ?? {},
-              urgencyLevel: form.urgencyLevel ?? 3,
-              fundingReady: form.fundingReady ?? false,
-              notesInternal: form.notes ?? "",
-            };
-
-            const existingProspect = prospects.find(
-              (p: ProspectData) => `prospect-${p.id}` === form.id,
-            );
-
-            if (existingProspect) {
-              // Update existing prospect
-              await updateProspectWithAuth(
-                BigInt(existingProspect.id),
-                prospectData as UpdateProspectInput,
-              );
-            } else {
-              // Create new prospect
-              await createProspectWithAuth(prospectData);
-            }
-          }
-
-          // Also save to contact for backward compatibility - convert BigInt to string
-          const serializableInterestForms = interestForms.map((form) => ({
-            ...form,
-            selectedNeighborhoods: form.selectedNeighborhoods.map(
-              (neighborhood) => ({
-                ...neighborhood,
-                neighborhoodId: neighborhood.neighborhoodId.toString(),
-              }),
-            ),
-          }));
-
-          contactData = {
-            additionalInfo: {
-              ...additionalInfo,
-              interestForms: serializableInterestForms,
-            },
           };
           break;
       }
@@ -1028,21 +781,40 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       </TabsContent>
 
       <TabsContent value="tareas" className="mt-6">
-        <div className="mx-auto max-w-4xl">
-          <ContactTareas
-            contactId={contact.contactId}
-            tasks={contactTasks}
-            loading={isLoadingTasks}
-            comments={contactComments}
-            onToggleCompleted={handleToggleTaskCompleted}
-            onDeleteTask={handleDeleteTask}
-            onAddTask={handleAddTask}
-            onUpdateTaskAfterSave={handleUpdateTaskAfterSave}
-            onRemoveOptimisticTask={handleRemoveOptimisticTask}
-            onAddComment={handleAddComment}
-            onEditComment={handleEditComment}
-            onDeleteComment={handleDeleteComment}
-          />
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left side - Tasks */}
+            <div className="flex-1 lg:w-1/2">
+              <ContactTareas
+                contactId={contact.contactId}
+                tasks={contactTasks}
+                loading={isLoadingTasks}
+                onToggleCompleted={handleToggleTaskCompleted}
+                onDeleteTask={handleDeleteTask}
+                onAddTask={handleAddTask}
+                onUpdateTaskAfterSave={handleUpdateTaskAfterSave}
+                onRemoveOptimisticTask={handleRemoveOptimisticTask}
+              />
+            </div>
+
+            {/* Right side - Comments */}
+            <div className="flex-1 lg:w-1/2">
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Notas</h3>
+              <ContactComments
+                contactId={contact.contactId}
+                initialComments={contactComments}
+                currentUserId={session?.user?.id}
+                currentUser={session?.user ? {
+                  id: session.user.id,
+                  name: session.user.name ?? undefined,
+                  image: session.user.image ?? undefined,
+                } : undefined}
+                onAddComment={handleAddComment}
+                onEditComment={handleEditComment}
+                onDeleteComment={handleDeleteComment}
+              />
+            </div>
+          </div>
         </div>
       </TabsContent>
 
@@ -1050,79 +822,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       {showSolicitudes && (
         <TabsContent value="solicitudes" className="mt-6">
           <div className="mx-auto max-w-4xl">
-            <Card className="relative p-4 transition-all duration-500 ease-out">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-sm font-semibold tracking-wide">
-                  SOLICITUDES DE BÚSQUEDA
-                </h3>
-                {!showNewForm && interestForms.length === 0 && (
-                  <Button
-                    onClick={createNewForm}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Añadir solicitud
-                  </Button>
-                )}
-              </div>
-
-              {/* Show saved prospects in compact view - Always visible */}
-              {prospects.length > 0 && (
-                <div className="mb-6 space-y-3">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {prospects.map((prospect) => (
-                      <ContactProspectCompact
-                        key={prospect.id.toString()}
-                        prospect={prospect}
-                        onEdit={handleEditProspect}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Show edit form when editing or creating new */}
-              {(showNewForm || interestForms.length > 0) && (
-                <div className="space-y-6">
-                  {interestForms.map((form, index) => (
-                    <div key={form.id} className="space-y-4">
-                      <ContactInterestForm
-                        data={form}
-                        onUpdate={(data) => updateInterestForm(form.id, data)}
-                        onRemove={() => {
-                          setInterestForms([]);
-                          setShowNewForm(false);
-                          setEditingProspectId(null);
-                        }}
-                        isRemovable={true}
-                        index={index}
-                        contactId={contact.contactId}
-                        onSaved={handleFormSaved}
-                        onDeleted={handleFormSaved}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Empty state */}
-              {prospects.length === 0 &&
-                !showNewForm &&
-                interestForms.length === 0 && (
-                  <div className="py-8 text-center text-gray-500">
-                    <User className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-                    <p className="text-sm">
-                      No hay solicitudes de búsqueda configuradas
-                    </p>
-                    <p className="mt-1 text-xs text-gray-400">
-                      Haz clic en &quot;Añadir solicitud&quot; para crear la
-                      primera solicitud
-                    </p>
-                  </div>
-                )}
-            </Card>
+            <ContactSolicitudes contactId={contact.contactId} />
           </div>
         </TabsContent>
       )}
