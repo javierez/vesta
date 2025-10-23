@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -43,7 +43,6 @@ import {
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import {
@@ -66,6 +65,7 @@ import { GoogleCalendarSyncSettings } from "~/components/calendar/google-calenda
 import { canEditCalendar, canDeleteCalendar } from "~/app/actions/permissions/check-permissions";
 import { useSession } from "~/lib/auth-client";
 import { toast } from "sonner";
+import { ExpandableSection } from "~/components/propiedades/detail/activity/expandable-section";
 
 // Appointment types configuration
 const appointmentTypes = {
@@ -172,10 +172,6 @@ export default function AppointmentsPage() {
   >(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-
-  // Intersection Observer for lazy loading
-  const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
-  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Prefetch state management
   const hasTriggeredPrefetchRef = useRef(false);
@@ -285,7 +281,7 @@ export default function AppointmentsPage() {
 
       const matchesAgent =
         selectedAgents.length === 0 ||
-        (appointment.agentName &&
+        (appointment.agentName != null &&
           selectedAgents.some(
             (agentId) =>
               agents.find((agent) => agent.id === agentId)?.name ===
@@ -294,55 +290,6 @@ export default function AppointmentsPage() {
       return matchesSearch && matchesType && matchesStatus && matchesAgent;
     });
   }, [realAppointments, searchQuery, typeFilter, statusFilter, selectedAgents, agents]);
-
-  // Intersection Observer callback
-  const observeRow = useCallback((element: HTMLElement | null, appointmentId: string) => {
-    if (!element || !observerRef.current) return;
-
-    // Add dataset to track which appointment this element represents
-    element.dataset.appointmentId = appointmentId;
-    observerRef.current.observe(element);
-  }, []);
-
-  // Initialize Intersection Observer
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const appointmentId = entry.target.getAttribute('data-appointment-id');
-          if (!appointmentId) return;
-
-          // Only add to visible set when intersecting, never remove
-          // This prevents flickering as items scroll in and out
-          if (entry.isIntersecting) {
-            setVisibleRows((prev) => {
-              const newSet = new Set(prev);
-              newSet.add(appointmentId);
-              return newSet;
-            });
-          }
-        });
-      },
-      {
-        root: null,
-        rootMargin: '200px', // Start loading content 200px before they come into view
-        threshold: 0.01, // Lower threshold for earlier detection
-      }
-    );
-
-    // Clean up observer on unmount
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  // Initialize visible rows for first few items (above fold)
-  useEffect(() => {
-    const initialVisibleIds = filteredAppointments.slice(0, 5).map(app => app.appointmentId.toString());
-    setVisibleRows(new Set(initialVisibleIds));
-  }, [filteredAppointments]);
 
   // Batch fetch tasks for filtered appointments (only in list view)
   useEffect(() => {
@@ -951,7 +898,7 @@ export default function AppointmentsPage() {
       </div>
 
       {view === "list" && (
-        <div className="space-y-2">
+        <div className="space-y-6">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader className="h-6 w-6 animate-spin" />
@@ -964,28 +911,120 @@ export default function AppointmentsPage() {
               No se encontraron citas
             </div>
           ) : (
-            filteredAppointments.map((appointment) => {
-              const appointmentId = appointment.appointmentId.toString();
-              const isVisible = visibleRows.has(appointmentId);
+            <>
+              {/* 🔴 Urgent/Action Required Section */}
+              {(() => {
+                const urgentAppointments = filteredAppointments
+                  .filter((a) => a.status === "NoShow" || a.status === "Rescheduled")
+                  .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
 
-              return (
-                <div
-                  key={appointmentId}
-                  ref={(el) => observeRow(el, appointmentId)}
-                >
-                  {isVisible ? (
-                    <ListCalendarEvent
-                      event={appointment}
-                      isSelected={selectedEvent === appointment.appointmentId}
-                      onClick={() => setSelectedEvent(appointment.appointmentId)}
-                      tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
-                    />
-                  ) : (
-                    <Skeleton className="h-20 w-full rounded-lg" />
-                  )}
-                </div>
-              );
-            })
+                return urgentAppointments.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-1">
+                      <div className="h-2 w-2 rounded-full bg-rose-500" />
+                      <h3 className="text-sm font-semibold text-rose-700 uppercase tracking-wide">
+                        Requieren Atención ({urgentAppointments.length})
+                      </h3>
+                    </div>
+                    <div className="space-y-3">
+                      {urgentAppointments.map((appointment) => (
+                        <ListCalendarEvent
+                          key={appointment.appointmentId.toString()}
+                          event={appointment}
+                          isSelected={selectedEvent === appointment.appointmentId}
+                          onClick={() => setSelectedEvent(appointment.appointmentId)}
+                          tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
+              {/* 🟢 Active/Upcoming Appointments Section */}
+              {(() => {
+                const activeAppointments = filteredAppointments
+                  .filter((a) => a.status === "Scheduled")
+                  .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+
+                return activeAppointments.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-1">
+                      <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">
+                        Próximas Citas ({activeAppointments.length})
+                      </h3>
+                    </div>
+                    <div className="space-y-3">
+                      {activeAppointments.map((appointment) => (
+                        <ListCalendarEvent
+                          key={appointment.appointmentId.toString()}
+                          event={appointment}
+                          isSelected={selectedEvent === appointment.appointmentId}
+                          onClick={() => setSelectedEvent(appointment.appointmentId)}
+                          tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
+              {/* ✓ Completed Appointments Section - Collapsible */}
+              {(() => {
+                const completedAppointments = filteredAppointments
+                  .filter((a) => a.status === "Completed")
+                  .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+
+                return completedAppointments.length > 0 ? (
+                  <ExpandableSection
+                    title="Completadas"
+                    count={completedAppointments.length}
+                    defaultExpanded={false}
+                    storageKey="calendar-completed-appointments"
+                  >
+                    <div className="space-y-3">
+                      {completedAppointments.map((appointment) => (
+                        <ListCalendarEvent
+                          key={appointment.appointmentId.toString()}
+                          event={appointment}
+                          isSelected={selectedEvent === appointment.appointmentId}
+                          onClick={() => setSelectedEvent(appointment.appointmentId)}
+                          tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                        />
+                      ))}
+                    </div>
+                  </ExpandableSection>
+                ) : null;
+              })()}
+
+              {/* ✕ Cancelled Appointments Section - Collapsible */}
+              {(() => {
+                const cancelledAppointments = filteredAppointments
+                  .filter((a) => a.status === "Cancelled")
+                  .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+
+                return cancelledAppointments.length > 0 ? (
+                  <ExpandableSection
+                    title="Canceladas"
+                    count={cancelledAppointments.length}
+                    defaultExpanded={false}
+                    storageKey="calendar-cancelled-appointments"
+                  >
+                    <div className="space-y-3">
+                      {cancelledAppointments.map((appointment) => (
+                        <ListCalendarEvent
+                          key={appointment.appointmentId.toString()}
+                          event={appointment}
+                          isSelected={selectedEvent === appointment.appointmentId}
+                          onClick={() => setSelectedEvent(appointment.appointmentId)}
+                          tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                        />
+                      ))}
+                    </div>
+                  </ExpandableSection>
+                ) : null;
+              })()}
+            </>
           )}
         </div>
       )}

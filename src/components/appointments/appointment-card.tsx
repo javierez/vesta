@@ -281,7 +281,7 @@ export function AppointmentCard({
       </div>
 
       {/* Badges - Top right */}
-      <div className="absolute top-2 right-2 flex flex-col gap-1.5">
+      <div className="absolute top-3 right-2 flex flex-col gap-1.5">
         {/* Type badge */}
         <div
           className={cn(
@@ -292,25 +292,6 @@ export function AppointmentCard({
           {typeConfig.icon && typeConfig.icon}
           <span>{appointment.type}</span>
         </div>
-
-        {/* Status badge */}
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-            appointment.status === "Scheduled" && "bg-gray-100 text-gray-700",
-            appointment.status === "Completed" && "bg-gray-200 text-gray-800",
-            appointment.status === "Cancelled" && "bg-rose-100 text-rose-800",
-            appointment.status === "Rescheduled" && "bg-gray-150 text-gray-700",
-            appointment.status === "NoShow" && "bg-gray-100 text-gray-500",
-          )}
-        >
-          {appointment.status === "Scheduled" ? "Programado" :
-           appointment.status === "Completed" ? "Completado" :
-           appointment.status === "Cancelled" ? "Cancelado" :
-           appointment.status === "Rescheduled" ? "Reprogramado" :
-           appointment.status === "NoShow" ? "No asistió" :
-           appointment.status}
-        </span>
       </div>
       </div>
     </>

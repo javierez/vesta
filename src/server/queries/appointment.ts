@@ -6,7 +6,7 @@ import {
   properties,
   users,
 } from "../db/schema";
-import { eq, and, or, between, inArray } from "drizzle-orm";
+import { eq, and, or, between, inArray, sql } from "drizzle-orm";
 import type { Appointment } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
@@ -571,6 +571,7 @@ export async function getAppointmentsByDateRangeSecure(
       .select({
         appointmentId: appointments.appointmentId,
         userId: appointments.userId,
+        assignedTo: appointments.assignedTo,
         contactId: appointments.contactId,
         listingId: appointments.listingId,
         listingContactId: appointments.listingContactId,
@@ -590,16 +591,21 @@ export async function getAppointmentsByDateRangeSecure(
         contactLastName: contacts.lastName,
         // Add property address from joined listings/properties tables
         propertyStreet: properties.street,
-        // Add agent/user information
-        agentName: users.name,
-        agentFirstName: users.firstName,
-        agentLastName: users.lastName,
+        // Add creator user information
+        creatorName: sql<string>`creator_user.name`,
+        creatorFirstName: sql<string>`creator_user.first_name`,
+        creatorLastName: sql<string>`creator_user.last_name`,
+        // Add assigned user information (for filtering)
+        agentName: sql<string | null>`assigned_user.name`,
+        agentFirstName: sql<string | null>`assigned_user.first_name`,
+        agentLastName: sql<string | null>`assigned_user.last_name`,
       })
       .from(appointments)
       .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .leftJoin(listings, eq(appointments.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(users, eq(appointments.userId, users.id))
+      .leftJoin(sql`users AS creator_user`, sql`${appointments.userId} = creator_user.id`)
+      .leftJoin(sql`users AS assigned_user`, sql`${appointments.assignedTo} = assigned_user.id`)
       .where(
         and(
           inArray(appointments.userId, userIds), // Only appointments from users in this account

@@ -458,7 +458,7 @@ export async function getAppointmentTasksAction(appointmentId: number) {
 export async function getBatchAppointmentTasksAction(appointmentIds: number[]) {
   try {
     // PATTERN: Always get account ID for security
-    const accountId = await getCurrentUserAccountId();
+    await getCurrentUserAccountId();
 
     // Fetch tasks for all appointments in parallel
     const tasksPromises = appointmentIds.map(async (appointmentId) => {

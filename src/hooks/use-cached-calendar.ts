@@ -27,6 +27,7 @@ interface CalendarEvent {
 interface RawAppointment {
   appointmentId: bigint;
   userId: string;
+  assignedTo: string | null;
   contactId: bigint;
   listingId: bigint | null;
   listingContactId: bigint | null;
@@ -44,6 +45,9 @@ interface RawAppointment {
   contactFirstName: string | null;
   contactLastName: string | null;
   propertyStreet: string | null;
+  creatorName: string | null;
+  creatorFirstName: string | null;
+  creatorLastName: string | null;
   agentName: string | null;
   agentFirstName: string | null;
   agentLastName: string | null;
