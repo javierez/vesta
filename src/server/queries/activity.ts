@@ -190,16 +190,16 @@ export async function getListingContactsSummary(listingId: bigint) {
       const hasCancelledVisit = (visitStats?.cancelledVisits ?? 0) > 0;
       const hasOffer = contact.offer !== null && contact.offer !== undefined;
 
-      // Priority for sorting: 1=cancelled, 2=missed, 3=upcoming, 4=offer made, 5=completed, 6=crear visita
+      // Priority for sorting: 1=upcoming, 2=offer made, 3=cancelled, 4=missed, 5=completed, 6=crear visita
       let sortPriority = 6;
-      if (hasCancelledVisit) {
-        sortPriority = 1; // Cancelled visit
+      if (hasUpcomingVisit) {
+        sortPriority = 1; // Upcoming visit (highest priority)
+      } else if (hasOffer) {
+        sortPriority = 2; // Offer made (regardless of visit status)
+      } else if (hasCancelledVisit) {
+        sortPriority = 3; // Cancelled visit
       } else if (hasMissedVisit) {
-        sortPriority = 2; // Missed visit
-      } else if (hasUpcomingVisit) {
-        sortPriority = 3; // Upcoming visit
-      } else if (hasCompletedVisit && hasOffer) {
-        sortPriority = 4; // Offer made
+        sortPriority = 4; // Missed visit
       } else if (hasCompletedVisit) {
         sortPriority = 5; // Completed visit
       }

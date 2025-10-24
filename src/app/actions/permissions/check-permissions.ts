@@ -104,3 +104,29 @@ export async function canDeleteCalendar(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Check if user can edit contacts
+ */
+export async function canEditContacts(): Promise<boolean> {
+  try {
+    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    return Boolean(permissions.contacts?.edit);
+  } catch (error) {
+    console.error("❌ Error checking edit contacts permission:", error);
+    return false;
+  }
+}
+
+/**
+ * Check if user can delete contacts
+ */
+export async function canDeleteContacts(): Promise<boolean> {
+  try {
+    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    return Boolean(permissions.contacts?.delete);
+  } catch (error) {
+    console.error("❌ Error checking delete contacts permission:", error);
+    return false;
+  }
+}

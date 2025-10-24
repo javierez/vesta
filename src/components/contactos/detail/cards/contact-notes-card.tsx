@@ -14,6 +14,7 @@ interface ContactNotesCardProps {
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   getCardStyles: (moduleName: ModuleName) => string;
+  canEdit?: boolean;
 }
 
 export function ContactNotesCard({
@@ -23,6 +24,7 @@ export function ContactNotesCard({
   onSave,
   onUpdateModule,
   getCardStyles,
+  canEdit = true,
 }: ContactNotesCardProps) {
   return (
     <Card
@@ -44,6 +46,7 @@ export function ContactNotesCard({
               setNotes(e.target.value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
             className="min-h-[120px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300"
             placeholder="Información adicional sobre el contacto..."
           />

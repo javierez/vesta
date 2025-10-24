@@ -25,6 +25,7 @@ interface ContactDetailsCardProps {
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   getCardStyles: (moduleName: ModuleName) => string;
+  canEdit?: boolean;
 }
 
 export function ContactDetailsCard({
@@ -42,6 +43,7 @@ export function ContactDetailsCard({
   onSave,
   onUpdateModule,
   getCardStyles,
+  canEdit = true,
 }: ContactDetailsCardProps) {
   return (
     <Card
@@ -69,6 +71,7 @@ export function ContactDetailsCard({
               setEmail(e.target.value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
             className="h-8 text-gray-500"
             placeholder="contacto@email.com"
           />
@@ -85,6 +88,7 @@ export function ContactDetailsCard({
               setPhone(e.target.value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
             className="h-8 text-gray-500 placeholder:text-gray-300"
             placeholder="Teléfono principal"
           />
@@ -100,6 +104,7 @@ export function ContactDetailsCard({
               setPhoneNotes(e.target.value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
             className="min-h-[50px] text-sm text-gray-400 placeholder:text-gray-300"
             placeholder="Notas sobre el teléfono principal..."
           />
@@ -116,6 +121,7 @@ export function ContactDetailsCard({
               setSecondaryPhone(e.target.value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
             className="h-8 text-gray-500 placeholder:text-gray-300"
             placeholder="Teléfono alternativo"
           />
@@ -131,6 +137,7 @@ export function ContactDetailsCard({
               setSecondaryPhoneNotes(e.target.value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
             className="min-h-[50px] text-sm text-gray-400 placeholder:text-gray-300"
             placeholder="Notas sobre el teléfono secundario..."
           />

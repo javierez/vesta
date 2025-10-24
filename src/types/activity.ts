@@ -76,6 +76,22 @@ export interface ContactsKPIProps {
   totalContactsCount: number;
 }
 
+export interface ContactSheetData {
+  contact: {
+    contactId: bigint;
+    firstName: string;
+    lastName: string | null;
+    email: string | null;
+    phone: string | null;
+    createdAt: Date;
+  };
+  hasUpcomingVisit: boolean;
+  hasMissedVisit: boolean;
+  hasCompletedVisit: boolean;
+  hasCancelledVisit: boolean;
+  hasOffer: boolean;
+}
+
 export interface CompactContactCardProps {
   contact: {
     contactId: bigint;
@@ -97,6 +113,7 @@ export interface CompactContactCardProps {
   hasOffer: boolean;
   visitCount: number;
   listingId: bigint;
+  onContactClick?: (data: ContactSheetData) => void;
 }
 
 // Section component types

@@ -11,6 +11,7 @@ import {
   getUserAppointmentsSecure,
   getAppointmentsByDateRangeSecure,
   getListingAppointments,
+  softDeleteAppointment,
 } from "~/server/queries/appointment";
 import {
   findOrCreateLeadForAppointment,
@@ -495,6 +496,42 @@ export async function getBatchAppointmentTasksAction(appointmentIds: number[]) {
       success: false,
       error: "Error al obtener las tareas de las citas",
       tasksMap: {},
+    };
+  }
+}
+
+// Server action to delete an appointment
+export async function deleteAppointmentAction(appointmentId: bigint) {
+  try {
+    // PATTERN: Always get account ID for security
+    await getCurrentUserAccountId();
+    const currentUser = await getCurrentUser();
+
+    // Soft delete the appointment (sets isActive = false)
+    await softDeleteAppointment(Number(appointmentId));
+
+    // Sync deletion to Google Calendar
+    try {
+      await syncToGoogle(currentUser.id, appointmentId, "delete");
+    } catch (error) {
+      console.error("Failed to sync appointment deletion to Google Calendar:", error);
+      // Don't fail the delete operation if Google Calendar sync fails
+    }
+
+    // Refresh calendar data
+    revalidatePath("/calendario");
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Failed to delete appointment:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al eliminar la cita",
     };
   }
 }

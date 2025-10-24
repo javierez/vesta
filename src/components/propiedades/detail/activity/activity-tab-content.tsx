@@ -7,9 +7,9 @@ import { ExpandableSection } from "./expandable-section";
 import { AppointmentCard, type AppointmentData } from "~/components/appointments/appointment-card";
 import { CompactContactCard } from "./compact-contact-card";
 import { EmptyState } from "./empty-states";
-import type { ActivityTabContentProps } from "~/types/activity";
+import type { ActivityTabContentProps, ContactSheetData } from "~/types/activity";
 import { Button } from "~/components/ui/button";
-import { Filter, Check, ChevronDown, X } from "lucide-react";
+import { Filter, Check, ChevronDown, X, Clock, MapPin, CalendarIcon, Home, Users, PenTool, Handshake, Train, Mail, Phone, CalendarPlus } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -17,9 +17,39 @@ import {
 } from "~/components/ui/popover";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 
 type ActiveView = "visits" | "contacts" | null;
 type VisitStatus = "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow";
+
+// Appointment types configuration for detail panel
+const appointmentTypes = {
+  Visita: {
+    color: "bg-blue-100 text-blue-800",
+    icon: <Home className="h-4 w-4" />,
+  },
+  Reunión: {
+    color: "bg-purple-100 text-purple-800",
+    icon: <Users className="h-4 w-4" />,
+  },
+  Firma: {
+    color: "bg-green-100 text-green-800",
+    icon: <PenTool className="h-4 w-4" />,
+  },
+  Cierre: {
+    color: "bg-yellow-100 text-yellow-800",
+    icon: <Handshake className="h-4 w-4" />,
+  },
+  Viaje: {
+    color: "bg-emerald-100 text-emerald-800",
+    icon: <Train className="h-4 w-4" />,
+  },
+};
 
 const STATUS_LABELS: Record<VisitStatus, string> = {
   Completed: "Completado",
@@ -52,6 +82,8 @@ export function ActivityTabContent({
   listingId,
 }: ActivityTabContentProps) {
   const [activeView, setActiveView] = useState<ActiveView>("visits");
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentData | null>(null);
+  const [selectedContact, setSelectedContact] = useState<ContactSheetData | null>(null);
   const [selectedStatuses, setSelectedStatuses] = useState<Set<VisitStatus>>(
     new Set(["Completed", "Scheduled", "Cancelled", "Rescheduled", "NoShow"])
   );
@@ -115,13 +147,13 @@ export function ActivityTabContent({
 
     if (c.hasUpcomingVisit) {
       contactFlag = "hasUpcomingVisit";
-    } else if (c.hasCompletedVisit && c.hasOffer) {
+    } else if (c.hasOffer) {
       contactFlag = "hasOffer";
     } else if (c.hasMissedVisit && !c.hasCancelledVisit) {
       contactFlag = "hasMissedVisit";
     } else if (c.hasCancelledVisit) {
       contactFlag = "hasCancelledVisit";
-    } else if (c.hasCompletedVisit && !c.hasOffer) {
+    } else if (c.hasCompletedVisit) {
       contactFlag = "hasCompletedVisit";
     } else {
       // No visits at all
@@ -133,11 +165,11 @@ export function ActivityTabContent({
 
   // Sorting logic for contacts - Priority based
   const sortedContacts = [...filteredContacts].sort((a, b) => {
-    // 1. Priority: Has offer (highest priority)
-    if (a.hasOffer !== b.hasOffer) return a.hasOffer ? -1 : 1;
-
-    // 2. Priority: Has upcoming visit
+    // 1. Priority: Has upcoming visit (highest priority)
     if (a.hasUpcomingVisit !== b.hasUpcomingVisit) return a.hasUpcomingVisit ? -1 : 1;
+
+    // 2. Priority: Has offer
+    if (a.hasOffer !== b.hasOffer) return a.hasOffer ? -1 : 1;
 
     // 3. Priority: Has missed visit (needs attention)
     if (a.hasMissedVisit !== b.hasMissedVisit) return a.hasMissedVisit ? -1 : 1;
@@ -391,7 +423,11 @@ export function ActivityTabContent({
                       <AppointmentCard
                         key={visit.appointmentId.toString()}
                         appointment={appointmentData}
-                        navigateToVisit={true}
+                        onClick={(appointment) => {
+                          console.log("🔍 [Activity] Appointment clicked:", appointment.appointmentId.toString());
+                          setSelectedAppointment(appointment);
+                        }}
+                        navigateToVisit={false}
                       />
                     );
                   })}
@@ -429,7 +465,11 @@ export function ActivityTabContent({
                       <AppointmentCard
                         key={visit.appointmentId.toString()}
                         appointment={appointmentData}
-                        navigateToVisit={true}
+                        onClick={(appointment) => {
+                          console.log("🔍 [Activity] Appointment clicked:", appointment.appointmentId.toString());
+                          setSelectedAppointment(appointment);
+                        }}
+                        navigateToVisit={false}
                       />
                     );
                   })}
@@ -466,7 +506,11 @@ export function ActivityTabContent({
                       <AppointmentCard
                         key={visit.appointmentId.toString()}
                         appointment={appointmentData}
-                        navigateToVisit={true}
+                        onClick={(appointment) => {
+                          console.log("🔍 [Activity] Appointment clicked:", appointment.appointmentId.toString());
+                          setSelectedAppointment(appointment);
+                        }}
+                        navigateToVisit={false}
                       />
                     );
                   })}
@@ -503,7 +547,11 @@ export function ActivityTabContent({
                       <AppointmentCard
                         key={visit.appointmentId.toString()}
                         appointment={appointmentData}
-                        navigateToVisit={true}
+                        onClick={(appointment) => {
+                          console.log("🔍 [Activity] Appointment clicked:", appointment.appointmentId.toString());
+                          setSelectedAppointment(appointment);
+                        }}
+                        navigateToVisit={false}
                       />
                     );
                   })}
@@ -608,22 +656,7 @@ export function ActivityTabContent({
                   </h3>
                 </div>
                 <div className="space-y-3">
-                  {newContacts.map((contact) => {
-                console.log('📇 Contact card data:', {
-                  contactId: contact.contactId.toString(),
-                  name: `${contact.firstName} ${contact.lastName ?? ''}`,
-                  contactType: contact.contactType,
-                  status: contact.status,
-                  source: contact.source,
-                  hasUpcomingVisit: contact.hasUpcomingVisit,
-                  hasMissedVisit: contact.hasMissedVisit,
-                  hasCompletedVisit: contact.hasCompletedVisit,
-                  hasCancelledVisit: contact.hasCancelledVisit,
-                  hasOffer: contact.hasOffer,
-                  visitCount: contact.visitCount,
-                  createdAt: contact.createdAt,
-                });
-                return (
+                  {newContacts.map((contact) => (
                   <CompactContactCard
                     key={contact.contactId.toString()}
                     contact={{
@@ -646,9 +679,9 @@ export function ActivityTabContent({
                     hasOffer={contact.hasOffer}
                     visitCount={contact.visitCount}
                     listingId={listingId}
+                    onContactClick={setSelectedContact}
                   />
-                );
-              })}
+                ))}
                 </div>
               </div>
             )}
@@ -662,22 +695,7 @@ export function ActivityTabContent({
                 storageKey={`activity-all-contacts-${listingId}`}
               >
                 <div className="space-y-3">
-                  {sortedContacts.map((contact) => {
-                  console.log('📇 All contacts - Contact card data:', {
-                    contactId: contact.contactId.toString(),
-                    name: `${contact.firstName} ${contact.lastName ?? ''}`,
-                    contactType: contact.contactType,
-                    status: contact.status,
-                    source: contact.source,
-                    hasUpcomingVisit: contact.hasUpcomingVisit,
-                    hasMissedVisit: contact.hasMissedVisit,
-                    hasCompletedVisit: contact.hasCompletedVisit,
-                    hasCancelledVisit: contact.hasCancelledVisit,
-                    hasOffer: contact.hasOffer,
-                    visitCount: contact.visitCount,
-                    createdAt: contact.createdAt,
-                  });
-                  return (
+                  {sortedContacts.map((contact) => (
                     <CompactContactCard
                       key={contact.contactId.toString()}
                       contact={{
@@ -700,15 +718,294 @@ export function ActivityTabContent({
                       hasOffer={contact.hasOffer}
                       visitCount={contact.visitCount}
                       listingId={listingId}
+                      onContactClick={setSelectedContact}
                     />
-                  );
-                })}
+                  ))}
               </div>
             </ExpandableSection>
           )}
           </div>
         </div>
       )}
+
+      {/* Contact Detail Sheet */}
+      <Sheet
+        open={selectedContact !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedContact(null);
+        }}
+      >
+        <SheetContent>
+          {selectedContact && (() => {
+            const contactName = `${selectedContact.contact.firstName} ${selectedContact.contact.lastName ?? ""}`.trim();
+
+            // Determine badge type and config
+            let badgeType: string;
+            let badgeConfig: { color: string; icon: React.ReactElement; title: string };
+
+            if (selectedContact.hasUpcomingVisit) {
+              badgeType = "upcoming";
+              badgeConfig = {
+                color: "bg-blue-100 text-blue-800",
+                icon: <CalendarIcon className="h-4 w-4" />,
+                title: "Visita Pendiente",
+              };
+            } else if (selectedContact.hasOffer) {
+              badgeType = "offer";
+              badgeConfig = {
+                color: "bg-green-100 text-green-800",
+                icon: <Handshake className="h-4 w-4" />,
+                title: "Oferta Realizada",
+              };
+            } else if (selectedContact.hasCancelledVisit) {
+              badgeType = "cancelled";
+              badgeConfig = {
+                color: "bg-orange-100 text-orange-800",
+                icon: <X className="h-4 w-4" />,
+                title: "Visita Cancelada",
+              };
+            } else if (selectedContact.hasMissedVisit) {
+              badgeType = "missed";
+              badgeConfig = {
+                color: "bg-red-100 text-red-800",
+                icon: <Clock className="h-4 w-4" />,
+                title: "Visita Perdida",
+              };
+            } else if (selectedContact.hasCompletedVisit) {
+              badgeType = "completed";
+              badgeConfig = {
+                color: "bg-gray-100 text-gray-700",
+                icon: <Check className="h-4 w-4" />,
+                title: "Visita Completada",
+              };
+            } else {
+              badgeType = "none";
+              badgeConfig = {
+                color: "bg-gray-100 text-gray-700",
+                icon: <CalendarPlus className="h-4 w-4" />,
+                title: "Sin Visitas",
+              };
+            }
+
+            return (
+              <>
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <span>{contactName}</span>
+                  </SheetTitle>
+                </SheetHeader>
+
+                <div className="space-y-4 mt-4">
+                  {/* Badge Status */}
+                  <div className="flex items-center justify-between">
+                    <Badge className={badgeConfig.color}>
+                      <span className="flex items-center gap-1">
+                        {badgeConfig.icon}
+                        {badgeConfig.title}
+                      </span>
+                    </Badge>
+                  </div>
+
+                  {/* Content based on badge type */}
+                  <div className="space-y-4">
+                    {badgeType === "upcoming" && (
+                      <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+                        <h4 className="font-medium text-blue-900 mb-2">Próxima Visita Programada</h4>
+                        <p className="text-sm text-blue-700">
+                          Este contacto tiene una visita programada próximamente.
+                        </p>
+                      </div>
+                    )}
+
+                    {badgeType === "offer" && (
+                      <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+                        <h4 className="font-medium text-green-900 mb-2">Oferta en Curso</h4>
+                        <p className="text-sm text-green-700">
+                          Este contacto ha realizado una oferta por la propiedad.
+                        </p>
+                      </div>
+                    )}
+
+                    {badgeType === "cancelled" && (
+                      <div className="rounded-lg bg-orange-50 border border-orange-200 p-4">
+                        <h4 className="font-medium text-orange-900 mb-2">Visita Cancelada</h4>
+                        <p className="text-sm text-orange-700">
+                          La visita de este contacto fue cancelada. Considera reprogramar.
+                        </p>
+                      </div>
+                    )}
+
+                    {badgeType === "missed" && (
+                      <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+                        <h4 className="font-medium text-red-900 mb-2">Visita No Realizada</h4>
+                        <p className="text-sm text-red-700">
+                          Este contacto no asistió a su visita programada. Requiere seguimiento.
+                        </p>
+                      </div>
+                    )}
+
+                    {badgeType === "completed" && (
+                      <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
+                        <h4 className="font-medium text-gray-900 mb-2">Visita Realizada</h4>
+                        <p className="text-sm text-gray-700">
+                          Este contacto ha completado una visita a la propiedad.
+                        </p>
+                      </div>
+                    )}
+
+                    {badgeType === "none" && (
+                      <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
+                        <h4 className="font-medium text-gray-900 mb-2">Sin Visitas Programadas</h4>
+                        <p className="text-sm text-gray-700">
+                          Este contacto aún no tiene visitas programadas. Considera agendar una.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Contact Information */}
+                    <div className="space-y-3 pt-2">
+                      <h5 className="text-sm font-medium text-muted-foreground">Información de Contacto</h5>
+
+                      {selectedContact.contact.email && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <a
+                            href={`mailto:${selectedContact.contact.email}`}
+                            className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
+                          >
+                            {selectedContact.contact.email}
+                          </a>
+                        </div>
+                      )}
+
+                      {selectedContact.contact.phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <a
+                            href={`tel:${selectedContact.contact.phone}`}
+                            className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
+                          >
+                            {selectedContact.contact.phone}
+                          </a>
+                        </div>
+                      )}
+
+                      {selectedContact.contact.createdAt && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">
+                            Contacto desde{" "}
+                            {new Intl.DateTimeFormat("es-ES", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            }).format(selectedContact.contact.createdAt)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
+
+      {/* Appointment Detail Sheet */}
+      <Sheet
+        open={selectedAppointment !== null}
+        onOpenChange={(open) => {
+          console.log("🔍 [Activity] Sheet onOpenChange:", { open, hasAppointment: selectedAppointment !== null });
+          if (!open) setSelectedAppointment(null);
+        }}
+      >
+        <SheetContent>
+          {selectedAppointment && (() => {
+            console.log("🔍 [Activity] Rendering sheet content for:", selectedAppointment.appointmentId.toString());
+            const typeConfig = appointmentTypes[
+              selectedAppointment.type as keyof typeof appointmentTypes
+            ] || {
+              color: "bg-gray-100 text-gray-800",
+              icon: <CalendarIcon className="h-4 w-4" />,
+            };
+
+            const formatDate = (date: Date) => {
+              return new Intl.DateTimeFormat("es-ES", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }).format(date);
+            };
+
+            const formatTime = (date: Date) => {
+              return new Intl.DateTimeFormat("es-ES", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }).format(date);
+            };
+
+            return (
+              <>
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    {typeConfig.icon}
+                    <span>{selectedAppointment.type} - {selectedAppointment.contactName}</span>
+                  </SheetTitle>
+                </SheetHeader>
+
+                <div className="space-y-4 mt-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">{selectedAppointment.type}</p>
+                    <Badge variant="secondary" className="text-xs">
+                      {STATUS_LABELS[selectedAppointment.status as VisitStatus]}
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                      <span>{formatDate(selectedAppointment.datetimeStart)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        {formatTime(selectedAppointment.datetimeStart)} -{" "}
+                        {formatTime(selectedAppointment.datetimeEnd)}
+                      </span>
+                    </div>
+                    {selectedAppointment.propertyAddress && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedAppointment.propertyAddress)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
+                        >
+                          {selectedAppointment.propertyAddress}
+                        </a>
+                      </div>
+                    )}
+                    {selectedAppointment.tripTimeMinutes && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span>Tiempo de viaje: {selectedAppointment.tripTimeMinutes} min</span>
+                      </div>
+                    )}
+                    {selectedAppointment.notes && (
+                      <div className="pt-2 text-sm">
+                        <h5 className="mb-1 text-sm font-medium">Notas</h5>
+                        <p>{selectedAppointment.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

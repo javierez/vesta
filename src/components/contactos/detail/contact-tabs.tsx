@@ -34,6 +34,7 @@ import { ContactBasicInfoCard } from "./cards/contact-basic-info-card";
 import { ContactDetailsCard } from "./cards/contact-details-card";
 import { ContactNotesCard } from "./cards/contact-notes-card";
 import { useSession } from "~/lib/auth-client";
+import { canEditContacts, canDeleteContacts } from "~/app/actions/permissions/check-permissions";
 
 // Create a type alias for the PropertyCard's expected Listing type
 type PropertyCardListing = {
@@ -149,6 +150,10 @@ interface ContactTabsProps {
 
 export function ContactTabs({ contact }: ContactTabsProps) {
   const { data: session } = useSession();
+
+  // Permission states
+  const [canEditContact, setCanEditContact] = useState(true);
+  const [canDeleteContact, setCanDeleteContact] = useState(false);
 
   // State for contact comments
   const [contactComments, setContactComments] = useState<UserCommentWithUser[]>([]);
@@ -443,6 +448,26 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       throw error;
     }
   };
+
+  // Fetch user permissions on component mount
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const [editPerm, deletePerm] = await Promise.all([
+          canEditContacts(),
+          canDeleteContacts(),
+        ]);
+        setCanEditContact(editPerm);
+        setCanDeleteContact(deletePerm);
+      } catch (error) {
+        console.error("❌ Error fetching contact permissions:", error);
+        setCanEditContact(false);
+        setCanDeleteContact(false);
+      }
+    };
+
+    void fetchPermissions();
+  }, []);
 
   // Load comments and tasks for the contact
   useEffect(() => {
@@ -747,6 +772,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
               onSave={() => saveModule("basicInfo")}
               onUpdateModule={(hasChanges) => updateModuleState("basicInfo", hasChanges)}
               getCardStyles={getCardStyles}
+              canEdit={canEditContact}
             />
 
             {/* Contact Details */}
@@ -765,6 +791,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
               onSave={() => saveModule("contactDetails")}
               onUpdateModule={(hasChanges) => updateModuleState("contactDetails", hasChanges)}
               getCardStyles={getCardStyles}
+              canEdit={canEditContact}
             />
           </div>
 
@@ -776,6 +803,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
             onSave={() => saveModule("notes")}
             onUpdateModule={(hasChanges) => updateModuleState("notes", hasChanges)}
             getCardStyles={getCardStyles}
+            canEdit={canEditContact}
           />
         </div>
       </TabsContent>

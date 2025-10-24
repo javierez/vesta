@@ -22,6 +22,7 @@ interface ContactBasicInfoCardProps {
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   getCardStyles: (moduleName: ModuleName) => string;
+  canEdit?: boolean;
 }
 
 export function ContactBasicInfoCard({
@@ -37,6 +38,7 @@ export function ContactBasicInfoCard({
   onSave,
   onUpdateModule,
   getCardStyles,
+  canEdit = true,
 }: ContactBasicInfoCardProps) {
   return (
     <Card
@@ -63,6 +65,7 @@ export function ContactBasicInfoCard({
               setFirstName(e.target.value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
             className="h-8 text-gray-500 placeholder:text-gray-300"
             placeholder="Nombre"
           />
@@ -78,6 +81,7 @@ export function ContactBasicInfoCard({
               setLastName(e.target.value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
             className="h-8 text-gray-500 placeholder:text-gray-300"
             placeholder="Apellidos"
           />
@@ -93,6 +97,7 @@ export function ContactBasicInfoCard({
               setNif(e.target.value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
             className="h-8 text-gray-500 placeholder:text-gray-300"
             placeholder="Opcional"
           />
@@ -108,6 +113,7 @@ export function ContactBasicInfoCard({
               setSource(e.target.value);
               onUpdateModule(true);
             }}
+            disabled={!canEdit}
             className="h-8 text-gray-500 placeholder:text-gray-300"
             placeholder="Opcional"
           />

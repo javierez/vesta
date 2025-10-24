@@ -41,7 +41,7 @@ const scrollbarStyles = `
   }
 `;
 
-interface PropertyStatusRowProps {
+export interface PropertyStatusRowProps {
   firstImageUrl?: string | null;
   oportunidadStatus?: string | null;
   propertyType?: string | null;

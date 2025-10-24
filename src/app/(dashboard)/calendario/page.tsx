@@ -40,6 +40,7 @@ import {
   Ban,
   RotateCw,
   UserX,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -59,13 +60,19 @@ import CalendarEvent, {
 import AppointmentModal, {
   useAppointmentModal,
 } from "~/components/appointments/appointment-modal";
-import { getAgentsForFilterAction, updateAppointmentStatusAction, getBatchAppointmentTasksAction } from "~/server/actions/appointments";
+import { getAgentsForFilterAction, updateAppointmentStatusAction, getBatchAppointmentTasksAction, deleteAppointmentAction } from "~/server/actions/appointments";
 import { useGoogleCalendarIntegration } from "~/hooks/use-google-calendar-integration";
 import { GoogleCalendarSyncSettings } from "~/components/calendar/google-calendar-sync-settings";
 import { canEditCalendar, canDeleteCalendar } from "~/app/actions/permissions/check-permissions";
 import { useSession } from "~/lib/auth-client";
 import { toast } from "sonner";
 import { ExpandableSection } from "~/components/propiedades/detail/activity/expandable-section";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 
 // Appointment types configuration
 const appointmentTypes = {
@@ -101,6 +108,29 @@ const getWeekStart = (date: Date) => {
 
 // Helper to get date string in YYYY-MM-DD
 const getDateString = (date: Date) => date.toISOString().split("T")[0];
+
+// Helper to format date for display in separators
+const formatDateSeparator = (date: Date) => {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const isToday = getDateString(date) === getDateString(today);
+  const isTomorrow = getDateString(date) === getDateString(tomorrow);
+  const isYesterday = getDateString(date) === getDateString(yesterday);
+
+  if (isToday) return "Hoy";
+  if (isTomorrow) return "Mañana";
+  if (isYesterday) return "Ayer";
+
+  return new Intl.DateTimeFormat("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(date);
+};
 
 // Helper to parse time string to hours and minutes
 const parseTime = (timeStr: string): { hours: number; minutes: number } => {
@@ -208,6 +238,9 @@ export default function AppointmentsPage() {
 
   // Status update state
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Delete state
+  const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
 
   // Tasks state - batch loaded for all appointments
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -500,6 +533,34 @@ export default function AppointmentsPage() {
       toast.error("Error al actualizar el estado");
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  // Handle appointment deletion
+  const handleDeleteAppointment = async (appointmentId: bigint) => {
+    // Confirm deletion
+    if (!confirm("¿Estás seguro de que deseas eliminar esta cita?")) {
+      return;
+    }
+
+    setIsDeletingAppointment(true);
+    try {
+      const result = await deleteAppointmentAction(appointmentId);
+
+      if (result.success) {
+        toast.success("Cita eliminada correctamente");
+        // Close the detail panel
+        setSelectedEvent(null);
+        // Refetch appointments to get updated data
+        await refetch();
+      } else {
+        toast.error(result.error ?? "Error al eliminar la cita");
+      }
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
+      toast.error("Error al eliminar la cita");
+    } finally {
+      setIsDeletingAppointment(false);
     }
   };
 
@@ -914,8 +975,15 @@ export default function AppointmentsPage() {
             <>
               {/* 🔴 Urgent/Action Required Section */}
               {(() => {
+                const now = new Date();
                 const urgentAppointments = filteredAppointments
-                  .filter((a) => a.status === "NoShow" || a.status === "Rescheduled")
+                  .filter((a) => {
+                    // Include NoShow and Rescheduled
+                    if (a.status === "NoShow" || a.status === "Rescheduled") return true;
+                    // Include Scheduled appointments that are in the past
+                    if (a.status === "Scheduled" && a.endTime < now) return true;
+                    return false;
+                  })
                   .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
 
                 return urgentAppointments.length > 0 ? (
@@ -926,16 +994,46 @@ export default function AppointmentsPage() {
                         Requieren Atención ({urgentAppointments.length})
                       </h3>
                     </div>
-                    <div className="space-y-3">
-                      {urgentAppointments.map((appointment) => (
-                        <ListCalendarEvent
-                          key={appointment.appointmentId.toString()}
-                          event={appointment}
-                          isSelected={selectedEvent === appointment.appointmentId}
-                          onClick={() => setSelectedEvent(appointment.appointmentId)}
-                          tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
-                        />
-                      ))}
+                    <div className="space-y-0">
+                      {urgentAppointments.map((appointment, index) => {
+                        const currentDate = getDateString(appointment.startTime);
+                        const previousDate = index > 0 ? getDateString(urgentAppointments[index - 1]!.startTime) : null;
+                        const showDateLabel = index === 0 || (previousDate && currentDate !== previousDate);
+                        const isToday = currentDate === getDateString(new Date());
+
+                        return (
+                          <div key={`urgent-${appointment.appointmentId.toString()}`}>
+                            {showDateLabel && (
+                              <div className={isToday ? "my-4" : "my-3"}>
+                                {isToday ? (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="h-px flex-1 bg-blue-200" />
+                                    <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
+                                      Hoy - {formatDateSeparator(appointment.startTime)}
+                                    </span>
+                                    <div className="h-px flex-1 bg-blue-200" />
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDateSeparator(appointment.startTime)}
+                                    </span>
+                                    <div className="h-px flex-1 bg-gray-100" />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="mb-3">
+                              <ListCalendarEvent
+                                event={appointment}
+                                isSelected={selectedEvent === appointment.appointmentId}
+                                onClick={() => setSelectedEvent(appointment.appointmentId)}
+                                tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : null;
@@ -943,8 +1041,9 @@ export default function AppointmentsPage() {
 
               {/* 🟢 Active/Upcoming Appointments Section */}
               {(() => {
+                const now = new Date();
                 const activeAppointments = filteredAppointments
-                  .filter((a) => a.status === "Scheduled")
+                  .filter((a) => a.status === "Scheduled" && a.endTime >= now)
                   .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
                 return activeAppointments.length > 0 ? (
@@ -954,16 +1053,46 @@ export default function AppointmentsPage() {
                         Próximas Citas ({activeAppointments.length})
                       </h3>
                     </div>
-                    <div className="space-y-3">
-                      {activeAppointments.map((appointment) => (
-                        <ListCalendarEvent
-                          key={appointment.appointmentId.toString()}
-                          event={appointment}
-                          isSelected={selectedEvent === appointment.appointmentId}
-                          onClick={() => setSelectedEvent(appointment.appointmentId)}
-                          tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
-                        />
-                      ))}
+                    <div className="space-y-0">
+                      {activeAppointments.map((appointment, index) => {
+                        const currentDate = getDateString(appointment.startTime);
+                        const previousDate = index > 0 ? getDateString(activeAppointments[index - 1]!.startTime) : null;
+                        const showDateLabel = index === 0 || (previousDate && currentDate !== previousDate);
+                        const isToday = currentDate === getDateString(new Date());
+
+                        return (
+                          <div key={`active-${appointment.appointmentId.toString()}`}>
+                            {showDateLabel && (
+                              <div className={isToday ? "my-4" : "my-3"}>
+                                {isToday ? (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="h-px flex-1 bg-blue-200" />
+                                    <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
+                                      Hoy - {formatDateSeparator(appointment.startTime)}
+                                    </span>
+                                    <div className="h-px flex-1 bg-blue-200" />
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDateSeparator(appointment.startTime)}
+                                    </span>
+                                    <div className="h-px flex-1 bg-gray-100" />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="mb-3">
+                              <ListCalendarEvent
+                                event={appointment}
+                                isSelected={selectedEvent === appointment.appointmentId}
+                                onClick={() => setSelectedEvent(appointment.appointmentId)}
+                                tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : null;
@@ -982,16 +1111,46 @@ export default function AppointmentsPage() {
                     defaultExpanded={false}
                     storageKey="calendar-completed-appointments"
                   >
-                    <div className="space-y-3">
-                      {completedAppointments.map((appointment) => (
-                        <ListCalendarEvent
-                          key={appointment.appointmentId.toString()}
-                          event={appointment}
-                          isSelected={selectedEvent === appointment.appointmentId}
-                          onClick={() => setSelectedEvent(appointment.appointmentId)}
-                          tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
-                        />
-                      ))}
+                    <div className="space-y-0">
+                      {completedAppointments.map((appointment, index) => {
+                        const currentDate = getDateString(appointment.startTime);
+                        const previousDate = index > 0 ? getDateString(completedAppointments[index - 1]!.startTime) : null;
+                        const showDateLabel = index === 0 || (previousDate && currentDate !== previousDate);
+                        const isToday = currentDate === getDateString(new Date());
+
+                        return (
+                          <div key={`completed-${appointment.appointmentId.toString()}`}>
+                            {showDateLabel && (
+                              <div className={isToday ? "my-4" : "my-3"}>
+                                {isToday ? (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="h-px flex-1 bg-blue-200" />
+                                    <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
+                                      Hoy - {formatDateSeparator(appointment.startTime)}
+                                    </span>
+                                    <div className="h-px flex-1 bg-blue-200" />
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDateSeparator(appointment.startTime)}
+                                    </span>
+                                    <div className="h-px flex-1 bg-gray-100" />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="mb-3">
+                              <ListCalendarEvent
+                                event={appointment}
+                                isSelected={selectedEvent === appointment.appointmentId}
+                                onClick={() => setSelectedEvent(appointment.appointmentId)}
+                                tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </ExpandableSection>
                 ) : null;
@@ -999,8 +1158,12 @@ export default function AppointmentsPage() {
 
               {/* ✕ Cancelled Appointments Section - Collapsible */}
               {(() => {
+                const now = new Date();
+                const fourteenDaysAgo = new Date(now);
+                fourteenDaysAgo.setDate(now.getDate() - 14);
+
                 const cancelledAppointments = filteredAppointments
-                  .filter((a) => a.status === "Cancelled")
+                  .filter((a) => a.status === "Cancelled" && a.startTime >= fourteenDaysAgo)
                   .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
 
                 return cancelledAppointments.length > 0 ? (
@@ -1010,16 +1173,46 @@ export default function AppointmentsPage() {
                     defaultExpanded={false}
                     storageKey="calendar-cancelled-appointments"
                   >
-                    <div className="space-y-3">
-                      {cancelledAppointments.map((appointment) => (
-                        <ListCalendarEvent
-                          key={appointment.appointmentId.toString()}
-                          event={appointment}
-                          isSelected={selectedEvent === appointment.appointmentId}
-                          onClick={() => setSelectedEvent(appointment.appointmentId)}
-                          tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
-                        />
-                      ))}
+                    <div className="space-y-0">
+                      {cancelledAppointments.map((appointment, index) => {
+                        const currentDate = getDateString(appointment.startTime);
+                        const previousDate = index > 0 ? getDateString(cancelledAppointments[index - 1]!.startTime) : null;
+                        const showDateLabel = index === 0 || (previousDate && currentDate !== previousDate);
+                        const isToday = currentDate === getDateString(new Date());
+
+                        return (
+                          <div key={`cancelled-${appointment.appointmentId.toString()}`}>
+                            {showDateLabel && (
+                              <div className={isToday ? "my-4" : "my-3"}>
+                                {isToday ? (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="h-px flex-1 bg-blue-200" />
+                                    <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
+                                      Hoy - {formatDateSeparator(appointment.startTime)}
+                                    </span>
+                                    <div className="h-px flex-1 bg-blue-200" />
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDateSeparator(appointment.startTime)}
+                                    </span>
+                                    <div className="h-px flex-1 bg-gray-100" />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="mb-3">
+                              <ListCalendarEvent
+                                event={appointment}
+                                isSelected={selectedEvent === appointment.appointmentId}
+                                onClick={() => setSelectedEvent(appointment.appointmentId)}
+                                tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </ExpandableSection>
                 ) : null;
@@ -1226,9 +1419,9 @@ export default function AppointmentsPage() {
         </Card>
       )}
 
-      {/* Event Detail Panel (shows when an event is selected) */}
-      {selectedEvent !== null && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[60vh] overflow-y-auto rounded-t-lg border bg-white p-4 shadow-lg sm:bottom-auto sm:left-auto sm:right-4 sm:top-20 sm:max-h-none sm:w-80 sm:rounded-lg">
+      {/* Event Detail Sheet (shows when an event is selected) */}
+      <Sheet open={selectedEvent !== null} onOpenChange={() => setSelectedEvent(null)}>
+        <SheetContent>
           {(() => {
             const event = realAppointments.find(
               (a) => a.appointmentId === selectedEvent,
@@ -1266,23 +1459,33 @@ export default function AppointmentsPage() {
               canEdit: canUserEditAppointment(event.userId),
             });
 
+            // Check button conditions
+            const canEdit = canUserEditAppointment(event.userId);
+            const canDelete = canEdit && hasDeleteCalendarPermission;
+            const showVisitaButton = canEdit && !(event.status === "Completed" && event.type === "Visita");
+
+            console.log("🔘 [Calendar] Action button conditions:", {
+              canEdit,
+              canDelete,
+              showVisitaButton,
+              eventStatus: event.status,
+              eventType: event.type,
+              hasDeleteCalendarPermission,
+              isCompletedVisita: event.status === "Completed" && event.type === "Visita",
+            });
+
             return (
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <>
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
                     {typeConfig.icon}
-                    {event.type} - {event.contactName}
-                  </h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedEvent(null)}
-                  >
-                    ×
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">{event.type}</p>
+                    <span>{event.type} - {event.contactName}</span>
+                  </SheetTitle>
+                </SheetHeader>
+
+                <div className="space-y-4 mt-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">{event.type}</p>
 
                   {/* Status Dropdown */}
                   <DropdownMenu>
@@ -1374,7 +1577,14 @@ export default function AppointmentsPage() {
                   {event.propertyAddress && (
                     <div className="flex items-center gap-2 text-sm">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{event.propertyAddress}</span>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.propertyAddress)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
+                      >
+                        {event.propertyAddress}
+                      </a>
                     </div>
                   )}
                   {event.tripTimeMinutes && (
@@ -1391,52 +1601,56 @@ export default function AppointmentsPage() {
                   )}
                 </div>
 
-                <div className="flex gap-2 pt-2">
-                  {canUserEditAppointment(event.userId) && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        // Open the appointment modal with the event data for editing
-                        openModalWithEdit({
-                          appointmentId: event.appointmentId,
-                          initialData: {
-                            contactId: event.contactId,
-                            listingId: event.listingId ?? undefined,
-                            listingContactId: event.listingContactId ?? undefined,
-                            dealId: event.dealId ?? undefined,
-                            prospectId: event.prospectId ?? undefined,
-                            startDate: event.startTime
-                              .toISOString()
-                              .split("T")[0],
-                            startTime: event.startTime.toTimeString().slice(0, 5),
-                            endDate: event.endTime.toISOString().split("T")[0],
-                            endTime: event.endTime.toTimeString().slice(0, 5),
-                            tripTimeMinutes: event.tripTimeMinutes,
-                            notes: event.notes,
-                            appointmentType: event.type as
-                              | "Visita"
-                              | "Reunión"
-                              | "Firma"
-                              | "Cierre"
-                              | "Viaje",
-                          },
-                        });
-                        setSelectedEvent(null); // Close the detail panel
-                      }}
-                      className="flex-1"
-                    >
-                      Editar
-                    </Button>
-                  )}
-                  {canUserEditAppointment(event.userId) &&
-                    !(
-                      event.status === "Completed" && event.type === "Visita"
-                    ) && (
+                <div className="flex gap-2 pt-4">
+                  {(() => {
+                    console.log("🔘 [Calendar] Rendering Edit button:", { canEdit });
+                    return canEdit && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          console.log("✏️ [Calendar] Edit button clicked");
+                          // Open the appointment modal with the event data for editing
+                          openModalWithEdit({
+                            appointmentId: event.appointmentId,
+                            initialData: {
+                              contactId: event.contactId,
+                              listingId: event.listingId ?? undefined,
+                              listingContactId: event.listingContactId ?? undefined,
+                              dealId: event.dealId ?? undefined,
+                              prospectId: event.prospectId ?? undefined,
+                              startDate: event.startTime
+                                .toISOString()
+                                .split("T")[0],
+                              startTime: event.startTime.toTimeString().slice(0, 5),
+                              endDate: event.endTime.toISOString().split("T")[0],
+                              endTime: event.endTime.toTimeString().slice(0, 5),
+                              tripTimeMinutes: event.tripTimeMinutes,
+                              notes: event.notes,
+                              appointmentType: event.type as
+                                | "Visita"
+                                | "Reunión"
+                                | "Firma"
+                                | "Cierre"
+                                | "Viaje",
+                            },
+                          });
+                          setSelectedEvent(null); // Close the detail panel
+                        }}
+                        className="flex-1"
+                      >
+                        Editar
+                      </Button>
+                    );
+                  })()}
+                  {(() => {
+                    console.log("🔘 [Calendar] Rendering Visita button:", { showVisitaButton });
+                    return showVisitaButton && (
                       <Button
                         size="sm"
                         variant="default"
                         onClick={() => {
+                          console.log("🏠 [Calendar] Visita button clicked");
                           router.push(
                             `/calendario/visita/${event.appointmentId}`,
                           );
@@ -1446,13 +1660,37 @@ export default function AppointmentsPage() {
                       >
                         Visita
                       </Button>
-                    )}
+                    );
+                  })()}
+                  {(() => {
+                    console.log("🔘 [Calendar] Rendering Delete button:", { canDelete });
+                    return canDelete && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          console.log("🗑️ [Calendar] Delete button clicked");
+                          void handleDeleteAppointment(event.appointmentId);
+                        }}
+                        disabled={isDeletingAppointment}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="Eliminar"
+                      >
+                        {isDeletingAppointment ? (
+                          <Loader className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    );
+                  })()}
                 </div>
-              </div>
+                </div>
+              </>
             );
           })()}
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
 
       {/* Appointment Modal */}
       <AppointmentModal
