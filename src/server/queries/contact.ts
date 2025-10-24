@@ -1749,7 +1749,7 @@ export async function removeListingContactRelationshipWithAuth(
 export async function listContactsOwnerDataWithAuth(
   page = 1,
   limit = 100,
-  filters?: Parameters<typeof listContactsWithTypes>[3],
+  filters?: Parameters<typeof listContactsOwnerData>[3],
 ) {
   try {
     const accountId = await getCurrentUserAccountId();
@@ -1769,7 +1769,7 @@ export async function listContactsOwnerDataWithAuth(
 export async function listContactsBuyerDataWithAuth(
   page = 1,
   limit = 100,
-  filters?: Parameters<typeof listContactsWithTypes>[3],
+  filters?: Parameters<typeof listContactsBuyerData>[3],
 ) {
   try {
     const accountId = await getCurrentUserAccountId();
@@ -1796,6 +1796,9 @@ export async function listContactsOwnerData(
     roles?: string[];
     searchQuery?: string;
     lastContactFilter?: string;
+    sources?: string[];
+    ratings?: number[];
+    statuses?: boolean[];
   },
 ) {
   try {
@@ -1825,7 +1828,7 @@ export async function listContactsOwnerData(
       if (filters.lastContactFilter && filters.lastContactFilter !== "all") {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
+
         let dateThreshold: Date;
         switch (filters.lastContactFilter) {
           case "today":
@@ -1846,8 +1849,24 @@ export async function listContactsOwnerData(
           default:
             dateThreshold = new Date(0); // All time
         }
-        
+
         whereConditions.push(sql`${contacts.updatedAt} >= ${dateThreshold}`);
+      }
+      // Apply source filtering
+      if (filters.sources && filters.sources.length > 0) {
+        whereConditions.push(inArray(contacts.source, filters.sources));
+      }
+      // Apply rating filtering
+      if (filters.ratings && filters.ratings.length > 0) {
+        whereConditions.push(inArray(contacts.rating, filters.ratings));
+      }
+      // Apply status filtering (active/inactive)
+      if (filters.statuses && filters.statuses.length > 0) {
+        if (filters.statuses.length === 1) {
+          // Only one status selected
+          whereConditions.push(eq(contacts.isActive, filters.statuses[0]!));
+        }
+        // If both statuses are selected, don't filter (show all)
       }
     } else {
       // By default, only show active contacts
@@ -1869,6 +1888,7 @@ export async function listContactsOwnerData(
         secondaryPhone: contacts.secondaryPhone,
         secondaryPhoneNotes: contacts.secondaryPhoneNotes,
         additionalInfo: contacts.additionalInfo,
+        source: contacts.source,
         isActive: contacts.isActive,
         updatedAt: contacts.updatedAt,
         // Calculate role counts - optimized for owners
@@ -2088,6 +2108,9 @@ export async function listContactsBuyerData(
     roles?: string[];
     searchQuery?: string;
     lastContactFilter?: string;
+    sources?: string[];
+    ratings?: number[];
+    statuses?: boolean[];
   },
 ) {
   try {
@@ -2117,7 +2140,7 @@ export async function listContactsBuyerData(
       if (filters.lastContactFilter && filters.lastContactFilter !== "all") {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
+
         let dateThreshold: Date;
         switch (filters.lastContactFilter) {
           case "today":
@@ -2138,8 +2161,24 @@ export async function listContactsBuyerData(
           default:
             dateThreshold = new Date(0); // All time
         }
-        
+
         whereConditions.push(sql`${contacts.updatedAt} >= ${dateThreshold}`);
+      }
+      // Apply source filtering
+      if (filters.sources && filters.sources.length > 0) {
+        whereConditions.push(inArray(contacts.source, filters.sources));
+      }
+      // Apply rating filtering
+      if (filters.ratings && filters.ratings.length > 0) {
+        whereConditions.push(inArray(contacts.rating, filters.ratings));
+      }
+      // Apply status filtering (active/inactive)
+      if (filters.statuses && filters.statuses.length > 0) {
+        if (filters.statuses.length === 1) {
+          // Only one status selected
+          whereConditions.push(eq(contacts.isActive, filters.statuses[0]!));
+        }
+        // If both statuses are selected, don't filter (show all)
       }
     } else {
       // By default, only show active contacts
@@ -2161,6 +2200,7 @@ export async function listContactsBuyerData(
         secondaryPhone: contacts.secondaryPhone,
         secondaryPhoneNotes: contacts.secondaryPhoneNotes,
         additionalInfo: contacts.additionalInfo,
+        source: contacts.source,
         isActive: contacts.isActive,
         updatedAt: contacts.updatedAt,
         // Calculate role counts

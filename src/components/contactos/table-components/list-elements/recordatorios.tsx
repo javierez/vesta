@@ -42,8 +42,8 @@ export function Recordatorios({
     return (
       <div
         className={cn(
-          "text-sm",
-          isActive ? "text-muted-foreground" : "text-gray-400",
+          "text-[12px]",
+          isActive ? "text-gray-400" : "text-gray-300",
         )}
       >
         Sin recordatorios

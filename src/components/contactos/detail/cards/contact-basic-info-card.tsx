@@ -3,8 +3,16 @@
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { cn } from "~/lib/utils";
 import { ModernSaveIndicator } from "~/components/propiedades/form/common/modern-save-indicator";
+import { CONTACT_SOURCES, CONTACT_SOURCE_LABELS } from "~/types/contact-source";
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error";
 type ModuleName = "basicInfo" | "contactDetails" | "notes";
@@ -106,17 +114,25 @@ export function ContactBasicInfoCard({
           <Label htmlFor="source" className="text-sm">
             Origen
           </Label>
-          <Input
-            id="source"
-            value={source}
-            onChange={(e) => {
-              setSource(e.target.value);
+          <Select
+            value={source ?? undefined}
+            onValueChange={(value) => {
+              setSource(value);
               onUpdateModule(true);
             }}
             disabled={!canEdit}
-            className="h-8 text-gray-500 placeholder:text-gray-300"
-            placeholder="Opcional"
-          />
+          >
+            <SelectTrigger className="h-8 text-gray-500">
+              <SelectValue placeholder="Seleccionar origen" />
+            </SelectTrigger>
+            <SelectContent>
+              {CONTACT_SOURCES.map((sourceOption) => (
+                <SelectItem key={sourceOption} value={sourceOption}>
+                  {CONTACT_SOURCE_LABELS[sourceOption]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </Card>

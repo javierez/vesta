@@ -604,6 +604,7 @@ export function PropertyTabs({
               visits={tabData.visits}
               contacts={tabData.contacts}
               listingId={listing.listingId}
+              listingPrice={listing.price}
             />
           ) : (
             <div className="py-16 text-center">

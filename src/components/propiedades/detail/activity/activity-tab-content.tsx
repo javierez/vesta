@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VisitsKPICard } from "./visits-kpi-card";
 import { ContactsKPICard } from "./contacts-kpi-card";
 import { ExpandableSection } from "./expandable-section";
 import { AppointmentCard, type AppointmentData } from "~/components/appointments/appointment-card";
 import { CompactContactCard } from "./compact-contact-card";
 import { EmptyState } from "./empty-states";
-import type { ActivityTabContentProps, ContactSheetData } from "~/types/activity";
+import type { ActivityTabContentProps, ContactSheetData, OwnerContact } from "~/types/activity";
+import { getListingOwnerContact } from "~/server/queries/activity";
 import { Button } from "~/components/ui/button";
-import { Filter, Check, ChevronDown, X, Clock, MapPin, CalendarIcon, Home, Users, PenTool, Handshake, Train, Mail, Phone, CalendarPlus } from "lucide-react";
+import { Filter, Check, ChevronDown, X, Clock, MapPin, CalendarIcon, Home, Users, PenTool, Handshake, Train, Mail, Phone, CalendarPlus, MessageCircle, CircleDot, CheckCircle, Ban, RotateCw, UserX, Trash2, Loader } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -23,9 +24,78 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { canEditCalendar, canDeleteCalendar } from "~/app/actions/permissions/check-permissions";
+import { toast } from "sonner";
+import { updateAppointmentStatusAction, deleteAppointmentAction } from "~/server/actions/appointments";
+import { useRouter } from "next/navigation";
+import AppointmentModal, { useAppointmentModal } from "~/components/appointments/appointment-modal";
+import { cn } from "~/lib/utils";
 
 type ActiveView = "visits" | "contacts" | null;
 type VisitStatus = "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow";
+
+// Mini component to display offer comparison
+interface OfferComparisonCardProps {
+  offer: number;
+  listingPrice: string;
+}
+
+function OfferComparisonCard({ offer, listingPrice }: OfferComparisonCardProps) {
+  const listingPriceNum = parseFloat(listingPrice);
+  const difference = offer - listingPriceNum;
+  const percentageDiff = ((difference / listingPriceNum) * 100);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const getDifferenceColor = () => {
+    if (difference < 0) return "text-green-600";
+    if (difference > 0) return "text-red-600";
+    return "text-gray-600";
+  };
+
+  const getDifferenceSign = () => {
+    if (difference > 0) return "+";
+    return "";
+  };
+
+  return (
+    <div className="space-y-3">
+      <h4 className="text-sm font-semibold text-gray-900">Comparación de Oferta</h4>
+
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="text-muted-foreground">Oferta</p>
+          <p className="font-semibold text-gray-900">{formatCurrency(offer)}</p>
+        </div>
+
+        <div>
+          <p className="text-muted-foreground">Precio de Venta</p>
+          <p className="font-semibold text-gray-900">{formatCurrency(listingPriceNum)}</p>
+        </div>
+      </div>
+
+      <div className="text-sm">
+        <p className="text-muted-foreground">Diferencia</p>
+        <p className={`font-semibold ${getDifferenceColor()}`}>
+          {getDifferenceSign()}{formatCurrency(Math.abs(difference))} ({getDifferenceSign()}{Math.abs(percentageDiff).toFixed(2)}%)
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // Appointment types configuration for detail panel
 const appointmentTypes = {
@@ -80,10 +150,14 @@ export function ActivityTabContent({
   visits,
   contacts,
   listingId,
+  listingPrice,
 }: ActivityTabContentProps) {
+  const router = useRouter();
+
   const [activeView, setActiveView] = useState<ActiveView>("visits");
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentData | null>(null);
   const [selectedContact, setSelectedContact] = useState<ContactSheetData | null>(null);
+  const [ownerContact, setOwnerContact] = useState<OwnerContact | null>(null);
   const [selectedStatuses, setSelectedStatuses] = useState<Set<VisitStatus>>(
     new Set(["Completed", "Scheduled", "Cancelled", "Rescheduled", "NoShow"])
   );
@@ -96,10 +170,70 @@ export function ActivityTabContent({
     contactStatus: true,
   });
 
+  // Permission states
+  const [hasEditCalendarPermission, setHasEditCalendarPermission] = useState<boolean>(false);
+  const [hasDeleteCalendarPermission, setHasDeleteCalendarPermission] = useState<boolean>(false);
+
+  // Status update state
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Delete state
+  const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
+
+  // Appointment modal state
+  const {
+    isOpen: isModalOpen,
+    openModal,
+    closeModal,
+    initialData: modalInitialData,
+  } = useAppointmentModal();
+  const [editMode, setEditMode] = useState<"create" | "edit">("create");
+  const [editingAppointmentId, setEditingAppointmentId] = useState<bigint | null>(null);
+
   // Contact filters - using badge flags instead of status
   const [selectedContactFlags, setSelectedContactFlags] = useState<Set<string>>(
     new Set(["hasUpcomingVisit", "hasMissedVisit", "hasCancelledVisit", "hasCompletedVisit", "hasOffer", "noVisits"])
   );
+
+  // Fetch user permissions on component mount
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      console.log("🔐 [Activity] Fetching calendar permissions...");
+      try {
+        const [editCalendarPerm, deleteCalendarPerm] = await Promise.all([
+          canEditCalendar(),
+          canDeleteCalendar(),
+        ]);
+        console.log("🔐 [Activity] Permissions fetched:", {
+          editCalendar: editCalendarPerm,
+          deleteCalendar: deleteCalendarPerm,
+        });
+        setHasEditCalendarPermission(editCalendarPerm);
+        setHasDeleteCalendarPermission(deleteCalendarPerm);
+      } catch (error) {
+        console.error("❌ [Activity] Error fetching calendar permissions:", error);
+        setHasEditCalendarPermission(false);
+        setHasDeleteCalendarPermission(false);
+      }
+    };
+
+    void fetchPermissions();
+  }, []); // Run once on mount
+
+  // Fetch owner contact when component mounts
+  useEffect(() => {
+    const fetchOwnerContact = async () => {
+      try {
+        const owner = await getListingOwnerContact(listingId);
+        setOwnerContact(owner);
+      } catch (error) {
+        console.error("Error fetching owner contact:", error);
+        setOwnerContact(null);
+      }
+    };
+
+    void fetchOwnerContact();
+  }, [listingId]);
 
   // Filter visits based on selected statuses and types
   const filteredVisits = visits.filter((v) =>
@@ -163,21 +297,24 @@ export function ActivityTabContent({
     return selectedContactFlags.has(contactFlag);
   });
 
-  // Sorting logic for contacts - Priority based
+  // Sorting logic for contacts - Sales funnel priority
   const sortedContacts = [...filteredContacts].sort((a, b) => {
-    // 1. Priority: Has upcoming visit (highest priority)
-    if (a.hasUpcomingVisit !== b.hasUpcomingVisit) return a.hasUpcomingVisit ? -1 : 1;
-
-    // 2. Priority: Has offer
+    // 1. HIGHEST: Has offer (potential deal in progress - closest to closing)
     if (a.hasOffer !== b.hasOffer) return a.hasOffer ? -1 : 1;
 
-    // 3. Priority: Has missed visit (needs attention)
+    // 2. URGENT: Has upcoming visit (scheduled, needs preparation)
+    if (a.hasUpcomingVisit !== b.hasUpcomingVisit) return a.hasUpcomingVisit ? -1 : 1;
+
+    // 3. ATTENTION: Has missed visit (needs immediate follow-up)
     if (a.hasMissedVisit !== b.hasMissedVisit) return a.hasMissedVisit ? -1 : 1;
 
-    // 4. Priority: Visit count (more engaged contacts first)
+    // 4. ATTENTION: Has cancelled visit (needs rescheduling)
+    if (a.hasCancelledVisit !== b.hasCancelledVisit) return a.hasCancelledVisit ? -1 : 1;
+
+    // 5. ENGAGEMENT: Visit count (more visits = warmer lead)
     if (a.visitCount !== b.visitCount) return b.visitCount - a.visitCount;
 
-    // 5. Finally: Most recent first
+    // 6. RECENCY: Most recent first (fresher leads)
     return b.createdAt.getTime() - a.createdAt.getTime();
   });
 
@@ -249,6 +386,71 @@ export function ActivityTabContent({
 
   // All available contact flags (static list)
   const availableContactFlags = ["hasUpcomingVisit", "hasMissedVisit", "hasCancelledVisit", "hasCompletedVisit", "hasOffer", "noVisits"];
+
+  // Handle status update
+  const handleStatusUpdate = async (
+    appointmentId: bigint,
+    newStatus: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow",
+  ) => {
+    setIsUpdatingStatus(true);
+    try {
+      const result = await updateAppointmentStatusAction(appointmentId, newStatus);
+
+      if (result.success) {
+        toast.success("Estado actualizado correctamente");
+        // Close the sheet and trigger a page refresh to get updated data
+        setSelectedAppointment(null);
+        window.location.reload();
+      } else {
+        toast.error(result.error ?? "Error al actualizar el estado");
+      }
+    } catch (error) {
+      console.error("Error updating appointment status:", error);
+      toast.error("Error al actualizar el estado");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Handle appointment deletion
+  const handleDeleteAppointment = async (appointmentId: bigint) => {
+    // Confirm deletion
+    if (!confirm("¿Estás seguro de que deseas eliminar esta cita?")) {
+      return;
+    }
+
+    setIsDeletingAppointment(true);
+    try {
+      const result = await deleteAppointmentAction(appointmentId);
+
+      if (result.success) {
+        toast.success("Cita eliminada correctamente");
+        // Close the detail panel and trigger a page refresh
+        setSelectedAppointment(null);
+        window.location.reload();
+      } else {
+        toast.error(result.error ?? "Error al eliminar la cita");
+      }
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
+      toast.error("Error al eliminar la cita");
+    } finally {
+      setIsDeletingAppointment(false);
+    }
+  };
+
+  // Handle opening modal for editing
+  const openModalWithEdit = ({
+    appointmentId,
+    initialData,
+  }: {
+    appointmentId: bigint;
+    initialData: Partial<Record<string, unknown>>;
+  }) => {
+    setEditMode("edit");
+    setEditingAppointmentId(appointmentId);
+    openModal(initialData);
+  };
 
   return (
     <div className="space-y-6">
@@ -677,6 +879,7 @@ export function ActivityTabContent({
                     hasCompletedVisit={contact.hasCompletedVisit}
                     hasCancelledVisit={contact.hasCancelledVisit}
                     hasOffer={contact.hasOffer}
+                    offer={contact.offer}
                     visitCount={contact.visitCount}
                     listingId={listingId}
                     onContactClick={setSelectedContact}
@@ -716,6 +919,7 @@ export function ActivityTabContent({
                       hasCompletedVisit={contact.hasCompletedVisit}
                       hasCancelledVisit={contact.hasCancelledVisit}
                       hasOffer={contact.hasOffer}
+                      offer={contact.offer}
                       visitCount={contact.visitCount}
                       listingId={listingId}
                       onContactClick={setSelectedContact}
@@ -817,13 +1021,11 @@ export function ActivityTabContent({
                       </div>
                     )}
 
-                    {badgeType === "offer" && (
-                      <div className="rounded-lg bg-green-50 border border-green-200 p-4">
-                        <h4 className="font-medium text-green-900 mb-2">Oferta en Curso</h4>
-                        <p className="text-sm text-green-700">
-                          Este contacto ha realizado una oferta por la propiedad.
-                        </p>
-                      </div>
+                    {badgeType === "offer" && selectedContact.offer && (
+                      <OfferComparisonCard
+                        offer={selectedContact.offer}
+                        listingPrice={listingPrice}
+                      />
                     )}
 
                     {badgeType === "cancelled" && (
@@ -862,48 +1064,59 @@ export function ActivityTabContent({
                       </div>
                     )}
 
-                    {/* Contact Information */}
-                    <div className="space-y-3 pt-2">
-                      <h5 className="text-sm font-medium text-muted-foreground">Información de Contacto</h5>
+                    {/* Owner Contact Section */}
+                    {ownerContact && (
+                      <div className="space-y-3 pt-4 border-t">
+                        <h5 className="text-sm font-medium text-muted-foreground">Contactar Propietario</h5>
 
-                      {selectedContact.contact.email && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <a
-                            href={`mailto:${selectedContact.contact.email}`}
-                            className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
-                          >
-                            {selectedContact.contact.email}
-                          </a>
-                        </div>
-                      )}
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-gray-900">
+                            {ownerContact.firstName} {ownerContact.lastName ?? ""}
+                          </p>
 
-                      {selectedContact.contact.phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <a
-                            href={`tel:${selectedContact.contact.phone}`}
-                            className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
-                          >
-                            {selectedContact.contact.phone}
-                          </a>
-                        </div>
-                      )}
+                          {ownerContact.email && (
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => window.open(`mailto:${ownerContact.email}`, "_blank")}
+                                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+                                title="Enviar email"
+                              >
+                                <Mail className="h-4 w-4" />
+                                <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                                  {ownerContact.email}
+                                </span>
+                              </button>
+                            </div>
+                          )}
 
-                      {selectedContact.contact.createdAt && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            Contacto desde{" "}
-                            {new Intl.DateTimeFormat("es-ES", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            }).format(selectedContact.contact.createdAt)}
-                          </span>
+                          {ownerContact.phone && (
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => window.open(`tel:${ownerContact.phone}`, "_blank")}
+                                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+                                title="Llamar"
+                              >
+                                <Phone className="h-4 w-4" />
+                                <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                                  {ownerContact.phone}
+                                </span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const cleanPhone = (ownerContact.phone ?? "").replace(/\D/g, "");
+                                  window.open(`https://wa.me/${cleanPhone}`, "_blank");
+                                }}
+                                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-green-600 transition-colors"
+                                title="Enviar WhatsApp"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                                <span>WhatsApp</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </>
@@ -957,55 +1170,230 @@ export function ActivityTabContent({
                 <div className="space-y-4 mt-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-muted-foreground">{selectedAppointment.type}</p>
-                    <Badge variant="secondary" className="text-xs">
-                      {STATUS_LABELS[selectedAppointment.status as VisitStatus]}
-                    </Badge>
-                  </div>
 
-                  <div className="space-y-2">
+                  {/* Status Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        disabled={!hasEditCalendarPermission}
+                      >
+                        <span className={cn(
+                          "rounded-full px-2 py-0.5",
+                          selectedAppointment.status === "Scheduled" && "bg-gray-100 text-gray-700",
+                          selectedAppointment.status === "Completed" && "bg-gray-200 text-gray-800",
+                          selectedAppointment.status === "Cancelled" && "bg-gray-50 text-gray-400 line-through",
+                          selectedAppointment.status === "Rescheduled" && "bg-gray-150 text-gray-700",
+                          selectedAppointment.status === "NoShow" && "bg-gray-100 text-gray-500",
+                        )}>
+                          {STATUS_LABELS[selectedAppointment.status as VisitStatus]}
+                        </span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleStatusUpdate(selectedAppointment.appointmentId, "Scheduled");
+                        }}
+                        disabled={isUpdatingStatus || selectedAppointment.status === "Scheduled"}
+                      >
+                        <CircleDot className="mr-2 h-3 w-3 text-muted-foreground" />
+                        Programado
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleStatusUpdate(selectedAppointment.appointmentId, "Completed");
+                        }}
+                        disabled={isUpdatingStatus || selectedAppointment.status === "Completed"}
+                      >
+                        <CheckCircle className="mr-2 h-3 w-3 text-muted-foreground" />
+                        Completado
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleStatusUpdate(selectedAppointment.appointmentId, "Cancelled");
+                        }}
+                        disabled={isUpdatingStatus || selectedAppointment.status === "Cancelled"}
+                      >
+                        <Ban className="mr-2 h-3 w-3 text-muted-foreground" />
+                        Cancelado
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleStatusUpdate(selectedAppointment.appointmentId, "Rescheduled");
+                        }}
+                        disabled={isUpdatingStatus || selectedAppointment.status === "Rescheduled"}
+                      >
+                        <RotateCw className="mr-2 h-3 w-3 text-muted-foreground" />
+                        Reprogramado
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleStatusUpdate(selectedAppointment.appointmentId, "NoShow");
+                        }}
+                        disabled={isUpdatingStatus || selectedAppointment.status === "NoShow"}
+                      >
+                        <UserX className="mr-2 h-3 w-3 text-muted-foreground" />
+                        No asistió
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span>{formatDate(selectedAppointment.datetimeStart)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span>
+                      {formatTime(selectedAppointment.datetimeStart)} -{" "}
+                      {formatTime(selectedAppointment.datetimeEnd)}
+                    </span>
+                  </div>
+                  {selectedAppointment.propertyAddress && (
                     <div className="flex items-center gap-2 text-sm">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                      <span>{formatDate(selectedAppointment.datetimeStart)}</span>
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedAppointment.propertyAddress)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
+                      >
+                        {selectedAppointment.propertyAddress}
+                      </a>
                     </div>
+                  )}
+                  {selectedAppointment.tripTimeMinutes && (
                     <div className="flex items-center gap-2 text-sm">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        {formatTime(selectedAppointment.datetimeStart)} -{" "}
-                        {formatTime(selectedAppointment.datetimeEnd)}
-                      </span>
+                      <span>Tiempo de viaje: {selectedAppointment.tripTimeMinutes} min</span>
                     </div>
-                    {selectedAppointment.propertyAddress && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedAppointment.propertyAddress)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
-                        >
-                          {selectedAppointment.propertyAddress}
-                        </a>
-                      </div>
-                    )}
-                    {selectedAppointment.tripTimeMinutes && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span>Tiempo de viaje: {selectedAppointment.tripTimeMinutes} min</span>
-                      </div>
-                    )}
-                    {selectedAppointment.notes && (
-                      <div className="pt-2 text-sm">
-                        <h5 className="mb-1 text-sm font-medium">Notas</h5>
-                        <p>{selectedAppointment.notes}</p>
-                      </div>
-                    )}
-                  </div>
+                  )}
+                  {selectedAppointment.notes && (
+                    <div className="pt-2 text-sm">
+                      <h5 className="mb-1 text-sm font-medium">Notas</h5>
+                      <p>{selectedAppointment.notes}</p>
+                    </div>
+                  )}
                 </div>
+
+                {/* Action Buttons Section */}
+                <div className="flex gap-2 pt-4">
+                  {(() => {
+                    const canEdit = hasEditCalendarPermission;
+                    const canDelete = canEdit && hasDeleteCalendarPermission;
+                    const showVisitaButton = canEdit && !(selectedAppointment.status === "Completed" && selectedAppointment.type === "Visita");
+
+                    console.log("🔘 [Activity] Action button conditions:", {
+                      canEdit,
+                      canDelete,
+                      showVisitaButton,
+                      status: selectedAppointment.status,
+                      type: selectedAppointment.type,
+                    });
+
+                    return (
+                      <>
+                        {canEdit && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              console.log("✏️ [Activity] Edit button clicked");
+                              // Open the appointment modal with the event data for editing
+                              openModalWithEdit({
+                                appointmentId: selectedAppointment.appointmentId,
+                                initialData: {
+                                  contactId: selectedAppointment.contactId,
+                                  startDate: selectedAppointment.datetimeStart
+                                    .toISOString()
+                                    .split("T")[0],
+                                  startTime: selectedAppointment.datetimeStart.toTimeString().slice(0, 5),
+                                  endDate: selectedAppointment.datetimeEnd.toISOString().split("T")[0],
+                                  endTime: selectedAppointment.datetimeEnd.toTimeString().slice(0, 5),
+                                  tripTimeMinutes: selectedAppointment.tripTimeMinutes,
+                                  notes: selectedAppointment.notes,
+                                  appointmentType: selectedAppointment.type as
+                                    | "Visita"
+                                    | "Reunión"
+                                    | "Firma"
+                                    | "Cierre"
+                                    | "Viaje",
+                                },
+                              });
+                              setSelectedAppointment(null); // Close the detail panel
+                            }}
+                            className="flex-1"
+                          >
+                            Editar
+                          </Button>
+                        )}
+                        {showVisitaButton && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => {
+                              console.log("🏠 [Activity] Visita button clicked");
+                              router.push(
+                                `/calendario/visita/${selectedAppointment.appointmentId}`,
+                              );
+                              setSelectedAppointment(null); // Close the detail panel
+                            }}
+                            className="flex-1"
+                          >
+                            Visita
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              console.log("🗑️ [Activity] Delete button clicked");
+                              void handleDeleteAppointment(selectedAppointment.appointmentId);
+                            }}
+                            disabled={isDeletingAppointment}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Eliminar"
+                          >
+                            {isDeletingAppointment ? (
+                              <Loader className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
               </>
             );
           })()}
         </SheetContent>
       </Sheet>
+
+      {/* Appointment Modal for editing */}
+      <AppointmentModal
+        open={isModalOpen}
+        onOpenChange={closeModal}
+        initialData={modalInitialData}
+        mode={editMode}
+        appointmentId={editingAppointmentId ?? undefined}
+        onSuccess={() => {
+          // Trigger a page refresh to get updated data
+          window.location.reload();
+        }}
+        // No optimistic updates for activity tab - undefined means modal won't use optimistic updates
+        addOptimisticEvent={undefined}
+        removeOptimisticEvent={undefined}
+        updateOptimisticEvent={undefined}
+      />
     </div>
   );
 }

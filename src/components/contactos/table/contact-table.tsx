@@ -9,6 +9,13 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { useRouter } from "next/navigation";
 import { cn } from "~/lib/utils";
 import { Nombre } from "../table-components/list-elements/nombre";
@@ -17,7 +24,9 @@ import { Propiedades } from "../table-components/list-elements/propiedades";
 import { Recordatorios } from "../table-components/list-elements/recordatorios";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Download } from "lucide-react";
+import { CONTACT_SOURCES, CONTACT_SOURCE_LABELS } from "~/types/contact-source";
+import { updateContactWithAuth } from "~/server/queries/contact";
 
 // Default column widths (in pixels)
 const DEFAULT_COLUMN_WIDTHS = {
@@ -106,6 +115,8 @@ export function ContactSpreadsheetTable({
   const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
   const [isHoveringTable, setIsHoveringTable] = useState(false);
+  const [editingSourceId, setEditingSourceId] = useState<string | null>(null);
+  const [optimisticSources, setOptimisticSources] = useState<Record<string, string>>({});
 
   const handleResizeStart = useCallback(
     (column: string, e: React.MouseEvent) => {
@@ -213,6 +224,26 @@ export function ContactSpreadsheetTable({
     setVisibleRows(new Set(initialVisibleIds));
   }, [contacts]);
 
+  // Close source editor on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (editingSourceId) {
+        // Check if click is outside the source editor
+        const target = event.target as HTMLElement;
+        const isInsideSourceEditor = target.closest('[data-source-editor]');
+
+        if (!isInsideSourceEditor) {
+          setEditingSourceId(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [editingSourceId]);
+
   // Export contacts to CSV
   const handleExport = useCallback(async () => {
     if (onExport) {
@@ -253,6 +284,31 @@ export function ContactSpreadsheetTable({
       document.body.removeChild(link);
     }
   }, [contacts, onExport]);
+
+  // Handle source update with optimistic UI
+  const handleSourceUpdate = useCallback(async (contactId: bigint, newSource: string) => {
+    const contactIdStr = contactId.toString();
+
+    // Optimistically update the UI
+    setOptimisticSources((prev) => ({
+      ...prev,
+      [contactIdStr]: newSource,
+    }));
+    setEditingSourceId(null);
+
+    try {
+      await updateContactWithAuth(Number(contactId), { source: newSource });
+      // Success - the optimistic update is now confirmed
+    } catch (error) {
+      console.error("Failed to update contact source:", error);
+      // Rollback optimistic update on error
+      setOptimisticSources((prev) => {
+        const newState = { ...prev };
+        delete newState[contactIdStr];
+        return newState;
+      });
+    }
+  }, []);
 
   // Pagination controls component
   const PaginationControls = () => {
@@ -398,17 +454,17 @@ export function ContactSpreadsheetTable({
               </TableHead>
               <TableHead
                 className="relative"
-                style={getColumnStyle("recordatorios")}
-              >
-                <div className="truncate">Recordatorios</div>
-                <ResizeHandle column="recordatorios" />
-              </TableHead>
-              <TableHead
-                className="relative"
                 style={getColumnStyle("origen")}
               >
                 <div className="truncate">Origen</div>
                 <ResizeHandle column="origen" />
+              </TableHead>
+              <TableHead
+                className="relative"
+                style={getColumnStyle("recordatorios")}
+              >
+                <div className="truncate">Recordatorios</div>
+                <ResizeHandle column="recordatorios" />
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -416,6 +472,8 @@ export function ContactSpreadsheetTable({
             {contacts.map((contact) => {
               const contactId = contact.contactId.toString();
               const isVisible = visibleRows.has(contactId);
+              // Use optimistic source if available, otherwise use contact source
+              const displaySource = optimisticSources[contactId] ?? contact.source;
 
               return (
               <TableRow
@@ -481,6 +539,64 @@ export function ContactSpreadsheetTable({
                 </TableCell>
 
                 <TableCell
+                  className="group/source relative overflow-visible py-2.5"
+                  style={getColumnStyle("origen")}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="relative flex items-center justify-start" data-source-editor>
+                    {/* Current source display */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingSourceId(editingSourceId === contactId ? null : contactId);
+                      }}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all",
+                        displaySource
+                          ? "bg-muted/50 text-muted-foreground hover:bg-muted"
+                          : "text-muted-foreground/40 hover:bg-muted/30",
+                        editingSourceId === contactId && "bg-muted"
+                      )}
+                    >
+                      {displaySource ? (
+                        CONTACT_SOURCE_LABELS[displaySource as keyof typeof CONTACT_SOURCE_LABELS] ?? displaySource
+                      ) : (
+                        <>
+                          <ChevronDown className="h-3 w-3" />
+                          <span className="text-xs">Añadir</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Inline source options */}
+                    {editingSourceId === contactId && (
+                      <div
+                        className="absolute left-0 top-full z-50 mt-1 flex flex-col gap-0.5 rounded-md border bg-background p-1 shadow-lg min-w-[140px]"
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        {CONTACT_SOURCES.map((sourceOption) => (
+                          <button
+                            key={sourceOption}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleSourceUpdate(contact.contactId, sourceOption);
+                            }}
+                            className={cn(
+                              "rounded px-2.5 py-1.5 text-xs text-left transition-colors hover:bg-muted",
+                              displaySource === sourceOption
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            {CONTACT_SOURCE_LABELS[sourceOption]}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+
+                <TableCell
                   className="overflow-hidden py-2.5"
                   style={getColumnStyle("recordatorios")}
                 >
@@ -490,17 +606,6 @@ export function ContactSpreadsheetTable({
                     ) : (
                       <Skeleton className="h-8 w-full" />
                     )}
-                  </div>
-                </TableCell>
-
-                <TableCell
-                  className="overflow-hidden py-2.5"
-                  style={getColumnStyle("origen")}
-                >
-                  <div className="truncate">
-                    <span className="text-sm text-muted-foreground">
-                      {contact.source ?? "-"}
-                    </span>
                   </div>
                 </TableCell>
               </TableRow>

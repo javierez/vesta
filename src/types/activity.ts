@@ -68,6 +68,7 @@ export interface ContactWithDetails {
   hasCompletedVisit: boolean;
   hasCancelledVisit: boolean;
   hasOffer: boolean;
+  offer: number | null;
   isNew: boolean;
 }
 
@@ -90,6 +91,7 @@ export interface ContactSheetData {
   hasCompletedVisit: boolean;
   hasCancelledVisit: boolean;
   hasOffer: boolean;
+  offer: number | null;
 }
 
 export interface CompactContactCardProps {
@@ -111,6 +113,7 @@ export interface CompactContactCardProps {
   hasCompletedVisit: boolean;
   hasCancelledVisit: boolean;
   hasOffer: boolean;
+  offer: number | null;
   visitCount: number;
   listingId: bigint;
   onContactClick?: (data: ContactSheetData) => void;
@@ -130,7 +133,17 @@ export interface ActivityTabContentProps {
   visits: VisitWithDetails[];
   contacts: ContactWithDetails[];
   listingId: bigint;
+  listingPrice: string;
 }
 
 // Empty state types
 export type EmptyStateType = "completed-visits" | "scheduled-visits" | "new-contacts";
+
+// Owner contact type
+export interface OwnerContact {
+  contactId: bigint;
+  firstName: string;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+}

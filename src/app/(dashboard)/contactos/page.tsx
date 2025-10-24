@@ -51,6 +51,7 @@ type DbContact = {
   lastName: string;
   email?: string | null;
   phone?: string | null;
+  source?: string | null;
   additionalInfo?: Record<string, unknown> | null;
   isActive: boolean;
   updatedAt: Date;
@@ -95,11 +96,17 @@ export default function ContactsPage() {
     const roles = searchParams.get("roles");
     const q = searchParams.get("q");
     const lastContact = searchParams.get("lastContact");
+    const sources = searchParams.get("sources");
+    const ratings = searchParams.get("ratings");
+    const statuses = searchParams.get("statuses");
 
     return {
       roles: roles ? roles.split(",") : ["owner"],
       searchQuery: q ?? "",
       lastContactFilter: lastContact ?? "all",
+      sources: sources ? sources.split(",") : [],
+      ratings: ratings ? ratings.split(",").map(Number) : [],
+      statuses: statuses ? statuses.split(",").map(s => s === "true") : [],
     };
   }, [searchParams]);
 
@@ -113,9 +120,10 @@ export default function ContactsPage() {
         lastName: contact.lastName,
         email: contact.email ?? undefined,
         phone: contact.phone ?? undefined,
+        source: contact.source ?? undefined,
         additionalInfo: contact.additionalInfo ?? undefined,
         isActive: contact.isActive,
-        createdAt: new Date(), // Default value since not fetched  
+        createdAt: new Date(), // Default value since not fetched
         updatedAt: contact.updatedAt,
         ownerCount: contact.ownerCount,
         buyerCount: contact.buyerCount,
@@ -144,16 +152,22 @@ export default function ContactsPage() {
           searchQuery: filters.searchQuery,
           roles: ["owner"],
           lastContactFilter: filters.lastContactFilter,
+          sources: filters.sources,
+          ratings: filters.ratings,
+          statuses: filters.statuses,
         })
       : await listContactsBuyerDataWithAuth(page, pageSize, {
           searchQuery: filters.searchQuery,
           roles: ["buyer"],
           lastContactFilter: filters.lastContactFilter,
+          sources: filters.sources,
+          ratings: filters.ratings,
+          statuses: filters.statuses,
         });
 
     // Process contacts from the result (already sorted by database)
     const processedContacts = processContactsData(result.contacts as DbContact[]);
-    
+
     return {
       contacts: processedContacts,
       totalPages: result.totalPages,
@@ -205,6 +219,9 @@ export default function ContactsPage() {
     searchQuery: string;
     roles: string[];
     lastContactFilter: string;
+    sources: string[];
+    ratings: number[];
+    statuses: boolean[];
   }) => {
     // The filtering is now handled by the database query and URL parameters
     // This function is called by the ContactFilter component to update the URL
@@ -223,11 +240,17 @@ export default function ContactsPage() {
             searchQuery: filters.searchQuery,
             roles: ["owner"],
             lastContactFilter: filters.lastContactFilter,
+            sources: filters.sources,
+            ratings: filters.ratings,
+            statuses: filters.statuses,
           })
         : await listContactsBuyerDataWithAuth(1, 100000, { // Large limit to get all
             searchQuery: filters.searchQuery,
             roles: ["buyer"],
             lastContactFilter: filters.lastContactFilter,
+            sources: filters.sources,
+            ratings: filters.ratings,
+            statuses: filters.statuses,
           });
 
       const allContacts = processContactsData(result.contacts as DbContact[]);

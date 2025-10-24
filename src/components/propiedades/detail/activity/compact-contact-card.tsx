@@ -16,6 +16,7 @@ export function CompactContactCard({
   hasCompletedVisit,
   hasCancelledVisit,
   hasOffer,
+  offer,
   visitCount: _visitCount,
   listingId,
   onContactClick,
@@ -62,6 +63,7 @@ export function CompactContactCard({
         hasCompletedVisit,
         hasCancelledVisit,
         hasOffer,
+        offer,
       });
     }
   };
@@ -185,22 +187,22 @@ export function CompactContactCard({
             "inline-flex items-center justify-center gap-1 rounded-full px-2 py-0 text-xs font-medium min-w-[120px] h-5",
             // Visita pendiente - upcoming visit scheduled (highest priority)
             hasUpcomingVisit &&
-              "bg-blue-100 text-blue-800",
+              "bg-amber-100 text-amber-800",
             // Oferta realizada - has offer (regardless of visit status)
             hasOffer && !hasUpcomingVisit &&
-              "bg-green-100 text-green-800",
+              "bg-orange-100 text-orange-800",
             // Visita cancelada - has cancelled visit, clickable to reschedule
             hasCancelledVisit && !hasUpcomingVisit && !hasOffer &&
-              "bg-white text-orange-800 border-2 border-dashed border-orange-600 cursor-pointer hover:bg-orange-50 hover:border-orange-700 transition-colors",
+              "bg-white text-orange-700 border-2 border-dashed border-orange-400 cursor-pointer hover:bg-orange-50 hover:border-orange-500 transition-colors",
             // Visita perdida - missed visit, clickable to reschedule
             hasMissedVisit && !hasUpcomingVisit && !hasCancelledVisit && !hasOffer &&
-              "bg-white text-red-800 border-2 border-dashed border-red-700 cursor-pointer hover:bg-red-50 hover:border-red-800 transition-colors",
+              "bg-white text-amber-700 border-2 border-dashed border-amber-400 cursor-pointer hover:bg-amber-50 hover:border-amber-500 transition-colors",
             // Visita completada - completed visit without offer yet
             hasCompletedVisit && !hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit &&
-              "bg-gray-100 text-gray-700",
+              "bg-amber-50 text-amber-700",
             // Crear visita - no visits at all and no offer
             !hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && !hasOffer &&
-              "bg-white text-gray-700 border-2 border-dashed border-gray-400 cursor-pointer hover:bg-gray-50 hover:border-gray-500 transition-colors"
+              "bg-white text-amber-700 border-2 border-dashed border-amber-300 cursor-pointer hover:bg-amber-50 hover:border-amber-400 transition-colors"
           )}
         >
           {hasUpcomingVisit && "Visita pendiente"}

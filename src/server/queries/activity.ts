@@ -229,3 +229,38 @@ export async function getListingContactsSummary(listingId: bigint) {
     throw error;
   }
 }
+
+/**
+ * Get owner contact information for a listing
+ * Returns the owner's contact details (email, phone) for the property
+ */
+export async function getListingOwnerContact(listingId: bigint) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    const ownerContact = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(listingContacts.listingId, listingId),
+          eq(listingContacts.contactType, "owner"),
+          eq(listingContacts.isActive, true),
+          eq(contacts.accountId, BigInt(accountId))
+        )
+      )
+      .limit(1);
+
+    return ownerContact[0] ?? null;
+  } catch (error) {
+    console.error("Error fetching listing owner contact:", error);
+    throw error;
+  }
+}

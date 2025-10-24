@@ -1077,6 +1077,7 @@ export type Contact = {
   secondaryPhone?: string;
   secondaryPhoneNotes?: string;
   rating?: number | null;
+  source?: string;
   additionalInfo?: {
     demandType?: string; // For demandante: what they're looking for
     propertiesCount?: number; // For sellers: number of properties
